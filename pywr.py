@@ -130,30 +130,34 @@ class Model(object):
         # river flow constraints
         for supply_node, idxs in by_supply.items():
             if isinstance(supply_node, RiverAbstraction):
+                flow_constraint = 0.0
                 # find all routes from a catchment to the abstraction
                 river_routes = self.find_all_routes(Catchment, supply_node)
-                flow = 0.0
-                upstream_abs = {}
+                upstream_abstractions = {}
                 for route in river_routes:
-                    coef = 1.0
-                    for node in route[0:-1][::-1]:
+                    route = route[::-1]
+                    coefficient = 1.0
+                    for n, node in enumerate(route):
                         if isinstance(node, Catchment):
-                            flow += node.properties['flow'].value
-                        elif isinstance(node, Supply):
-                            upstream_abs.setdefault(node, 1.0)
-                            # TODO FIXME: this isn't quite right, how to handle splits?
-                            upstream_abs[node] *= coef
-                if upstream_abs:
-                    # need to account for upstream abstractions
-                    idx_abs = []
-                    coef_abs = []
-                    for node, coef in upstream_abs.items():
-                        idx_abs.extend(by_supply[node])
-                        coef_abs.extend([coef] * len(idx_abs))
-                    s += x[idxs].sum() + CyLPArray(coef_abs) * x[idx_abs].sum() <= flow
-                else:
-                    # no upstream abstractions
-                    s += x[idxs].sum() <= flow
+                            # catchments add water
+                            flow_constraint += (node.properties['flow'].value * coefficient)
+                        elif isinstance(node, RiverSplit):
+                            # splits
+                            if node.split[0] is route[n-1]:
+                                coefficient *= node.properties['split'].value
+                            else:
+                                coefficient *= (1 - node.properties['split'].value)
+                        elif isinstance(node, RiverAbstraction):
+                            # abstractions remove water
+                            upstream_abstractions.setdefault(node, 1.0)
+                            upstream_abstractions[node] *= coefficient
+                abstraction_idxs = []
+                abstraction_coefficients = []
+                for upstream_node, coefficient in upstream_abstractions.items():
+                    cols = by_supply[upstream_node]
+                    abstraction_idxs.extend(cols)
+                    abstraction_coefficients.extend([coefficient]*len(cols))
+                s += CyLPArray(abstraction_coefficients) * x[abstraction_idxs].sum() <= flow_constraint
         
         # TODO: objective function
         s.optimizationDirection = 'max'
@@ -206,13 +210,20 @@ class Parameter(object):
 
 class Node(object):
     '''Base object from which all other nodes inherit'''
-    def __init__(self, model, position=None, **kwargs):
+    def __init__(self, model, position=None, name=None, **kwargs):
         self.model = model
         model.graph.add_node(self)
         self.color = 'black'
         self.position = position
+        self.name = name
         
         self.properties = {}
+    
+    def __repr__(self):
+        if self.name:
+            return '<RiverAbstraction "{}">'.format(self.name)
+        else:
+            return '<RiverAbstraction "{}">'.format(hex(id(self)))
     
     def connect(self, node):
         '''Create a connection from this Node to another Node'''
@@ -251,7 +262,7 @@ class Demand(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#FFF467' # light yellow
         
-        self.properties['demand'] = Parameter(value=20)
+        self.properties['demand'] = Parameter(value=10)
 
 class Link(Node):
     def __init__(self, *args, **kwargs):
@@ -263,7 +274,7 @@ class Catchment(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#82CA9D' # green
         
-        self.properties['flow'] = Parameter(value=1.5)
+        self.properties['flow'] = Parameter(value=2.0)
     
     def check(self):
         Node.check(self)
@@ -275,6 +286,12 @@ class River(Node):
     def __init__(self, *args, **kwargs):
         Node.__init__(self, *args, **kwargs)
         self.color = '#6ECFF6' # blue
+
+class RiverSplit(River):
+    def __init__(self, *args, **kwargs):
+        River.__init__(self, *args, **kwargs)
+        self.split = [None, None]
+        self.properties['split'] = Parameter(value=0.75)
 
 class Terminator(Node):
     pass
