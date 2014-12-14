@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from pywr import *
+import matplotlib.pyplot as pyplot
 
 model = Model()
 
@@ -65,3 +66,4 @@ model.check()
 status, links, nodes = model.solve()
 
 model.plot(links, nodes)
+pyplot.show()

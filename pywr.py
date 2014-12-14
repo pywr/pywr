@@ -52,7 +52,7 @@ class Model(object):
         catchment_nodes = [node for node in nodes if isinstance(node, Catchment)]
         nx.draw_networkx_labels(self.graph, pos, nodelist=catchment_nodes, labels=dict([(n, n.properties['flow'].value) for n in catchment_nodes]), font_size=10)
         
-        pyplot.show()
+        return fig
     
     def check(self):
         nodes = self.graph.nodes()
@@ -208,8 +208,19 @@ class Parameter(object):
     def value(self):
         return self._value
 
+# node subclasses are stored in a dict for convenience
+node_registry = {}
+class NodeMeta(type):
+    def __new__(meta, name, bases, dct):
+        return super(NodeMeta, meta).__new__(meta, name, bases, dct)
+    def __init__(cls, name, bases, dct):
+        super(NodeMeta, cls).__init__(name, bases, dct)
+        node_registry[name.lower()] = cls
+
 class Node(object):
     '''Base object from which all other nodes inherit'''
+    __metaclass__ = NodeMeta
+    
     def __init__(self, model, position=None, name=None, **kwargs):
         self.model = model
         model.graph.add_node(self)
@@ -255,7 +266,7 @@ class Supply(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#F26C4F' # light red
         
-        self.properties['max_flow'] = Parameter(value=kwargs['max_flow'])
+        self.properties['max_flow'] = Parameter(value=10)
 
 class Demand(Node):
     def __init__(self, *args, **kwargs):
