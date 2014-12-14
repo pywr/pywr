@@ -11,6 +11,7 @@ import numpy as np
 from cylp.cy import CyClpSimplex
 from cylp.py.modeling.CyLPModel import CyLPArray
 import inspect
+import pandas
 
 import warnings
 warnings.simplefilter(action = "ignore", category = FutureWarning)
@@ -21,6 +22,8 @@ inf = float('inf')
 class Model(object):
     def __init__(self):
         self.graph = nx.DiGraph()
+        
+        self.timestamp = pandas.to_datetime('2015-01-5')
     
     def plot(self, volume_labels=None, node_labels=None):
         fig = pyplot.figure()
@@ -50,7 +53,7 @@ class Model(object):
             nx.draw_networkx_labels(self.graph, pos, labels=node_labels, font_size=10)
         
         catchment_nodes = [node for node in nodes if isinstance(node, Catchment)]
-        nx.draw_networkx_labels(self.graph, pos, nodelist=catchment_nodes, labels=dict([(n, n.properties['flow'].value) for n in catchment_nodes]), font_size=10)
+        nx.draw_networkx_labels(self.graph, pos, nodelist=catchment_nodes, labels=dict([(n, n.properties['flow'].value(self.timestamp)) for n in catchment_nodes]), font_size=10)
         
         return fig
     
@@ -98,6 +101,8 @@ class Model(object):
         return all_routes
     
     def solve(self):
+        timestamp = self.timestamp
+        
         routes = self.find_all_routes(Supply, Demand, valid=(Link,))
         count_routes = len(routes)
         assert(count_routes > 0)
@@ -121,11 +126,11 @@ class Model(object):
         
         for supply_node, idxs in by_supply.items():
             cols = x[idxs]
-            s += cols.sum() <= supply_node.properties['max_flow'].value
+            s += cols.sum() <= supply_node.properties['max_flow'].value(timestamp)
         
         for demand_node, idxs in by_demand.items():
             cols = x[idxs]
-            s += cols.sum() <= demand_node.properties['demand'].value
+            s += cols.sum() <= demand_node.properties['demand'].value(timestamp)
 
         # river flow constraints
         for supply_node, idxs in by_supply.items():
@@ -140,13 +145,13 @@ class Model(object):
                     for n, node in enumerate(route):
                         if isinstance(node, Catchment):
                             # catchments add water
-                            flow_constraint += (node.properties['flow'].value * coefficient)
+                            flow_constraint += (node.properties['flow'].value(timestamp) * coefficient)
                         elif isinstance(node, RiverSplit):
                             # splits
                             if node.split[0] is route[n-1]:
-                                coefficient *= node.properties['split'].value
+                                coefficient *= node.properties['split'].value(timestamp)
                             else:
-                                coefficient *= (1 - node.properties['split'].value)
+                                coefficient *= (1 - node.properties['split'].value(timestamp))
                         elif isinstance(node, RiverAbstraction):
                             # abstractions remove water
                             upstream_abstractions.setdefault(node, 1.0)
@@ -204,9 +209,15 @@ class Parameter(object):
     def __init__(self, value=None):
         self._value = value
     
-    @property
-    def value(self):
+    def value(self, index=None):
         return self._value
+
+class Timeseries(object):
+    def __init__(self, df):
+        self.df = df
+    
+    def value(self, index):
+        return self.df[index]
 
 # node subclasses are stored in a dict for convenience
 node_registry = {}

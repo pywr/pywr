@@ -4,11 +4,19 @@
 from pywr import *
 import matplotlib.pyplot as pyplot
 
+import pandas
+
 model = Model()
 
 source1 = Supply(model, position=(1,1), max_flow=1.0, name='supply1')
 pipe1 = Link(model, position=(2,1))
+
 demand1 = Demand(model, position=(3,1), name='demand1')
+r = pandas.date_range('2015-01-01', '2015-12-31', freq='D')
+ts = pandas.Series(range(0, 365), index=r)
+demand1.properties['demand'] = Timeseries(ts)
+
+
 source2 = Supply(model, position=(2,2), max_flow=2.0, name='supply2')
 source3 = Supply(model, position=(3,3), max_flow=0.5, name='supply3')
 pipe2 = Link(model, position=(3,2))
@@ -25,6 +33,7 @@ source3.connect(pipe3)
 pipe3.connect(demand1)
 
 demand2 = Demand(model, position=(2,0), name='demand2')
+demand2.properties['demand'] = Timeseries(ts)
 pipe1.connect(demand2)
 
 catch1 = Catchment(model, position=(1, 0), name='catch1')
