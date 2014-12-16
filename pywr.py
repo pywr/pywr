@@ -247,9 +247,9 @@ class Node(object):
     
     def __repr__(self):
         if self.name:
-            return '<RiverAbstraction "{}">'.format(self.name)
+            return '<{} "{}">'.format(self.__class__.__name__, self.name)
         else:
-            return '<RiverAbstraction "{}">'.format(hex(id(self)))
+            return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
     
     def connect(self, node):
         '''Create a connection from this Node to another Node'''
