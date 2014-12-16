@@ -13,6 +13,14 @@ def parse_xml(data):
     
     model = pywr.Model()
     
+    # parse metadata
+    xml_metadatas = root.find('metadata')
+    for xml_metadata in xml_metadatas.getchildren():
+        tag = xml_metadata.tag.lower()
+        text = xml_metadata.text.strip()
+        model.metadata[tag] = text
+
+    # parse nodes
     nodes = {}
     xml_nodes = root.find('nodes')
     for xml_node in xml_nodes.getchildren():
@@ -38,6 +46,7 @@ def parse_xml(data):
                 else:
                     raise NotImplementedError()
 
+    # parse edges
     xml_edges = root.find('edges')
     for xml_edge in xml_edges.getchildren():
         tag = xml_edge.tag.lower()

@@ -22,6 +22,7 @@ inf = float('inf')
 class Model(object):
     def __init__(self):
         self.graph = nx.DiGraph()
+        self.metadata = {}
         
         self.timestamp = pandas.to_datetime('2015-01-5')
     
