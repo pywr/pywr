@@ -12,12 +12,14 @@ from cylp.cy import CyClpSimplex
 from cylp.py.modeling.CyLPModel import CyLPArray
 import inspect
 import pandas
+import datetime
 
 import warnings
 warnings.simplefilter(action = "ignore", category = FutureWarning)
 warnings.simplefilter(action = "ignore", category = UnicodeWarning)
 
 inf = float('inf')
+TIMESTEP = datetime.timedelta(1)
 
 class Model(object):
     def __init__(self):
@@ -104,6 +106,12 @@ class Model(object):
         
         return all_routes
     
+    def step(self):
+        '''Step the model forward by one day'''
+        ret = self.solve()
+        self.timestamp += TIMESTEP
+        return ret
+
     def solve(self):
         timestamp = self.timestamp
         
@@ -210,9 +218,9 @@ class Model(object):
             else:
                 del(volumes_nodes[k])
         
-        print(status)
+        assert(status == 'optimal')
         
-        return status, volumes_links, volumes_nodes
+        return status, round(total_water_demanded, 3), round(total_water_supplied, 3)
 
 class Parameter(object):
     def __init__(self, value=None):
