@@ -132,9 +132,12 @@ class Model(object):
             cols = x[idxs]
             s += cols.sum() <= supply_node.properties['max_flow'].value(timestamp)
         
+        total_water_demanded = 0.0
         for demand_node, idxs in by_demand.items():
             cols = x[idxs]
-            s += cols.sum() <= demand_node.properties['demand'].value(timestamp)
+            demand_value = demand_node.properties['demand'].value(timestamp)
+            s += cols.sum() <= demand_value
+            total_water_demanded += demand_value
 
         # river flow constraints
         for supply_node, idxs in by_supply.items():
@@ -176,6 +179,8 @@ class Model(object):
         status = s.primal()
         result = s.primalVariableSolution['x']
         
+        total_water_supplied = sum(result)
+
         volumes_links = {}
         volumes_nodes = {}
         for n, route in enumerate(routes):
@@ -281,7 +286,10 @@ class Supply(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#F26C4F' # light red
         
-        self.properties['max_flow'] = Parameter(value=10)
+        if 'max_flow' in kwargs:
+            self.properties['max_flow'] = Parameter(value=kwargs['max_flow'])
+        else:
+            self.properties['max_flow'] = Parameter(value=0)
 
 class Demand(Node):
     def __init__(self, *args, **kwargs):
@@ -317,7 +325,11 @@ class RiverSplit(River):
     def __init__(self, *args, **kwargs):
         River.__init__(self, *args, **kwargs)
         self.split = [None, None]
-        self.properties['split'] = Parameter(value=0.75)
+        
+        if 'split' in kwargs:
+            self.properties['split'] = Parameter(value=kwargs['split'])
+        else:
+            self.properties['split'] = Parameter(value=0.5)
 
 class Terminator(Node):
     pass
