@@ -62,6 +62,9 @@ class Model(object):
         nodes = self.graph.nodes()
         for node in nodes:
             node.check()
+
+    def nodes(self):
+        return self.graph.nodes()
     
     def find_all_routes(self, type1, type2, valid=None):
         '''Find all routes between two nodes or types of node'''
