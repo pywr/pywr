@@ -169,7 +169,7 @@ class Model(object):
                     cols = by_supply[upstream_node]
                     abstraction_idxs.extend(cols)
                     abstraction_coefficients.extend([coefficient]*len(cols))
-                s += CyLPArray(abstraction_coefficients) * x[abstraction_idxs].sum() <= flow_constraint
+                s += CyLPArray(abstraction_coefficients) * x[abstraction_idxs] <= flow_constraint
         
         # TODO: objective function
         s.optimizationDirection = 'max'
