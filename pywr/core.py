@@ -179,6 +179,10 @@ class Model(object):
                     abstraction_coefficients.extend([coefficient]*len(cols))
                 s += CyLPArray(abstraction_coefficients) * x[abstraction_idxs] <= flow_constraint
         
+        # workaround for bug in CyLP where problem fails with only 1 variable
+        if count_routes == 1:
+            y = s.addVariable('y', 1)
+        
         # TODO: objective function
         s.optimizationDirection = 'max'
         s.objective = CyLPArray([1] * count_routes) * x
