@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import pywr
+import pywr.core
 
 import xml.etree.ElementTree as ET
 
@@ -11,7 +11,7 @@ def parse_xml(data):
     '''Create a new Model from XML data'''
     root = ET.fromstring(data)
     
-    model = pywr.Model()
+    model = pywr.core.Model()
     
     # parse metadata
     xml_metadatas = root.find('metadata')
@@ -26,7 +26,7 @@ def parse_xml(data):
     for xml_node in xml_nodes.getchildren():
         tag = xml_node.tag.lower()
         try:
-            cls = pywr.node_registry[tag]
+            cls = pywr.core.node_registry[tag]
         except KeyError:
             raise KeyError('Unrecognised node type ({})'.format(tag))
         attrs = dict(xml_node.items())
@@ -42,7 +42,7 @@ def parse_xml(data):
                         value = float(child.text)
                     except:
                         value = child.text
-                    node.properties[key] = pywr.Parameter(value=value)
+                    node.properties[key] = pywr.core.Parameter(value=value)
                 else:
                     raise NotImplementedError()
 

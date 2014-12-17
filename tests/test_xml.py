@@ -3,14 +3,16 @@
 
 from __future__ import print_function
 
-import pywr
-import xmlutils
+import os
+
+import pywr.core
+import pywr.xmlutils
 
 def test_simple1():
 	'''Test parsing a simple XML document'''
 	# parse the XML into a model
-	data = file('simple1.xml', 'r').read()
-	model = xmlutils.parse_xml(data)
+	data = file(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r').read()
+	model = pywr.xmlutils.parse_xml(data)
 
 	# metadata
 	assert(model.metadata['title'] == 'Simple 1')
@@ -27,9 +29,9 @@ def test_simple1():
 	demand1 = name_to_node['demand1']
 
 	# node types
-	assert(type(supply1) is pywr.Supply)
-	assert(type(link1) is pywr.Link)
-	assert(type(demand1) is pywr.Demand)
+	assert(type(supply1) is pywr.core.Supply)
+	assert(type(link1) is pywr.core.Link)
+	assert(type(demand1) is pywr.core.Demand)
 
 	# node positions
 	assert(supply1.position == (1,1))
