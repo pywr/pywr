@@ -163,10 +163,12 @@ class Model(object):
                             flow_constraint += (node.properties['flow'].value(timestamp) * coefficient)
                         elif isinstance(node, RiverSplit):
                             # splits
-                            if node.split[0] is route[n-1]:
+                            if node.slots[1] is route[n-1]:
                                 coefficient *= node.properties['split'].value(timestamp)
-                            else:
+                            elif node.slots[2] is route[n-1]:
                                 coefficient *= (1 - node.properties['split'].value(timestamp))
+                            else:
+                                raise RuntimeError()
                         elif isinstance(node, RiverAbstraction):
                             # abstractions remove water
                             upstream_abstractions.setdefault(node, 1.0)
@@ -289,11 +291,13 @@ class Node(object):
         else:
             return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
     
-    def connect(self, node):
+    def connect(self, node, slot=None):
         '''Create a connection from this Node to another Node'''
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
         self.model.graph.add_edge(self, node)
+        if slot is not None:
+            self.slots[slot] = node
     
     def disconnect(self, node=None):
         '''Remove a connection from this Node to another Node
@@ -364,7 +368,7 @@ class River(Node):
 class RiverSplit(River):
     def __init__(self, *args, **kwargs):
         River.__init__(self, *args, **kwargs)
-        self.split = [None, None]
+        self.slots = {1: None, 2: None}
         
         if 'split' in kwargs:
             self.properties['split'] = Parameter(value=kwargs['split'])

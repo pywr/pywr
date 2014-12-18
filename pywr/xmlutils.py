@@ -60,6 +60,9 @@ def parse_xml(data):
         to_name = xml_edge.get('to')
         from_node = nodes[from_name]
         to_node = nodes[to_name]
-        from_node.connect(to_node)
+        slot = xml_edge.get('slot')
+        if slot is not None:
+            slot = int(slot)
+        from_node.connect(to_node, slot=slot)
 
     return model

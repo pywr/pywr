@@ -31,3 +31,19 @@ def test_run_reservoir1():
     for delivered in [10.0, 10.0, 10.0, 5.0, 0.0]:
         result = model.step()
         assert(result == ('optimal', 10.0, delivered))
+
+def test_run_river1():
+    data = file(os.path.join(os.path.dirname(__file__), 'river1.xml'), 'r').read()
+    model = pywr.xmlutils.parse_xml(data)
+    model.check()
+    
+    result = model.step()
+    assert(result == ('optimal', 10.0, 5.0))
+
+def test_run_river2():
+    data = file(os.path.join(os.path.dirname(__file__), 'river2.xml'), 'r').read()
+    model = pywr.xmlutils.parse_xml(data)
+    model.check()
+    
+    result = model.step()
+    assert(result == ('optimal', 12.0, 9.25))
