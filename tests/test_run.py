@@ -23,4 +23,11 @@ def test_run_simple1():
     
     # check the timestamp incremented
     assert(model.timestamp - t0 == datetime.timedelta(1))
-        
+
+def test_run_reservoir1():
+    data = file(os.path.join(os.path.dirname(__file__), 'reservoir1.xml'), 'r').read()
+    model = pywr.xmlutils.parse_xml(data)
+
+    for delivered in [10.0, 10.0, 10.0, 5.0, 0.0]:
+        result = model.step()
+        assert(result == ('optimal', 10.0, delivered))

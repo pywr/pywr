@@ -45,6 +45,10 @@ def parse_xml(data):
                     node.properties[key] = pywr.core.Parameter(value=value)
                 else:
                     raise NotImplementedError()
+            elif child.tag == 'variable':
+                key = child.get('key')
+                value = float(child.text)
+                node.properties[key] = pywr.core.Variable(initial=value)
 
     # parse edges
     xml_edges = root.find('edges')

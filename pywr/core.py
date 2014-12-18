@@ -208,6 +208,11 @@ class Model(object):
                     volumes_links.setdefault(pair, 0.0)
                     volumes_links[pair] += result[n]
         
+        # commit the volume of water actually supplied
+        for n, route in enumerate(routes):
+            for node in route:
+                node.commit(result[n])
+
         for k,v in volumes_links.items():
             v = round(v,3)
             if v:
@@ -233,12 +238,28 @@ class Parameter(object):
     def value(self, index=None):
         return self._value
 
+class ParameterFunction(object):
+    def __init__(self, parent, func):
+        self._parent = parent
+        self._func = func
+
+    def value(self, index=None):
+        return self._func(self._parent, index)
+
 class Timeseries(object):
     def __init__(self, df):
         self.df = df
     
     def value(self, index):
         return self.df[index]
+
+class Variable(object):
+    def __init__(self, initial=0.0):
+        self._initial = initial
+        self._value = initial
+
+    def value(self, index=None):
+        return self._value
 
 # node subclasses are stored in a dict for convenience
 node_registry = {}
@@ -292,6 +313,13 @@ class Node(object):
             raise TypeError('{} position has invalid type ({})'.format(self, type(self.position)))
         if not len(self.position) == 2:
             raise ValueError('{} position has invalid length ({})'.format(self, len(self.position)))
+
+    def commit(self, volume):
+        '''Commit a volume of water actually supplied
+        
+        This should be implemented by the various node classes
+        '''
+        pass
 
 class Supply(Node):
     def __init__(self, *args, **kwargs):
@@ -348,3 +376,20 @@ class Terminator(Node):
 
 class RiverAbstraction(Supply, River):
     pass
+
+class Reservoir(Supply):
+    def __init__(self, *args, **kwargs):
+        Supply.__init__(self, *args, **kwargs)
+        
+        if 'volume' in kwargs:
+            self.properties['volume'] = Variable(initial=kwargs['volume'])
+        else:
+            self.properties['volume'] = Variable(initial=100.0)
+        
+        def func(parent, index):
+            return self.properties['volume'].value(index)
+        self.properties['max_flow'] = ParameterFunction(self, func)
+
+    def commit(self, volume):
+        # update the remaining volume in the reservoir
+        self.properties['volume']._value -= volume
