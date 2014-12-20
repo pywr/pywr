@@ -191,7 +191,7 @@ class Model(object):
         
         s.logLevel = 0
         status = s.primal()
-        result = s.primalVariableSolution['x']
+        result = [round(value, 3) for value in s.primalVariableSolution['x']]
         
         total_water_supplied = sum(result)
 
@@ -212,8 +212,10 @@ class Model(object):
         
         # commit the volume of water actually supplied
         for n, route in enumerate(routes):
-            for node in route:
-                node.commit(result[n])
+            route[0].commit(result[n], chain='first')
+            for node in route[1:-1]:
+                node.commit(result[n], chain='middle')
+            route[-1].commit(result[n], chain='last')
 
         for k,v in volumes_links.items():
             v = round(v,3)
@@ -318,7 +320,7 @@ class Node(object):
         if not len(self.position) == 2:
             raise ValueError('{} position has invalid length ({})'.format(self, len(self.position)))
 
-    def commit(self, volume):
+    def commit(self, volume, chain):
         '''Commit a volume of water actually supplied
         
         This should be implemented by the various node classes
@@ -381,18 +383,30 @@ class Terminator(Node):
 class RiverAbstraction(Supply, River):
     pass
 
-class Reservoir(Supply):
+class Reservoir(Supply, Demand):
     def __init__(self, *args, **kwargs):
-        Supply.__init__(self, *args, **kwargs)
+        super(Reservoir, self).__init__(*args, **kwargs)
         
         # reservoir cannot supply more than it's current volume
         def func(parent, index):
             return self.properties['current_volume'].value(index)
         self.properties['max_flow'] = ParameterFunction(self, func)
+        
+        def func(parent, index):
+            current_volume = self.properties['current_volume'].value(index)
+            max_volume = self.properties['max_volume'].value(index)
+            print(max_volume - current_volume)
+            return max_volume - current_volume
+        self.properties['demand'] = ParameterFunction(self, func)
 
-    def commit(self, volume):
-        # update the remaining volume in the reservoir
-        self.properties['current_volume']._value -= volume
+    def commit(self, volume, chain):
+        # update the volume remaining in the reservoir
+        if chain == 'first':
+            # reservoir supplied some water
+            self.properties['current_volume']._value -= volume
+        elif chain == 'last':
+            # reservoir received some water
+            self.properties['current_volume']._value += volume
 
     def check(self):
         super(Reservoir, self).check()
