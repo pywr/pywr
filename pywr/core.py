@@ -385,15 +385,17 @@ class Reservoir(Supply):
     def __init__(self, *args, **kwargs):
         Supply.__init__(self, *args, **kwargs)
         
-        if 'volume' in kwargs:
-            self.properties['volume'] = Variable(initial=kwargs['volume'])
-        else:
-            self.properties['volume'] = Variable(initial=100.0)
-        
+        # reservoir cannot supply more than it's current volume
         def func(parent, index):
-            return self.properties['volume'].value(index)
+            return self.properties['current_volume'].value(index)
         self.properties['max_flow'] = ParameterFunction(self, func)
 
     def commit(self, volume):
         # update the remaining volume in the reservoir
-        self.properties['volume']._value -= volume
+        self.properties['current_volume']._value -= volume
+
+    def check(self):
+        super(Reservoir, self).check()
+        index = self.model.timestamp
+        # check volume doesn't exceed maximum volume
+        assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))

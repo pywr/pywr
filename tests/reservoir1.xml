@@ -8,7 +8,8 @@
     </metadata>
     <nodes>
         <reservoir name="supply1" x="1" y="1">
-            <variable key="volume">35</variable>
+            <parameter type="constant" key="max_volume">35</parameter>
+            <variable key="current_volume">35</variable>
         </reservoir>
         <link name="link1" x="2" y="1" />
         <demand name="demand1" x="3" y="1">
