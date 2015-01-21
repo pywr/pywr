@@ -71,6 +71,20 @@ def test_run_river2():
     result = model.step()
     assert(result == ('optimal', 12.0, 9.25))
 
+def test_run_cost1():
+    data = file(os.path.join(os.path.dirname(__file__), 'cost1.xml'), 'r').read()
+    model = pywr.xmlutils.parse_xml(data)
+    model.check()
+    
+    nodes = dict([(node.name, node) for node in model.nodes()])
+    assert(nodes['supply1'].properties['cost'].value(None) == 1)
+    assert(nodes['supply2'].properties['cost'].value(None) == 2)
+    
+    result = model.step()
+    assert(result == ('optimal', 10.0, 10.0))
+    
+    # TODO: check that the supply has come entirely from supply1
+
 def test_solver_cylp():
     '''Test specifying the solver in XML'''
     data = '''<pywr><solver name="cylp" /><nodes /><edges /><metadata /></pywr>'''

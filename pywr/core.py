@@ -149,6 +149,7 @@ class SolverCyLP(Solver):
         count_routes = len(routes)
         assert(count_routes > 0)
         
+        costs = []
         by_supply = {}
         by_demand = {}
         for n, route in enumerate(routes):
@@ -158,6 +159,10 @@ class SolverCyLP(Solver):
             by_supply[supply_node].append(n)
             by_demand.setdefault(demand_node, [])
             by_demand[demand_node].append(n)
+            cost = 0.0
+            for node in route:
+                cost += node.properties['cost'].value(timestamp)
+            costs.append(cost)
         
         s = CyClpSimplex()
         x = s.addVariable('x', count_routes)
@@ -215,9 +220,12 @@ class SolverCyLP(Solver):
         if count_routes == 1:
             y = s.addVariable('y', 1)
         
-        # TODO: objective function
+        # TODO: two-phase solve
+        # if resource state < 1 (for any source), skip 1
+        # 1) minimise cost
+        # 2) maximise high resource state usage
         s.optimizationDirection = 'max'
-        s.objective = CyLPArray([1] * count_routes) * x
+        s.objective = (1+max(costs)-CyLPArray(costs)) * x
         
         s.logLevel = 0
         status = s.primal()
@@ -315,7 +323,9 @@ class Node(object):
         self.position = position
         self.name = name
         
-        self.properties = {}
+        self.properties = {
+            'cost': Parameter(value=0.0)
+        }
     
     def __repr__(self):
         if self.name:
