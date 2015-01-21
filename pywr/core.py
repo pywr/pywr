@@ -22,9 +22,19 @@ inf = float('inf')
 TIMESTEP = datetime.timedelta(1)
 
 class Model(object):
-    def __init__(self):
+    def __init__(self, solver=None):
         self.graph = nx.DiGraph()
         self.metadata = {}
+        
+        if solver is not None:
+            # use specific solver
+            try:
+                self.solver = SolverMeta.solvers[solver.lower()]
+            except KeyError:
+                raise KeyError('Unrecognised solver: {}'.format(solver))
+        else:
+            # use default solver
+            self.solver = SolverCyLP()
         
         self.timestamp = pandas.to_datetime('2015-01-5')
     
@@ -113,9 +123,29 @@ class Model(object):
         return ret
 
     def solve(self):
-        timestamp = self.timestamp
+        '''Call solver to solve the current timestep'''
+        return self.solver.solve(self)
+
+class SolverMeta(type):
+    solvers = {}
+    def __new__(cls, clsname, bases, attrs):
+        newclass = super(SolverMeta, cls).__new__(cls, clsname, bases, attrs)
+        cls.solvers[newclass.name.lower()] = newclass
+        return newclass
+
+class Solver(object):
+    '''Solver base class from which all solvers should inherit'''
+    __metaclass__ = SolverMeta
+    name = 'default'
+    def solve(self, model):
+        raise NotImplementedError('Solver should be subclassed to provide solve()')
+
+class SolverCyLP(Solver):
+    name = 'CyLP'
+    def solve(self, model):
+        timestamp = model.timestamp
         
-        routes = self.find_all_routes(Supply, Demand, valid=(Link,))
+        routes = model.find_all_routes(Supply, Demand, valid=(Link,))
         count_routes = len(routes)
         assert(count_routes > 0)
         
@@ -152,7 +182,7 @@ class Model(object):
             if isinstance(supply_node, RiverAbstraction):
                 flow_constraint = 0.0
                 # find all routes from a catchment to the abstraction
-                river_routes = self.find_all_routes(Catchment, supply_node)
+                river_routes = model.find_all_routes(Catchment, supply_node)
                 upstream_abstractions = {}
                 for route in river_routes:
                     route = route[::-1]

@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import os
 import datetime
+import pytest
 
 import pywr.core
 import pywr.xmlutils
@@ -69,3 +70,15 @@ def test_run_river2():
     
     result = model.step()
     assert(result == ('optimal', 12.0, 9.25))
+
+def test_solver_cylp():
+    '''Test specifying the solver in XML'''
+    data = '''<pywr><solver name="cylp" /><nodes /><edges /><metadata /></pywr>'''
+    model = pywr.xmlutils.parse_xml(data)
+    assert(model.solver.name.lower() == 'cylp')
+
+def test_solver_unrecognised():
+    '''Test specifying an unrecognised solver XML'''
+    data = '''<pywr><solver name="foobar" /><nodes /><edges /><metadata /></pywr>'''
+    with pytest.raises(KeyError):
+        model = pywr.xmlutils.parse_xml(data)

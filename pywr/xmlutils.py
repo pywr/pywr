@@ -11,7 +11,14 @@ def parse_xml(data):
     '''Create a new Model from XML data'''
     root = ET.fromstring(data)
     
-    model = pywr.core.Model()
+    # parse solver
+    xml_solver = root.find('solver')
+    if xml_solver is not None:
+        solver = xml_solver.get('name')
+    else:
+        solver = None
+    
+    model = pywr.core.Model(solver=solver)
     
     # parse metadata
     xml_metadatas = root.find('metadata')
