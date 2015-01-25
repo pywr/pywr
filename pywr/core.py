@@ -25,6 +25,8 @@ class Model(object):
     def __init__(self, solver=None):
         self.graph = nx.DiGraph()
         self.metadata = {}
+        self.parameters = {}
+        self.data = {}
         
         if solver is not None:
             # use specific solver
