@@ -6,6 +6,8 @@ from __future__ import print_function
 import pywr.core
 
 import xml.etree.ElementTree as ET
+import pandas
+import dateutil
 
 def parse_xml(data):
     '''Create a new Model from XML data'''
@@ -26,6 +28,40 @@ def parse_xml(data):
         tag = xml_metadata.tag.lower()
         text = xml_metadata.text.strip()
         model.metadata[tag] = text
+    
+    # parse parameters
+    xml_parameters = root.find('parameters')
+    if xml_parameters:
+        for xml_parameter in xml_parameters.getchildren():
+            tag = xml_parameter.tag.lower()
+            if tag == 'parameter':
+                key = xml_parameter.get('key')
+                value = xml_parameter.text
+                model.parameters[key] = value
+            else:
+                raise NotImplementedError()
+        try:
+            model.timestamp = dateutil.parser.parse(model.parameters['timestamp'])
+        except KeyError:
+            pass
+
+    # parse data
+    xml_datas = root.find('data')
+    if xml_datas:
+        for xml_data in xml_datas.getchildren():
+            tag = xml_data.tag.lower()
+            name = xml_data.get('name')
+            properties = {}
+            for child in xml_data.getchildren():
+                properties[child.tag] = child.text
+            if properties['type'] == 'pandas':
+                # TODO: better handling of british/american dates (currently assumes british)
+                df = pandas.read_csv(properties['path'], index_col=0, parse_dates=True, dayfirst=True)
+                df = df[properties['column']]
+                ts = pywr.core.Timeseries(df)
+                model.data[name] = ts
+            else:
+                raise NotImplementedError()
 
     # parse nodes
     nodes = {}
@@ -43,13 +79,17 @@ def parse_xml(data):
         nodes[name] = node
         for child in xml_node.getchildren():
             if child.tag == 'parameter':
-                if child.get('type') == 'constant':
-                    key = child.get('key')
+                child_type = child.get('type')
+                key = child.get('key')
+                if child_type == 'constant':
                     try:
                         value = float(child.text)
                     except:
                         value = child.text
                     node.properties[key] = pywr.core.Parameter(value=value)
+                elif child_type == 'timeseries':
+                    name = child.text
+                    node.properties[key] = model.data[name]
                 else:
                     raise NotImplementedError()
             elif child.tag == 'variable':

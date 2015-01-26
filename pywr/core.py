@@ -25,6 +25,8 @@ class Model(object):
     def __init__(self, solver=None):
         self.graph = nx.DiGraph()
         self.metadata = {}
+        self.parameters = {}
+        self.data = {}
         
         if solver is not None:
             # use specific solver
@@ -149,6 +151,7 @@ class SolverCyLP(Solver):
         count_routes = len(routes)
         assert(count_routes > 0)
         
+        costs = []
         by_supply = {}
         by_demand = {}
         for n, route in enumerate(routes):
@@ -158,6 +161,10 @@ class SolverCyLP(Solver):
             by_supply[supply_node].append(n)
             by_demand.setdefault(demand_node, [])
             by_demand[demand_node].append(n)
+            cost = 0.0
+            for node in route:
+                cost += node.properties['cost'].value(timestamp)
+            costs.append(cost)
         
         s = CyClpSimplex()
         x = s.addVariable('x', count_routes)
@@ -168,7 +175,13 @@ class SolverCyLP(Solver):
         
         for supply_node, idxs in by_supply.items():
             cols = x[idxs]
-            s += cols.sum() <= supply_node.properties['max_flow'].value(timestamp)
+            # maximum supply from node is limited by max_flow parameter and licenses
+            max_flow_parameter = supply_node.properties['max_flow'].value(timestamp)
+            max_flow_license = inf
+            if supply_node.licenses is not None:
+                max_flow_license = supply_node.licenses.available(timestamp)
+            max_flow = min(max_flow_parameter, max_flow_license)
+            s += cols.sum() <= max_flow
         
         total_water_demanded = 0.0
         for demand_node, idxs in by_demand.items():
@@ -215,9 +228,12 @@ class SolverCyLP(Solver):
         if count_routes == 1:
             y = s.addVariable('y', 1)
         
-        # TODO: objective function
+        # TODO: two-phase solve
+        # if resource state < 1 (for any source), skip 1
+        # 1) minimise cost
+        # 2) maximise high resource state usage
         s.optimizationDirection = 'max'
-        s.objective = CyLPArray([1] * count_routes) * x
+        s.objective = (1+max(costs)-CyLPArray(costs)) * x
         
         s.logLevel = 0
         status = s.primal()
@@ -263,7 +279,7 @@ class SolverCyLP(Solver):
         
         assert(status == 'optimal')
         
-        return status, round(total_water_demanded, 3), round(total_water_supplied, 3)
+        return status, round(total_water_demanded, 3), round(total_water_supplied, 3), volumes_links, volumes_nodes
 
 class Parameter(object):
     def __init__(self, value=None):
@@ -315,7 +331,9 @@ class Node(object):
         self.position = position
         self.name = name
         
-        self.properties = {}
+        self.properties = {
+            'cost': Parameter(value=0.0)
+        }
     
     def __repr__(self):
         if self.name:
@@ -366,6 +384,13 @@ class Supply(Node):
             self.properties['max_flow'] = Parameter(value=kwargs['max_flow'])
         else:
             self.properties['max_flow'] = Parameter(value=0)
+        
+        self.licenses = None
+    
+    def commit(self, volume, chain):
+        super(Supply, self).commit(volume, chain)
+        if self.licenses is not None:
+            self.licenses.commit(volume)
 
 class Demand(Node):
     def __init__(self, *args, **kwargs):
@@ -430,6 +455,7 @@ class Reservoir(Supply, Demand):
         self.properties['demand'] = ParameterFunction(self, func)
 
     def commit(self, volume, chain):
+        super(Reservoir, self).commit(volume, chain)
         # update the volume remaining in the reservoir
         if chain == 'first':
             # reservoir supplied some water
