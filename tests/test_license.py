@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime
 
-from pywr.licenses import License, DailyLicense, AnnualLicense
+from pywr.licenses import License, DailyLicense, AnnualLicense, LicenseCollection
 
 def test_base_license():
     with pytest.raises(TypeError):
@@ -43,3 +43,19 @@ def test_annual_license():
     lic.refresh()
     assert(lic.available(datetime(2015, 1, 1)) == 365.0)
     assert(lic.resource_state(datetime(2015, 1, 1)) == 1.0)
+
+def test_license_collection():
+    '''Test license collection'''
+    daily_lic = DailyLicense(42.0)
+    annual_lic = AnnualLicense(365.0)
+    collection = LicenseCollection([daily_lic, annual_lic])
+
+    assert(len(collection) == 2)
+    
+    assert(collection.available(datetime(2015, 1, 1)) == 42.0)
+    assert(collection.resource_state(datetime(2015, 1, 1)) == 1.0)
+    assert(collection.resource_state(datetime(2015, 2, 1)) > 1.0)
+    
+    collection.commit(360.0)
+    assert(collection.available(datetime(2015, 12, 1)) == 5.0)
+    assert(collection.resource_state(datetime(2015, 12, 1)) < 1.0)

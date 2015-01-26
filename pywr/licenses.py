@@ -56,3 +56,35 @@ class AnnualLicense(License):
         self._remaining -= value
     def refresh(self):
         self._remaining = self._amount
+
+class LicenseCollection(License):
+    '''A collection of Licences'''
+    def __init__(self, licenses=None):
+        if licenses is None:
+            self._licenses = []
+        else:
+            self._licenses = licenses
+            self._licenses = set(self._licenses)
+    def add(self, license):
+        self._licenses.add(license)
+    def remove(self, license):
+        self._licenses.remove(license)
+    def __len__(self):
+        return len(self._licenses)
+    def available(self, index):
+        min_available = float('inf')
+        for license in self._licenses:
+            min_available = min(license.available(index), min_available)
+        return min_available
+    def resource_state(self, index):
+        resource_states = []
+        for license in self._licenses:
+            resource_states.append(license.resource_state(index))
+        resource_states = [r for r in resource_states if r is not None]
+        return min(resource_states)
+    def commit(self, value):
+        for license in self._licenses:
+            license.commit(value)
+    def refresh(self):
+        for license in self._licenses:
+            license.refresh()
