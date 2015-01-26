@@ -48,10 +48,7 @@ class AnnualLicense(License):
             return inf
         else:
             expected_remaining = self._amount - ((day_of_year-1) * self._amount / days_in_year)
-            if expected_remaining == self._amount:
-                return 1.0
-            else:
-                return self._remaining / expected_remaining
+            return self._remaining / expected_remaining
     def commit(self, value):
         self._remaining -= value
     def refresh(self):

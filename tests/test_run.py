@@ -9,6 +9,7 @@ import pytest
 
 import pywr.core
 import pywr.xmlutils
+import pywr.licenses
 
 def test_run_simple1():
     '''Test the most basic model possible'''
@@ -103,6 +104,37 @@ def test_run_cost1():
     assert(result == ('optimal', 10.0, 10.0))
     
     # TODO: check that the supply has come entirely from supply1
+
+def test_run_license():
+    data = file(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r').read()
+    model = pywr.xmlutils.parse_xml(data)
+    model.timestamp = datetime.datetime(2015, 1, 1)
+    
+    # add licenses to supply node
+    nodes = dict([(node.name, node) for node in model.nodes()])
+    supply1 = nodes['supply1']
+    daily_lic = pywr.licenses.DailyLicense(5)
+    annual_lic = pywr.licenses.AnnualLicense(7)
+    collection = pywr.licenses.LicenseCollection([daily_lic, annual_lic])
+    supply1.licenses = collection
+    
+    model.check()
+    
+    # daily license is limit
+    result = model.step()
+    assert(result == ('optimal', 10.0, 5.0))
+    
+    # resource state is getting worse
+    assert(annual_lic.resource_state(model.timestamp) < 1.0)
+    
+    # annual license is limit
+    result = model.step()
+    assert(result == ('optimal', 10.0, 2.0))
+    
+    # annual license is exhausted
+    result = model.step()
+    assert(result == ('optimal', 10.0, 0.0))
+    assert(annual_lic.resource_state(model.timestamp) == 0.0)
 
 def test_solver_cylp():
     '''Test specifying the solver in XML'''

@@ -175,7 +175,13 @@ class SolverCyLP(Solver):
         
         for supply_node, idxs in by_supply.items():
             cols = x[idxs]
-            s += cols.sum() <= supply_node.properties['max_flow'].value(timestamp)
+            # maximum supply from node is limited by max_flow parameter and licenses
+            max_flow_parameter = supply_node.properties['max_flow'].value(timestamp)
+            max_flow_license = inf
+            if supply_node.licenses is not None:
+                max_flow_license = supply_node.licenses.available(timestamp)
+            max_flow = min(max_flow_parameter, max_flow_license)
+            s += cols.sum() <= max_flow
         
         total_water_demanded = 0.0
         for demand_node, idxs in by_demand.items():
@@ -378,6 +384,13 @@ class Supply(Node):
             self.properties['max_flow'] = Parameter(value=kwargs['max_flow'])
         else:
             self.properties['max_flow'] = Parameter(value=0)
+        
+        self.licenses = None
+    
+    def commit(self, volume, chain):
+        super(Supply, self).commit(volume, chain)
+        if self.licenses is not None:
+            self.licenses.commit(volume)
 
 class Demand(Node):
     def __init__(self, *args, **kwargs):
@@ -442,6 +455,7 @@ class Reservoir(Supply, Demand):
         self.properties['demand'] = ParameterFunction(self, func)
 
     def commit(self, volume, chain):
+        super(Reservoir, self).commit(volume, chain)
         # update the volume remaining in the reservoir
         if chain == 'first':
             # reservoir supplied some water
