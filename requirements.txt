@@ -1,4 +1,4 @@
-cylp==0.2.3.6
+cylp==0.7.3
 decorator==3.4.0
 matplotlib==1.4.2
 mock==1.0.1
@@ -8,6 +8,7 @@ numpy==1.9.1
 pandas==0.15.2
 py==1.4.26
 pyparsing==2.0.3
+PySide==1.2.2
 pytest==2.6.4
 python-dateutil==2.4.0
 pytz==2014.10

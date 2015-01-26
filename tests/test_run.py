@@ -71,6 +71,25 @@ def test_run_river2():
     result = model.step()
     assert(result == ('optimal', 12.0, 9.25))
 
+def test_run_timeseries1():
+    data = file(os.path.join(os.path.dirname(__file__), 'timeseries1.xml'), 'r').read()
+    model = pywr.xmlutils.parse_xml(data)
+    model.check()
+    
+    # check first day initalised
+    assert(model.timestamp == datetime.datetime(2015, 1, 1))
+    
+    # check timeseries has been loaded correctly
+    assert(model.data['riverflow1'].value(datetime.datetime(2015, 1, 1)) == 23.92)
+    assert(model.data['riverflow1'].value(datetime.datetime(2015, 1, 2)) == 22.14)
+    
+    # check results
+    supplied = []
+    for n in range(0, 5):
+        result = model.step()
+        supplied.append(result[2])
+    assert(supplied == [23.0, 22.14, 22.57, 23.0, 23.0])
+
 def test_run_cost1():
     data = file(os.path.join(os.path.dirname(__file__), 'cost1.xml'), 'r').read()
     model = pywr.xmlutils.parse_xml(data)

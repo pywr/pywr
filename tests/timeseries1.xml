@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<pywr>
+    <metadata>
+        <title>River 1</title>
+        <description>
+            A model with a catchment timeseries
+        </description>
+    </metadata>
+    <parameters>
+        <parameter key="timestamp">2015-01-01</parameter>
+    </parameters>
+    <data>
+        <timeseries name="riverflow1">
+            <type>pandas</type>
+            <path>tests/timeseries1.csv</path>
+            <column>Data</column>
+        </timeseries>
+    </data>
+    <nodes>
+        <catchment name="catchment1" x="0" y="0">
+            <parameter type="timeseries" key="flow">riverflow1</parameter>
+        </catchment>
+        <river name="river1" x="1" y="0" />
+        <riverabstraction name="abs1" x="2" y="0">
+            <parameter type="constant" key="max_flow">50</parameter>
+        </riverabstraction>
+        <link name="link1" x="2" y="1" />
+        <demand name="demand1" x="3" y="1">
+            <parameter type="constant" key="demand">23</parameter>
+        </demand>
+        <terminator name="term1" x="3" y="0" />
+    </nodes>
+    <edges>
+        <edge from="catchment1" to="river1" />
+        <edge from="river1" to="abs1" />
+        <edge from="abs1" to="link1" />
+        <edge from="link1" to="demand1" />
+        <edge from="abs1" to="term1" />
+    </edges>
+</pywr>
