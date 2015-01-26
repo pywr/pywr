@@ -16,9 +16,19 @@ class Node(QtGui.QGraphicsItem):
         self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, True)
         scene.addItem(self)
         
+        # node label
+        text = self.text = QtGui.QGraphicsTextItem(parent=self)
+        text.setPlainText(node.name)
+        font = QtGui.QFont()
+        font.setStyleStrategy(QtGui.QFont.PreferAntialias)
+        font.setFamily('Arial')
+        text.setFont(font)
+        text.setPos(10,0)
+        text.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
+        
         # position
         x, y = node.position
-        self.setPos(x * 100, y * 100)
+        self.setPos(x * 100, -y * 100)
         self.snap()
         
         return ret
@@ -118,14 +128,14 @@ class PywrSchematic(QtGui.QDialog):
         # create a view into the scene
         self.view = QtGui.QGraphicsView(self.scene, self)
         self.view.setRenderHints(QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform)
-        self.view.scale(1, -1)
+        self.view.scale(1, 1)
         
         # add view to the dialog
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.view)
         self.setLayout(vbox)
         
-        self.resize(600, 400)
+        self.resize(700, 500)
         self.setWindowTitle('Pywr schematic')
         
         self.show()
