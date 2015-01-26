@@ -279,7 +279,7 @@ class SolverCyLP(Solver):
         
         assert(status == 'optimal')
         
-        return status, round(total_water_demanded, 3), round(total_water_supplied, 3)
+        return status, round(total_water_demanded, 3), round(total_water_supplied, 3), volumes_links, volumes_nodes
 
 class Parameter(object):
     def __init__(self, value=None):

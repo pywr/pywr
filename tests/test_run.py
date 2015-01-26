@@ -22,7 +22,7 @@ def test_run_simple1():
     result = model.step()
     
     # check results
-    assert(result == ('optimal', 10.0, 10.0))
+    assert(result[0:3][0:3] == ('optimal', 10.0, 10.0))
     
     # check the timestamp incremented
     assert(model.timestamp - t0 == datetime.timedelta(1))
@@ -38,7 +38,7 @@ def test_run_reservoir1():
 
     for delivered in [10.0, 10.0, 10.0, 5.0, 0.0]:
         result = model.step()
-        assert(result == ('optimal', 10.0, delivered))
+        assert(result[0:3] == ('optimal', 10.0, delivered))
 
 def test_run_reservoir2():
     '''Test a reservoir fed by a river abstraction
@@ -52,7 +52,7 @@ def test_run_reservoir2():
     
     for demand, supply in [(10.0, 10.0), (20.0, 14.0), (26.0, 14.0), (32.0, 14.0), (38.0, 11.0), (41.0, 8.0), (41.0, 8.0)]:
         result = model.step()
-        assert(result == ('optimal', demand, supply))
+        assert(result[0:3] == ('optimal', demand, supply))
 
 def test_run_river1():
     '''Test a river abstraction with a simple catchment'''
@@ -61,7 +61,7 @@ def test_run_river1():
     model.check()
     
     result = model.step()
-    assert(result == ('optimal', 10.0, 5.0))
+    assert(result[0:3] == ('optimal', 10.0, 5.0))
 
 def test_run_river2():
     '''Test a river abstraction with two catchments, a confluence and a split'''
@@ -70,7 +70,7 @@ def test_run_river2():
     model.check()
     
     result = model.step()
-    assert(result == ('optimal', 12.0, 9.25))
+    assert(result[0:3] == ('optimal', 12.0, 9.25))
 
 def test_run_timeseries1():
     data = file(os.path.join(os.path.dirname(__file__), 'timeseries1.xml'), 'r').read()
@@ -98,12 +98,25 @@ def test_run_cost1():
     
     nodes = dict([(node.name, node) for node in model.nodes()])
     assert(nodes['supply1'].properties['cost'].value(None) == 1)
-    assert(nodes['supply2'].properties['cost'].value(None) == 2)
+    assert(nodes['supply2'].properties['cost'].value(None) == 2) # more expensive
     
     result = model.step()
-    assert(result == ('optimal', 10.0, 10.0))
+    # check entire demand was supplied by supply1
+    assert(result[0:3] == ('optimal', 10.0, 10.0))
+    assert(result[3].items() == [((nodes['supply1'], nodes['demand1']), 10.0)])
     
-    # TODO: check that the supply has come entirely from supply1
+    # increase demand to more than supply1 can provide on it's own
+    # and check that supply2 is used to pick up the slack
+    nodes['demand1'].properties['demand'] = pywr.core.Parameter(20.0)
+    result = model.step()
+    assert(result[0:3] == ('optimal', 20.0, 20.0))
+    assert(result[3][(nodes['supply1'], nodes['demand1'])] == 15.0)
+    assert(result[3][(nodes['supply2'], nodes['demand1'])] == 5.0)
+    
+    # supply as much as possible, even if it isn't enough
+    nodes['demand1'].properties['demand'] = pywr.core.Parameter(40.0)
+    result = model.step()
+    assert(result[0:3] == ('optimal', 40.0, 30.0))
 
 def test_run_license():
     data = file(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r').read()
@@ -122,18 +135,18 @@ def test_run_license():
     
     # daily license is limit
     result = model.step()
-    assert(result == ('optimal', 10.0, 5.0))
+    assert(result[0:3] == ('optimal', 10.0, 5.0))
     
     # resource state is getting worse
     assert(annual_lic.resource_state(model.timestamp) < 1.0)
     
     # annual license is limit
     result = model.step()
-    assert(result == ('optimal', 10.0, 2.0))
+    assert(result[0:3] == ('optimal', 10.0, 2.0))
     
     # annual license is exhausted
     result = model.step()
-    assert(result == ('optimal', 10.0, 0.0))
+    assert(result[0:3] == ('optimal', 10.0, 0.0))
     assert(annual_lic.resource_state(model.timestamp) == 0.0)
 
 def test_solver_cylp():
