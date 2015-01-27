@@ -77,6 +77,9 @@ class Node(QtGui.QGraphicsItem):
         action.setEnabled(False)
         action = menu.addAction('Properties')
         menu.popup(QtGui.QCursor.pos())
+    
+    def set_label(self, text):
+        self.text.setPlainText('{}\n{}'.format(self.node.name, text))
 
 class Edge(QtGui.QGraphicsLineItem):
     def __init__(self, edge, *args, **kwargs):
@@ -133,6 +136,21 @@ class PywrSchematic(QtGui.QDialog):
         # add view to the dialog
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.view)
+        
+        # TODO: move this into Qt Designer
+        hbox = QtGui.QHBoxLayout()
+        hbox.setContentsMargins(0, 0, 0, 0)
+        spacer1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacer2 = QtGui.QSpacerItem(10, 20, QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Minimum)
+        button_step = self.button_step = QtGui.QPushButton('Step')
+        button_step.clicked.connect(self.step)
+        timestamp_label = self.timestamp_label = QtGui.QLabel('')
+        hbox.addItem(spacer1)
+        hbox.addWidget(timestamp_label)
+        hbox.addItem(spacer2)
+        hbox.addWidget(button_step)
+        vbox.addItem(hbox)
+        
         self.setLayout(vbox)
         
         self.resize(700, 500)
@@ -140,6 +158,12 @@ class PywrSchematic(QtGui.QDialog):
         
         self.show()
         self.raise_()
+    
+    def step(self):
+        result = self.model.step()
+        for node, amount in result[4].items():
+            node.schematic.set_label('{:.3f}'.format(amount))
+        self.timestamp_label.setText((self.model.timestamp-core.TIMESTEP).strftime('%Y-%m-%d'))
 
 if __name__ == '__main__':
     import sys
