@@ -149,11 +149,11 @@ def test_run_license():
     assert(result[0:3] == ('optimal', 10.0, 0.0))
     assert(annual_lic.resource_state(model.timestamp) == 0.0)
 
-def test_solver_cylp():
+def test_solver_glpk():
     '''Test specifying the solver in XML'''
-    data = '''<pywr><solver name="cylp" /><nodes /><edges /><metadata /></pywr>'''
+    data = '''<pywr><solver name="glpk" /><nodes /><edges /><metadata /></pywr>'''
     model = pywr.xmlutils.parse_xml(data)
-    assert(model.solver.name.lower() == 'cylp')
+    assert(model.solver.name.lower() == 'glpk')
 
 def test_solver_unrecognised():
     '''Test specifying an unrecognised solver XML'''
