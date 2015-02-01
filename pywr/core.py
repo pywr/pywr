@@ -239,10 +239,11 @@ class Supply(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#F26C4F' # light red
         
-        if 'max_flow' in kwargs:
-            self.properties['max_flow'] = Parameter(value=kwargs['max_flow'])
+        max_flow = kwargs.pop('max_flow', 0.0)
+        if callable(max_flow):            
+            self.properties['max_flow'] = ParameterFunction(self, max_flow)
         else:
-            self.properties['max_flow'] = Parameter(value=0)
+            self.properties['max_flow'] = Parameter(value=max_flow)
         
         self.licenses = None
     
@@ -256,19 +257,23 @@ class Demand(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#FFF467' # light yellow
         
-        self.properties['demand'] = Parameter(value=10)
+        self.properties['demand'] = Parameter(value=kwargs.pop('demand',10.0))
 
 class Link(Node):
     def __init__(self, *args, **kwargs):
         Node.__init__(self, *args, **kwargs)
-        self.color = '#A0A0A0' # 45% grey
+        self.color = '#A0A0A0' # 45% grey
 
 class Catchment(Node):
     def __init__(self, *args, **kwargs):
         Node.__init__(self, *args, **kwargs)
-        self.color = '#82CA9D' # green
+        self.color = '#82CA9D' # green
         
-        self.properties['flow'] = Parameter(value=2.0)
+        flow = kwargs.pop('flow', 2.0)
+        if callable(flow):            
+            self.properties['flow'] = ParameterFunction(self, flow)
+        else:
+            self.properties['flow'] = Parameter(value=flow)        
     
     def check(self):
         Node.check(self)
@@ -279,7 +284,7 @@ class Catchment(Node):
 class River(Node):
     def __init__(self, *args, **kwargs):
         Node.__init__(self, *args, **kwargs)
-        self.color = '#6ECFF6' # blue
+        self.color = '#6ECFF6' # blue
 
 class RiverSplit(River):
     def __init__(self, *args, **kwargs):
