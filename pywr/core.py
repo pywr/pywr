@@ -240,7 +240,7 @@ class Supply(Node):
         self.color = '#F26C4F' # light red
         
         max_flow = kwargs.pop('max_flow', 0.0)
-        if callable(max_flow):            
+        if callable(max_flow):
             self.properties['max_flow'] = ParameterFunction(self, max_flow)
         else:
             self.properties['max_flow'] = Parameter(value=max_flow)
@@ -263,6 +263,13 @@ class Link(Node):
     def __init__(self, *args, **kwargs):
         Node.__init__(self, *args, **kwargs)
         self.color = '#A0A0A0' # 45% grey
+        
+        if 'max_flow' in kwargs:
+            max_flow = kwargs.pop('max_flow', 0.0)
+            if callable(max_flow):
+                self.properties['max_flow'] = ParameterFunction(self, max_flow)
+            else:
+                self.properties['max_flow'] = Parameter(value=max_flow)
 
 class Catchment(Node):
     def __init__(self, *args, **kwargs):
@@ -270,7 +277,7 @@ class Catchment(Node):
         self.color = '#82CA9D' # green
         
         flow = kwargs.pop('flow', 2.0)
-        if callable(flow):            
+        if callable(flow):
             self.properties['flow'] = ParameterFunction(self, flow)
         else:
             self.properties['flow'] = Parameter(value=flow)        
@@ -314,7 +321,6 @@ class Reservoir(Supply, Demand):
         def func(parent, index):
             current_volume = self.properties['current_volume'].value(index)
             max_volume = self.properties['max_volume'].value(index)
-            print(max_volume - current_volume)
             return max_volume - current_volume
         self.properties['demand'] = ParameterFunction(self, func)
 

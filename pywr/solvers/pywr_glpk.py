@@ -58,6 +58,20 @@ class SolverGLPK(Solver):
             row.matrix = [(idx, 1.0) for idx in idxs]
             row.bounds = 0, demand_value
             total_water_demanded += demand_value
+        
+        # intermediate node max flow constraints
+        max_flow_constraints = {}
+        for n, route in enumerate(routes):
+            intermediate_nodes = route[1:-1]
+            for node in intermediate_nodes:
+                if 'max_flow' in node.properties:
+                    max_flow_constraints.setdefault(node, [])
+                    max_flow_constraints[node].append(n)
+        for node, route_idxs in max_flow_constraints.items():
+            lp.rows.add(1)
+            row = lp.rows[-1]
+            row.matrix = [(idx, 1.0) for idx in route_idxs]
+            row.bounds = 0, node.properties['max_flow'].value(timestamp)
 
         # river flow constraints
         for supply_node, idxs in by_supply.items():
