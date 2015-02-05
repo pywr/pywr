@@ -25,6 +25,7 @@ class Model(object):
         self.metadata = {}
         self.parameters = {}
         self.data = {}
+        self.dirty = True
         
         if solver is not None:
             # use specific solver
