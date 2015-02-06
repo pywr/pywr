@@ -149,6 +149,14 @@ def test_run_license():
     assert(result[0:3] == ('optimal', 10.0, 0.0))
     assert(annual_lic.resource_state(model.timestamp) == 0.0)
 
+def test_run_bottleneck():
+    '''Test max flow constraint on intermediate nodes is upheld'''
+    data = file(os.path.join(os.path.dirname(__file__), 'bottleneck.xml'), 'r').read()
+    model = pywr.xmlutils.parse_xml(data)
+    model.check()
+    result = model.step()
+    assert(result[0:3] == ('optimal', 20.0, 15.0))
+
 def test_solver_glpk():
     '''Test specifying the solver in XML'''
     data = '''<pywr><solver name="glpk" /><nodes /><edges /><metadata /></pywr>'''
