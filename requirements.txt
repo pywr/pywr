@@ -1,5 +1,5 @@
 decorator==3.4.0
-glpk==0.3
+glpk==0.4
 matplotlib==1.4.2
 mock==1.0.1
 networkx==1.9.1

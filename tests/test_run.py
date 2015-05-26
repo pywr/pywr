@@ -14,7 +14,8 @@ import pywr.licenses
 def test_run_simple1():
     '''Test the most basic model possible'''
     # parse the XML into a model
-    data = file(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r').read()
+    with open(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r') as f:
+        data = f.read()
     model = pywr.xmlutils.parse_xml(data)
 
     # run the model
@@ -32,7 +33,8 @@ def test_run_reservoir1():
     
     Without an additional supply the reservoir should empty and cause a failure.
     '''
-    data = file(os.path.join(os.path.dirname(__file__), 'reservoir1.xml'), 'r').read()
+    with open(os.path.join(os.path.dirname(__file__), 'reservoir1.xml'), 'r') as f:
+        data = f.read()
     model = pywr.xmlutils.parse_xml(data)
     model.check()
 
@@ -46,7 +48,8 @@ def test_run_reservoir2():
     The river abstraction should refill the reservoir, but not quickly enough
     to keep up with the demand.
     '''
-    data = file(os.path.join(os.path.dirname(__file__), 'reservoir2.xml'), 'r').read()
+    with open(os.path.join(os.path.dirname(__file__), 'reservoir2.xml'), 'r') as f:
+        data = f.read()
     model = pywr.xmlutils.parse_xml(data)
     model.check()
     
@@ -56,7 +59,8 @@ def test_run_reservoir2():
 
 def test_run_river1():
     '''Test a river abstraction with a simple catchment'''
-    data = file(os.path.join(os.path.dirname(__file__), 'river1.xml'), 'r').read()
+    with open(os.path.join(os.path.dirname(__file__), 'river1.xml'), 'r') as f:
+        data = f.read()
     model = pywr.xmlutils.parse_xml(data)
     model.check()
     
@@ -65,7 +69,8 @@ def test_run_river1():
 
 def test_run_river2():
     '''Test a river abstraction with two catchments, a confluence and a split'''
-    data = file(os.path.join(os.path.dirname(__file__), 'river2.xml'), 'r').read()
+    with open(os.path.join(os.path.dirname(__file__), 'river2.xml'), 'r') as f:
+        data = f.read()
     model = pywr.xmlutils.parse_xml(data)
     model.check()
     
@@ -73,7 +78,8 @@ def test_run_river2():
     assert(result[0:3] == ('optimal', 12.0, 9.25))
 
 def test_run_timeseries1():
-    data = file(os.path.join(os.path.dirname(__file__), 'timeseries1.xml'), 'r').read()
+    with open(os.path.join(os.path.dirname(__file__), 'timeseries1.xml'), 'r') as f:
+        data = f.read()
     model = pywr.xmlutils.parse_xml(data)
     model.check()
     
@@ -92,7 +98,8 @@ def test_run_timeseries1():
     assert(supplied == [23.0, 22.14, 22.57, 23.0, 23.0])
 
 def test_run_cost1():
-    data = file(os.path.join(os.path.dirname(__file__), 'cost1.xml'), 'r').read()
+    with open(os.path.join(os.path.dirname(__file__), 'cost1.xml'), 'r') as f:
+        data = f.read()
     model = pywr.xmlutils.parse_xml(data)
     model.check()
     
@@ -103,7 +110,7 @@ def test_run_cost1():
     result = model.step()
     # check entire demand was supplied by supply1
     assert(result[0:3] == ('optimal', 10.0, 10.0))
-    assert(result[3].items() == [((nodes['supply1'], nodes['demand1']), 10.0)])
+    assert(list(result[3].items()) == [((nodes['supply1'], nodes['demand1']), 10.0)])
     
     # increase demand to more than supply1 can provide on it's own
     # and check that supply2 is used to pick up the slack
@@ -119,7 +126,8 @@ def test_run_cost1():
     assert(result[0:3] == ('optimal', 40.0, 30.0))
 
 def test_run_license():
-    data = file(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r').read()
+    with open(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r') as f:
+        data = f.read()
     model = pywr.xmlutils.parse_xml(data)
     model.timestamp = datetime.datetime(2015, 1, 1)
     
@@ -151,7 +159,8 @@ def test_run_license():
 
 def test_run_bottleneck():
     '''Test max flow constraint on intermediate nodes is upheld'''
-    data = file(os.path.join(os.path.dirname(__file__), 'bottleneck.xml'), 'r').read()
+    with open(os.path.join(os.path.dirname(__file__), 'bottleneck.xml'), 'r') as f:
+        data = f.read()
     model = pywr.xmlutils.parse_xml(data)
     model.check()
     result = model.step()

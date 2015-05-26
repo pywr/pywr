@@ -134,7 +134,7 @@ class SolverMeta(type):
         cls.solvers[newclass.name.lower()] = newclass
         return newclass
 
-class Solver(object):
+class Solver(object, metaclass=SolverMeta):
     '''Solver base class from which all solvers should inherit'''
     __metaclass__ = SolverMeta
     name = 'default'
@@ -180,7 +180,7 @@ class NodeMeta(type):
         super(NodeMeta, cls).__init__(name, bases, dct)
         node_registry[name.lower()] = cls
 
-class Node(object):
+class Node(object, metaclass=NodeMeta):
     '''Base object from which all other nodes inherit'''
     __metaclass__ = NodeMeta
     
@@ -341,4 +341,4 @@ class Reservoir(Supply, Demand):
         # check volume doesn't exceed maximum volume
         assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))
 
-import solvers
+from . import solvers

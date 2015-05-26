@@ -14,7 +14,7 @@ class License(object):
         if cls is License:
             raise TypeError('License cannot be instantiated directly')
         else:
-            return object.__new__(cls, *args, **kwargs)
+            return object.__new__(cls)
     def available(self, index):
         raise NotImplementedError()
     def resource_state(self, index):
