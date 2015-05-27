@@ -166,6 +166,31 @@ def test_run_bottleneck():
     result = model.step()
     assert(result[0:3] == ('optimal', 20.0, 15.0))
 
+def test_run_mrf():
+    '''Test minimum residual flow constraint'''
+    with open(os.path.join(os.path.dirname(__file__), 'river_mrf1.xml'), 'r') as f:
+        data = f.read()
+    model = pywr.xmlutils.parse_xml(data)
+    model.check()
+    
+    # check mrf value was parsed from xml
+    nodes = dict([(node.name, node) for node in model.nodes()])
+    river_gauge = nodes['gauge1']
+    assert(river_gauge.properties['mrf'].value(model.timestamp) == 10.5)
+    
+    # test model result
+    data = {
+        None: 12.0,
+        100: 0.0,
+        10.5: 8.5,
+        11.75: 7.25,
+        0.0: 12.0,
+    }
+    for mrf_value, expected_supply in data.items():
+        river_gauge.properties['mrf'] = pywr.core.Parameter(mrf_value)
+        result = model.step()
+        assert(result[0:3] == ('optimal', 12.0, expected_supply))
+
 def test_solver_glpk():
     '''Test specifying the solver in XML'''
     data = '''<pywr><solver name="glpk" /><nodes /><edges /><metadata /></pywr>'''

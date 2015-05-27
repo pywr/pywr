@@ -307,6 +307,9 @@ class RiverSplit(River):
 class Terminator(Node):
     pass
 
+class RiverGauge(River):
+    pass
+
 class RiverAbstraction(Supply, River):
     pass
 

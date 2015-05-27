@@ -6,7 +6,6 @@ import glpk
 
 inf = float('inf')
 
-
 class SolverGLPK(Solver):
     name = 'GLPK'
 
@@ -20,8 +19,16 @@ class SolverGLPK(Solver):
             lp = self.lp = glpk.LPX()
             lp.obj.maximize = True
 
-            # find all routes betwee supply and demand nodes
+            # find all routes between supply and demand nodes
             routes = self.routes = model.find_all_routes(Supply, Demand, valid=(Link,))
+            
+            # find all routes between catchments and river gauges
+            mrf_routes = self.mrf_routes = model.find_all_routes(Catchment, RiverGauge)
+            river_gauge_nodes = self.river_gauge_nodes = dict([(node, {}) for node in set([route[-1] for route in mrf_routes])])
+            for river_gauge_node, info in river_gauge_nodes.items():
+                info['river_routes'] = []
+            for route in mrf_routes:
+                river_gauge_nodes[route[-1]]['river_routes'].append(route)
 
             # each route between a supply and demand is represented as a column
             supply_nodes = self.supply_nodes = {}
@@ -71,6 +78,12 @@ class SolverGLPK(Solver):
                 row = lp.rows[row_idx]
                 info['demand_constraint'] = row
                 info['matrix'] = [(idx, 1.0) for idx in info['col_idxs']]
+            
+            # add mrf constraint rows
+            for river_gauge_node, info in river_gauge_nodes.items():
+                row_idx = lp.rows.add(1)
+                row = lp.rows[row_idx]
+                info['mrf_constraint'] = row
 
             model.dirty = False
         else:
@@ -79,8 +92,9 @@ class SolverGLPK(Solver):
             demand_nodes = self.demand_nodes
             routes = self.routes
             intermediate_max_flow_constraints = self.intermediate_max_flow_constraints
+            river_gauge_nodes = self.river_gauge_nodes
 
-        timestamp = model.timestamp
+        timestamp = self.timestamp = model.timestamp
 
         # apply route costs as objective function
         costs = []
@@ -120,39 +134,25 @@ class SolverGLPK(Solver):
         # river flow constraints
         for supply_node, info in supply_nodes.items():
             if isinstance(supply_node, RiverAbstraction):
-                flow_constraint = 0.0
-                # find all routes from a catchment to the abstraction
                 river_routes = info['river_routes']
-                upstream_abstractions = {}
-                for route in river_routes:
-                    # traverse the route from abstraction back up to catchments
-                    route = route[::-1]
-                    coefficient = 1.0
-                    for n, node in enumerate(route):
-                        if isinstance(node, Catchment):
-                            # catchments add water
-                            flow_constraint += (node.properties['flow'].value(timestamp) * coefficient)
-                        elif isinstance(node, RiverSplit):
-                            # splits
-                            if node.slots[1] is route[n-1]:
-                                coefficient *= node.properties['split'].value(timestamp)
-                            elif node.slots[2] is route[n-1]:
-                                coefficient *= (1 - node.properties['split'].value(timestamp))
-                            else:
-                                raise RuntimeError()
-                        elif isinstance(node, RiverAbstraction):
-                            # abstractions remove water
-                            upstream_abstractions.setdefault(node, 1.0)
-                            upstream_abstractions[node] *= coefficient
-                abstraction_idxs = []
-                abstraction_coefficients = []
-                for upstream_node, coefficient in upstream_abstractions.items():
-                    cols = supply_nodes[upstream_node]['col_idxs']
-                    abstraction_idxs.extend(cols)
-                    abstraction_coefficients.extend([coefficient]*len(cols))
+                flow_constraint, abstraction_idxs, abstraction_coefficients = self.upstream_constraint(river_routes)
                 row = info['river_constraint']
                 row.matrix = [(abstraction_idxs[n], abstraction_coefficients[n]) for n in range(0, len(abstraction_idxs))]
                 row.bounds = 0, flow_constraint
+        
+        # mrf constraints
+        for river_gauge_node, info in river_gauge_nodes.items():
+            mrf_value = river_gauge_node.properties['mrf'].value(timestamp)
+            row = info['mrf_constraint']
+            if mrf_value is None:
+                row.matrix = []
+                row.bounds = 0, inf
+                continue
+            river_routes = info['river_routes']
+            flow_constraint, abstraction_idxs, abstraction_coefficients = self.upstream_constraint(river_routes)
+            flow_constraint = max(0, flow_constraint - mrf_value)
+            row.matrix = [(abstraction_idxs[n], abstraction_coefficients[n]) for n in range(0, len(abstraction_idxs))]
+            row.bounds = 0, flow_constraint
 
         # solve the linear programme
         lp.simplex()
@@ -199,3 +199,36 @@ class SolverGLPK(Solver):
                 del(volumes_nodes[k])
 
         return status, round(total_water_demanded, 3), round(total_water_supplied, 3), volumes_links, volumes_nodes
+
+    def upstream_constraint(self, river_routes):
+        '''Calculate parameters for river flow constraint'''
+        flow_constraint = 0.0
+        upstream_abstractions = {}
+        for route in river_routes:
+            # traverse the route from abstraction back up to catchments
+            route = route[::-1]
+            coefficient = 1.0
+            for n, node in enumerate(route):
+                if isinstance(node, Catchment):
+                    # catchments add water
+                    flow_constraint += (node.properties['flow'].value(self.timestamp) * coefficient)
+                elif isinstance(node, RiverSplit):
+                    # splits
+                    if node.slots[1] is route[n-1]:
+                        coefficient *= node.properties['split'].value(self.timestamp)
+                    elif node.slots[2] is route[n-1]:
+                        coefficient *= (1 - node.properties['split'].value(self.timestamp))
+                    else:
+                        raise RuntimeError()
+                elif isinstance(node, RiverAbstraction):
+                    # abstractions remove water
+                    upstream_abstractions.setdefault(node, 1.0)
+                    upstream_abstractions[node] *= coefficient
+        abstraction_idxs = []
+        abstraction_coefficients = []
+        for upstream_node, coefficient in upstream_abstractions.items():
+            cols = self.supply_nodes[upstream_node]['col_idxs']
+            abstraction_idxs.extend(cols)
+            abstraction_coefficients.extend([coefficient]*len(cols))
+        
+        return flow_constraint, abstraction_idxs, abstraction_coefficients
