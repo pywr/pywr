@@ -85,6 +85,30 @@ class SolverGLPK(Solver):
                 row = lp.rows[row_idx]
                 info['mrf_constraint'] = row
 
+            # blenders
+            blenders = self.blenders = {}
+            for node in model.nodes():
+                if isinstance(node, Blender):
+                    blenders[node] = {}
+                    blended_routes = []
+                    for n, route in enumerate(routes):
+                        try:
+                            index = route.index(node)
+                            previous_node = route[index-1]
+                            if node.slots[1] == previous_node:
+                                slot = 1
+                                blended_routes.append((n, 1))
+                            else:
+                                slot = 2
+                                blended_routes.append((n, -1))
+                        except ValueError:
+                            pass
+                    row_idx = lp.rows.add(1)
+                    row = lp.rows[row_idx]
+                    row.bounds = 0, 0
+                    blenders[node]['blender_constraint'] = row
+                    blenders[node]['routes'] = blended_routes
+
             model.dirty = False
         else:
             lp = self.lp
@@ -93,6 +117,7 @@ class SolverGLPK(Solver):
             routes = self.routes
             intermediate_max_flow_constraints = self.intermediate_max_flow_constraints
             river_gauge_nodes = self.river_gauge_nodes
+            blenders = self.blenders
 
         timestamp = self.timestamp = model.timestamp
 
@@ -153,6 +178,17 @@ class SolverGLPK(Solver):
             flow_constraint = max(0, flow_constraint - mrf_value)
             row.matrix = [(abstraction_idxs[n], abstraction_coefficients[n]) for n in range(0, len(abstraction_idxs))]
             row.bounds = 0, flow_constraint
+
+        for blender, info in blenders.items():
+            matrix = []
+            row = info['blender_constraint']
+            ratio = blender.properties['ratio'].value(self.timestamp)
+            for col_idx, sign in info['routes']:
+                if sign == 1:
+                    matrix.append((col_idx, sign*(1-ratio)))
+                else:
+                    matrix.append((col_idx, sign*ratio))
+            row.matrix = matrix
 
         # solve the linear programme
         lp.simplex()

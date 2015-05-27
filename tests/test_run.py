@@ -191,6 +191,32 @@ def test_run_mrf():
         result = model.step()
         assert(result[0:3] == ('optimal', 12.0, expected_supply))
 
+def test_run_blender():
+    '''Test blender constraint/component'''
+    with open(os.path.join(os.path.dirname(__file__), 'blender1.xml'), 'r') as f:
+        data = f.read()
+    model = pywr.xmlutils.parse_xml(data)
+    model.check()
+
+    nodes = dict([(node.name, node) for node in model.nodes()])
+    blender = nodes['blender1']
+    supply1 = nodes['supply1']
+    supply2 = nodes['supply2']
+    supply3 = nodes['supply3']
+
+    # check blender ratio
+    assert(blender.properties['ratio'].value(model.timestamp) == 0.75)
+
+    # check supplies have been connected correctly
+    assert(len(blender.slots) == 2)
+    assert(blender.slots[1] == nodes['supply1'])
+    assert(blender.slots[2] == nodes['supply2'])
+
+    # test model results
+    result = model.step()
+    assert(result[3][(supply1, blender)] == 7.5)
+    assert(result[3][(supply2, blender)] == 2.5)
+
 def test_solver_glpk():
     '''Test specifying the solver in XML'''
     data = '''<pywr><solver name="glpk" /><nodes /><edges /><metadata /></pywr>'''

@@ -201,13 +201,15 @@ class Node(object, metaclass=NodeMeta):
         else:
             return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
     
-    def connect(self, node, slot=None):
+    def connect(self, node, slot=None, to_slot=None):
         '''Create a connection from this Node to another Node'''
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
         self.model.graph.add_edge(self, node)
         if slot is not None:
             self.slots[slot] = node
+        if to_slot is not None:
+            node.slots[to_slot] = self
     
     def disconnect(self, node=None):
         '''Remove a connection from this Node to another Node
@@ -271,6 +273,16 @@ class Link(Node):
                 self.properties['max_flow'] = ParameterFunction(self, max_flow)
             else:
                 self.properties['max_flow'] = Parameter(value=max_flow)
+
+class Blender(Link):
+    def __init__(self, *args, **kwargs):
+        Link.__init__(self, *args, **kwargs)
+        self.slots = {1: None, 2: None}
+
+        if 'ratio' in kwargs:
+            self.properties['ratio'] = Parameter(value=kwargs['ratio'])
+        else:
+            self.properties['ratio'] = Parameter(value=0.5)
 
 class Catchment(Node):
     def __init__(self, *args, **kwargs):

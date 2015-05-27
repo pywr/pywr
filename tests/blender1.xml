@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<pywr>
+    <metadata>
+        <title>Blender</title>
+        <description>
+            An example demonstrating a blender
+        </description>
+    </metadata>
+    <nodes>
+        <supply name="supply1" x="1" y="1">
+            <parameter type="constant" key="max_flow">30</parameter>
+        </supply>
+        <supply name="supply2" x="3" y="1">
+            <parameter type="constant" key="max_flow">30</parameter>
+        </supply>
+        <supply name="supply3" x="4" y="1">
+            <parameter type="constant" key="max_flow">0</parameter>
+        </supply>
+        <blender name="blender1" x="2" y="2">
+            <parameter type="constant" key="ratio">0.75</parameter>
+        </blender>
+        <demand name="demand1" x="2" y="3">
+            <parameter type="constant" key="demand">10</parameter>
+        </demand>
+    </nodes>
+    <edges>
+        <edge from="supply1" to="blender1" to_slot="1" />
+        <edge from="supply2" to="blender1" to_slot="2" />
+        <edge from="blender1" to="demand1" />
+        <edge from="supply3" to="demand1" />
+    </edges>
+</pywr>

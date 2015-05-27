@@ -110,6 +110,9 @@ def parse_xml(data):
         slot = xml_edge.get('slot')
         if slot is not None:
             slot = int(slot)
-        from_node.connect(to_node, slot=slot)
+        to_slot = xml_edge.get('to_slot')
+        if to_slot is not None:
+            to_slot = int(to_slot)
+        from_node.connect(to_node, slot=slot, to_slot=to_slot)
 
     return model
