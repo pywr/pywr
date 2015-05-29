@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import pywr.core
+import pywr.licenses
 
 import xml.etree.ElementTree as ET
 import pandas
@@ -96,6 +97,18 @@ def parse_xml(data):
                 key = child.get('key')
                 value = float(child.text)
                 node.properties[key] = pywr.core.Variable(initial=value)
+            elif child.tag == 'licensecollection':
+                collection = pywr.licenses.LicenseCollection([])
+                for xml_lic in child.getchildren():
+                    lic_type = xml_lic.get('type')
+                    value = float(xml_lic.text)
+                    lic_types = {
+                        'annual': pywr.licenses.AnnualLicense,
+                        'daily': pywr.licenses.DailyLicense,
+                    }
+                    lic = lic_types[lic_type](value)
+                    collection.add(lic)
+                node.licenses = collection
 
     # parse edges
     xml_edges = root.find('edges')

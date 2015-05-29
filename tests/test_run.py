@@ -125,7 +125,7 @@ def test_run_cost1():
     result = model.step()
     assert(result[0:3] == ('optimal', 40.0, 30.0))
 
-def test_run_license():
+def test_run_license1():
     with open(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r') as f:
         data = f.read()
     model = pywr.xmlutils.parse_xml(data)
@@ -156,6 +156,27 @@ def test_run_license():
     result = model.step()
     assert(result[0:3] == ('optimal', 10.0, 0.0))
     assert(annual_lic.resource_state(model.timestamp) == 0.0)
+
+def test_run_license2():
+    '''Test licenses loaded from XML'''
+    with open(os.path.join(os.path.dirname(__file__), 'license1.xml'), 'r') as f:
+        data = f.read()
+    model = pywr.xmlutils.parse_xml(data)
+    model.timestamp = datetime.datetime(2015, 1, 1)
+    model.check()
+    
+    nodes = dict([(node.name, node) for node in model.nodes()])
+    supply1 = nodes['supply1']
+    
+    assert(len(supply1.licenses) == 2)
+    
+    # daily license limit
+    result = model.step()
+    assert(result[0:3] == ('optimal', 10.0, 5.0))
+    
+    # annual license limit
+    result = model.step()
+    assert(result[0:3] == ('optimal', 10.0, 2.0))
 
 def test_run_bottleneck():
     '''Test max flow constraint on intermediate nodes is upheld'''
