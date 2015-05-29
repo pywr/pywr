@@ -86,9 +86,17 @@ class Edge(QtGui.QGraphicsLineItem):
         self.edge = edge
         super(Edge, self).__init__(*args, **kwargs)
         self.setZValue(-1)
+        node1, node2 = self.edge
         # style
         pen = QtGui.QPen()
         pen.setWidth(2)
+        # TODO: this is crude - use an attribute on the node instead?
+        if(isinstance(node1, (core.River, core.Catchment, core.Terminator)) \
+         and isinstance(node2, (core.River, core.Catchment, core.Terminator))):
+            color = '#0892D0'  # blue
+        else:
+            color = '#000'
+        pen.setColor(color)
         self.setPen(pen)
         # position
         self.refresh()
