@@ -11,6 +11,7 @@ import numpy as np
 import inspect
 import pandas
 import datetime
+from six import with_metaclass
 
 import warnings
 warnings.simplefilter(action = "ignore", category = FutureWarning)
@@ -134,9 +135,8 @@ class SolverMeta(type):
         cls.solvers[newclass.name.lower()] = newclass
         return newclass
 
-class Solver(object, metaclass=SolverMeta):
+class Solver(with_metaclass(SolverMeta)):
     '''Solver base class from which all solvers should inherit'''
-    __metaclass__ = SolverMeta
     name = 'default'
     def solve(self, model):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
@@ -180,9 +180,8 @@ class NodeMeta(type):
         super(NodeMeta, cls).__init__(name, bases, dct)
         node_registry[name.lower()] = cls
 
-class Node(object, metaclass=NodeMeta):
+class Node(with_metaclass(NodeMeta)):
     '''Base object from which all other nodes inherit'''
-    __metaclass__ = NodeMeta
     
     def __init__(self, model, position=None, name=None, **kwargs):
         self.model = model
