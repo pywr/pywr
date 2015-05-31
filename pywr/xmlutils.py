@@ -9,6 +9,7 @@ import pywr.licenses
 import xml.etree.ElementTree as ET
 import pandas
 import dateutil
+import datetime
 
 def parse_xml(data):
     '''Create a new Model from XML data'''
@@ -37,7 +38,13 @@ def parse_xml(data):
             tag = xml_parameter.tag.lower()
             if tag == 'parameter':
                 key = xml_parameter.get('key')
-                value = xml_parameter.text
+                parameter_type = xml_parameter.get('type')
+                if parameter_type == 'datetime':
+                    value = pandas.to_datetime(xml_parameter.text)
+                elif parameter_type == 'timedelta':
+                    value = datetime.timedelta(float(xml_parameter.text))
+                else:
+                    value = xml_parameter.text
                 model.parameters[key] = value
             else:
                 raise NotImplementedError()

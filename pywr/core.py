@@ -15,13 +15,19 @@ warnings.simplefilter(action = "ignore", category = FutureWarning)
 warnings.simplefilter(action = "ignore", category = UnicodeWarning)
 
 inf = float('inf')
-TIMESTEP = datetime.timedelta(1)
 
 class Model(object):
-    def __init__(self, solver=None):
+    def __init__(self, solver=None, parameters=None):
         self.graph = nx.DiGraph()
         self.metadata = {}
-        self.parameters = {}
+        self.parameters = {
+            # default parameter values
+            'timestamp_start': pandas.to_datetime('2015-01-01'),
+            'timestamp_finish': pandas.to_datetime('2015-12-31'),
+            'timestep': datetime.timedelta(1),
+        }
+        if parameters is not None:
+            self.parameters.update(parameters)
         self.data = {}
         self.dirty = True
         
@@ -35,13 +41,10 @@ class Model(object):
             # use default solver
             self.solver = solvers.SolverGLPK()
         
-        # TODO: parameterize this / read from XML
-        self.timestamp_start = pandas.to_datetime('2015-01-01')
-        self.timestamp_finish = pandas.to_datetime('2015-12-31')
-        self.timestamp = self.timestamp_start
-        
         self.node = {}
         self.group = {}
+        
+        self.reset()
     
     def check(self):
         nodes = self.graph.nodes()
@@ -92,7 +95,7 @@ class Model(object):
     def step(self):
         '''Step the model forward by one day'''
         ret = self.solve()
-        self.timestamp += TIMESTEP
+        self.timestamp += self.parameters['timestep']
         return ret
 
     def solve(self):
@@ -111,7 +114,7 @@ class Model(object):
         
         Returns the number of timesteps that were run.
         '''
-        if self.timestamp > self.timestamp_finish:
+        if self.timestamp > self.parameters['timestamp_finish']:
             return
         timesteps = 0
         while True:
@@ -122,13 +125,13 @@ class Model(object):
                 return timesteps
             elif until_date and self.timestamp > until_date:
                 return timesteps
-            elif self.timestamp > self.timestamp_finish:
+            elif self.timestamp > self.parameters['timestamp_finish']:
                 return timesteps
     
     def reset(self):
         '''Reset model to it's initial conditions'''
         # TODO: this will need more, e.g. reservoir states, license states
-        self.timestamp = self.timestamp_start
+        self.timestamp = self.parameters['timestamp_start']
 
 class SolverMeta(type):
     solvers = {}

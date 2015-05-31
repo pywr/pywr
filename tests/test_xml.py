@@ -4,6 +4,8 @@
 from __future__ import print_function
 
 import os
+import pandas
+import datetime
 
 import pywr.core
 import pywr.xmlutils
@@ -40,3 +42,12 @@ def test_simple1():
     assert(demand1.position == (3,1))
 
     model.check()
+
+def test_timestamps():
+    '''Test datetime related model parameters'''
+    model = load_model('timeseries1.xml')
+    
+    assert(model.parameters['timestamp_start'] == pandas.to_datetime('1970-01-01'))
+    assert(model.parameters['timestamp_finish'] == pandas.to_datetime('3027-08-22'))
+    assert(model.parameters['timestep'] == datetime.timedelta(1))
+    
