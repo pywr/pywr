@@ -35,7 +35,10 @@ class Model(object):
             # use default solver
             self.solver = solvers.SolverGLPK()
         
-        self.timestamp = pandas.to_datetime('2015-01-5')
+        # TODO: parameterize this / read from XML
+        self.timestamp_start = pandas.to_datetime('2015-01-01')
+        self.timestamp_finish = pandas.to_datetime('2015-12-31')
+        self.timestamp = self.timestamp_start
         
         self.node = {}
         self.group = {}
@@ -95,6 +98,37 @@ class Model(object):
     def solve(self):
         '''Call solver to solve the current timestep'''
         return self.solver.solve(self)
+    
+    def run(self, until_date=None, until_failure=False):
+        '''Run model until exit condition is reached
+        
+        Parameters
+        ----------
+        until_date : datetime
+            Stop model when date is reached
+        until_failure: bool
+            Stop model run when failure condition occurs
+        
+        Returns the number of timesteps that were run.
+        '''
+        if self.timestamp > self.timestamp_finish:
+            return
+        timesteps = 0
+        while True:
+            ret = self.step()
+            timesteps += 1
+            # TODO: more complex assessment of "failure"
+            if until_failure is True and ret[1] != ret[2]:
+                return timesteps
+            elif until_date and self.timestamp > until_date:
+                return timesteps
+            elif self.timestamp > self.timestamp_finish:
+                return timesteps
+    
+    def reset(self):
+        '''Reset model to it's initial conditions'''
+        # TODO: this will need more, e.g. reservoir states, license states
+        self.timestamp = self.timestamp_start
 
 class SolverMeta(type):
     solvers = {}

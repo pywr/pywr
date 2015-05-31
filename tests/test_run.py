@@ -6,6 +6,7 @@ from __future__ import print_function
 import os
 import datetime
 import pytest
+import pandas
 
 import pywr.core
 import pywr.xmlutils
@@ -231,6 +232,47 @@ def test_run_blender2():
     result = model.step()
     assert(result[3][(supply1, blender)] == 3.0)
     assert(result[3][(supply2, blender)] == 7.0)
+
+def test_run():
+    model = load_model('simple1.xml')
+    
+    # run model from start to finish
+    timesteps = model.run()
+    assert(timesteps == 365)
+    
+    # try to run finished model
+    timesteps = model.run()
+    assert(timesteps is None)
+    
+    # reset model and run again
+    model.reset()
+    timesteps = model.run()
+    assert(timesteps == 365)
+    
+    # run remaining timesteps
+    model.timestamp = pandas.to_datetime('2015-12-01')
+    timesteps = model.run()
+    assert(timesteps == 31)
+
+def test_run_until_failure():
+    model = load_model('simple1.xml')
+    
+    # run until failure
+    model.timestamp = pandas.to_datetime('2015-12-01')
+    demand1 = model.node['demand1']
+    def demand_func(node, timestamp):
+        return timestamp.day
+    demand1.properties['demand'] = pywr.core.ParameterFunction(demand1, demand_func)
+    timesteps = model.run(until_failure=True)
+    assert(timesteps == 16)
+
+def test_run_until_date():
+    model = load_model('simple1.xml')
+    
+    # run until date
+    model.reset()
+    timesteps = model.run(until_date=pandas.to_datetime('2015-01-20'))
+    assert(timesteps == 20)
 
 def test_solver_glpk():
     '''Test specifying the solver in XML'''
