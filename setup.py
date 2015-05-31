@@ -9,5 +9,5 @@ setup(
     author='Joshua Arnott',
     author_email='josh@snorfalorpagus.net',
     url='http://snorf.net/pywr/',
-    packages=['pywr'],
+    packages=['pywr', 'pywr.solvers'],
 )
