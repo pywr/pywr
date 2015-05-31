@@ -12,7 +12,7 @@
             <licensecollection>
                 <license type="daily">5.0</license>
                 <license type="annual">7.0</license>
-            </licensecollection>>
+            </licensecollection>
         </supply>
         <link name="link1" x="2" y="1" />
         <demand name="demand1" x="3" y="1">
