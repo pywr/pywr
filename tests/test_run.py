@@ -103,25 +103,28 @@ def test_run_cost1():
     model = pywr.xmlutils.parse_xml(data)
     model.check()
     
-    nodes = dict([(node.name, node) for node in model.nodes()])
-    assert(nodes['supply1'].properties['cost'].value(None) == 1)
-    assert(nodes['supply2'].properties['cost'].value(None) == 2) # more expensive
+    supply1 = model.node['supply1']
+    supply2 = model.node['supply2']
+    demand1 = model.node['demand1']
+    
+    assert(supply1.properties['cost'].value(None) == 1)
+    assert(supply2.properties['cost'].value(None) == 2) # more expensive
     
     result = model.step()
     # check entire demand was supplied by supply1
     assert(result[0:3] == ('optimal', 10.0, 10.0))
-    assert(list(result[3].items()) == [((nodes['supply1'], nodes['demand1']), 10.0)])
+    assert(list(result[3].items()) == [((supply1, demand1), 10.0)])
     
     # increase demand to more than supply1 can provide on it's own
     # and check that supply2 is used to pick up the slack
-    nodes['demand1'].properties['demand'] = pywr.core.Parameter(20.0)
+    demand1.properties['demand'] = pywr.core.Parameter(20.0)
     result = model.step()
     assert(result[0:3] == ('optimal', 20.0, 20.0))
-    assert(result[3][(nodes['supply1'], nodes['demand1'])] == 15.0)
-    assert(result[3][(nodes['supply2'], nodes['demand1'])] == 5.0)
+    assert(result[3][(supply1, demand1)] == 15.0)
+    assert(result[3][(supply2, demand1)] == 5.0)
     
     # supply as much as possible, even if it isn't enough
-    nodes['demand1'].properties['demand'] = pywr.core.Parameter(40.0)
+    demand1.properties['demand'] = pywr.core.Parameter(40.0)
     result = model.step()
     assert(result[0:3] == ('optimal', 40.0, 30.0))
 
@@ -132,8 +135,7 @@ def test_run_license1():
     model.timestamp = datetime.datetime(2015, 1, 1)
     
     # add licenses to supply node
-    nodes = dict([(node.name, node) for node in model.nodes()])
-    supply1 = nodes['supply1']
+    supply1 = model.node['supply1']
     daily_lic = pywr.licenses.DailyLicense(5)
     annual_lic = pywr.licenses.AnnualLicense(7)
     collection = pywr.licenses.LicenseCollection([daily_lic, annual_lic])
@@ -165,8 +167,7 @@ def test_run_license2():
     model.timestamp = datetime.datetime(2015, 1, 1)
     model.check()
     
-    nodes = dict([(node.name, node) for node in model.nodes()])
-    supply1 = nodes['supply1']
+    supply1 = model.node['supply1']
     
     assert(len(supply1.licenses) == 2)
     
@@ -195,8 +196,7 @@ def test_run_mrf():
     model.check()
     
     # check mrf value was parsed from xml
-    nodes = dict([(node.name, node) for node in model.nodes()])
-    river_gauge = nodes['gauge1']
+    river_gauge = model.node['gauge1']
     assert(river_gauge.properties['mrf'].value(model.timestamp) == 10.5)
     
     # test model result
@@ -219,19 +219,18 @@ def test_run_blender1():
     model = pywr.xmlutils.parse_xml(data)
     model.check()
 
-    nodes = dict([(node.name, node) for node in model.nodes()])
-    blender = nodes['blender1']
-    supply1 = nodes['supply1']
-    supply2 = nodes['supply2']
-    supply3 = nodes['supply3']
+    blender = model.node['blender1']
+    supply1 = model.node['supply1']
+    supply2 = model.node['supply2']
+    supply3 = model.node['supply3']
 
     # check blender ratio
     assert(blender.properties['ratio'].value(model.timestamp) == 0.75)
 
     # check supplies have been connected correctly
     assert(len(blender.slots) == 2)
-    assert(blender.slots[1] == nodes['supply1'])
-    assert(blender.slots[2] == nodes['supply2'])
+    assert(blender.slots[1] is supply1)
+    assert(blender.slots[2] is supply2)
 
     # test model results
     result = model.step()
@@ -245,10 +244,9 @@ def test_run_blender2():
     model = pywr.xmlutils.parse_xml(data)
     model.check()
 
-    nodes = dict([(node.name, node) for node in model.nodes()])
-    blender = nodes['blender1']
-    supply1 = nodes['supply1']
-    supply2 = nodes['supply2']
+    blender = model.node['blender1']
+    supply1 = model.node['supply1']
+    supply2 = model.node['supply2']
     
     # test model results
     result = model.step()

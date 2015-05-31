@@ -36,6 +36,8 @@ class Model(object):
             self.solver = solvers.SolverGLPK()
         
         self.timestamp = pandas.to_datetime('2015-01-5')
+        
+        self.node = {}
     
     def check(self):
         nodes = self.graph.nodes()
@@ -153,6 +155,7 @@ class Node(with_metaclass(NodeMeta)):
         model.graph.add_node(self)
         self.color = 'black'
         self.position = position
+        self.__name = None
         self.name = name
         
         self.properties = {
@@ -164,6 +167,19 @@ class Node(with_metaclass(NodeMeta)):
             return '<{} "{}">'.format(self.__class__.__name__, self.name)
         else:
             return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
+    
+    @property
+    def name(self):
+        return self.__name
+    
+    @name.setter
+    def name(self, name):
+        try:
+            del(self.model.node[self.__name])
+        except KeyError:
+            pass
+        self.__name = name
+        self.model.node[name] = self
     
     def connect(self, node, slot=None, to_slot=None):
         '''Create a connection from this Node to another Node'''
