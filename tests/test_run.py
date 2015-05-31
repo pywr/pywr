@@ -11,12 +11,12 @@ import pywr.core
 import pywr.xmlutils
 import pywr.licenses
 
+from helpers import load_model  
+
 def test_run_simple1():
     '''Test the most basic model possible'''
     # parse the XML into a model
-    with open(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
+    model = load_model('simple1.xml')
 
     # run the model
     t0 = model.timestamp
@@ -33,10 +33,7 @@ def test_run_reservoir1():
     
     Without an additional supply the reservoir should empty and cause a failure.
     '''
-    with open(os.path.join(os.path.dirname(__file__), 'reservoir1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('reservoir1.xml')
 
     for delivered in [10.0, 10.0, 10.0, 5.0, 0.0]:
         result = model.step()
@@ -48,10 +45,7 @@ def test_run_reservoir2():
     The river abstraction should refill the reservoir, but not quickly enough
     to keep up with the demand.
     '''
-    with open(os.path.join(os.path.dirname(__file__), 'reservoir2.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('reservoir2.xml')
     
     for demand, supply in [(10.0, 10.0), (20.0, 14.0), (26.0, 14.0), (32.0, 14.0), (38.0, 11.0), (41.0, 8.0), (41.0, 8.0)]:
         result = model.step()
@@ -59,29 +53,20 @@ def test_run_reservoir2():
 
 def test_run_river1():
     '''Test a river abstraction with a simple catchment'''
-    with open(os.path.join(os.path.dirname(__file__), 'river1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('river1.xml')
     
     result = model.step()
     assert(result[0:3] == ('optimal', 10.0, 5.0))
 
 def test_run_river2():
     '''Test a river abstraction with two catchments, a confluence and a split'''
-    with open(os.path.join(os.path.dirname(__file__), 'river2.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('river2.xml')
     
     result = model.step()
     assert(result[0:3] == ('optimal', 12.0, 9.25))
 
 def test_run_timeseries1():
-    with open(os.path.join(os.path.dirname(__file__), 'timeseries1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('timeseries1.xml')
     
     # check first day initalised
     assert(model.timestamp == datetime.datetime(2015, 1, 1))
@@ -98,10 +83,7 @@ def test_run_timeseries1():
     assert(supplied == [23.0, 22.14, 22.57, 23.0, 23.0])
 
 def test_run_cost1():
-    with open(os.path.join(os.path.dirname(__file__), 'cost1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('cost1.xml')
     
     supply1 = model.node['supply1']
     supply2 = model.node['supply2']
@@ -129,9 +111,8 @@ def test_run_cost1():
     assert(result[0:3] == ('optimal', 40.0, 30.0))
 
 def test_run_license1():
-    with open(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
+    model = load_model('simple1.xml')
+    
     model.timestamp = datetime.datetime(2015, 1, 1)
     
     # add licenses to supply node
@@ -161,11 +142,9 @@ def test_run_license1():
 
 def test_run_license2():
     '''Test licenses loaded from XML'''
-    with open(os.path.join(os.path.dirname(__file__), 'license1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
+    model = load_model('license1.xml')
+    
     model.timestamp = datetime.datetime(2015, 1, 1)
-    model.check()
     
     supply1 = model.node['supply1']
     
@@ -181,23 +160,10 @@ def test_run_license2():
 
 def test_run_license_group():
     '''Test license groups'''
-    with open(os.path.join(os.path.dirname(__file__), 'groups1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
+    model = load_model('groups1.xml')
     
     supply1 = model.node['supply1']
     supply2 = model.node['supply2']
-    
-    '''
-    # a group with a daily license
-    group = pywr.core.Group(model, 'A', [supply1, supply2])
-    daily_lic = pywr.licenses.DailyLicense(6.0)
-    collection = pywr.licenses.LicenseCollection([daily_lic])
-    group.licenses = collection
-    
-    # a group without any licenses (useful for reporting)
-    group2 = pywr.core.Group(model, 'B', [supply2])
-    '''
     
     assert(len(model.group) == 2)
     
@@ -206,19 +172,13 @@ def test_run_license_group():
 
 def test_run_bottleneck():
     '''Test max flow constraint on intermediate nodes is upheld'''
-    with open(os.path.join(os.path.dirname(__file__), 'bottleneck.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('bottleneck.xml')
     result = model.step()
     assert(result[0:3] == ('optimal', 20.0, 15.0))
 
 def test_run_mrf():
     '''Test minimum residual flow constraint'''
-    with open(os.path.join(os.path.dirname(__file__), 'river_mrf1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('river_mrf1.xml')
     
     # check mrf value was parsed from xml
     river_gauge = model.node['gauge1']
@@ -239,10 +199,7 @@ def test_run_mrf():
 
 def test_run_blender1():
     '''Test blender constraint/component'''
-    with open(os.path.join(os.path.dirname(__file__), 'blender1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('blender1.xml')
 
     blender = model.node['blender1']
     supply1 = model.node['supply1']
@@ -264,10 +221,7 @@ def test_run_blender1():
 
 def test_run_blender2():
     '''Test blender constraint/component'''
-    with open(os.path.join(os.path.dirname(__file__), 'blender2.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
-    model.check()
+    model = load_model('blender2.xml')
 
     blender = model.node['blender1']
     supply1 = model.node['supply1']

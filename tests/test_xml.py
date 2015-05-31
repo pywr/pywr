@@ -8,12 +8,12 @@ import os
 import pywr.core
 import pywr.xmlutils
 
+from helpers import load_model
+
 def test_simple1():
     '''Test parsing a simple XML document'''
     # parse the XML into a model
-    with open(os.path.join(os.path.dirname(__file__), 'simple1.xml'), 'r') as f:
-        data = f.read()
-    model = pywr.xmlutils.parse_xml(data)
+    model = load_model('simple1.xml')
 
     # metadata
     assert(model.metadata['title'] == 'Simple 1')
