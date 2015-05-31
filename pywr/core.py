@@ -4,9 +4,6 @@
 from __future__ import print_function
 
 import networkx as nx
-import matplotlib
-matplotlib.use('Qt4Agg')
-import matplotlib.pyplot as pyplot
 import numpy as np
 import inspect
 import pandas
@@ -39,38 +36,6 @@ class Model(object):
             self.solver = solvers.SolverGLPK()
         
         self.timestamp = pandas.to_datetime('2015-01-5')
-    
-    def plot(self, volume_labels=None, node_labels=None):
-        fig = pyplot.figure()
-        ax = pyplot.subplot(111)
-        pyplot.axis('equal')
-        nodes = self.graph.nodes()
-        edges = self.graph.edges()
-        pos = dict([(node, node.position) for node in nodes])
-        edge_colors = []
-        river_types = (Catchment, River, Terminator,)
-        for edge in edges:
-            if isinstance(edge[0], river_types) and isinstance(edge[1], river_types):
-                color = '#00AEEF' # cyan
-            else:
-                color = 'black'
-            edge_colors.append(color)
-        colors = [node.color for node in nodes]
-        nx.draw_networkx_nodes(self.graph, pos, nodelist=nodes, node_color=colors)
-        nx.draw_networkx_edges(self.graph, pos, edgelist=edges, edge_color=edge_colors)
-        
-        if volume_labels is not None:
-            volume_labels = dict([(k,'{:.3g}'.format(v)) for k,v in volume_labels.items()])
-            nx.draw_networkx_edge_labels(self.graph, pos, edge_labels=volume_labels)
-        
-        if node_labels is not None:
-            node_labels = dict([(k,'{:.3g}'.format(v)) for k,v in node_labels.items()])
-            nx.draw_networkx_labels(self.graph, pos, labels=node_labels, font_size=10)
-        
-        catchment_nodes = [node for node in nodes if isinstance(node, Catchment)]
-        nx.draw_networkx_labels(self.graph, pos, nodelist=catchment_nodes, labels=dict([(n, n.properties['flow'].value(self.timestamp)) for n in catchment_nodes]), font_size=10)
-        
-        return fig
     
     def check(self):
         nodes = self.graph.nodes()
