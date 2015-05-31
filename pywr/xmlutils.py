@@ -98,17 +98,7 @@ def parse_xml(data):
                 value = float(child.text)
                 node.properties[key] = pywr.core.Variable(initial=value)
             elif child.tag == 'licensecollection':
-                collection = pywr.licenses.LicenseCollection([])
-                for xml_lic in child.getchildren():
-                    lic_type = xml_lic.get('type')
-                    value = float(xml_lic.text)
-                    lic_types = {
-                        'annual': pywr.licenses.AnnualLicense,
-                        'daily': pywr.licenses.DailyLicense,
-                    }
-                    lic = lic_types[lic_type](value)
-                    collection.add(lic)
-                node.licenses = collection
+                node.licenses = parse_licensecollection(child)
 
     # parse edges
     xml_edges = root.find('edges')
@@ -127,5 +117,36 @@ def parse_xml(data):
         if to_slot is not None:
             to_slot = int(to_slot)
         from_node.connect(to_node, slot=slot, to_slot=to_slot)
+    
+    # parse groups
+    xml_groups = root.find('groups')
+    if xml_groups:
+        for xml_group in xml_groups.getchildren():
+            tag = xml_group.tag.lower()
+            if tag != 'group':
+                raise ValueError()
+            name = xml_group.get('name')
+            group = pywr.core.Group(model, name)
+            for xml_member in xml_group.find('members'):
+                name = xml_member.get('name')
+                node = nodes[name]
+                group.nodes.add(node)
+            licenses = xml_group.find('licensecollection')
+            if licenses:
+                licenses = parse_licensecollection(licenses)
+                group.licenses = licenses
 
     return model
+
+def parse_licensecollection(xml):
+    collection = pywr.licenses.LicenseCollection([])
+    for xml_lic in xml.getchildren():
+        lic_type = xml_lic.get('type')
+        value = float(xml_lic.text)
+        lic_types = {
+            'annual': pywr.licenses.AnnualLicense,
+            'daily': pywr.licenses.DailyLicense,
+        }
+        lic = lic_types[lic_type](value)
+        collection.add(lic)
+    return collection

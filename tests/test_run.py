@@ -179,6 +179,31 @@ def test_run_license2():
     result = model.step()
     assert(result[0:3] == ('optimal', 10.0, 2.0))
 
+def test_run_license_group():
+    '''Test license groups'''
+    with open(os.path.join(os.path.dirname(__file__), 'groups1.xml'), 'r') as f:
+        data = f.read()
+    model = pywr.xmlutils.parse_xml(data)
+    
+    supply1 = model.node['supply1']
+    supply2 = model.node['supply2']
+    
+    '''
+    # a group with a daily license
+    group = pywr.core.Group(model, 'A', [supply1, supply2])
+    daily_lic = pywr.licenses.DailyLicense(6.0)
+    collection = pywr.licenses.LicenseCollection([daily_lic])
+    group.licenses = collection
+    
+    # a group without any licenses (useful for reporting)
+    group2 = pywr.core.Group(model, 'B', [supply2])
+    '''
+    
+    assert(len(model.group) == 2)
+    
+    result = model.step()
+    assert(result[0:3] == ('optimal', 10.0, 6.0))
+
 def test_run_bottleneck():
     '''Test max flow constraint on intermediate nodes is upheld'''
     with open(os.path.join(os.path.dirname(__file__), 'bottleneck.xml'), 'r') as f:

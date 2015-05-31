@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<pywr>
+    <metadata>
+        <title>Groups 1</title>
+        <description>
+            An example of groups including group licenses
+        </description>
+    </metadata>
+    <nodes>
+        <supply name="supply1" x="1" y="1">
+            <parameter type="constant" key="max_flow">15</parameter>
+            <parameter type="constant" key="cost">1</parameter>
+        </supply>
+        <supply name="supply2" x="3" y="1">
+            <parameter type="constant" key="max_flow">15</parameter>
+            <parameter type="constant" key="cost">2</parameter>
+        </supply>
+        <demand name="demand1" x="2" y="2">
+            <parameter type="constant" key="demand">10</parameter>
+        </demand>
+    </nodes>
+    <edges>
+        <edge from="supply1" to="demand1" />
+        <edge from="supply2" to="demand1" />
+    </edges>
+    <groups>
+        <group name="A">
+            <members>
+                <member name="supply1" />
+                <member name="supply2" />
+            </members>
+            <licensecollection>
+                <license type="daily">6.0</license>
+            </licensecollection>
+        </group>
+        <group name="B">
+            <members>
+                <member name="supply2" />
+            </members>
+        </group>
+    </groups>
+</pywr>

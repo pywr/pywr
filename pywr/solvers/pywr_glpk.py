@@ -108,6 +108,21 @@ class SolverGLPK(Solver):
                     row.bounds = 0, 0
                     blenders[node]['blender_constraint'] = row
                     blenders[node]['routes'] = blended_routes
+            
+            # groups
+            groups = self.groups = {}
+            for group in model.group.values():
+                if group.licenses is None:
+                    continue
+                row_idx = lp.rows.add(1)
+                row = lp.rows[row_idx]
+                col_idxs = []
+                for node in group.nodes:
+                    col_idxs.extend(supply_nodes[node]['col_idxs'])
+                groups[group] = {
+                    'group_constraint': row
+                }
+                row.matrix = [(col_idx, 1.0) for col_idx in col_idxs]
 
             model.dirty = False
         else:
@@ -118,6 +133,7 @@ class SolverGLPK(Solver):
             intermediate_max_flow_constraints = self.intermediate_max_flow_constraints
             river_gauge_nodes = self.river_gauge_nodes
             blenders = self.blenders
+            groups = self.groups
 
         timestamp = self.timestamp = model.timestamp
 
@@ -189,6 +205,16 @@ class SolverGLPK(Solver):
                 else:
                     matrix.append((col_idx, sign*ratio))
             row.matrix = matrix
+        
+        # groups
+        for group, info in groups.items():
+            if group.licenses is None:
+                continue
+            row = info['group_constraint']
+            if group.licenses is None:
+                row.bounds = None, None
+            else:
+                row.bounds = 0, group.licenses.available(timestamp)
 
         # solve the linear programme
         lp.simplex()

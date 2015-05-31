@@ -38,6 +38,7 @@ class Model(object):
         self.timestamp = pandas.to_datetime('2015-01-5')
         
         self.node = {}
+        self.group = {}
     
     def check(self):
         nodes = self.graph.nodes()
@@ -335,5 +336,29 @@ class Reservoir(Supply, Demand):
         index = self.model.timestamp
         # check volume doesn't exceed maximum volume
         assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))
+
+class Group(object):
+    def __init__(self, model, name, nodes=None):
+        self.model = model
+        if nodes is None:
+            self.nodes = set()
+        else:
+            self.nodes = set(nodes)
+        self.__name = name
+        self.name = name
+        self.licenses = None
+
+    @property
+    def name(self):
+        return self.__name
+    
+    @name.setter
+    def name(self, name):
+        try:
+            del(self.model.group[self.__name])
+        except KeyError:
+            pass
+        self.__name = name
+        self.model.group[name] = self
 
 from . import solvers
