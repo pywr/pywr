@@ -171,7 +171,7 @@ class PywrSchematic(QtGui.QDialog):
         result = self.model.step()
         for node, amount in result[4].items():
             node.schematic.set_label('{:.3f}'.format(amount))
-        self.timestamp_label.setText((self.model.timestamp-core.TIMESTEP).strftime('%Y-%m-%d'))
+        self.timestamp_label.setText((self.model.timestamp-self.model.parameters['timestep']).strftime('%Y-%m-%d'))
 
 if __name__ == '__main__':
     import sys
