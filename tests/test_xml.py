@@ -24,12 +24,9 @@ def test_simple1():
     # node names
     nodes = model.nodes()
     assert(len(nodes) == 3)
-    name_to_node = {}
-    for node in nodes:
-        name_to_node[node.name] = node
-    supply1 = name_to_node['supply1']
-    link1 = name_to_node['link1']
-    demand1 = name_to_node['demand1']
+    supply1 = model.node['supply1']
+    link1 = model.node['link1']
+    demand1 = model.node['demand1']
 
     # node types
     assert(type(supply1) is pywr.core.Supply)
