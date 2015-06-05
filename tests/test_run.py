@@ -277,11 +277,11 @@ def test_run_until_date():
 def test_solver_glpk():
     '''Test specifying the solver in XML'''
     data = '''<pywr><solver name="glpk" /><nodes /><edges /><metadata /></pywr>'''
-    model = pywr.xmlutils.parse_xml(data)
+    model = load_model(data=data)
     assert(model.solver.name.lower() == 'glpk')
 
 def test_solver_unrecognised():
     '''Test specifying an unrecognised solver XML'''
     data = '''<pywr><solver name="foobar" /><nodes /><edges /><metadata /></pywr>'''
     with pytest.raises(KeyError):
-        model = pywr.xmlutils.parse_xml(data)
+        model = load_model(data=data)

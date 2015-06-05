@@ -8,6 +8,7 @@ import numpy as np
 import inspect
 import pandas
 import datetime
+import xml.etree.ElementTree as ET
 from six import with_metaclass
 
 import warnings
@@ -132,6 +133,98 @@ class Model(object):
         '''Reset model to it's initial conditions'''
         # TODO: this will need more, e.g. reservoir states, license states
         self.timestamp = self.parameters['timestamp_start']
+    
+    @property
+    def xml(self):
+        """Serialize the Model to XML"""
+        raise NotImplementedError('TODO')
+    
+    @classmethod
+    def from_xml(cls, xml):
+        """Deserialize a Model from XML"""
+        xml_solver = xml.find('solver')
+        if xml_solver is not None:
+            solver = xml_solver.get('name')
+        else:
+            solver = None
+        
+        model = Model(solver=solver)
+        
+        # parse metadata
+        xml_metadata = xml.find('metadata')
+        if xml_metadata is not None:
+            for xml_metadata_item in xml_metadata.getchildren():
+                key = xml_metadata_item.tag.lower()
+                value = xml_metadata_item.text.strip()
+                model.metadata[key] = value
+        
+        # parse model parameters
+        for xml_parameters in xml.findall('parameters'):
+            for xml_parameter in xml_parameters.getchildren():
+                key, parameter = xmlutils.parse_parameter(model, xml_parameter)
+                model.parameters[key] = parameter
+
+        # parse data
+        xml_datas = xml.find('data')
+        if xml_datas:
+            for xml_data in xml_datas.getchildren():
+                tag = xml_data.tag.lower()
+                name = xml_data.get('name')
+                properties = {}
+                for child in xml_data.getchildren():
+                    properties[child.tag] = child.text
+                if properties['type'] == 'pandas':
+                    # TODO: better handling of british/american dates (currently assumes british)
+                    df = pandas.read_csv(properties['path'], index_col=0, parse_dates=True, dayfirst=True)
+                    df = df[properties['column']]
+                    ts = Timeseries(df)
+                    model.data[name] = ts
+                else:
+                    raise NotImplementedError()
+        
+        # parse nodes
+        for node_xml in xml.find('nodes'):
+            tag = node_xml.tag.lower()
+            node_cls = node_registry[tag]
+            node = node_cls.from_xml(model, node_xml)
+
+        # parse edges
+        xml_edges = xml.find('edges')
+        for xml_edge in xml_edges.getchildren():
+            tag = xml_edge.tag.lower()
+            if tag != 'edge':
+                raise ValueError()
+            from_name = xml_edge.get('from')
+            to_name = xml_edge.get('to')
+            from_node = model.node[from_name]
+            to_node = model.node[to_name]
+            slot = xml_edge.get('slot')
+            if slot is not None:
+                slot = int(slot)
+            to_slot = xml_edge.get('to_slot')
+            if to_slot is not None:
+                to_slot = int(to_slot)
+            from_node.connect(to_node, slot=slot, to_slot=to_slot)
+
+        # parse groups
+        xml_groups = xml.find('groups')
+        if xml_groups:
+            for xml_group in xml_groups.getchildren():
+                tag = xml_group.tag.lower()
+                if tag != 'group':
+                    raise ValueError()
+                name = xml_group.get('name')
+                group = Group(model, name)
+                for xml_member in xml_group.find('members'):
+                    name = xml_member.get('name')
+                    node = model.node[name]
+                    group.nodes.add(node)
+                licenses = xml_group.find('licensecollection')
+                if licenses:
+                    licenses = xmlutils.parse_licensecollection(licenses)
+                    group.licenses = licenses
+        
+        return model
 
 class SolverMeta(type):
     solvers = {}
@@ -254,6 +347,37 @@ class Node(with_metaclass(NodeMeta)):
         This should be implemented by the various node classes
         '''
         pass
+    
+    @property
+    def xml(self):
+        xml = ET.fromstring('<{} />'.format(self.__class__.__name__.lower()))
+        xml.set('name', self.name)
+        xml.set('x', str(self.position[0]))
+        xml.set('y', str(self.position[1]))
+        # TODO: delegate this
+        for key, prop in self.properties.items():
+            prop_xml = ET.fromstring('<parameter />')
+            prop_xml.set('key', key)
+            prop_xml.set('type', 'const')
+            prop_xml.text = str(prop._value)
+            xml.append(prop_xml)
+        return xml
+    
+    @classmethod
+    def from_xml(cls, model, xml):
+        tag = xml.tag.lower()
+        node_cls = node_registry[tag]
+        name = xml.get('name')
+        x = float(xml.get('x'))
+        y = float(xml.get('y'))
+        node = node_cls(model, name=name, position=(x, y,))
+        for prop_xml in xml.findall('parameter'):
+            key, prop = xmlutils.parse_parameter(model, prop_xml)
+            node.properties[key] = prop
+        for var_xml in xml.findall('variable'):
+            key, prop = xmlutils.parse_variable(model, var_xml)
+            node.properties[key] = prop
+        return node
 
 class Supply(Node):
     def __init__(self, *args, **kwargs):
@@ -272,6 +396,14 @@ class Supply(Node):
         super(Supply, self).commit(volume, chain)
         if self.licenses is not None:
             self.licenses.commit(volume)
+
+    @classmethod
+    def from_xml(cls, model, xml):
+        node = Node.from_xml(model, xml)
+        licensecollection_xml = xml.find('licensecollection')
+        if licensecollection_xml is not None:
+            node.licenses = xmlutils.parse_licensecollection(licensecollection_xml)
+        return node
 
 class Demand(Node):
     def __init__(self, *args, **kwargs):
@@ -399,3 +531,4 @@ class Group(object):
         self.model.group[name] = self
 
 from . import solvers
+from . import xmlutils

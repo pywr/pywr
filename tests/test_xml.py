@@ -6,6 +6,7 @@ from __future__ import print_function
 import os
 import pandas
 import datetime
+import xml.etree.ElementTree as ET
 
 import pywr.core
 import pywr.xmlutils
@@ -38,6 +39,12 @@ def test_simple1():
     assert(link1.position == (2,1))
     assert(demand1.position == (3,1))
 
+    # edges
+    edges = model.graph.edges()
+    assert(len(edges) == 2)
+    assert((supply1, link1) in edges)
+    assert((link1, demand1) in edges)
+
     model.check()
 
 def test_timestamps():
@@ -47,4 +54,3 @@ def test_timestamps():
     assert(model.parameters['timestamp_start'] == pandas.to_datetime('1970-01-01'))
     assert(model.parameters['timestamp_finish'] == pandas.to_datetime('3027-08-22'))
     assert(model.parameters['timestep'] == datetime.timedelta(1))
-    
