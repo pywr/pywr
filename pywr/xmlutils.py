@@ -37,16 +37,3 @@ def parse_variable(model, xml):
     value = float(xml.text)
     var = pywr.core.Variable(initial=value)
     return key, var
-
-def parse_licensecollection(xml):
-    collection = pywr.licenses.LicenseCollection([])
-    for xml_lic in xml.getchildren():
-        lic_type = xml_lic.get('type')
-        value = float(xml_lic.text)
-        lic_types = {
-            'annual': pywr.licenses.AnnualLicense,
-            'daily': pywr.licenses.DailyLicense,
-        }
-        lic = lic_types[lic_type](value)
-        collection.add(lic)
-    return collection

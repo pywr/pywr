@@ -24,6 +24,17 @@ class License(object):
     def refresh(self):
         pass
 
+    @classmethod
+    def from_xml(cls, xml):
+        lic_type = xml.get('type')
+        amount = float(xml.text)
+        lic_types = {
+            'annual': AnnualLicense,
+            'daily': DailyLicense,
+        }
+        lic = lic_types[lic_type](amount)
+        return lic
+
 class DailyLicense(License):
     '''Daily license'''
     def __init__(self, amount):
@@ -85,3 +96,11 @@ class LicenseCollection(License):
     def refresh(self):
         for license in self._licenses:
             license.refresh()
+
+    @classmethod
+    def from_xml(cls, xml):
+        licenses = set()
+        for xml_lic in xml.getchildren():
+            license = License.from_xml(xml_lic)
+            licenses.add(license)
+        return LicenseCollection(licenses)

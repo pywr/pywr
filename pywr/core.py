@@ -15,6 +15,8 @@ import warnings
 warnings.simplefilter(action = "ignore", category = FutureWarning)
 warnings.simplefilter(action = "ignore", category = UnicodeWarning)
 
+from .licenses import LicenseCollection
+
 inf = float('inf')
 
 class Model(object):
@@ -219,10 +221,9 @@ class Model(object):
                     name = xml_member.get('name')
                     node = model.node[name]
                     group.nodes.add(node)
-                licenses = xml_group.find('licensecollection')
-                if licenses:
-                    licenses = xmlutils.parse_licensecollection(licenses)
-                    group.licenses = licenses
+                licensecollection_xml = xml_group.find('licensecollection')
+                if licensecollection_xml:
+                    group.licenses = LicenseCollection.from_xml(licensecollection_xml)
         
         return model
 
@@ -402,7 +403,7 @@ class Supply(Node):
         node = Node.from_xml(model, xml)
         licensecollection_xml = xml.find('licensecollection')
         if licensecollection_xml is not None:
-            node.licenses = xmlutils.parse_licensecollection(licensecollection_xml)
+            node.licenses = LicenseCollection.from_xml(licensecollection_xml)
         return node
 
 class Demand(Node):
