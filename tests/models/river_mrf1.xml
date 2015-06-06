@@ -39,8 +39,8 @@
         <edge from="catchment2" to="abs1" />
         <edge from="abs1" to="river2" />
         <edge from="abs1" to="demand2" />
-        <edge from="river2" to="river1" slot="1" />
-        <edge from="river2" to="term2" slot="2" />
+        <edge from="river2" to="river1" from_slot="1" />
+        <edge from="river2" to="term2" from_slot="2" />
         <edge from="catchment1" to="river1" />
         <edge from="river1" to="abs2" />
         <edge from="abs2" to="demand1" />

@@ -200,13 +200,13 @@ class Model(object):
             to_name = xml_edge.get('to')
             from_node = model.node[from_name]
             to_node = model.node[to_name]
-            slot = xml_edge.get('slot')
-            if slot is not None:
-                slot = int(slot)
+            from_slot = xml_edge.get('from_slot')
+            if from_slot is not None:
+                from_slot = int(from_slot)
             to_slot = xml_edge.get('to_slot')
             if to_slot is not None:
                 to_slot = int(to_slot)
-            from_node.connect(to_node, slot=slot, to_slot=to_slot)
+            from_node.connect(to_node, from_slot=from_slot, to_slot=to_slot)
 
         # parse groups
         xml_groups = xml.find('groups')
@@ -364,13 +364,13 @@ class Node(with_metaclass(NodeMeta)):
         self.__name = name
         self.model.node[name] = self
     
-    def connect(self, node, slot=None, to_slot=None):
+    def connect(self, node, from_slot=None, to_slot=None):
         '''Create a connection from this Node to another Node'''
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
         self.model.graph.add_edge(self, node)
-        if slot is not None:
-            self.slots[slot] = node
+        if from_slot is not None:
+            self.slots[from_slot] = node
         if to_slot is not None:
             node.slots[to_slot] = self
     
