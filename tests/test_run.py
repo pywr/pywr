@@ -9,7 +9,6 @@ import pytest
 import pandas
 
 import pywr.core
-import pywr.xmlutils
 import pywr.licenses
 
 from helpers import load_model  
@@ -100,14 +99,14 @@ def test_run_cost1():
     
     # increase demand to more than supply1 can provide on it's own
     # and check that supply2 is used to pick up the slack
-    demand1.properties['demand'] = pywr.core.Parameter(20.0)
+    demand1.properties['demand'] = pywr.core.ParameterConstant(20.0)
     result = model.step()
     assert(result[0:3] == ('optimal', 20.0, 20.0))
     assert(result[3][(supply1, demand1)] == 15.0)
     assert(result[3][(supply2, demand1)] == 5.0)
     
     # supply as much as possible, even if it isn't enough
-    demand1.properties['demand'] = pywr.core.Parameter(40.0)
+    demand1.properties['demand'] = pywr.core.ParameterConstant(40.0)
     result = model.step()
     assert(result[0:3] == ('optimal', 40.0, 30.0))
 
@@ -194,7 +193,7 @@ def test_run_mrf():
         0.0: 12.0,
     }
     for mrf_value, expected_supply in data.items():
-        river_gauge.properties['mrf'] = pywr.core.Parameter(mrf_value)
+        river_gauge.properties['mrf'] = pywr.core.ParameterConstant(mrf_value)
         result = model.step()
         assert(result[0:3] == ('optimal', 12.0, expected_supply))
 

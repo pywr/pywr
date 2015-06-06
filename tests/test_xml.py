@@ -9,7 +9,6 @@ import datetime
 import xml.etree.ElementTree as ET
 
 import pywr.core
-import pywr.xmlutils
 
 from helpers import load_model
 

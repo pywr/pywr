@@ -1,7 +1,7 @@
 import os
 import xml.etree.ElementTree as ET
 
-import pywr.xmlutils
+import pywr.core
 
 def load_model(filename=None, data=None):
     '''Load a test model and check it'''

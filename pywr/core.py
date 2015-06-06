@@ -163,7 +163,7 @@ class Model(object):
         # parse model parameters
         for xml_parameters in xml.findall('parameters'):
             for xml_parameter in xml_parameters.getchildren():
-                key, parameter = xmlutils.parse_parameter(model, xml_parameter)
+                key, parameter = Parameter.from_xml(model, xml_parameter)
                 model.parameters[key] = parameter
 
         # parse data
@@ -241,19 +241,61 @@ class Solver(with_metaclass(SolverMeta)):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
 
 class Parameter(object):
+    def value(self, index=None):
+        raise NotImplementedError()
+    
+    @classmethod
+    def from_xml(cls, model, xml):
+        # TODO: this doesn't look nice - need to rethink xml specification?
+        parameter_types = {
+            'constant': ParameterConstant,
+            'timestamp': ParameterConstant,
+            'timedelta': ParameterConstant,
+            'datetime': ParameterConstant,
+            'timeseries': ParameterConstant,
+            'python': ParameterFunction,
+        }
+        parameter_type = xml.get('type')
+        return parameter_types[parameter_type].from_xml(model, xml)
+
+class ParameterConstant(Parameter):
     def __init__(self, value=None):
         self._value = value
     
     def value(self, index=None):
         return self._value
 
-class ParameterFunction(object):
+    @classmethod
+    def from_xml(cls, model, xml):
+        parameter_type = xml.get('type')
+        key = xml.get('key')
+        if parameter_type == 'const' or parameter_type == 'constant':
+            try:
+                value = float(xml.text)
+            except:
+                value = xml.text
+            return key, ParameterConstant(value=value)
+        elif parameter_type == 'timeseries':
+            name = xml.text
+            return key, model.data[name]
+        elif parameter_type == 'datetime':
+            return key, pandas.to_datetime(xml.text)
+        elif parameter_type == 'timedelta':
+            return key, datetime.timedelta(float(xml.text))
+        else:
+            raise NotImplementedError('Unknown parameter type: {}'.format(parameter_type))
+
+class ParameterFunction(Parameter):
     def __init__(self, parent, func):
         self._parent = parent
         self._func = func
 
     def value(self, index=None):
         return self._func(self._parent, index)
+    
+    @classmethod
+    def from_xml(cls, xml):
+        raise NotImplementedError('TODO')
 
 class Timeseries(object):
     def __init__(self, df):
@@ -269,6 +311,15 @@ class Variable(object):
 
     def value(self, index=None):
         return self._value
+
+    @classmethod
+    def from_xml(cls, model, xml):
+        key = xml.get('key')
+        try:
+            value = float(xml.text)
+        except:
+            value = xml.text
+        return key, ParameterConstant(value=value)
 
 # node subclasses are stored in a dict for convenience
 node_registry = {}
@@ -291,7 +342,7 @@ class Node(with_metaclass(NodeMeta)):
         self.name = name
         
         self.properties = {
-            'cost': Parameter(value=0.0)
+            'cost': ParameterConstant(value=0.0)
         }
     
     def __repr__(self):
@@ -373,10 +424,10 @@ class Node(with_metaclass(NodeMeta)):
         y = float(xml.get('y'))
         node = node_cls(model, name=name, position=(x, y,))
         for prop_xml in xml.findall('parameter'):
-            key, prop = xmlutils.parse_parameter(model, prop_xml)
+            key, prop = Parameter.from_xml(model, prop_xml)
             node.properties[key] = prop
         for var_xml in xml.findall('variable'):
-            key, prop = xmlutils.parse_variable(model, var_xml)
+            key, prop = Variable.from_xml(model, var_xml)
             node.properties[key] = prop
         return node
 
@@ -389,7 +440,7 @@ class Supply(Node):
         if callable(max_flow):
             self.properties['max_flow'] = ParameterFunction(self, max_flow)
         else:
-            self.properties['max_flow'] = Parameter(value=max_flow)
+            self.properties['max_flow'] = ParameterConstant(value=max_flow)
         
         self.licenses = None
     
@@ -411,7 +462,7 @@ class Demand(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#FFF467' # light yellow
         
-        self.properties['demand'] = Parameter(value=kwargs.pop('demand',10.0))
+        self.properties['demand'] = ParameterConstant(value=kwargs.pop('demand',10.0))
 
 class Link(Node):
     def __init__(self, *args, **kwargs):
@@ -423,7 +474,7 @@ class Link(Node):
             if callable(max_flow):
                 self.properties['max_flow'] = ParameterFunction(self, max_flow)
             else:
-                self.properties['max_flow'] = Parameter(value=max_flow)
+                self.properties['max_flow'] = ParameterConstant(value=max_flow)
 
 class Blender(Link):
     def __init__(self, *args, **kwargs):
@@ -431,9 +482,9 @@ class Blender(Link):
         self.slots = {1: None, 2: None}
 
         if 'ratio' in kwargs:
-            self.properties['ratio'] = Parameter(value=kwargs['ratio'])
+            self.properties['ratio'] = ParameterConstant(value=kwargs['ratio'])
         else:
-            self.properties['ratio'] = Parameter(value=0.5)
+            self.properties['ratio'] = ParameterConstant(value=0.5)
 
 class Catchment(Node):
     def __init__(self, *args, **kwargs):
@@ -444,7 +495,7 @@ class Catchment(Node):
         if callable(flow):
             self.properties['flow'] = ParameterFunction(self, flow)
         else:
-            self.properties['flow'] = Parameter(value=flow)        
+            self.properties['flow'] = ParameterConstant(value=flow)        
     
     def check(self):
         Node.check(self)
@@ -463,9 +514,9 @@ class RiverSplit(River):
         self.slots = {1: None, 2: None}
         
         if 'split' in kwargs:
-            self.properties['split'] = Parameter(value=kwargs['split'])
+            self.properties['split'] = ParameterConstant(value=kwargs['split'])
         else:
-            self.properties['split'] = Parameter(value=0.5)
+            self.properties['split'] = ParameterConstant(value=0.5)
 
 class Terminator(Node):
     pass
@@ -532,4 +583,3 @@ class Group(object):
         self.model.group[name] = self
 
 from . import solvers
-from . import xmlutils

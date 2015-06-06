@@ -33,8 +33,8 @@ def make_simple_model(supply_amplitude, demand, frequency,
     supply = pywr.core.Supply(model, max_flow=supply_func)
     demand = pywr.core.Demand(model, demand=demand)
     res = pywr.core.Reservoir(model, )
-    res.properties['max_volume'] = pywr.core.Parameter(1e6)
-    res.properties['current_volume'] = pywr.core.Parameter(initial_volume)
+    res.properties['max_volume'] = pywr.core.ParameterConstant(1e6)
+    res.properties['current_volume'] = pywr.core.Variable(initial_volume)
     
     supply_res_link = pywr.core.Link(model)    
     res_demand_link = pywr.core.Link(model)    
