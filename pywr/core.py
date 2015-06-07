@@ -57,6 +57,9 @@ class Model(object):
     def nodes(self):
         return self.graph.nodes()
     
+    def edges(self):
+        return self.graph.edges()
+    
     def find_all_routes(self, type1, type2, valid=None):
         '''Find all routes between two nodes or types of node'''
         
@@ -138,7 +141,34 @@ class Model(object):
     
     def xml(self):
         """Serialize the Model to XML"""
-        raise NotImplementedError('TODO')
+        xml_model = ET.Element('pywr')
+        
+        xml_metadata = ET.SubElement(xml_model, 'metadata')
+        for key, value in self.metadata.items():
+            xml_metadata_item = ET.SubElement(xml_metadata, key)
+            xml_metadata_item.text = value
+        
+        # TODO: model parameters
+        # TODO: data
+        
+        xml_nodes = ET.SubElement(xml_model, 'nodes')
+        for node in self.nodes():
+            xml_node = node.xml()
+            xml_nodes.append(xml_node)
+        
+        xml_edges = ET.SubElement(xml_model, 'edges')
+        for edge in self.edges():
+            node_from, node_to = edge
+            xml_edge = ET.SubElement(xml_edges, 'edge')
+            xml_edge.set('from', node_from.name)
+            xml_edge.set('to', node_to.name)
+        
+        xml_groups = ET.SubElement(xml_model, 'groups')
+        for name, group in self.group.items():
+            xml_group = group.xml()
+            xml_groups.append(xml_group)
+        
+        return xml_model
     
     @classmethod
     def from_xml(cls, xml):
@@ -211,18 +241,7 @@ class Model(object):
         xml_groups = xml.find('groups')
         if xml_groups:
             for xml_group in xml_groups.getchildren():
-                tag = xml_group.tag.lower()
-                if tag != 'group':
-                    raise ValueError()
-                name = xml_group.get('name')
-                group = Group(model, name)
-                for xml_member in xml_group.find('members'):
-                    name = xml_member.get('name')
-                    node = model.node[name]
-                    group.nodes.add(node)
-                licensecollection_xml = xml_group.find('licensecollection')
-                if licensecollection_xml:
-                    group.licenses = LicenseCollection.from_xml(licensecollection_xml)
+                group = Group.from_xml(model, xml_group)
         
         return model
 
@@ -241,6 +260,9 @@ class Solver(with_metaclass(SolverMeta)):
 
 class Parameter(object):
     def value(self, index=None):
+        raise NotImplementedError()
+    
+    def xml(*args, **kwargs):
         raise NotImplementedError()
     
     @classmethod
@@ -621,5 +643,35 @@ class Group(object):
             pass
         self.__name = name
         self.model.group[name] = self
+    
+    def xml(self):
+        xml = ET.Element('group')
+        xml.set('name', self.name)
+        # members
+        xml_members = ET.SubElement(xml, 'members')
+        for node in self.nodes:
+            member = ET.SubElement(xml_members, 'member')
+            member.set('name', node.name)
+        # licenses
+        if self.licenses:
+            xml_licensecollection = self.licenses.xml()
+            xml.append(xml_licensecollection)
+        return xml
+    
+    @classmethod
+    def from_xml(cls, model, xml):
+        name = xml.get('name')
+        group = Group(model, name)
+        # members
+        xml_members = xml.find('members')
+        for xml_member in xml_members:
+            name = xml_member.get('name')
+            node = model.node[name]
+            group.nodes.add(node)
+        # licenses
+        xml_licensecollection = xml.find('licensecollection')
+        if xml_licensecollection:
+            group.licenses = LicenseCollection.from_xml(xml_licensecollection)
+        return group
 
 from . import solvers

@@ -178,3 +178,33 @@ def test_xml_node_supply_with_license():
     license = list(node.licenses._licenses)[0]
     assert(isinstance(license, pywr.licenses.DailyLicense))
     assert(license._amount == 42.0)
+
+def test_xml_group():
+    model = pywr.core.Model()
+    supply1 = pywr.core.Supply(model, name='supply1', position=(0, 1))
+    supply2 = pywr.core.Supply(model, name='supply2', position=(3, 4))
+    group = pywr.core.Group(model, name='group1', nodes=[supply1, supply2])
+    license = pywr.licenses.DailyLicense(42.0)
+    licensecollection = pywr.licenses.LicenseCollection([license])
+    group.licenses = licensecollection
+    
+    xml = group.xml()
+    
+    del(group, license, licensecollection)
+    group = pywr.core.Group.from_xml(model, xml)
+    assert(len(group.nodes) == 2)
+    assert(supply1 in group.nodes)
+    assert(supply2 in group.nodes)
+    assert(group.name == 'group1')
+    assert(group.name in model.group)
+    assert(model.group[group.name] is group)
+    assert(isinstance(group.licenses, pywr.licenses.LicenseCollection))
+
+def test_xml_model():
+    model = load_model('river2.xml')
+    
+    xml = model.xml()
+    print(ET.tostring(xml))
+    
+    del(model)
+    model = pywr.core.Model.from_xml(xml)
