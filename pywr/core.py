@@ -148,8 +148,14 @@ class Model(object):
             xml_metadata_item = ET.SubElement(xml_metadata, key)
             xml_metadata_item.text = value
         
-        # TODO: model parameters
-        # TODO: data
+        xml_parameters = ET.SubElement(xml_model, 'parameters')
+        for key, value in self.parameters.items():
+            pass # TODO
+        
+        xml_data = ET.SubElement(xml_model, 'data')
+        for name, ts in self.data.items():
+            xml_ts = ts.xml(name)
+            xml_data.append(xml_ts)
         
         xml_nodes = ET.SubElement(xml_model, 'nodes')
         for node in self.nodes():
@@ -199,19 +205,7 @@ class Model(object):
         xml_datas = xml.find('data')
         if xml_datas:
             for xml_data in xml_datas.getchildren():
-                tag = xml_data.tag.lower()
-                name = xml_data.get('name')
-                properties = {}
-                for child in xml_data.getchildren():
-                    properties[child.tag] = child.text
-                if properties['type'] == 'pandas':
-                    # TODO: better handling of british/american dates (currently assumes british)
-                    df = pandas.read_csv(properties['path'], index_col=0, parse_dates=True, dayfirst=True)
-                    df = df[properties['column']]
-                    ts = Timeseries(df)
-                    model.data[name] = ts
-                else:
-                    raise NotImplementedError()
+                ts = Timeseries.from_xml(model, xml_data)
         
         # parse nodes
         for node_xml in xml.find('nodes'):
@@ -359,11 +353,40 @@ class ParameterFunction(Parameter):
         raise NotImplementedError('TODO')
 
 class Timeseries(object):
-    def __init__(self, df):
+    def __init__(self, name, df, metadata=None):
+        self.name = name
         self.df = df
+        if metadata is None:
+            metadata = {}
+        self.metadata = metadata
     
     def value(self, index):
         return self.df[index]
+    
+    def xml(self, name):
+        xml_ts = ET.Element('timeseries')
+        xml_ts.set('name', self.name)
+        for key, value in self.metadata.items():
+            xml_meta = ET.SubElement(xml_ts, key)
+            xml_meta.text = value
+        return xml_ts
+    
+    @classmethod
+    def from_xml(self, model, xml):
+        name = xml.get('name')
+        properties = {}
+        for child in xml.getchildren():
+            properties[child.tag.lower()] = child.text
+        if properties['type'] == 'pandas':
+            # TODO: additional data formats (e.g. XLS/XLSX and SQLite)
+            # TODO: better handling of british/american dates (currently assumes british)
+            df = pandas.read_csv(properties['path'], index_col=0, parse_dates=True, dayfirst=True)
+            df = df[properties['column']]
+            ts = Timeseries(name, df, metadata=properties)
+            model.data[name] = ts
+        else:
+            raise NotImplementedError()
+        return ts
 
 class Variable(object):
     def __init__(self, initial=0.0):

@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 import pywr.core
 import pywr.licenses
 
+import pytest
 from helpers import load_model
 
 def test_simple1():
@@ -200,11 +201,44 @@ def test_xml_group():
     assert(model.group[group.name] is group)
     assert(isinstance(group.licenses, pywr.licenses.LicenseCollection))
 
-def test_xml_model():
-    model = load_model('river2.xml')
+def test_xml_timeseries():
+    """Test serialisation/deserialisation of Timeseries"""
+    model = pywr.core.Model()
+    metadata = {
+        'type': 'pandas',
+        'path': 'tests/timeseries1.csv',
+        'column': 'Data',
+    }
+    ts = pywr.core.Timeseries('test1', None, metadata)
+    xml = ts.xml('test1')
+    del(ts)
+    ts = pywr.core.Timeseries.from_xml(model, xml)
+    assert(ts.name == 'test1')
+    assert(ts.metadata['path'] == 'tests/timeseries1.csv')
+    assert(ts.df['2015-01-01'] == 23.92)
+
+filenames = [
+    'river_mrf1.xml',
+    'groups1.xml',
+    'timeseries1.xml',
+    #'reservoir1.xml',
+]
+@pytest.mark.parametrize("filename", filenames)
+def test_xml_model(filename):
+    """Basic test if model can be serialised then deserialised"""
+    model1 = load_model(filename)
+    xml = model1.xml()
+    model2 = pywr.core.Model.from_xml(xml)
     
-    xml = model.xml()
-    print(ET.tostring(xml))
-    
-    del(model)
-    model = pywr.core.Model.from_xml(xml)
+    # compare metadata
+    assert(sorted(model1.metadata.items()) == sorted(model2.metadata.items()))
+    # compare nodes
+    assert(sorted([node for node in model1.node]) == sorted([node for node in model2.node]))
+    for node in model2.node.values():
+        assert(isinstance(node, pywr.core.Node))
+    # compare edges
+    assert(sorted([(edge[0].name, edge[1].name) for edge in model1.edges()]) == sorted([(edge[0].name, edge[1].name) for edge in model2.edges()]))
+    # compare groups
+    assert(sorted([group for group in model1.group]) == sorted([group for group in model2.group]))
+    for group in model2.group.values():
+        assert(isinstance(group, pywr.core.Group))
