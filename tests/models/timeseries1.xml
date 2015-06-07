@@ -9,7 +9,7 @@
     <parameters>
         <parameter key="timestamp_start" type="datetime">1970-01-01</parameter>
         <parameter key="timestamp_finish" type="datetime">3027-08-22</parameter>
-        <parameter key="timestep" type="timedelta">1</parameter>
+        <parameter key="timestep" type="timedelta" units="days">1</parameter>
     </parameters>
     <data>
         <timeseries name="riverflow1">

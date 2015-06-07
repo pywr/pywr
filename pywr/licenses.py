@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import calendar
+import xml.etree.ElementTree as ET
 
 inf = float('inf')
 
@@ -43,6 +44,12 @@ class DailyLicense(License):
         return self._amount # assumes daily timestep
     def resource_state(self, index):
         return None
+    
+    def xml(self):
+        xml = ET.Element('license')
+        xml.set('type', 'daily')
+        xml.text = str(self._amount)
+        return xml
 
 class AnnualLicense(License):
     '''Annual license'''
@@ -64,6 +71,12 @@ class AnnualLicense(License):
         self._remaining -= value
     def refresh(self):
         self._remaining = self._amount
+
+    def xml(self):
+        xml = ET.Element('license')
+        xml.set('type', 'annual')
+        xml.text = str(self._amount)
+        return xml
 
 class LicenseCollection(License):
     '''A collection of Licences'''
@@ -96,6 +109,12 @@ class LicenseCollection(License):
     def refresh(self):
         for license in self._licenses:
             license.refresh()
+
+    def xml(self):
+        xml = ET.Element('licensecollection')
+        for license in self._licenses:
+            xml.append(license.xml())
+        return xml
 
     @classmethod
     def from_xml(cls, xml):

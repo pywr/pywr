@@ -136,7 +136,6 @@ class Model(object):
         # TODO: this will need more, e.g. reservoir states, license states
         self.timestamp = self.parameters['timestamp_start']
     
-    @property
     def xml(self):
         """Serialize the Model to XML"""
         raise NotImplementedError('TODO')
@@ -248,6 +247,7 @@ class Parameter(object):
     def from_xml(cls, model, xml):
         # TODO: this doesn't look nice - need to rethink xml specification?
         parameter_types = {
+            'const': ParameterConstant,
             'constant': ParameterConstant,
             'timestamp': ParameterConstant,
             'timedelta': ParameterConstant,
@@ -264,6 +264,37 @@ class ParameterConstant(Parameter):
     
     def value(self, index=None):
         return self._value
+    
+    def xml(self, key):
+        parameter_xml = ET.Element('parameter')
+        parameter_xml.set('key', key)
+        if isinstance(self._value, float):
+            parameter_type = 'const'
+            parameter_xml.text = str(self._value)
+        elif isinstance(self._value, pandas.tslib.Timestamp):
+            parameter_type = 'datetime'
+            parameter_xml.text = str(self._value)
+        elif isinstance(self._value, datetime.timedelta):
+            parameter_type = 'timedelta'
+            # try to represent the timedelta in sensible units
+            total_seconds = self._value.total_seconds()
+            if total_seconds % (60*60*24) == 0:
+                units = 'days'
+                parameter_xml.text = str(int(total_seconds / (60*60*24)))
+            elif total_seconds % (60*60) == 0:
+                units = 'hours'
+                parameter_xml.text = str(int(total_seconds / (60*60)))
+            elif total_seconds % (60) == 0:
+                units = 'minutes'
+                parameter_xml.text = str(int(total_seconds / 60))
+            else:
+                units = 'seconds'
+                parameter_xml.text = str(int(total_seconds))
+            parameter_xml.set('units', units)
+        else:
+            raise TypeError()
+        parameter_xml.set('type', parameter_type)
+        return parameter_xml
 
     @classmethod
     def from_xml(cls, model, xml):
@@ -281,7 +312,15 @@ class ParameterConstant(Parameter):
         elif parameter_type == 'datetime':
             return key, pandas.to_datetime(xml.text)
         elif parameter_type == 'timedelta':
-            return key, datetime.timedelta(float(xml.text))
+            units = xml.get('units')
+            value = float(xml.text)
+            if units is None:
+                units = 'seconds'
+            units = units.lower()
+            if units[-1] != 's':
+                units = units + 's'
+            td = datetime.timedelta(**{units: value})
+            return key, td
         else:
             raise NotImplementedError('Unknown parameter type: {}'.format(parameter_type))
 
@@ -400,18 +439,13 @@ class Node(with_metaclass(NodeMeta)):
         '''
         pass
     
-    @property
     def xml(self):
         xml = ET.fromstring('<{} />'.format(self.__class__.__name__.lower()))
         xml.set('name', self.name)
         xml.set('x', str(self.position[0]))
         xml.set('y', str(self.position[1]))
-        # TODO: delegate this
         for key, prop in self.properties.items():
-            prop_xml = ET.fromstring('<parameter />')
-            prop_xml.set('key', key)
-            prop_xml.set('type', 'const')
-            prop_xml.text = str(prop._value)
+            prop_xml = prop.xml(key)
             xml.append(prop_xml)
         return xml
     
@@ -448,6 +482,12 @@ class Supply(Node):
         super(Supply, self).commit(volume, chain)
         if self.licenses is not None:
             self.licenses.commit(volume)
+
+    def xml(self):
+        xml = super(Supply, self).xml()
+        if self.licenses is not None:
+            xml.append(self.licenses.xml())
+        return xml
 
     @classmethod
     def from_xml(cls, model, xml):
