@@ -603,6 +603,16 @@ class RiverSplit(River):
         else:
             self.properties['split'] = ParameterConstant(value=0.5)
 
+class Discharge(River):
+    def __init__(self, *args, **kwargs):
+        River.__init__(self, *args, **kwargs)
+        
+        flow = kwargs.pop('flow', 0.0)
+        if callable(flow) is not None:
+            self.properties['flow'] = ParameterFunction(self, flow)
+        else:
+            self.properties['flow'] = ParameterConstant(value=flow)
+
 class Terminator(Node):
     pass
 

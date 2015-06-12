@@ -197,6 +197,26 @@ def test_run_mrf():
         result = model.step()
         assert(result[0:3] == ('optimal', 12.0, expected_supply))
 
+def test_run_discharge_upstream():
+    '''Test river with inline discharge (upstream)
+    
+    In this instance the discharge is upstream of the abstraction, and so can
+    be abstracted in the same way as the water from the catchment
+    '''
+    model = load_model('river_discharge1.xml')
+    result = model.step()
+    assert(result[0:3] == ('optimal', 10.0, 8.0))
+
+def test_run_discharge_downstream():
+    '''Test river with inline discharge (downstream)
+    
+    In this instance the discharge is downstream of the abstraction, so the
+    water shouldn't be available.
+    '''
+    model = load_model('river_discharge2.xml')
+    result = model.step()
+    assert(result[0:3] == ('optimal', 10.0, 5.0))
+
 def test_run_blender1():
     '''Test blender constraint/component'''
     model = load_model('blender1.xml')

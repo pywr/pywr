@@ -271,7 +271,10 @@ class SolverGLPK(Solver):
             coefficient = 1.0
             for n, node in enumerate(route):
                 if isinstance(node, Catchment):
-                    # catchments add water
+                    # catchments add water at head of river
+                    flow_constraint += (node.properties['flow'].value(self.timestamp) * coefficient)
+                elif isinstance(node, Discharge):
+                    # discharges add water inline
                     flow_constraint += (node.properties['flow'].value(self.timestamp) * coefficient)
                 elif isinstance(node, RiverSplit):
                     # splits
