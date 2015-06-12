@@ -186,8 +186,7 @@ class SolverGLPK(Solver):
             mrf_value = river_gauge_node.properties['mrf'].value(timestamp)
             row = info['mrf_constraint']
             if mrf_value is None:
-                row.matrix = []
-                row.bounds = 0, inf
+                row.bounds = None, None
                 continue
             river_routes = info['river_routes']
             flow_constraint, abstraction_idxs, abstraction_coefficients = self.upstream_constraint(river_routes)
