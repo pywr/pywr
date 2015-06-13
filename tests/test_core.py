@@ -25,6 +25,19 @@ def test_names():
     assert(model.node['C'] is node1)
     assert('A' not in model.node)
 
+    # attempt name collision (via rename)
+    with pytest.raises(ValueError):
+        node2.name = 'C'
+
+    # attempt name collision (via new)
+    with pytest.raises(ValueError):
+        node3 = Supply(model, name='C')
+    assert(len(model.node) == 2)
+
+    # attempt to create a node without a name
+    with pytest.raises(TypeError):
+        node4 = Supply(model)
+
 def test_slots_to():
     model = Model()
     

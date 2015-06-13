@@ -30,24 +30,21 @@ def make_simple_model(supply_amplitude, demand, frequency,
         t = parent.model.timestamp.timetuple().tm_yday
         return S*np.cos(t*w)+S
     
-    supply = pywr.core.Supply(model, max_flow=supply_func)
-    demand = pywr.core.Demand(model, demand=demand)
-    res = pywr.core.Reservoir(model, )
+    supply = pywr.core.Supply(model, name='supply', max_flow=supply_func)
+    demand = pywr.core.Demand(model, name='demand', demand=demand)
+    res = pywr.core.Reservoir(model, name='reservoir')
     res.properties['max_volume'] = pywr.core.ParameterConstant(1e6)
     res.properties['current_volume'] = pywr.core.Variable(initial_volume)
     
-    supply_res_link = pywr.core.Link(model)    
-    res_demand_link = pywr.core.Link(model)    
+    supply_res_link = pywr.core.Link(model, name='link1')
+    res_demand_link = pywr.core.Link(model, name='link2')
     
     supply.connect(supply_res_link)
     supply_res_link.connect(res)
     res.connect(res_demand_link)
     res_demand_link.connect(demand)
     
-    
     return model
-    
-    
     
 def test_run_analytical():
     """

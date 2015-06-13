@@ -455,7 +455,7 @@ class NodeMeta(type):
 class Node(with_metaclass(NodeMeta)):
     """Base object from which all other nodes inherit"""
     
-    def __init__(self, model, position=None, name=None, **kwargs):
+    def __init__(self, model, name, position=None, **kwargs):
         """Initialise a new Node object
         
         Parameters
@@ -493,10 +493,15 @@ class Node(with_metaclass(NodeMeta)):
     
     @name.setter
     def name(self, name):
+        # check for name collision
+        if name in self.model.node:
+            raise ValueError('A node with the name "{}" already exists.'.format(name))
+        # remove old name
         try:
             del(self.model.node[self.__name])
         except KeyError:
             pass
+        # apply new name
         self.__name = name
         self.model.node[name] = self
     
