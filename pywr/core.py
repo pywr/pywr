@@ -474,6 +474,8 @@ class Node(with_metaclass(NodeMeta)):
         self.__name = None
         self.name = name
         
+        self.slots = {}
+        
         self.properties = {
             'cost': ParameterConstant(value=0.0)
         }
@@ -512,11 +514,21 @@ class Node(with_metaclass(NodeMeta)):
         """
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
-        self.model.graph.add_edge(self, node)
+        
+        # check slots are valid
+        if from_slot is not None:
+            if from_slot not in self.slots:
+                raise ValueError('{} does not have slot: {}'.format(self.__class__.__name__, from_slot))
+        if to_slot is not None:
+            if to_slot not in node.slots:
+                raise ValueError('{} does not have slot: {}'.format(node.__class__.__name__, to_slot))
+
+        # create edge and connect slots
         if from_slot is not None:
             self.slots[from_slot] = node
         if to_slot is not None:
             node.slots[to_slot] = self
+        self.model.graph.add_edge(self, node)
     
     def disconnect(self, node=None):
         """Remove a connection from this Node to another Node
@@ -528,11 +540,21 @@ class Node(with_metaclass(NodeMeta)):
             specified, all connections from this node will be removed.
         """
         if node is not None:
-            self.model.graph.remove_edge(self, node)
+            self._disconnect(node)
         else:
             neighbors = self.model.graph.neighbors(self)
             for neighbor in neighbors:
-                self.model.graph.remove_edge(self, neighbor)
+                self._disconnect(neighbor)
+
+    def _disconnect(self, node):
+        """As disconnect, except node argument is required"""
+        self.model.graph.remove_edge(self, node)
+        for slot, slot_node in node.slots.items():
+            if slot_node is self:
+                node.slots[slot] = None
+        for slot, slot_node in self.slots.items():
+            if slot_node is node:
+                self.slots[slot] = None
     
     def check(self):
         """Check the node is valid
