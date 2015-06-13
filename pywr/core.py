@@ -477,7 +477,7 @@ class Node(with_metaclass(NodeMeta)):
         self.slots = {}
         
         self.properties = {
-            'cost': ParameterConstant(value=0.0)
+            'cost': self.pop_kwarg_parameter(kwargs, 'cost', 0.0)
         }
     
     def __repr__(self):
@@ -582,6 +582,28 @@ class Node(with_metaclass(NodeMeta)):
         """
         pass
     
+    def pop_kwarg_parameter(self, kwargs, key, default):
+        """Pop a parameter from the keyword arguments dictionary
+        
+        Parameters
+        ----------
+        kwargs : dict
+            A keyword arguments dictionary
+        key : string
+            The argument name, e.g. 'flow'
+        default : object
+            The default value to use if the dictionary does not have that key
+        
+        Returns a Parameter
+        """
+        value = kwargs.pop(key, default)
+        if isinstance(value, Parameter):
+            return value
+        elif callable(value):
+            return ParameterFunction(self, value)
+        else:
+            return ParameterConstant(value=value)
+    
     def xml(self):
         """Serialize the node to an XML object
         
@@ -647,11 +669,7 @@ class Supply(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#F26C4F' # light red
         
-        max_flow = kwargs.pop('max_flow', 0.0)
-        if callable(max_flow):
-            self.properties['max_flow'] = ParameterFunction(self, max_flow)
-        else:
-            self.properties['max_flow'] = ParameterConstant(value=max_flow)
+        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', 0.0)
         
         self.licenses = None
     
@@ -687,7 +705,7 @@ class Demand(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#FFF467' # light yellow
         
-        self.properties['demand'] = ParameterConstant(value=kwargs.pop('demand',10.0))
+        self.properties['demand'] = self.pop_kwarg_parameter(kwargs, 'demand', 0.0)
 
 class Link(Node):
     """A link in the supply network, such as a pipe
@@ -708,12 +726,7 @@ class Link(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#A0A0A0' # 45% grey
         
-        if 'max_flow' in kwargs:
-            max_flow = kwargs.pop('max_flow', 0.0)
-            if callable(max_flow):
-                self.properties['max_flow'] = ParameterFunction(self, max_flow)
-            else:
-                self.properties['max_flow'] = ParameterConstant(value=max_flow)
+        self.pop_kwarg_parameter(kwargs, 'max_flow', None)
 
 class Blender(Link):
     """Blender node to maintain a constant ratio between two supply routes"""
@@ -729,10 +742,7 @@ class Blender(Link):
         Link.__init__(self, *args, **kwargs)
         self.slots = {1: None, 2: None}
 
-        if 'ratio' in kwargs:
-            self.properties['ratio'] = ParameterConstant(value=kwargs['ratio'])
-        else:
-            self.properties['ratio'] = ParameterConstant(value=0.5)
+        self.properties['ratio'] = self.pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
 class Catchment(Node):
     """A hydrological catchment, supplying water to the river network"""
@@ -747,11 +757,7 @@ class Catchment(Node):
         Node.__init__(self, *args, **kwargs)
         self.color = '#82CA9D' # green
         
-        flow = kwargs.pop('flow', 2.0)
-        if callable(flow):
-            self.properties['flow'] = ParameterFunction(self, flow)
-        else:
-            self.properties['flow'] = ParameterConstant(value=flow)        
+        self.properties['flow'] = self.pop_kwarg_parameter(kwargs, 'flow', 0.0)
     
     def check(self):
         Node.check(self)
@@ -784,10 +790,7 @@ class RiverSplit(River):
         River.__init__(self, *args, **kwargs)
         self.slots = {1: None, 2: None}
         
-        if 'split' in kwargs:
-            self.properties['split'] = ParameterConstant(value=kwargs['split'])
-        else:
-            self.properties['split'] = ParameterConstant(value=0.5)
+        self.properties['split'] = self.pop_kwarg_parameter(kwargs, 'split', 0.5)
 
 class Discharge(River):
     """An inline discharge to the river network
@@ -798,11 +801,7 @@ class Discharge(River):
     def __init__(self, *args, **kwargs):
         River.__init__(self, *args, **kwargs)
         
-        flow = kwargs.pop('flow', 0.0)
-        if callable(flow) is not None:
-            self.properties['flow'] = ParameterFunction(self, flow)
-        else:
-            self.properties['flow'] = ParameterConstant(value=flow)
+        self.properties['flow'] = self.pop_kwarg_parameter(kwargs, 'flow', 0.0)
 
 class Terminator(Node):
     """A sink in the river network
