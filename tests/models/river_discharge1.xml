@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<pywr>
+    <metadata>
+        <title>River Discharge 1</title>
+        <description>
+            A model with a river discharge
+        </description>
+    </metadata>
+    <nodes>
+        <catchment name="catchment1" x="0" y="0">
+            <parameter type="constant" key="flow">5</parameter>
+        </catchment>
+        <discharge name="discharge1" x="1" y="0">
+            <parameter type="constant" key="flow">3</parameter>
+        </discharge>
+        <river name="river1" x="2" y="0" />
+        <riverabstraction name="abs1" x="2" y="0">
+            <parameter type="constant" key="max_flow">15</parameter>
+        </riverabstraction>
+        <link name="link1" x="3" y="1" />
+        <demand name="demand1" x="3" y="1">
+            <parameter type="constant" key="demand">10</parameter>
+        </demand>
+        <terminator name="term1" x="4" y="0" />
+    </nodes>
+    <edges>
+        <edge from="catchment1" to="river1" />
+        <edge from="river1" to="discharge1" />
+        <edge from="discharge1" to="abs1" />
+        <edge from="abs1" to="link1" />
+        <edge from="link1" to="demand1" />
+        <edge from="abs1" to="term1" />
+    </edges>
+</pywr>
