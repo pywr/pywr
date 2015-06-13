@@ -17,10 +17,21 @@ warnings.simplefilter(action = "ignore", category = UnicodeWarning)
 
 from .licenses import LicenseCollection
 
-inf = float('inf')
-
 class Model(object):
+    """Model of a water supply network"""
     def __init__(self, solver=None, parameters=None):
+        """Initialise a new Model instance
+        
+        Parameters
+        ----------
+        solver : string
+            The name of the underlying solver to use. See the `pywr.solvers`
+            package. If no value is given, the default GLPK solver is used.
+        parameters : dict of Parameters
+            A dictionary of parameters to initialise the model with. Parameters
+            can also be added, modified or removed after the Model has been
+            initialised.
+        """
         self.graph = nx.DiGraph()
         self.metadata = {}
         self.parameters = {
@@ -50,18 +61,43 @@ class Model(object):
         self.reset()
     
     def check(self):
+        """Check the validity of the model
+        
+        Raises an Exception if the model is invalid.
+        """
         nodes = self.graph.nodes()
         for node in nodes:
             node.check()
 
     def nodes(self):
+        """Returns a list of Nodes in the model"""
         return self.graph.nodes()
     
     def edges(self):
+        """Returns a list of Edges in the model
+        
+        An edge is described as a 2-tuple of the source and dest Nodes.
+        """
         return self.graph.edges()
     
     def find_all_routes(self, type1, type2, valid=None):
-        '''Find all routes between two nodes or types of node'''
+        """Find all routes between two nodes or types of node
+        
+        Parameters
+        ----------
+        type1 : Node class or instance
+            The source node instance (or class)
+        type2 : Node class or instance
+            The destination  node instance (or class)
+        valid : tuple of Node classes
+            A tuple of Node classes that the route can traverse. For example,
+            a route between a Catchment and Terminator can generally only
+            traverse River nodes.
+        
+        Returns a list of all the routes between the two nodes. A route is
+        specified as a list of all the nodes between the source and
+        destination.
+        """
         
         nodes = self.graph.nodes()
         
@@ -99,27 +135,27 @@ class Model(object):
         return all_routes
     
     def step(self):
-        '''Step the model forward by one day'''
+        """Step the model forward by one day"""
         ret = self.solve()
         self.timestamp += self.parameters['timestep']
         return ret
 
     def solve(self):
-        '''Call solver to solve the current timestep'''
+        """Call solver to solve the current timestep"""
         return self.solver.solve(self)
     
     def run(self, until_date=None, until_failure=False):
-        '''Run model until exit condition is reached
+        """Run model until exit condition is reached
         
         Parameters
         ----------
-        until_date : datetime
+        until_date : datetime (optional)
             Stop model when date is reached
-        until_failure: bool
+        until_failure: bool (optional)
             Stop model run when failure condition occurs
         
         Returns the number of timesteps that were run.
-        '''
+        """
         if self.timestamp > self.parameters['timestamp_finish']:
             return
         timesteps = 0
@@ -135,7 +171,7 @@ class Model(object):
                 return timesteps
     
     def reset(self):
-        '''Reset model to it's initial conditions'''
+        """Reset model to it's initial conditions"""
         # TODO: this will need more, e.g. reservoir states, license states
         self.timestamp = self.parameters['timestamp_start']
     
@@ -240,6 +276,7 @@ class Model(object):
         return model
 
 class SolverMeta(type):
+    """Solver metaclass used to keep a registry of Solver classes"""
     solvers = {}
     def __new__(cls, clsname, bases, attrs):
         newclass = super(SolverMeta, cls).__new__(cls, clsname, bases, attrs)
@@ -247,7 +284,7 @@ class SolverMeta(type):
         return newclass
 
 class Solver(with_metaclass(SolverMeta)):
-    '''Solver base class from which all solvers should inherit'''
+    """Solver base class from which all solvers should inherit"""
     name = 'default'
     def solve(self, model):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
@@ -408,6 +445,7 @@ class Variable(object):
 # node subclasses are stored in a dict for convenience
 node_registry = {}
 class NodeMeta(type):
+    """Node metaclass used to keep a registry of Node classes"""
     def __new__(meta, name, bases, dct):
         return super(NodeMeta, meta).__new__(meta, name, bases, dct)
     def __init__(cls, name, bases, dct):
@@ -415,9 +453,20 @@ class NodeMeta(type):
         node_registry[name.lower()] = cls
 
 class Node(with_metaclass(NodeMeta)):
-    '''Base object from which all other nodes inherit'''
+    """Base object from which all other nodes inherit"""
     
     def __init__(self, model, position=None, name=None, **kwargs):
+        """Initialise a new Node object
+        
+        Parameters
+        ----------
+        model : Model
+            The model the node belongs to
+        position : 2-tuple of floats
+            The location of the node in the schematic, e.g. (3.0, 4.5)
+        name : string
+            A unique name for the node
+        """
         self.model = model
         model.graph.add_node(self)
         self.color = 'black'
@@ -431,6 +480,7 @@ class Node(with_metaclass(NodeMeta)):
     
     def __repr__(self):
         if self.name:
+            # e.g. <Node "oxford">
             return '<{} "{}">'.format(self.__class__.__name__, self.name)
         else:
             return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
@@ -449,7 +499,17 @@ class Node(with_metaclass(NodeMeta)):
         self.model.node[name] = self
     
     def connect(self, node, from_slot=None, to_slot=None):
-        '''Create a connection from this Node to another Node'''
+        """Create an edge from this Node to another Node
+        
+        Parameters
+        ----------
+        node : Node
+            The node to connect to
+        from_slot : object (optional)
+            The outgoing slot on this node to connect to
+        to_slot : object (optional)
+            The incoming slot on the target node to connect to
+        """
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
         self.model.graph.add_edge(self, node)
@@ -459,11 +519,14 @@ class Node(with_metaclass(NodeMeta)):
             node.slots[to_slot] = self
     
     def disconnect(self, node=None):
-        '''Remove a connection from this Node to another Node
+        """Remove a connection from this Node to another Node
         
-        If another Node is not specified, all connections from this Node will
-        be removed.
-        '''
+        Parameters
+        ----------
+        node : Node (optional)
+            The node to remove the connection to. If another node is not
+            specified, all connections from this node will be removed.
+        """
         if node is not None:
             self.model.graph.remove_edge(self, node)
         else:
@@ -472,19 +535,40 @@ class Node(with_metaclass(NodeMeta)):
                 self.model.graph.remove_edge(self, neighbor)
     
     def check(self):
+        """Check the node is valid
+        
+        Raises an exception if the node is invalid
+        """
         if not isinstance(self.position, (tuple, list,)):
             raise TypeError('{} position has invalid type ({})'.format(self, type(self.position)))
         if not len(self.position) == 2:
             raise ValueError('{} position has invalid length ({})'.format(self, len(self.position)))
 
     def commit(self, volume, chain):
-        '''Commit a volume of water actually supplied
+        """Commit a volume of water actually supplied/transferred/received
         
-        This should be implemented by the various node classes
-        '''
+        Parameter
+        ---------
+        volume : float
+            The volume to commit
+        chain : string
+            The position in the route of the node for this commit. This must be
+            one of: 'first' (the node supplied water), 'middle' (the node
+            transferred water) or 'last' (the node received water).
+        
+        This should be implemented by the various node subclasses.
+        """
         pass
     
     def xml(self):
+        """Serialize the node to an XML object
+        
+        The tag of the XML node returned is the same as the class name. For the
+        base Node object a <node /> is returned, but this will differ for
+        subclasses, e.g. Supply.xml returns a <supply /> element.
+        
+        Returns an xml.etree.ElementTree.Element object
+        """
         xml = ET.fromstring('<{} />'.format(self.__class__.__name__.lower()))
         xml.set('name', self.name)
         xml.set('x', str(self.position[0]))
@@ -496,6 +580,17 @@ class Node(with_metaclass(NodeMeta)):
     
     @classmethod
     def from_xml(cls, model, xml):
+        """Deserialize a node from an XML object
+        
+        Parameters
+        ----------
+        model : Model
+            The model to add the node to
+        xml : xml.etree.ElementTree.Element
+            The XML element representing the node
+        
+        Returns a Node instance, or an instance of the appropriate subclass.
+        """
         tag = xml.tag.lower()
         node_cls = node_registry[tag]
         name = xml.get('name')
@@ -511,7 +606,22 @@ class Node(with_metaclass(NodeMeta)):
         return node
 
 class Supply(Node):
+    """A supply in the network
+    
+    The base supply node should be sufficient to represent simply supplies
+    which do not interact with other components (e.g. a groundwater source
+    or a bulk supply from another zone/company). For more complex supplies
+    use the appropriate subclass (e.g. RiverAbstraction or Reservoir).
+    """
     def __init__(self, *args, **kwargs):
+        """Initialise a new Supply node
+        
+        Parameters
+        ----------
+        max_flow : float (optional)
+            A simple maximum flow constraint for the supply. For more complex
+            constraints a License instance should be used.
+        """
         Node.__init__(self, *args, **kwargs)
         self.color = '#F26C4F' # light red
         
@@ -543,14 +653,36 @@ class Supply(Node):
         return node
 
 class Demand(Node):
+    """A demand in the network"""
     def __init__(self, *args, **kwargs):
+        """Initialise a new Demand node
+        
+        Parameters
+        ----------
+        demand : float
+            The amount of water to demand each timestep
+        """
         Node.__init__(self, *args, **kwargs)
         self.color = '#FFF467' # light yellow
         
         self.properties['demand'] = ParameterConstant(value=kwargs.pop('demand',10.0))
 
 class Link(Node):
+    """A link in the supply network, such as a pipe
+    
+    Connections between Nodes in the network are created using edges (see the
+    Node.connect and Node.disconnect methods). However, these edges cannot
+    hold constraints (e.g. a maximum flow constraint). In this instance a Link
+    node should be used.
+    """
     def __init__(self, *args, **kwargs):
+        """Initialise a new Link node
+        
+        Parameters
+        ----------
+        max_flow : float or function (optional)
+            A maximum flow constraint on the link, e.g. 5.0
+        """
         Node.__init__(self, *args, **kwargs)
         self.color = '#A0A0A0' # 45% grey
         
@@ -562,7 +694,16 @@ class Link(Node):
                 self.properties['max_flow'] = ParameterConstant(value=max_flow)
 
 class Blender(Link):
+    """Blender node to maintain a constant ratio between two supply routes"""
     def __init__(self, *args, **kwargs):
+        """Initialise a new Blender node
+        
+        Parameters
+        ----------
+        ratio : float (optional)
+            The ratio to constraint the two routes by (0.0-0.1). If no value is
+            given a default value of 0.5 is used.
+        """
         Link.__init__(self, *args, **kwargs)
         self.slots = {1: None, 2: None}
 
@@ -572,7 +713,15 @@ class Blender(Link):
             self.properties['ratio'] = ParameterConstant(value=0.5)
 
 class Catchment(Node):
+    """A hydrological catchment, supplying water to the river network"""
     def __init__(self, *args, **kwargs):
+        """Initialise a new Catchment node
+        
+        Parameters
+        ----------
+        flow : float or function
+            The amount of water supplied by the catchment each timestep
+        """
         Node.__init__(self, *args, **kwargs)
         self.color = '#82CA9D' # green
         
@@ -589,12 +738,27 @@ class Catchment(Node):
             raise ValueError('{} has invalid number of successors ({})'.format(self, len(successors)))
 
 class River(Node):
+    """A node in the river network
+    
+    This node may have multiple upstream nodes (i.e. a confluence) but only
+    one downstream node.
+    """
     def __init__(self, *args, **kwargs):
         Node.__init__(self, *args, **kwargs)
         self.color = '#6ECFF6' # blue
 
 class RiverSplit(River):
+    """A split in the river network"""
     def __init__(self, *args, **kwargs):
+        """Initialise a new RiverSplit instance
+        
+        Parameters
+        ----------
+        split : float or function
+            The ratio to apportion the flow between the two downstream nodes as
+            a ratio (0.0-1.0). If no value is given a default value of 0.5 is
+            used.
+        """
         River.__init__(self, *args, **kwargs)
         self.slots = {1: None, 2: None}
         
@@ -604,6 +768,11 @@ class RiverSplit(River):
             self.properties['split'] = ParameterConstant(value=0.5)
 
 class Discharge(River):
+    """An inline discharge to the river network
+    
+    This node is similar to a catchment, but sits inline to the river network,
+    rather than at the head of the river.
+    """
     def __init__(self, *args, **kwargs):
         River.__init__(self, *args, **kwargs)
         
@@ -614,15 +783,22 @@ class Discharge(River):
             self.properties['flow'] = ParameterConstant(value=flow)
 
 class Terminator(Node):
+    """A sink in the river network
+    
+    This node is required to close the network and is used by some of the
+    routing algorithms. Every river must end in a Terminator.
+    """
     pass
 
 class RiverGauge(River):
     pass
 
 class RiverAbstraction(Supply, River):
+    """An abstraction from the river network"""
     pass
 
 class Reservoir(Supply, Demand):
+    """A reservoir"""
     def __init__(self, *args, **kwargs):
         super(Reservoir, self).__init__(*args, **kwargs)
         
@@ -654,6 +830,11 @@ class Reservoir(Supply, Demand):
         assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))
 
 class Group(object):
+    """A group of nodes
+    
+    This class is useful for applying a license constraint (or set of
+    constraints) to a group of Supply nodes.
+    """
     def __init__(self, model, name, nodes=None):
         self.model = model
         if nodes is None:
