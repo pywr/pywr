@@ -24,6 +24,7 @@ def test_run_simple1():
     
     # check results
     assert(result[0:3][0:3] == ('optimal', 10.0, 10.0))
+    assert(not model.failure)
     
     # check the timestamp incremented
     assert(model.timestamp - t0 == datetime.timedelta(1))
@@ -38,6 +39,7 @@ def test_run_reservoir1():
     for delivered in [10.0, 10.0, 10.0, 5.0, 0.0]:
         result = model.step()
         assert(result[0:3] == ('optimal', 10.0, delivered))
+    assert(model.failure)
 
 def test_run_reservoir2():
     '''Test a reservoir fed by a river abstraction
@@ -50,6 +52,7 @@ def test_run_reservoir2():
     for demand, supply in [(10.0, 10.0), (20.0, 14.0), (26.0, 14.0), (32.0, 14.0), (38.0, 11.0), (41.0, 8.0), (41.0, 8.0)]:
         result = model.step()
         assert(result[0:3] == ('optimal', demand, supply))
+    assert(model.failure)
 
 def test_run_river1():
     '''Test a river abstraction with a simple catchment'''
@@ -57,6 +60,7 @@ def test_run_river1():
     
     result = model.step()
     assert(result[0:3] == ('optimal', 10.0, 5.0))
+    assert(model.failure)
 
 def test_run_river2():
     '''Test a river abstraction with two catchments, a confluence and a split'''
@@ -64,6 +68,7 @@ def test_run_river2():
     
     result = model.step()
     assert(result[0:3] == ('optimal', 12.0, 9.25))
+    assert(model.failure)
 
 def test_run_timeseries1():
     model = load_model('timeseries1.xml')
@@ -104,11 +109,13 @@ def test_run_cost1():
     assert(result[0:3] == ('optimal', 20.0, 20.0))
     assert(result[3][(supply1, demand1)] == 15.0)
     assert(result[3][(supply2, demand1)] == 5.0)
+    assert(not model.failure)
     
     # supply as much as possible, even if it isn't enough
     demand1.properties['demand'] = pywr.core.ParameterConstant(40.0)
     result = model.step()
     assert(result[0:3] == ('optimal', 40.0, 30.0))
+    assert(model.failure)
 
 def test_run_license1():
     model = load_model('simple1.xml')
@@ -283,6 +290,7 @@ def test_run_until_failure():
         return timestamp.day
     demand1.properties['demand'] = pywr.core.ParameterFunction(demand1, demand_func)
     timesteps = model.run(until_failure=True)
+    assert(model.failure)
     assert(timesteps == 16)
 
 def test_run_until_date():

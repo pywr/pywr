@@ -43,6 +43,7 @@ class Model(object):
         if parameters is not None:
             self.parameters.update(parameters)
         self.data = {}
+        self.failure = set()
         self.dirty = True
         
         if solver is not None:
@@ -136,6 +137,9 @@ class Model(object):
     
     def step(self):
         """Step the model forward by one day"""
+        # reset any failures
+        self.failure = set()
+        # solve the current timestep
         ret = self.solve()
         self.timestamp += self.parameters['timestep']
         return ret
@@ -162,8 +166,7 @@ class Model(object):
         while True:
             ret = self.step()
             timesteps += 1
-            # TODO: more complex assessment of "failure"
-            if until_failure is True and ret[1] != ret[2]:
+            if until_failure is True and self.failure:
                 return timesteps
             elif until_date and self.timestamp > until_date:
                 return timesteps
@@ -571,6 +574,11 @@ class Node(with_metaclass(NodeMeta)):
         if not len(self.position) == 2:
             raise ValueError('{} position has invalid length ({})'.format(self, len(self.position)))
 
+    def before(self):
+        """Called before the current timestep begins
+        """
+        pass
+
     def commit(self, volume, chain):
         """Commit a volume of water actually supplied/transferred/received
         
@@ -584,6 +592,11 @@ class Node(with_metaclass(NodeMeta)):
             transferred water) or 'last' (the node received water).
         
         This should be implemented by the various node subclasses.
+        """
+        pass
+
+    def after(self):
+        """Called after the current timestep has finished
         """
         pass
     
@@ -711,6 +724,21 @@ class Demand(Node):
         self.color = '#FFF467' # light yellow
         
         self.properties['demand'] = self.pop_kwarg_parameter(kwargs, 'demand', 0.0)
+
+    def before(self):
+        self._supplied = 0.0
+
+    def commit(self, volume, chain):
+        super(Demand, self).commit(volume, chain)
+        if chain == 'last':
+            self._supplied += volume
+
+    def after(self):
+        """Check if the demand has been satisfied this timestep
+        """
+        demanded = self.properties['demand'].value(self.model.timestamp)
+        if self._supplied < demanded:
+            self.model.failure.add((self, 'demand',))
 
 class Link(Node):
     """A link in the supply network, such as a pipe

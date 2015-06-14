@@ -137,6 +137,9 @@ class SolverGLPK(Solver):
 
         timestamp = self.timestamp = model.timestamp
 
+        for node in model.nodes():
+            node.before()
+
         # apply route costs as objective function
         costs = []
         for col_idx, route in enumerate(routes):
@@ -230,6 +233,9 @@ class SolverGLPK(Solver):
             for node in route[1:-1]:
                 node.commit(result[n], chain='middle')
             route[-1].commit(result[n], chain='last')
+
+        for node in model.nodes():
+            node.after()
 
         # calculate the total amount of water transferred via each node/link
         volumes_links = {}
