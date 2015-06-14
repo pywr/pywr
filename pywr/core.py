@@ -845,7 +845,19 @@ class Terminator(Node):
     pass
 
 class RiverGauge(River):
-    pass
+    """A river gauging station, with a minimum residual flow (MRF)
+    """
+    def __init__(self, *args, **kwargs):
+        """Initialise a new RiverGauge instance
+
+        Parameters
+        ----------
+        mrf : float (optional)
+            The minimum residual flow (MRF) at the gauge
+        """
+        River.__init__(self, *args, **kwargs)
+
+        self.properties['mrf'] = self.pop_kwarg_parameter(kwargs, 'mrf', None)
 
 class RiverAbstraction(Supply, River):
     """An abstraction from the river network"""

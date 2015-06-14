@@ -6,7 +6,7 @@ from __future__ import print_function
 import os
 import pytest
 
-from pywr.core import Model, Supply, Demand, Blender, River, RiverSplit
+from pywr.core import *
 
 def test_names():
     '''Test node names'''
@@ -91,3 +91,9 @@ def test_slots_from():
     
     riversplit.disconnect()
     assert(len(model.edges()) == 0)
+
+def test_rivergauge_mrf():
+    # test programmatic creation of a river gauge with an MRF
+    model = Model()
+    node = RiverGauge(model, name='gauge', mrf=42.0)
+    assert(node.properties['mrf'].value(None) == 42.0)
