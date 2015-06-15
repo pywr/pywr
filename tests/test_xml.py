@@ -205,7 +205,7 @@ def test_xml_timeseries():
     """Test serialisation/deserialisation of Timeseries"""
     model = pywr.core.Model()
     metadata = {
-        'type': 'pandas',
+        'type': 'csv',
         'path': 'tests/timeseries1.csv',
         'column': 'Data',
     }
@@ -228,7 +228,7 @@ def test_xml_model(filename):
     """Basic test if model can be serialised then deserialised"""
     model1 = load_model(filename)
     xml = model1.xml()
-    model2 = pywr.core.Model.from_xml(xml)
+    model2 = pywr.core.Model.from_xml(xml, path='tests/models/'+filename)
     
     # compare metadata
     assert(sorted(model1.metadata.items()) == sorted(model2.metadata.items()))

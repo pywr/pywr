@@ -97,3 +97,19 @@ def test_rivergauge_mrf():
     model = Model()
     node = RiverGauge(model, name='gauge', mrf=42.0)
     assert(node.properties['mrf'].value(None) == 42.0)
+
+def test_timeseries_csv():
+    model = Model()
+    ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
+    assert(ts.value(pandas.to_datetime('2015-01-31')) == 21.92)
+
+def test_timeseries_excel():
+    model = Model()
+    ts = Timeseries.read(model, name='ts', path='tests/timeseries1.xlsx', sheet='mydata', column='Data')
+    assert(ts.value(pandas.to_datetime('2015-01-31')) == 21.92)
+
+def test_timeseries_name_collision():
+    model = Model()
+    ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
+    with pytest.raises(ValueError):
+        ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')

@@ -13,8 +13,8 @@
     </parameters>
     <data>
         <timeseries name="riverflow1">
-            <type>pandas</type>
-            <path>tests/timeseries1.csv</path>
+            <type>csv</type>
+            <path>../timeseries1.csv</path>
             <column>Data</column>
         </timeseries>
     </data>

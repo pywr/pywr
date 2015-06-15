@@ -3,6 +3,7 @@
 
 from __future__ import print_function
 
+import os
 import networkx as nx
 import numpy as np
 import inspect
@@ -33,6 +34,7 @@ class Model(object):
             initialised.
         """
         self.graph = nx.DiGraph()
+        self.xml_path = None  # keep track of XML location, for relative paths
         self.metadata = {}
         self.parameters = {
             # default parameter values
@@ -216,7 +218,7 @@ class Model(object):
         return xml_model
     
     @classmethod
-    def from_xml(cls, xml):
+    def from_xml(cls, xml, path=None):
         """Deserialize a Model from XML"""
         xml_solver = xml.find('solver')
         if xml_solver is not None:
@@ -233,6 +235,11 @@ class Model(object):
                 key = xml_metadata_item.tag.lower()
                 value = xml_metadata_item.text.strip()
                 model.metadata[key] = value
+
+        if path:
+            model.xml_path = os.path.abspath(path)
+        else:
+            model.xml_path = None
         
         # parse model parameters
         for xml_parameters in xml.findall('parameters'):
@@ -277,6 +284,12 @@ class Model(object):
                 group = Group.from_xml(model, xml_group)
         
         return model
+
+    def path_rel_to_xml(self, path):
+        if self.xml_path is None:
+            return os.path.abspath(path)
+        else:
+            return os.path.abspath(os.path.join(os.path.dirname(self.xml_path), path))
 
 class SolverMeta(type):
     """Solver metaclass used to keep a registry of Solver classes"""
@@ -410,6 +423,52 @@ class Timeseries(object):
             xml_meta = ET.SubElement(xml_ts, key)
             xml_meta.text = value
         return xml_ts
+
+    @classmethod
+    def read(self, model, **kwargs):
+        name = kwargs['name']
+        if name in model.data:
+            raise ValueError('Timeseries with name "{}" already exists.'.format(name))
+
+        filetype = None
+        if 'type' in kwargs:
+            filetype = kwargs['type']
+        elif 'path' in kwargs:
+            ext = kwargs['path'].split('.')[-1].lower()
+            if ext == 'csv':
+                filetype = 'csv'
+            elif ext in ('xls', 'xlsx', 'xlsm'):
+                filetype = 'excel'
+            else:
+                raise ValueError('Unrecognised timeseries type: {}'.format(ext))
+        # TODO: other filetypes (SQLite? HDF5?)
+        if filetype is None:
+            raise ValueError('Unknown timeseries type.')
+        if filetype == 'csv':
+            path = model.path_rel_to_xml(kwargs['path'])
+            df = pandas.read_csv(
+                path,
+                index_col=0,
+                parse_dates=True,
+                dayfirst=True,
+            )
+        elif filetype == 'excel':
+            path = model.path_rel_to_xml(kwargs['path'])
+            sheet = kwargs['sheet']
+            df = pandas.read_excel(
+                path,
+                sheet,
+                index_col=0,
+                parse_dates=True,
+                dayfirst=True,
+            )
+
+        df = df[kwargs['column']]
+        # create a new timeseries object
+        ts = Timeseries(name, df, metadata=kwargs)
+        # register the timeseries in the model
+        model.data[name] = ts
+        return ts
     
     @classmethod
     def from_xml(self, model, xml):
@@ -417,15 +476,14 @@ class Timeseries(object):
         properties = {}
         for child in xml.getchildren():
             properties[child.tag.lower()] = child.text
-        if properties['type'] == 'pandas':
-            # TODO: additional data formats (e.g. XLS/XLSX and SQLite)
-            # TODO: better handling of british/american dates (currently assumes british)
-            df = pandas.read_csv(properties['path'], index_col=0, parse_dates=True, dayfirst=True)
-            df = df[properties['column']]
-            ts = Timeseries(name, df, metadata=properties)
-            model.data[name] = ts
-        else:
-            raise NotImplementedError()
+        properties['name'] = name
+
+        if 'dayfirst' not in properties:
+            # default to british dates
+            properties['dayfirst'] = True
+
+        ts = self.read(model, **properties)
+
         return ts
 
 class Variable(object):
