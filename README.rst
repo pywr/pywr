@@ -4,7 +4,7 @@ Pywr
 
 Pywr is a conjunctive use water resource model written in Python. It aims to be fast, free, and extendable.
 
-.. image:: https://api.travis-ci.org/snorfalorpagus/pywr.png?branch=master
+.. image:: https://travis-ci.org/snorfalorpagus/pywr.svg?branch=master
    :target: https://travis-ci.org/snorfalorpagus/pywr
 
 Overview
