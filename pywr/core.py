@@ -532,9 +532,12 @@ class Node(with_metaclass(NodeMeta)):
         model.graph.add_node(self)
         self.color = 'black'
         self.position = position
-        self.__name = None
-        self.name = name
-        
+
+        if not hasattr(self, 'name'):
+            # set name, avoiding issues with multiple inheritance
+            self.__name = None
+            self.name = name
+
         self.slots = {}
         
         self.properties = {
@@ -783,6 +786,8 @@ class Demand(Node):
         
         self.properties['demand'] = self.pop_kwarg_parameter(kwargs, 'demand', 0.0)
 
+        self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 1000.0)
+
     def before(self):
         self._supplied = 0.0
 
@@ -924,7 +929,9 @@ class RiverAbstraction(Supply, River):
 class Reservoir(Supply, Demand):
     """A reservoir"""
     def __init__(self, *args, **kwargs):
-        super(Reservoir, self).__init__(*args, **kwargs)
+        #super(Reservoir, self).__init__(*args, **kwargs)
+        Supply.__init__(self, *args, **kwargs)
+        Demand.__init__(self, *args, **kwargs)
         
         # reservoir cannot supply more than it's current volume
         def func(parent, index):

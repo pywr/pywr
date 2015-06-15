@@ -34,6 +34,7 @@ class SolverGLPK(Solver):
             supply_nodes = self.supply_nodes = {}
             demand_nodes = self.demand_nodes = {}
             intermediate_max_flow_constraints = self.intermediate_max_flow_constraints = {}
+            # TODO: this assumes routes are the first variables added
             lp.cols.add(len(routes))
             for col_idx, route in enumerate(routes):
                 col = lp.cols[col_idx]
@@ -74,11 +75,19 @@ class SolverGLPK(Solver):
                     info['river_routes'] = river_routes = model.find_all_routes(Catchment, supply_node)
 
             for demand_node, info in demand_nodes.items():
+                # add a column for each demand
+                col_idx = lp.cols.add(1)
+                col = lp.cols[col_idx]
+                info['demand_col'] = col
+                # mass balance between supply and demand
                 row_idx = lp.rows.add(1)
                 row = lp.rows[row_idx]
-                info['demand_constraint'] = row
-                info['matrix'] = [(idx, 1.0) for idx in info['col_idxs']]
-            
+                row.bounds = 0, 0
+                supply_matrix = [(idx, 1.0) for idx in info['col_idxs']]
+                demand_matrix = [(col_idx, -1.0)]
+                row.matrix = supply_matrix + demand_matrix
+                info['demand_row'] = row
+
             # add mrf constraint rows
             for river_gauge_node, info in river_gauge_nodes.items():
                 row_idx = lp.rows.add(1)
@@ -140,16 +149,19 @@ class SolverGLPK(Solver):
         for node in model.nodes():
             node.before()
 
-        # apply route costs as objective function
+        # the cost of a route is equal to the sum of the route's node's costs
         costs = []
         for col_idx, route in enumerate(routes):
             cost = 0.0
-            for node in route:
+            for node in route[0:-1]:
                 cost += node.properties['cost'].value(timestamp)
-            costs.append(cost)
-        max_cost = max(costs)
-        for col_idx, cost in enumerate(costs):
-            lp.obj[col_idx] = 1 + max_cost - cost
+            lp.obj[col_idx] = -cost
+
+        # there is a benefit for supplying water to demands
+        for demand_node, info in demand_nodes.items():
+            col = info['demand_col']
+            cost = demand_node.properties['benefit'].value(timestamp)
+            lp.obj[col.index] = cost
 
         # supply is limited by a maximum flow, and any licenses
         for supply_node, info in supply_nodes.items():
@@ -165,10 +177,10 @@ class SolverGLPK(Solver):
         # demands require water, but can only accept a certain amount
         total_water_demanded = 0.0
         for demand_node, info in demand_nodes.items():
-            row = info['demand_constraint']
+            # update demand for the current timestep
+            col = info['demand_col']
             demand_value = demand_node.properties['demand'].value(timestamp)
-            row.matrix = info['matrix']
-            row.bounds = 0, demand_value
+            col.bounds = 0, demand_value
             total_water_demanded += demand_value
 
         # intermediate node max flow constraints
@@ -224,7 +236,7 @@ class SolverGLPK(Solver):
         status = 'optimal'
 
         # retrieve the results
-        result = [round(value.primal, 3) for value in lp.cols]
+        result = [round(value.primal, 3) for value in lp.cols[0:len(routes)]]
         total_water_supplied = sum(result)
 
         # commit the volume of water actually supplied
