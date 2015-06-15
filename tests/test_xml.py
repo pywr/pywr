@@ -166,7 +166,7 @@ def test_xml_node_supply_with_license():
     licenses = licensecollection_xml.getchildren()
     assert(len(licenses) == 1)
     license = licenses[0]
-    assert(license.get('type') == 'daily')
+    assert(license.get('type') == 'timestep')
     assert(float(license.text) == 42.0)
     
     # and back again
@@ -177,7 +177,7 @@ def test_xml_node_supply_with_license():
     assert(isinstance(node.licenses, pywr.licenses.LicenseCollection))
     assert(len(node.licenses) == 1)
     license = list(node.licenses._licenses)[0]
-    assert(isinstance(license, pywr.licenses.DailyLicense))
+    assert(isinstance(license, pywr.licenses.TimestepLicense))
     assert(license._amount == 42.0)
 
 def test_xml_group():

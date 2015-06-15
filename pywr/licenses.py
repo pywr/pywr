@@ -6,11 +6,11 @@ import xml.etree.ElementTree as ET
 inf = float('inf')
 
 class License(object):
-    '''Base license class from which others inherit
+    """Base license class from which others inherit
     
     This class should not be instantiated directly. Instead, use one of the
     subclasses (e.g. DailyLicense).
-    '''
+    """
     def __new__(cls, *args, **kwargs):
         if cls is License:
             raise TypeError('License cannot be instantiated directly')
@@ -31,33 +31,68 @@ class License(object):
         amount = float(xml.text)
         lic_types = {
             'annual': AnnualLicense,
-            'daily': DailyLicense,
+            'daily': TimestepLicense,
+            'timestep': TimestepLicense,
         }
         lic = lic_types[lic_type](amount)
         return lic
 
-class DailyLicense(License):
-    '''Daily license'''
+class TimestepLicense(License):
+    """License limiting volume for a single timestep
+
+    This is the simplest kind of license. The volume available each timestep
+    is a fixed value. There is no resource state, as use today does not
+    impact availability tomorrow.
+    """
     def __init__(self, amount):
+        """Initialise a new TimestepLicense
+
+        Parameters
+        ----------
+        amount : float
+            The maximum volume available in each timestep
+        """
         self._amount = amount
     def available(self, index):
-        return self._amount # assumes daily timestep
+        return self._amount
     def resource_state(self, index):
         return None
     
     def xml(self):
         xml = ET.Element('license')
-        xml.set('type', 'daily')
+        xml.set('type', 'timestep')
         xml.text = str(self._amount)
         return xml
 
-class AnnualLicense(License):
-    '''Annual license'''
+# for now, assume a daily timestep
+# in the future this will need to be more clever
+class DailyLicense(TimestepLicense):
+    pass
+
+class StorageLicense(License):
     def __init__(self, amount):
+        """A license with a volume to be spent over multiple timesteps
+
+        This class should not be instantiated directly. Instead, use one of the
+        subclasses such as AnnualLicense.
+
+        Parameters
+        ----------
+        amount : float
+            The volume of water available in each period
+        """
+        super(StorageLicense, self).__init__()
         self._amount = amount
         self.refresh()
     def available(self, index):
         return self._remaining
+    def commit(self, value):
+        self._remaining -= value
+    def refresh(self):
+        self._remaining = self._amount
+
+class AnnualLicense(StorageLicense):
+    """An annual license"""
     def resource_state(self, index):
         timetuple = index.timetuple()
         day_of_year = timetuple.tm_yday
@@ -67,10 +102,6 @@ class AnnualLicense(License):
         else:
             expected_remaining = self._amount - ((day_of_year-1) * self._amount / days_in_year)
             return self._remaining / expected_remaining
-    def commit(self, value):
-        self._remaining -= value
-    def refresh(self):
-        self._remaining = self._amount
 
     def xml(self):
         xml = ET.Element('license')
@@ -79,7 +110,13 @@ class AnnualLicense(License):
         return xml
 
 class LicenseCollection(License):
-    '''A collection of Licences'''
+    """A collection of Licences
+
+    This object behaves like a set. Licenses can be added to or removed from it.
+    The amount of water available in the current timestep is the minimum
+    amount available from the child licenses. Similarly, the resource state is
+    the minimum of the resource states of the child licenses.
+    """
     def __init__(self, licenses=None):
         if licenses is None:
             self._licenses = []
@@ -93,7 +130,7 @@ class LicenseCollection(License):
     def __len__(self):
         return len(self._licenses)
     def available(self, index):
-        min_available = float('inf')
+        min_available = inf
         for license in self._licenses:
             min_available = min(license.available(index), min_available)
         return min_available

@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime
 
-from pywr.licenses import License, DailyLicense, AnnualLicense, LicenseCollection
+from pywr.licenses import License, TimestepLicense, AnnualLicense, LicenseCollection
 
 def test_base_license():
     with pytest.raises(TypeError):
@@ -12,7 +12,7 @@ def test_base_license():
 def test_daily_license():
     '''Test daily licence'''
     
-    lic = DailyLicense(42.0)
+    lic = TimestepLicense(42.0)
     assert(isinstance(lic, License))
     assert(lic.available(datetime(2015, 1, 1)) == 42.0)
     
@@ -46,7 +46,7 @@ def test_annual_license():
 
 def test_license_collection():
     '''Test license collection'''
-    daily_lic = DailyLicense(42.0)
+    daily_lic = TimestepLicense(42.0)
     annual_lic = AnnualLicense(365.0)
     collection = LicenseCollection([daily_lic, annual_lic])
 
