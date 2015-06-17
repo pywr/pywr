@@ -530,6 +530,8 @@ class Node(with_metaclass(NodeMeta)):
         """
         self.model = model
         model.graph.add_node(self)
+        model.dirty = True
+
         self.color = 'black'
         self.position = position
 
@@ -598,6 +600,7 @@ class Node(with_metaclass(NodeMeta)):
         if to_slot is not None:
             node.slots[to_slot] = self
         self.model.graph.add_edge(self, node)
+        self.model.dirty = True
     
     def disconnect(self, node=None):
         """Remove a connection from this Node to another Node
@@ -624,6 +627,7 @@ class Node(with_metaclass(NodeMeta)):
         for slot, slot_node in self.slots.items():
             if slot_node is node:
                 self.slots[slot] = None
+        self.model.dirty = True
     
     def check(self):
         """Check the node is valid

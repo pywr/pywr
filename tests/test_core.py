@@ -113,3 +113,38 @@ def test_timeseries_name_collision():
     ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
     with pytest.raises(ValueError):
         ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
+
+def test_dirty_model():
+    """Test that the LP is updated when the model structure is redefined"""
+    # start dirty
+    model = Model()
+    assert(model.dirty)
+
+    # add some nodes, still dirty
+    supply1 = Supply(model, 'supply1')
+    demand1 = Demand(model, 'demand1')
+    supply1.connect(demand1)
+    assert(model.dirty)
+
+    # run the model, clean
+    result = model.step()
+    assert(not model.dirty)
+
+    # add a new node, dirty
+    supply2 = Supply(model, 'supply2')
+
+    # run the model, clean
+    result = model.step()
+    assert(not model.dirty)
+
+    # add a new connection, dirty
+    supply2.connect(demand1)
+    assert(model.dirty)
+
+    # run the model, clean
+    result = model.step()
+    assert(not model.dirty)
+
+    # remove a connection, dirty
+    supply2.disconnect()
+    assert(model.dirty)
