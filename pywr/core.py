@@ -177,8 +177,9 @@ class Model(object):
     
     def reset(self):
         """Reset model to it's initial conditions"""
-        # TODO: this will need more, e.g. reservoir states, license states
         self.timestamp = self.parameters['timestamp_start']
+        for node in self.nodes():
+            node.reset()
     
     def xml(self):
         """Serialize the Model to XML"""
@@ -494,6 +495,9 @@ class Variable(object):
     def value(self, index=None):
         return self._value
 
+    def reset(self):
+        self._value = self._initial
+
     @classmethod
     def from_xml(cls, model, xml):
         key = xml.get('key')
@@ -639,6 +643,14 @@ class Node(with_metaclass(NodeMeta)):
         if not len(self.position) == 2:
             raise ValueError('{} position has invalid length ({})'.format(self, len(self.position)))
 
+    def reset(self):
+        # reset variables
+        for key, parameter in self.properties.items():
+            try:
+                parameter.reset()
+            except AttributeError:
+                pass
+
     def before(self):
         """Called before the current timestep begins
         """
@@ -760,6 +772,11 @@ class Supply(Node):
         super(Supply, self).commit(volume, chain)
         if self.licenses is not None:
             self.licenses.commit(volume)
+
+    def reset(self):
+        Node.reset(self)
+        if self.licenses:
+            self.licenses.refresh()
 
     def xml(self):
         xml = super(Supply, self).xml()

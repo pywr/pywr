@@ -293,6 +293,18 @@ def test_run_demand_discharge():
     result = model.step()
     assert(not model.failure)
 
+def test_reset():
+    """Test model reset"""
+    model = load_model('license1.xml')
+    supply1 = model.node['supply1']
+    license_collection = supply1.licenses
+    license = [lic for lic in license_collection._licenses if isinstance(lic, pywr.licenses.AnnualLicense)][0]
+    assert(license.available(None) == 7.0)
+    model.step()
+    assert(license.available(None) == 2.0)
+    model.reset()
+    assert(license.available(None) == 7.0)
+
 def test_run():
     model = load_model('simple1.xml')
     
