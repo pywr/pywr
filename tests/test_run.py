@@ -259,6 +259,40 @@ def test_run_blender2():
     assert(result[3][(supply1, blender)] == 3.0)
     assert(result[3][(supply2, blender)] == 7.0)
 
+def test_run_demand_discharge():
+    """Test demand discharge node"""
+    model = pywr.core.Model()
+    catchment = pywr.core.Catchment(model, 'catchment', flow=10.0)
+    abstraction1 = pywr.core.RiverAbstraction(model, 'abstraction1', max_flow=100)
+    demand1 = pywr.core.Demand(model, 'demand1', demand=8.0)
+    discharge = pywr.core.DemandDischarge(model, 'discharge')
+    abstraction2 = pywr.core.RiverAbstraction(model, 'abstraction2', max_flow=100)
+    demand2 = pywr.core.Demand(model, 'demand2', demand=5.0)
+    term = pywr.core.Terminator(model, 'term')
+    catchment.connect(abstraction1)
+    abstraction1.connect(demand1)
+    abstraction1.connect(discharge)
+    demand1.connect(discharge)
+    discharge.connect(abstraction2)
+    abstraction2.connect(demand2)
+    abstraction2.connect(term)
+    
+    # when consumption is 100% there is not enough water
+    # 8 + 5 > 10
+    demand1.properties['consumption'] = pywr.core.ParameterConstant(1.0)
+    result = model.step()
+    assert(model.failure)
+
+    # when demand #1 consumes 90% of it's supply there still isn't enough
+    demand1.properties['consumption'] = pywr.core.ParameterConstant(0.9)
+    result = model.step()
+    assert(model.failure)
+
+    # when demand #1 only consumes 50% of it's supply there is enough for all
+    demand1.properties['consumption'] = pywr.core.ParameterConstant(0.5)
+    result = model.step()
+    assert(not model.failure)
+
 def test_run():
     model = load_model('simple1.xml')
     

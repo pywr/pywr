@@ -780,6 +780,12 @@ class Demand(Node):
         ----------
         demand : float
             The amount of water to demand each timestep
+        consumption : float
+            The proportion of water received that is consumed. The remaining
+            water can be discharged back into the river system using a
+            DemandDischarge node. e.g. a value of 0.7 means 70% of the water is
+            consumed and the remaining 30% can be discharged. The default is
+            that 100% of the water is consumed.
         """
         Node.__init__(self, *args, **kwargs)
         self.color = '#FFF467' # light yellow
@@ -787,6 +793,8 @@ class Demand(Node):
         self.properties['demand'] = self.pop_kwarg_parameter(kwargs, 'demand', 0.0)
 
         self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 1000.0)
+
+        self.properties['consumption'] = self.pop_kwarg_parameter(kwargs, 'consumption', 1.0)
 
     def before(self):
         self._supplied = 0.0
@@ -898,6 +906,11 @@ class Discharge(River):
         River.__init__(self, *args, **kwargs)
         
         self.properties['flow'] = self.pop_kwarg_parameter(kwargs, 'flow', 0.0)
+
+class DemandDischarge(River):
+    """River discharge for demands that aren't entirely consumptive
+    """
+    pass
 
 class Terminator(Node):
     """A sink in the river network

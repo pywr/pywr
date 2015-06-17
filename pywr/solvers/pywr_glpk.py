@@ -30,6 +30,18 @@ class SolverGLPK(Solver):
             for route in mrf_routes:
                 river_gauge_nodes[route[-1]]['river_routes'].append(route)
 
+            # find all demand discharge nodes, and their parent demand
+            demand_discharge_nodes = self.demand_discharge_nodes = {}
+            for node in model.nodes():
+                if isinstance(node, DemandDischarge):
+                    demand_node = None
+                    for predecessor in model.graph.predecessors(node):
+                        if isinstance(predecessor, Demand):
+                            demand_node = predecessor
+                            break
+                    assert(demand_node)
+                    demand_discharge_nodes[node] = {'demand_node': demand_node}
+
             # each route between a supply and demand is represented as a column
             supply_nodes = self.supply_nodes = {}
             demand_nodes = self.demand_nodes = {}
@@ -72,7 +84,7 @@ class SolverGLPK(Solver):
                     row_idx = lp.rows.add(1)
                     row = lp.rows[row_idx]
                     info['river_constraint'] = row
-                    info['river_routes'] = river_routes = model.find_all_routes(Catchment, supply_node)
+                    info['river_routes'] = river_routes = model.find_all_routes(Catchment, supply_node, (River,))
 
             for demand_node, info in demand_nodes.items():
                 # add a column for each demand
@@ -283,6 +295,7 @@ class SolverGLPK(Solver):
         '''Calculate parameters for river flow constraint'''
         flow_constraint = 0.0
         upstream_abstractions = {}
+        upstream_discharges = {}
         for route in river_routes:
             # traverse the route from abstraction back up to catchments
             route = route[::-1]
@@ -306,11 +319,20 @@ class SolverGLPK(Solver):
                     # abstractions remove water
                     upstream_abstractions.setdefault(node, 1.0)
                     upstream_abstractions[node] *= coefficient
+                elif isinstance(node, DemandDischarge):
+                    # demand discharges add water back
+                    demand_node = self.demand_discharge_nodes[node]['demand_node']
+                    upstream_discharges.setdefault(node, -(1-demand_node.properties['consumption'].value(self.timestamp)))
+                    upstream_discharges[node] *= coefficient
         abstraction_idxs = []
         abstraction_coefficients = []
         for upstream_node, coefficient in upstream_abstractions.items():
             cols = self.supply_nodes[upstream_node]['col_idxs']
             abstraction_idxs.extend(cols)
             abstraction_coefficients.extend([coefficient]*len(cols))
+        for upstream_node, coefficient in upstream_discharges.items():
+            col = self.demand_nodes[self.demand_discharge_nodes[upstream_node]['demand_node']]['demand_col']
+            abstraction_idxs.append(col.index)
+            abstraction_coefficients.append(coefficient)
         
         return flow_constraint, abstraction_idxs, abstraction_coefficients
