@@ -306,7 +306,10 @@ class Solver(with_metaclass(SolverMeta)):
     def solve(self, model):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
 
-class Parameter(object):
+class Property(object):
+    pass
+
+class Parameter(Property):
     def value(self, index=None):
         raise NotImplementedError()
     
@@ -406,7 +409,7 @@ class ParameterFunction(Parameter):
     def from_xml(cls, xml):
         raise NotImplementedError('TODO')
 
-class Timeseries(object):
+class Timeseries(Property):
     def __init__(self, name, df, metadata=None):
         self.name = name
         self.df = df
@@ -487,7 +490,7 @@ class Timeseries(object):
 
         return ts
 
-class Variable(object):
+class Variable(Property):
     def __init__(self, initial=0.0):
         self._initial = initial
         self._value = initial
@@ -506,6 +509,12 @@ class Variable(object):
         except:
             value = xml.text
         return key, ParameterConstant(value=value)
+
+class PropertiesDict(dict):
+    def __setitem__(self, key, value):
+        if not isinstance(value, Property):
+            value = ParameterConstant(value)
+        dict.__setitem__(self, key, value)
 
 # node subclasses are stored in a dict for convenience
 node_registry = {}
@@ -546,9 +555,9 @@ class Node(with_metaclass(NodeMeta)):
 
         self.slots = {}
         
-        self.properties = {
+        self.properties = PropertiesDict({
             'cost': self.pop_kwarg_parameter(kwargs, 'cost', 0.0)
-        }
+        })
     
     def __repr__(self):
         if self.name:

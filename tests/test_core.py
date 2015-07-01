@@ -148,3 +148,14 @@ def test_dirty_model():
     # remove a connection, dirty
     supply2.disconnect()
     assert(model.dirty)
+
+def test_shorthand_property():
+    # test shorthand assignment of constant properties
+    model = Model()
+    node = Node(model, 'node')
+    node.properties['test'] = 123
+    assert(isinstance(node.properties['test'], ParameterConstant))
+    assert(node.properties['test'].value(None) == 123)
+    # test the long hand version still works
+    node.properties['another_test'] = ParameterConstant(456)
+    assert(node.properties['another_test'].value(None) == 456)
