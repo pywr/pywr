@@ -1,7 +1,7 @@
 
 
 from ..core import *
-
+from collections import defaultdict
 import glpk
 
 inf = float('inf')
@@ -60,6 +60,15 @@ class SolverGLPK(Solver):
                 info['input_constraint'] = row
                 info['matrix'] = [(idx, 1.0) for idx in info['col_idxs']]
 
+            # Find cross-domain routes
+            cross_domain_routes = self.cross_domain_routes = model.find_all_routes(Output, InputFromOtherDomain,
+                                                                                   max_length=2,
+                                                                                   domain_match='different')
+            # translate to a dictionary with the Ouput node as a key
+            output_cross_domain_nodes = self.output_cross_domain_nodes = defaultdict(list)
+            for output_node, input_node in cross_domain_routes:
+                output_cross_domain_nodes[output_node].append(input_node)
+
             for output_node, info in output_nodes.items():
                 # add a column for each output
                 col_idx = lp.cols.add(1)
@@ -73,6 +82,23 @@ class SolverGLPK(Solver):
                 output_matrix = [(col_idx, -1.0)]
                 row.matrix = input_matrix + output_matrix
                 info['output_row'] = row
+
+                # Deal with exports from this output node to other input nodes
+                info['cross_domain_row'] = None
+                cross_domain_nodes = output_cross_domain_nodes[output_node]
+                if len(cross_domain_nodes) > 0:
+                    row_idx = lp.rows.add(1)
+                    row = lp.rows[row_idx]
+                    row.bounds = 0, 0
+                    input_matrix = []
+                    for input_node in cross_domain_nodes:
+                        input_info = input_nodes[input_node]
+                        # TODO Make this vary with timestep
+                        coef = input_node.properties['conversion_factor'].value()
+                        input_matrix.extend([(idx, 1/coef) for idx in input_info['col_idxs']])
+                    output_matrix = [(col_idx, -1.0)]
+                    row.matrix = input_matrix + output_matrix
+                    info['cross_domain_row'] = row
 
             # TODO add min flow requirement
             """
@@ -89,6 +115,7 @@ class SolverGLPK(Solver):
             output_nodes = self.output_nodes
             routes = self.routes
             intermediate_max_flow_constraints = self.intermediate_max_flow_constraints
+            cross_domain_routes = self.cross_domain_routes
             #blenders = self.blenders
             #groups = self.groups
 
@@ -124,18 +151,20 @@ class SolverGLPK(Solver):
             row.bounds = min_flow, max_flow
 
         # outputs require a water between a min and maximium flow
-        total_water_outputed = 0.0
+        total_water_outputed = defaultdict(lambda: 0.0)
         for output_node, info in output_nodes.items():
             # update output for the current timestep
             col = info['output_col']
             max_flow = output_node.properties['max_flow'].value(timestamp)
             min_flow = output_node.properties['min_flow'].value(timestamp)
             col.bounds = min_flow, max_flow
-            total_water_outputed += min_flow
+            total_water_outputed[output_node.domain] += min_flow
 
         # intermediate node max flow constraints
         for node, row in intermediate_max_flow_constraints.items():
             row.bounds = 0, node.properties['max_flow'].value(timestamp)
+
+
 
         # TODO add min flow requirement
         """
@@ -183,7 +212,9 @@ class SolverGLPK(Solver):
 
         # retrieve the results
         result = [round(col.primal, 3) for col, route in routes]
-        total_water_supplied = sum(result)
+        total_water_supplied = defaultdict(lambda: 0.0)
+        for col, route in routes:
+            total_water_supplied[route[-1].domain] += round(col.primal, 3)
 
         # commit the volume of water actually supplied
         for n, (col, route) in enumerate(routes):
@@ -223,4 +254,4 @@ class SolverGLPK(Solver):
             else:
                 del(volumes_nodes[k])
 
-        return status, round(total_water_outputed, 3), round(total_water_supplied, 3), volumes_links, volumes_nodes
+        return status, total_water_outputed, total_water_supplied, volumes_links, volumes_nodes

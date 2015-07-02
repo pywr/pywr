@@ -83,7 +83,7 @@ class Model(object):
         """
         return self.graph.edges()
     
-    def find_all_routes(self, type1, type2, valid=None):
+    def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):
         """Find all routes between two nodes or types of node
         
         Parameters
@@ -96,10 +96,17 @@ class Model(object):
             A tuple of Node classes that the route can traverse. For example,
             a route between a Catchment and Terminator can generally only
             traverse River nodes.
+        max_length : integer
+            Maximum length of the route including start and end nodes.
+        domain_match : string
+            A string to control the behaviour of different domains on the route.
+                'strict' : all nodes must have the same domain as the first node.
+                'any' : any domain is permitted on any node (i.e. nodes can have different domains)
+                'different' : at least two different domains must be present on the route
         
         Returns a list of all the routes between the two nodes. A route is
         specified as a list of all the nodes between the source and
-        destination.
+        destination with the same domain has the source.
         """
         
         nodes = self.graph.nodes()
@@ -128,10 +135,35 @@ class Model(object):
             for node2 in type2_nodes:
                 for route in nx.all_simple_paths(self.graph, node1, node2):
                     is_valid = True
+                    # Check valid intermediate nodes
                     if valid is not None and len(route) > 2:
                         for node in route[1:-1]:
                             if not isinstance(node, valid):
                                 is_valid = False
+                    # Check domains
+                    if domain_match == 'strict':
+                        # Domains must match the first node
+                        for node in route[1:]:
+                            if node.domain != route[0].domain:
+                                is_valid = False
+                    elif domain_match == 'different':
+                        # Ensure at least two different domains are present
+                        domains_found = set()
+                        for node in route:
+                            domains_found.add(node.domain)
+                        if len(domains_found) < 2:
+                            is_valid = False
+                    elif domain_match == 'any':
+                        # No filtering required
+                        pass
+                    else:
+                        raise ValueError("domain_match '{}' not understood.".format(domain_match))
+
+                    # Check length
+                    if max_length is not None:
+                        if len(route) > max_length:
+                            is_valid = False
+
                     if is_valid:
                         all_routes.append(route)
         
@@ -529,7 +561,7 @@ class NodeMeta(type):
 class Node(with_metaclass(NodeMeta)):
     """Base object from which all other nodes inherit"""
     
-    def __init__(self, model, name, position=None, **kwargs):
+    def __init__(self, model, name, domain='default', position=None, **kwargs):
         """Initialise a new Node object
         
         Parameters
@@ -547,6 +579,7 @@ class Node(with_metaclass(NodeMeta)):
 
         self.color = 'black'
         self.position = position
+        self.domain = domain
 
         if not hasattr(self, 'name'):
             # set name, avoiding issues with multiple inheritance
@@ -774,6 +807,22 @@ class Input(Node):
         self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', 0.0)
 
         self.licenses = None
+
+
+class InputFromOtherDomain(Input):
+    """A input in to the network that is connected to an output from another domain
+
+    Parameters
+    ----------
+    conversion_factor : float (optional)
+        A factor that is multiplied by the upstream output to calculate the input flow rate.
+        This is typically used for losses and/or unit conversion.
+    """
+    def __init__(self, *args, **kwargs):
+        Input.__init__(self, *args, **kwargs)
+
+        self.properties['conversion_factor'] = self.pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
+
 
 class Output(Node):
     """A general output at any point from the network
