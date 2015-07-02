@@ -5,10 +5,52 @@ network problem.
 
 
 """
-
+from __future__ import print_function
 import pywr.core
 import datetime
 import numpy as np
+import pytest
+
+def assert_model(model, expected_requested, expected_sent, expected_node_results):
+    status, requested, sent, routes, nodes = model.step()
+    print(nodes)
+    assert(status == 'optimal')
+    assert(requested == expected_requested)
+    assert(sent == expected_sent)
+    for node, val in nodes.items():
+        assert(expected_node_results[node.name] == val)
+
+@pytest.fixture(params=[(10.0, 10.0, 10.0), (10.0, 0.0, 0.0)])
+def simple_linear_model(request):
+    """
+    Make a simple model with a single Input and Output.
+
+    Input -> Link -> Output
+
+    :return: pywr.core.Model() instance
+    """
+    in_flow, out_flow, benefit = request.param
+
+    model = pywr.core.Model()
+    inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
+    lnk = pywr.core.Link(model, name="Link", cost=1.0)
+    inpt.connect(lnk)
+    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, benefit=benefit)
+    lnk.connect(otpt)
+
+    expected_requested = out_flow
+    expected_sent = in_flow if benefit > 1.0 else out_flow
+
+    expected_node_results = {
+        "Input": expected_sent,
+        "Link": expected_sent,
+        "Output": expected_sent,
+    }
+    return model, expected_requested, expected_sent, expected_node_results
+
+def test_linear_model(simple_linear_model):
+    assert_model(*simple_linear_model)
+
 
 def make_simple_model(supply_amplitude, demand, frequency,
                       initial_volume):
@@ -46,7 +88,7 @@ def make_simple_model(supply_amplitude, demand, frequency,
     
     return model
     
-def test_run_analytical():
+def pytest_run_analytical():
     """
     Run the test model though a year with analytical solution values to 
     ensure reservoir just contains sufficient volume.
