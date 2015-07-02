@@ -13,12 +13,16 @@ import pytest
 
 def assert_model(model, expected_requested, expected_sent, expected_node_results):
     status, requested, sent, routes, nodes = model.step()
-    print(nodes)
+    print(requested, sent, routes, nodes)
     assert(status == 'optimal')
-    assert(requested == expected_requested)
-    assert(sent == expected_sent)
+    for key in requested:
+        assert(requested[key] == expected_requested[key])
+    for key in sent:
+        assert(sent[key] == expected_sent[key])
     for node, val in nodes.items():
+        print(expected_node_results, node.name, val)
         assert(expected_node_results[node.name] == val)
+
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (10.0, 0.0, 0.0)])
 def simple_linear_model(request):
@@ -27,7 +31,6 @@ def simple_linear_model(request):
 
     Input -> Link -> Output
 
-    :return: pywr.core.Model() instance
     """
     in_flow, out_flow, benefit = request.param
 
@@ -38,18 +41,72 @@ def simple_linear_model(request):
     otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, benefit=benefit)
     lnk.connect(otpt)
 
-    expected_requested = out_flow
-    expected_sent = in_flow if benefit > 1.0 else out_flow
+    expected_requested = {'default': out_flow}
+    expected_sent = {'default': in_flow if benefit > 1.0 else out_flow}
 
     expected_node_results = {
-        "Input": expected_sent,
-        "Link": expected_sent,
-        "Output": expected_sent,
+        "Input": expected_sent['default'],
+        "Link": expected_sent['default'],
+        "Output": expected_sent['default'],
     }
     return model, expected_requested, expected_sent, expected_node_results
 
+
 def test_linear_model(simple_linear_model):
     assert_model(*simple_linear_model)
+
+
+@pytest.fixture
+def two_domain_linear_model(request):
+    """
+    Make a simple model with two domains, each with a single Input and Output
+
+    Input -> Link -> Output  : river
+                        | across the domain
+    Output <- Link <- Input  : grid
+
+    """
+    river_flow = 864.0  # Ml/d
+    power_plant_cap = 24  # GWh/d
+    power_plant_flow_req = 18.0  # Ml/GWh
+    power_demand = 12  # GWh/d
+    power_benefit = 10.0  # £/GWh
+
+    model = pywr.core.Model()
+    # Create river network
+    river_inpt = pywr.core.Input(model, name="Catchment", max_flow=river_flow, domain='river')
+    river_lnk = pywr.core.Link(model, name="Reach", domain='river')
+    river_inpt.connect(river_lnk)
+    river_otpt = pywr.core.Output(model, name="Abstraction", domain='river', benefit=0.0)
+    river_lnk.connect(river_otpt)
+    # Create grid network
+    grid_inpt = pywr.core.InputFromOtherDomain(model, name="Power Plant", max_flow=power_plant_cap, domain='grid',
+                                               conversion_factor=1/power_plant_flow_req)
+    grid_lnk = pywr.core.Link(model, name="Transmission", cost=1.0, domain='grid')
+    grid_inpt.connect(grid_lnk)
+    grid_otpt = pywr.core.Output(model, name="Substation", max_flow=power_demand,
+                                 benefit=power_benefit, domain='grid')
+    grid_lnk.connect(grid_otpt)
+    # Connect grid to river
+    river_otpt.connect(grid_inpt)
+
+    expected_requested = {'river': 0.0, 'grid': 0.0}
+    expected_sent = {'river': power_demand*power_plant_flow_req, 'grid': power_demand}
+
+    expected_node_results = {
+        "Catchment": power_demand*power_plant_flow_req,
+        "Reach": power_demand*power_plant_flow_req,
+        "Abstraction": power_demand*power_plant_flow_req,
+        "Power Plant": power_demand,
+        "Transmission": power_demand,
+        "Substation": power_demand,
+    }
+
+    return model, expected_requested, expected_sent, expected_node_results
+
+
+def test_two_domain_linear_model(two_domain_linear_model):
+    assert_model(*two_domain_linear_model)
 
 
 def make_simple_model(supply_amplitude, demand, frequency,
