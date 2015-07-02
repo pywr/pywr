@@ -753,6 +753,50 @@ class Node(with_metaclass(NodeMeta)):
             node.properties[key] = prop
         return node
 
+class Input(Node):
+    """A general input at any point in the network
+
+    """
+    def __init__(self, *args, **kwargs):
+        """Initialise a new Input node
+
+        Parameters
+        ----------
+        min_flow : float (optional)
+            A simple minimum flow constraint for the input. Defaults to None
+        max_flow : float (optional)
+            A simple maximum flow constraint for the input. Defaults to 0.0
+        """
+        Node.__init__(self, *args, **kwargs)
+        self.color = '#F26C4F' # light red
+
+        self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
+        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', 0.0)
+
+        self.licenses = None
+
+class Output(Node):
+    """A general output at any point from the network
+
+    """
+    def __init__(self, *args, **kwargs):
+        """Initialise a new Output node
+
+        Parameters
+        ----------
+        min_flow : float (optional)
+            A simple minimum flow constraint for the output. Defaults to 0.0
+        max_flow : float (optional)
+            A simple maximum flow constraint for the output. Defaults to None
+        """
+        Node.__init__(self, *args, **kwargs)
+        self.color = '#F26C4F' # light red
+
+        self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
+        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
+        self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 1000.0)
+
+
 class Supply(Node):
     """A supply in the network
     
