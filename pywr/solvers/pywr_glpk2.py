@@ -52,7 +52,7 @@ class SolverGLPK(Solver):
                             if node in route:
                                 col_idxs.append(col.index)
                         row.matrix = [(idx, 1.0) for idx in col_idxs]
-                        
+
             # initialise the structure (only) for the input constraint
             for input_node, info in input_nodes.items():
                 row_idx = lp.rows.add(1)
@@ -181,8 +181,8 @@ class SolverGLPK(Solver):
 
         # storage limits
         for node, row in storage_rows.items():
-            current_volume = node.properties['current_volume'].value(index)
-            max_volume = node.properties['max_volume'].value(index)
+            current_volume = node.properties['current_volume'].value(timestamp)
+            max_volume = node.properties['max_volume'].value(timestamp)
             # Change in storage limits
             #   lower bound ensures a net loss is not more than current volume
             #   upper bound ensures a net gain is not more than capacity
