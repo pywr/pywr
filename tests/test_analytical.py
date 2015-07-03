@@ -13,14 +13,12 @@ import pytest
 
 def assert_model(model, expected_requested, expected_sent, expected_node_results):
     status, requested, sent, routes, nodes = model.step()
-    print(requested, sent, routes, nodes)
     assert(status == 'optimal')
     for key in requested:
         assert(requested[key] == expected_requested[key])
     for key in sent:
         assert(sent[key] == expected_sent[key])
     for node, val in nodes.items():
-        print(expected_node_results, node.name, val)
         assert(expected_node_results[node.name] == val)
 
 
@@ -55,6 +53,51 @@ def simple_linear_model(request):
 def test_linear_model(simple_linear_model):
     assert_model(*simple_linear_model)
 
+
+@pytest.fixture
+def linear_model_with_storage(request):
+    """
+    Make a simple model with a single Input and Output and an offline Storage Node
+
+    Input -> Link -> Output
+               |     ^
+               v     |
+               Storage
+    """
+    in_flow, out_flow, out_benefit, strg_benefit = 10.0, 5.0, 5.0, 0.0
+    current_volume = 0.0
+    max_strg_out = 10.0
+
+    model = pywr.core.Model()
+    inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
+    lnk = pywr.core.Link(model, name="Link", cost=1.0)
+    inpt.connect(lnk)
+    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow)
+    lnk.connect(otpt)
+
+    strg = pywr.core.Storage(model, name="Storage", max_volume=10.0, current_volume=current_volume,
+                             benefit=strg_benefit)
+
+    lnk2 = pywr.core.Link(model, name='Storage Link', cost=2.0, max_flow=max_strg_out)
+    strg.input.connect(lnk2)
+    lnk.connect(strg.output)
+    lnk2.connect(otpt)
+
+    expected_requested = {'default': out_flow}
+    expected_sent = {'default': in_flow+min(max_strg_out, current_volume) if out_benefit > 1.0 else out_flow}
+
+    expected_node_results = {
+        "Input": expected_sent['default'],
+        "Link": expected_sent['default'],
+        "Output": expected_sent['default'],
+        "Storage Output": min(max_strg_out, current_volume) if out_benefit > 1.0 else 0.0,
+        "Storage Input": 0.0,
+        "Storage": 0.0,
+    }
+    return model, expected_requested, expected_sent, expected_node_results
+
+def test_linear_model_with_storage(linear_model_with_storage):
+    assert_model(*linear_model_with_storage)
 
 @pytest.fixture
 def two_domain_linear_model(request):

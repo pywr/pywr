@@ -100,6 +100,20 @@ class SolverGLPK(Solver):
                     row.matrix = input_matrix + output_matrix
                     info['cross_domain_row'] = row
 
+            storage_rows = self.storage_rows = {}
+            # Setup Storage node constraints
+            for node in model.nodes():
+                if isinstance(node, Storage):
+                    input_info = input_nodes[node.input]
+                    output_info = output_nodes[node.output]
+                    # mass balance between input and output
+                    row_idx = lp.rows.add(1)
+                    row = lp.rows[row_idx]
+                    row.bounds = 0, 0
+                    input_matrix = [(idx, 1.0) for idx in info['col_idxs']]
+                    output_matrix = [(output_info['output_col'], -1.0)]
+                    storage_rows[node] = row
+
             # TODO add min flow requirement
             """
             # add mrf constraint rows
@@ -116,6 +130,7 @@ class SolverGLPK(Solver):
             routes = self.routes
             intermediate_max_flow_constraints = self.intermediate_max_flow_constraints
             cross_domain_routes = self.cross_domain_routes
+            storage_rows = self.storage_rows
             #blenders = self.blenders
             #groups = self.groups
 
@@ -164,7 +179,14 @@ class SolverGLPK(Solver):
         for node, row in intermediate_max_flow_constraints.items():
             row.bounds = 0, node.properties['max_flow'].value(timestamp)
 
-
+        # storage limits
+        for node, row in storage_rows.items():
+            current_volume = node.properties['current_volume'].value(index)
+            max_volume = node.properties['max_volume'].value(index)
+            # Change in storage limits
+            #   lower bound ensures a net loss is not more than current volume
+            #   upper bound ensures a net gain is not more than capacity
+            row.bounds = -current_volume, max_volume-current_volume
 
         # TODO add min flow requirement
         """
