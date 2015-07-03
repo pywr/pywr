@@ -1062,23 +1062,30 @@ class RiverAbstraction(Supply, River):
     """An abstraction from the river network"""
     pass
 
-class Reservoir(Supply, Demand):
-    """A reservoir"""
-    def __init__(self, *args, **kwargs):
-        #super(Reservoir, self).__init__(*args, **kwargs)
-        Supply.__init__(self, *args, **kwargs)
-        Demand.__init__(self, *args, **kwargs)
-        
-        # reservoir cannot supply more than it's current volume
+class Storage(Node):
+    """A generic storage Node"""
+    def __init__(self, model, *args, **kwargs):
+        Node.__init__(self,  model, *args, **kwargs)
+
+        # keyword arguments for input and output nodes specified with prefix
+        input_kwargs, output_kwargs = {}, {}
+        for key in kwargs.keys():
+            if key.startswith('input_'):
+                input_kwargs[key.replace('input_', '')] = kwargs.pop(key)
+            elif key.startswith('output_'):
+                output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
+
+        # output node should have the same benefit as Storage
+        output_kwargs['benefit'] = kwargs.pop('benefit', 0.0)
         def func(parent, index):
-            return self.properties['current_volume'].value(index)
-        self.properties['max_flow'] = ParameterFunction(self, func)
-        
-        def func(parent, index):
-            current_volume = self.properties['current_volume'].value(index)
-            max_volume = self.properties['max_volume'].value(index)
-            return max_volume - current_volume
-        self.properties['demand'] = ParameterFunction(self, func)
+            return self.output.properties['benefit'].value(index)
+        self.properties['benefit'] = ParameterFunction(self, func)
+
+        self.input = Input(model, name="{} Input".format(self.name), **input_kwargs)
+        self.output = Output(model, name="{} Output".format(self.name), **output_kwargs)
+
+        self.properties['current_volume'] = self.pop_kwarg_parameter(kwargs, 'current_volume', 0.0)
+        self.properties['max_volume'] = self.pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
 
     def commit(self, volume, chain):
         super(Reservoir, self).commit(volume, chain)
@@ -1091,7 +1098,8 @@ class Reservoir(Supply, Demand):
             self.properties['current_volume']._value += volume
 
     def check(self):
-        super(Reservoir, self).check()
+        Input.check(self)
+        Output.check(self)
         index = self.model.timestamp
         # check volume doesn't exceed maximum volume
         assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))
