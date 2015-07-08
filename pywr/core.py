@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import os
+from IPython.core.magic_arguments import kwds
 import networkx as nx
 import numpy as np
 import inspect
@@ -1018,6 +1019,51 @@ class Storage(Node):
         index = self.model.timestamp
         # check volume doesn't exceed maximum volume
         assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))
+
+class PiecewiseLink(Node):
+    """ An extension of Nodes that represents a non-linear Link with a piece wise cost function.
+
+    This object is intended to model situations where there is a benefit of supplying certain flow rates
+    but beyond a fixed limit there is a change in (or zero) cost.
+
+
+    """
+    def __init__(self, model, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        max_flow : iterable
+            A monotonic increasing list of maximum flows for the piece wise function
+        cost : iterable
+            A list of costs corresponding to the max_flow steps
+        """
+        # Grab cost and max_flow keywords before given to Node.__init__
+        costs = kwargs.pop('cost')
+        max_flows = kwargs.pop('max_flow')
+        Node.__init__(self,  model, *args, **kwargs)
+
+        if len(costs) != len(max_flows):
+            raise ValueError("Piecewise max_flow and cost keywords must be the same length.")
+
+        self.sublinks = []
+        for max_flow, cost in zip(max_flows, costs):
+            self.sublinks.append(Link(model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
+                                      cost=cost, max_flow=max_flow))
+
+    def connect(self, node, from_slot=None, to_slot=None):
+        """
+        Overload Node.connect to connect node to all sublinks rather than directly to this PiecewiseLink.
+        """
+        for sublink in self.sublinks:
+            sublink.connect(node, from_slot=from_slot, to_slot=to_slot)
+
+    def disconnect(self, node=None):
+        """
+        Overload Node.disconnect to disconnect node from all sublinks.
+        """
+        for sublink in self.sublinks:
+            sublink.disconnect(node=node)
+
 
 class Group(object):
     """A group of nodes
