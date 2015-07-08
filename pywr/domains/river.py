@@ -30,7 +30,7 @@ class Catchment(Input, RiverDomainMixin):
 
         def func(parent, index):
             return self.properties['flow'].value(index)
-        #self.properties['min_flow'] = ParameterFunction(self, func)
+        self.properties['min_flow'] = ParameterFunction(self, func)
         self.properties['max_flow'] = ParameterFunction(self, func)
 
     def check(self):

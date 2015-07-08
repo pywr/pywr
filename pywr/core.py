@@ -843,7 +843,7 @@ class Output(Node):
 
         self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
         self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
-        self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 1000.0)
+        self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 0.0)
 
 
 class Supply(Input):
