@@ -2,6 +2,7 @@ import os
 import xml.etree.ElementTree as ET
 
 import pywr.core
+from pywr.domains import river
 
 def load_model(filename=None, data=None):
     '''Load a test model and check it'''

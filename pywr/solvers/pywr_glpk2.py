@@ -137,7 +137,7 @@ class SolverGLPK(Solver):
                 row = lp.rows[row_idx]
                 info['mrf_constraint'] = row
             """
-
+            model.dirty = False
         else:
             lp = self.lp
             input_nodes = self.input_nodes
@@ -170,18 +170,19 @@ class SolverGLPK(Solver):
 
         # input is limited by a minimum and maximum flow, and any licenses
         for input_node, info in input_nodes.items():
-            row = info['input_constraint']
-            max_flow_parameter = input_node.properties['max_flow'].value(timestamp)
-            max_flow_license = inf
-            if input_node.licenses is not None:
-                max_flow_license = input_node.licenses.available(timestamp)
-            if max_flow_parameter is not None:
-                max_flow = min(max_flow_parameter, max_flow_license)
-            else:
-                max_flow = max_flow_license
-            min_flow = input_node.properties['min_flow'].value(timestamp)
-            row.matrix = info['matrix']
-            row.bounds = min_flow, max_flow
+            if len(info['col_idxs']) > 0:
+                row = info['input_constraint']
+                max_flow_parameter = input_node.properties['max_flow'].value(timestamp)
+                max_flow_license = inf
+                if input_node.licenses is not None:
+                    max_flow_license = input_node.licenses.available(timestamp)
+                if max_flow_parameter is not None:
+                    max_flow = min(max_flow_parameter, max_flow_license)
+                else:
+                    max_flow = max_flow_license
+                min_flow = input_node.properties['min_flow'].value(timestamp)
+                row.matrix = info['matrix']
+                row.bounds = min_flow, max_flow
 
         # outputs require a water between a min and maximium flow
         total_water_outputed = defaultdict(lambda: 0.0)
