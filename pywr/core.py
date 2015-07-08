@@ -845,7 +845,7 @@ class Output(Node):
         self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 1000.0)
 
 
-class Supply(Node):
+class Supply(Input):
     """A supply in the network
 
     The base supply node should be sufficient to represent simply supplies
@@ -862,7 +862,7 @@ class Supply(Node):
             A simple maximum flow constraint for the supply. For more complex
             constraints a License instance should be used.
         """
-        Node.__init__(self, *args, **kwargs)
+        Input.__init__(self, *args, **kwargs)
         self.color = '#F26C4F' # light red
 
         self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', 0.0)
@@ -893,7 +893,7 @@ class Supply(Node):
             node.licenses = LicenseCollection.from_xml(licensecollection_xml)
         return node
 
-class Demand(Node):
+class Demand(Output):
     """A demand in the network"""
     def __init__(self, *args, **kwargs):
         """Initialise a new Demand node
@@ -909,7 +909,7 @@ class Demand(Node):
             consumed and the remaining 30% can be discharged. The default is
             that 100% of the water is consumed.
         """
-        Node.__init__(self, *args, **kwargs)
+        Output.__init__(self, *args, **kwargs)
         self.color = '#FFF467' # light yellow
 
         self.properties['demand'] = self.pop_kwarg_parameter(kwargs, 'demand', 0.0)
