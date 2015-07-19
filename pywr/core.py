@@ -593,6 +593,8 @@ class Node(with_metaclass(NodeMeta)):
         self.color = 'black'
         self.position = position
         self.domain = domain
+        self.visible = kwargs.pop('visible', True)
+        self.parent = kwargs.pop('parent', None)
 
         if not hasattr(self, 'name'):
             # set name, avoiding issues with multiple inheritance
@@ -645,20 +647,24 @@ class Node(with_metaclass(NodeMeta)):
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
 
+        node1 = self
         # check slots are valid
         if from_slot is not None:
             if from_slot not in self.slots:
                 raise ValueError('{} does not have slot: {}'.format(self.__class__.__name__, from_slot))
+            node1 = self.slots[from_slot]
+
+        node2 = node
         if to_slot is not None:
             if to_slot not in node.slots:
                 raise ValueError('{} does not have slot: {}'.format(node.__class__.__name__, to_slot))
+            node2 = node.slots[to_slot]
+        else:
+            # Add default to_slot for Storage and its subclases
+            if isinstance(node2, Storage):
+                node2 = node.slots['input']
 
-        # create edge and connect slots
-        if from_slot is not None:
-            self.slots[from_slot] = node
-        if to_slot is not None:
-            node.slots[to_slot] = self
-        self.model.graph.add_edge(self, node)
+        self.model.graph.add_edge(node1, node2)
         self.model.dirty = True
 
     def disconnect(self, node=None):
@@ -1009,8 +1015,12 @@ class Storage(Node):
             return self.output.properties['benefit'].value(index)
         self.properties['benefit'] = ParameterFunction(self, func)
 
-        self.input = Input(model, name="{} Input".format(self.name), **input_kwargs)
-        self.output = Output(model, name="{} Output".format(self.name), **output_kwargs)
+        self.input = Input(model, name="{} Input".format(self.name),
+                           visible=False, parent=self, **input_kwargs)
+        self.slots['input'] = self.input
+        self.output = Output(model, name="{} Output".format(self.name),
+                             visible=False, parent=self, **output_kwargs)
+        self.slots['output'] = self.output
 
         self.properties['current_volume'] = self.pop_kwarg_parameter(kwargs, 'current_volume', 0.0)
         self.properties['max_volume'] = self.pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
@@ -1032,6 +1042,10 @@ class Storage(Node):
         index = self.model.timestamp
         # check volume doesn't exceed maximum volume
         assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))
+
+    def connect(self, node, from_slot='output', to_slot=None):
+        super(Storage, self).connect(node, from_slot=from_slot, to_slot=to_slot)
+
 
 class PiecewiseLink(Node):
     """ An extension of Nodes that represents a non-linear Link with a piece wise cost function.
