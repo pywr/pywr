@@ -442,7 +442,20 @@ class ParameterFunction(Parameter):
     def from_xml(cls, xml):
         raise NotImplementedError('TODO')
 
-class Timeseries(Property):
+class ParameterMonthlyProfile(Parameter):
+    def __init__(self, values):
+        if len(values) != 12:
+            raise ValueError("12 values must be given for a monthly profile.")
+        self._values = values
+
+    def value(self, index=None):
+        return self._values[index.month-1]
+
+    @classmethod
+    def from_xml(cls, xml):
+        raise NotImplementedError('TODO')
+
+class Timeseries(Parameter):
     def __init__(self, name, df, metadata=None):
         self.name = name
         self.df = df
@@ -839,7 +852,7 @@ class Output(Node):
             A simple maximum flow constraint for the output. Defaults to None
         """
         Node.__init__(self, *args, **kwargs)
-        self.color = '#F26C4F' # light red
+        self.color = '#FFF467' # light yellow
 
         self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
         self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
@@ -976,7 +989,7 @@ class Storage(Node):
     """A generic storage Node"""
     def __init__(self, model, *args, **kwargs):
         Node.__init__(self,  model, *args, **kwargs)
-
+        self.color = 'green' # light yellow
         # keyword arguments for input and output nodes specified with prefix
         input_kwargs, output_kwargs = {}, {}
         for key in kwargs.keys():
