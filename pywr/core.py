@@ -1060,7 +1060,7 @@ class Storage(Node):
 
     def commit(self, volume, ):
         super(Storage, self).commit(volume)
-        self.properties['current_volume']._value += volume
+        self.properties['current_volume']._value += volume*self.model.parameters['timestep']
 
     def check(self):
         Node.check(self)

@@ -23,6 +23,8 @@ class SolverGLPK(Solver):
     name = 'GLPK'
 
     def solve(self, model):
+        timestep = model.parameters['timestep']
+
         if model.dirty:
             '''
             This section should only need to be run when the model has changed
@@ -205,7 +207,7 @@ class SolverGLPK(Solver):
             # Change in storage limits
             #   lower bound ensures a net loss is not more than current volume
             #   upper bound ensures a net gain is not more than capacity
-            row.bounds = -current_volume, max_volume-current_volume
+            row.bounds = -current_volume/timestep, (max_volume-current_volume)/timestep
 
         # TODO add min flow requirement
         """
