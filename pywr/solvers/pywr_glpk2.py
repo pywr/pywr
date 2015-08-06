@@ -259,13 +259,8 @@ class SolverGLPK(Solver):
 
         # commit the volume of water actually supplied
         for n, (col, route) in enumerate(routes):
-            route[0].commit(result[n], chain='first')
-            for node in route[1:-1]:
-                node.commit(result[n], chain='middle')
-            route[-1].commit(result[n], chain='last')
-
-        for node in model.nodes():
-            node.after()
+            for node in route:
+                node.commit(result[n])
 
         # calculate the total amount of water transferred via each node/link
         volumes_links = {}

@@ -177,6 +177,7 @@ class Model(object):
         # solve the current timestep
         ret = self.solve()
         self.timestamp += self.parameters['timestep']
+        self.after()
         return ret
 
     def solve(self):
@@ -213,6 +214,10 @@ class Model(object):
         self.timestamp = self.parameters['timestamp_start']
         for node in self.nodes():
             node.reset()
+
+    def after(self):
+        for node in self.nodes():
+            node.after()
 
     def xml(self):
         """Serialize the Model to XML"""
@@ -537,15 +542,22 @@ class Timeseries(Parameter):
         return ts
 
 class Variable(Property):
+    """This property is used for values that are calculated by the model, i.e.
+    variables. It provides a method of saving the results at each timestep.
+    """
     def __init__(self, initial=0.0):
         self._initial = initial
-        self._value = initial
+        self.reset()
 
     def value(self, index=None):
         return self._value
 
     def reset(self):
         self._value = self._initial
+        self._saved_values = []
+
+    def save(self):
+        self._saved_values.append(self._value)
 
     @classmethod
     def from_xml(cls, model, xml):
@@ -562,6 +574,11 @@ class PropertiesDict(dict):
             value = ParameterConstant(value)
         dict.__setitem__(self, key, value)
 
+class Domain(object):
+    def __init__(self, name='default', **kwargs):
+        self.name = name
+        self.color = kwargs.pop('color', '#FF6600')
+
 # node subclasses are stored in a dict for convenience
 node_registry = {}
 class NodeMeta(type):
@@ -574,7 +591,7 @@ class NodeMeta(type):
 
 class Node(with_metaclass(NodeMeta)):
     """Base object from which all other nodes inherit"""
-    def __init__(self, model, name, domain='default', position=None, **kwargs):
+    def __init__(self, model, name, domain=Domain(), position=None, **kwargs):
         """Initialise a new Node object
 
         Parameters
@@ -662,7 +679,13 @@ class Node(with_metaclass(NodeMeta)):
         else:
             # Add default to_slot for Storage and its subclases
             if isinstance(node2, Storage):
-                node2 = node.slots['input']
+                node2 = node.slots['output']
+            if isinstance(node2, PiecewiseLink):
+                # must recursively add all sublinks
+                for sublink in node2.sublinks:
+                    print('Connecting sublink...')
+                    node1.connect(sublink)
+                return
 
         self.model.graph.add_edge(node1, node2)
         self.model.dirty = True
@@ -717,17 +740,13 @@ class Node(with_metaclass(NodeMeta)):
         """
         pass
 
-    def commit(self, volume, chain):
+    def commit(self, volume):
         """Commit a volume of water actually supplied/transferred/received
 
         Parameter
         ---------
         volume : float
             The volume to commit
-        chain : string
-            The position in the route of the node for this commit. This must be
-            one of: 'first' (the node supplied water), 'middle' (the node
-            transferred water) or 'last' (the node received water).
 
         This should be implemented by the various node subclasses.
         """
@@ -736,7 +755,12 @@ class Node(with_metaclass(NodeMeta)):
     def after(self):
         """Called after the current timestep has finished
         """
-        pass
+        # save variables
+        for key, parameter in self.properties.items():
+            try:
+                parameter.save()
+            except AttributeError:
+                pass
 
     def pop_kwarg_parameter(self, kwargs, key, default):
         """Pop a parameter from the keyword arguments dictionary
@@ -889,8 +913,8 @@ class Supply(Input):
 
         self.licenses = None
 
-    def commit(self, volume, chain):
-        super(Supply, self).commit(volume, chain)
+    def commit(self, volume):
+        super(Supply, self).commit(volume)
         if self.licenses is not None:
             self.licenses.commit(volume)
 
@@ -941,8 +965,8 @@ class Demand(Output):
     def before(self):
         self._supplied = 0.0
 
-    def commit(self, volume, chain):
-        super(Demand, self).commit(volume, chain)
+    def commit(self, volume):
+        super(Demand, self).commit(volume)
         if chain == 'last':
             self._supplied += volume
 
@@ -990,6 +1014,15 @@ class Blender(Link):
 
         self.properties['ratio'] = self.pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
+class StorageInput(Input):
+    def commit(self, volume):
+        super(StorageInput, self).commit(volume)
+        self.parent.commit(-volume)
+
+class StorageOutput(Output):
+    def commit(self, volume):
+        super(StorageOutput, self).commit(volume)
+        self.parent.commit(volume)
 
 class Storage(Node):
     """A generic storage Node"""
@@ -1015,25 +1048,19 @@ class Storage(Node):
             return self.output.properties['benefit'].value(index)
         self.properties['benefit'] = ParameterFunction(self, func)
 
-        self.input = Input(model, name="{} Input".format(self.name),
+        self.input = StorageInput(model, name="{} Input".format(self.name),
                            visible=False, parent=self, **input_kwargs)
         self.slots['input'] = self.input
-        self.output = Output(model, name="{} Output".format(self.name),
+        self.output = StorageOutput(model, name="{} Output".format(self.name),
                              visible=False, parent=self, **output_kwargs)
         self.slots['output'] = self.output
 
-        self.properties['current_volume'] = self.pop_kwarg_parameter(kwargs, 'current_volume', 0.0)
+        self.properties['current_volume'] = Variable(initial=kwargs.pop('current_volume', 0.0))
         self.properties['max_volume'] = self.pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
 
-    def commit(self, volume, chain):
-        super(Reservoir, self).commit(volume, chain)
-        # update the volume remaining in the reservoir
-        if chain == 'first':
-            # reservoir supplied some water
-            self.properties['current_volume']._value -= volume
-        elif chain == 'last':
-            # reservoir received some water
-            self.properties['current_volume']._value += volume
+    def commit(self, volume, ):
+        super(Storage, self).commit(volume)
+        self.properties['current_volume']._value += volume
 
     def check(self):
         Node.check(self)
@@ -1043,7 +1070,7 @@ class Storage(Node):
         # check volume doesn't exceed maximum volume
         assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))
 
-    def connect(self, node, from_slot='output', to_slot=None):
+    def connect(self, node, from_slot='input', to_slot=None):
         super(Storage, self).connect(node, from_slot=from_slot, to_slot=to_slot)
 
 
@@ -1075,7 +1102,8 @@ class PiecewiseLink(Node):
         self.sublinks = []
         for max_flow, cost in zip(max_flows, costs):
             self.sublinks.append(Link(model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
-                                      cost=cost, max_flow=max_flow))
+                                      cost=cost, max_flow=max_flow, visible=False, parent=self,
+                                      position=self.position, domain=self.domain))
 
     def connect(self, node, from_slot=None, to_slot=None):
         """

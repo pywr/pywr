@@ -1,11 +1,11 @@
 
-from ..core import Node, Input, Output, Link, Storage, ParameterFunction
+from ..core import Node, Domain, Input, Output, Link, Storage, ParameterFunction
 
 
 class RiverDomainMixin(object):
     def __init__(self, *args, **kwargs):
         if 'domain' not in kwargs:
-            kwargs['domain'] = 'river'
+            kwargs['domain'] = Domain(name='river', color='#33CCFF')
         super(RiverDomainMixin, self).__init__(*args, **kwargs)
 
 
@@ -121,3 +121,9 @@ class RiverAbstraction(Output, RiverDomainMixin):
     """An abstraction from the river network"""
     def __init__(self, *args, **kwargs):
         super(RiverAbstraction, self).__init__(*args, **kwargs)
+
+
+class DemandCentre(Output, RiverDomainMixin):
+    """A demand centre"""
+    def __init__(self, *args, **kwargs):
+        super(DemandCentre, self).__init__(*args, **kwargs)
