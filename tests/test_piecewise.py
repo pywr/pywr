@@ -26,15 +26,17 @@ def simple_piecewise_model(request):
     otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, benefit=benefit)
     lnk.connect(otpt)
 
-    expected_requested = {'default': out_flow}
-    expected_sent = {'default': in_flow if benefit > 1.0 else out_flow}
+    default = inpt.domain
+
+    expected_requested = {default: out_flow}
+    expected_sent = {default: in_flow if benefit > 1.0 else out_flow}
 
     expected_node_results = {
-        "Input": expected_sent['default'],
+        "Input": expected_sent[default],
         "Link": 0.0,
-        "Link Sublink 0": min(min_flow_req, expected_sent['default']),
-        "Link Sublink 1": expected_sent['default'] - min(min_flow_req, expected_sent['default']),
-        "Output": expected_sent['default'],
+        "Link Sublink 0": min(min_flow_req, expected_sent[default]),
+        "Link Sublink 1": expected_sent[default] - min(min_flow_req, expected_sent[default]),
+        "Output": expected_sent[default],
     }
     return model, expected_requested, expected_sent, expected_node_results
 
