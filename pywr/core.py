@@ -83,7 +83,7 @@ class Model(object):
         """
         return self.graph.edges()
     
-    def find_all_routes(self, type1, type2, valid=None):
+    def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):
         """Find all routes between two nodes or types of node
         
         Parameters
@@ -96,10 +96,17 @@ class Model(object):
             A tuple of Node classes that the route can traverse. For example,
             a route between a Catchment and Terminator can generally only
             traverse River nodes.
+        max_length : integer
+            Maximum length of the route including start and end nodes.
+        domain_match : string
+            A string to control the behaviour of different domains on the route.
+                'strict' : all nodes must have the same domain as the first node.
+                'any' : any domain is permitted on any node (i.e. nodes can have different domains)
+                'different' : at least two different domains must be present on the route
         
         Returns a list of all the routes between the two nodes. A route is
         specified as a list of all the nodes between the source and
-        destination.
+        destination with the same domain has the source.
         """
         
         nodes = self.graph.nodes()
@@ -128,10 +135,35 @@ class Model(object):
             for node2 in type2_nodes:
                 for route in nx.all_simple_paths(self.graph, node1, node2):
                     is_valid = True
+                    # Check valid intermediate nodes
                     if valid is not None and len(route) > 2:
                         for node in route[1:-1]:
                             if not isinstance(node, valid):
                                 is_valid = False
+                    # Check domains
+                    if domain_match == 'strict':
+                        # Domains must match the first node
+                        for node in route[1:]:
+                            if node.domain != route[0].domain:
+                                is_valid = False
+                    elif domain_match == 'different':
+                        # Ensure at least two different domains are present
+                        domains_found = set()
+                        for node in route:
+                            domains_found.add(node.domain)
+                        if len(domains_found) < 2:
+                            is_valid = False
+                    elif domain_match == 'any':
+                        # No filtering required
+                        pass
+                    else:
+                        raise ValueError("domain_match '{}' not understood.".format(domain_match))
+
+                    # Check length
+                    if max_length is not None:
+                        if len(route) > max_length:
+                            is_valid = False
+
                     if is_valid:
                         all_routes.append(route)
         
@@ -529,7 +561,7 @@ class NodeMeta(type):
 class Node(with_metaclass(NodeMeta)):
     """Base object from which all other nodes inherit"""
     
-    def __init__(self, model, name, position=None, **kwargs):
+    def __init__(self, model, name, domain='default', position=None, **kwargs):
         """Initialise a new Node object
         
         Parameters
@@ -547,6 +579,7 @@ class Node(with_metaclass(NodeMeta)):
 
         self.color = 'black'
         self.position = position
+        self.domain = domain
 
         if not hasattr(self, 'name'):
             # set name, avoiding issues with multiple inheritance
@@ -752,6 +785,66 @@ class Node(with_metaclass(NodeMeta)):
             key, prop = Variable.from_xml(model, var_xml)
             node.properties[key] = prop
         return node
+
+class Input(Node):
+    """A general input at any point in the network
+
+    """
+    def __init__(self, *args, **kwargs):
+        """Initialise a new Input node
+
+        Parameters
+        ----------
+        min_flow : float (optional)
+            A simple minimum flow constraint for the input. Defaults to None
+        max_flow : float (optional)
+            A simple maximum flow constraint for the input. Defaults to 0.0
+        """
+        Node.__init__(self, *args, **kwargs)
+        self.color = '#F26C4F' # light red
+
+        self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
+        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', 0.0)
+
+        self.licenses = None
+
+
+class InputFromOtherDomain(Input):
+    """A input in to the network that is connected to an output from another domain
+
+    Parameters
+    ----------
+    conversion_factor : float (optional)
+        A factor that is multiplied by the upstream output to calculate the input flow rate.
+        This is typically used for losses and/or unit conversion.
+    """
+    def __init__(self, *args, **kwargs):
+        Input.__init__(self, *args, **kwargs)
+
+        self.properties['conversion_factor'] = self.pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
+
+
+class Output(Node):
+    """A general output at any point from the network
+
+    """
+    def __init__(self, *args, **kwargs):
+        """Initialise a new Output node
+
+        Parameters
+        ----------
+        min_flow : float (optional)
+            A simple minimum flow constraint for the output. Defaults to 0.0
+        max_flow : float (optional)
+            A simple maximum flow constraint for the output. Defaults to None
+        """
+        Node.__init__(self, *args, **kwargs)
+        self.color = '#F26C4F' # light red
+
+        self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
+        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
+        self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 1000.0)
+
 
 class Supply(Node):
     """A supply in the network
@@ -969,23 +1062,30 @@ class RiverAbstraction(Supply, River):
     """An abstraction from the river network"""
     pass
 
-class Reservoir(Supply, Demand):
-    """A reservoir"""
-    def __init__(self, *args, **kwargs):
-        #super(Reservoir, self).__init__(*args, **kwargs)
-        Supply.__init__(self, *args, **kwargs)
-        Demand.__init__(self, *args, **kwargs)
-        
-        # reservoir cannot supply more than it's current volume
+class Storage(Node):
+    """A generic storage Node"""
+    def __init__(self, model, *args, **kwargs):
+        Node.__init__(self,  model, *args, **kwargs)
+
+        # keyword arguments for input and output nodes specified with prefix
+        input_kwargs, output_kwargs = {}, {}
+        for key in kwargs.keys():
+            if key.startswith('input_'):
+                input_kwargs[key.replace('input_', '')] = kwargs.pop(key)
+            elif key.startswith('output_'):
+                output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
+
+        # output node should have the same benefit as Storage
+        output_kwargs['benefit'] = kwargs.pop('benefit', 0.0)
         def func(parent, index):
-            return self.properties['current_volume'].value(index)
-        self.properties['max_flow'] = ParameterFunction(self, func)
-        
-        def func(parent, index):
-            current_volume = self.properties['current_volume'].value(index)
-            max_volume = self.properties['max_volume'].value(index)
-            return max_volume - current_volume
-        self.properties['demand'] = ParameterFunction(self, func)
+            return self.output.properties['benefit'].value(index)
+        self.properties['benefit'] = ParameterFunction(self, func)
+
+        self.input = Input(model, name="{} Input".format(self.name), **input_kwargs)
+        self.output = Output(model, name="{} Output".format(self.name), **output_kwargs)
+
+        self.properties['current_volume'] = self.pop_kwarg_parameter(kwargs, 'current_volume', 0.0)
+        self.properties['max_volume'] = self.pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
 
     def commit(self, volume, chain):
         super(Reservoir, self).commit(volume, chain)
@@ -998,7 +1098,8 @@ class Reservoir(Supply, Demand):
             self.properties['current_volume']._value += volume
 
     def check(self):
-        super(Reservoir, self).check()
+        Input.check(self)
+        Output.check(self)
         index = self.model.timestamp
         # check volume doesn't exceed maximum volume
         assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))

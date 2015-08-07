@@ -9,13 +9,13 @@ class Node(QtGui.QGraphicsItem):
         self.node = node
         self.node.schematic = self
         self.edges = []
-        
+
         ret = super(Node, self).__init__(*args, **kwargs)
-        
+
         self.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, True)
         scene.addItem(self)
-        
+
         # node label
         text = self.text = QtGui.QGraphicsTextItem(parent=self)
         text.setPlainText(node.name)
@@ -25,31 +25,31 @@ class Node(QtGui.QGraphicsItem):
         text.setFont(font)
         text.setPos(10,0)
         text.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
-        
+
         # position
         x, y = node.position
         self.setPos(x * 100, -y * 100)
         self.snap()
-        
+
         return ret
-    
+
     def paint(self, painter, option, widget):
         pen = QtGui.QPen(QtGui.QBrush(QtGui.QColor('black')), 2)
         painter.setPen(pen)
         brush = QtGui.QBrush(QtGui.QColor(self.node.color))
         painter.setBrush(brush)
         painter.drawRoundedRect(-10, -10, 20, 20, 2, 2)
-    
+
     def boundingRect(self):
         return QtCore.QRectF(-12, -12, 24, 24)
-    
+
     def itemChange(self, change, value):
         if change is QtGui.QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             # node has moved, refresh edges
             for edge in self.edges:
                 edge.refresh()
         return super(Node, self).itemChange(change, value)
-    
+
     def mouseReleaseEvent(self, event):
         button = event.button()
         if button == QtCore.Qt.LeftButton:
@@ -57,7 +57,7 @@ class Node(QtGui.QGraphicsItem):
         elif button == QtCore.Qt.RightButton:
             self.show_menu()
         return(super(Node, self).mouseReleaseEvent(event))
-    
+
     def snap(self):
         '''Snap to grid'''
         center = self.pos()
@@ -68,7 +68,7 @@ class Node(QtGui.QGraphicsItem):
         position = self.pos()
         position += (snapped_center-center)
         self.setPos(position)
-    
+
     def show_menu(self):
         '''Display contextual menu'''
         cls_name = self.node.__class__.__name__
@@ -77,7 +77,7 @@ class Node(QtGui.QGraphicsItem):
         action.setEnabled(False)
         action = menu.addAction('Properties')
         menu.popup(QtGui.QCursor.pos())
-    
+
     def set_label(self, text):
         self.text.setPlainText('{}\n{}'.format(self.node.name, text))
 
@@ -107,44 +107,49 @@ class Edge(QtGui.QGraphicsLineItem):
         self.setLine(QtCore.QLineF(pos1, pos2))
 
 class PywrSchematic(QtGui.QDialog):
-    def __init__(self, filename):
+    def __init__(self, filename=None, model=None):
         super(PywrSchematic, self).__init__()
-        
+
         self.scene = QtGui.QGraphicsScene(self)
-        
-        # read model from xml
-        with open(filename, 'r') as f:
-            data = f.read()
-        self.model = xmlutils.parse_xml(data)
-        
+
+        if filename is not None:
+            # read model from xml
+            with open(filename, 'r') as f:
+                data = f.read()
+            self.model = xmlutils.parse_xml(data)
+        elif model is not None:
+            self.model = model
+        else:
+            raise ValueError("A filename or model keyword argument must be provided.")
+
         graph = self.model.graph
         nodes = graph.nodes()
         edges = graph.edges()
-        
+
         # add nodes
         for node in nodes:
             n = Node(node, self.scene)
-        
+
         # add edges
         for edge in edges:
             e = Edge(edge)
             for node in edge:
                 node.schematic.edges.append(e)
             self.scene.addItem(e)
-            
+
         # fix the area shown by the scene
         rect = self.scene.sceneRect()
         self.scene.setSceneRect(rect)
-        
+
         # create a view into the scene
         self.view = QtGui.QGraphicsView(self.scene, self)
         self.view.setRenderHints(QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform)
-        self.view.scale(1, 1)
-        
+        self.view.scale(0.75, 0.75)
+
         # add view to the dialog
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.view)
-        
+
         # TODO: move this into Qt Designer
         hbox = QtGui.QHBoxLayout()
         hbox.setContentsMargins(0, 0, 0, 0)
@@ -158,15 +163,15 @@ class PywrSchematic(QtGui.QDialog):
         hbox.addItem(spacer2)
         hbox.addWidget(button_step)
         vbox.addItem(hbox)
-        
+
         self.setLayout(vbox)
-        
+
         self.resize(700, 500)
         self.setWindowTitle('Pywr schematic')
-        
+
         self.show()
         self.raise_()
-    
+
     def step(self):
         result = self.model.step()
         for node, amount in result[4].items():
