@@ -967,8 +967,8 @@ class Demand(Output):
 
     def commit(self, volume):
         super(Demand, self).commit(volume)
-
-        self._supplied += volume
+        if chain == 'last':
+            self._supplied += volume
 
     def after(self):
         """Check if the demand has been satisfied this timestep
