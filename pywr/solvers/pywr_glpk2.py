@@ -6,25 +6,10 @@ import glpk
 
 inf = float('inf')
 
-def print_matrix(lp):
-    ncols = len(lp.cols)
-    nrows = len(lp.rows)
-    for row in lp.rows:
-        #row = lp.rows[row_idx]
-        coef = ['0.0']*ncols
-        for col_idx, val in row.matrix:
-            coef[col_idx] = str(val)
-        print('{} <= {} <= {}'.format(row.bounds[0], ' + '.join(coef), row.bounds[1]))
-
-    for col in lp.cols:
-        print('{} <= x{} <= {}'.format(col.bounds[0], col.index, col.bounds[1]))
-
 class SolverGLPK(Solver):
     name = 'GLPK'
 
     def solve(self, model):
-        timestep = model.parameters['timestep']
-
         if model.dirty:
             '''
             This section should only need to be run when the model has changed
@@ -34,12 +19,12 @@ class SolverGLPK(Solver):
             lp = self.lp = glpk.LPX()
             lp.obj.maximize = True
 
-            routes = model.find_all_routes(Input, Output, valid=(Link, Input, Output))
+            routes = model.find_all_routes(Input, Output, valid=(Link,))
             first_index = lp.cols.add(len(routes))
             routes = self.routes = list(zip([lp.cols[index] for index in range(first_index, first_index+len(routes))], routes))
 
-            input_nodes = self.input_nodes = {node: {'cols': [], 'col_idxs': []} for node in model.nodes() if isinstance(node, Input)}
-            output_nodes = self.output_nodes = {node: {'cols': [], 'col_idxs': []} for node in model.nodes() if isinstance(node, Output)}
+            input_nodes = self.input_nodes = {}
+            output_nodes = self.output_nodes = {}
             intermediate_max_flow_constraints = self.intermediate_max_flow_constraints = {}
 
             for col, route in routes:
@@ -47,9 +32,11 @@ class SolverGLPK(Solver):
                 input_node = route[0]
                 output_node = route[-1]
 
+                input_nodes.setdefault(input_node, {'cols': [], 'col_idxs': []})
                 input_nodes[input_node]['cols'].append(col)
                 input_nodes[input_node]['col_idxs'].append(col.index)
 
+                output_nodes.setdefault(output_node, {'cols': [], 'col_idxs': []})
                 output_nodes[output_node]['cols'].append(col)
                 output_nodes[output_node]['col_idxs'].append(col.index)
 
@@ -65,14 +52,13 @@ class SolverGLPK(Solver):
                             if node in route:
                                 col_idxs.append(col.index)
                         row.matrix = [(idx, 1.0) for idx in col_idxs]
-
+                        
             # initialise the structure (only) for the input constraint
             for input_node, info in input_nodes.items():
-                if len(info['col_idxs']) > 0:
-                    row_idx = lp.rows.add(1)
-                    row = lp.rows[row_idx]
-                    info['input_constraint'] = row
-                    info['matrix'] = [(idx, 1.0) for idx in info['col_idxs']]
+                row_idx = lp.rows.add(1)
+                row = lp.rows[row_idx]
+                info['input_constraint'] = row
+                info['matrix'] = [(idx, 1.0) for idx in info['col_idxs']]
 
             # Find cross-domain routes
             cross_domain_routes = self.cross_domain_routes = model.find_all_routes(Output, InputFromOtherDomain,
@@ -85,19 +71,17 @@ class SolverGLPK(Solver):
 
             for output_node, info in output_nodes.items():
                 # add a column for each output
-
                 col_idx = lp.cols.add(1)
                 col = lp.cols[col_idx]
                 info['output_col'] = col
-                if len(info['col_idxs']) > 0:
-                    # mass balance between input and output
-                    row_idx = lp.rows.add(1)
-                    row = lp.rows[row_idx]
-                    row.bounds = 0, 0
-                    input_matrix = [(idx, 1.0) for idx in info['col_idxs']]
-                    output_matrix = [(col_idx, -1.0)]
-                    row.matrix = input_matrix + output_matrix
-                    info['output_row'] = row
+                # mass balance between input and output
+                row_idx = lp.rows.add(1)
+                row = lp.rows[row_idx]
+                row.bounds = 0, 0
+                input_matrix = [(idx, 1.0) for idx in info['col_idxs']]
+                output_matrix = [(col_idx, -1.0)]
+                row.matrix = input_matrix + output_matrix
+                info['output_row'] = row
 
                 # Deal with exports from this output node to other input nodes
                 info['cross_domain_row'] = None
@@ -126,9 +110,8 @@ class SolverGLPK(Solver):
                     row_idx = lp.rows.add(1)
                     row = lp.rows[row_idx]
                     row.bounds = 0, 0
-                    input_matrix = [(idx, -1.0) for idx in input_info['col_idxs']]
-                    output_matrix = [(output_info['output_col'].index, 1.0)]
-                    row.matrix = input_matrix + output_matrix
+                    input_matrix = [(idx, 1.0) for idx in info['col_idxs']]
+                    output_matrix = [(output_info['output_col'], -1.0)]
                     storage_rows[node] = row
 
             # TODO add min flow requirement
@@ -139,7 +122,7 @@ class SolverGLPK(Solver):
                 row = lp.rows[row_idx]
                 info['mrf_constraint'] = row
             """
-            model.dirty = False
+
         else:
             lp = self.lp
             input_nodes = self.input_nodes
@@ -172,19 +155,15 @@ class SolverGLPK(Solver):
 
         # input is limited by a minimum and maximum flow, and any licenses
         for input_node, info in input_nodes.items():
-            if len(info['col_idxs']) > 0:
-                row = info['input_constraint']
-                max_flow_parameter = input_node.properties['max_flow'].value(timestamp)
-                max_flow_license = inf
-                if input_node.licenses is not None:
-                    max_flow_license = input_node.licenses.available(timestamp)
-                if max_flow_parameter is not None:
-                    max_flow = min(max_flow_parameter, max_flow_license)
-                else:
-                    max_flow = max_flow_license
-                min_flow = input_node.properties['min_flow'].value(timestamp)
-                row.matrix = info['matrix']
-                row.bounds = min_flow, max_flow
+            row = info['input_constraint']
+            max_flow_parameter = input_node.properties['max_flow'].value(timestamp)
+            max_flow_license = inf
+            if input_node.licenses is not None:
+                max_flow_license = input_node.licenses.available(timestamp)
+            max_flow = min(max_flow_parameter, max_flow_license)
+            min_flow = input_node.properties['min_flow'].value(timestamp)
+            row.matrix = info['matrix']
+            row.bounds = min_flow, max_flow
 
         # outputs require a water between a min and maximium flow
         total_water_outputed = defaultdict(lambda: 0.0)
@@ -202,12 +181,12 @@ class SolverGLPK(Solver):
 
         # storage limits
         for node, row in storage_rows.items():
-            current_volume = node.properties['current_volume'].value(timestamp)
-            max_volume = node.properties['max_volume'].value(timestamp)
+            current_volume = node.properties['current_volume'].value(index)
+            max_volume = node.properties['max_volume'].value(index)
             # Change in storage limits
             #   lower bound ensures a net loss is not more than current volume
             #   upper bound ensures a net gain is not more than capacity
-            row.bounds = -current_volume/timestep, (max_volume-current_volume)/timestep
+            row.bounds = -current_volume, max_volume-current_volume
 
         # TODO add min flow requirement
         """
@@ -247,7 +226,7 @@ class SolverGLPK(Solver):
             else:
                 row.bounds = 0, group.licenses.available(timestamp)
         """
-        #print_matrix(lp)
+
         # solve the linear programme
         lp.simplex()
         assert(lp.status == 'opt')
@@ -261,8 +240,13 @@ class SolverGLPK(Solver):
 
         # commit the volume of water actually supplied
         for n, (col, route) in enumerate(routes):
-            for node in route:
-                node.commit(result[n])
+            route[0].commit(result[n], chain='first')
+            for node in route[1:-1]:
+                node.commit(result[n], chain='middle')
+            route[-1].commit(result[n], chain='last')
+
+        for node in model.nodes():
+            node.after()
 
         # calculate the total amount of water transferred via each node/link
         volumes_links = {}

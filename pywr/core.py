@@ -4,7 +4,6 @@
 from __future__ import print_function
 
 import os
-from IPython.core.magic_arguments import kwds
 import networkx as nx
 import numpy as np
 import inspect
@@ -23,7 +22,7 @@ class Model(object):
     """Model of a water supply network"""
     def __init__(self, solver=None, parameters=None):
         """Initialise a new Model instance
-
+        
         Parameters
         ----------
         solver : string
@@ -48,7 +47,7 @@ class Model(object):
         self.data = {}
         self.failure = set()
         self.dirty = True
-
+        
         if solver is not None:
             # use specific solver
             try:
@@ -58,15 +57,15 @@ class Model(object):
         else:
             # use default solver
             self.solver = solvers.SolverGLPK()
-
+        
         self.node = {}
         self.group = {}
-
+        
         self.reset()
-
+    
     def check(self):
         """Check the validity of the model
-
+        
         Raises an Exception if the model is invalid.
         """
         nodes = self.graph.nodes()
@@ -76,17 +75,17 @@ class Model(object):
     def nodes(self):
         """Returns a list of Nodes in the model"""
         return self.graph.nodes()
-
+    
     def edges(self):
         """Returns a list of Edges in the model
-
+        
         An edge is described as a 2-tuple of the source and dest Nodes.
         """
         return self.graph.edges()
-
+    
     def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):
         """Find all routes between two nodes or types of node
-
+        
         Parameters
         ----------
         type1 : Node class or instance
@@ -104,14 +103,14 @@ class Model(object):
                 'strict' : all nodes must have the same domain as the first node.
                 'any' : any domain is permitted on any node (i.e. nodes can have different domains)
                 'different' : at least two different domains must be present on the route
-
+        
         Returns a list of all the routes between the two nodes. A route is
         specified as a list of all the nodes between the source and
         destination with the same domain has the source.
         """
-
+        
         nodes = self.graph.nodes()
-
+        
         if inspect.isclass(type1):
             # find all nodes of type1
             type1_nodes = []
@@ -120,7 +119,7 @@ class Model(object):
                     type1_nodes.append(node)
         else:
             type1_nodes = [type1]
-
+        
         if inspect.isclass(type2):
             # find all nodes of type2
             type2_nodes = []
@@ -129,7 +128,7 @@ class Model(object):
                     type2_nodes.append(node)
         else:
             type2_nodes = [type2]
-
+        
         # find all routes between type1_nodes and type2_nodes
         all_routes = []
         for node1 in type1_nodes:
@@ -167,9 +166,9 @@ class Model(object):
 
                     if is_valid:
                         all_routes.append(route)
-
+        
         return all_routes
-
+    
     def step(self):
         """Step the model forward by one day"""
         # reset any failures
@@ -177,23 +176,22 @@ class Model(object):
         # solve the current timestep
         ret = self.solve()
         self.timestamp += self.parameters['timestep']
-        self.after()
         return ret
 
     def solve(self):
         """Call solver to solve the current timestep"""
         return self.solver.solve(self)
-
+    
     def run(self, until_date=None, until_failure=False):
         """Run model until exit condition is reached
-
+        
         Parameters
         ----------
         until_date : datetime (optional)
             Stop model when date is reached
         until_failure: bool (optional)
             Stop model run when failure condition occurs
-
+        
         Returns the number of timesteps that were run.
         """
         if self.timestamp > self.parameters['timestamp_finish']:
@@ -208,54 +206,50 @@ class Model(object):
                 return timesteps
             elif self.timestamp > self.parameters['timestamp_finish']:
                 return timesteps
-
+    
     def reset(self):
         """Reset model to it's initial conditions"""
         self.timestamp = self.parameters['timestamp_start']
         for node in self.nodes():
             node.reset()
-
-    def after(self):
-        for node in self.nodes():
-            node.after()
-
+    
     def xml(self):
         """Serialize the Model to XML"""
         xml_model = ET.Element('pywr')
-
+        
         xml_metadata = ET.SubElement(xml_model, 'metadata')
         for key, value in self.metadata.items():
             xml_metadata_item = ET.SubElement(xml_metadata, key)
             xml_metadata_item.text = value
-
+        
         xml_parameters = ET.SubElement(xml_model, 'parameters')
         for key, value in self.parameters.items():
             pass # TODO
-
+        
         xml_data = ET.SubElement(xml_model, 'data')
         for name, ts in self.data.items():
             xml_ts = ts.xml(name)
             xml_data.append(xml_ts)
-
+        
         xml_nodes = ET.SubElement(xml_model, 'nodes')
         for node in self.nodes():
             xml_node = node.xml()
             xml_nodes.append(xml_node)
-
+        
         xml_edges = ET.SubElement(xml_model, 'edges')
         for edge in self.edges():
             node_from, node_to = edge
             xml_edge = ET.SubElement(xml_edges, 'edge')
             xml_edge.set('from', node_from.name)
             xml_edge.set('to', node_to.name)
-
+        
         xml_groups = ET.SubElement(xml_model, 'groups')
         for name, group in self.group.items():
             xml_group = group.xml()
             xml_groups.append(xml_group)
-
+        
         return xml_model
-
+    
     @classmethod
     def from_xml(cls, xml, path=None):
         """Deserialize a Model from XML"""
@@ -264,9 +258,9 @@ class Model(object):
             solver = xml_solver.get('name')
         else:
             solver = None
-
+        
         model = Model(solver=solver)
-
+        
         # parse metadata
         xml_metadata = xml.find('metadata')
         if xml_metadata is not None:
@@ -279,7 +273,7 @@ class Model(object):
             model.xml_path = os.path.abspath(path)
         else:
             model.xml_path = None
-
+        
         # parse model parameters
         for xml_parameters in xml.findall('parameters'):
             for xml_parameter in xml_parameters.getchildren():
@@ -291,7 +285,7 @@ class Model(object):
         if xml_datas:
             for xml_data in xml_datas.getchildren():
                 ts = Timeseries.from_xml(model, xml_data)
-
+        
         # parse nodes
         for node_xml in xml.find('nodes'):
             tag = node_xml.tag.lower()
@@ -321,7 +315,7 @@ class Model(object):
         if xml_groups:
             for xml_group in xml_groups.getchildren():
                 group = Group.from_xml(model, xml_group)
-
+        
         return model
 
     def path_rel_to_xml(self, path):
@@ -350,10 +344,10 @@ class Property(object):
 class Parameter(Property):
     def value(self, index=None):
         raise NotImplementedError()
-
+    
     def xml(*args, **kwargs):
         raise NotImplementedError()
-
+    
     @classmethod
     def from_xml(cls, model, xml):
         # TODO: this doesn't look nice - need to rethink xml specification?
@@ -372,10 +366,10 @@ class Parameter(Property):
 class ParameterConstant(Parameter):
     def __init__(self, value=None):
         self._value = value
-
+    
     def value(self, index=None):
         return self._value
-
+    
     def xml(self, key):
         parameter_xml = ET.Element('parameter')
         parameter_xml.set('key', key)
@@ -442,35 +436,22 @@ class ParameterFunction(Parameter):
 
     def value(self, index=None):
         return self._func(self._parent, index)
-
+    
     @classmethod
     def from_xml(cls, xml):
         raise NotImplementedError('TODO')
 
-class ParameterMonthlyProfile(Parameter):
-    def __init__(self, values):
-        if len(values) != 12:
-            raise ValueError("12 values must be given for a monthly profile.")
-        self._values = values
-
-    def value(self, index=None):
-        return self._values[index.month-1]
-
-    @classmethod
-    def from_xml(cls, xml):
-        raise NotImplementedError('TODO')
-
-class Timeseries(Parameter):
+class Timeseries(Property):
     def __init__(self, name, df, metadata=None):
         self.name = name
         self.df = df
         if metadata is None:
             metadata = {}
         self.metadata = metadata
-
+    
     def value(self, index):
         return self.df[index]
-
+    
     def xml(self, name):
         xml_ts = ET.Element('timeseries')
         xml_ts.set('name', self.name)
@@ -524,7 +505,7 @@ class Timeseries(Parameter):
         # register the timeseries in the model
         model.data[name] = ts
         return ts
-
+    
     @classmethod
     def from_xml(self, model, xml):
         name = xml.get('name')
@@ -542,22 +523,15 @@ class Timeseries(Parameter):
         return ts
 
 class Variable(Property):
-    """This property is used for values that are calculated by the model, i.e.
-    variables. It provides a method of saving the results at each timestep.
-    """
     def __init__(self, initial=0.0):
         self._initial = initial
-        self.reset()
+        self._value = initial
 
     def value(self, index=None):
         return self._value
 
     def reset(self):
         self._value = self._initial
-        self._saved_values = []
-
-    def save(self):
-        self._saved_values.append(self._value)
 
     @classmethod
     def from_xml(cls, model, xml):
@@ -574,11 +548,6 @@ class PropertiesDict(dict):
             value = ParameterConstant(value)
         dict.__setitem__(self, key, value)
 
-class Domain(object):
-    def __init__(self, name='default', **kwargs):
-        self.name = name
-        self.color = kwargs.pop('color', '#FF6600')
-
 # node subclasses are stored in a dict for convenience
 node_registry = {}
 class NodeMeta(type):
@@ -591,9 +560,10 @@ class NodeMeta(type):
 
 class Node(with_metaclass(NodeMeta)):
     """Base object from which all other nodes inherit"""
-    def __init__(self, model, name, domain=Domain(), position=None, **kwargs):
+    
+    def __init__(self, model, name, domain='default', position=None, **kwargs):
         """Initialise a new Node object
-
+        
         Parameters
         ----------
         model : Model
@@ -610,8 +580,6 @@ class Node(with_metaclass(NodeMeta)):
         self.color = 'black'
         self.position = position
         self.domain = domain
-        self.visible = kwargs.pop('visible', True)
-        self.parent = kwargs.pop('parent', None)
 
         if not hasattr(self, 'name'):
             # set name, avoiding issues with multiple inheritance
@@ -619,22 +587,22 @@ class Node(with_metaclass(NodeMeta)):
             self.name = name
 
         self.slots = {}
-
+        
         self.properties = PropertiesDict({
             'cost': self.pop_kwarg_parameter(kwargs, 'cost', 0.0)
         })
-
+    
     def __repr__(self):
         if self.name:
             # e.g. <Node "oxford">
             return '<{} "{}">'.format(self.__class__.__name__, self.name)
         else:
             return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
-
+    
     @property
     def name(self):
         return self.__name
-
+    
     @name.setter
     def name(self, name):
         # check for name collision
@@ -648,10 +616,10 @@ class Node(with_metaclass(NodeMeta)):
         # apply new name
         self.__name = name
         self.model.node[name] = self
-
+    
     def connect(self, node, from_slot=None, to_slot=None):
         """Create an edge from this Node to another Node
-
+        
         Parameters
         ----------
         node : Node
@@ -663,36 +631,26 @@ class Node(with_metaclass(NodeMeta)):
         """
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
-
-        node1 = self
+        
         # check slots are valid
         if from_slot is not None:
             if from_slot not in self.slots:
                 raise ValueError('{} does not have slot: {}'.format(self.__class__.__name__, from_slot))
-            node1 = self.slots[from_slot]
-
-        node2 = node
         if to_slot is not None:
             if to_slot not in node.slots:
                 raise ValueError('{} does not have slot: {}'.format(node.__class__.__name__, to_slot))
-            node2 = node.slots[to_slot]
-        else:
-            # Add default to_slot for Storage and its subclases
-            if isinstance(node2, Storage):
-                node2 = node.slots['output']
-            if isinstance(node2, PiecewiseLink):
-                # must recursively add all sublinks
-                for sublink in node2.sublinks:
-                    print('Connecting sublink...')
-                    node1.connect(sublink)
-                return
 
-        self.model.graph.add_edge(node1, node2)
+        # create edge and connect slots
+        if from_slot is not None:
+            self.slots[from_slot] = node
+        if to_slot is not None:
+            node.slots[to_slot] = self
+        self.model.graph.add_edge(self, node)
         self.model.dirty = True
-
+    
     def disconnect(self, node=None):
         """Remove a connection from this Node to another Node
-
+        
         Parameters
         ----------
         node : Node (optional)
@@ -716,10 +674,10 @@ class Node(with_metaclass(NodeMeta)):
             if slot_node is node:
                 self.slots[slot] = None
         self.model.dirty = True
-
+    
     def check(self):
         """Check the node is valid
-
+        
         Raises an exception if the node is invalid
         """
         if not isinstance(self.position, (tuple, list,)):
@@ -740,14 +698,18 @@ class Node(with_metaclass(NodeMeta)):
         """
         pass
 
-    def commit(self, volume):
+    def commit(self, volume, chain):
         """Commit a volume of water actually supplied/transferred/received
-
+        
         Parameter
         ---------
         volume : float
             The volume to commit
-
+        chain : string
+            The position in the route of the node for this commit. This must be
+            one of: 'first' (the node supplied water), 'middle' (the node
+            transferred water) or 'last' (the node received water).
+        
         This should be implemented by the various node subclasses.
         """
         pass
@@ -755,16 +717,11 @@ class Node(with_metaclass(NodeMeta)):
     def after(self):
         """Called after the current timestep has finished
         """
-        # save variables
-        for key, parameter in self.properties.items():
-            try:
-                parameter.save()
-            except AttributeError:
-                pass
-
+        pass
+    
     def pop_kwarg_parameter(self, kwargs, key, default):
         """Pop a parameter from the keyword arguments dictionary
-
+        
         Parameters
         ----------
         kwargs : dict
@@ -773,7 +730,7 @@ class Node(with_metaclass(NodeMeta)):
             The argument name, e.g. 'flow'
         default : object
             The default value to use if the dictionary does not have that key
-
+        
         Returns a Parameter
         """
         value = kwargs.pop(key, default)
@@ -783,14 +740,14 @@ class Node(with_metaclass(NodeMeta)):
             return ParameterFunction(self, value)
         else:
             return ParameterConstant(value=value)
-
+    
     def xml(self):
         """Serialize the node to an XML object
-
+        
         The tag of the XML node returned is the same as the class name. For the
         base Node object a <node /> is returned, but this will differ for
         subclasses, e.g. Supply.xml returns a <supply /> element.
-
+        
         Returns an xml.etree.ElementTree.Element object
         """
         xml = ET.fromstring('<{} />'.format(self.__class__.__name__.lower()))
@@ -801,18 +758,18 @@ class Node(with_metaclass(NodeMeta)):
             prop_xml = prop.xml(key)
             xml.append(prop_xml)
         return xml
-
+    
     @classmethod
     def from_xml(cls, model, xml):
         """Deserialize a node from an XML object
-
+        
         Parameters
         ----------
         model : Model
             The model to add the node to
         xml : xml.etree.ElementTree.Element
             The XML element representing the node
-
+        
         Returns a Node instance, or an instance of the appropriate subclass.
         """
         tag = xml.tag.lower()
@@ -843,11 +800,11 @@ class Input(Node):
         max_flow : float (optional)
             A simple maximum flow constraint for the input. Defaults to 0.0
         """
-        super(Input, self).__init__(*args, **kwargs)
+        Node.__init__(self, *args, **kwargs)
         self.color = '#F26C4F' # light red
 
         self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
-        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
+        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', 0.0)
 
         self.licenses = None
 
@@ -882,16 +839,16 @@ class Output(Node):
             A simple maximum flow constraint for the output. Defaults to None
         """
         Node.__init__(self, *args, **kwargs)
-        self.color = '#FFF467' # light yellow
+        self.color = '#F26C4F' # light red
 
         self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
         self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
-        self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 0.0)
+        self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 1000.0)
 
 
-class Supply(Input):
+class Supply(Node):
     """A supply in the network
-
+    
     The base supply node should be sufficient to represent simply supplies
     which do not interact with other components (e.g. a groundwater source
     or a bulk supply from another zone/company). For more complex supplies
@@ -899,22 +856,22 @@ class Supply(Input):
     """
     def __init__(self, *args, **kwargs):
         """Initialise a new Supply node
-
+        
         Parameters
         ----------
         max_flow : float (optional)
             A simple maximum flow constraint for the supply. For more complex
             constraints a License instance should be used.
         """
-        Input.__init__(self, *args, **kwargs)
+        Node.__init__(self, *args, **kwargs)
         self.color = '#F26C4F' # light red
-
+        
         self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', 0.0)
-
+        
         self.licenses = None
-
-    def commit(self, volume):
-        super(Supply, self).commit(volume)
+    
+    def commit(self, volume, chain):
+        super(Supply, self).commit(volume, chain)
         if self.licenses is not None:
             self.licenses.commit(volume)
 
@@ -937,11 +894,11 @@ class Supply(Input):
             node.licenses = LicenseCollection.from_xml(licensecollection_xml)
         return node
 
-class Demand(Output):
+class Demand(Node):
     """A demand in the network"""
     def __init__(self, *args, **kwargs):
         """Initialise a new Demand node
-
+        
         Parameters
         ----------
         demand : float
@@ -953,9 +910,9 @@ class Demand(Output):
             consumed and the remaining 30% can be discharged. The default is
             that 100% of the water is consumed.
         """
-        Output.__init__(self, *args, **kwargs)
+        Node.__init__(self, *args, **kwargs)
         self.color = '#FFF467' # light yellow
-
+        
         self.properties['demand'] = self.pop_kwarg_parameter(kwargs, 'demand', 0.0)
 
         self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 1000.0)
@@ -965,8 +922,8 @@ class Demand(Output):
     def before(self):
         self._supplied = 0.0
 
-    def commit(self, volume):
-        super(Demand, self).commit(volume)
+    def commit(self, volume, chain):
+        super(Demand, self).commit(volume, chain)
         if chain == 'last':
             self._supplied += volume
 
@@ -979,7 +936,7 @@ class Demand(Output):
 
 class Link(Node):
     """A link in the supply network, such as a pipe
-
+    
     Connections between Nodes in the network are created using edges (see the
     Node.connect and Node.disconnect methods). However, these edges cannot
     hold constraints (e.g. a maximum flow constraint). In this instance a Link
@@ -987,7 +944,7 @@ class Link(Node):
     """
     def __init__(self, *args, **kwargs):
         """Initialise a new Link node
-
+        
         Parameters
         ----------
         max_flow : float or function (optional)
@@ -995,14 +952,14 @@ class Link(Node):
         """
         Node.__init__(self, *args, **kwargs)
         self.color = '#A0A0A0' # 45% grey
-
-        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
+        
+        self.pop_kwarg_parameter(kwargs, 'max_flow', None)
 
 class Blender(Link):
     """Blender node to maintain a constant ratio between two supply routes"""
     def __init__(self, *args, **kwargs):
         """Initialise a new Blender node
-
+        
         Parameters
         ----------
         ratio : float (optional)
@@ -1014,21 +971,102 @@ class Blender(Link):
 
         self.properties['ratio'] = self.pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
-class StorageInput(Input):
-    def commit(self, volume):
-        super(StorageInput, self).commit(volume)
-        self.parent.commit(-volume)
+class Catchment(Node):
+    """A hydrological catchment, supplying water to the river network"""
+    def __init__(self, *args, **kwargs):
+        """Initialise a new Catchment node
+        
+        Parameters
+        ----------
+        flow : float or function
+            The amount of water supplied by the catchment each timestep
+        """
+        Node.__init__(self, *args, **kwargs)
+        self.color = '#82CA9D' # green
+        
+        self.properties['flow'] = self.pop_kwarg_parameter(kwargs, 'flow', 0.0)
+    
+    def check(self):
+        Node.check(self)
+        successors = self.model.graph.successors(self)
+        if not len(successors) == 1:
+            raise ValueError('{} has invalid number of successors ({})'.format(self, len(successors)))
 
-class StorageOutput(Output):
-    def commit(self, volume):
-        super(StorageOutput, self).commit(volume)
-        self.parent.commit(volume)
+class River(Node):
+    """A node in the river network
+    
+    This node may have multiple upstream nodes (i.e. a confluence) but only
+    one downstream node.
+    """
+    def __init__(self, *args, **kwargs):
+        Node.__init__(self, *args, **kwargs)
+        self.color = '#6ECFF6' # blue
+
+class RiverSplit(River):
+    """A split in the river network"""
+    def __init__(self, *args, **kwargs):
+        """Initialise a new RiverSplit instance
+        
+        Parameters
+        ----------
+        split : float or function
+            The ratio to apportion the flow between the two downstream nodes as
+            a ratio (0.0-1.0). If no value is given a default value of 0.5 is
+            used.
+        """
+        River.__init__(self, *args, **kwargs)
+        self.slots = {1: None, 2: None}
+        
+        self.properties['split'] = self.pop_kwarg_parameter(kwargs, 'split', 0.5)
+
+class Discharge(River):
+    """An inline discharge to the river network
+    
+    This node is similar to a catchment, but sits inline to the river network,
+    rather than at the head of the river.
+    """
+    def __init__(self, *args, **kwargs):
+        River.__init__(self, *args, **kwargs)
+        
+        self.properties['flow'] = self.pop_kwarg_parameter(kwargs, 'flow', 0.0)
+
+class DemandDischarge(River):
+    """River discharge for demands that aren't entirely consumptive
+    """
+    pass
+
+class Terminator(Node):
+    """A sink in the river network
+    
+    This node is required to close the network and is used by some of the
+    routing algorithms. Every river must end in a Terminator.
+    """
+    pass
+
+class RiverGauge(River):
+    """A river gauging station, with a minimum residual flow (MRF)
+    """
+    def __init__(self, *args, **kwargs):
+        """Initialise a new RiverGauge instance
+
+        Parameters
+        ----------
+        mrf : float (optional)
+            The minimum residual flow (MRF) at the gauge
+        """
+        River.__init__(self, *args, **kwargs)
+
+        self.properties['mrf'] = self.pop_kwarg_parameter(kwargs, 'mrf', None)
+
+class RiverAbstraction(Supply, River):
+    """An abstraction from the river network"""
+    pass
 
 class Storage(Node):
     """A generic storage Node"""
     def __init__(self, model, *args, **kwargs):
         Node.__init__(self,  model, *args, **kwargs)
-        self.color = 'green' # light yellow
+
         # keyword arguments for input and output nodes specified with prefix
         input_kwargs, output_kwargs = {}, {}
         for key in kwargs.keys():
@@ -1037,92 +1075,38 @@ class Storage(Node):
             elif key.startswith('output_'):
                 output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
 
-        # subnodes require position of this node
-        input_kwargs['position'] = output_kwargs['position'] = self.position
-        # subnodes have the same domain as this node
-        input_kwargs['domain'] = output_kwargs['domain'] = self.domain
-
         # output node should have the same benefit as Storage
         output_kwargs['benefit'] = kwargs.pop('benefit', 0.0)
         def func(parent, index):
             return self.output.properties['benefit'].value(index)
         self.properties['benefit'] = ParameterFunction(self, func)
 
-        self.input = StorageInput(model, name="{} Input".format(self.name),
-                           visible=False, parent=self, **input_kwargs)
-        self.slots['input'] = self.input
-        self.output = StorageOutput(model, name="{} Output".format(self.name),
-                             visible=False, parent=self, **output_kwargs)
-        self.slots['output'] = self.output
+        self.input = Input(model, name="{} Input".format(self.name), **input_kwargs)
+        self.output = Output(model, name="{} Output".format(self.name), **output_kwargs)
 
-        self.properties['current_volume'] = Variable(initial=kwargs.pop('current_volume', 0.0))
+        self.properties['current_volume'] = self.pop_kwarg_parameter(kwargs, 'current_volume', 0.0)
         self.properties['max_volume'] = self.pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
 
-    def commit(self, volume, ):
-        super(Storage, self).commit(volume)
-        self.properties['current_volume']._value += volume*self.model.parameters['timestep']
+    def commit(self, volume, chain):
+        super(Reservoir, self).commit(volume, chain)
+        # update the volume remaining in the reservoir
+        if chain == 'first':
+            # reservoir supplied some water
+            self.properties['current_volume']._value -= volume
+        elif chain == 'last':
+            # reservoir received some water
+            self.properties['current_volume']._value += volume
 
     def check(self):
-        Node.check(self)
-        self.input.check()
-        self.output.check()
+        Input.check(self)
+        Output.check(self)
         index = self.model.timestamp
         # check volume doesn't exceed maximum volume
         assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))
 
-    def connect(self, node, from_slot='input', to_slot=None):
-        super(Storage, self).connect(node, from_slot=from_slot, to_slot=to_slot)
-
-
-class PiecewiseLink(Node):
-    """ An extension of Nodes that represents a non-linear Link with a piece wise cost function.
-
-    This object is intended to model situations where there is a benefit of supplying certain flow rates
-    but beyond a fixed limit there is a change in (or zero) cost.
-
-
-    """
-    def __init__(self, model, *args, **kwargs):
-        """
-        Parameters
-        ----------
-        max_flow : iterable
-            A monotonic increasing list of maximum flows for the piece wise function
-        cost : iterable
-            A list of costs corresponding to the max_flow steps
-        """
-        # Grab cost and max_flow keywords before given to Node.__init__
-        costs = kwargs.pop('cost')
-        max_flows = kwargs.pop('max_flow')
-        Node.__init__(self,  model, *args, **kwargs)
-
-        if len(costs) != len(max_flows):
-            raise ValueError("Piecewise max_flow and cost keywords must be the same length.")
-
-        self.sublinks = []
-        for max_flow, cost in zip(max_flows, costs):
-            self.sublinks.append(Link(model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
-                                      cost=cost, max_flow=max_flow, visible=False, parent=self,
-                                      position=self.position, domain=self.domain))
-
-    def connect(self, node, from_slot=None, to_slot=None):
-        """
-        Overload Node.connect to connect node to all sublinks rather than directly to this PiecewiseLink.
-        """
-        for sublink in self.sublinks:
-            sublink.connect(node, from_slot=from_slot, to_slot=to_slot)
-
-    def disconnect(self, node=None):
-        """
-        Overload Node.disconnect to disconnect node from all sublinks.
-        """
-        for sublink in self.sublinks:
-            sublink.disconnect(node=node)
-
-
 class Group(object):
     """A group of nodes
-
+    
     This class is useful for applying a license constraint (or set of
     constraints) to a group of Supply nodes.
     """
@@ -1139,7 +1123,7 @@ class Group(object):
     @property
     def name(self):
         return self.__name
-
+    
     @name.setter
     def name(self, name):
         try:
@@ -1148,7 +1132,7 @@ class Group(object):
             pass
         self.__name = name
         self.model.group[name] = self
-
+    
     def xml(self):
         xml = ET.Element('group')
         xml.set('name', self.name)
@@ -1162,7 +1146,7 @@ class Group(object):
             xml_licensecollection = self.licenses.xml()
             xml.append(xml_licensecollection)
         return xml
-
+    
     @classmethod
     def from_xml(cls, model, xml):
         name = xml.get('name')

@@ -7,7 +7,6 @@ import os
 import pytest
 
 from pywr.core import *
-from pywr.domains.river import *
 
 def test_names():
     '''Test node names'''
@@ -73,8 +72,6 @@ def test_slots_to():
     assert(blender.slots[1] is supply1)
     assert(blender.slots[2] is supply2)
 
-# TODO Update this test. RiverSplit is deprecated.
-@pytest.mark.xfail
 def test_slots_from():
     model = Model()
     

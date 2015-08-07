@@ -10,7 +10,6 @@ import pandas
 
 import pywr.core
 import pywr.licenses
-import pywr.domains.river
 
 from helpers import load_model  
 
