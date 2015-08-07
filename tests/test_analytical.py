@@ -38,14 +38,14 @@ def simple_linear_model(request):
     inpt.connect(lnk)
     otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, benefit=benefit)
     lnk.connect(otpt)
-    default = inpt.domain
-    expected_requested = {default: out_flow}
-    expected_sent = {default: in_flow if benefit > 1.0 else out_flow}
+
+    expected_requested = {'default': out_flow}
+    expected_sent = {'default': in_flow if benefit > 1.0 else out_flow}
 
     expected_node_results = {
-        "Input": expected_sent[default],
-        "Link": expected_sent[default],
-        "Output": expected_sent[default],
+        "Input": expected_sent['default'],
+        "Link": expected_sent['default'],
+        "Output": expected_sent['default'],
     }
     return model, expected_requested, expected_sent, expected_node_results
 
@@ -82,14 +82,14 @@ def linear_model_with_storage(request):
     strg.input.connect(lnk2)
     lnk.connect(strg.output)
     lnk2.connect(otpt)
-    default = inpt.domain
-    expected_requested = {default: out_flow}
-    expected_sent = {default: in_flow+min(max_strg_out, current_volume) if out_benefit > 1.0 else out_flow}
+
+    expected_requested = {'default': out_flow}
+    expected_sent = {'default': in_flow+min(max_strg_out, current_volume) if out_benefit > 1.0 else out_flow}
 
     expected_node_results = {
-        "Input": expected_sent[default],
-        "Link": expected_sent[default],
-        "Output": expected_sent[default],
+        "Input": expected_sent['default'],
+        "Link": expected_sent['default'],
+        "Output": expected_sent['default'],
         "Storage Output": min(max_strg_out, current_volume) if out_benefit > 1.0 else 0.0,
         "Storage Input": 0.0,
         "Storage": 0.0,
