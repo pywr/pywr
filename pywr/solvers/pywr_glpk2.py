@@ -24,6 +24,8 @@ class SolverGLPK(Solver):
 
     def solve(self, model):
         timestep = model.parameters['timestep']
+        if isinstance(timestep, datetime.timedelta):
+            timestep = timestep.days
 
         if model.dirty:
             '''
