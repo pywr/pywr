@@ -1057,10 +1057,16 @@ class Storage(Node):
 
         self.properties['current_volume'] = Variable(initial=kwargs.pop('current_volume', 0.0))
         self.properties['max_volume'] = self.pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
+        def func(parent, index):
+            return parent.properties['current_volume'].value(index)/parent.properties['max_volume'].value(index)
+        self.properties['current_pc_full'] = ParameterFunction(self, func)
 
     def commit(self, volume, ):
         super(Storage, self).commit(volume)
-        self.properties['current_volume']._value += volume*self.model.parameters['timestep']
+        timestep = self.model.parameters['timestep']
+        if isinstance(timestep, datetime.timedelta):
+            timestep = timestep.days
+        self.properties['current_volume']._value += volume*timestep
 
     def check(self):
         Node.check(self)
