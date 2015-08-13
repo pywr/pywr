@@ -1,11 +1,13 @@
 
-from ..core import Node, Domain, Input, Output, Link, Storage, ParameterFunction
+from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, ParameterFunction
 
 
 class RiverDomainMixin(object):
     def __init__(self, *args, **kwargs):
         if 'domain' not in kwargs:
             kwargs['domain'] = Domain(name='river', color='#33CCFF')
+        if 'color' not in kwargs:
+            self.color = '#6ECFF6' # blue
         super(RiverDomainMixin, self).__init__(*args, **kwargs)
 
 
@@ -53,7 +55,6 @@ class River(Link, RiverDomainMixin):
     """
     def __init__(self, *args, **kwargs):
         super(River, self).__init__(*args, **kwargs)
-        self.color = '#6ECFF6' # blue
 
 
 class RiverSplit(River):
@@ -101,7 +102,7 @@ class Terminator(Output, RiverDomainMixin):
         super(Terminator, self).__init__(*args, **kwargs)
 
 
-class RiverGauge(River):
+class RiverGauge(PiecewiseLink, RiverDomainMixin):
     """A river gauging station, with a minimum residual flow (MRF)
     """
     def __init__(self, *args, **kwargs):
@@ -109,12 +110,14 @@ class RiverGauge(River):
 
         Parameters
         ----------
-        mrf : float (optional)
+        mrf : float
             The minimum residual flow (MRF) at the gauge
         """
-        River.__init__(self, *args, **kwargs)
-
-        self.properties['mrf'] = self.pop_kwarg_parameter(kwargs, 'mrf', None)
+        # create keyword arguments for PiecewiseLink
+        cost = kwargs.pop('cost', 0.0)
+        kwargs['cost'] = [cost-kwargs.pop('benefit', 0.0), cost]
+        kwargs['max_flow'] = [kwargs.pop('mrf'), None]
+        super(RiverGauge, self).__init__(*args, **kwargs)
 
 
 class RiverAbstraction(Output, RiverDomainMixin):
