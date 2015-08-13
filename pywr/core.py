@@ -172,6 +172,7 @@ class Model(object):
 
     def step(self):
         """Step the model forward by one day"""
+        self.before()
         # reset any failures
         self.failure = set()
         # solve the current timestep
@@ -214,6 +215,10 @@ class Model(object):
         self.timestamp = self.parameters['timestamp_start']
         for node in self.nodes():
             node.reset()
+
+    def before(self):
+        for node in self.nodes():
+            node.before()
 
     def after(self):
         for node in self.nodes():
@@ -850,7 +855,15 @@ class Input(Node):
         self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
 
         self.licenses = None
+        self.properties['flow'] = Variable(initial=kwargs.pop('flow', 0.0))
 
+    def before(self, ):
+        super(Input, self).before()
+        self.properties['flow']._value = 0.0
+
+    def commit(self, volume, ):
+        super(Input, self).commit(volume)
+        self.properties['flow']._value += volume
 
 class InputFromOtherDomain(Input):
     """A input in to the network that is connected to an output from another domain
@@ -887,7 +900,15 @@ class Output(Node):
         self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
         self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
         self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 0.0)
+        self.properties['flow'] = Variable(initial=kwargs.pop('flow', 0.0))
 
+    def before(self, ):
+        super(Output, self).before()
+        self.properties['flow']._value = 0.0
+
+    def commit(self, volume, ):
+        super(Output, self).commit(volume)
+        self.properties['flow']._value += volume
 
 class Supply(Input):
     """A supply in the network
