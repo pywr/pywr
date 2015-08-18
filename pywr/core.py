@@ -1019,6 +1019,16 @@ class Link(Node):
 
         self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
 
+        self.properties['flow'] = Variable(initial=kwargs.pop('flow', 0.0))
+
+    def before(self, ):
+        super(Link, self).before()
+        self.properties['flow']._value = 0.0
+
+    def commit(self, volume, ):
+        super(Link, self).commit(volume)
+        self.properties['flow']._value += volume
+
 class Blender(Link):
     """Blender node to maintain a constant ratio between two supply routes"""
     def __init__(self, *args, **kwargs):
@@ -1132,6 +1142,8 @@ class PiecewiseLink(Node):
                                       cost=cost, max_flow=max_flow, visible=False, parent=self,
                                       position=self.position, domain=self.domain))
 
+        self.properties['flow'] = Variable(initial=kwargs.pop('flow', 0.0))
+
     def connect(self, node, from_slot=None, to_slot=None):
         """
         Overload Node.connect to connect node to all sublinks rather than directly to this PiecewiseLink.
@@ -1146,6 +1158,15 @@ class PiecewiseLink(Node):
         for sublink in self.sublinks:
             sublink.disconnect(node=node)
 
+    def after(self, ):
+        """
+        Set total flow on this link as sum of sublinks
+        """
+        self.properties['flow']._value = 0.0
+        for lnk in self.sublinks:
+            self.properties['flow']._value += lnk.properties['flow']._value
+        # Make sure save is done after setting aggregated flow
+        super(PiecewiseLink, self).after()
 
 class Group(object):
     """A group of nodes
