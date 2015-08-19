@@ -465,6 +465,19 @@ class ParameterMonthlyProfile(Parameter):
     def from_xml(cls, xml):
         raise NotImplementedError('TODO')
 
+class ParameterDailyProfile(Parameter):
+    def __init__(self, values):
+        if len(values) != 366:
+            raise ValueError("366 values must be given for a daily profile.")
+        self._values = values
+
+    def value(self, index=None):
+        return self._values[index.dayofyear-1]
+
+    @classmethod
+    def from_xml(cls, xml):
+        raise NotImplementedError('TODO')
+
 class Timeseries(Parameter):
     def __init__(self, name, df, metadata=None):
         self.name = name
