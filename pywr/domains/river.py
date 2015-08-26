@@ -11,7 +11,7 @@ class RiverDomainMixin(object):
         super(RiverDomainMixin, self).__init__(*args, **kwargs)
 
 
-class Catchment(Input, RiverDomainMixin):
+class Catchment(RiverDomainMixin, Input):
     """A hydrological catchment, supplying water to the river network"""
     def __init__(self, *args, **kwargs):
         """Initialise a new Catchment node.
@@ -25,15 +25,12 @@ class Catchment(Input, RiverDomainMixin):
         flow : float or function
             The amount of water supplied by the catchment each timestep
         """
-        super(Catchment, self).__init__(*args, **kwargs)
         self.color = '#82CA9D' # green
 
-        self.properties['flow'] = self.pop_kwarg_parameter(kwargs, 'flow', 0.0)
-
-        def func(parent, index):
-            return self.properties['flow'].value(index)
-        self.properties['min_flow'] = ParameterFunction(self, func)
-        self.properties['max_flow'] = ParameterFunction(self, func)
+        # Min/max flow set in super inits
+        super(Catchment, self).__init__(*args, **kwargs)
+        # Grab flow from kwargs
+        self.flow = kwargs.pop('flow', 0.0)
 
     def check(self):
         super(Catchment, self).check()
@@ -41,13 +38,23 @@ class Catchment(Input, RiverDomainMixin):
         if not len(successors) == 1:
             raise ValueError('{} has invalid number of successors ({})'.format(self, len(successors)))
 
+    def get_flow(self, timestep):
+        """ flow is ensured that both min_flow and max_flow are the same. """
+        return self.get_min_flow(timestep)
 
-class Reservoir(Storage, RiverDomainMixin):
+    def __setattr__(self, name, value):
+        if name == 'flow':
+            self.min_flow = value
+            self.max_flow = value
+            return
+        super(Catchment, self).__setattr__(name, value)
+
+class Reservoir(RiverDomainMixin, Storage):
     def __init__(self, *args, **kwargs):
         super(Reservoir, self).__init__(*args, **kwargs)
 
 
-class River(Link, RiverDomainMixin):
+class River(RiverDomainMixin, Link):
     """A node in the river network
 
     This node may have multiple upstream nodes (i.e. a confluence) but only
@@ -92,7 +99,7 @@ class DemandDischarge(River):
     pass
 
 
-class Terminator(Output, RiverDomainMixin):
+class Terminator(RiverDomainMixin, Output):
     """A sink in the river network
 
     This node is required to close the network and is used by some of the
@@ -102,7 +109,7 @@ class Terminator(Output, RiverDomainMixin):
         super(Terminator, self).__init__(*args, **kwargs)
 
 
-class RiverGauge(PiecewiseLink, RiverDomainMixin):
+class RiverGauge(RiverDomainMixin, PiecewiseLink):
     """A river gauging station, with a minimum residual flow (MRF)
     """
     def __init__(self, *args, **kwargs):
@@ -120,13 +127,13 @@ class RiverGauge(PiecewiseLink, RiverDomainMixin):
         super(RiverGauge, self).__init__(*args, **kwargs)
 
 
-class RiverAbstraction(Output, RiverDomainMixin):
+class RiverAbstraction(RiverDomainMixin, Output):
     """An abstraction from the river network"""
     def __init__(self, *args, **kwargs):
         super(RiverAbstraction, self).__init__(*args, **kwargs)
 
 
-class DemandCentre(Output, RiverDomainMixin):
+class DemandCentre(RiverDomainMixin, Output):
     """A demand centre"""
     def __init__(self, *args, **kwargs):
         super(DemandCentre, self).__init__(*args, **kwargs)
