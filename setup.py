@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
+from Cython.Build import cythonize
 
 setup(
     name='pywr',
@@ -10,4 +11,7 @@ setup(
     author_email='josh@snorfalorpagus.net',
     url='http://snorf.net/pywr/',
     packages=['pywr', 'pywr.solvers'],
+    ext_modules=cythonize([
+        "pywr/_core.pyx",
+        ])
 )

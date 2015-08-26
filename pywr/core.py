@@ -3,6 +3,8 @@
 
 from __future__ import print_function
 
+import _core
+
 import os
 from IPython.core.magic_arguments import kwds
 import networkx as nx
@@ -18,6 +20,34 @@ warnings.simplefilter(action = "ignore", category = FutureWarning)
 warnings.simplefilter(action = "ignore", category = UnicodeWarning)
 
 from .licenses import LicenseCollection
+
+class Timestepper(object):
+    def __init__(self, start=pandas.to_datetime('2015-01-01'),
+                       end=pandas.to_datetime('2015-12-31'),
+                       delta=datetime.timedelta(1)):
+        self.start = start
+        self.end = end
+        self.delta = delta
+        self.reset()
+
+    def __iter__(self, ):
+        return self
+
+    def __len__(self, ):
+        return int((self.end-self.start)/self.delta) + 1
+
+    def reset(self, ):
+        self.current = self.start
+        self.index = 0
+
+    def next(self, ):
+        if self.current >= self.end:
+            raise StopIteration()
+
+        self.current += self.delta
+        self.index += 1
+        return _core.Timestep(self.current, self.index, self.delta.days)
+
 
 class Model(object):
     """Model of a water supply network"""
@@ -45,6 +75,10 @@ class Model(object):
         }
         if parameters is not None:
             self.parameters.update(parameters)
+
+        self.timestepper = Timestepper(self.parameters['timestamp_start'],
+                                       self.parameters['timestamp_finish'],
+                                       self.parameters['timestep'])
         self.data = {}
         self.failure = set()
         self.dirty = True
@@ -177,7 +211,6 @@ class Model(object):
         self.failure = set()
         # solve the current timestep
         ret = self.solve()
-        self.timestamp += self.parameters['timestep']
         self.after()
         return ret
 
@@ -197,22 +230,19 @@ class Model(object):
 
         Returns the number of timesteps that were run.
         """
-        if self.timestamp > self.parameters['timestamp_finish']:
-            return
-        timesteps = 0
-        while True:
+        for timestep in self.timestepper:
+            self.timestep = timestep
             ret = self.step()
-            timesteps += 1
             if until_failure is True and self.failure:
-                return timesteps
-            elif until_date and self.timestamp > until_date:
-                return timesteps
-            elif self.timestamp > self.parameters['timestamp_finish']:
-                return timesteps
+                return timestep
+            elif until_date and timestep.datetime > until_date:
+                return timestep
+            elif timestep.datetime > self.parameters['timestamp_finish']:
+                return timestep
 
     def reset(self):
         """Reset model to it's initial conditions"""
-        self.timestamp = self.parameters['timestamp_start']
+        self.timestepper.reset()
         for node in self.nodes():
             node.reset()
 
@@ -222,7 +252,7 @@ class Model(object):
 
     def after(self):
         for node in self.nodes():
-            node.after()
+            node.after(self.timestep)
 
     def xml(self):
         """Serialize the Model to XML"""
@@ -346,13 +376,33 @@ class SolverMeta(type):
 class Solver(with_metaclass(SolverMeta)):
     """Solver base class from which all solvers should inherit"""
     name = 'default'
-    def solve(self, model):
+    def solve(self, model, timestep):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
 
-class Property(object):
-    pass
+def pop_kwarg_parameter(kwargs, key, default):
+    """Pop a parameter from the keyword arguments dictionary
 
-class Parameter(Property):
+    Parameters
+    ----------
+    kwargs : dict
+        A keyword arguments dictionary
+    key : string
+        The argument name, e.g. 'flow'
+    default : object
+        The default value to use if the dictionary does not have that key
+
+    Returns a Parameter
+    """
+    value = kwargs.pop(key, default)
+    if isinstance(value, Parameter):
+        return value
+    elif callable(value):
+        return ParameterFunction(self, value)
+    else:
+        return value
+
+
+class Parameter(_core.Parameter):
     def value(self, index=None):
         raise NotImplementedError()
 
@@ -459,7 +509,7 @@ class ParameterMonthlyProfile(Parameter):
         self._values = values
 
     def value(self, index=None):
-        return self._values[index.month-1]
+        return self._values[index.datetime.month-1]
 
     @classmethod
     def from_xml(cls, xml):
@@ -486,8 +536,8 @@ class Timeseries(Parameter):
             metadata = {}
         self.metadata = metadata
 
-    def value(self, index):
-        return self.df[index]
+    def value(self, ts):
+        return self.df[ts.index]
 
     def xml(self, name):
         xml_ts = ET.Element('timeseries')
@@ -559,32 +609,6 @@ class Timeseries(Parameter):
 
         return ts
 
-class Variable(Property):
-    """This property is used for values that are calculated by the model, i.e.
-    variables. It provides a method of saving the results at each timestep.
-    """
-    def __init__(self, initial=0.0):
-        self._initial = initial
-        self.reset()
-
-    def value(self, index=None):
-        return self._value
-
-    def reset(self):
-        self._value = self._initial
-        self._saved_values = []
-
-    def save(self):
-        self._saved_values.append(self._value)
-
-    @classmethod
-    def from_xml(cls, model, xml):
-        key = xml.get('key')
-        try:
-            value = float(xml.text)
-        except:
-            value = xml.text
-        return key, ParameterConstant(value=value)
 
 class PropertiesDict(dict):
     def __setitem__(self, key, value):
@@ -597,75 +621,48 @@ class Domain(object):
         self.name = name
         self.color = kwargs.pop('color', '#FF6600')
 
-# node subclasses are stored in a dict for convenience
-node_registry = {}
-class NodeMeta(type):
-    """Node metaclass used to keep a registry of Node classes"""
-    def __new__(meta, name, bases, dct):
-        return super(NodeMeta, meta).__new__(meta, name, bases, dct)
-    def __init__(cls, name, bases, dct):
-        super(NodeMeta, cls).__init__(name, bases, dct)
-        node_registry[name.lower()] = cls
 
-class Node(with_metaclass(NodeMeta)):
-    """Base object from which all other nodes inherit"""
-    def __init__(self, model, name, domain=Domain(), position=None, **kwargs):
-        """Initialise a new Node object
-
-        Parameters
-        ----------
-        model : Model
-            The model the node belongs to
-        position : 2-tuple of floats
-            The location of the node in the schematic, e.g. (3.0, 4.5)
-        name : string
-            A unique name for the node
-        """
-        self.model = model
-        model.graph.add_node(self)
-        model.dirty = True
-
-        self.color = 'black'
-        self.position = position
-        self.domain = domain
-        self.visible = kwargs.pop('visible', True)
-        self.parent = kwargs.pop('parent', None)
-
-        if not hasattr(self, 'name'):
-            # set name, avoiding issues with multiple inheritance
-            self.__name = None
-            self.name = name
-
-        self.slots = {}
-
-        self.properties = PropertiesDict({
-            'cost': self.pop_kwarg_parameter(kwargs, 'cost', 0.0)
-        })
-
-    def __repr__(self):
-        if self.name:
-            # e.g. <Node "oxford">
-            return '<{} "{}">'.format(self.__class__.__name__, self.name)
-        else:
-            return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
+class HasDomain(object):
+    def __init__(self, *args, **kwargs):
+        self._domain = kwargs.pop('domain', None)
+        super(HasDomain, self).__init__(*args, **kwargs)
 
     @property
-    def name(self):
-        return self.__name
+    def domain(self, ):
+        return self._domain
 
-    @name.setter
-    def name(self, name):
-        # check for name collision
-        if name in self.model.node:
-            raise ValueError('A node with the name "{}" already exists.'.format(name))
-        # remove old name
-        try:
-            del(self.model.node[self.__name])
-        except KeyError:
-            pass
-        # apply new name
-        self.__name = name
-        self.model.node[name] = self
+    @domain.setter
+    def domain(self, value):
+        self._domain = value
+
+class Drawable(object):
+    """Mixin class for objects that are drawable on a diagram of the network.
+    """
+    def __init__(self, *args, **kwargs):
+        self.position = kwargs.pop('position', None)
+        self.color = kwargs.pop('color', 'black')
+        super(Drawable, self).__init__(*args, **kwargs)
+
+
+class Connectable(object):
+    """
+    Connectable is a mixin class that provides methods for connect the object to
+    others view a NetworkX graph store in self.model.graph
+    """
+    def iter_slots(self, slot_name=None, is_connector=True):
+        """ Returns the object(s) wich should be connected to given slot_name
+
+        Overload this method when implementing compound nodes which have
+        multiple slots and may return something other than self.
+
+        is_connector is True when self's connect method has been used. I.e. self
+        is connecting to another object. This is useful for providing an
+        appropriate response object in circumstances where a subnode should make
+        the actual connection rather than self.
+        """
+        if slot_name is not None:
+            raise ValueError('{} does not have slot: {}'.format(self, slot_name))
+        yield self
 
     def connect(self, node, from_slot=None, to_slot=None):
         """Create an edge from this Node to another Node
@@ -682,30 +679,11 @@ class Node(with_metaclass(NodeMeta)):
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
 
-        node1 = self
-        # check slots are valid
-        if from_slot is not None:
-            if from_slot not in self.slots:
-                raise ValueError('{} does not have slot: {}'.format(self.__class__.__name__, from_slot))
-            node1 = self.slots[from_slot]
-
-        node2 = node
-        if to_slot is not None:
-            if to_slot not in node.slots:
-                raise ValueError('{} does not have slot: {}'.format(node.__class__.__name__, to_slot))
-            node2 = node.slots[to_slot]
-        else:
-            # Add default to_slot for Storage and its subclases
-            if isinstance(node2, Storage):
-                node2 = node.slots['output']
-            if isinstance(node2, PiecewiseLink):
-                # must recursively add all sublinks
-                for sublink in node2.sublinks:
-                    print('Connecting sublink...')
-                    node1.connect(sublink)
-                return
-
-        self.model.graph.add_edge(node1, node2)
+        # Get slot from this node
+        for node1 in self.iter_slots(slot_name=from_slot, is_connector=True):
+            # And slot to connect from other node
+            for node2 in node.iter_slots(slot_name=to_slot, is_connector=False):
+                self.model.graph.add_edge(node1, node2)
         self.model.dirty = True
 
     def disconnect(self, node=None):
@@ -735,6 +713,94 @@ class Node(with_metaclass(NodeMeta)):
                 self.slots[slot] = None
         self.model.dirty = True
 
+
+# node subclasses are stored in a dict for convenience
+node_registry = {}
+class NodeMeta(type):
+    """Node metaclass used to keep a registry of Node classes"""
+    def __new__(meta, name, bases, dct):
+        return super(NodeMeta, meta).__new__(meta, name, bases, dct)
+    def __init__(cls, name, bases, dct):
+        super(NodeMeta, cls).__init__(name, bases, dct)
+        node_registry[name.lower()] = cls
+
+class BaseNode(_core.Node):#, with_metaclass(NodeMeta)):
+    """Base object from which all other nodes inherit
+
+    This BaseNode is not connectable by default, and the Node class should
+    be used for actual Nodes in the model. The BaseNode provides an abstract
+    class for other Node types (e.g. StorageInput) that are not directly
+    Connectable.
+    """
+    def __init__(self, model, name, **kwargs):
+        """Initialise a new Node object
+
+        Parameters
+        ----------
+        model : Model
+            The model the node belongs to
+        name : string
+            A unique name for the node
+        """
+        self.model = model
+        model.graph.add_node(self)
+        model.dirty = True
+
+        self.color = 'black'
+        self.visible = kwargs.pop('visible', True)
+        self.parent = kwargs.pop('parent', None)
+        # TODO fix this default hack
+        self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
+
+        if not hasattr(self, 'name'):
+            # set name, avoiding issues with multiple inheritance
+            self.__name = None
+            self.name = name
+
+        self.slots = {}
+        self.min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
+        self.max_flow = pop_kwarg_parameter(kwargs, 'max_flow', float('inf'))
+        self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+        super(BaseNode, self).__init__(**kwargs)
+
+    def __repr__(self):
+        if self.name:
+            # e.g. <Node "oxford">
+            return '<{} "{}">'.format(self.__class__.__name__, self.name)
+        else:
+            return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
+
+    @property
+    def name(self):
+        return self.__name
+
+    @name.setter
+    def name(self, name):
+        # check for name collision
+        if name in self.model.node:
+            raise ValueError('A node with the name "{}" already exists.'.format(name))
+        # remove old name
+        try:
+            del(self.model.node[self.__name])
+        except KeyError:
+            pass
+        # apply new name
+        self.__name = name
+        self.model.node[name] = self
+
+    @property
+    def domain(self, ):
+        try:
+            return self._domain
+        except AttributeError:
+            return self.parent.domain
+
+    @domain.setter
+    def domain(self, value):
+        if self.parent is None:
+            raise AttributeError("Cannot set the domain of a Node that has a parent.")
+        self._domain = value
+
     def check(self):
         """Check the node is valid
 
@@ -752,55 +818,6 @@ class Node(with_metaclass(NodeMeta)):
                 parameter.reset()
             except AttributeError:
                 pass
-
-    def before(self):
-        """Called before the current timestep begins
-        """
-        pass
-
-    def commit(self, volume):
-        """Commit a volume of water actually supplied/transferred/received
-
-        Parameter
-        ---------
-        volume : float
-            The volume to commit
-
-        This should be implemented by the various node subclasses.
-        """
-        pass
-
-    def after(self):
-        """Called after the current timestep has finished
-        """
-        # save variables
-        for key, parameter in self.properties.items():
-            try:
-                parameter.save()
-            except AttributeError:
-                pass
-
-    def pop_kwarg_parameter(self, kwargs, key, default):
-        """Pop a parameter from the keyword arguments dictionary
-
-        Parameters
-        ----------
-        kwargs : dict
-            A keyword arguments dictionary
-        key : string
-            The argument name, e.g. 'flow'
-        default : object
-            The default value to use if the dictionary does not have that key
-
-        Returns a Parameter
-        """
-        value = kwargs.pop(key, default)
-        if isinstance(value, Parameter):
-            return value
-        elif callable(value):
-            return ParameterFunction(self, value)
-        else:
-            return ParameterConstant(value=value)
 
     def xml(self):
         """Serialize the node to an XML object
@@ -847,7 +864,26 @@ class Node(with_metaclass(NodeMeta)):
             node.properties[key] = prop
         return node
 
-class Input(Node):
+
+class Node(HasDomain, Drawable, Connectable, BaseNode):
+    pass
+
+
+class BaseLink(BaseNode):
+    pass
+
+
+class BaseInput(BaseNode):
+    def __init__(self, *args, **kwargs):
+        self.licenses = None
+        super(BaseInput, self).__init__(*args, **kwargs)
+
+
+class BaseOutput(BaseNode):
+    pass
+
+
+class Input(Node, BaseInput):
     """A general input at any point in the network
 
     """
@@ -864,19 +900,6 @@ class Input(Node):
         super(Input, self).__init__(*args, **kwargs)
         self.color = '#F26C4F' # light red
 
-        self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
-        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
-
-        self.licenses = None
-        self.properties['flow'] = Variable(initial=kwargs.pop('flow', 0.0))
-
-    def before(self, ):
-        super(Input, self).before()
-        self.properties['flow']._value = 0.0
-
-    def commit(self, volume, ):
-        super(Input, self).commit(volume)
-        self.properties['flow']._value += volume
 
 class InputFromOtherDomain(Input):
     """A input in to the network that is connected to an output from another domain
@@ -890,10 +913,11 @@ class InputFromOtherDomain(Input):
     def __init__(self, *args, **kwargs):
         Input.__init__(self, *args, **kwargs)
 
-        self.properties['conversion_factor'] = self.pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
+        import warnings
+        warnings.warn("InputFromOtherDomain class is deprecated as the functionality is provided by Input.")
 
 
-class Output(Node):
+class Output(Node, BaseOutput):
     """A general output at any point from the network
 
     """
@@ -907,111 +931,11 @@ class Output(Node):
         max_flow : float (optional)
             A simple maximum flow constraint for the output. Defaults to None
         """
-        Node.__init__(self, *args, **kwargs)
-        self.color = '#FFF467' # light yellow
+        kwargs['color'] = kwargs.pop('color', '#FFF467')  # light yellow
+        super(Output, self).__init__(*args, **kwargs)
 
-        self.properties['min_flow'] = self.pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
-        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
-        self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 0.0)
-        self.properties['flow'] = Variable(initial=kwargs.pop('flow', 0.0))
 
-    def before(self, ):
-        super(Output, self).before()
-        self.properties['flow']._value = 0.0
-
-    def commit(self, volume, ):
-        super(Output, self).commit(volume)
-        self.properties['flow']._value += volume
-
-class Supply(Input):
-    """A supply in the network
-
-    The base supply node should be sufficient to represent simply supplies
-    which do not interact with other components (e.g. a groundwater source
-    or a bulk supply from another zone/company). For more complex supplies
-    use the appropriate subclass (e.g. RiverAbstraction or Reservoir).
-    """
-    def __init__(self, *args, **kwargs):
-        """Initialise a new Supply node
-
-        Parameters
-        ----------
-        max_flow : float (optional)
-            A simple maximum flow constraint for the supply. For more complex
-            constraints a License instance should be used.
-        """
-        Input.__init__(self, *args, **kwargs)
-        self.color = '#F26C4F' # light red
-
-        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', 0.0)
-
-        self.licenses = None
-
-    def commit(self, volume):
-        super(Supply, self).commit(volume)
-        if self.licenses is not None:
-            self.licenses.commit(volume)
-
-    def reset(self):
-        Node.reset(self)
-        if self.licenses:
-            self.licenses.refresh()
-
-    def xml(self):
-        xml = super(Supply, self).xml()
-        if self.licenses is not None:
-            xml.append(self.licenses.xml())
-        return xml
-
-    @classmethod
-    def from_xml(cls, model, xml):
-        node = Node.from_xml(model, xml)
-        licensecollection_xml = xml.find('licensecollection')
-        if licensecollection_xml is not None:
-            node.licenses = LicenseCollection.from_xml(licensecollection_xml)
-        return node
-
-class Demand(Output):
-    """A demand in the network"""
-    def __init__(self, *args, **kwargs):
-        """Initialise a new Demand node
-
-        Parameters
-        ----------
-        demand : float
-            The amount of water to demand each timestep
-        consumption : float
-            The proportion of water received that is consumed. The remaining
-            water can be discharged back into the river system using a
-            DemandDischarge node. e.g. a value of 0.7 means 70% of the water is
-            consumed and the remaining 30% can be discharged. The default is
-            that 100% of the water is consumed.
-        """
-        Output.__init__(self, *args, **kwargs)
-        self.color = '#FFF467' # light yellow
-
-        self.properties['demand'] = self.pop_kwarg_parameter(kwargs, 'demand', 0.0)
-
-        self.properties['benefit'] = self.pop_kwarg_parameter(kwargs, 'benefit', 1000.0)
-
-        self.properties['consumption'] = self.pop_kwarg_parameter(kwargs, 'consumption', 1.0)
-
-    def before(self):
-        self._supplied = 0.0
-
-    def commit(self, volume):
-        super(Demand, self).commit(volume)
-
-        self._supplied += volume
-
-    def after(self):
-        """Check if the demand has been satisfied this timestep
-        """
-        demanded = self.properties['demand'].value(self.model.timestamp)
-        if self._supplied < demanded:
-            self.model.failure.add((self, 'demand',))
-
-class Link(Node):
+class Link(Node, BaseLink):
     """A link in the supply network, such as a pipe
 
     Connections between Nodes in the network are created using edges (see the
@@ -1027,20 +951,9 @@ class Link(Node):
         max_flow : float or function (optional)
             A maximum flow constraint on the link, e.g. 5.0
         """
-        Node.__init__(self, *args, **kwargs)
-        self.color = '#A0A0A0' # 45% grey
+        kwargs['color'] = kwargs.pop('color', '#A0A0A0')  # 45% grey
+        super(Link, self).__init__(*args, **kwargs)
 
-        self.properties['max_flow'] = self.pop_kwarg_parameter(kwargs, 'max_flow', None)
-
-        self.properties['flow'] = Variable(initial=kwargs.pop('flow', 0.0))
-
-    def before(self, ):
-        super(Link, self).before()
-        self.properties['flow']._value = 0.0
-
-    def commit(self, volume, ):
-        super(Link, self).commit(volume)
-        self.properties['flow']._value += volume
 
 class Blender(Link):
     """Blender node to maintain a constant ratio between two supply routes"""
@@ -1056,23 +969,29 @@ class Blender(Link):
         Link.__init__(self, *args, **kwargs)
         self.slots = {1: None, 2: None}
 
-        self.properties['ratio'] = self.pop_kwarg_parameter(kwargs, 'ratio', 0.5)
+        self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
-class StorageInput(Input):
+class StorageInput(BaseInput):
     def commit(self, volume):
         super(StorageInput, self).commit(volume)
         self.parent.commit(-volume)
 
-class StorageOutput(Output):
+class StorageOutput(BaseOutput):
     def commit(self, volume):
         super(StorageOutput, self).commit(volume)
         self.parent.commit(volume)
 
-class Storage(Node):
-    """A generic storage Node"""
+class Storage(HasDomain, Drawable, Connectable, _core.Storage):
+    """A generic storage Node
+
+    Storage consists of an input and output subnodes which form the routes
+    in the network """
     def __init__(self, model, *args, **kwargs):
-        Node.__init__(self,  model, *args, **kwargs)
-        self.color = 'green' # light yellow
+        self.model = model
+        model.graph.add_node(self)
+        model.dirty = True
+
+        kwargs['color'] = kwargs.pop('color', 'green')
         # keyword arguments for input and output nodes specified with prefix
         input_kwargs, output_kwargs = {}, {}
         for key in kwargs.keys():
@@ -1080,37 +999,39 @@ class Storage(Node):
                 input_kwargs[key.replace('input_', '')] = kwargs.pop(key)
             elif key.startswith('output_'):
                 output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
+        self.name = kwargs.pop('name')
+        self.input = StorageInput(model, name="{} Input".format(self.name), parent=self, **input_kwargs)
+        self.output = StorageOutput(model, name="{} Output".format(self.name), parent=self, **output_kwargs)
 
-        # subnodes require position of this node
-        input_kwargs['position'] = output_kwargs['position'] = self.position
-        # subnodes have the same domain as this node
-        input_kwargs['domain'] = output_kwargs['domain'] = self.domain
+        self.min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        self.max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
+        self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
 
-        # output node should have the same benefit as Storage
-        output_kwargs['benefit'] = kwargs.pop('benefit', 0.0)
-        def func(parent, index):
-            return self.output.properties['benefit'].value(index)
-        self.properties['benefit'] = ParameterFunction(self, func)
+        # TODO fix this default hack
+        self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
 
-        self.input = StorageInput(model, name="{} Input".format(self.name),
-                           visible=False, parent=self, **input_kwargs)
-        self.slots['input'] = self.input
-        self.output = StorageOutput(model, name="{} Output".format(self.name),
-                             visible=False, parent=self, **output_kwargs)
-        self.slots['output'] = self.output
+        super(Storage, self).__init__(*args, **kwargs)
 
-        self.properties['current_volume'] = Variable(initial=kwargs.pop('current_volume', 0.0))
-        self.properties['max_volume'] = self.pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        def func(parent, index):
-            return parent.properties['current_volume'].value(index)/parent.properties['max_volume'].value(index)
-        self.properties['current_pc_full'] = ParameterFunction(self, func)
+    @property
+    def cost(self, ):
+        return self.input.cost
+
+    @cost.setter
+    def cost(self, value):
+        self.input.cost = value
+        self.output.cost = value
+
+    def iter_slots(self, slot_name=None, is_connector=True):
+        # Return the input node if Storage is connecting to another node
+        # otherwise return the output.
+        # No direct connections are made to Storage itself.
+        if is_connector:
+            yield self.input
+        else:
+            yield self.output
 
     def commit(self, volume, ):
         super(Storage, self).commit(volume)
-        timestep = self.model.parameters['timestep']
-        if isinstance(timestep, datetime.timedelta):
-            timestep = timestep.days
-        self.properties['current_volume']._value += volume*timestep
 
     def check(self):
         Node.check(self)
@@ -1132,7 +1053,7 @@ class PiecewiseLink(Node):
 
 
     """
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Parameters
         ----------
@@ -1141,45 +1062,31 @@ class PiecewiseLink(Node):
         cost : iterable
             A list of costs corresponding to the max_flow steps
         """
-        # Grab cost and max_flow keywords before given to Node.__init__
         costs = kwargs.pop('cost')
         max_flows = kwargs.pop('max_flow')
-        Node.__init__(self,  model, *args, **kwargs)
+        super(PiecewiseLink, self).__init__(*args, **kwargs)
 
         if len(costs) != len(max_flows):
             raise ValueError("Piecewise max_flow and cost keywords must be the same length.")
 
         self.sublinks = []
         for max_flow, cost in zip(max_flows, costs):
-            self.sublinks.append(Link(model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
-                                      cost=cost, max_flow=max_flow, visible=False, parent=self,
-                                      position=self.position, domain=self.domain))
+            self.sublinks.append(BaseLink(self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
+                                      cost=cost, max_flow=max_flow, parent=self))
 
-        self.properties['flow'] = Variable(initial=kwargs.pop('flow', 0.0))
+    def iter_slots(self, slot_name=None, is_connector=True):
+        # All sublinks are connected upstream and downstream
+        for link in self.sublinks:
+            yield link
 
-    def connect(self, node, from_slot=None, to_slot=None):
-        """
-        Overload Node.connect to connect node to all sublinks rather than directly to this PiecewiseLink.
-        """
-        for sublink in self.sublinks:
-            sublink.connect(node, from_slot=from_slot, to_slot=to_slot)
-
-    def disconnect(self, node=None):
-        """
-        Overload Node.disconnect to disconnect node from all sublinks.
-        """
-        for sublink in self.sublinks:
-            sublink.disconnect(node=node)
-
-    def after(self, ):
+    def after(self, timestep):
         """
         Set total flow on this link as sum of sublinks
         """
-        self.properties['flow']._value = 0.0
         for lnk in self.sublinks:
-            self.properties['flow']._value += lnk.properties['flow']._value
+            self.commit(lnk.flow)
         # Make sure save is done after setting aggregated flow
-        super(PiecewiseLink, self).after()
+        super(PiecewiseLink, self).after(timestep)
 
 class Group(object):
     """A group of nodes

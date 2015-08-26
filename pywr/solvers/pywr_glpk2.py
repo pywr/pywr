@@ -1,5 +1,5 @@
 
-
+from .._core import NumpyArrayRecorder
 from ..core import *
 from collections import defaultdict
 import glpk
@@ -23,10 +23,7 @@ class SolverGLPK(Solver):
     name = 'GLPK'
 
     def solve(self, model):
-        timestep = model.parameters['timestep']
-        if isinstance(timestep, datetime.timedelta):
-            timestep = timestep.days
-
+        timestep = model.timestep
         if model.dirty:
             '''
             This section should only need to be run when the model has changed
@@ -36,12 +33,12 @@ class SolverGLPK(Solver):
             lp = self.lp = glpk.LPX()
             lp.obj.maximize = True
 
-            routes = model.find_all_routes(Input, Output, valid=(Link, Input, Output))
+            routes = model.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
             first_index = lp.cols.add(len(routes))
             routes = self.routes = list(zip([lp.cols[index] for index in range(first_index, first_index+len(routes))], routes))
 
-            input_nodes = self.input_nodes = {node: {'cols': [], 'col_idxs': []} for node in model.nodes() if isinstance(node, Input)}
-            output_nodes = self.output_nodes = {node: {'cols': [], 'col_idxs': []} for node in model.nodes() if isinstance(node, Output)}
+            input_nodes = self.input_nodes = {node: {'cols': [], 'col_idxs': []} for node in model.nodes() if isinstance(node, BaseInput)}
+            output_nodes = self.output_nodes = {node: {'cols': [], 'col_idxs': []} for node in model.nodes() if isinstance(node, BaseOutput)}
             intermediate_max_flow_constraints = self.intermediate_max_flow_constraints = {}
 
             for col, route in routes:
@@ -58,7 +55,7 @@ class SolverGLPK(Solver):
                 # find constraints on intermediate nodes
                 intermediate_nodes = route[1:-1]
                 for node in intermediate_nodes:
-                    if 'max_flow' in node.properties and node not in intermediate_max_flow_constraints:
+                    if node not in intermediate_max_flow_constraints:
                         row_idx = lp.rows.add(1)
                         row = lp.rows[row_idx]
                         intermediate_max_flow_constraints[node] = row
@@ -77,7 +74,7 @@ class SolverGLPK(Solver):
                     info['matrix'] = [(idx, 1.0) for idx in info['col_idxs']]
 
             # Find cross-domain routes
-            cross_domain_routes = self.cross_domain_routes = model.find_all_routes(Output, InputFromOtherDomain,
+            cross_domain_routes = self.cross_domain_routes = model.find_all_routes(BaseOutput, InputFromOtherDomain,
                                                                                    max_length=2,
                                                                                    domain_match='different')
             # translate to a dictionary with the Ouput node as a key
@@ -112,7 +109,7 @@ class SolverGLPK(Solver):
                     for input_node in cross_domain_nodes:
                         input_info = input_nodes[input_node]
                         # TODO Make this vary with timestep
-                        coef = input_node.properties['conversion_factor'].value()
+                        coef = input_node.get_conversion_factor(timestep)
                         input_matrix.extend([(idx, 1/coef) for idx in input_info['col_idxs']])
                     output_matrix = [(col_idx, -1.0)]
                     row.matrix = input_matrix + output_matrix
@@ -153,30 +150,25 @@ class SolverGLPK(Solver):
             #blenders = self.blenders
             #groups = self.groups
 
-        timestamp = self.timestamp = model.timestamp
-
-        for node in model.nodes():
-            node.before()
-
         # the cost of a route is equal to the sum of the route's node's costs
         costs = []
         for col, route in routes:
             cost = 0.0
             for node in route[0:-1]:
-                cost += node.properties['cost'].value(timestamp)
+                cost += node.get_cost(timestep)
             lp.obj[col.index] = -cost
 
         # there is a benefit for inputting water to outputs
         for output_node, info in output_nodes.items():
             col = info['output_col']
-            cost = output_node.properties['benefit'].value(timestamp)
-            lp.obj[col.index] = cost
+            cost = output_node.get_cost(timestep)
+            lp.obj[col.index] = -cost
 
         # input is limited by a minimum and maximum flow, and any licenses
         for input_node, info in input_nodes.items():
             if len(info['col_idxs']) > 0:
                 row = info['input_constraint']
-                max_flow_parameter = input_node.properties['max_flow'].value(timestamp)
+                max_flow_parameter = input_node.get_max_flow(timestep)
                 max_flow_license = inf
                 if input_node.licenses is not None:
                     max_flow_license = input_node.licenses.available(timestamp)
@@ -184,7 +176,7 @@ class SolverGLPK(Solver):
                     max_flow = min(max_flow_parameter, max_flow_license)
                 else:
                     max_flow = max_flow_license
-                min_flow = input_node.properties['min_flow'].value(timestamp)
+                min_flow = input_node.get_min_flow(timestep)
                 row.matrix = info['matrix']
                 row.bounds = min_flow, max_flow
 
@@ -193,23 +185,23 @@ class SolverGLPK(Solver):
         for output_node, info in output_nodes.items():
             # update output for the current timestep
             col = info['output_col']
-            max_flow = output_node.properties['max_flow'].value(timestamp)
-            min_flow = output_node.properties['min_flow'].value(timestamp)
+            max_flow = output_node.get_max_flow(timestep)
+            min_flow = output_node.get_min_flow(timestep)
             col.bounds = min_flow, max_flow
             total_water_outputed[output_node.domain] += min_flow
 
         # intermediate node max flow constraints
         for node, row in intermediate_max_flow_constraints.items():
-            row.bounds = 0, node.properties['max_flow'].value(timestamp)
+            row.bounds = 0, node.get_max_flow(timestep)
 
         # storage limits
         for node, row in storage_rows.items():
-            current_volume = node.properties['current_volume'].value(timestamp)
-            max_volume = node.properties['max_volume'].value(timestamp)
+            avail_volume = max(node.volume - node.get_min_volume(timestep), 0.0)
+            max_volume = node.get_max_volume(timestep)
             # Change in storage limits
             #   lower bound ensures a net loss is not more than current volume
             #   upper bound ensures a net gain is not more than capacity
-            row.bounds = -current_volume/timestep, (max_volume-current_volume)/timestep
+            row.bounds = -avail_volume/timestep.days, (max_volume-avail_volume)/timestep.days
 
         # TODO add min flow requirement
         """
