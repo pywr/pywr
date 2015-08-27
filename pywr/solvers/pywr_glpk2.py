@@ -74,7 +74,7 @@ class SolverGLPK(Solver):
                     info['matrix'] = [(idx, 1.0) for idx in info['col_idxs']]
 
             # Find cross-domain routes
-            cross_domain_routes = self.cross_domain_routes = model.find_all_routes(BaseOutput, InputFromOtherDomain,
+            cross_domain_routes = self.cross_domain_routes = model.find_all_routes(BaseOutput, Input,
                                                                                    max_length=2,
                                                                                    domain_match='different')
             # translate to a dictionary with the Ouput node as a key

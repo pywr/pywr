@@ -206,6 +206,10 @@ class Model(object):
 
     def step(self):
         """Step the model forward by one day"""
+        self.timestep = self.timestepper.next()
+        return self._step()
+
+    def _step(self):
         self.before()
         # reset any failures
         self.failure = set()
@@ -232,7 +236,7 @@ class Model(object):
         """
         for timestep in self.timestepper:
             self.timestep = timestep
-            ret = self.step()
+            ret = self._step()
             if until_failure is True and self.failure:
                 return timestep
             elif until_date and timestep.datetime > until_date:
@@ -761,6 +765,7 @@ class BaseNode(_core.Node):#, with_metaclass(NodeMeta)):
         self.min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
         self.max_flow = pop_kwarg_parameter(kwargs, 'max_flow', float('inf'))
         self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+        self.conversion_factor = pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
         super(BaseNode, self).__init__(**kwargs)
 
     def __repr__(self):
