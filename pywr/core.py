@@ -541,7 +541,7 @@ class Timeseries(Parameter):
         self.metadata = metadata
 
     def value(self, ts):
-        return self.df[ts.index]
+        return self.df[ts.datetime]
 
     def xml(self, name):
         xml_ts = ET.Element('timeseries')
