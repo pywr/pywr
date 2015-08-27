@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import _core
+from pywr import _core
 
 import os
 from IPython.core.magic_arguments import kwds
@@ -40,13 +40,14 @@ class Timestepper(object):
         self.current = self.start
         self.index = 0
 
-    def next(self, ):
-        if self.current >= self.end:
+    def __next__(self):
+        if self.current > self.end:
             raise StopIteration()
 
         self.current += self.delta
+        timestep = _core.Timestep(self.current, self.index, self.delta.days)
         self.index += 1
-        return _core.Timestep(self.current, self.index, self.delta.days)
+        return timestep
 
 
 class Model(object):
@@ -83,6 +84,8 @@ class Model(object):
         self.failure = set()
         self.dirty = True
 
+        self.solver = solver  # TODO
+        '''
         if solver is not None:
             # use specific solver
             try:
@@ -92,6 +95,7 @@ class Model(object):
         else:
             # use default solver
             self.solver = solvers.SolverGLPK()
+        '''
 
         self.node = {}
         self.group = {}
