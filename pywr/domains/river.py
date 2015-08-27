@@ -1,11 +1,12 @@
 
 from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, ParameterFunction
 
+DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 
 class RiverDomainMixin(object):
     def __init__(self, *args, **kwargs):
         if 'domain' not in kwargs:
-            kwargs['domain'] = Domain(name='river', color='#33CCFF')
+            kwargs['domain'] = DEFAULT_RIVER_DOMAIN
         if 'color' not in kwargs:
             self.color = '#6ECFF6' # blue
         super(RiverDomainMixin, self).__init__(*args, **kwargs)
