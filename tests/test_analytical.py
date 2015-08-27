@@ -11,15 +11,15 @@ import datetime
 import numpy as np
 import pytest
 
-def assert_model(model, expected_requested, expected_sent, expected_node_results):
-    status, requested, sent, routes, nodes = model.step()
-    assert(status == 'optimal')
-    for key in requested:
-        assert(requested[key] == expected_requested[key])
-    for key in sent:
-        assert(sent[key] == expected_sent[key])
-    for node, val in nodes.items():
-        assert(expected_node_results[node.name] == val)
+def assert_model(model, expected_node_results):
+    model.step()
+
+    for node in model.nodes():
+        if node.name in expected_node_results:
+            if isinstance(node, pywr.core.BaseNode):
+                assert(expected_node_results[node.name] == node.flow)
+            elif isinstance(node, pywr.core.Storage):
+                assert(expected_node_results[node.name] == node.volume)
 
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (10.0, 0.0, 0.0)])
@@ -47,7 +47,7 @@ def simple_linear_model(request):
         "Link": expected_sent[default],
         "Output": expected_sent[default],
     }
-    return model, expected_requested, expected_sent, expected_node_results
+    return model, expected_node_results
 
 
 def test_linear_model(simple_linear_model):
@@ -72,29 +72,28 @@ def linear_model_with_storage(request):
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=0.1)
     inpt.connect(lnk)
-    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, benefit=out_benefit)
+    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-out_benefit)
     lnk.connect(otpt)
 
     strg = pywr.core.Storage(model, name="Storage", max_volume=10.0, current_volume=current_volume,
-                             benefit=strg_benefit)
+                             cost=-strg_benefit)
 
     lnk2 = pywr.core.Link(model, name='Storage Link', cost=2.0, max_flow=max_strg_out)
-    strg.input.connect(lnk2)
-    lnk.connect(strg.output)
+    strg.connect(lnk2)
+    lnk.connect(strg)
     lnk2.connect(otpt)
-    default = inpt.domain
-    expected_requested = {default: out_flow}
-    expected_sent = {default: in_flow+min(max_strg_out, current_volume) if out_benefit > 1.0 else out_flow}
+
+    expected_sent = in_flow+min(max_strg_out, current_volume) if out_benefit > 1.0 else out_flow
 
     expected_node_results = {
-        "Input": expected_sent[default],
-        "Link": expected_sent[default],
-        "Output": expected_sent[default],
+        "Input": expected_sent,
+        "Link": expected_sent,
+        "Output": expected_sent,
         "Storage Output": min(max_strg_out, current_volume) if out_benefit > 1.0 else 0.0,
         "Storage Input": 0.0,
         "Storage": 0.0,
     }
-    return model, expected_requested, expected_sent, expected_node_results
+    return model, expected_node_results
 
 def test_linear_model_with_storage(linear_model_with_storage):
     assert_model(*linear_model_with_storage)
@@ -120,15 +119,15 @@ def two_domain_linear_model(request):
     river_inpt = pywr.core.Input(model, name="Catchment", max_flow=river_flow, domain='river')
     river_lnk = pywr.core.Link(model, name="Reach", domain='river')
     river_inpt.connect(river_lnk)
-    river_otpt = pywr.core.Output(model, name="Abstraction", domain='river', benefit=0.0)
+    river_otpt = pywr.core.Output(model, name="Abstraction", domain='river', cost=0.0)
     river_lnk.connect(river_otpt)
     # Create grid network
-    grid_inpt = pywr.core.InputFromOtherDomain(model, name="Power Plant", max_flow=power_plant_cap, domain='grid',
+    grid_inpt = pywr.core.Input(model, name="Power Plant", max_flow=power_plant_cap, domain='grid',
                                                conversion_factor=1/power_plant_flow_req)
     grid_lnk = pywr.core.Link(model, name="Transmission", cost=1.0, domain='grid')
     grid_inpt.connect(grid_lnk)
     grid_otpt = pywr.core.Output(model, name="Substation", max_flow=power_demand,
-                                 benefit=power_benefit, domain='grid')
+                                 cost=-power_benefit, domain='grid')
     grid_lnk.connect(grid_otpt)
     # Connect grid to river
     river_otpt.connect(grid_inpt)
@@ -145,7 +144,7 @@ def two_domain_linear_model(request):
         "Substation": power_demand,
     }
 
-    return model, expected_requested, expected_sent, expected_node_results
+    return model, expected_node_results
 
 
 def test_two_domain_linear_model(two_domain_linear_model):
