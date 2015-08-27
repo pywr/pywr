@@ -21,24 +21,24 @@ def simple_piecewise_model(request):
     model = pywr.core.Model()
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.PiecewiseLink(model, name="Link", cost=[-1.0, 0.0], max_flow=[min_flow_req, None])
-    for sublnk in lnk.sublinks:
-        inpt.connect(sublnk)
-    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, benefit=benefit)
+
+    inpt.connect(lnk)
+    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-benefit)
     lnk.connect(otpt)
 
     default = inpt.domain
 
-    expected_requested = {default: out_flow}
-    expected_sent = {default: in_flow if benefit > 1.0 else out_flow}
+
+    expected_sent = in_flow if benefit > 1.0 else out_flow
 
     expected_node_results = {
-        "Input": expected_sent[default],
-        "Link": 0.0,
-        "Link Sublink 0": min(min_flow_req, expected_sent[default]),
-        "Link Sublink 1": expected_sent[default] - min(min_flow_req, expected_sent[default]),
-        "Output": expected_sent[default],
+        "Input": expected_sent,
+        "Link": expected_sent,
+        "Link Sublink 0": min(min_flow_req, expected_sent),
+        "Link Sublink 1": expected_sent - min(min_flow_req, expected_sent),
+        "Output": expected_sent,
     }
-    return model, expected_requested, expected_sent, expected_node_results
+    return model, expected_node_results
 
 
 def test_piecewise_model(simple_piecewise_model):
