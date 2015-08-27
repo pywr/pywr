@@ -48,3 +48,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA.
+
+
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/snorfalorpagus/pywr
+   :target: https://gitter.im/snorfalorpagus/pywr?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
