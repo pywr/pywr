@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-from . import _core
+from pywr import _core
 
 import os
 from IPython.core.magic_arguments import kwds
@@ -104,6 +104,8 @@ class Model(object):
         self.failure = set()
         self.dirty = True
 
+        self.solver = solver  # TODO
+        '''
         if solver is not None:
             # use specific solver
             try:
@@ -113,6 +115,7 @@ class Model(object):
         else:
             # use default solver
             self.solver = solvers.SolverGLPK()
+        '''
 
         self.node = {}
         self.group = {}
