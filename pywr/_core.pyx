@@ -1,12 +1,9 @@
+from pywr._core cimport *
 
 import numpy as np
 cimport numpy as np
 
 cdef class Timestep:
-    cdef object _datetime
-    cdef int _index
-    cdef double _days
-
     def __init__(self, object datetime, int index, double days):
         self._datetime = datetime
         self._index = index
@@ -51,18 +48,6 @@ cdef class Parameter:
 
 
 cdef class Node:
-    cdef double _prev_flow
-    cdef double _flow
-    cdef double _min_flow
-    cdef double _max_flow
-    cdef double _cost
-    cdef double _conversion_factor
-    cdef object _min_flow_param
-    cdef Parameter _max_flow_param
-    cdef Parameter _cost_param
-    cdef Parameter _conversion_factor_param
-    cdef Recorder _recorder
-
     def __cinit__(self, ):
         self._prev_flow = 0.0
         self._flow = 0.0
@@ -173,17 +158,6 @@ cdef class Node:
             self._recorder.commit(ts, self._flow)
 
 cdef class Storage:
-    cdef double _flow
-    cdef double _volume
-
-    cdef double _min_volume
-    cdef double _max_volume
-    cdef double _cost
-    cdef Parameter _min_volume_param
-    cdef Parameter _max_volume_param
-    cdef Parameter _cost_param
-    cdef Recorder _recorder
-
     def __cinit__(self, ):
         self._flow = 0.0
         self._volume = 0.0
