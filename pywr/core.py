@@ -54,6 +54,9 @@ class Timestepper(object):
         self.index = diff.days / self.delta.days
         self.current = start
 
+    def __next__(self, ):
+        return self.next()
+
     def next(self, ):
         current = self.current
         index = self.index
@@ -224,7 +227,7 @@ class Model(object):
 
     def step(self):
         """Step the model forward by one day"""
-        self.timestep = self.timestepper.next()
+        self.timestep = next(self.timestepper)
         return self._step()
 
     def _step(self):
