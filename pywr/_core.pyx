@@ -161,7 +161,7 @@ cdef class Node:
         def __set__(self, value):
             self._recorder = value
 
-    cpdef before(self, ):
+    cpdef before(self, Timestep ts):
         self._flow = 0.0
 
     cpdef commit(self, double value):
@@ -253,7 +253,7 @@ cdef class Storage:
         def __set__(self, value):
             self._recorder = value
 
-    cpdef before(self, ):
+    cpdef before(self, Timestep ts):
         self._flow = 0.0
 
     cpdef commit(self, double value):

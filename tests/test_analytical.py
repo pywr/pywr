@@ -36,7 +36,7 @@ def simple_linear_model(request):
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=1.0)
     inpt.connect(lnk)
-    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, benefit=benefit)
+    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-benefit)
     lnk.connect(otpt)
     default = inpt.domain
     expected_requested = {default: out_flow}
@@ -75,7 +75,7 @@ def linear_model_with_storage(request):
     otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-out_benefit)
     lnk.connect(otpt)
 
-    strg = pywr.core.Storage(model, name="Storage", max_volume=10.0, current_volume=current_volume,
+    strg = pywr.core.Storage(model, name="Storage", max_volume=10.0, volume=current_volume,
                              cost=-strg_benefit)
 
     lnk2 = pywr.core.Link(model, name='Storage Link', cost=2.0, max_flow=max_strg_out)
