@@ -1,5 +1,5 @@
 
-from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, ParameterFunction
+from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, ParameterFunction, pop_kwarg_parameter
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 
@@ -78,20 +78,25 @@ class RiverSplit(River):
             used.
         """
         River.__init__(self, *args, **kwargs)
-        self.slots = {1: None, 2: None}
+        # These are the upstream slots
+        self._slots = {1: None, 2: None}
 
-        self.properties['split'] = self.pop_kwarg_parameter(kwargs, 'split', 0.5)
+        self.split = pop_kwarg_parameter(kwargs, 'split', 0.5)
 
-class Discharge(River):
+    def iter_slots(self, slot_name=None, is_connector=True):
+        # All sublinks are connected upstream and downstream
+        if not is_connector:
+            yield self._slots[slot_name]
+        for link in self.sublinks:
+            yield link
+
+class Discharge(Catchment):
     """An inline discharge to the river network
 
     This node is similar to a catchment, but sits inline to the river network,
     rather than at the head of the river.
     """
-    def __init__(self, *args, **kwargs):
-        River.__init__(self, *args, **kwargs)
-
-        self.properties['flow'] = self.pop_kwarg_parameter(kwargs, 'flow', 0.0)
+    pass
 
 
 class DemandDischarge(River):

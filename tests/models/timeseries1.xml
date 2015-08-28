@@ -26,10 +26,11 @@
         <riverabstraction name="abs1" x="2" y="0">
             <parameter type="constant" key="max_flow">50</parameter>
         </riverabstraction>
-        <link name="link1" x="2" y="1" />
-        <demand name="demand1" x="3" y="1">
-            <parameter type="constant" key="demand">23</parameter>
-        </demand>
+        <river name="link1" x="2" y="1" />
+        <demandcentre name="demand1" x="3" y="1">
+            <parameter type="constant" key="max_flow">23</parameter>
+            <parameter type="constant" key="cost">-10</parameter>
+        </demandcentre>
         <terminator name="term1" x="3" y="0" />
     </nodes>
     <edges>

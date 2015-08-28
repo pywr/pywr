@@ -130,14 +130,21 @@ class SolverGLPK(Solver):
                     row.matrix = input_matrix + output_matrix
                     storage_rows[node] = row
 
-            # TODO add min flow requirement
-            """
-            # add mrf constraint rows
-            for river_gauge_node, info in river_gauge_nodes.items():
+            # groups
+            groups = self.groups = {}
+            for group in model.group.values():
+                if group.licenses is None:
+                    continue
                 row_idx = lp.rows.add(1)
                 row = lp.rows[row_idx]
-                info['mrf_constraint'] = row
-            """
+                col_idxs = []
+                for node in group.nodes:
+                    col_idxs.extend(input_nodes[node]['col_idxs'])
+                groups[group] = {
+                    'group_constraint': row
+                }
+                row.matrix = [(col_idx, 1.0) for col_idx in col_idxs]
+
             model.dirty = False
         else:
             lp = self.lp
@@ -148,7 +155,7 @@ class SolverGLPK(Solver):
             cross_domain_routes = self.cross_domain_routes
             storage_rows = self.storage_rows
             #blenders = self.blenders
-            #groups = self.groups
+            groups = self.groups
 
         # the cost of a route is equal to the sum of the route's node's costs
         costs = []
@@ -171,7 +178,7 @@ class SolverGLPK(Solver):
                 max_flow_parameter = input_node.get_max_flow(timestep)
                 max_flow_license = inf
                 if input_node.licenses is not None:
-                    max_flow_license = input_node.licenses.available(timestamp)
+                    max_flow_license = input_node.licenses.available(timestep)
                 if max_flow_parameter is not None:
                     max_flow = min(max_flow_parameter, max_flow_license)
                 else:
@@ -189,10 +196,14 @@ class SolverGLPK(Solver):
             min_flow = output_node.get_min_flow(timestep)
             col.bounds = min_flow, max_flow
             total_water_outputed[output_node.domain] += min_flow
+            if len(info['col_idxs']) == 0:
+                # Unconnected column is overriden to have zero bounds
+                col.bounds = 0, 0
 
         # intermediate node max flow constraints
         for node, row in intermediate_max_flow_constraints.items():
-            row.bounds = 0, node.get_max_flow(timestep)
+            if isinstance(node, BaseLink):
+                row.bounds = 0, node.get_max_flow(timestep)
 
         # storage limits
         for node, row in storage_rows.items():
@@ -230,7 +241,7 @@ class SolverGLPK(Solver):
                 else:
                     matrix.append((col_idx, sign*ratio))
             row.matrix = matrix
-
+        """
         # groups
         for group, info in groups.items():
             if group.licenses is None:
@@ -239,8 +250,8 @@ class SolverGLPK(Solver):
             if group.licenses is None:
                 row.bounds = None, None
             else:
-                row.bounds = 0, group.licenses.available(timestamp)
-        """
+                row.bounds = 0, group.licenses.available(timestep)
+
         #print_matrix(lp)
         # solve the linear programme
         lp.simplex()
