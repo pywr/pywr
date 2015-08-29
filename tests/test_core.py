@@ -10,9 +10,9 @@ from pywr._core import Timestep
 from pywr.core import *
 from pywr.domains.river import *
 
-def test_names():
+def test_names(solver):
     '''Test node names'''
-    model = Model()
+    model = Model(solver=solver)
 
     node1 = Input(model, name='A')
     node2 = Output(model, name='B')
@@ -43,8 +43,8 @@ def test_names():
 
 # TODO Update this test. Blender is not implemented.
 @pytest.mark.xfail
-def test_slots_to():
-    model = Model()
+def test_slots_to(solver):
+    model = Model(solver=solver)
 
     supply1 = Input(model, name='supply1')
     supply2 = Input(model, name='supply2')
@@ -79,8 +79,8 @@ def test_slots_to():
 
 # TODO Update this test. RiverSplit is deprecated.
 @pytest.mark.xfail
-def test_slots_from():
-    model = Model()
+def test_slots_from(solver):
+    model = Model(solver=solver)
 
     riversplit = RiverSplit(model, name='split')
     river1 = River(model, name='river1')
@@ -121,10 +121,10 @@ def test_timeseries_name_collision():
         ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
 
 
-def test_dirty_model():
+def test_dirty_model(solver):
     """Test that the LP is updated when the model structure is redefined"""
     # start dirty
-    model = Model()
+    model = Model(solver=solver)
     assert(model.dirty)
 
     # add some nodes, still dirty
@@ -157,9 +157,9 @@ def test_dirty_model():
     assert(model.dirty)
 
 
-def test_shorthand_property():
+def test_shorthand_property(solver):
     # test shorthand assignment of constant properties
-    model = Model()
+    model = Model(solver=solver)
     node = BaseNode(model, 'node')
     for attr in ('min_flow', 'max_flow', 'cost', 'conversion_factor'):
         # should except int, float or Paramter

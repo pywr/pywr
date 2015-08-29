@@ -24,7 +24,7 @@ def simple_gauge_model(request):
     in_flow, out_flow, benefit = request.param
     min_flow_req = 5.0
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=request.config.getoption("--solver"))
     inpt = river.Catchment(model, name="Catchment", flow=in_flow)
     lnk = river.RiverGauge(model, name="Gauge", mrf=min_flow_req, cost=-1.0)
     inpt.connect(lnk)
