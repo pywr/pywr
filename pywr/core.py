@@ -1122,9 +1122,6 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
         else:
             yield self.output
 
-    def commit(self, volume, ):
-        super(Storage, self).commit(volume)
-
     def check(self):
         self.input.check()
         self.output.check()
