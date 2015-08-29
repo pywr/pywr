@@ -15,7 +15,7 @@ def test_me():
             'timestamp_finish': pandas.to_datetime('1888-01-05'),
             'timestep': datetime.timedelta(1),
         },
-        solver=CythonGLPKSolver()
+        solver='cyglpk'
     )
 
     supply1 = Input(model, 'supply1')
