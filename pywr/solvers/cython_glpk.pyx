@@ -172,10 +172,9 @@ cdef class CythonGLPKSolver:
 
         # update route properties
         for col, route in enumerate(routes):
-            supply = route[0]
-            demand = route[-1]
-            # TODO: cost should be for every node in route, not just supply
-            cost = supply.get_cost(timestep)
+            cost = 0.0
+            for node in route:
+                cost += node.get_cost(timestep)
             glp_set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
         # update supply properties
