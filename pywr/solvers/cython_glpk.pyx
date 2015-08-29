@@ -34,6 +34,7 @@ cdef class CythonGLPKSolver:
     cpdef object solve(self, model):
         cdef Node supply
         cdef Node demand
+        cdef Node node
         cdef double min_flow
         cdef double max_flow
         cdef double cost
@@ -58,13 +59,13 @@ cdef class CythonGLPKSolver:
             supplys = []
             demands = []
             storages = []
-            for node in model.nodes():
-                if isinstance(node, (BaseInput, BaseLink)):
-                    supplys.append(node)
-                if isinstance(node, BaseOutput):
-                    demands.append(node)
-                if isinstance(node, Storage):
-                    storages.append(node)
+            for some_node in model.nodes():
+                if isinstance(some_node, (BaseInput, BaseLink)):
+                    supplys.append(some_node)
+                if isinstance(some_node, BaseOutput):
+                    demands.append(some_node)
+                if isinstance(some_node, Storage):
+                    storages.append(some_node)
 
             assert(routes)
             assert(supplys)
