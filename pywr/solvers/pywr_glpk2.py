@@ -175,14 +175,7 @@ class SolverGLPK(Solver):
         for input_node, info in input_nodes.items():
             if len(info['col_idxs']) > 0:
                 row = info['input_constraint']
-                max_flow_parameter = input_node.get_max_flow(timestep)
-                max_flow_license = inf
-                if input_node.licenses is not None:
-                    max_flow_license = input_node.licenses.available(timestep)
-                if max_flow_parameter is not None:
-                    max_flow = min(max_flow_parameter, max_flow_license)
-                else:
-                    max_flow = max_flow_license
+                max_flow = input_node.get_max_flow(timestep)
                 min_flow = input_node.get_min_flow(timestep)
                 row.matrix = info['matrix']
                 row.bounds = min_flow, max_flow

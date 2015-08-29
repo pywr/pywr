@@ -26,9 +26,9 @@ def simple_gauge_model(request):
 
     model = pywr.core.Model(solver=request.config.getoption("--solver"))
     inpt = river.Catchment(model, name="Catchment", flow=in_flow)
-    lnk = river.RiverGauge(model, name="Gauge", mrf=min_flow_req, cost=-1.0)
+    lnk = river.RiverGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-1.0)
     inpt.connect(lnk)
-    otpt = river.DemandCentre(model, name="Demand", min_flow=out_flow, cost=-benefit)
+    otpt = river.DemandCentre(model, name="Demand", max_flow=out_flow, cost=-benefit)
     lnk.connect(otpt)
 
     default = inpt.domain
