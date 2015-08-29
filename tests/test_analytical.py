@@ -10,16 +10,7 @@ import pywr.core
 import datetime
 import numpy as np
 import pytest
-
-def assert_model(model, expected_node_results):
-    model.step()
-
-    for node in model.nodes():
-        if node.name in expected_node_results:
-            if isinstance(node, pywr.core.BaseNode):
-                assert(expected_node_results[node.name] == node.flow)
-            elif isinstance(node, pywr.core.Storage):
-                assert(expected_node_results[node.name] == node.volume)
+from helpers import assert_model
 
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (10.0, 0.0, 0.0)])
@@ -32,7 +23,7 @@ def simple_linear_model(request):
     """
     in_flow, out_flow, benefit = request.param
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=request.config.getoption("--solver"))
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=1.0)
     inpt.connect(lnk)
@@ -68,7 +59,7 @@ def linear_model_with_storage(request):
     current_volume = 0.0
     max_strg_out = 10.0
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=request.config.getoption("--solver"))
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=0.1)
     inpt.connect(lnk)
@@ -114,7 +105,7 @@ def two_domain_linear_model(request):
     power_demand = 12  # GWh/d
     power_benefit = 10.0  # £/GWh
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=request.config.getoption("--solver"))
     # Create river network
     river_inpt = pywr.core.Input(model, name="Catchment", max_flow=river_flow, domain='river')
     river_lnk = pywr.core.Link(model, name="Reach", domain='river')
@@ -152,7 +143,7 @@ def test_two_domain_linear_model(two_domain_linear_model):
 
 
 def make_simple_model(supply_amplitude, demand, frequency,
-                      initial_volume):
+                      initial_volume, solver):
     """
     Make a simlpe model,
         supply -> reservoir -> demand.
@@ -162,7 +153,7 @@ def make_simple_model(supply_amplitude, demand, frequency,
 
     """
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=solver)
 
     S = supply_amplitude
     w = frequency
@@ -187,7 +178,7 @@ def make_simple_model(supply_amplitude, demand, frequency,
 
     return model
 
-def pytest_run_analytical():
+def pytest_run_analytical(solver):
     """
     Run the test model though a year with analytical solution values to
     ensure reservoir just contains sufficient volume.
@@ -198,7 +189,7 @@ def pytest_run_analytical():
     w = 2*np.pi/365 # frequency (annual)
     V0 = S/w  # initial reservoir level
 
-    model = make_simple_model(S, D, w, V0)
+    model = make_simple_model(S, D, w, V0, solver)
 
     model.timestamp = datetime.datetime(2015, 1, 1)
 
@@ -215,27 +206,3 @@ def pytest_run_analytical():
 
 
     return T, V_model, V_anal
-
-
-
-if __name__ == '__main__':
-
-    t, Vm, Va = test_run_analytical()
-
-    error = np.abs(Vm-Va)/Va
-
-
-    import matplotlib.pyplot as plt
-
-    fig, (ax1, ax2) = plt.subplots(2,sharex=True)
-
-    ax1.plot(t, Va, label='Analytical')
-    ax1.plot(t, Vm, '-o', label='Model')
-
-    ax1.set_ylabel('Volume')
-
-    ax2.plot(t, error, '-o', label='Error')
-    ax2.set_ylabel('Error [%]')
-    ax2.set_xlabel('Day of Year')
-
-    plt.show()

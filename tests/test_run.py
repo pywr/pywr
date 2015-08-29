@@ -14,10 +14,10 @@ import pywr.domains.river
 
 from helpers import load_model
 
-def test_run_simple1():
+def test_run_simple1(solver):
     '''Test the most basic model possible'''
     # parse the XML into a model
-    model = load_model('simple1.xml')
+    model = load_model('simple1.xml', solver=solver)
 
     # run the model
     t0 = model.timestepper.current
@@ -31,12 +31,12 @@ def test_run_simple1():
     assert(model.timestepper.current - t0 == datetime.timedelta(1))
 
 
-def test_run_reservoir1():
+def test_run_reservoir1(solver):
     '''Test a reservoir with no refill
 
     Without an additional supply the reservoir should empty and cause a failure.
     '''
-    model = load_model('reservoir1.xml')
+    model = load_model('reservoir1.xml', solver=solver)
     demand1 = model.node['demand1']
     supply1 = model.node['supply1']
     for demand, stored in [(10.0, 25.0), (10.0, 15.0), (10.0, 5.0), (5.0, 0.0), (0.0, 0.0)]:
@@ -45,13 +45,13 @@ def test_run_reservoir1():
         assert(supply1.volume == stored)
 
 
-def test_run_reservoir2():
+def test_run_reservoir2(solver):
     '''Test a reservoir fed by a river abstraction
 
     The river abstraction should refill the reservoir, but not quickly enough
     to keep up with the demand.
     '''
-    model = load_model('reservoir2.xml')
+    model = load_model('reservoir2.xml', solver=solver)
 
     demand1 = model.node['demand1']
     supply1 = model.node['supply1']
@@ -61,9 +61,9 @@ def test_run_reservoir2():
         assert(supply1.volume == stored)
 
 
-def test_run_river1():
+def test_run_river1(solver):
     '''Test a river abstraction with a simple catchment'''
-    model = load_model('river1.xml')
+    model = load_model('river1.xml', solver=solver)
 
     result = model.step()
     demand1 = model.node['demand1']
@@ -72,16 +72,16 @@ def test_run_river1():
 
 # Contains a RiverSplit which needs addressing
 @pytest.mark.xfail
-def test_run_river2():
+def test_run_river2(solver):
     '''Test a river abstraction with two catchments, a confluence and a split'''
-    model = load_model('river2.xml')
+    model = load_model('river2.xml', solver=solver)
 
     result = model.step()
     assert(result[0:3] == ('optimal', 12.0, 9.25))
     assert(model.failure)
 
-def test_run_timeseries1():
-    model = load_model('timeseries1.xml')
+def test_run_timeseries1(solver):
+    model = load_model('timeseries1.xml', solver=solver)
 
     # check first day initalised
     assert(model.timestepper.start == datetime.datetime(2015, 1, 1))
@@ -100,8 +100,8 @@ def test_run_timeseries1():
         supplied.append(demand1.flow)
     assert(supplied == [23.0, 22.14, 22.57, 23.0, 23.0])
 
-def test_run_cost1():
-    model = load_model('cost1.xml')
+def test_run_cost1(solver):
+    model = load_model('cost1.xml', solver=solver)
 
     supply1 = model.node['supply1']
     supply2 = model.node['supply2']
@@ -132,8 +132,8 @@ def test_run_cost1():
     assert(demand1.flow == 30.0)
 
 
-def test_run_license1():
-    model = load_model('simple1.xml')
+def test_run_license1(solver):
+    model = load_model('simple1.xml', solver=solver)
 
     model.timestamp = datetime.datetime(2015, 1, 1)
 
@@ -166,9 +166,9 @@ def test_run_license1():
     assert(annual_lic.resource_state(model.timestep) == 0.0)
 
 
-def test_run_license2():
+def test_run_license2(solver):
     '''Test licenses loaded from XML'''
-    model = load_model('license1.xml')
+    model = load_model('license1.xml', solver=solver)
 
     model.timestamp = datetime.datetime(2015, 1, 1)
 
@@ -186,9 +186,9 @@ def test_run_license2():
     assert(d1.flow == 2.0)
 
 
-def test_run_license_group():
+def test_run_license_group(solver):
     '''Test license groups'''
-    model = load_model('groups1.xml')
+    model = load_model('groups1.xml', solver=solver)
 
     supply1 = model.node['supply1']
     supply2 = model.node['supply2']
@@ -200,9 +200,9 @@ def test_run_license_group():
     assert(d1.flow == 6.0)
 
 
-def test_run_bottleneck():
+def test_run_bottleneck(solver):
     '''Test max flow constraint on intermediate nodes is upheld'''
-    model = load_model('bottleneck.xml')
+    model = load_model('bottleneck.xml', solver=solver)
     result = model.step()
     d1 = model.node['demand1']
     d2 = model.node['demand2']
@@ -210,9 +210,9 @@ def test_run_bottleneck():
 
 
 @pytest.mark.xfail
-def test_run_mrf():
+def test_run_mrf(solver):
     '''Test minimum residual flow constraint'''
-    model = load_model('river_mrf1.xml')
+    model = load_model('river_mrf1.xml', solver=solver)
 
     # check mrf value was parsed from xml
     river_gauge = model.node['gauge1']
@@ -231,26 +231,26 @@ def test_run_mrf():
         result = model.step()
         assert(result[0:3] == ('optimal', 12.0, expected_supply))
 
-def test_run_discharge_upstream():
+def test_run_discharge_upstream(solver):
     '''Test river with inline discharge (upstream)
 
     In this instance the discharge is upstream of the abstraction, and so can
     be abstracted in the same way as the water from the catchment
     '''
-    model = load_model('river_discharge1.xml')
+    model = load_model('river_discharge1.xml', solver=solver)
     model.step()
     demand = model.node['demand1']
     term = model.node['term1']
     assert(demand.flow == 8.0)
     assert(term.flow == 0.0)
 
-def test_run_discharge_downstream():
+def test_run_discharge_downstream(solver):
     '''Test river with inline discharge (downstream)
 
     In this instance the discharge is downstream of the abstraction, so the
     water shouldn't be available.
     '''
-    model = load_model('river_discharge2.xml')
+    model = load_model('river_discharge2.xml', solver=solver)
     model.step()
     demand = model.node['demand1']
     term = model.node['term1']
@@ -259,9 +259,9 @@ def test_run_discharge_downstream():
 
 
 @pytest.mark.xfail
-def test_run_blender1():
+def test_run_blender1(solver):
     '''Test blender constraint/component'''
-    model = load_model('blender1.xml')
+    model = load_model('blender1.xml', solver=solver)
 
     blender = model.node['blender1']
     supply1 = model.node['supply1']
@@ -282,9 +282,9 @@ def test_run_blender1():
     assert(result[3][(supply2, blender)] == 2.5)
 
 @pytest.mark.xfail
-def test_run_blender2():
+def test_run_blender2(solver):
     '''Test blender constraint/component'''
-    model = load_model('blender2.xml')
+    model = load_model('blender2.xml', solver=solver)
 
     blender = model.node['blender1']
     supply1 = model.node['supply1']
@@ -296,9 +296,9 @@ def test_run_blender2():
     assert(result[3][(supply2, blender)] == 7.0)
 
 @pytest.mark.xfail
-def test_run_demand_discharge():
+def test_run_demand_discharge(solver):
     """Test demand discharge node"""
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=solver)
     catchment = pywr.core.Catchment(model, 'catchment', flow=10.0)
     abstraction1 = pywr.core.RiverAbstraction(model, 'abstraction1', max_flow=100)
     demand1 = pywr.core.Demand(model, 'demand1', demand=8.0)
@@ -330,9 +330,9 @@ def test_run_demand_discharge():
     result = model.step()
     assert(not model.failure)
 
-def test_reset():
+def test_reset(solver):
     """Test model reset"""
-    model = load_model('license1.xml')
+    model = load_model('license1.xml', solver=solver)
     supply1 = model.node['supply1']
     license_collection = supply1.licenses
     license = [lic for lic in license_collection._licenses if isinstance(lic, pywr.licenses.AnnualLicense)][0]
@@ -343,8 +343,8 @@ def test_reset():
     assert(license.available(None) == 7.0)
 
 
-def test_run():
-    model = load_model('simple1.xml')
+def test_run(solver):
+    model = load_model('simple1.xml', solver=solver)
 
     # run model from start to finish
     timestep = model.run()
@@ -366,8 +366,8 @@ def test_run():
 
 
 @pytest.mark.xfail
-def test_run_until_failure():
-    model = load_model('simple1.xml')
+def test_run_until_failure(solver):
+    model = load_model('simple1.xml', solver=solver)
 
     # run until failure
     model.timestamp = pandas.to_datetime('2015-12-01')
@@ -380,8 +380,8 @@ def test_run_until_failure():
     assert(timesteps == 16)
 
 
-def test_run_until_date():
-    model = load_model('simple1.xml')
+def test_run_until_date(solver):
+    model = load_model('simple1.xml', solver=solver)
 
     # run until date
     model.reset()

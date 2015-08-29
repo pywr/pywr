@@ -325,13 +325,14 @@ class Model(object):
         return xml_model
 
     @classmethod
-    def from_xml(cls, xml, path=None):
+    def from_xml(cls, xml, path=None, solver=None):
         """Deserialize a Model from XML"""
-        xml_solver = xml.find('solver')
-        if xml_solver is not None:
-            solver = xml_solver.get('name')
-        else:
-            solver = None
+        if solver is None:
+            xml_solver = xml.find('solver')
+            if xml_solver is not None:
+                solver = xml_solver.get('name')
+            else:
+                solver = None
 
         model = Model(solver=solver)
 

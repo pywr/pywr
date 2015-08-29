@@ -18,7 +18,7 @@ def simple_piecewise_model(request):
     in_flow, out_flow, benefit = request.param
     min_flow_req = 5.0
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=request.config.getoption("--solver"))
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.PiecewiseLink(model, name="Link", cost=[-1.0, 0.0], max_flow=[min_flow_req, None])
 
