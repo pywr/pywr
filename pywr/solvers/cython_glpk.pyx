@@ -59,7 +59,7 @@ cdef class CythonGLPKSolver:
             demands = []
             storages = []
             for node in model.nodes():
-                if isinstance(node, BaseInput):
+                if isinstance(node, (BaseInput, BaseLink)):
                     supplys.append(node)
                 if isinstance(node, BaseOutput):
                     demands.append(node)
@@ -102,7 +102,11 @@ cdef class CythonGLPKSolver:
             # constrain supply minimum and maximum flow
             self.idx_row_supplys = glp_add_rows(self.prob, len(supplys))
             for col, supply in enumerate(supplys):
-                cols = [n for n, route in enumerate(routes) if route[0] is supply]
+                # TODO is this a bit hackish??
+                if isinstance(supply, BaseInput):
+                    cols = [n for n, route in enumerate(routes) if route[0] is supply]
+                else:
+                    cols = [n for n, route in enumerate(routes) if supply in route]
                 ind = <int*>malloc((1+len(cols)) * sizeof(int))
                 val = <double*>malloc((1+len(cols)) * sizeof(double))
                 for n, c in enumerate(cols):
