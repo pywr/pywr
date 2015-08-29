@@ -915,6 +915,13 @@ class BaseInput(BaseNode):
         self.licenses = None
         super(BaseInput, self).__init__(*args, **kwargs)
 
+    def get_max_flow(self, timestep):
+        """ Calculate maximum flow including licenses """
+        max_flow = super(BaseNode, self).get_max_flow(timestep)
+        if self.licenses is not None:
+            max_flow = min(max_flow, self.licenses.available(timestep))
+        return max_flow
+
     def reset(self, ):
         if self.licenses is not None:
             self.licenses.reset()

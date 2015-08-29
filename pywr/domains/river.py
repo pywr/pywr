@@ -128,7 +128,7 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         """
         # create keyword arguments for PiecewiseLink
         cost = kwargs.pop('cost', 0.0)
-        kwargs['cost'] = [cost-kwargs.pop('benefit', 0.0), cost]
+        kwargs['cost'] = [kwargs.pop('mrf_cost', 0.0), cost]
         kwargs['max_flow'] = [kwargs.pop('mrf'), None]
         super(RiverGauge, self).__init__(*args, **kwargs)
 
