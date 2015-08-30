@@ -6,6 +6,10 @@ cdef class Timestep:
 cdef class Parameter:
     cpdef double value(self, Timestep ts) except? -1
 
+cdef class ParameterArrayIndexed(Parameter):
+    cdef double[:] values
+    cpdef double value(self, Timestep ts) except? -1
+
 cdef class Recorder:
     cpdef setup(self, int ntimesteps)
     cpdef int commit(self, Timestep ts, double value) except -1

@@ -1,4 +1,4 @@
-# cython: profile=True
+# cython: profile=False
 from pywr._core cimport *
 
 import numpy as np
@@ -46,6 +46,13 @@ cdef class NumpyArrayRecorder(Recorder):
 cdef class Parameter:
     cpdef double value(self, Timestep ts) except? -1:
         return 0
+
+cdef class ParameterArrayIndexed(Parameter):
+    def __cinit__(self, double[:] values):
+        self.values = values
+
+    cpdef double value(self, Timestep ts) except? -1:
+        return self.values[ts._index]
 
 
 cdef class Node:
