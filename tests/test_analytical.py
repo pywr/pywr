@@ -45,7 +45,11 @@ def test_linear_model(simple_linear_model):
     assert_model(*simple_linear_model)
 
 
-@pytest.fixture
+@pytest.fixture(params=[
+    (10.0, 5.0, 5.0, 0.0, 0.0, 0.0),
+    (10.0, 5.0, 5.0, 0.0, 10.0, 0.0),
+    (10.0, 5.0, 5.0, 0.0, 10.0, 2.0),
+    ])
 def linear_model_with_storage(request):
     """
     Make a simple model with a single Input and Output and an offline Storage Node
@@ -55,8 +59,7 @@ def linear_model_with_storage(request):
                v     |
                Storage
     """
-    in_flow, out_flow, out_benefit, strg_benefit = 10.0, 5.0, 5.0, 0.0
-    current_volume = 0.0
+    in_flow, out_flow, out_benefit, strg_benefit, current_volume, min_volume = request.param
     max_strg_out = 10.0
 
     model = pywr.core.Model(solver=request.config.getoption("--solver"))
@@ -66,23 +69,21 @@ def linear_model_with_storage(request):
     otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-out_benefit)
     lnk.connect(otpt)
 
-    strg = pywr.core.Storage(model, name="Storage", max_volume=10.0, volume=current_volume,
-                             cost=-strg_benefit)
+    strg = pywr.core.Storage(model, name="Storage", max_volume=10.0, min_volume=min_volume,
+                             volume=current_volume, cost=-strg_benefit)
 
-    lnk2 = pywr.core.Link(model, name='Storage Link', cost=2.0, max_flow=max_strg_out)
-    strg.connect(lnk2)
+    strg.connect(otpt)
     lnk.connect(strg)
-    lnk2.connect(otpt)
-
-    expected_sent = in_flow+min(max_strg_out, current_volume) if out_benefit > 1.0 else out_flow
+    avail_volume = max(current_volume - min_volume, 0.0)
+    expected_sent = in_flow+min(max_strg_out, avail_volume) if out_benefit > 1.0 else out_flow
 
     expected_node_results = {
-        "Input": expected_sent,
-        "Link": expected_sent,
+        "Input": in_flow,
+        "Link": in_flow,
         "Output": expected_sent,
-        "Storage Output": min(max_strg_out, current_volume) if out_benefit > 1.0 else 0.0,
-        "Storage Input": 0.0,
-        "Storage": 0.0,
+        "Storage Output": 0.0,
+        "Storage Input": min(max_strg_out, avail_volume) if out_benefit > 1.0 else 0.0,
+        "Storage": min_volume,
     }
     return model, expected_node_results
 

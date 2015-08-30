@@ -38,7 +38,7 @@ cdef class CythonGLPKSolver:
         cdef double min_flow
         cdef double max_flow
         cdef double cost
-        cdef double current_volume
+        cdef double avail_volume
         cdef int col
         cdef int* ind
         cdef double* val
@@ -199,11 +199,11 @@ cdef class CythonGLPKSolver:
         # update storage node constraint
         for col, storage in enumerate(storages):
             max_volume = storage.get_max_volume(timestep)
-            current_volume = storage._volume
+            avail_volume = max(storage.volume - storage.get_min_volume(timestep), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
-            lb = -current_volume
-            ub = max_volume-current_volume
+            lb = -avail_volume
+            ub = max_volume-avail_volume
             glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # attempt to solve the linear programme
