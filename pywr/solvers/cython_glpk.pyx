@@ -1,3 +1,4 @@
+# cython: profile=True
 from libc.stdlib cimport malloc, free
 
 from pywr.core import BaseInput, BaseOutput, BaseLink

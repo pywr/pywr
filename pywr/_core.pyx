@@ -1,3 +1,4 @@
+# cython: profile=True
 from pywr._core cimport *
 
 import numpy as np

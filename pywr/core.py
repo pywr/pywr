@@ -663,6 +663,8 @@ class HasDomain(object):
 
     @property
     def domain(self, ):
+        if self._domain is None and self.parent is not None:
+            return self.parent.domain
         return self._domain
 
     @domain.setter
@@ -1057,6 +1059,8 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
         self.model = model
         model.graph.add_node(self)
         model.dirty = True
+        self.visible = kwargs.pop('visible', True)
+        self.parent = kwargs.pop('parent', None)
 
         if not hasattr(self, 'name'):
             # set name, avoiding issues with multiple inheritance
@@ -1144,7 +1148,18 @@ class PiecewiseLink(Node):
     This object is intended to model situations where there is a benefit of supplying certain flow rates
     but beyond a fixed limit there is a change in (or zero) cost.
 
+    This Node is implemented using a compound node structure like so:
+            | Separate Domain         |
+    Output -> Sublink 0 -> Sub Output -> Input
+           -> Sublink 1 ---^
+           ...             |
+           -> Sublink n ---|
 
+    This means routes do not directly traverse this node due to the separate
+    domain in the middle. Instead several new routes are made for each of
+    the sublinks and connections to the Output/Input node. The reason for this
+    breaking of the route is to avoid an geometric increase in the number
+    of routes when multiple PiecewiseLinks are present in the same route.
     """
     def __init__(self, *args, **kwargs):
         """
@@ -1162,15 +1177,31 @@ class PiecewiseLink(Node):
         if len(costs) != len(max_flows):
             raise ValueError("Piecewise max_flow and cost keywords must be the same length.")
 
+        # TODO look at the application of Domains here. Having to use
+        # Input/Output instead of BaseInput/BaseOutput because of a different
+        # domain is required on the sub-nodes and they need to be connected
+        self.sub_domain = Domain()
+        self.input = Input(self.model, name='{} Input'.format(self.name), parent=self)
+        self.output = Output(self.model, name='{} Output'.format(self.name), parent=self)
+
+        self.sub_output = Output(self.model, name='{} Sub Output'.format(self.name), parent=self,
+                             domain=self.sub_domain)
+        self.sub_output.connect(self.input)
         self.sublinks = []
         for max_flow, cost in zip(max_flows, costs):
-            self.sublinks.append(BaseLink(self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
-                                      cost=cost, max_flow=max_flow, parent=self))
+            self.sublinks.append(Input(self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
+                                      cost=cost, max_flow=max_flow, parent=self, domain=self.sub_domain))
+            self.sublinks[-1].connect(self.sub_output)
+            self.output.connect(self.sublinks[-1])
 
     def iter_slots(self, slot_name=None, is_connector=True):
-        # All sublinks are connected upstream and downstream
-        for link in self.sublinks:
-            yield link
+        if is_connector:
+            yield self.input
+        else:
+            yield self.output
+            # All sublinks are connected upstream and downstream
+            #for link in self.sublinks:
+            #    yield link
 
     def after(self, timestep):
         """
