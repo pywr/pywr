@@ -1071,7 +1071,8 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
         kwargs['color'] = kwargs.pop('color', 'green')
         # keyword arguments for input and output nodes specified with prefix
         input_kwargs, output_kwargs = {}, {}
-        for key in kwargs.keys():
+        keys = list(kwargs.keys())
+        for key in keys:
             if key.startswith('input_'):
                 input_kwargs[key.replace('input_', '')] = kwargs.pop(key)
             elif key.startswith('output_'):
