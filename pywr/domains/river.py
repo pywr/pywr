@@ -27,11 +27,12 @@ class Catchment(RiverDomainMixin, Input):
             The amount of water supplied by the catchment each timestep
         """
         self.color = '#82CA9D' # green
-
+        # Grab flow from kwargs
+        flow = kwargs.pop('flow', 0.0)
         # Min/max flow set in super inits
         super(Catchment, self).__init__(*args, **kwargs)
-        # Grab flow from kwargs
-        self.flow = kwargs.pop('flow', 0.0)
+        self.flow = flow
+
 
     def check(self):
         super(Catchment, self).check()
