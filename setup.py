@@ -20,6 +20,6 @@ setup(
     author='Joshua Arnott',
     author_email='josh@snorfalorpagus.net',
     url='http://snorf.net/pywr/',
-    packages=['pywr', 'pywr.solvers'],
+    packages=['pywr', 'pywr.solvers', 'pywr.domains'],
     ext_modules=cythonize(extensions)
 )
