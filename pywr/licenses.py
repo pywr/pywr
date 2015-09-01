@@ -7,7 +7,7 @@ inf = float('inf')
 
 class License(object):
     """Base license class from which others inherit
-    
+
     This class should not be instantiated directly. Instead, use one of the
     subclasses (e.g. DailyLicense).
     """
@@ -16,13 +16,13 @@ class License(object):
             raise TypeError('License cannot be instantiated directly')
         else:
             return object.__new__(cls)
-    def available(self, index):
+    def available(self, timestep):
         raise NotImplementedError()
-    def resource_state(self, index):
+    def resource_state(self, timestep):
         raise NotImplementedError()
     def commit(self, value):
         pass
-    def refresh(self):
+    def reset(self):
         pass
 
     @classmethod
@@ -53,11 +53,11 @@ class TimestepLicense(License):
             The maximum volume available in each timestep
         """
         self._amount = amount
-    def available(self, index):
+    def available(self, timestep):
         return self._amount
-    def resource_state(self, index):
+    def resource_state(self, timestep):
         return None
-    
+
     def xml(self):
         xml = ET.Element('license')
         xml.set('type', 'timestep')
@@ -83,20 +83,20 @@ class StorageLicense(License):
         """
         super(StorageLicense, self).__init__()
         self._amount = amount
-        self.refresh()
-    def available(self, index):
+        self.reset()
+    def available(self, timestep):
         return self._remaining
     def commit(self, value):
         self._remaining -= value
-    def refresh(self):
+    def reset(self):
         self._remaining = self._amount
 
 class AnnualLicense(StorageLicense):
     """An annual license"""
-    def resource_state(self, index):
-        timetuple = index.timetuple()
+    def resource_state(self, timestep):
+        timetuple = timestep.datetime.timetuple()
         day_of_year = timetuple.tm_yday
-        days_in_year = 365 + int(calendar.isleap(index.year))
+        days_in_year = 365 + int(calendar.isleap(timestep.datetime.year))
         if day_of_year == days_in_year:
             return inf
         else:
@@ -129,23 +129,23 @@ class LicenseCollection(License):
         self._licenses.remove(license)
     def __len__(self):
         return len(self._licenses)
-    def available(self, index):
+    def available(self, timestep):
         min_available = inf
         for license in self._licenses:
-            min_available = min(license.available(index), min_available)
+            min_available = min(license.available(timestep), min_available)
         return min_available
-    def resource_state(self, index):
+    def resource_state(self, timestep):
         resource_states = []
         for license in self._licenses:
-            resource_states.append(license.resource_state(index))
+            resource_states.append(license.resource_state(timestep))
         resource_states = [r for r in resource_states if r is not None]
         return min(resource_states)
     def commit(self, value):
         for license in self._licenses:
             license.commit(value)
-    def refresh(self):
+    def reset(self):
         for license in self._licenses:
-            license.refresh()
+            license.reset()
 
     def xml(self):
         xml = ET.Element('licensecollection')

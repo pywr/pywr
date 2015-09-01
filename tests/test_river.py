@@ -24,26 +24,25 @@ def simple_gauge_model(request):
     in_flow, out_flow, benefit = request.param
     min_flow_req = 5.0
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=request.config.getoption("--solver"))
     inpt = river.Catchment(model, name="Catchment", flow=in_flow)
-    lnk = river.RiverGauge(model, name="Gauge", mrf=min_flow_req, benefit=1.0)
+    lnk = river.RiverGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-1.0)
     inpt.connect(lnk)
-    otpt = river.DemandCentre(model, name="Demand", min_flow=out_flow, benefit=benefit)
+    otpt = river.DemandCentre(model, name="Demand", max_flow=out_flow, cost=-benefit)
     lnk.connect(otpt)
 
     default = inpt.domain
 
-    expected_requested = {default: out_flow}
-    expected_sent = {default: in_flow if benefit > 1.0 else out_flow}
+    expected_sent = in_flow if benefit > 1.0 else out_flow
 
     expected_node_results = {
-        "Catchment": expected_sent[default],
-        "Gauge": 0.0,
-        "Gauge Sublink 0": min(min_flow_req, expected_sent[default]),
-        "Gauge Sublink 1": expected_sent[default] - min(min_flow_req, expected_sent[default]),
-        "Demand": expected_sent[default],
+        "Catchment": expected_sent,
+        "Gauge": expected_sent,
+        "Gauge Sublink 0": min(min_flow_req, expected_sent),
+        "Gauge Sublink 1": expected_sent - min(min_flow_req, expected_sent),
+        "Demand": expected_sent,
     }
-    return model, expected_requested, expected_sent, expected_node_results
+    return model, expected_node_results
 
 
 def test_piecewise_model(simple_gauge_model):

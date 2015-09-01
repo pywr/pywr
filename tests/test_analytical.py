@@ -10,16 +10,7 @@ import pywr.core
 import datetime
 import numpy as np
 import pytest
-
-def assert_model(model, expected_requested, expected_sent, expected_node_results):
-    status, requested, sent, routes, nodes = model.step()
-    assert(status == 'optimal')
-    for key in requested:
-        assert(requested[key] == expected_requested[key])
-    for key in sent:
-        assert(sent[key] == expected_sent[key])
-    for node, val in nodes.items():
-        assert(expected_node_results[node.name] == val)
+from helpers import assert_model
 
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (10.0, 0.0, 0.0)])
@@ -32,11 +23,11 @@ def simple_linear_model(request):
     """
     in_flow, out_flow, benefit = request.param
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=request.config.getoption("--solver"))
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=1.0)
     inpt.connect(lnk)
-    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, benefit=benefit)
+    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-benefit)
     lnk.connect(otpt)
     default = inpt.domain
     expected_requested = {default: out_flow}
@@ -47,14 +38,18 @@ def simple_linear_model(request):
         "Link": expected_sent[default],
         "Output": expected_sent[default],
     }
-    return model, expected_requested, expected_sent, expected_node_results
+    return model, expected_node_results
 
 
 def test_linear_model(simple_linear_model):
     assert_model(*simple_linear_model)
 
 
-@pytest.fixture
+@pytest.fixture(params=[
+    (10.0, 5.0, 5.0, 0.0, 0.0, 0.0),
+    (10.0, 5.0, 5.0, 0.0, 10.0, 0.0),
+    (10.0, 5.0, 5.0, 0.0, 10.0, 2.0),
+    ])
 def linear_model_with_storage(request):
     """
     Make a simple model with a single Input and Output and an offline Storage Node
@@ -64,37 +59,33 @@ def linear_model_with_storage(request):
                v     |
                Storage
     """
-    in_flow, out_flow, out_benefit, strg_benefit = 10.0, 5.0, 5.0, 0.0
-    current_volume = 0.0
+    in_flow, out_flow, out_benefit, strg_benefit, current_volume, min_volume = request.param
     max_strg_out = 10.0
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=request.config.getoption("--solver"))
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=0.1)
     inpt.connect(lnk)
-    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, benefit=out_benefit)
+    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-out_benefit)
     lnk.connect(otpt)
 
-    strg = pywr.core.Storage(model, name="Storage", max_volume=10.0, current_volume=current_volume,
-                             benefit=strg_benefit)
+    strg = pywr.core.Storage(model, name="Storage", max_volume=10.0, min_volume=min_volume,
+                             volume=current_volume, cost=-strg_benefit)
 
-    lnk2 = pywr.core.Link(model, name='Storage Link', cost=2.0, max_flow=max_strg_out)
-    strg.input.connect(lnk2)
-    lnk.connect(strg.output)
-    lnk2.connect(otpt)
-    default = inpt.domain
-    expected_requested = {default: out_flow}
-    expected_sent = {default: in_flow+min(max_strg_out, current_volume) if out_benefit > 1.0 else out_flow}
+    strg.connect(otpt)
+    lnk.connect(strg)
+    avail_volume = max(current_volume - min_volume, 0.0)
+    expected_sent = in_flow+min(max_strg_out, avail_volume) if out_benefit > 1.0 else out_flow
 
     expected_node_results = {
-        "Input": expected_sent[default],
-        "Link": expected_sent[default],
-        "Output": expected_sent[default],
-        "Storage Output": min(max_strg_out, current_volume) if out_benefit > 1.0 else 0.0,
-        "Storage Input": 0.0,
-        "Storage": 0.0,
+        "Input": in_flow,
+        "Link": in_flow,
+        "Output": expected_sent,
+        "Storage Output": 0.0,
+        "Storage Input": min(max_strg_out, avail_volume) if out_benefit > 1.0 else 0.0,
+        "Storage": min_volume,
     }
-    return model, expected_requested, expected_sent, expected_node_results
+    return model, expected_node_results
 
 def test_linear_model_with_storage(linear_model_with_storage):
     assert_model(*linear_model_with_storage)
@@ -115,20 +106,20 @@ def two_domain_linear_model(request):
     power_demand = 12  # GWh/d
     power_benefit = 10.0  # £/GWh
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=request.config.getoption("--solver"))
     # Create river network
     river_inpt = pywr.core.Input(model, name="Catchment", max_flow=river_flow, domain='river')
     river_lnk = pywr.core.Link(model, name="Reach", domain='river')
     river_inpt.connect(river_lnk)
-    river_otpt = pywr.core.Output(model, name="Abstraction", domain='river', benefit=0.0)
+    river_otpt = pywr.core.Output(model, name="Abstraction", domain='river', cost=0.0)
     river_lnk.connect(river_otpt)
     # Create grid network
-    grid_inpt = pywr.core.InputFromOtherDomain(model, name="Power Plant", max_flow=power_plant_cap, domain='grid',
+    grid_inpt = pywr.core.Input(model, name="Power Plant", max_flow=power_plant_cap, domain='grid',
                                                conversion_factor=1/power_plant_flow_req)
     grid_lnk = pywr.core.Link(model, name="Transmission", cost=1.0, domain='grid')
     grid_inpt.connect(grid_lnk)
     grid_otpt = pywr.core.Output(model, name="Substation", max_flow=power_demand,
-                                 benefit=power_benefit, domain='grid')
+                                 cost=-power_benefit, domain='grid')
     grid_lnk.connect(grid_otpt)
     # Connect grid to river
     river_otpt.connect(grid_inpt)
@@ -145,7 +136,7 @@ def two_domain_linear_model(request):
         "Substation": power_demand,
     }
 
-    return model, expected_requested, expected_sent, expected_node_results
+    return model, expected_node_results
 
 
 def test_two_domain_linear_model(two_domain_linear_model):
@@ -153,7 +144,7 @@ def test_two_domain_linear_model(two_domain_linear_model):
 
 
 def make_simple_model(supply_amplitude, demand, frequency,
-                      initial_volume):
+                      initial_volume, solver):
     """
     Make a simlpe model,
         supply -> reservoir -> demand.
@@ -163,7 +154,7 @@ def make_simple_model(supply_amplitude, demand, frequency,
 
     """
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=solver)
 
     S = supply_amplitude
     w = frequency
@@ -188,7 +179,7 @@ def make_simple_model(supply_amplitude, demand, frequency,
 
     return model
 
-def pytest_run_analytical():
+def pytest_run_analytical(solver):
     """
     Run the test model though a year with analytical solution values to
     ensure reservoir just contains sufficient volume.
@@ -199,7 +190,7 @@ def pytest_run_analytical():
     w = 2*np.pi/365 # frequency (annual)
     V0 = S/w  # initial reservoir level
 
-    model = make_simple_model(S, D, w, V0)
+    model = make_simple_model(S, D, w, V0, solver)
 
     model.timestamp = datetime.datetime(2015, 1, 1)
 
@@ -216,27 +207,3 @@ def pytest_run_analytical():
 
 
     return T, V_model, V_anal
-
-
-
-if __name__ == '__main__':
-
-    t, Vm, Va = test_run_analytical()
-
-    error = np.abs(Vm-Va)/Va
-
-
-    import matplotlib.pyplot as plt
-
-    fig, (ax1, ax2) = plt.subplots(2,sharex=True)
-
-    ax1.plot(t, Va, label='Analytical')
-    ax1.plot(t, Vm, '-o', label='Model')
-
-    ax1.set_ylabel('Volume')
-
-    ax2.plot(t, error, '-o', label='Error')
-    ax2.set_ylabel('Error [%]')
-    ax2.set_xlabel('Day of Year')
-
-    plt.show()

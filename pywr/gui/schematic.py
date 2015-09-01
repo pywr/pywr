@@ -103,13 +103,14 @@ class Schematic(QtGui.QWidget):
 
         nodes = {}
         for node in model.nodes():
-            N = Node(node)
-            nodes[node] = N
+            if node.parent is None:
+                N = Node(node)
+                nodes[node] = N
 
-            # Node labels
-            N_label = QtGui.QGraphicsTextItem(node.name, parent=N)
-            N_label.setPos(11, -22)
-            self.scene.addItem(N)
+                # Node labels
+                N_label = QtGui.QGraphicsTextItem(node.name, parent=N)
+                N_label.setPos(11, -22)
+                self.scene.addItem(N)
 
         for edge in model.edges():
             E = Edge(edge)

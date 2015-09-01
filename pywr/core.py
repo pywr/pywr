@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import _core
+from pywr import _core
 
 import os
 from IPython.core.magic_arguments import kwds
@@ -36,17 +36,38 @@ class Timestepper(object):
     def __len__(self, ):
         return int((self.end-self.start)/self.delta) + 1
 
-    def reset(self, ):
-        self.current = self.start
-        self.index = 0
+    def reset(self, start=None):
+        """ Reset the timestepper
+
+        If start is None it resets to the original self.start, otherwise
+        start is used as the new starting point.
+        """
+        if start is None:
+            self.current = self.start
+            self.index = 0
+            return
+
+        # Calculate actual index from new position
+        diff = start - self.start
+        if diff.days % self.delta.days != 0:
+            raise ValueError('New starting position is not compatible with the existing starting position and timestep.')
+        self.index = diff.days / self.delta.days
+        self.current = start
+
+    def __next__(self, ):
+        return self.next()
 
     def next(self, ):
-        if self.current >= self.end:
+        current = self.current
+        index = self.index
+        if current > self.end:
             raise StopIteration()
 
+        # Increment to next timestep
         self.current += self.delta
         self.index += 1
-        return _core.Timestep(self.current, self.index, self.delta.days)
+        # Return this timestep
+        return _core.Timestep(current, index, self.delta.days)
 
 
 class Model(object):
@@ -83,15 +104,17 @@ class Model(object):
         self.failure = set()
         self.dirty = True
 
+
         if solver is not None:
             # use specific solver
             try:
-                self.solver = SolverMeta.solvers[solver.lower()]
+                self.solver = SolverMeta.solvers[solver.lower()]()
             except KeyError:
                 raise KeyError('Unrecognised solver: {}'.format(solver))
         else:
             # use default solver
             self.solver = solvers.SolverGLPK()
+
 
         self.node = {}
         self.group = {}
@@ -206,6 +229,10 @@ class Model(object):
 
     def step(self):
         """Step the model forward by one day"""
+        self.timestep = next(self.timestepper)
+        return self._step()
+
+    def _step(self):
         self.before()
         # reset any failures
         self.failure = set()
@@ -228,27 +255,33 @@ class Model(object):
         until_failure: bool (optional)
             Stop model run when failure condition occurs
 
-        Returns the number of timesteps that were run.
+        Returns the number of last Timestep that was run.
         """
         for timestep in self.timestepper:
             self.timestep = timestep
-            ret = self.step()
+            ret = self._step()
             if until_failure is True and self.failure:
                 return timestep
             elif until_date and timestep.datetime > until_date:
                 return timestep
             elif timestep.datetime > self.parameters['timestamp_finish']:
                 return timestep
+        try:
+            # Can only return timestep object if the iterator went
+            # through at least one iteration
+            return timestep
+        except UnboundLocalError:
+            return None
 
-    def reset(self):
+    def reset(self, start=None):
         """Reset model to it's initial conditions"""
-        self.timestepper.reset()
+        self.timestepper.reset(start=start)
         for node in self.nodes():
             node.reset()
 
     def before(self):
         for node in self.nodes():
-            node.before()
+            node.before(self.timestep)
 
     def after(self):
         for node in self.nodes():
@@ -292,13 +325,14 @@ class Model(object):
         return xml_model
 
     @classmethod
-    def from_xml(cls, xml, path=None):
+    def from_xml(cls, xml, path=None, solver=None):
         """Deserialize a Model from XML"""
-        xml_solver = xml.find('solver')
-        if xml_solver is not None:
-            solver = xml_solver.get('name')
-        else:
-            solver = None
+        if solver is None:
+            xml_solver = xml.find('solver')
+            if xml_solver is not None:
+                solver = xml_solver.get('name')
+            else:
+                solver = None
 
         model = Model(solver=solver)
 
@@ -537,7 +571,7 @@ class Timeseries(Parameter):
         self.metadata = metadata
 
     def value(self, ts):
-        return self.df[ts.index]
+        return self.df[ts.datetime]
 
     def xml(self, name):
         xml_ts = ET.Element('timeseries')
@@ -629,6 +663,8 @@ class HasDomain(object):
 
     @property
     def domain(self, ):
+        if self._domain is None and self.parent is not None:
+            return self.parent.domain
         return self._domain
 
     @domain.setter
@@ -714,6 +750,60 @@ class Connectable(object):
         self.model.dirty = True
 
 
+class XMLSeriaizable(object):
+    """Mixin class to proivide XML serialization for node-like objects"""
+
+    def xml(self):
+        """Serialize the node to an XML object
+
+        The tag of the XML node returned is the same as the class name. For the
+        base Node object a <node /> is returned, but this will differ for
+        subclasses, e.g. Supply.xml returns a <supply /> element.
+
+        Returns an xml.etree.ElementTree.Element object
+        """
+        xml = ET.fromstring('<{} />'.format(self.__class__.__name__.lower()))
+        xml.set('name', self.name)
+        xml.set('x', str(self.position[0]))
+        xml.set('y', str(self.position[1]))
+        for key, prop in self.properties.items():
+            prop_xml = prop.xml(key)
+            xml.append(prop_xml)
+        return xml
+
+    @classmethod
+    def from_xml(cls, model, xml):
+        """Deserialize a node from an XML object
+
+        Parameters
+        ----------
+        model : Model
+            The model to add the node to
+        xml : xml.etree.ElementTree.Element
+            The XML element representing the node
+
+        Returns a Node instance, or an instance of the appropriate subclass.
+        """
+        tag = xml.tag.lower()
+        node_cls = node_registry[tag]
+        name = xml.get('name')
+        x = float(xml.get('x'))
+        y = float(xml.get('y'))
+        node = node_cls(model, name=name, position=(x, y,))
+        for prop_xml in xml.findall('parameter'):
+            key, prop = Parameter.from_xml(model, prop_xml)
+            # TODO fix this hack by making Parameter loading better
+            # volume and flow attributes can not be Parameter objects,
+            # but doubles only.
+            if isinstance(prop, ParameterConstant):
+                setattr(node, key, prop._value)
+            else:
+                setattr(node, key, prop)
+        for var_xml in xml.findall('variable'):
+            key, prop = Variable.from_xml(model, var_xml)
+            setattr(node, key, prop)
+        return node
+
 # node subclasses are stored in a dict for convenience
 node_registry = {}
 class NodeMeta(type):
@@ -724,7 +814,8 @@ class NodeMeta(type):
         super(NodeMeta, cls).__init__(name, bases, dct)
         node_registry[name.lower()] = cls
 
-class BaseNode(_core.Node):#, with_metaclass(NodeMeta)):
+
+class BaseNode(with_metaclass(NodeMeta, _core.Node)):
     """Base object from which all other nodes inherit
 
     This BaseNode is not connectable by default, and the Node class should
@@ -761,6 +852,7 @@ class BaseNode(_core.Node):#, with_metaclass(NodeMeta)):
         self.min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
         self.max_flow = pop_kwarg_parameter(kwargs, 'max_flow', float('inf'))
         self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+        self.conversion_factor = pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
         super(BaseNode, self).__init__(**kwargs)
 
     def __repr__(self):
@@ -806,66 +898,13 @@ class BaseNode(_core.Node):#, with_metaclass(NodeMeta)):
 
         Raises an exception if the node is invalid
         """
-        if not isinstance(self.position, (tuple, list,)):
-            raise TypeError('{} position has invalid type ({})'.format(self, type(self.position)))
-        if not len(self.position) == 2:
-            raise ValueError('{} position has invalid length ({})'.format(self, len(self.position)))
+        pass
 
     def reset(self):
-        # reset variables
-        for key, parameter in self.properties.items():
-            try:
-                parameter.reset()
-            except AttributeError:
-                pass
-
-    def xml(self):
-        """Serialize the node to an XML object
-
-        The tag of the XML node returned is the same as the class name. For the
-        base Node object a <node /> is returned, but this will differ for
-        subclasses, e.g. Supply.xml returns a <supply /> element.
-
-        Returns an xml.etree.ElementTree.Element object
-        """
-        xml = ET.fromstring('<{} />'.format(self.__class__.__name__.lower()))
-        xml.set('name', self.name)
-        xml.set('x', str(self.position[0]))
-        xml.set('y', str(self.position[1]))
-        for key, prop in self.properties.items():
-            prop_xml = prop.xml(key)
-            xml.append(prop_xml)
-        return xml
-
-    @classmethod
-    def from_xml(cls, model, xml):
-        """Deserialize a node from an XML object
-
-        Parameters
-        ----------
-        model : Model
-            The model to add the node to
-        xml : xml.etree.ElementTree.Element
-            The XML element representing the node
-
-        Returns a Node instance, or an instance of the appropriate subclass.
-        """
-        tag = xml.tag.lower()
-        node_cls = node_registry[tag]
-        name = xml.get('name')
-        x = float(xml.get('x'))
-        y = float(xml.get('y'))
-        node = node_cls(model, name=name, position=(x, y,))
-        for prop_xml in xml.findall('parameter'):
-            key, prop = Parameter.from_xml(model, prop_xml)
-            node.properties[key] = prop
-        for var_xml in xml.findall('variable'):
-            key, prop = Variable.from_xml(model, var_xml)
-            node.properties[key] = prop
-        return node
+        pass
 
 
-class Node(HasDomain, Drawable, Connectable, BaseNode):
+class Node(HasDomain, Drawable, Connectable, XMLSeriaizable, BaseNode):
     pass
 
 
@@ -877,6 +916,23 @@ class BaseInput(BaseNode):
     def __init__(self, *args, **kwargs):
         self.licenses = None
         super(BaseInput, self).__init__(*args, **kwargs)
+
+    def get_max_flow(self, timestep):
+        """ Calculate maximum flow including licenses """
+        max_flow = super(BaseNode, self).get_max_flow(timestep)
+        if self.licenses is not None:
+            max_flow = min(max_flow, self.licenses.available(timestep))
+        return max_flow
+
+    def reset(self, ):
+        if self.licenses is not None:
+            self.licenses.reset()
+        super(BaseInput, self).reset()
+
+    def commit(self, value):
+        if self.licenses is not None:
+            self.licenses.commit(value)
+        super(BaseInput, self).commit(value)
 
 
 class BaseOutput(BaseNode):
@@ -900,6 +956,19 @@ class Input(Node, BaseInput):
         super(Input, self).__init__(*args, **kwargs)
         self.color = '#F26C4F' # light red
 
+    def xml(self):
+        xml = super(Supply, self).xml()
+        if self.licenses is not None:
+            xml.append(self.licenses.xml())
+        return xml
+
+    @classmethod
+    def from_xml(cls, model, xml):
+        node = Node.from_xml(model, xml)
+        licensecollection_xml = xml.find('licensecollection')
+        if licensecollection_xml is not None:
+            node.licenses = LicenseCollection.from_xml(licensecollection_xml)
+        return node
 
 class InputFromOtherDomain(Input):
     """A input in to the network that is connected to an output from another domain
@@ -981,36 +1050,64 @@ class StorageOutput(BaseOutput):
         super(StorageOutput, self).commit(volume)
         self.parent.commit(volume)
 
-class Storage(HasDomain, Drawable, Connectable, _core.Storage):
+class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
     """A generic storage Node
 
     Storage consists of an input and output subnodes which form the routes
     in the network """
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, model, name, *args, **kwargs):
         self.model = model
         model.graph.add_node(self)
         model.dirty = True
+        self.visible = kwargs.pop('visible', True)
+        self.parent = kwargs.pop('parent', None)
+
+        if not hasattr(self, 'name'):
+            # set name, avoiding issues with multiple inheritance
+            self.__name = None
+            self.name = name
+
 
         kwargs['color'] = kwargs.pop('color', 'green')
         # keyword arguments for input and output nodes specified with prefix
         input_kwargs, output_kwargs = {}, {}
-        for key in kwargs.keys():
+        keys = list(kwargs.keys())
+        for key in keys:
             if key.startswith('input_'):
                 input_kwargs[key.replace('input_', '')] = kwargs.pop(key)
             elif key.startswith('output_'):
                 output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
-        self.name = kwargs.pop('name')
+
         self.input = StorageInput(model, name="{} Input".format(self.name), parent=self, **input_kwargs)
         self.output = StorageOutput(model, name="{} Output".format(self.name), parent=self, **output_kwargs)
 
         self.min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         self.max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
+        self.volume = kwargs.pop('volume', 0.0)
         self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
 
         # TODO fix this default hack
         self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
 
         super(Storage, self).__init__(*args, **kwargs)
+
+    @property
+    def name(self):
+        return self.__name
+
+    @name.setter
+    def name(self, name):
+        # check for name collision
+        if name in self.model.node:
+            raise ValueError('A node with the name "{}" already exists.'.format(name))
+        # remove old name
+        try:
+            del(self.model.node[self.__name])
+        except KeyError:
+            pass
+        # apply new name
+        self.__name = name
+        self.model.node[name] = self
 
     @property
     def cost(self, ):
@@ -1030,16 +1127,17 @@ class Storage(HasDomain, Drawable, Connectable, _core.Storage):
         else:
             yield self.output
 
-    def commit(self, volume, ):
-        super(Storage, self).commit(volume)
-
     def check(self):
-        Node.check(self)
         self.input.check()
         self.output.check()
-        index = self.model.timestamp
-        # check volume doesn't exceed maximum volume
-        assert(self.properties['max_volume'].value(index) >= self.properties['current_volume'].value(index))
+        try:
+            ts = self.model.timestep
+            # check volume doesn't exceed maximum volume
+            assert(self.properties['max_volume'].value(ts) >= self.properties['current_volume'].value(ts))
+        except AttributeError:
+            # Model run not started
+            pass
+
 
     def connect(self, node, from_slot='input', to_slot=None):
         super(Storage, self).connect(node, from_slot=from_slot, to_slot=to_slot)
@@ -1051,7 +1149,18 @@ class PiecewiseLink(Node):
     This object is intended to model situations where there is a benefit of supplying certain flow rates
     but beyond a fixed limit there is a change in (or zero) cost.
 
+    This Node is implemented using a compound node structure like so:
+            | Separate Domain         |
+    Output -> Sublink 0 -> Sub Output -> Input
+           -> Sublink 1 ---^
+           ...             |
+           -> Sublink n ---|
 
+    This means routes do not directly traverse this node due to the separate
+    domain in the middle. Instead several new routes are made for each of
+    the sublinks and connections to the Output/Input node. The reason for this
+    breaking of the route is to avoid an geometric increase in the number
+    of routes when multiple PiecewiseLinks are present in the same route.
     """
     def __init__(self, *args, **kwargs):
         """
@@ -1069,15 +1178,31 @@ class PiecewiseLink(Node):
         if len(costs) != len(max_flows):
             raise ValueError("Piecewise max_flow and cost keywords must be the same length.")
 
+        # TODO look at the application of Domains here. Having to use
+        # Input/Output instead of BaseInput/BaseOutput because of a different
+        # domain is required on the sub-nodes and they need to be connected
+        self.sub_domain = Domain()
+        self.input = Input(self.model, name='{} Input'.format(self.name), parent=self)
+        self.output = Output(self.model, name='{} Output'.format(self.name), parent=self)
+
+        self.sub_output = Output(self.model, name='{} Sub Output'.format(self.name), parent=self,
+                             domain=self.sub_domain)
+        self.sub_output.connect(self.input)
         self.sublinks = []
         for max_flow, cost in zip(max_flows, costs):
-            self.sublinks.append(BaseLink(self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
-                                      cost=cost, max_flow=max_flow, parent=self))
+            self.sublinks.append(Input(self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
+                                      cost=cost, max_flow=max_flow, parent=self, domain=self.sub_domain))
+            self.sublinks[-1].connect(self.sub_output)
+            self.output.connect(self.sublinks[-1])
 
     def iter_slots(self, slot_name=None, is_connector=True):
-        # All sublinks are connected upstream and downstream
-        for link in self.sublinks:
-            yield link
+        if is_connector:
+            yield self.input
+        else:
+            yield self.output
+            # All sublinks are connected upstream and downstream
+            #for link in self.sublinks:
+            #    yield link
 
     def after(self, timestep):
         """
