@@ -14,7 +14,7 @@ from helpers import assert_model
 
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (10.0, 0.0, 0.0)])
-def simple_linear_model(request):
+def simple_linear_model(request, solver):
     """
     Make a simple model with a single Input and Output.
 
@@ -23,7 +23,7 @@ def simple_linear_model(request):
     """
     in_flow, out_flow, benefit = request.param
 
-    model = pywr.core.Model(solver=request.config.getoption("--solver"))
+    model = pywr.core.Model(solver=solver)
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=1.0)
     inpt.connect(lnk)
@@ -50,7 +50,7 @@ def test_linear_model(simple_linear_model):
     (10.0, 5.0, 5.0, 0.0, 10.0, 0.0),
     (10.0, 5.0, 5.0, 0.0, 10.0, 2.0),
     ])
-def linear_model_with_storage(request):
+def linear_model_with_storage(request, solver):
     """
     Make a simple model with a single Input and Output and an offline Storage Node
 
@@ -62,7 +62,7 @@ def linear_model_with_storage(request):
     in_flow, out_flow, out_benefit, strg_benefit, current_volume, min_volume = request.param
     max_strg_out = 10.0
 
-    model = pywr.core.Model(solver=request.config.getoption("--solver"))
+    model = pywr.core.Model(solver=solver)
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=0.1)
     inpt.connect(lnk)
@@ -91,7 +91,7 @@ def test_linear_model_with_storage(linear_model_with_storage):
     assert_model(*linear_model_with_storage)
 
 @pytest.fixture
-def two_domain_linear_model(request):
+def two_domain_linear_model(request, solver):
     """
     Make a simple model with two domains, each with a single Input and Output
 
@@ -106,7 +106,7 @@ def two_domain_linear_model(request):
     power_demand = 12  # GWh/d
     power_benefit = 10.0  # £/GWh
 
-    model = pywr.core.Model(solver=request.config.getoption("--solver"))
+    model = pywr.core.Model(solver=solver)
     # Create river network
     river_inpt = pywr.core.Input(model, name="Catchment", max_flow=river_flow, domain='river')
     river_lnk = pywr.core.Link(model, name="Reach", domain='river')
