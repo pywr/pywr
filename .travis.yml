@@ -13,9 +13,9 @@ before_install:
     - ./miniconda.sh -b
     - export PATH=/home/travis/miniconda/bin:$PATH
     - conda update --yes conda
-  
+
     # dependencies
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib pytest dateutil pandas statsmodels networkx xlrd
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib pytest dateutil pandas statsmodels networkx xlrd cython six ipython
 
     # pyglpk v0.4
     - sudo apt-get install -qq libgmp3-dev libglpk-dev glpk

@@ -7,17 +7,18 @@
         </description>
     </metadata>
     <nodes>
-        <supply name="supply1" x="1" y="1">
+        <input name="supply1" x="1" y="1">
             <parameter type="constant" key="max_flow">15</parameter>
             <parameter type="constant" key="cost">1</parameter>
-        </supply>
-        <supply name="supply2" x="3" y="1">
+        </input>
+        <input name="supply2" x="3" y="1">
             <parameter type="constant" key="max_flow">15</parameter>
             <parameter type="constant" key="cost">2</parameter>
-        </supply>
-        <demand name="demand1" x="2" y="2">
-            <parameter type="constant" key="demand">10</parameter>
-        </demand>
+        </input>
+        <output name="demand1" x="2" y="2">
+            <parameter type="constant" key="max_flow">10</parameter>
+            <parameter type="constant" key="cost">-10</parameter>
+        </output>
     </nodes>
     <edges>
         <edge from="supply1" to="demand1" />

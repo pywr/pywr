@@ -6,18 +6,19 @@ from __future__ import print_function
 import os
 import pytest
 
+from pywr._core import Timestep
 from pywr.core import *
 from pywr.domains.river import *
 
-def test_names():
+def test_names(solver):
     '''Test node names'''
-    model = Model()
-    
-    node1 = Supply(model, name='A')
-    node2 = Demand(model, name='B')
+    model = Model(solver=solver)
+
+    node1 = Input(model, name='A')
+    node2 = Output(model, name='B')
     assert(model.node['A'] is node1)
     assert(model.node['B'] is node2)
-    
+
     nodes = sorted(model.nodes(), key=lambda node: node.name)
     assert(nodes == [node1, node2])
 
@@ -32,38 +33,41 @@ def test_names():
 
     # attempt name collision (via new)
     with pytest.raises(ValueError):
-        node3 = Supply(model, name='C')
+        node3 = Input(model, name='C')
     assert(len(model.node) == 2)
 
     # attempt to create a node without a name
     with pytest.raises(TypeError):
-        node4 = Supply(model)
+        node4 = Input(model)
 
-def test_slots_to():
-    model = Model()
-    
-    supply1 = Supply(model, name='supply1')
-    supply2 = Supply(model, name='supply2')
+
+# TODO Update this test. Blender is not implemented.
+@pytest.mark.xfail
+def test_slots_to(solver):
+    model = Model(solver=solver)
+
+    supply1 = Input(model, name='supply1')
+    supply2 = Input(model, name='supply2')
     blender = Blender(model, name='blender', ratio=0.5)
-    
+
     # attempt to connect to invalid slot
     with pytest.raises(ValueError):
         supply1.connect(blender, to_slot=3)
     assert((supply1, blender) not in model.edges())
-    
+
     supply1.connect(blender, to_slot=1)
     assert((supply1, blender) in model.edges())
-    
+
     # a node can connect to multiple slots
     supply1.connect(blender, to_slot=2)
     assert(blender.slots[1] is supply1)
     assert(blender.slots[2] is supply1)
-    
+
     supply1.disconnect(blender)
     assert((supply1, blender) not in model.edges())
     # as well as removing the edge, the node should be removed from the slot
     assert(supply1 not in blender.slots.values())
-    
+
     # override slot with another node
     supply1.connect(blender, to_slot=1)
     supply1.connect(blender, to_slot=2)
@@ -75,41 +79,40 @@ def test_slots_to():
 
 # TODO Update this test. RiverSplit is deprecated.
 @pytest.mark.xfail
-def test_slots_from():
-    model = Model()
-    
+def test_slots_from(solver):
+    model = Model(solver=solver)
+
     riversplit = RiverSplit(model, name='split')
     river1 = River(model, name='river1')
     river2 = River(model, name='river2')
-    
+
     riversplit.connect(river1, from_slot=1)
     assert((riversplit, river1) in model.edges())
-    
+
     riversplit.connect(river2, from_slot=2)
     assert((riversplit, river2) in model.edges())
-    
+
     riversplit.disconnect(river2)
     assert(riversplit.slots[2] is None)
     assert(riversplit.slots[1] is river1)
-    
+
     riversplit.disconnect()
     assert(len(model.edges()) == 0)
 
-def test_rivergauge_mrf():
-    # test programmatic creation of a river gauge with an MRF
-    model = Model()
-    node = RiverGauge(model, name='gauge', mrf=42.0)
-    assert(node.properties['mrf'].value(None) == 42.0)
 
 def test_timeseries_csv():
     model = Model()
     ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
-    assert(ts.value(pandas.to_datetime('2015-01-31')) == 21.92)
+    timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
+    assert(ts.value(timestep) == 21.92)
+
 
 def test_timeseries_excel():
     model = Model()
     ts = Timeseries.read(model, name='ts', path='tests/timeseries1.xlsx', sheet='mydata', column='Data')
-    assert(ts.value(pandas.to_datetime('2015-01-31')) == 21.92)
+    timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
+    assert(ts.value(timestep) == 21.92)
+
 
 def test_timeseries_name_collision():
     model = Model()
@@ -117,15 +120,16 @@ def test_timeseries_name_collision():
     with pytest.raises(ValueError):
         ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
 
-def test_dirty_model():
+
+def test_dirty_model(solver):
     """Test that the LP is updated when the model structure is redefined"""
     # start dirty
-    model = Model()
+    model = Model(solver=solver)
     assert(model.dirty)
 
     # add some nodes, still dirty
-    supply1 = Supply(model, 'supply1')
-    demand1 = Demand(model, 'demand1')
+    supply1 = Input(model, 'supply1')
+    demand1 = Output(model, 'demand1')
     supply1.connect(demand1)
     assert(model.dirty)
 
@@ -134,7 +138,7 @@ def test_dirty_model():
     assert(not model.dirty)
 
     # add a new node, dirty
-    supply2 = Supply(model, 'supply2')
+    supply2 = Input(model, 'supply2')
 
     # run the model, clean
     result = model.step()
@@ -152,13 +156,16 @@ def test_dirty_model():
     supply2.disconnect()
     assert(model.dirty)
 
-def test_shorthand_property():
+
+def test_shorthand_property(solver):
     # test shorthand assignment of constant properties
-    model = Model()
-    node = Node(model, 'node')
-    node.properties['test'] = 123
-    assert(isinstance(node.properties['test'], ParameterConstant))
-    assert(node.properties['test'].value(None) == 123)
-    # test the long hand version still works
-    node.properties['another_test'] = ParameterConstant(456)
-    assert(node.properties['another_test'].value(None) == 456)
+    model = Model(solver=solver)
+    node = BaseNode(model, 'node')
+    for attr in ('min_flow', 'max_flow', 'cost', 'conversion_factor'):
+        # should except int, float or Paramter
+        setattr(node, attr, 123)
+        setattr(node, attr, Parameter())
+
+        with pytest.raises(TypeError):
+            setattr(node, attr, '123')
+            setattr(node, attr, None)

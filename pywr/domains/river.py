@@ -1,11 +1,12 @@
 
-from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, ParameterFunction
+from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, ParameterFunction, pop_kwarg_parameter
 
+DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 
 class RiverDomainMixin(object):
     def __init__(self, *args, **kwargs):
         if 'domain' not in kwargs:
-            kwargs['domain'] = Domain(name='river', color='#33CCFF')
+            kwargs['domain'] = DEFAULT_RIVER_DOMAIN
         if 'color' not in kwargs:
             self.color = '#6ECFF6' # blue
         super(RiverDomainMixin, self).__init__(*args, **kwargs)
@@ -26,11 +27,12 @@ class Catchment(RiverDomainMixin, Input):
             The amount of water supplied by the catchment each timestep
         """
         self.color = '#82CA9D' # green
-
+        # Grab flow from kwargs
+        flow = kwargs.pop('flow', 0.0)
         # Min/max flow set in super inits
         super(Catchment, self).__init__(*args, **kwargs)
-        # Grab flow from kwargs
-        self.flow = kwargs.pop('flow', 0.0)
+        self.flow = flow
+
 
     def check(self):
         super(Catchment, self).check()
@@ -77,20 +79,25 @@ class RiverSplit(River):
             used.
         """
         River.__init__(self, *args, **kwargs)
-        self.slots = {1: None, 2: None}
+        # These are the upstream slots
+        self._slots = {1: None, 2: None}
 
-        self.properties['split'] = self.pop_kwarg_parameter(kwargs, 'split', 0.5)
+        self.split = pop_kwarg_parameter(kwargs, 'split', 0.5)
 
-class Discharge(River):
+    def iter_slots(self, slot_name=None, is_connector=True):
+        # All sublinks are connected upstream and downstream
+        if not is_connector:
+            yield self._slots[slot_name]
+        for link in self.sublinks:
+            yield link
+
+class Discharge(Catchment):
     """An inline discharge to the river network
 
     This node is similar to a catchment, but sits inline to the river network,
     rather than at the head of the river.
     """
-    def __init__(self, *args, **kwargs):
-        River.__init__(self, *args, **kwargs)
-
-        self.properties['flow'] = self.pop_kwarg_parameter(kwargs, 'flow', 0.0)
+    pass
 
 
 class DemandDischarge(River):
@@ -122,7 +129,7 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         """
         # create keyword arguments for PiecewiseLink
         cost = kwargs.pop('cost', 0.0)
-        kwargs['cost'] = [cost-kwargs.pop('benefit', 0.0), cost]
+        kwargs['cost'] = [kwargs.pop('mrf_cost', 0.0), cost]
         kwargs['max_flow'] = [kwargs.pop('mrf'), None]
         super(RiverGauge, self).__init__(*args, **kwargs)
 
