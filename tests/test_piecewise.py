@@ -8,7 +8,7 @@ import pytest
 from test_analytical import assert_model
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
-def simple_piecewise_model(request):
+def simple_piecewise_model(request, solver):
     """
     Make a simple model with a single Input and Output and PiecewiseLink
 
@@ -18,7 +18,7 @@ def simple_piecewise_model(request):
     in_flow, out_flow, benefit = request.param
     min_flow_req = 5.0
 
-    model = pywr.core.Model(solver=request.config.getoption("--solver"))
+    model = pywr.core.Model(solver=solver)
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.PiecewiseLink(model, name="Link", cost=[-1.0, 0.0], max_flow=[min_flow_req, None])
 
