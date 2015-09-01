@@ -14,7 +14,7 @@ import pytest
 from test_analytical import assert_model
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
-def simple_gauge_model(request):
+def simple_gauge_model(request, solver):
     """
     Make a simple model with a single Input and Output and RiverGauge
 
@@ -24,7 +24,7 @@ def simple_gauge_model(request):
     in_flow, out_flow, benefit = request.param
     min_flow_req = 5.0
 
-    model = pywr.core.Model(solver=request.config.getoption("--solver"))
+    model = pywr.core.Model(solver=solver)
     inpt = river.Catchment(model, name="Catchment", flow=in_flow)
     lnk = river.RiverGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-1.0)
     inpt.connect(lnk)
