@@ -205,7 +205,7 @@ class SolverGLPK(Solver):
             # Change in storage limits
             #   lower bound ensures a net loss is not more than current volume
             #   upper bound ensures a net gain is not more than capacity
-            row.bounds = -avail_volume/timestep.days, (max_volume-avail_volume)/timestep.days
+            row.bounds = -avail_volume/timestep.days, (max_volume-node.volume)/timestep.days
 
         # TODO add min flow requirement
         """

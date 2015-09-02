@@ -49,6 +49,7 @@ def test_linear_model(simple_linear_model):
     (10.0, 5.0, 5.0, 0.0, 0.0, 0.0),
     (10.0, 5.0, 5.0, 0.0, 10.0, 0.0),
     (10.0, 5.0, 5.0, 0.0, 10.0, 2.0),
+    (10.0, 5.0, 0.0, 5.0, 10.0, 2.0),
     ])
 def linear_model_with_storage(request, solver):
     """
@@ -61,21 +62,23 @@ def linear_model_with_storage(request, solver):
     """
     in_flow, out_flow, out_benefit, strg_benefit, current_volume, min_volume = request.param
     max_strg_out = 10.0
+    max_volume = 10.0
 
     model = pywr.core.Model(solver=solver)
-    inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
+    inpt = pywr.core.Input(model, name="Input", min_flow=in_flow, max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=0.1)
     inpt.connect(lnk)
     otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-out_benefit)
     lnk.connect(otpt)
 
-    strg = pywr.core.Storage(model, name="Storage", max_volume=10.0, min_volume=min_volume,
+    strg = pywr.core.Storage(model, name="Storage", max_volume=max_volume, min_volume=min_volume,
                              volume=current_volume, cost=-strg_benefit)
 
     strg.connect(otpt)
     lnk.connect(strg)
     avail_volume = max(current_volume - min_volume, 0.0)
-    expected_sent = in_flow+min(max_strg_out, avail_volume) if out_benefit > 1.0 else out_flow
+    avail_refill = max_volume - current_volume
+    expected_sent = in_flow+min(max_strg_out, avail_volume) if out_benefit > strg_benefit else max(out_flow, in_flow-avail_refill)
 
     expected_node_results = {
         "Input": in_flow,
@@ -83,7 +86,7 @@ def linear_model_with_storage(request, solver):
         "Output": expected_sent,
         "Storage Output": 0.0,
         "Storage Input": min(max_strg_out, avail_volume) if out_benefit > 1.0 else 0.0,
-        "Storage": min_volume,
+        "Storage": min_volume if out_benefit > strg_benefit else max_volume,
     }
     return model, expected_node_results
 

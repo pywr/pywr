@@ -204,7 +204,7 @@ cdef class CythonGLPKSolver:
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume
-            ub = max_volume-avail_volume
+            ub = max_volume-storage.volume
             glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # attempt to solve the linear programme
