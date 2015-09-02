@@ -586,7 +586,7 @@ class ParameterDailyProfile(Parameter):
         self._values = values
 
     def value(self, ts, scenario_indices=[0]):
-        return self._values[ts.dayofyear-1]
+        return self._values[index.datetime.dayofyear-1]
 
     @classmethod
     def from_xml(cls, xml):
@@ -1079,17 +1079,21 @@ class StorageInput(BaseInput):
         super(StorageInput, self).commit(scenario_index, volume)
         self.parent.commit(scenario_index, -volume)
 
+    def get_cost(self, ts):
+        # Return negative of parent cost
+        return -self.parent.get_cost(ts)
+
 class StorageOutput(BaseOutput):
     def commit(self, scenario_index, volume):
         super(StorageOutput, self).commit(scenario_index, volume)
         self.parent.commit(scenario_index, volume)
 
-class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
-                             XMLSeriaizable, _core.Storage)):
-    """A generic storage node
+    def get_cost(self, ts):
+        # Return parent cost
+        return self.parent.get_cost(ts)
 
-    The storage node contains an input node (or nodes) and an output node (or
-    nodes).
+class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
+    """A generic storage Node
 
     In terms of connections in the network the Storage node behaves like any
     other node, provided there is only 1 input and 1 output. If there are
