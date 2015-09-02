@@ -4,6 +4,8 @@ from pywr._core cimport *
 import numpy as np
 cimport numpy as np
 
+cdef double inf = float('inf')
+
 cdef class Timestep:
     def __init__(self, object datetime, int index, double days):
         self._datetime = datetime
@@ -11,10 +13,12 @@ cdef class Timestep:
         self._days = days
 
     property datetime:
+        """Timestep representation as a `datetime.datetime` object"""
         def __get__(self, ):
             return self._datetime
 
     property index:
+        """The index of the timestep for use in arrays"""
         def __get__(self, ):
             return self._index
 
@@ -48,22 +52,30 @@ cdef class Parameter:
         return 0
 
 cdef class ParameterArrayIndexed(Parameter):
+    """Time varying parameter using an array and Timestep._index
+    """
     def __cinit__(self, double[:] values):
         self.values = values
 
     cpdef double value(self, Timestep ts) except? -1:
+        """Returns the value of the parameter at a given timestep
+        """
         return self.values[ts._index]
 
 
 cdef class Node:
-    def __cinit__(self, ):
+    """Node class from which all others inherit
+    """
+    def __cinit__(self):
+        """Initialise the node attributes
+        """
         self._prev_flow = 0.0
         self._flow = 0.0
         # Initialised attributes to zero
         self._min_flow = 0.0
         self._max_flow = 0.0
         self._cost = 0.0
-        # Conversion is default to unity some there is no loss
+        # Conversion is default to unity so that there is no loss
         self._conversion_factor = 1.0
         # Parameters are initialised to None which corresponds to
         # a static value
@@ -74,58 +86,91 @@ cdef class Node:
         self._recorder = None
 
     property prev_flow:
-        def __get__(self, ):
+        """Total flow via this node in the previous timestep
+        """
+        def __get__(self):
             return self._prev_flow
 
     property flow:
-        def __get__(self, ):
+        """Total flow via this node in the current timestep
+        """
+        def __get__(self):
             return self._flow
 
     property min_flow:
-        def __get__(self, ):
+        """The minimum flow constraint on the node
+        
+        The minimum flow may be set to either a constant (i.e. a float) or a
+        Parameter.
+        """
+        def __get__(self):
             return self._min_flow_param
 
         def __set__(self, value):
-            self._min_flow_param = None
             if isinstance(value, Parameter):
                 self._min_flow_param = value
             else:
+                self._min_flow_param = None
                 self._min_flow = value
 
     cpdef get_min_flow(self, Timestep ts):
+        """Get the minimum flow at a given timestep
+        """
         if self._min_flow_param is None:
             return self._min_flow
         return self._min_flow_param.value(ts)
 
     property max_flow:
+        """The maximum flow constraint on the node
+        
+        The maximum flow may be set to either a constant (i.e. a float) or a
+        Parameter.
+        """
         def __set__(self, value):
-            self._max_flow_param = None
             if value is None:
-                self._max_flow = float('inf')
+                self._max_flow = inf
             elif isinstance(value, Parameter):
                 self._max_flow_param = value
             else:
+                self._max_flow_param = None
                 self._max_flow = value
 
     cpdef get_max_flow(self, Timestep ts):
+        """Get the maximum flow at a given timestep
+        """
         if self._max_flow_param is None:
             return self._max_flow
         return self._max_flow_param.value(ts)
 
     property cost:
+        """The cost per unit flow via the node
+        
+        The cost may be set to either a constant (i.e. a float) or a Parameter.
+        
+        The value returned can be positive (i.e. a cost), negative (i.e. a
+        benefit) or netural. Typically supply nodes will have an associated
+        cost and demands will provide a benefit.
+        """
         def __set__(self, value):
-            self._cost_param = None
             if isinstance(value, Parameter):
                 self._cost_param = value
             else:
+                self._cost_param = None
                 self._cost = value
 
     cpdef get_cost(self, Timestep ts):
+        """Get the cost per unit flow at a given timestep
+        """
         if self._cost_param is None:
             return self._cost
         return self._cost_param.value(ts)
 
     property conversion_factor:
+        """The conversion between inflow and outflow for the node
+        
+        The conversion factor may be set to either a constant (i.e. a float) or
+        a Parameter.
+        """
         def __set__(self, value):
             self._conversion_factor_param = None
             if isinstance(value, Parameter):
@@ -134,12 +179,18 @@ cdef class Node:
                 self._conversion_factor = value
 
     cpdef get_conversion_factor(self, Timestep ts):
+        """Get the conversion factor at a given timestep
+        """
         if self._conversion_factor_param is None:
             return self._conversion_factor
         return self._conversion_factor_param.value(ts)
 
     cdef set_parameters(self, Timestep ts):
-        "Update the attributes by evaluating any Parameter objects"
+        """Update the constant attributes by evaluating any Parameter objects
+        
+        This is useful when the `get_` functions need to be accessed multiple
+        times and there is a benefit to caching the values.
+        """
         if self._min_flow_param is not None:
             self._min_flow = self._min_flow_param.value(ts)
         if self._max_flow_param is not None:
@@ -148,19 +199,24 @@ cdef class Node:
             self._cost = self._cost_param.value(ts)
 
     property recorder:
-        def __get__(self, ):
+        """The recorder for the node, e.g. a NumpyArrayRecorder
+        """
+        def __get__(self):
             return self._recorder
 
         def __set__(self, value):
             self._recorder = value
 
     cpdef before(self, Timestep ts):
+        """Called at the beginning of the timestep"""
         self._flow = 0.0
 
     cpdef commit(self, double value):
+        """Called once for each route the node is a member of"""
         self._flow += value
 
     cpdef after(self, Timestep ts):
+        """Called at the end of the timestep"""
         self._prev_flow = self._flow
         if self._recorder is not None:
             self._recorder.commit(ts, self._flow)
