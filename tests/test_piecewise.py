@@ -5,7 +5,7 @@ import datetime
 import numpy as np
 import pytest
 
-from test_analytical import assert_model
+from helpers import assert_model
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
 def simple_piecewise_model(request, solver):
