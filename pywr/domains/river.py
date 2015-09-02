@@ -78,9 +78,9 @@ class Reservoir(RiverDomainMixin, Storage):
             return super(Reservoir, self).get_cost(ts)
 
         if isinstance(self.control_curve, Parameter):
-            control_curve = self.control_curve.value(ts)/100.0
+            control_curve = self.control_curve.value(ts)
         else:
-            control_curve = self.control_curve/100.0
+            control_curve = self.control_curve
         # If level above control curve then return above_curve_cost
         if self.current_pc >= control_curve:
             return self.above_curve_cost
