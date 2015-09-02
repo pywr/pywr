@@ -47,3 +47,54 @@ def simple_gauge_model(request, solver):
 
 def test_piecewise_model(simple_gauge_model):
     assert_model(*simple_gauge_model)
+
+
+def test_control_curve(solver):
+    """
+    Use a simple model of a Reservoir to test that a control curve
+    behaves as expected.
+
+    The control curve should alter the cost of the Reservoir when it
+    is above or below a particular threshold.
+
+    (flow = 8.0)          (max_flow = 10.0)
+    Catchment -> River -> DemandCentre
+                     |        ^
+    (max_flow = 2.0) v        | (max_flow = 2.0)
+                    Reservoir
+
+    """
+    in_flow = 8
+
+    model = pywr.core.Model(solver=solver)
+    catchment = river.Catchment(model, name="Catchment", flow=in_flow)
+    lnk = river.River(model, name="River")
+    catchment.connect(lnk)
+    demand = river.DemandCentre(model, name="Demand", cost=-10.0, max_flow=10)
+    lnk.connect(demand)
+
+    reservoir = river.Reservoir(model, name="Reservoir", max_volume=10, cost=-20,
+                                control_curve=80, volume=10,
+                                input_max_flow=2, output_max_flow=2)
+    lnk.connect(reservoir)
+    reservoir.connect(demand)
+
+    model.step()
+    # Reservoir is currently above control curve. 2 should be taken from the
+    # reservoir
+    assert(reservoir.volume == 8)
+    assert(demand.flow == 10)
+    # Reservoir is still at (therefore above) control curve. So 2 is still taken
+    model.step()
+    assert(reservoir.volume == 6)
+    assert(demand.flow == 10)
+    # Reservoir now below curve. Better to retain volume and divert some of the
+    # inflow
+    model.step()
+    assert(reservoir.volume == 8)
+    assert(demand.flow == 6)
+    # Set the above_curve_cost function to keep filling
+    reservoir.above_curve_cost = -20.0
+    model.step()
+    assert(reservoir.volume == 10)
+    assert(demand.flow == 6)
