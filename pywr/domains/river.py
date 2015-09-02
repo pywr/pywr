@@ -68,7 +68,7 @@ class Reservoir(RiverDomainMixin, Storage):
                 as a percentage of fill, for the given timestep.
             above_curve_cost - The cost to apply when the reservoir is above its curve.
         """
-        self.control_curve = kwargs.pop('control_curve', None)
+        self.control_curve = pop_kwarg_parameter(kwargs, 'control_curve', None)
         self.above_curve_cost = kwargs.pop('above_curve_cost', 0.0)
         super(Reservoir, self).__init__(*args, **kwargs)
 
@@ -78,9 +78,9 @@ class Reservoir(RiverDomainMixin, Storage):
             return super(Reservoir, self).get_cost(ts)
 
         if isinstance(self.control_curve, Parameter):
-            control_curve = self.control_curve.value(ts)
+            control_curve = self.control_curve.value(ts)/100.0
         else:
-            control_curve = self.control_curve
+            control_curve = self.control_curve/100.0
 
         # If level above control curve then return above_curve_cost
         if self.current_pc >= control_curve:
