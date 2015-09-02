@@ -74,7 +74,7 @@ def test_control_curve(solver):
     lnk.connect(demand)
 
     reservoir = river.Reservoir(model, name="Reservoir", max_volume=10, cost=-20,
-                                control_curve=80, volume=10,
+                                control_curve=0.8, volume=10,
                                 input_max_flow=2, output_max_flow=2)
     lnk.connect(reservoir)
     reservoir.connect(demand)
