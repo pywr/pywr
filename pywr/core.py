@@ -1045,7 +1045,6 @@ class StorageInput(BaseInput):
         super(StorageInput, self).commit(volume)
         self.parent.commit(-volume)
 
-
 class StorageOutput(BaseOutput):
     def commit(self, volume):
         super(StorageOutput, self).commit(volume)
