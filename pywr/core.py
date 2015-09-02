@@ -556,7 +556,7 @@ class ParameterDailyProfile(Parameter):
         self._values = values
 
     def value(self, index=None):
-        return self._values[index.dayofyear-1]
+        return self._values[index.datetime.dayofyear-1]
 
     @classmethod
     def from_xml(cls, xml):
@@ -1045,10 +1045,18 @@ class StorageInput(BaseInput):
         super(StorageInput, self).commit(volume)
         self.parent.commit(-volume)
 
+    def get_cost(self, ts):
+        # Return negative of parent cost
+        return -self.parent.get_cost(ts)
+
 class StorageOutput(BaseOutput):
     def commit(self, volume):
         super(StorageOutput, self).commit(volume)
         self.parent.commit(volume)
+
+    def get_cost(self, ts):
+        # Return parent cost
+        return self.parent.get_cost(ts)
 
 class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
     """A generic storage Node
@@ -1089,10 +1097,7 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
         # TODO fix this default hack
         self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
 
-        # Grab cost keyword before passed
-        cost = kwargs.pop('cost', 0.0)
         super(Storage, self).__init__(*args, **kwargs)
-        self.cost = cost
 
     @property
     def name(self):
@@ -1111,15 +1116,6 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
         # apply new name
         self.__name = name
         self.model.node[name] = self
-
-    @property
-    def cost(self, ):
-        return self.output.cost
-
-    @cost.setter
-    def cost(self, value):
-        self.input.cost = -value
-        self.output.cost = value
 
     def iter_slots(self, slot_name=None, is_connector=True):
         # Return the input node if Storage is connecting to another node
