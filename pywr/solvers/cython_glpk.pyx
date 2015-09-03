@@ -203,8 +203,8 @@ cdef class CythonGLPKSolver:
             avail_volume = max(storage.volume - storage.get_min_volume(timestep), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
-            lb = -avail_volume
-            ub = max_volume-storage.volume
+            lb = -avail_volume/timestep.days
+            ub = (max_volume-storage.volume)/timestep.days
             glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # attempt to solve the linear programme
