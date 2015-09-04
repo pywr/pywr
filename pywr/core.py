@@ -1040,12 +1040,12 @@ class Blender(Link):
 
         self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
-class StorageInput(BaseInput, Connectable):
+class StorageInput(BaseInput):
     def commit(self, volume):
         super(StorageInput, self).commit(volume)
         self.parent.commit(-volume)
 
-class StorageOutput(BaseOutput, Connectable):
+class StorageOutput(BaseOutput):
     def commit(self, volume):
         super(StorageOutput, self).commit(volume)
         self.parent.commit(volume)
@@ -1064,8 +1064,8 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
 
     >>> storage(model, 'reservoir', num_outputs=1, num_inputs=2)
     >>> supply.connect(storage)
-    >>> storage.outputs[0].connect(demand1)
-    >>> storage.outputs[1].connect(demand2)
+    >>> storage.connect(demand1, from_slot=0)
+    >>> storage.connect(demand2, from_slot=1)
 
     The attribtues of the sub-nodes can be modified directly (and
     independently). For example:
@@ -1115,13 +1115,15 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
-            if len(self.inputs) > 1:
-                raise ValueError('Ambiguous connection from storage node')
-            yield self.inputs[0]
+            if slot_name is None:
+                yield self.inputs[0]
+            else:
+                yield self.inputs[slot_name]
         else:
-            if len(self.outputs) > 1:
-                raise ValueError('Ambiguous connection to storage node')
-            yield self.outputs[0]
+            if slot_name is None:
+                yield self.outputs[0]
+            else:
+                yield self.outputs[slot_name]
 
     @property
     def name(self):

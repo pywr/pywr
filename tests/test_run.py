@@ -350,10 +350,9 @@ def test_new_storage(solver):
     demand2 = pywr.core.Output(model, 'demand2')
 
     supply1.connect(splitter)
-    #supply1.connect(splitter.outputs[0])
 
-    splitter.inputs[0].connect(demand1)
-    splitter.inputs[1].connect(demand2)
+    splitter.connect(demand1, from_slot=0)
+    splitter.connect(demand2, from_slot=1)
 
     supply1.max_flow = 45.0
     demand1.max_flow = 20
