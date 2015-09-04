@@ -1040,36 +1040,70 @@ class Blender(Link):
 
         self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
-class StorageInput(BaseInput):
+class StorageInput(BaseInput, Connectable):
     def commit(self, volume):
         super(StorageInput, self).commit(volume)
         self.parent.commit(-volume)
 
-class StorageOutput(BaseOutput):
+class StorageOutput(BaseOutput, Connectable):
     def commit(self, volume):
         super(StorageOutput, self).commit(volume)
         self.parent.commit(volume)
 
-class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
-    """A generic storage Node
+class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
+                             XMLSeriaizable, _core.Storage)):
+    """A generic storage node
 
-    Storage consists of an input and output subnodes which form the routes
-    in the network """
-    def __init__(self, model, name, *args, **kwargs):
+    The storage node contains an input node (or nodes) and an output node (or
+    nodes).
+
+    In terms of connections in the network the Storage node behaves like any
+    other node, provided there is only 1 input and 1 output. If there are
+    multiple sub-nodes the connections need to be explicit about which they
+    are connecting to. For example:
+
+    >>> storage(model, 'reservoir', num_outputs=1, num_inputs=2)
+    >>> supply.connect(storage)
+    >>> storage.outputs[0].connect(demand1)
+    >>> storage.outputs[1].connect(demand2)
+
+    The attribtues of the sub-nodes can be modified directly (and
+    independently). For example:
+
+    >>> storage.outputs[0].max_flow = 15.0
+
+    If a recorder is set on the storage node, instead of recording flow it
+    records changes in storage. Any recorders set on the output or input
+    sub-nodes record flow as normal.
+    """
+    def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
         self.model = model
         model.graph.add_node(self)
         model.dirty = True
-        self.visible = kwargs.pop('visible', True)
-        self.parent = kwargs.pop('parent', None)
-
         if not hasattr(self, 'name'):
             # set name, avoiding issues with multiple inheritance
             self.__name = None
             self.name = name
+        self._domain = kwargs.pop('domain', None)
+        self.parent = kwargs.pop('parent', None)
+        # TODO fix this default hack
+        self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
 
+        self.outputs = []
+        for n in range(0, num_outputs):
+            self.outputs.append(StorageOutput(model, name="{} Output #{}".format(self.name, n), parent=self))
 
-        kwargs['color'] = kwargs.pop('color', 'green')
-        # keyword arguments for input and output nodes specified with prefix
+        self.inputs = []
+        for n in range(0, num_inputs):
+            self.inputs.append(StorageInput(model, name="{} Input #{}".format(self.name, n), parent=self))
+
+        self.min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        self.max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
+        self.volume = kwargs.pop('volume', 0.0)
+        self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+
+        # TODO: keyword arguments for input and output nodes specified with prefix
+        '''
         input_kwargs, output_kwargs = {}, {}
         keys = list(kwargs.keys())
         for key in keys:
@@ -1077,22 +1111,17 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
                 input_kwargs[key.replace('input_', '')] = kwargs.pop(key)
             elif key.startswith('output_'):
                 output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
+        '''
 
-        self.input = StorageInput(model, name="{} Input".format(self.name), parent=self, **input_kwargs)
-        self.output = StorageOutput(model, name="{} Output".format(self.name), parent=self, **output_kwargs)
-
-        self.min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
-        self.max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        self.volume = kwargs.pop('volume', 0.0)
-        self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
-
-        # TODO fix this default hack
-        self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
-
-        # Grab cost keyword before passed
-        cost = kwargs.pop('cost', 0.0)
-        super(Storage, self).__init__(*args, **kwargs)
-        self.cost = cost
+    def iter_slots(self, slot_name=None, is_connector=True):
+        if is_connector:
+            if len(self.inputs) > 1:
+                raise ValueError('Ambiguous connection from storage node')
+            yield self.inputs[0]
+        else:
+            if len(self.outputs) > 1:
+                raise ValueError('Ambiguous connection to storage node')
+            yield self.outputs[0]
 
     @property
     def name(self):
@@ -1113,38 +1142,31 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
         self.model.node[name] = self
 
     @property
-    def cost(self, ):
-        return self.output.cost
+    def cost(self):
+        return sum(node_output.cost for node_output in self.outputs)
 
     @cost.setter
     def cost(self, value):
-        self.input.cost = -value
-        self.output.cost = value
-
-    def iter_slots(self, slot_name=None, is_connector=True):
-        # Return the input node if Storage is connecting to another node
-        # otherwise return the output.
-        # No direct connections are made to Storage itself.
-        if is_connector:
-            yield self.input
-        else:
-            yield self.output
+        for node_input in self.inputs:
+            node_input.cost = -value
+        for node_output in self.outputs:
+            node_output.cost = value
 
     def check(self):
-        self.input.check()
-        self.output.check()
-        try:
-            ts = self.model.timestep
-            # check volume doesn't exceed maximum volume
-            assert(self.properties['max_volume'].value(ts) >= self.properties['current_volume'].value(ts))
-        except AttributeError:
-            # Model run not started
-            pass
+        pass  # TODO
 
+    def before(self, timestep):
+        super(Storage, self).before(timestep)
+        self._change = 0.0
 
-    def connect(self, node, from_slot='input', to_slot=None):
-        super(Storage, self).connect(node, from_slot=from_slot, to_slot=to_slot)
+    def commit(self, value):
+        super(Storage, self).commit(value)
+        self._change += value
 
+    def after(self, timestep):
+        super(Storage, self).after(timestep)
+        if self.recorder is not None:
+            self.recorder.commit(timestep, self._change)
 
 class PiecewiseLink(Node):
     """ An extension of Nodes that represents a non-linear Link with a piece wise cost function.

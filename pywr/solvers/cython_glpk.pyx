@@ -152,8 +152,8 @@ cdef class CythonGLPKSolver:
             if len(storages):
                 self.idx_row_storages = glp_add_rows(self.prob, len(storages))
             for col, storage in enumerate(storages):
-                cols_output = [n for n, demand in enumerate(demands) if demand is storage.output]
-                cols_input = [n for n, route in enumerate(routes) if route[0] is storage.input]
+                cols_output = [n for n, demand in enumerate(demands) if demand in storage.outputs]
+                cols_input = [n for n, route in enumerate(routes) if route[0] in storage.inputs]
                 ind = <int*>malloc((1+len(cols_output)+len(cols_input)) * sizeof(int))
                 val = <double*>malloc((1+len(cols_output)+len(cols_input)) * sizeof(double))
                 for n, c in enumerate(cols_output):

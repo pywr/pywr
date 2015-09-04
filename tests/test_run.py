@@ -331,6 +331,44 @@ def test_run_demand_discharge(solver):
     result = model.step()
     assert(not model.failure)
 
+def test_new_storage(solver):
+    """Test new-style storage node with multiple inputs"""
+    model = pywr.core.Model(
+        parameters={
+            'timestamp_start': pandas.to_datetime('1888-01-01'),
+            'timestamp_finish': pandas.to_datetime('1888-01-01'),
+            'timestep': datetime.timedelta(1),
+        },
+        solver=solver
+    )
+
+    supply1 = pywr.core.Input(model, 'supply1')
+
+    splitter = pywr.core.Storage(model, 'splitter', num_outputs=1, num_inputs=2, max_volume=10, volume=5)
+
+    demand1 = pywr.core.Output(model, 'demand1')
+    demand2 = pywr.core.Output(model, 'demand2')
+
+    supply1.connect(splitter)
+    #supply1.connect(splitter.outputs[0])
+
+    splitter.inputs[0].connect(demand1)
+    splitter.inputs[1].connect(demand2)
+
+    supply1.max_flow = 45.0
+    demand1.max_flow = 20
+    demand2.max_flow = 40
+
+    demand1.cost = -150
+    demand2.cost = -100
+
+    model.run()
+
+    assert(supply1.recorder.data == [45])
+    assert(splitter.recorder.data == [-5])
+    assert(demand1.recorder.data == [20])
+    assert(demand2.recorder.data == [30])
+
 def test_reset(solver):
     """Test model reset"""
     model = load_model('license1.xml', solver=solver)
