@@ -133,6 +133,14 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         kwargs['max_flow'] = [kwargs.pop('mrf'), None]
         super(RiverGauge, self).__init__(*args, **kwargs)
 
+    @property
+    def mrf(self, ):
+        return self.sublinks[0].max_flow
+
+    @mrf.setter
+    def mrf(self, value):
+        self.sublinks[0].max_flow = value
+
 
 class RiverAbstraction(RiverDomainMixin, Output):
     """An abstraction from the river network"""
