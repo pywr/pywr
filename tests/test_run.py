@@ -186,6 +186,7 @@ def test_run_license2(solver):
     assert(d1.flow == 2.0)
 
 
+@pytest.mark.xfail
 def test_run_license_group(solver):
     '''Test license groups'''
     model = load_model('groups1.xml', solver=solver)
