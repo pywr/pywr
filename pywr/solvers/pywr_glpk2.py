@@ -119,14 +119,14 @@ class SolverGLPK(Solver):
             # Setup Storage node constraints
             for node in model.nodes():
                 if isinstance(node, Storage):
-                    input_info = input_nodes[node.input]
-                    output_info = output_nodes[node.output]
                     # mass balance between input and output
+                    cols_output = [col for output_node, attrs in output_nodes.items() for col in attrs['col_idxs'] if output_node in node.outputs]
+                    cols_input = [col for input_node, attrs in input_nodes.items() for col in attrs['col_idxs'] if input_node in node.inputs]
                     row_idx = lp.rows.add(1)
                     row = lp.rows[row_idx]
                     row.bounds = 0, 0
-                    input_matrix = [(idx, -1.0) for idx in input_info['col_idxs']]
-                    output_matrix = [(output_info['output_col'].index, 1.0)]
+                    input_matrix = [(idx, -1.0) for idx in cols_input]
+                    output_matrix = [(idx, 1.0) for idx in cols_output]
                     row.matrix = input_matrix + output_matrix
                     storage_rows[node] = row
 
