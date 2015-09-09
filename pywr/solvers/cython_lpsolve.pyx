@@ -123,7 +123,7 @@ cdef class CythonLPSolveSolver:
             raise MemoryError()
         set_verbose(self.prob, CRITICAL)
 
-    def __dealloc__(self):        
+    def __dealloc__(self):
         if self.prob is not NULL:
             # free the problem
             delete_lp(self.prob)
@@ -265,8 +265,8 @@ cdef class CythonLPSolveSolver:
                 self.idx_row_storages = get_Norig_rows(self.prob)+1
                 ret = resize_lp(self.prob, get_Norig_rows(self.prob)+len(storages), get_Norig_columns(self.prob))
             for col, storage in enumerate(storages):
-                cols_output = [n for n, demand in enumerate(demands) if demand is storage.output]
-                cols_input = [n for n, route in enumerate(routes) if route[0] is storage.input]
+                cols_output = [n for n, demand in enumerate(demands) if demand in storage.outputs]
+                cols_input = [n for n, route in enumerate(routes) if route[0] in storage.inputs]
                 ind = <int*>malloc((len(cols_output)+len(cols_input)) * sizeof(int))
                 val = <double*>malloc((len(cols_output)+len(cols_input)) * sizeof(double))
                 for n, c in enumerate(cols_output):
