@@ -113,7 +113,7 @@ class Model(object):
                 raise KeyError('Unrecognised solver: {}'.format(solver))
         else:
             # use default solver
-            self.solver = solvers.SolverGLPK()
+            self.solver = solvers.CythonGLPKSolver()
 
 
         self.node = {}

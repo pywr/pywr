@@ -5,7 +5,6 @@ python:
     - "3.4"
 
 env:
-    - "PYWR_SOLVER=cyglpk"
     - "PYWR_SOLVER=glpk"
     - "PYWR_SOLVER=lpsolve"
 
@@ -22,10 +21,8 @@ before_install:
     # dependencies
     - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib pytest dateutil pandas statsmodels networkx xlrd cython six ipython
 
-    # pyglpk v0.4
+    # system libraries
     - sudo apt-get install -qq libgmp3-dev libglpk-dev glpk liblpsolve55-dev lpsolve
-    - git clone https://github.com/bradfordboyle/pyglpk.git
-    - pushd pyglpk && git checkout v0.4-dev-api && python setup.py install && popd
 
 install:
     - python setup.py install
