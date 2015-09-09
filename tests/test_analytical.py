@@ -13,7 +13,7 @@ import pytest
 from helpers import assert_model
 
 
-@pytest.fixture(params=[(10.0, 10.0, 10.0), (10.0, 0.0, 0.0)])
+@pytest.fixture()
 def simple_linear_model(request, solver):
     """
     Make a simple model with a single Input and Output.
@@ -21,28 +21,34 @@ def simple_linear_model(request, solver):
     Input -> Link -> Output
 
     """
-    in_flow, out_flow, benefit = request.param
-
     model = pywr.core.Model(solver=solver)
-    inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
+    inpt = pywr.core.Input(model, name="Input")
     lnk = pywr.core.Link(model, name="Link", cost=1.0)
     inpt.connect(lnk)
-    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-benefit)
+    otpt = pywr.core.Output(model, name="Output")
     lnk.connect(otpt)
-    default = inpt.domain
-    expected_requested = {default: out_flow}
-    expected_sent = {default: in_flow if benefit > 1.0 else out_flow}
+
+    return model
+
+@pytest.mark.parametrize("in_flow, out_flow, benefit",
+                         [(10.0, 10.0, 10.0), (10.0, 0.0, 0.0)])
+def test_linear_model(simple_linear_model, in_flow, out_flow, benefit):
+    """
+    Test the simple_linear_model with different basic input and output values
+    """
+
+    simple_linear_model.node["Input"].max_flow = in_flow
+    simple_linear_model.node["Output"].min_flow = out_flow
+    simple_linear_model.node["Output"].cost = -benefit
+
+    expected_sent = in_flow if benefit > 1.0 else out_flow
 
     expected_node_results = {
-        "Input": expected_sent[default],
-        "Link": expected_sent[default],
-        "Output": expected_sent[default],
+        "Input": expected_sent,
+        "Link": expected_sent,
+        "Output": expected_sent,
     }
-    return model, expected_node_results
-
-
-def test_linear_model(simple_linear_model):
-    assert_model(*simple_linear_model)
+    assert_model(simple_linear_model, expected_node_results)
 
 
 @pytest.fixture(params=[
