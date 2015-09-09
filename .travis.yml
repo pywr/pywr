@@ -23,7 +23,7 @@ before_install:
     - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib pytest dateutil pandas statsmodels networkx xlrd cython six ipython
 
     # pyglpk v0.4
-    - sudo apt-get install -qq libgmp3-dev libglpk-dev glpk
+    - sudo apt-get install -qq libgmp3-dev libglpk-dev glpk liblpsolve55-dev lpsolve
     - git clone https://github.com/bradfordboyle/pyglpk.git
     - pushd pyglpk && git checkout v0.4-dev-api && python setup.py install && popd
 
