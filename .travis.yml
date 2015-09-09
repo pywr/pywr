@@ -22,7 +22,7 @@ before_install:
     - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib pytest dateutil pandas statsmodels networkx xlrd cython six ipython
 
     # system libraries
-    - sudo apt-get install -qq libgmp3-dev libglpk-dev glpk liblpsolve55-dev lp-solve
+    - sudo apt-get install -qq libgmp3-dev libglpk-dev glpk lp-solve
 
 install:
     - python setup.py install
