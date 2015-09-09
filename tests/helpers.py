@@ -1,6 +1,6 @@
 import os
 import xml.etree.ElementTree as ET
-
+from numpy.testing import assert_allclose
 import pywr.core
 from pywr.domains import river
 
@@ -26,6 +26,6 @@ def assert_model(model, expected_node_results):
     for node in model.nodes():
         if node.name in expected_node_results:
             if isinstance(node, pywr.core.BaseNode):
-                assert(expected_node_results[node.name] == node.flow)
+                assert_allclose(expected_node_results[node.name], node.flow)
             elif isinstance(node, pywr.core.Storage):
-                assert(expected_node_results[node.name] == node.volume)
+                assert_allclose(expected_node_results[node.name], node.volume)

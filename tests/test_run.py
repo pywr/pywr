@@ -7,6 +7,7 @@ import os
 import datetime
 import pytest
 import pandas
+from numpy.testing import assert_allclose
 
 import pywr.core
 import pywr.licenses
@@ -25,7 +26,7 @@ def test_run_simple1(solver):
 
     # check results
     demand1 = model.node['demand1']
-    assert(demand1.flow == 10.0)
+    assert_allclose(demand1.flow, 10.0)
 
     # check the timestamp incremented
     assert(model.timestepper.current - t0 == datetime.timedelta(1))
@@ -41,8 +42,8 @@ def test_run_reservoir1(solver):
     supply1 = model.node['supply1']
     for demand, stored in [(10.0, 25.0), (10.0, 15.0), (10.0, 5.0), (5.0, 0.0), (0.0, 0.0)]:
         result = model.step()
-        assert(demand1.flow == demand)
-        assert(supply1.volume == stored)
+        assert_allclose(demand1.flow, demand)
+        assert_allclose(supply1.volume, stored)
 
 
 def test_run_reservoir2(solver):
@@ -57,8 +58,8 @@ def test_run_reservoir2(solver):
     supply1 = model.node['supply1']
     for demand, stored in [(15.0, 25.0), (15.0, 15.0), (15.0, 5.0), (10.0, 0.0), (5.0, 0.0)]:
         result = model.step()
-        assert(demand1.flow == demand)
-        assert(supply1.volume == stored)
+        assert_allclose(demand1.flow, demand)
+        assert_allclose(supply1.volume,  stored)
 
 
 def test_run_river1(solver):
@@ -67,7 +68,7 @@ def test_run_river1(solver):
 
     result = model.step()
     demand1 = model.node['demand1']
-    assert(demand1.flow == 5.0)
+    assert_allclose(demand1.flow, 5.0)
 
 
 # Contains a RiverSplit which needs addressing
@@ -88,8 +89,8 @@ def test_run_timeseries1(solver):
 
     # check timeseries has been loaded correctly
     from pywr._core import Timestep
-    assert(model.data['riverflow1'].value(Timestep(datetime.datetime(2015, 1, 1), 0, 0)) == 23.92)
-    assert(model.data['riverflow1'].value(Timestep(datetime.datetime(2015, 1, 2), 1, 0)) == 22.14)
+    assert_allclose(model.data['riverflow1'].value(Timestep(datetime.datetime(2015, 1, 1), 0, 0)), 23.92)
+    assert_allclose(model.data['riverflow1'].value(Timestep(datetime.datetime(2015, 1, 2), 1, 0)), 22.14)
 
     # check results
     demand1 = model.node['demand1']
@@ -98,7 +99,7 @@ def test_run_timeseries1(solver):
         result = model.step()
         print(model.timestep.datetime)
         supplied.append(demand1.flow)
-    assert(supplied == [23.0, 22.14, 22.57, 23.0, 23.0])
+    assert_allclose(supplied, [23.0, 22.14, 22.57, 23.0, 23.0])
 
 def test_run_cost1(solver):
     model = load_model('cost1.xml', solver=solver)
@@ -107,29 +108,29 @@ def test_run_cost1(solver):
     supply2 = model.node['supply2']
     demand1 = model.node['demand1']
 
-    assert(supply1.get_cost(None) == 1)
-    assert(supply2.get_cost(None) == 2)  # more expensive
+    assert_allclose(supply1.get_cost(None), 1)
+    assert_allclose(supply2.get_cost(None), 2)  # more expensive
 
     result = model.step()
     # check entire demand was supplied by supply1
-    assert(supply1.flow == 10.0)
-    assert(supply2.flow == 0.0)
-    assert(demand1.flow == 10.0)
+    assert_allclose(supply1.flow, 10.0)
+    assert_allclose(supply2.flow, 0.0)
+    assert_allclose(demand1.flow, 10.0)
 
     # increase demand to more than supply1 can provide on it's own
     # and check that supply2 is used to pick up the slack
     demand1.max_flow = 20.0
     result = model.step()
-    assert(supply1.flow == 15.0)
-    assert(supply2.flow == 5.0)
-    assert(demand1.flow == 20.0)
+    assert_allclose(supply1.flow, 15.0)
+    assert_allclose(supply2.flow, 5.0)
+    assert_allclose(demand1.flow, 20.0)
 
     # supply as much as possible, even if it isn't enough
     demand1.max_flow = 40.0
     result = model.step()
-    assert(supply1.flow == 15.0)
-    assert(supply2.flow == 15.0)
-    assert(demand1.flow == 30.0)
+    assert_allclose(supply1.flow, 15.0)
+    assert_allclose(supply2.flow, 15.0)
+    assert_allclose(demand1.flow, 30.0)
 
 
 def test_run_license1(solver):
@@ -149,7 +150,7 @@ def test_run_license1(solver):
     # daily license is limit
     result = model.step()
     d1 = model.node['demand1']
-    assert(d1.flow == 5.0)
+    assert_allclose(d1.flow, 5.0)
 
     # resource state is getting worse
     assert(annual_lic.resource_state(model.timestep) < 1.0)
@@ -157,13 +158,13 @@ def test_run_license1(solver):
     # annual license is limit
     result = model.step()
     d1 = model.node['demand1']
-    assert(d1.flow == 2.0)
+    assert_allclose(d1.flow, 2.0)
 
     # annual license is exhausted
     result = model.step()
     d1 = model.node['demand1']
-    assert(d1.flow == 0.0)
-    assert(annual_lic.resource_state(model.timestep) == 0.0)
+    assert_allclose(d1.flow, 0.0)
+    assert_allclose(annual_lic.resource_state(model.timestep), 0.0)
 
 
 def test_run_license2(solver):
@@ -179,11 +180,11 @@ def test_run_license2(solver):
     # daily license limit
     result = model.step()
     d1 = model.node['demand1']
-    assert(d1.flow == 5.0)
+    assert_allclose(d1.flow, 5.0)
 
     # annual license limit
     result = model.step()
-    assert(d1.flow == 2.0)
+    assert_allclose(d1.flow, 2.0)
 
 
 @pytest.mark.xfail
@@ -198,7 +199,7 @@ def test_run_license_group(solver):
 
     result = model.step()
     d1 = model.node['demand1']
-    assert(d1.flow == 6.0)
+    assert_allclose(d1.flow, 6.0)
 
 
 def test_run_bottleneck(solver):
@@ -207,7 +208,7 @@ def test_run_bottleneck(solver):
     result = model.step()
     d1 = model.node['demand1']
     d2 = model.node['demand2']
-    assert(d1.flow+d2.flow == 15.0)
+    assert_allclose(d1.flow+d2.flow, 15.0)
 
 
 @pytest.mark.xfail
@@ -217,7 +218,7 @@ def test_run_mrf(solver):
 
     # check mrf value was parsed from xml
     river_gauge = model.node['gauge1']
-    assert(river_gauge.properties['mrf'].value(model.timestamp) == 10.5)
+    assert_allclose(river_gauge.properties['mrf'].value(model.timestamp), 10.5)
 
     # test model result
     data = {
@@ -242,8 +243,8 @@ def test_run_discharge_upstream(solver):
     model.step()
     demand = model.node['demand1']
     term = model.node['term1']
-    assert(demand.flow == 8.0)
-    assert(term.flow == 0.0)
+    assert_allclose(demand.flow, 8.0)
+    assert_allclose(term.flow, 0.0)
 
 def test_run_discharge_downstream(solver):
     '''Test river with inline discharge (downstream)
@@ -255,8 +256,8 @@ def test_run_discharge_downstream(solver):
     model.step()
     demand = model.node['demand1']
     term = model.node['term1']
-    assert(demand.flow == 5.0)
-    assert(term.flow == 3.0)
+    assert_allclose(demand.flow, 5.0)
+    assert_allclose(term.flow, 3.0)
 
 
 @pytest.mark.xfail
@@ -270,7 +271,7 @@ def test_run_blender1(solver):
     supply3 = model.node['supply3']
 
     # check blender ratio
-    assert(blender.properties['ratio'].value(model.timestamp) == 0.75)
+    assert_allclose(blender.properties['ratio'].value(model.timestamp), 0.75)
 
     # check supplies have been connected correctly
     assert(len(blender.slots) == 2)
@@ -279,8 +280,8 @@ def test_run_blender1(solver):
 
     # test model results
     result = model.step()
-    assert(result[3][(supply1, blender)] == 7.5)
-    assert(result[3][(supply2, blender)] == 2.5)
+    assert_allclose(result[3][(supply1, blender)], 7.5)
+    assert_allclose(result[3][(supply2, blender)], 2.5)
 
 @pytest.mark.xfail
 def test_run_blender2(solver):
@@ -293,8 +294,8 @@ def test_run_blender2(solver):
 
     # test model results
     result = model.step()
-    assert(result[3][(supply1, blender)] == 3.0)
-    assert(result[3][(supply2, blender)] == 7.0)
+    assert_allclose(result[3][(supply1, blender)], 3.0)
+    assert_allclose(result[3][(supply2, blender)], 7.0)
 
 @pytest.mark.xfail
 def test_run_demand_discharge(solver):
@@ -374,11 +375,11 @@ def test_reset(solver):
     supply1 = model.node['supply1']
     license_collection = supply1.licenses
     license = [lic for lic in license_collection._licenses if isinstance(lic, pywr.licenses.AnnualLicense)][0]
-    assert(license.available(None) == 7.0)
+    assert_allclose(license.available(None), 7.0)
     model.step()
-    assert(license.available(None) == 2.0)
+    assert_allclose(license.available(None), 2.0)
     model.reset()
-    assert(license.available(None) == 7.0)
+    assert_allclose(license.available(None), 7.0)
 
 
 def test_run(solver):
