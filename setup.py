@@ -10,7 +10,10 @@ extensions = [
               include_dirs=[np.get_include()],),
     Extension('pywr.solvers.cython_glpk', ['pywr/solvers/cython_glpk.pyx'],
               include_dirs=[np.get_include()],
-              libraries = ['glpk'],)
+              libraries=['glpk'],),
+    Extension('pywr.solvers.cython_lpsolve', ['pywr/solvers/cython_lpsolve.pyx'],
+              include_dirs=[np.get_include()],
+              libraries=['lpsolve55'],),
 ]
 
 setup(
