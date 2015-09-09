@@ -7,6 +7,7 @@ python:
 env:
     - "PYWR_SOLVER=cyglpk"
     - "PYWR_SOLVER=glpk"
+    - "PYWR_SOLVER=lpsolve"
 
 before_install:
     - sudo apt-get update -qq
