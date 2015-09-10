@@ -164,7 +164,11 @@ def test_shorthand_property(solver):
     for attr in ('min_flow', 'max_flow', 'cost', 'conversion_factor'):
         # should except int, float or Paramter
         setattr(node, attr, 123)
-        setattr(node, attr, Parameter())
+        if attr == 'conversion_factor':
+            with pytest.raises(ValueError):
+                setattr(node, attr, Parameter())
+        else:
+            setattr(node, attr, Parameter())
 
         with pytest.raises(TypeError):
             setattr(node, attr, '123')

@@ -104,7 +104,6 @@ class Model(object):
         self.failure = set()
         self.dirty = True
 
-
         if solver is not None:
             # use specific solver
             try:
@@ -229,6 +228,8 @@ class Model(object):
 
     def step(self):
         """Step the model forward by one day"""
+        if self.dirty:
+            self.setup()
         self.timestep = next(self.timestepper)
         return self._step()
 
@@ -257,6 +258,8 @@ class Model(object):
 
         Returns the number of last Timestep that was run.
         """
+        if self.dirty:
+            self.setup()
         for timestep in self.timestepper:
             self.timestep = timestep
             ret = self._step()
@@ -272,6 +275,12 @@ class Model(object):
             return timestep
         except UnboundLocalError:
             return None
+
+    def setup(self, ):
+        """Setup the model for the first time or if it has changed since
+        last run."""
+        self.solver.setup(self)
+        self.dirty = False
 
     def reset(self, start=None):
         """Reset model to it's initial conditions"""
@@ -410,6 +419,8 @@ class SolverMeta(type):
 class Solver(with_metaclass(SolverMeta)):
     """Solver base class from which all solvers should inherit"""
     name = 'default'
+    def setup(self, model):
+        raise NotImplementedError('Solver should be subclassed to provide setup()')
     def solve(self, model, timestep):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
 

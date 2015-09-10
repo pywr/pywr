@@ -30,7 +30,7 @@ cdef class Node:
     cpdef get_min_flow(self, Timestep ts)
     cpdef get_max_flow(self, Timestep ts)
     cpdef get_cost(self, Timestep ts)
-    cpdef get_conversion_factor(self, Timestep ts)
+    cpdef get_conversion_factor(self)
     cdef set_parameters(self, Timestep ts)
 
     cpdef before(self, Timestep ts)

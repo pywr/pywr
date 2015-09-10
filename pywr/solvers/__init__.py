@@ -14,6 +14,9 @@ class CythonGLPKSolver(Solver):
         super(CythonGLPKSolver, self).__init__(*args, **kwargs)
         self._cy_solver = cy_CythonGLPKSolver()
 
+    def setup(self, model):
+        return self._cy_solver.setup(model)
+
     def solve(self, model):
         return self._cy_solver.solve(model)
 
