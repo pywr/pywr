@@ -99,7 +99,7 @@ cdef class Node:
 
     property min_flow:
         """The minimum flow constraint on the node
-        
+
         The minimum flow may be set to either a constant (i.e. a float) or a
         Parameter.
         """
@@ -122,7 +122,7 @@ cdef class Node:
 
     property max_flow:
         """The maximum flow constraint on the node
-        
+
         The maximum flow may be set to either a constant (i.e. a float) or a
         Parameter.
         """
@@ -144,9 +144,9 @@ cdef class Node:
 
     property cost:
         """The cost per unit flow via the node
-        
+
         The cost may be set to either a constant (i.e. a float) or a Parameter.
-        
+
         The value returned can be positive (i.e. a cost), negative (i.e. a
         benefit) or netural. Typically supply nodes will have an associated
         cost and demands will provide a benefit.
@@ -167,27 +167,27 @@ cdef class Node:
 
     property conversion_factor:
         """The conversion between inflow and outflow for the node
-        
+
         The conversion factor may be set to either a constant (i.e. a float) or
         a Parameter.
         """
         def __set__(self, value):
             self._conversion_factor_param = None
             if isinstance(value, Parameter):
-                self._conversion_factor_param = value
+                raise ValueError("Conversion factor can not be a Parameter.")
             else:
                 self._conversion_factor = value
 
-    cpdef get_conversion_factor(self, Timestep ts):
-        """Get the conversion factor at a given timestep
+    cpdef get_conversion_factor(self):
+        """Get the conversion factor
+
+        Note: the conversion factor must be a constant.
         """
-        if self._conversion_factor_param is None:
-            return self._conversion_factor
-        return self._conversion_factor_param.value(ts)
+        return self._conversion_factor
 
     cdef set_parameters(self, Timestep ts):
         """Update the constant attributes by evaluating any Parameter objects
-        
+
         This is useful when the `get_` functions need to be accessed multiple
         times and there is a benefit to caching the values.
         """
