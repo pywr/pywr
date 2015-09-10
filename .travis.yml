@@ -24,6 +24,10 @@ before_install:
     # system libraries
     - sudo apt-get install -qq libgmp3-dev libglpk-dev glpk liblpsolve55-dev lp-solve
 
+    # remove lpsolve static library, which causes issues
+    - sudo rm /usr/lib/liblpsolve55.a
+    - sudo ln -s /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
+
 install:
     - python setup.py install
 
