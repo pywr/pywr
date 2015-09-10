@@ -31,5 +31,8 @@ class CythonLPSolveSolver(Solver):
         super(CythonLPSolveSolver, self).__init__(*args, **kwargs)
         self._cy_solver = cy_CythonLPSolveSolver()
 
+    def setup(self, model):
+        return self._cy_solver.setup(model)        
+
     def solve(self, model):
         return self._cy_solver.solve(model)
