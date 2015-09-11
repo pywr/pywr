@@ -1084,7 +1084,6 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
             # set name, avoiding issues with multiple inheritance
             self.__name = None
             self.name = name
-        self._domain = kwargs.pop('domain', None)
         self.parent = kwargs.pop('parent', None)
         # TODO fix this default hack
         self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
