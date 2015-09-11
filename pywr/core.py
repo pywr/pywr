@@ -1112,6 +1112,7 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
                 output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
         '''
 
+
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
             if slot_name is None:
@@ -1141,6 +1142,7 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
         # apply new name
         self.__name = name
         self.model.node[name] = self
+
 
     @property
     def cost(self):
