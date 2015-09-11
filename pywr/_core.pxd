@@ -17,11 +17,10 @@ cdef class Timestep:
 
 cdef class Parameter:
     cpdef setup(self, model)
-    cpdef double value(self, Timestep ts) except? -1
+    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1
 
 cdef class ParameterArrayIndexed(Parameter):
     cdef double[:] values
-    cpdef double value(self, Timestep ts) except? -1
 
 cdef class Recorder:
     cpdef setup(self, model)
@@ -42,11 +41,11 @@ cdef class Node:
     cdef Parameter _conversion_factor_param
     cdef Recorder _recorder
 
-    cpdef get_min_flow(self, Timestep ts)
-    cpdef get_max_flow(self, Timestep ts)
-    cpdef get_cost(self, Timestep ts)
+    cpdef get_min_flow(self, Timestep ts, int[:] scenario_indices=*)
+    cpdef get_max_flow(self, Timestep ts, int[:] scenario_indices=*)
+    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=*)
     cpdef get_conversion_factor(self)
-    cdef set_parameters(self, Timestep ts)
+    cdef set_parameters(self, Timestep ts, int[:] scenario_indices=*)
 
     cpdef setup(self, model)
     cpdef reset(self)
@@ -68,9 +67,9 @@ cdef class Storage:
     cdef Parameter _cost_param
     cdef Recorder _recorder
 
-    cpdef get_min_volume(self, Timestep ts)
-    cpdef get_max_volume(self, Timestep ts)
-    cpdef get_cost(self, Timestep ts)
+    cpdef get_min_volume(self, Timestep ts, int[:] scenario_indices=*)
+    cpdef get_max_volume(self, Timestep ts, int[:] scenario_indices=*)
+    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=*)
 
     cpdef setup(self, model)
     cpdef reset(self)
