@@ -280,6 +280,12 @@ cdef class CythonLPSolveSolver:
         self.storages = storages
 
     cpdef object solve(self, model):
+        cdef int[:, :] scenario_combinations = model.scenarios.get_combinations()
+        cdef int scenario_id
+        for scenario_id in range(scenario_combinations.shape[0]):
+            self._solve_scenario(model, scenario_id, scenario_combinations[scenario_id, :])
+
+    cdef object _solve_scenario(self, model, int scenario_id, int[:] scenario_indices):
         cdef Node supply
         cdef Node demand
         cdef Node node
@@ -309,27 +315,27 @@ cdef class CythonLPSolveSolver:
         for col, route in enumerate(routes):
             cost = 0.0
             for node in route:
-                cost += node.get_cost(timestep)
+                cost += node.get_cost(timestep, scenario_indices)
             set_obj(self.prob, self.idx_col_routes+col, cost)
 
         # update supply properties
         for col, supply in enumerate(supplys):
-            min_flow = inf_to_dbl_max(supply.get_min_flow(timestep))
-            max_flow = inf_to_dbl_max(supply.get_max_flow(timestep))
+            min_flow = inf_to_dbl_max(supply.get_min_flow(timestep, scenario_indices))
+            max_flow = inf_to_dbl_max(supply.get_max_flow(timestep, scenario_indices))
             set_row_bnds(self.prob, self.idx_row_supplys+col, min_flow, max_flow)
 
 
         # update demand properties
         for col, demand in enumerate(demands):
-            min_flow = inf_to_dbl_max(demand.get_min_flow(timestep))
-            max_flow = inf_to_dbl_max(demand.get_max_flow(timestep))
-            cost = demand.get_cost(timestep)
+            min_flow = inf_to_dbl_max(demand.get_min_flow(timestep, scenario_indices))
+            max_flow = inf_to_dbl_max(demand.get_max_flow(timestep, scenario_indices))
+            cost = demand.get_cost(timestep, scenario_indices)
             set_bounds(self.prob, self.idx_col_demands+col, min_flow, max_flow)
             set_obj(self.prob, self.idx_col_demands+col, cost)
 
         # update storage node constraint
         for col, storage in enumerate(storages):
-            max_volume = storage.get_max_volume(timestep)
+            max_volume = storage.get_max_volume(timestep, scenario_indices)
             avail_volume = max(storage.volume - storage.get_min_volume(timestep), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
@@ -354,6 +360,6 @@ cdef class CythonLPSolveSolver:
 
         for route, flow in zip(routes, route_flow):
             for node in route:
-                node.commit(0, flow)
+                node.commit(scenario_id, flow)
 
         return route_flow, change_in_storage

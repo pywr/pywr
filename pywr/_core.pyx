@@ -45,12 +45,14 @@ cdef cartesian(sizes, out=None):
     """
     cdef int j
     dtype = np.int32
-    array0 = np.arange(sizes[0], dtype=dtype)
 
     n = np.prod([x for x in sizes])
     if out is None:
         out = np.zeros([n, len(sizes)], dtype=dtype)
 
+    if len(sizes) == 0:
+        return out
+    array0 = np.arange(sizes[0], dtype=dtype)
     m = n / sizes[0]
     out[:,0] = np.repeat(array0, m)
     if sizes[1:]:
@@ -71,7 +73,7 @@ cdef class ScenarioCollection:
 
     cpdef get_scenario_index(self, Scenario sc):
         """Return the index of Scenario in this controller."""
-        return self.scenarios.index(sc)
+        return self._scenarios.index(sc)
 
     cpdef add_scenario(self, Scenario sc):
         if sc in self._scenarios:
@@ -163,7 +165,7 @@ cdef class NumpyArrayRecorder(Recorder):
 cdef class Parameter:
     cpdef setup(self, model):
         pass
-    cpdef double value(self, Timestep ts) except? -1:
+    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
         return 0
 
 cdef class ParameterArrayIndexed(Parameter):
@@ -172,7 +174,7 @@ cdef class ParameterArrayIndexed(Parameter):
     def __cinit__(self, double[:] values):
         self.values = values
 
-    cpdef double value(self, Timestep ts) except? -1:
+    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
         """Returns the value of the parameter at a given timestep
         """
         return self.values[ts._index]
@@ -189,14 +191,21 @@ cdef class ParameterConstantScenario(Parameter):
         self._values = np.empty(scenario._size)
         for i in range(scenario._size):
             self._values[i] = values[i]
+        self._scenario = scenario
 
     cpdef setup(self, model):
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
 
-    cpdef double value(self, Timestep ts) except? -1:
-        return self._values[0]
+    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
+        # This is a bit confusing.
+        # scenario_indices contains the current scenario number for all
+        # the Scenario objects in the model run. We have cached the
+        # position of self._scenario in self._scenario_index to lookup the
+        # correct number to use in this instance.
+        print(np.array(self._values), self._scenario_index, np.array(scenario_indices))
+        return self._values[scenario_indices[self._scenario_index]]
 
 
 cdef class Node:
@@ -247,12 +256,12 @@ cdef class Node:
                 self._min_flow_param = None
                 self._min_flow = value
 
-    cpdef get_min_flow(self, Timestep ts):
+    cpdef get_min_flow(self, Timestep ts, int[:] scenario_indices=None):
         """Get the minimum flow at a given timestep
         """
         if self._min_flow_param is None:
             return self._min_flow
-        return self._min_flow_param.value(ts)
+        return self._min_flow_param.value(ts, scenario_indices)
 
     property max_flow:
         """The maximum flow constraint on the node
@@ -269,12 +278,12 @@ cdef class Node:
                 self._max_flow_param = None
                 self._max_flow = value
 
-    cpdef get_max_flow(self, Timestep ts):
+    cpdef get_max_flow(self, Timestep ts, int[:] scenario_indices=None):
         """Get the maximum flow at a given timestep
         """
         if self._max_flow_param is None:
             return self._max_flow
-        return self._max_flow_param.value(ts)
+        return self._max_flow_param.value(ts, scenario_indices)
 
     property cost:
         """The cost per unit flow via the node
@@ -292,12 +301,12 @@ cdef class Node:
                 self._cost_param = None
                 self._cost = value
 
-    cpdef get_cost(self, Timestep ts):
+    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
         """Get the cost per unit flow at a given timestep
         """
         if self._cost_param is None:
             return self._cost
-        return self._cost_param.value(ts)
+        return self._cost_param.value(ts, scenario_indices)
 
     property conversion_factor:
         """The conversion between inflow and outflow for the node
@@ -319,18 +328,18 @@ cdef class Node:
         """
         return self._conversion_factor
 
-    cdef set_parameters(self, Timestep ts):
+    cdef set_parameters(self, Timestep ts, int[:] scenario_indices=None):
         """Update the constant attributes by evaluating any Parameter objects
 
         This is useful when the `get_` functions need to be accessed multiple
         times and there is a benefit to caching the values.
         """
         if self._min_flow_param is not None:
-            self._min_flow = self._min_flow_param.value(ts)
+            self._min_flow = self._min_flow_param.value(ts, scenario_indices)
         if self._max_flow_param is not None:
-            self._max_flow = self._max_flow_param.value(ts)
+            self._max_flow = self._max_flow_param.value(ts, scenario_indices)
         if self._cost_param is not None:
-            self._cost = self._cost_param.value(ts)
+            self._cost = self._cost_param.value(ts, scenario_indices)
 
     property recorder:
         """The recorder for the node, e.g. a NumpyArrayRecorder
@@ -346,6 +355,13 @@ cdef class Node:
         cdef int ncomb = model.number_of_scenario_combinations
         self._flow = np.empty(ncomb, dtype=np.float64)
         self._prev_flow = np.empty(ncomb, dtype=np.float64)
+        # Setup any Parameters and Recorders
+        if self._min_flow_param is not None:
+            self._min_flow_param.setup(model)
+        if self._max_flow_param is not None:
+            self._max_flow_param.setup(model)
+        if self._cost_param is not None:
+            self._cost_param.setup(model)
         if self._recorder is not None:
             self._recorder.setup(model)
 
@@ -416,10 +432,10 @@ cdef class Storage:
             else:
                 self._min_volume = value
 
-    cpdef get_min_volume(self, Timestep ts):
+    cpdef get_min_volume(self, Timestep ts, int[:] scenario_indices=None):
         if self._min_volume_param is None:
             return self._min_volume
-        return self._min_volume_param.value(ts)
+        return self._min_volume_param.value(ts, scenario_indices)
 
     property max_volume:
         def __set__(self, value):
@@ -429,10 +445,10 @@ cdef class Storage:
             else:
                 self._max_volume = value
 
-    cpdef get_max_volume(self, Timestep ts):
+    cpdef get_max_volume(self, Timestep ts, int[:] scenario_indices=None):
         if self._max_volume_param is None:
             return self._max_volume
-        return self._max_volume_param.value(ts)
+        return self._max_volume_param.value(ts, scenario_indices)
 
     property cost:
         def __set__(self, value):
@@ -442,10 +458,10 @@ cdef class Storage:
             else:
                 self._cost = value
 
-    cpdef get_cost(self, Timestep ts):
+    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
         if self._cost_param is None:
             return self._cost
-        return self._cost_param.value(ts)
+        return self._cost_param.value(ts, scenario_indices)
 
     property current_pc:
         " Current percentage full "

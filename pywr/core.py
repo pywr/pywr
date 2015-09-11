@@ -479,7 +479,7 @@ def pop_kwarg_parameter(kwargs, key, default):
 
 
 class Parameter(_core.Parameter):
-    def value(self, index=None):
+    def value(self, ts, scenario_indices=[0]):
         raise NotImplementedError()
 
     def xml(*args, **kwargs):
@@ -504,7 +504,7 @@ class ParameterConstant(Parameter):
     def __init__(self, value=None):
         self._value = value
 
-    def value(self, index=None):
+    def value(self, ts, scenario_indices=[0]):
         return self._value
 
     def xml(self, key):
@@ -571,8 +571,8 @@ class ParameterFunction(Parameter):
         self._parent = parent
         self._func = func
 
-    def value(self, index=None):
-        return self._func(self._parent, index)
+    def value(self, ts, scenario_indices=[0]):
+        return self._func(self._parent, index, scenario_indices)
 
     @classmethod
     def from_xml(cls, xml):
@@ -584,7 +584,7 @@ class ParameterMonthlyProfile(Parameter):
             raise ValueError("12 values must be given for a monthly profile.")
         self._values = values
 
-    def value(self, index=None):
+    def value(self, ts, scenario_indices=[0]):
         return self._values[index.datetime.month-1]
 
     @classmethod
@@ -597,7 +597,7 @@ class ParameterDailyProfile(Parameter):
             raise ValueError("366 values must be given for a daily profile.")
         self._values = values
 
-    def value(self, index=None):
+    def value(self, ts, scenario_indices=[0]):
         return self._values[index.dayofyear-1]
 
     @classmethod
@@ -612,7 +612,7 @@ class Timeseries(Parameter):
             metadata = {}
         self.metadata = metadata
 
-    def value(self, ts):
+    def value(self, ts, scenario_indices=[0]):
         return self.df[ts.datetime]
 
     def xml(self, name):
@@ -959,10 +959,14 @@ class BaseInput(BaseNode):
         self.licenses = None
         super(BaseInput, self).__init__(*args, **kwargs)
 
-    def get_max_flow(self, timestep):
+    def get_max_flow(self, timestep, scenario_indices):
         """ Calculate maximum flow including licenses """
-        max_flow = super(BaseNode, self).get_max_flow(timestep)
+        max_flow = super(BaseNode, self).get_max_flow(timestep, scenario_indices)
         if self.licenses is not None:
+            # TODO make licences Scenario aware
+            if len(scenario_indices) > 0:
+                import warnings
+                warnings.warn("Licences are not scenario aware!")
             max_flow = min(max_flow, self.licenses.available(timestep))
         return max_flow
 
