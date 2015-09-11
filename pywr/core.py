@@ -1164,11 +1164,7 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
     def commit(self, value):
         super(Storage, self).commit(value)
         self._change += value
-
-    def after(self, timestep):
-        super(Storage, self).after(timestep)
-        if self.recorder is not None:
-            self.recorder.commit(timestep, self._change)
+        
 
 class PiecewiseLink(Node):
     """ An extension of Nodes that represents a non-linear Link with a piece wise cost function.
