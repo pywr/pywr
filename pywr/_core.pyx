@@ -231,7 +231,6 @@ cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
         cdef int imth = ts.datetime.month-1
         return self._values[ts._index]*self._factors[scenario_indices[self._scenario_index], imth]
 
-
 cdef class Node:
     """Node class from which all others inherit
     """
