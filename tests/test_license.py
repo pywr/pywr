@@ -28,7 +28,7 @@ def test_annual_license():
     assert(lic.resource_state(Timestep(datetime(2015, 1, 1), 0, 0)) == 1.0)
 
     # use some water and check the remaining decreases
-    lic.commit(181.0)
+    lic.commit(0, 181.0)
     assert(lic.available(Timestep(datetime(2015, 1, 1), 0, 0)) == 184.0)
 
     # check resource state
@@ -56,6 +56,6 @@ def test_license_collection():
     assert(collection.resource_state(Timestep(datetime(2015, 1, 1), 0, 0)) == 1.0)
     assert(collection.resource_state(Timestep(datetime(2015, 2, 1), 0, 0)) > 1.0)
 
-    collection.commit(360.0)
+    collection.commit(0, 360.0)
     assert(collection.available(Timestep(datetime(2015, 12, 1), 0, 0)) == 5.0)
     assert(collection.resource_state(Timestep(datetime(2015, 12, 1), 0, 0)) < 1.0)

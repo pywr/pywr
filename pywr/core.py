@@ -5,6 +5,9 @@ from __future__ import print_function
 
 from pywr import _core
 
+# Cython objects availble in the core namespace
+from pywr._core import ParameterConstantScenario, ParameterArrayIndexed
+
 import os
 from IPython.core.magic_arguments import kwds
 import networkx as nx
@@ -70,6 +73,17 @@ class Timestepper(object):
         return _core.Timestep(current, index, self.delta.days)
 
 
+class Scenario(_core.Scenario):
+    def __init__(self, model, name, size=1):
+        super(Scenario, self).__init__(name, size)
+        model.scenarios.add_scenario(self)
+
+
+class ScenarioCollection(_core.ScenarioCollection):
+    def get_combinations(self):
+        return np.array(super(ScenarioCollection, self).get_combinations())
+
+
 class Model(object):
     """Model of a water supply network"""
     def __init__(self, solver=None, parameters=None):
@@ -117,8 +131,21 @@ class Model(object):
 
         self.node = {}
         self.group = {}
+        self.scenarios = ScenarioCollection()
 
         self.reset()
+
+    @property
+    def number_of_timesteps(self):
+        return len(self.timestepper)
+
+    @property
+    def number_of_scenarios(self):
+        return self.scenarios.get_number_of_scenarios()
+
+    @property
+    def number_of_scenario_combinations(self):
+        return self.scenarios.get_number_of_combinations()
 
     def check(self):
         """Check the validity of the model
@@ -279,7 +306,11 @@ class Model(object):
     def setup(self, ):
         """Setup the model for the first time or if it has changed since
         last run."""
+        ntimesteps = len(self.timestepper)
+        for node in self.nodes():
+            node.setup(self)
         self.solver.setup(self)
+        self.reset()
         self.dirty = False
 
     def reset(self, start=None):
@@ -940,10 +971,10 @@ class BaseInput(BaseNode):
             self.licenses.reset()
         super(BaseInput, self).reset()
 
-    def commit(self, value):
+    def commit(self, scenario_index, value):
         if self.licenses is not None:
-            self.licenses.commit(value)
-        super(BaseInput, self).commit(value)
+            self.licenses.commit(scenario_index, value)
+        super(BaseInput, self).commit(scenario_index, value)
 
 
 class BaseOutput(BaseNode):
@@ -1052,14 +1083,14 @@ class Blender(Link):
         self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
 class StorageInput(BaseInput):
-    def commit(self, volume):
-        super(StorageInput, self).commit(volume)
-        self.parent.commit(-volume)
+    def commit(self, scenario_index, volume):
+        super(StorageInput, self).commit(scenario_index, volume)
+        self.parent.commit(scenario_index, -volume)
 
 class StorageOutput(BaseOutput):
-    def commit(self, volume):
-        super(StorageOutput, self).commit(volume)
-        self.parent.commit(volume)
+    def commit(self, scenario_index, volume):
+        super(StorageOutput, self).commit(scenario_index, volume)
+        self.parent.commit(scenario_index, volume)
 
 class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
                              XMLSeriaizable, _core.Storage)):
@@ -1172,14 +1203,14 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
         super(Storage, self).before(timestep)
         self._change = 0.0
 
-    def commit(self, value):
-        super(Storage, self).commit(value)
+    def commit(self, scenario_index, value):
+        super(Storage, self).commit(scenario_index, value)
         self._change += value
 
     def after(self, timestep):
         super(Storage, self).after(timestep)
         if self.recorder is not None:
-            self.recorder.commit(timestep, self._change)
+            self.recorder.commit(timestep, 0, self._change)
 
 class PiecewiseLink(Node):
     """ An extension of Nodes that represents a non-linear Link with a piece wise cost function.
@@ -1247,7 +1278,7 @@ class PiecewiseLink(Node):
         Set total flow on this link as sum of sublinks
         """
         for lnk in self.sublinks:
-            self.commit(lnk.flow)
+            self.commit_all(lnk.flow)
         # Make sure save is done after setting aggregated flow
         super(PiecewiseLink, self).after(timestep)
 
