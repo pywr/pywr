@@ -572,7 +572,7 @@ class ParameterFunction(Parameter):
         self._func = func
 
     def value(self, ts, scenario_indices=[0]):
-        return self._func(self._parent, index, scenario_indices)
+        return self._func(self._parent, ts, scenario_indices)
 
     @classmethod
     def from_xml(cls, xml):
@@ -585,7 +585,7 @@ class ParameterMonthlyProfile(Parameter):
         self._values = values
 
     def value(self, ts, scenario_indices=[0]):
-        return self._values[index.datetime.month-1]
+        return self._values[ts.datetime.month-1]
 
     @classmethod
     def from_xml(cls, xml):
@@ -598,7 +598,7 @@ class ParameterDailyProfile(Parameter):
         self._values = values
 
     def value(self, ts, scenario_indices=[0]):
-        return self._values[index.dayofyear-1]
+        return self._values[ts.dayofyear-1]
 
     @classmethod
     def from_xml(cls, xml):
