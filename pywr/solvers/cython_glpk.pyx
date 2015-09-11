@@ -219,11 +219,11 @@ cdef class CythonGLPKSolver:
         # update storage node constraint
         for col, storage in enumerate(storages):
             max_volume = storage.get_max_volume(timestep, scenario_indices)
-            avail_volume = max(storage.volume - storage.get_min_volume(timestep, scenario_indices), 0.0)
+            avail_volume = max(storage._volume[scenario_id] - storage.get_min_volume(timestep, scenario_indices), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep.days
-            ub = (max_volume-storage.volume)/timestep.days
+            ub = (max_volume-storage._volume[scenario_id])/timestep.days
             glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # attempt to solve the linear programme
