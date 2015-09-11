@@ -6,7 +6,8 @@ from __future__ import print_function
 from pywr import _core
 
 # Cython objects availble in the core namespace
-from pywr._core import ParameterConstantScenario, ParameterArrayIndexed
+from pywr._core import ParameterConstantScenario, ParameterArrayIndexed, \
+    ParameterArrayIndexedScenarioMonthlyFactors
 
 import os
 from IPython.core.magic_arguments import kwds

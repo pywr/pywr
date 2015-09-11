@@ -22,6 +22,17 @@ cdef class Parameter:
 cdef class ParameterArrayIndexed(Parameter):
     cdef double[:] values
 
+cdef class ParameterConstantScenario(Parameter):
+    cdef Scenario _scenario
+    cdef double[:] _values
+    cdef int _scenario_index
+
+cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
+    cdef double[:] _values
+    cdef double[:, :] _factors
+    cdef Scenario _scenario
+    cdef int _scenario_index
+
 cdef class Recorder:
     cpdef setup(self, model)
     cpdef reset(self)
