@@ -556,7 +556,7 @@ class ParameterDailyProfile(Parameter):
         self._values = values
 
     def value(self, index=None):
-        return self._values[index.dayofyear-1]
+        return self._values[index.datetime.dayofyear-1]
 
     @classmethod
     def from_xml(cls, xml):
@@ -1045,14 +1045,14 @@ class StorageInput(BaseInput):
         super(StorageInput, self).commit(volume)
         self.parent.commit(-volume)
 
+
 class StorageOutput(BaseOutput):
     def commit(self, volume):
         super(StorageOutput, self).commit(volume)
         self.parent.commit(volume)
 
-class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
-                             XMLSeriaizable, _core.Storage)):
-    """A generic storage node
+class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
+    """A generic storage Node
 
     The storage node contains an input node (or nodes) and an output node (or
     nodes).
