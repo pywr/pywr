@@ -365,7 +365,7 @@ def test_new_storage(solver):
     model.run()
 
     assert(supply1.recorder.data == [45])
-    assert(splitter.recorder.data == [-5])
+    assert(splitter.recorder.data == [0])  # New volume is zero
     assert(demand1.recorder.data == [20])
     assert(demand2.recorder.data == [30])
 
