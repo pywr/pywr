@@ -99,7 +99,7 @@ def test_run_timeseries1(solver):
         result = model.step()
         print(model.timestep.datetime)
         supplied.append(demand1.flow)
-    assert_allclose(supplied, [23.0, 22.14, 22.57, 23.0, 23.0])
+    assert_allclose(supplied, [[23.0], [22.14], [22.57], [23.0], [23.0]])
 
 def test_run_cost1(solver):
     model = load_model('cost1.xml', solver=solver)

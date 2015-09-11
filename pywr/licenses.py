@@ -20,7 +20,7 @@ class License(object):
         raise NotImplementedError()
     def resource_state(self, timestep):
         raise NotImplementedError()
-    def commit(self, value):
+    def commit(self, scenario_index, value):
         pass
     def reset(self):
         pass
@@ -86,7 +86,7 @@ class StorageLicense(License):
         self.reset()
     def available(self, timestep):
         return self._remaining
-    def commit(self, value):
+    def commit(self, scenario_index, value):
         self._remaining -= value
     def reset(self):
         self._remaining = self._amount
@@ -140,9 +140,9 @@ class LicenseCollection(License):
             resource_states.append(license.resource_state(timestep))
         resource_states = [r for r in resource_states if r is not None]
         return min(resource_states)
-    def commit(self, value):
+    def commit(self, scenario_index, value):
         for license in self._licenses:
-            license.commit(value)
+            license.commit(scenario_index, value)
     def reset(self):
         for license in self._licenses:
             license.reset()

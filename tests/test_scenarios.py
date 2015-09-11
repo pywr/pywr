@@ -8,6 +8,28 @@ import pywr.core
 from helpers import assert_model
 # To gete simple_linear_model fixture
 from test_analytical import simple_linear_model
+from numpy.testing import assert_equal
+
+
+def test_scenario_collection():
+    """ Basic test of Scenario and ScenarioCollection API """
+
+    model = pywr.core.Model()
+    # There is 1 combination when there are no Scenarios
+    assert(model.scenarios.get_number_of_combinations() == 1)
+    assert(model.number_of_scenario_combinations == 1)
+    assert(model.number_of_scenarios == 0)
+    scA = pywr.core.Scenario(model, 'Scenario A', size=3)
+    assert(model.scenarios.get_number_of_combinations() == 3)
+    assert(model.number_of_scenarios == 1)
+    assert(model.number_of_scenario_combinations == 3)
+    scA = pywr.core.Scenario(model, 'Scenario B', size=2)
+    assert(model.scenarios.get_number_of_combinations() == 6)
+    assert(model.number_of_scenarios == 2)
+    assert(model.number_of_scenario_combinations == 6)
+
+    assert_equal(model.scenarios.get_combinations(),
+                 [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
 
 
 def test_scenario(simple_linear_model, ):

@@ -354,6 +354,6 @@ cdef class CythonLPSolveSolver:
 
         for route, flow in zip(routes, route_flow):
             for node in route:
-                node.commit(flow)
+                node.commit(0, flow)
 
         return route_flow, change_in_storage
