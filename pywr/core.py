@@ -677,6 +677,7 @@ class Drawable(object):
     def __init__(self, *args, **kwargs):
         self.position = kwargs.pop('position', None)
         self.color = kwargs.pop('color', 'black')
+        self.visible = kwargs.pop('visible', True)
         super(Drawable, self).__init__(*args, **kwargs)
 
 
@@ -838,7 +839,6 @@ class BaseNode(with_metaclass(NodeMeta, _core.Node)):
         model.dirty = True
 
         self.color = 'black'
-        self.visible = kwargs.pop('visible', True)
         self.parent = kwargs.pop('parent', None)
         # TODO fix this default hack
         self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
@@ -1112,6 +1112,7 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
             elif key.startswith('output_'):
                 output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
         '''
+        super(Storage, self).__init__(self, *args, **kwargs)
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
@@ -1164,7 +1165,7 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
     def commit(self, value):
         super(Storage, self).commit(value)
         self._change += value
-        
+
 
 class PiecewiseLink(Node):
     """ An extension of Nodes that represents a non-linear Link with a piece wise cost function.
