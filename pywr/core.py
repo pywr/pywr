@@ -1158,7 +1158,7 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable,
             elif key.startswith('output_'):
                 output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
         '''
-        super(Storage, self).__init__(self, *args, **kwargs)
+        super(Storage, self).__init__(*args, **kwargs)
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
