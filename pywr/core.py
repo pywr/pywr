@@ -81,8 +81,7 @@ class Scenario(_core.Scenario):
 
 
 class ScenarioCollection(_core.ScenarioCollection):
-    def get_combinations(self):
-        return np.array(super(ScenarioCollection, self).get_combinations())
+    pass
 
 
 class Model(object):
@@ -135,18 +134,6 @@ class Model(object):
         self.scenarios = ScenarioCollection()
 
         self.reset()
-
-    @property
-    def number_of_timesteps(self):
-        return len(self.timestepper)
-
-    @property
-    def number_of_scenarios(self):
-        return self.scenarios.get_number_of_scenarios()
-
-    @property
-    def number_of_scenario_combinations(self):
-        return self.scenarios.get_number_of_combinations()
 
     def check(self):
         """Check the validity of the model

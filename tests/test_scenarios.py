@@ -16,19 +16,16 @@ def test_scenario_collection():
 
     model = pywr.core.Model()
     # There is 1 combination when there are no Scenarios
-    assert(model.scenarios.get_number_of_combinations() == 1)
-    assert(model.number_of_scenario_combinations == 1)
-    assert(model.number_of_scenarios == 0)
+    assert(len(model.scenarios.combinations) == 1)
+    assert(len(model.scenarios) == 0)
     scA = pywr.core.Scenario(model, 'Scenario A', size=3)
-    assert(model.scenarios.get_number_of_combinations() == 3)
-    assert(model.number_of_scenarios == 1)
-    assert(model.number_of_scenario_combinations == 3)
+    assert(len(model.scenarios.combinations) == 3)
+    assert(len(model.scenarios) == 1)
     scA = pywr.core.Scenario(model, 'Scenario B', size=2)
-    assert(model.scenarios.get_number_of_combinations() == 6)
-    assert(model.number_of_scenarios == 2)
-    assert(model.number_of_scenario_combinations == 6)
+    assert(len(model.scenarios.combinations) == 6)
+    assert(len(model.scenarios) == 2)
 
-    assert_equal(model.scenarios.get_combinations(),
+    assert_equal([comb for comb in model.scenarios.combinations],
                  [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
 
 

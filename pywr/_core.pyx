@@ -1,65 +1,32 @@
 # cython: profile=False
 from pywr._core cimport *
-
+import itertools
 import numpy as np
 cimport numpy as np
 
 cdef double inf = float('inf')
 
+def product(sizes):
+    """ Wrapper for itertools.product to return a np.array """
+    cdef int s
+    for comb in itertools.product(*[range(s) for s in sizes]):
+        yield np.array(comb, dtype=np.int32)
 
-cdef cartesian(sizes, out=None):
-    """
-    Generate a cartesian product of input sizes.
+# TODO can this be a cdef class?
+cdef class ScenarioCombinations:
+    def __init__(self, ScenarioCollection collection):
+        self._collection = collection
 
-    Adapted from Stackoverflow answer (user: pv):
-    http://stackoverflow.com/questions/1208118/using-numpy-to-build-an-array-of-all-combinations-of-two-arrays
+    def __iter__(self, ):
+        cdef Scenario sc
+        return product([sc._size for sc in self._collection._scenarios])
 
-    Parameters
-    ----------
-    sizes : array-like of the number of entries in each combination
-    out : ndarray
-        Array to place the cartesian product in.
+    def __len__(self, ):
+        cdef Scenario sc
+        if len(self._collection._scenarios) > 0:
+            return np.prod([sc._size for sc in self._collection._scenarios])
+        return 1
 
-    Returns
-    -------
-    out : ndarray
-        2-D array of shape (M, len(sizes)) containing cartesian products
-        formed of input arrays.
-
-    Examples
-    --------
-    >>> cartesian([3, 2, 2])
-    array([[0, 0, 0],
-           [0, 0, 1],
-           [0, 1, 0],
-           [0, 1, 1],
-           [1, 0, 0],
-           [1, 0, 1],
-           [1, 1, 0],
-           [1, 1, 1],
-           [2, 0, 0],
-           [2, 0, 1],
-           [2, 1, 0],
-           [2, 1, 1]])
-
-    """
-    cdef int j
-    dtype = np.int32
-
-    n = np.prod([x for x in sizes])
-    if out is None:
-        out = np.zeros([n, len(sizes)], dtype=dtype)
-
-    if len(sizes) == 0:
-        return out
-    array0 = np.arange(sizes[0], dtype=dtype)
-    m = n / sizes[0]
-    out[:,0] = np.repeat(array0, m)
-    if sizes[1:]:
-        cartesian(sizes[1:], out=out[0:m,1:])
-        for j in range(1, array0.size):
-            out[j*m:(j+1)*m,1:] = out[0:m,1:]
-    return out
 
 cdef class Scenario:
     def __init__(self, str name, int size):
@@ -70,6 +37,7 @@ cdef class Scenario:
 cdef class ScenarioCollection:
     def __init__(self, ):
         self._scenarios = []
+        self.combinations = ScenarioCombinations(self)
 
     cpdef get_scenario_index(self, Scenario sc):
         """Return the index of Scenario in this controller."""
@@ -80,29 +48,8 @@ cdef class ScenarioCollection:
             raise ValueError("The same scenario can not be added twice.")
         self._scenarios.append(sc)
 
-    cpdef int get_number_of_scenarios(self):
+    def __len__(self):
         return len(self._scenarios)
-
-    cpdef int get_number_of_combinations(self):
-        """Return the total number of combinations of Scenarios
-
-        This is essentially a product of the sizes of the Scenarios. When
-        there are no Scenarios 1 is returned.
-        """
-        cdef Scenario sc
-        if len(self._scenarios) > 0:
-            return np.prod([sc._size for sc in self._scenarios])
-        return 1
-
-    cpdef int[:, :] get_combinations(self, ):
-        """ Return an 2D array of the all of the scenario combinations.
-
-        Each corresponds to a particular combination's scenario index. For example
-        a Scenario with size 2 will correspond to entries of 0 and 1 to indicate
-        which of the two possibilities to refer to in a given combination.
-        """
-        cdef Scenario sc
-        return cartesian([sc._size for sc in self._scenarios])
 
 
 cdef class Timestep:
@@ -142,8 +89,8 @@ cdef class Recorder:
 cdef class NumpyArrayRecorder(Recorder):
     cdef double[:, :] _data
     cpdef setup(self, model):
-        cdef int ncomb = model.number_of_scenario_combinations
-        cdef int nts = model.number_of_timesteps
+        cdef int ncomb = len(model.scenarios.combinations)
+        cdef int nts = len(model.timestepper)
         self._data = np.zeros((nts, ncomb))
 
     cpdef reset(self):
@@ -375,7 +322,7 @@ cdef class Node:
 
     cpdef setup(self, model):
         """Called before the first run of the model"""
-        cdef int ncomb = model.number_of_scenario_combinations
+        cdef int ncomb = len(model.scenarios.combinations)
         self._flow = np.empty(ncomb, dtype=np.float64)
         self._prev_flow = np.empty(ncomb, dtype=np.float64)
         # Setup any Parameters and Recorders
@@ -500,7 +447,7 @@ cdef class Storage:
 
     cpdef setup(self, model):
         """Called before the first run of the model"""
-        cdef int ncomb = model.number_of_scenario_combinations
+        cdef int ncomb = len(model.scenarios.combinations)
         self._flow = np.empty(ncomb, dtype=np.float64)
         self._volume = np.empty(ncomb, dtype=np.float64)
         if self._recorder is not None:

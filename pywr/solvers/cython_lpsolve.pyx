@@ -280,10 +280,10 @@ cdef class CythonLPSolveSolver:
         self.storages = storages
 
     cpdef object solve(self, model):
-        cdef int[:, :] scenario_combinations = model.scenarios.get_combinations()
+        cdef int[:] scenario_combination
         cdef int scenario_id
-        for scenario_id in range(scenario_combinations.shape[0]):
-            self._solve_scenario(model, scenario_id, scenario_combinations[scenario_id, :])
+        for scenario_id, scenario_combination in enumerate(model.scenarios.combinations):
+            self._solve_scenario(model, scenario_id, scenario_combination)
 
     cdef object _solve_scenario(self, model, int scenario_id, int[:] scenario_indices):
         cdef Node supply

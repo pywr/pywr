@@ -4,11 +4,12 @@ cdef class Scenario:
 
 cdef class ScenarioCollection:
     cdef list _scenarios
+    cdef public ScenarioCombinations combinations
     cpdef get_scenario_index(self, Scenario sc)
     cpdef add_scenario(self, Scenario sc)
-    cpdef int get_number_of_scenarios(self)
-    cpdef int get_number_of_combinations(self)
-    cpdef int[:, :] get_combinations(self, )
+
+cdef class ScenarioCombinations:
+    cdef ScenarioCollection _collection
 
 cdef class Timestep:
     cdef object _datetime
