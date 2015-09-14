@@ -6,7 +6,7 @@ A series of tests of the Scenario objects and associated infrastructure
 """
 import pywr.core
 from helpers import assert_model
-# To gete simple_linear_model fixture
+# To get simple_linear_model fixture
 from test_analytical import simple_linear_model
 from numpy.testing import assert_equal
 
