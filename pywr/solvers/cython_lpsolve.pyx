@@ -314,7 +314,7 @@ cdef class CythonLPSolveSolver:
         # update route properties
         for col, route in enumerate(routes):
             cost = 0.0
-            for node in route:
+            for node in route[:1]:
                 cost += node.get_cost(timestep, scenario_indices)
             set_obj(self.prob, self.idx_col_routes+col, cost)
 
