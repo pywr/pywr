@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 from ..core import Solver
-from .cython_glpk import CythonGLPKSolver as cy_CythonGLPKSolver
-from .cython_lpsolve import CythonLPSolveSolver as cy_CythonLPSolveSolver
+# Attempt to import solvers. These will only be successful if they are built correctly.
+try:
+    from .cython_glpk import CythonGLPKSolver as cy_CythonGLPKSolver
+except ImportError:
+    pass
+
+try:
+    from .cython_lpsolve import CythonLPSolveSolver as cy_CythonLPSolveSolver
+except ImportError:
+    pass
 
 
 class CythonGLPKSolver(Solver):
