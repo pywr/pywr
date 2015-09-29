@@ -72,10 +72,10 @@ class Reservoir(RiverDomainMixin, Storage):
         self.above_curve_cost = kwargs.pop('above_curve_cost', 0.0)
         super(Reservoir, self).__init__(*args, **kwargs)
 
-    def get_cost(self, ts):
+    def get_cost(self, ts, scenario_indices):
         # If no control curve given behaves like a normal Storage
         if self.control_curve is None:
-            return super(Reservoir, self).get_cost(ts)
+            return super(Reservoir, self).get_cost(ts, scenario_indices)
 
         if isinstance(self.control_curve, Parameter):
             control_curve = self.control_curve.value(ts)
@@ -84,7 +84,7 @@ class Reservoir(RiverDomainMixin, Storage):
         # If level above control curve then return above_curve_cost
         if self.current_pc >= control_curve:
             return self.above_curve_cost
-        return super(Reservoir, self).get_cost(ts)
+        return super(Reservoir, self).get_cost(ts, scenario_indices)
 
 
 class River(RiverDomainMixin, Link):

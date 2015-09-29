@@ -1079,18 +1079,18 @@ class StorageInput(BaseInput):
         super(StorageInput, self).commit(scenario_index, volume)
         self.parent.commit(scenario_index, -volume)
 
-    def get_cost(self, ts):
+    def get_cost(self, ts, scenario_indices):
         # Return negative of parent cost
-        return -self.parent.get_cost(ts)
+        return -self.parent.get_cost(ts, scenario_indices)
 
 class StorageOutput(BaseOutput):
     def commit(self, scenario_index, volume):
         super(StorageOutput, self).commit(scenario_index, volume)
         self.parent.commit(scenario_index, volume)
 
-    def get_cost(self, ts):
+    def get_cost(self, ts, scenario_indices):
         # Return parent cost
-        return self.parent.get_cost(ts)
+        return self.parent.get_cost(ts, scenario_indices)
 
 class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
     """A generic storage Node
@@ -1180,17 +1180,6 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
         # apply new name
         self.__name = name
         self.model.node[name] = self
-
-    @property
-    def cost(self):
-        return sum(node_output.cost for node_output in self.outputs)
-
-    @cost.setter
-    def cost(self, value):
-        for node_input in self.inputs:
-            node_input.cost = -value
-        for node_output in self.outputs:
-            node_output.cost = value
 
     def check(self):
         pass  # TODO
