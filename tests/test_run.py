@@ -364,10 +364,10 @@ def test_new_storage(solver):
 
     model.run()
 
-    assert(supply1.recorder.data == [45])
-    assert(splitter.recorder.data == [0])  # New volume is zero
-    assert(demand1.recorder.data == [20])
-    assert(demand2.recorder.data == [30])
+    assert_allclose(supply1.recorder.data, [[45]], atol=1e-7)
+    assert_allclose(splitter.recorder.data, [[0]], atol=1e-7)  # New volume is zero
+    assert_allclose(demand1.recorder.data, [[20]], atol=1e-7)
+    assert_allclose(demand2.recorder.data, [[30]], atol=1e-7)
 
 def test_reset(solver):
     """Test model reset"""
