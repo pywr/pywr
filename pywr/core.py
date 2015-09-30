@@ -118,6 +118,9 @@ class Model(object):
         self.failure = set()
         self.dirty = True
 
+        # Import this here once everything else is defined.
+        # This avoids circular references in the solver classes
+        from .solvers import SolverMeta
         if solver is not None:
             # use specific solver
             try:
@@ -126,7 +129,7 @@ class Model(object):
                 raise KeyError('Unrecognised solver: {}'.format(solver))
         else:
             # use default solver
-            self.solver = solvers.CythonGLPKSolver()
+            self.solver = SolverMeta.get_default()()
 
 
         self.node = {}
@@ -427,21 +430,6 @@ class Model(object):
         else:
             return os.path.abspath(os.path.join(os.path.dirname(self.xml_path), path))
 
-class SolverMeta(type):
-    """Solver metaclass used to keep a registry of Solver classes"""
-    solvers = {}
-    def __new__(cls, clsname, bases, attrs):
-        newclass = super(SolverMeta, cls).__new__(cls, clsname, bases, attrs)
-        cls.solvers[newclass.name.lower()] = newclass
-        return newclass
-
-class Solver(with_metaclass(SolverMeta)):
-    """Solver base class from which all solvers should inherit"""
-    name = 'default'
-    def setup(self, model):
-        raise NotImplementedError('Solver should be subclassed to provide setup()')
-    def solve(self, model, timestep):
-        raise NotImplementedError('Solver should be subclassed to provide solve()')
 
 def pop_kwarg_parameter(kwargs, key, default):
     """Pop a parameter from the keyword arguments dictionary
