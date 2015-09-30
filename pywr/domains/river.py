@@ -1,5 +1,5 @@
 
-from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, ParameterFunction, pop_kwarg_parameter
+from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, Parameter, ParameterFunction, pop_kwarg_parameter
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 
@@ -51,9 +51,40 @@ class Catchment(RiverDomainMixin, Input):
             return
         super(Catchment, self).__setattr__(name, value)
 
+
 class Reservoir(RiverDomainMixin, Storage):
+    """A reservoir node with control curve.
+
+    The Reservoir is a subclass of Storage with additional functionality to provide a
+    simple control curve. The Reservoir has above_curve_cost when it is above its curve
+    and the user defined cost when it is below. Typically the costs are negative
+    to represent a benefit of filling the reservoir when it is below its curve.
+    """
     def __init__(self, *args, **kwargs):
+        """
+
+        Keywords:
+            control_curve - A Parameter object that can return the control curve position,
+                as a percentage of fill, for the given timestep.
+            above_curve_cost - The cost to apply when the reservoir is above its curve.
+        """
+        self.control_curve = pop_kwarg_parameter(kwargs, 'control_curve', None)
+        self.above_curve_cost = kwargs.pop('above_curve_cost', 0.0)
         super(Reservoir, self).__init__(*args, **kwargs)
+
+    def get_cost(self, ts, scenario_indices):
+        # If no control curve given behaves like a normal Storage
+        if self.control_curve is None:
+            return super(Reservoir, self).get_cost(ts, scenario_indices)
+
+        if isinstance(self.control_curve, Parameter):
+            control_curve = self.control_curve.value(ts)
+        else:
+            control_curve = self.control_curve
+        # If level above control curve then return above_curve_cost
+        if self.current_pc >= control_curve:
+            return self.above_curve_cost
+        return super(Reservoir, self).get_cost(ts, scenario_indices)
 
 
 class River(RiverDomainMixin, Link):

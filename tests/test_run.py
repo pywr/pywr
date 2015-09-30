@@ -26,7 +26,7 @@ def test_run_simple1(solver):
 
     # check results
     demand1 = model.node['demand1']
-    assert_allclose(demand1.flow, 10.0)
+    assert_allclose(demand1.flow, 10.0, atol=1e-7)
 
     # check the timestamp incremented
     assert(model.timestepper.current - t0 == datetime.timedelta(1))
@@ -42,8 +42,8 @@ def test_run_reservoir1(solver):
     supply1 = model.node['supply1']
     for demand, stored in [(10.0, 25.0), (10.0, 15.0), (10.0, 5.0), (5.0, 0.0), (0.0, 0.0)]:
         result = model.step()
-        assert_allclose(demand1.flow, demand)
-        assert_allclose(supply1.volume, stored)
+        assert_allclose(demand1.flow, demand, atol=1e-7)
+        assert_allclose(supply1.volume, stored, atol=1e-7)
 
 
 def test_run_reservoir2(solver):
@@ -58,8 +58,8 @@ def test_run_reservoir2(solver):
     supply1 = model.node['supply1']
     for demand, stored in [(15.0, 25.0), (15.0, 15.0), (15.0, 5.0), (10.0, 0.0), (5.0, 0.0)]:
         result = model.step()
-        assert_allclose(demand1.flow, demand)
-        assert_allclose(supply1.volume,  stored)
+        assert_allclose(demand1.flow, demand, atol=1e-7)
+        assert_allclose(supply1.volume,  stored, atol=1e-7)
 
 
 def test_run_river1(solver):
@@ -68,7 +68,7 @@ def test_run_river1(solver):
 
     result = model.step()
     demand1 = model.node['demand1']
-    assert_allclose(demand1.flow, 5.0)
+    assert_allclose(demand1.flow, 5.0, atol=1e-7)
 
 
 # Contains a RiverSplit which needs addressing
@@ -99,7 +99,7 @@ def test_run_timeseries1(solver):
         result = model.step()
         print(model.timestep.datetime)
         supplied.append(demand1.flow)
-    assert_allclose(supplied, [[23.0], [22.14], [22.57], [23.0], [23.0]])
+    assert_allclose(supplied, [[23.0], [22.14], [22.57], [23.0], [23.0]], atol=1e-7)
 
 def test_run_cost1(solver):
     model = load_model('cost1.xml', solver=solver)
@@ -113,24 +113,24 @@ def test_run_cost1(solver):
 
     result = model.step()
     # check entire demand was supplied by supply1
-    assert_allclose(supply1.flow, 10.0)
-    assert_allclose(supply2.flow, 0.0)
-    assert_allclose(demand1.flow, 10.0)
+    assert_allclose(supply1.flow, 10.0, atol=1e-7)
+    assert_allclose(supply2.flow, 0.0, atol=1e-7)
+    assert_allclose(demand1.flow, 10.0, atol=1e-7)
 
     # increase demand to more than supply1 can provide on it's own
     # and check that supply2 is used to pick up the slack
     demand1.max_flow = 20.0
     result = model.step()
-    assert_allclose(supply1.flow, 15.0)
-    assert_allclose(supply2.flow, 5.0)
-    assert_allclose(demand1.flow, 20.0)
+    assert_allclose(supply1.flow, 15.0, atol=1e-7)
+    assert_allclose(supply2.flow, 5.0, atol=1e-7)
+    assert_allclose(demand1.flow, 20.0, atol=1e-7)
 
     # supply as much as possible, even if it isn't enough
     demand1.max_flow = 40.0
     result = model.step()
-    assert_allclose(supply1.flow, 15.0)
-    assert_allclose(supply2.flow, 15.0)
-    assert_allclose(demand1.flow, 30.0)
+    assert_allclose(supply1.flow, 15.0, atol=1e-7)
+    assert_allclose(supply2.flow, 15.0, atol=1e-7)
+    assert_allclose(demand1.flow, 30.0, atol=1e-7)
 
 
 def test_run_license1(solver):
@@ -150,7 +150,7 @@ def test_run_license1(solver):
     # daily license is limit
     result = model.step()
     d1 = model.node['demand1']
-    assert_allclose(d1.flow, 5.0)
+    assert_allclose(d1.flow, 5.0, atol=1e-7)
 
     # resource state is getting worse
     assert(annual_lic.resource_state(model.timestep) < 1.0)
@@ -158,13 +158,13 @@ def test_run_license1(solver):
     # annual license is limit
     result = model.step()
     d1 = model.node['demand1']
-    assert_allclose(d1.flow, 2.0)
+    assert_allclose(d1.flow, 2.0, atol=1e-7)
 
     # annual license is exhausted
     result = model.step()
     d1 = model.node['demand1']
-    assert_allclose(d1.flow, 0.0)
-    assert_allclose(annual_lic.resource_state(model.timestep), 0.0)
+    assert_allclose(d1.flow, 0.0, atol=1e-7)
+    assert_allclose(annual_lic.resource_state(model.timestep), 0.0, atol=1e-7)
 
 
 def test_run_license2(solver):
@@ -180,11 +180,11 @@ def test_run_license2(solver):
     # daily license limit
     result = model.step()
     d1 = model.node['demand1']
-    assert_allclose(d1.flow, 5.0)
+    assert_allclose(d1.flow, 5.0, atol=1e-7)
 
     # annual license limit
     result = model.step()
-    assert_allclose(d1.flow, 2.0)
+    assert_allclose(d1.flow, 2.0, atol=1e-7)
 
 
 @pytest.mark.xfail
@@ -199,7 +199,7 @@ def test_run_license_group(solver):
 
     result = model.step()
     d1 = model.node['demand1']
-    assert_allclose(d1.flow, 6.0)
+    assert_allclose(d1.flow, 6.0, atol=1e-7)
 
 
 def test_run_bottleneck(solver):
@@ -208,7 +208,7 @@ def test_run_bottleneck(solver):
     result = model.step()
     d1 = model.node['demand1']
     d2 = model.node['demand2']
-    assert_allclose(d1.flow+d2.flow, 15.0)
+    assert_allclose(d1.flow+d2.flow, 15.0, atol=1e-7)
 
 
 @pytest.mark.xfail
@@ -243,8 +243,8 @@ def test_run_discharge_upstream(solver):
     model.step()
     demand = model.node['demand1']
     term = model.node['term1']
-    assert_allclose(demand.flow, 8.0)
-    assert_allclose(term.flow, 0.0)
+    assert_allclose(demand.flow, 8.0, atol=1e-7)
+    assert_allclose(term.flow, 0.0, atol=1e-7)
 
 def test_run_discharge_downstream(solver):
     '''Test river with inline discharge (downstream)
@@ -256,8 +256,8 @@ def test_run_discharge_downstream(solver):
     model.step()
     demand = model.node['demand1']
     term = model.node['term1']
-    assert_allclose(demand.flow, 5.0)
-    assert_allclose(term.flow, 3.0)
+    assert_allclose(demand.flow, 5.0, atol=1e-7)
+    assert_allclose(term.flow, 3.0, atol=1e-7)
 
 
 @pytest.mark.xfail
@@ -271,7 +271,7 @@ def test_run_blender1(solver):
     supply3 = model.node['supply3']
 
     # check blender ratio
-    assert_allclose(blender.properties['ratio'].value(model.timestamp), 0.75)
+    assert_allclose(blender.properties['ratio'].value(model.timestamp), 0.75, atol=1e-7)
 
     # check supplies have been connected correctly
     assert(len(blender.slots) == 2)
@@ -280,8 +280,8 @@ def test_run_blender1(solver):
 
     # test model results
     result = model.step()
-    assert_allclose(result[3][(supply1, blender)], 7.5)
-    assert_allclose(result[3][(supply2, blender)], 2.5)
+    assert_allclose(result[3][(supply1, blender)], 7.5, atol=1e-7)
+    assert_allclose(result[3][(supply2, blender)], 2.5, atol=1e-7)
 
 @pytest.mark.xfail
 def test_run_blender2(solver):
@@ -294,8 +294,8 @@ def test_run_blender2(solver):
 
     # test model results
     result = model.step()
-    assert_allclose(result[3][(supply1, blender)], 3.0)
-    assert_allclose(result[3][(supply2, blender)], 7.0)
+    assert_allclose(result[3][(supply1, blender)], 3.0, atol=1e-7)
+    assert_allclose(result[3][(supply2, blender)], 7.0, atol=1e-7)
 
 @pytest.mark.xfail
 def test_run_demand_discharge(solver):
@@ -364,10 +364,10 @@ def test_new_storage(solver):
 
     model.run()
 
-    assert(supply1.recorder.data == [45])
-    assert(splitter.recorder.data == [0])  # New volume is zero
-    assert(demand1.recorder.data == [20])
-    assert(demand2.recorder.data == [30])
+    assert_allclose(supply1.recorder.data, [[45]], atol=1e-7)
+    assert_allclose(splitter.recorder.data, [[0]], atol=1e-7)  # New volume is zero
+    assert_allclose(demand1.recorder.data, [[20]], atol=1e-7)
+    assert_allclose(demand2.recorder.data, [[30]], atol=1e-7)
 
 def test_reset(solver):
     """Test model reset"""
@@ -375,11 +375,11 @@ def test_reset(solver):
     supply1 = model.node['supply1']
     license_collection = supply1.licenses
     license = [lic for lic in license_collection._licenses if isinstance(lic, pywr.licenses.AnnualLicense)][0]
-    assert_allclose(license.available(None), 7.0)
+    assert_allclose(license.available(None), 7.0, atol=1e-7)
     model.step()
-    assert_allclose(license.available(None), 2.0)
+    assert_allclose(license.available(None), 2.0, atol=1e-7)
     model.reset()
-    assert_allclose(license.available(None), 7.0)
+    assert_allclose(license.available(None), 7.0, atol=1e-7)
 
 
 def test_run(solver):
