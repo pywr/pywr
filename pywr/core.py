@@ -586,7 +586,7 @@ class ParameterDailyProfile(Parameter):
         self._values = values
 
     def value(self, ts, scenario_indices=[0]):
-        return self._values[index.datetime.dayofyear-1]
+        return self._values[ts.datetime.dayofyear-1]
 
     @classmethod
     def from_xml(cls, xml):
