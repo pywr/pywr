@@ -94,12 +94,9 @@ def test_run_timeseries1(solver):
 
     # check results
     demand1 = model.node['demand1']
-    supplied = []
-    for n in range(0, 5):
+    for expected in (23.0, 22.14, 22.57, 23.0, 23.0):
         result = model.step()
-        print(model.timestep.datetime)
-        supplied.append(demand1.flow)
-    assert_allclose(supplied, [[23.0], [22.14], [22.57], [23.0], [23.0]], atol=1e-7)
+        assert_allclose(demand1.flow, expected, atol=1e-7)
 
 def test_run_cost1(solver):
     model = load_model('cost1.xml', solver=solver)
