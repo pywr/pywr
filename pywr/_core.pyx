@@ -455,33 +455,58 @@ cdef class BaseLink(Node):
 
 cdef class BaseInput(Node):
     def __init__(self, *args, **kwargs):
-        self.licenses = None
+        self._licenses = None
         super(BaseInput, self).__init__(*args, **kwargs)
+
+    property licenses:
+        def __get__(self):
+            return self._licenses
+        def __set__(self, value):
+            self._licenses = value
 
     cpdef get_max_flow(self, Timestep timestep, int[:] scenario_indices=None):
         """ Calculate maximum flow including licenses """
         max_flow = Node.get_max_flow(self, timestep, scenario_indices)
-        if self.licenses is not None:
+        if self._licenses is not None:
             # TODO make licences Scenario aware
             if len(scenario_indices) > 0:
                 import warnings
                 warnings.warn("Licences are not scenario aware!")
-            max_flow = min(max_flow, self.licenses.available(timestep))
+            max_flow = min(max_flow, self._licenses.available(timestep))
         return max_flow
 
     cpdef reset(self, ):
-        if self.licenses is not None:
-            self.licenses.reset()
+        if self._licenses is not None:
+            self._licenses.reset()
         Node.reset(self)
 
     cpdef commit(self, int scenario_index, double value):
-        if self.licenses is not None:
-            self.licenses.commit(scenario_index, value)
+        if self._licenses is not None:
+            self._licenses.commit(scenario_index, value)
         Node.commit(self, scenario_index, value)
 
 
 cdef class BaseOutput(Node):
     pass
+
+
+cdef class StorageInput(BaseInput):
+    cpdef commit(self, int scenario_index, double volume):
+        BaseInput.commit(self, scenario_index, volume)
+        self._parent.commit(scenario_index, -volume)
+
+    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
+        # Return negative of parent cost
+        return -self.parent.get_cost(ts, scenario_indices)
+
+cdef class StorageOutput(BaseOutput):
+    cpdef commit(self, int scenario_index, double volume):
+        BaseOutput.commit(self, scenario_index, volume)
+        self._parent.commit(scenario_index, volume)
+
+    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
+        # Return parent cost
+        return self.parent.get_cost(ts, scenario_indices)
 
 cdef class Storage(AbstractNode):
     def __cinit__(self, ):

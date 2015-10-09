@@ -7,8 +7,9 @@ from pywr import _core
 
 # Cython objects availble in the core namespace
 from pywr._core import ParameterConstantScenario, ParameterArrayIndexed, \
-    ParameterArrayIndexedScenarioMonthlyFactors
-from pywr._core import Node as BaseNode, BaseInput, BaseLink, BaseOutput
+    ParameterArrayIndexedScenarioMonthlyFactors, BaseInput, BaseLink, BaseOutput, \
+    StorageInput, StorageOutput
+from pywr._core import Node as BaseNode
 import os
 from IPython.core.magic_arguments import kwds
 import networkx as nx
@@ -961,23 +962,6 @@ class Blender(Link):
 
         self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
-class StorageInput(BaseInput):
-    def commit(self, scenario_index, volume):
-        super(StorageInput, self).commit(scenario_index, volume)
-        self.parent.commit(scenario_index, -volume)
-
-    def get_cost(self, ts, scenario_indices):
-        # Return negative of parent cost
-        return -self.parent.get_cost(ts, scenario_indices)
-
-class StorageOutput(BaseOutput):
-    def commit(self, scenario_index, volume):
-        super(StorageOutput, self).commit(scenario_index, volume)
-        self.parent.commit(scenario_index, volume)
-
-    def get_cost(self, ts, scenario_indices):
-        # Return parent cost
-        return self.parent.get_cost(ts, scenario_indices)
 
 class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
     """A generic storage Node

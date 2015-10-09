@@ -78,6 +78,9 @@ cdef class Node(AbstractNode):
     cpdef get_conversion_factor(self)
     cdef set_parameters(self, Timestep ts, int[:] scenario_indices=*)
 
+cdef class BaseInput(Node):
+    cdef object _licenses
+
 cdef class Storage(AbstractNode):
     cdef public double[:] _volume
     cdef double _initial_volume
