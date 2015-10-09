@@ -1172,14 +1172,6 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
     def check(self):
         pass  # TODO
 
-    def before(self, timestep):
-        super(Storage, self).before(timestep)
-        self._change = 0.0
-
-    def commit(self, scenario_index, value):
-        super(Storage, self).commit(scenario_index, value)
-        self._change += value
-
 
 class PiecewiseLink(Node):
     """ An extension of Nodes that represents a non-linear Link with a piece wise cost function.
