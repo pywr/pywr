@@ -8,7 +8,7 @@ from pywr import _core
 # Cython objects availble in the core namespace
 from pywr._core import ParameterConstantScenario, ParameterArrayIndexed, \
     ParameterArrayIndexedScenarioMonthlyFactors
-
+from pywr._core import Node as BaseNode
 import os
 from IPython.core.magic_arguments import kwds
 import networkx as nx
@@ -668,26 +668,10 @@ class PropertiesDict(dict):
             value = ParameterConstant(value)
         dict.__setitem__(self, key, value)
 
-class Domain(object):
+class Domain(_core.Domain):
     def __init__(self, name='default', **kwargs):
-        self.name = name
+        super(Domain, self).__init__(name)
         self.color = kwargs.pop('color', '#FF6600')
-
-
-class HasDomain(object):
-    def __init__(self, *args, **kwargs):
-        self._domain = kwargs.pop('domain', None)
-        super(HasDomain, self).__init__(*args, **kwargs)
-
-    @property
-    def domain(self, ):
-        if self._domain is None and self.parent is not None:
-            return self.parent.domain
-        return self._domain
-
-    @domain.setter
-    def domain(self, value):
-        self._domain = value
 
 class Drawable(object):
     """Mixin class for objects that are drawable on a diagram of the network.
@@ -834,7 +818,7 @@ class NodeMeta(type):
         node_registry[name.lower()] = cls
 
 
-class BaseNode(with_metaclass(NodeMeta, _core.Node)):
+class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseNode)):
     """Base object from which all other nodes inherit
 
     This BaseNode is not connectable by default, and the Node class should
@@ -852,26 +836,14 @@ class BaseNode(with_metaclass(NodeMeta, _core.Node)):
         name : string
             A unique name for the node
         """
-        self.model = model
-        model.graph.add_node(self)
-        model.dirty = True
-
+        super(Node, self).__init__(model, name, **kwargs)
         self.color = 'black'
-        self.parent = kwargs.pop('parent', None)
-        # TODO fix this default hack
-        self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
-
-        if not hasattr(self, 'name'):
-            # set name, avoiding issues with multiple inheritance
-            self.__name = None
-            self.name = name
 
         self.slots = {}
         self.min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
         self.max_flow = pop_kwarg_parameter(kwargs, 'max_flow', float('inf'))
         self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
         self.conversion_factor = pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
-        super(BaseNode, self).__init__(**kwargs)
 
     def __repr__(self):
         if self.name:
@@ -880,50 +852,12 @@ class BaseNode(with_metaclass(NodeMeta, _core.Node)):
         else:
             return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
 
-    @property
-    def name(self):
-        return self.__name
-
-    @name.setter
-    def name(self, name):
-        # check for name collision
-        if name in self.model.node:
-            raise ValueError('A node with the name "{}" already exists.'.format(name))
-        # remove old name
-        try:
-            del(self.model.node[self.__name])
-        except KeyError:
-            pass
-        # apply new name
-        self.__name = name
-        self.model.node[name] = self
-
-    @property
-    def domain(self, ):
-        try:
-            return self._domain
-        except AttributeError:
-            return self.parent.domain
-
-    @domain.setter
-    def domain(self, value):
-        if self.parent is None:
-            raise AttributeError("Cannot set the domain of a Node that has a parent.")
-        self._domain = value
-
     def check(self):
         """Check the node is valid
 
         Raises an exception if the node is invalid
         """
         pass
-
-    def reset(self):
-        pass
-
-
-class Node(HasDomain, Drawable, Connectable, XMLSeriaizable, BaseNode):
-    pass
 
 
 class BaseLink(BaseNode):
@@ -937,7 +871,7 @@ class BaseInput(BaseNode):
 
     def get_max_flow(self, timestep, scenario_indices):
         """ Calculate maximum flow including licenses """
-        max_flow = super(BaseNode, self).get_max_flow(timestep, scenario_indices)
+        max_flow = super(BaseInput, self).get_max_flow(timestep, scenario_indices)
         if self.licenses is not None:
             # TODO make licences Scenario aware
             if len(scenario_indices) > 0:
@@ -1080,7 +1014,7 @@ class StorageOutput(BaseOutput):
         # Return parent cost
         return self.parent.get_cost(ts, scenario_indices)
 
-class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
+class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
     """A generic storage Node
 
     In terms of connections in the network the Storage node behaves like any
@@ -1103,16 +1037,7 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
     sub-nodes record flow as normal.
     """
     def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
-        self.model = model
-        model.graph.add_node(self)
-        model.dirty = True
-        if not hasattr(self, 'name'):
-            # set name, avoiding issues with multiple inheritance
-            self.__name = None
-            self.name = name
-        self.parent = kwargs.pop('parent', None)
-        # TODO fix this default hack
-        self.recorder = kwargs.pop('recorder', _core.NumpyArrayRecorder(len(model.timestepper)))
+        super(Storage, self).__init__(model, name, **kwargs)
 
         self.outputs = []
         for n in range(0, num_outputs):
@@ -1137,7 +1062,7 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
             elif key.startswith('output_'):
                 output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
         '''
-        super(Storage, self).__init__(*args, **kwargs)
+
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
@@ -1150,24 +1075,6 @@ class Storage(with_metaclass(NodeMeta, HasDomain, Drawable, Connectable, XMLSeri
                 yield self.outputs[0]
             else:
                 yield self.outputs[slot_name]
-
-    @property
-    def name(self):
-        return self.__name
-
-    @name.setter
-    def name(self, name):
-        # check for name collision
-        if name in self.model.node:
-            raise ValueError('A node with the name "{}" already exists.'.format(name))
-        # remove old name
-        try:
-            del(self.model.node[self.__name])
-        except KeyError:
-            pass
-        # apply new name
-        self.__name = name
-        self.model.node[name] = self
 
     def check(self):
         pass  # TODO

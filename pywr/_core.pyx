@@ -178,7 +178,145 @@ cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
         cdef int imth = ts.datetime.month-1
         return self._values[ts._index]*self._factors[scenario_indices[self._scenario_index], imth]
 
-cdef class Node:
+cdef class Domain:
+    """ Domain class which all Node objects must have. """
+    def __init__(self, name):
+        self.name = name
+
+cdef class AbstractNode:
+    def __init__(self, model, name, **kwargs):
+        self._model = model
+        model.graph.add_node(self)
+        model.dirty = True
+        self.name = name
+
+        self._parent = kwargs.pop('parent', None)
+        self._domain = kwargs.pop('domain', None)
+        # TODO fix this default hack
+        self._recorder = kwargs.pop('recorder', NumpyArrayRecorder(len(model.timestepper)))
+
+    property cost:
+        """The cost per unit flow via the node
+
+        The cost may be set to either a constant (i.e. a float) or a Parameter.
+
+        The value returned can be positive (i.e. a cost), negative (i.e. a
+        benefit) or netural. Typically supply nodes will have an associated
+        cost and demands will provide a benefit.
+        """
+        def __set__(self, value):
+            if isinstance(value, Parameter):
+                self._cost_param = value
+            else:
+                self._cost_param = None
+                self._cost = value
+
+    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
+        """Get the cost per unit flow at a given timestep
+        """
+        if self._cost_param is None:
+            return self._cost
+        return self._cost_param.value(ts, scenario_indices)
+
+    property name:
+        def __get__(self):
+            return self._name
+
+        def __set__(self, name):
+            # check for name collision
+            if name in self.model.node:
+                raise ValueError('A node with the name "{}" already exists.'.format(name))
+            # remove old name
+            try:
+                del(self.model.node[self._name])
+            except KeyError:
+                pass
+            # apply new name
+            self._name = name
+            self.model.node[name] = self
+
+    property model:
+        """The recorder for the node, e.g. a NumpyArrayRecorder
+        """
+        def __get__(self):
+            return self._model
+
+        def __set__(self, value):
+            self._model = value
+
+    property recorder:
+        """The recorder for the node, e.g. a NumpyArrayRecorder
+        """
+        def __get__(self):
+            return self._recorder
+
+        def __set__(self, value):
+            self._recorder = value
+
+    property domain:
+        def __get__(self):
+            if self._domain is None and self._parent is not None:
+                return self._parent._domain
+            return self._domain
+
+        def __set__(self, value):
+            if self._parent is not None:
+                import warnings
+                warnings.warn("Setting domain property of node with a parent.")
+            self._domain = value
+
+    property parent:
+        """The parent Node/Storage of this object.
+        """
+        def __get__(self):
+            return self._parent
+
+        def __set__(self, value):
+            self._parent = value
+
+
+    cpdef setup(self, model):
+        """Called before the first run of the model"""
+        cdef int ncomb = len(model.scenarios.combinations)
+        self._flow = np.empty(ncomb, dtype=np.float64)
+        if self._recorder is not None:
+            self._recorder.setup(model)
+        if self._cost_param is not None:
+            self._cost_param.setup(model)
+        if self._recorder is not None:
+            self._recorder.setup(model)
+
+    cpdef reset(self):
+        """Called at the beginning of a run"""
+        cdef int i
+        for i in range(self._flow.shape[0]):
+            self._flow[i] = 0.0
+        if self._recorder is not None:
+            self._recorder.reset()
+
+    cpdef before(self, Timestep ts):
+        """Called at the beginning of the timestep"""
+        cdef int i
+        for i in range(self._flow.shape[0]):
+            self._flow[i] = 0.0
+
+    cpdef commit(self, int scenario_index, double value):
+        """Called once for each route the node is a member of"""
+        self._flow[scenario_index] += value
+
+    cpdef commit_all(self, double[:] value):
+        """Called once for each route the node is a member of"""
+        cdef int i
+        for i in range(self._flow.shape[0]):
+            self._flow[i] += value[i]
+
+    cpdef after(self, Timestep ts):
+        pass
+
+    cpdef check(self,):
+        pass
+
+cdef class Node(AbstractNode):
     """Node class from which all others inherit
     """
     def __cinit__(self):
@@ -186,7 +324,7 @@ cdef class Node:
         """
         # Initialised attributes to zero
         self._min_flow = 0.0
-        self._max_flow = 0.0
+        self._max_flow = inf
         self._cost = 0.0
         # Conversion is default to unity so that there is no loss
         self._conversion_factor = 1.0
@@ -197,6 +335,7 @@ cdef class Node:
         self._cost_param = None
         self._conversion_factor_param = None
         self._recorder = None
+        self._domain = None
 
     property prev_flow:
         """Total flow via this node in the previous timestep
@@ -255,29 +394,6 @@ cdef class Node:
             return self._max_flow
         return self._max_flow_param.value(ts, scenario_indices)
 
-    property cost:
-        """The cost per unit flow via the node
-
-        The cost may be set to either a constant (i.e. a float) or a Parameter.
-
-        The value returned can be positive (i.e. a cost), negative (i.e. a
-        benefit) or netural. Typically supply nodes will have an associated
-        cost and demands will provide a benefit.
-        """
-        def __set__(self, value):
-            if isinstance(value, Parameter):
-                self._cost_param = value
-            else:
-                self._cost_param = None
-                self._cost = value
-
-    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
-        """Get the cost per unit flow at a given timestep
-        """
-        if self._cost_param is None:
-            return self._cost
-        return self._cost_param.value(ts, scenario_indices)
-
     property conversion_factor:
         """The conversion between inflow and outflow for the node
 
@@ -311,17 +427,9 @@ cdef class Node:
         if self._cost_param is not None:
             self._cost = self._cost_param.value(ts, scenario_indices)
 
-    property recorder:
-        """The recorder for the node, e.g. a NumpyArrayRecorder
-        """
-        def __get__(self):
-            return self._recorder
-
-        def __set__(self, value):
-            self._recorder = value
-
     cpdef setup(self, model):
         """Called before the first run of the model"""
+        AbstractNode.setup(self, model)
         cdef int ncomb = len(model.scenarios.combinations)
         self._flow = np.empty(ncomb, dtype=np.float64)
         self._prev_flow = np.empty(ncomb, dtype=np.float64)
@@ -335,37 +443,13 @@ cdef class Node:
         if self._recorder is not None:
             self._recorder.setup(model)
 
-    cpdef reset(self):
-        """Called at the beginning of a run"""
-        cdef int i
-        for i in range(self._flow.shape[0]):
-            self._flow[i] = 0.0
-        if self._recorder is not None:
-            self._recorder.reset()
-
-    cpdef before(self, Timestep ts):
-        """Called at the beginning of the timestep"""
-        cdef int i
-        for i in range(self._flow.shape[0]):
-            self._flow[i] = 0.0
-
-    cpdef commit(self, int scenario_index, double value):
-        """Called once for each route the node is a member of"""
-        self._flow[scenario_index] += value
-
-    cpdef commit_all(self, double[:] value):
-        """Called once for each route the node is a member of"""
-        cdef int i
-        for i in range(self._flow.shape[0]):
-            self._flow[i] += value[i]
-
     cpdef after(self, Timestep ts):
         """Called at the end of the timestep"""
         self._prev_flow[:] = self._flow[:]
         if self._recorder is not None:
             self._recorder.commit_all(ts, self._flow)
 
-cdef class Storage:
+cdef class Storage(AbstractNode):
     def __cinit__(self, ):
         self._initial_volume = 0.0
         self._min_volume = 0.0
@@ -375,6 +459,8 @@ cdef class Storage:
         self._min_volume_param = None
         self._max_volume_param = None
         self._cost_param = None
+        self._recorder = None
+        self._domain = None
 
     property volume:
         def __get__(self, ):
@@ -420,19 +506,6 @@ cdef class Storage:
             return self._max_volume
         return self._max_volume_param.value(ts, scenario_indices)
 
-    property cost:
-        def __set__(self, value):
-            self._cost_param = None
-            if isinstance(value, Parameter):
-                self._cost_param = value
-            else:
-                self._cost = value
-
-    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
-        if self._cost_param is None:
-            return self._cost
-        return self._cost_param.value(ts, scenario_indices)
-
     property current_pc:
         " Current percentage full "
         def __get__(self, ):
@@ -445,41 +518,28 @@ cdef class Storage:
         def __set__(self, value):
             self._recorder = value
 
+    property domain:
+        def __get__(self):
+            return self._domain
+
+        def __set__(self, value):
+            self._domain = value
+
     cpdef setup(self, model):
         """Called before the first run of the model"""
+        AbstractNode.setup(self, model)
         cdef int ncomb = len(model.scenarios.combinations)
-        self._flow = np.empty(ncomb, dtype=np.float64)
         self._volume = np.empty(ncomb, dtype=np.float64)
-        if self._recorder is not None:
-            self._recorder.setup(model)
 
     cpdef reset(self):
         """Called at the beginning of a run"""
+        AbstractNode.reset(self)
         cdef int i
-        for i in range(self._flow.shape[0]):
-            self._flow[i] = 0.0
+        for i in range(self._volume.shape[0]):
             self._volume[i] = self._initial_volume
-        if self._recorder is not None:
-            self._recorder.reset()
-
-    cpdef before(self, Timestep ts):
-        """Called at the beginning of the timestep"""
-        cdef int i
-        for i in range(self._flow.shape[0]):
-            self._flow[i] = 0.0
-
-    cpdef commit(self, int scenario_index, double value):
-        """Called once for each route the node is a member of"""
-        self._flow[scenario_index] += value
-
-    cpdef commit_all(self, double[:] value):
-        """Called once for each route the node is a member of"""
-        cdef int i
-        for i in range(self._flow.shape[0]):
-            self._flow[i] += value[i]
 
     cpdef after(self, Timestep ts):
-        # Update storage
+        AbstractNode.after(self, ts)
         cdef int i
         for i in range(self._flow.shape[0]):
             self._volume[i] += self._flow[i]*ts._days

@@ -160,7 +160,7 @@ def test_dirty_model(solver):
 def test_shorthand_property(solver):
     # test shorthand assignment of constant properties
     model = Model(solver=solver)
-    node = BaseNode(model, 'node')
+    node = Node(model, 'node')
     for attr in ('min_flow', 'max_flow', 'cost', 'conversion_factor'):
         # should except int, float or Paramter
         setattr(node, attr, 123)
