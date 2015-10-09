@@ -152,6 +152,65 @@ def test_two_domain_linear_model(two_domain_linear_model):
     assert_model(*two_domain_linear_model)
 
 
+@pytest.fixture
+def two_cross_domain_output_single_input(request, solver):
+    """
+    Make a simple model with two domains. Thre are two Output nodes
+    both connect to an Input node in a different domain.
+
+    In this example the rivers should be able to provide flow to the grid
+    with a total flow equal to the sum of their respective parts.
+
+    Input -> Link -> Output  : river
+                        | across the domain
+                        Input -> Link -> Output : grid
+                        | across the domain
+    Input -> Link -> Output  : river
+
+    """
+    river_flow = 10.0
+    expected_node_results = {}
+
+    model = pywr.core.Model(solver=solver)
+    # Create grid network
+    grid_inpt = pywr.core.Input(model, name="Input", domain='grid',)
+    grid_lnk = pywr.core.Link(model, name="Link", cost=1.0, domain='grid')
+    grid_inpt.connect(grid_lnk)
+    grid_otpt = pywr.core.Output(model, name="Output", max_flow=50.0, cost=-10.0, domain='grid')
+    grid_lnk.connect(grid_otpt)
+    # Create river network
+    for i in range(2):
+        river_inpt = pywr.core.Input(model, name="Catchment {}".format(i), max_flow=river_flow, domain='river')
+        river_lnk = pywr.core.Link(model, name="Reach {}".format(i), domain='river')
+        river_inpt.connect(river_lnk)
+        river_otpt = pywr.core.Output(model, name="Abstraction {}".format(i), domain='river', cost=0.0)
+        river_lnk.connect(river_otpt)
+        # Connect grid to river
+        river_otpt.connect(grid_inpt)
+
+        expected_node_results.update({
+            "Catchment {}".format(i): river_flow,
+            "Reach {}".format(i): river_flow,
+            "Abstraction {}".format(i): river_flow
+        })
+
+    expected_node_results.update({
+        "Input": river_flow*2,
+        "Link": river_flow*2,
+        "Output": river_flow*2,
+    })
+
+    return model, expected_node_results
+
+
+@pytest.mark.xfail
+def test_two_cross_domain_output_single_input(two_cross_domain_output_single_input):
+    # TODO This test currently fails because of the simple way in which the cross
+    # domain paths work. It can not cope with two Outputs connected to one
+    # input.
+    assert_model(*two_cross_domain_output_single_input)
+
+
 def make_simple_model(supply_amplitude, demand, frequency,
                       initial_volume, solver):
     """
