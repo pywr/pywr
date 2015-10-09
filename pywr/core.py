@@ -8,7 +8,7 @@ from pywr import _core
 # Cython objects availble in the core namespace
 from pywr._core import ParameterConstantScenario, ParameterArrayIndexed, \
     ParameterArrayIndexedScenarioMonthlyFactors
-from pywr._core import Node as BaseNode
+from pywr._core import Node as BaseNode, BaseInput, BaseLink, BaseOutput
 import os
 from IPython.core.magic_arguments import kwds
 import networkx as nx
@@ -858,41 +858,6 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseN
         Raises an exception if the node is invalid
         """
         pass
-
-
-class BaseLink(BaseNode):
-    pass
-
-
-class BaseInput(BaseNode):
-    def __init__(self, *args, **kwargs):
-        self.licenses = None
-        super(BaseInput, self).__init__(*args, **kwargs)
-
-    def get_max_flow(self, timestep, scenario_indices):
-        """ Calculate maximum flow including licenses """
-        max_flow = super(BaseInput, self).get_max_flow(timestep, scenario_indices)
-        if self.licenses is not None:
-            # TODO make licences Scenario aware
-            if len(scenario_indices) > 0:
-                import warnings
-                warnings.warn("Licences are not scenario aware!")
-            max_flow = min(max_flow, self.licenses.available(timestep))
-        return max_flow
-
-    def reset(self, ):
-        if self.licenses is not None:
-            self.licenses.reset()
-        super(BaseInput, self).reset()
-
-    def commit(self, scenario_index, value):
-        if self.licenses is not None:
-            self.licenses.commit(scenario_index, value)
-        super(BaseInput, self).commit(scenario_index, value)
-
-
-class BaseOutput(BaseNode):
-    pass
 
 
 class Input(Node, BaseInput):
