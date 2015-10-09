@@ -263,6 +263,57 @@ def test_simple_linear_inline_model(simple_linear_inline_model, in_flow_1, out_f
     assert_model(model, expected_node_results)
 
 
+@pytest.fixture()
+def bidirectional_model(request, solver):
+    """
+    Make a simple model with a single Input and Output.
+
+    Input 0 -> Link 0 -> Output 0
+               |   ^
+               v   |
+    Input 1 -> Link 1 -> Output 1
+
+    """
+    model = pywr.core.Model(solver=solver)
+    for i in range(2):
+        inpt = pywr.core.Input(model, name="Input {}".format(i))
+        lnk = pywr.core.Link(model, name="Link {}".format(i))
+        inpt.connect(lnk)
+        otpt = pywr.core.Output(model, name="Output {}".format(i))
+        lnk.connect(otpt)
+
+    # Create bidirectional link (i.e. a cycle)
+    model.node['Link 0'].connect(model.node['Link 1'])
+    model.node['Link 1'].connect(model.node['Link 0'])
+
+    return model
+
+
+def test_bidirectional_model(bidirectional_model):
+    """
+    Test the simple_linear_model with different basic input and output values
+    """
+    model = bidirectional_model
+    model.node["Input 0"].max_flow = 10.0
+    model.node["Input 1"].max_flow = 10.0
+    model.node["Output 0"].max_flow = 10.0
+    model.node["Output 1"].max_flow = 15.0
+    model.node["Output 0"].cost = -5.0
+    model.node["Output 1"].cost = -10.0
+    model.node["Link 0"].cost = 1.0
+    model.node["Link 1"].cost = 1.0
+
+    expected_node_results = {
+        "Input 0": 10.0,
+        "Input 1": 10.0,
+        "Link 0": 10.0,
+        "Link 1": 15.0,
+        "Output 0": 5.0,
+        "Output 1": 15.0,
+    }
+    assert_model(model, expected_node_results)
+
+
 def make_simple_model(supply_amplitude, demand, frequency,
                       initial_volume, solver):
     """
