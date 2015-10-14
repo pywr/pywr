@@ -233,21 +233,19 @@ def simple_linear_inline_model(request, solver):
     return model
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("in_flow_1, out_flow_0, link_flow",
-                         [(10.0, 10.0, 10.0),
+                         [(10.0, 10.0, 15.0),
                           (0.0, 0.0, 10.0)])
 def test_simple_linear_inline_model(simple_linear_inline_model, in_flow_1, out_flow_0, link_flow):
     """
     Test the test_simple_linear_inline_model with different flow constraints
     """
-    # This test currently fails because it is not clear how inline Input/Output
-    # nodes should work - if it all!
     model = simple_linear_inline_model
     model.node["Input 0"].max_flow = 10.0
     model.node["Input 1"].max_flow = in_flow_1
     model.node["Link"].max_flow = link_flow
     model.node["Output 0"].max_flow = out_flow_0
+    model.node["Input 1"].cost = 1.0
     model.node["Output 0"].cost = -10.0
     model.node["Output 1"].cost = -5.0
 
@@ -255,7 +253,7 @@ def test_simple_linear_inline_model(simple_linear_inline_model, in_flow_1, out_f
 
     expected_node_results = {
         "Input 0": 10.0,
-        "Input 1": in_flow_1,
+        "Input 1": max(expected_sent-10.0, 0.0),
         "Link": expected_sent,
         "Output 0": min(expected_sent, out_flow_0),
         "Output 1": max(expected_sent - out_flow_0, 0.0),

@@ -197,9 +197,10 @@ cdef class CythonGLPKSolver:
 
         # update route properties
         for col, route in enumerate(routes):
-            cost = 0.0
-            for node in route[:-1]:
-                cost += node.get_cost(timestep, scenario_indices)
+            cost = route[0].get_cost(timestep, scenario_indices)
+            for node in route[1:-1]:
+                if isinstance(node, BaseLink):
+                    cost += node.get_cost(timestep, scenario_indices)
             glp_set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
         # update supply properties
@@ -239,7 +240,11 @@ cdef class CythonGLPKSolver:
         result = {}
 
         for route, flow in zip(routes, route_flow):
-            for node in route:
-                node.commit(scenario_id, flow)
+            # TODO make this cleaner.
+            route[0].commit(scenario_id, flow)
+            route[-1].commit(scenario_id, flow)
+            for node in route[1:-1]:
+                if isinstance(node, BaseLink):
+                    node.commit(scenario_id, flow)
 
         return route_flow, change_in_storage
