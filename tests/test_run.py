@@ -423,7 +423,6 @@ def test_run_until_date(solver):
     model = load_model('simple1.xml', solver=solver)
 
     # run until date
-    model.reset()
     timestep = model.run(until_date=pandas.to_datetime('2015-01-20'))
     assert(timestep.index == 20)
 

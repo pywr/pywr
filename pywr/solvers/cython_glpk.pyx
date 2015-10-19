@@ -1,7 +1,7 @@
 # cython: profile=False
 from libc.stdlib cimport malloc, free
 
-from pywr.core import BaseInput, BaseOutput, BaseLink
+from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
 
 include "glpk.pxi"

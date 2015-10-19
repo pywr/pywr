@@ -115,20 +115,23 @@ def two_domain_linear_model(request, solver):
     power_demand = 12  # GWh/d
     power_benefit = 10.0  # £/GWh
 
+    river_domain = pywr.core.Domain('river')
+    grid_domain = pywr.core.Domain('grid')
+
     model = pywr.core.Model(solver=solver)
     # Create river network
-    river_inpt = pywr.core.Input(model, name="Catchment", max_flow=river_flow, domain='river')
-    river_lnk = pywr.core.Link(model, name="Reach", domain='river')
+    river_inpt = pywr.core.Input(model, name="Catchment", max_flow=river_flow, domain=river_domain)
+    river_lnk = pywr.core.Link(model, name="Reach", domain=river_domain)
     river_inpt.connect(river_lnk)
-    river_otpt = pywr.core.Output(model, name="Abstraction", domain='river', cost=0.0)
+    river_otpt = pywr.core.Output(model, name="Abstraction", domain=river_domain, cost=0.0)
     river_lnk.connect(river_otpt)
     # Create grid network
-    grid_inpt = pywr.core.Input(model, name="Power Plant", max_flow=power_plant_cap, domain='grid',
+    grid_inpt = pywr.core.Input(model, name="Power Plant", max_flow=power_plant_cap, domain=grid_domain,
                                                conversion_factor=1/power_plant_flow_req)
-    grid_lnk = pywr.core.Link(model, name="Transmission", cost=1.0, domain='grid')
+    grid_lnk = pywr.core.Link(model, name="Transmission", cost=1.0, domain=grid_domain)
     grid_inpt.connect(grid_lnk)
     grid_otpt = pywr.core.Output(model, name="Substation", max_flow=power_demand,
-                                 cost=-power_benefit, domain='grid')
+                                 cost=-power_benefit, domain=grid_domain)
     grid_lnk.connect(grid_otpt)
     # Connect grid to river
     river_otpt.connect(grid_inpt)
