@@ -81,6 +81,9 @@ def test_run_river2(solver):
     assert(result[0:3] == ('optimal', 12.0, 9.25))
     assert(model.failure)
 
+
+# Contains an out of range date for pandas.to_datetime
+@pytest.mark.xfail
 def test_run_timeseries1(solver):
     model = load_model('timeseries1.xml', solver=solver)
 

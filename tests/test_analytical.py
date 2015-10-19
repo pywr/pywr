@@ -152,6 +152,166 @@ def test_two_domain_linear_model(two_domain_linear_model):
     assert_model(*two_domain_linear_model)
 
 
+@pytest.fixture
+def two_cross_domain_output_single_input(request, solver):
+    """
+    Make a simple model with two domains. Thre are two Output nodes
+    both connect to an Input node in a different domain.
+
+    In this example the rivers should be able to provide flow to the grid
+    with a total flow equal to the sum of their respective parts.
+
+    Input -> Link -> Output  : river
+                        | across the domain
+                        Input -> Link -> Output : grid
+                        | across the domain
+    Input -> Link -> Output  : river
+
+    """
+    river_flow = 10.0
+    expected_node_results = {}
+
+    model = pywr.core.Model(solver=solver)
+    # Create grid network
+    grid_inpt = pywr.core.Input(model, name="Input", domain='grid',)
+    grid_lnk = pywr.core.Link(model, name="Link", cost=1.0, domain='grid')
+    grid_inpt.connect(grid_lnk)
+    grid_otpt = pywr.core.Output(model, name="Output", max_flow=50.0, cost=-10.0, domain='grid')
+    grid_lnk.connect(grid_otpt)
+    # Create river network
+    for i in range(2):
+        river_inpt = pywr.core.Input(model, name="Catchment {}".format(i), max_flow=river_flow, domain='river')
+        river_lnk = pywr.core.Link(model, name="Reach {}".format(i), domain='river')
+        river_inpt.connect(river_lnk)
+        river_otpt = pywr.core.Output(model, name="Abstraction {}".format(i), domain='river', cost=0.0)
+        river_lnk.connect(river_otpt)
+        # Connect grid to river
+        river_otpt.connect(grid_inpt)
+
+        expected_node_results.update({
+            "Catchment {}".format(i): river_flow,
+            "Reach {}".format(i): river_flow,
+            "Abstraction {}".format(i): river_flow
+        })
+
+    expected_node_results.update({
+        "Input": river_flow*2,
+        "Link": river_flow*2,
+        "Output": river_flow*2,
+    })
+
+    return model, expected_node_results
+
+
+@pytest.mark.xfail
+def test_two_cross_domain_output_single_input(two_cross_domain_output_single_input):
+    # TODO This test currently fails because of the simple way in which the cross
+    # domain paths work. It can not cope with two Outputs connected to one
+    # input.
+    assert_model(*two_cross_domain_output_single_input)
+
+
+@pytest.fixture()
+def simple_linear_inline_model(request, solver):
+    """
+    Make a simple model with a single Input and Output nodes inline of a route.
+
+    Input 0 -> Input 1 -> Link -> Output 0 -> Output 1
+
+    """
+    model = pywr.core.Model(solver=solver)
+    inpt0 = pywr.core.Input(model, name="Input 0")
+    inpt1 = pywr.core.Input(model, name="Input 1")
+    inpt0.connect(inpt1)
+    lnk = pywr.core.Link(model, name="Link", cost=1.0)
+    inpt1.connect(lnk)
+    otpt0 = pywr.core.Output(model, name="Output 0")
+    lnk.connect(otpt0)
+    otpt1 = pywr.core.Output(model, name="Output 1")
+    otpt0.connect(otpt1)
+
+    return model
+
+
+@pytest.mark.parametrize("in_flow_1, out_flow_0, link_flow",
+                         [(10.0, 10.0, 15.0),
+                          (0.0, 0.0, 10.0)])
+def test_simple_linear_inline_model(simple_linear_inline_model, in_flow_1, out_flow_0, link_flow):
+    """
+    Test the test_simple_linear_inline_model with different flow constraints
+    """
+    model = simple_linear_inline_model
+    model.node["Input 0"].max_flow = 10.0
+    model.node["Input 1"].max_flow = in_flow_1
+    model.node["Link"].max_flow = link_flow
+    model.node["Output 0"].max_flow = out_flow_0
+    model.node["Input 1"].cost = 1.0
+    model.node["Output 0"].cost = -10.0
+    model.node["Output 1"].cost = -5.0
+
+    expected_sent = min(link_flow, 10+in_flow_1)
+
+    expected_node_results = {
+        "Input 0": 10.0,
+        "Input 1": max(expected_sent-10.0, 0.0),
+        "Link": expected_sent,
+        "Output 0": min(expected_sent, out_flow_0),
+        "Output 1": max(expected_sent - out_flow_0, 0.0),
+    }
+    assert_model(model, expected_node_results)
+
+
+@pytest.fixture()
+def bidirectional_model(request, solver):
+    """
+    Make a simple model with a single Input and Output.
+
+    Input 0 -> Link 0 -> Output 0
+               |   ^
+               v   |
+    Input 1 -> Link 1 -> Output 1
+
+    """
+    model = pywr.core.Model(solver=solver)
+    for i in range(2):
+        inpt = pywr.core.Input(model, name="Input {}".format(i))
+        lnk = pywr.core.Link(model, name="Link {}".format(i))
+        inpt.connect(lnk)
+        otpt = pywr.core.Output(model, name="Output {}".format(i))
+        lnk.connect(otpt)
+
+    # Create bidirectional link (i.e. a cycle)
+    model.node['Link 0'].connect(model.node['Link 1'])
+    model.node['Link 1'].connect(model.node['Link 0'])
+
+    return model
+
+
+def test_bidirectional_model(bidirectional_model):
+    """
+    Test the simple_linear_model with different basic input and output values
+    """
+    model = bidirectional_model
+    model.node["Input 0"].max_flow = 10.0
+    model.node["Input 1"].max_flow = 10.0
+    model.node["Output 0"].max_flow = 10.0
+    model.node["Output 1"].max_flow = 15.0
+    model.node["Output 0"].cost = -5.0
+    model.node["Output 1"].cost = -10.0
+    model.node["Link 0"].cost = 1.0
+    model.node["Link 1"].cost = 1.0
+
+    expected_node_results = {
+        "Input 0": 10.0,
+        "Input 1": 10.0,
+        "Link 0": 10.0,
+        "Link 1": 15.0,
+        "Output 0": 5.0,
+        "Output 1": 15.0,
+    }
+    assert_model(model, expected_node_results)
+
+
 def make_simple_model(supply_amplitude, demand, frequency,
                       initial_volume, solver):
     """
