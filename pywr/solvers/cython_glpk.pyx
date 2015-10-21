@@ -55,7 +55,7 @@ cdef class CythonGLPKSolver:
         for some_node in model.nodes():
             if isinstance(some_node, (BaseInput, BaseLink, BaseOutput)):
                 non_storages.append(some_node)
-            if isinstance(some_node, Storage):
+            elif isinstance(some_node, Storage):
                 storages.append(some_node)
 
         assert(routes)
