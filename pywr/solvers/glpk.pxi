@@ -68,6 +68,7 @@ cdef extern from "glpk.h":
     glp_prob* glp_create_prob()
     void glp_init_smcp(glp_smcp *parm)
     void glp_erase_prob(glp_prob *P)
+    void glp_delete_prob(glp_prob *P)
     void glp_free(void *ptr)
     
     int glp_add_rows(glp_prob *P, int nrs)

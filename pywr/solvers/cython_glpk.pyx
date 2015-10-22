@@ -27,7 +27,7 @@ cdef class CythonGLPKSolver:
 
     def __dealloc__(self):
         # free the problem
-        glp_free(self.prob)
+        glp_delete_prob(self.prob)
 
     cpdef object setup(self, model):
         cdef Node supply
