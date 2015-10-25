@@ -27,9 +27,9 @@ def test_run_simple1(solver):
     # check results
     demand1 = model.node['demand1']
     assert_allclose(demand1.flow, 10.0, atol=1e-7)
-
+    print(t0.datetime, model.timestepper.current.datetime)
     # check the timestamp incremented
-    assert(model.timestepper.current - t0 == datetime.timedelta(1))
+    assert(model.timestepper.current.datetime - t0.datetime == datetime.timedelta(1))
 
 
 def test_run_reservoir1(solver):
