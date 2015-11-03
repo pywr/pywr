@@ -29,7 +29,7 @@ before_install:
     - sudo ln -s /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
 
 install:
-    - python setup.py install
+    - python setup.py install --with-${PYWR_SOLVER}
 
 script:
     - py.test tests --solver ${PYWR_SOLVER}
