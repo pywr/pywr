@@ -100,22 +100,22 @@ def test_slots_from(solver):
     assert(len(model.edges()) == 0)
 
 
-def test_timeseries_csv():
-    model = Model()
+def test_timeseries_csv(solver):
+    model = Model(solver=solver)
     ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
     timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
     assert(ts.value(timestep) == 21.92)
 
 
-def test_timeseries_excel():
-    model = Model()
+def test_timeseries_excel(solver):
+    model = Model(solver=solver)
     ts = Timeseries.read(model, name='ts', path='tests/timeseries1.xlsx', sheet='mydata', column='Data')
     timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
     assert(ts.value(timestep) == 21.92)
 
 
-def test_timeseries_name_collision():
-    model = Model()
+def test_timeseries_name_collision(solver):
+    model = Model(solver=solver)
     ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
     with pytest.raises(ValueError):
         ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')

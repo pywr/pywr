@@ -11,10 +11,10 @@ from test_analytical import simple_linear_model
 from numpy.testing import assert_equal
 
 
-def test_scenario_collection():
+def test_scenario_collection(solver):
     """ Basic test of Scenario and ScenarioCollection API """
 
-    model = pywr.core.Model()
+    model = pywr.core.Model(solver=solver)
     # There is 1 combination when there are no Scenarios
     assert(len(model.scenarios.combinations) == 1)
     assert(len(model.scenarios) == 0)

@@ -427,6 +427,8 @@ def test_run_until_date(solver):
     assert(timestep.index == 20)
 
 
+# TODO: this fails if glpk solver wasn't built
+@pytest.mark.xfail
 def test_solver_glpk():
     '''Test specifying the solver in XML'''
     data = '''<pywr><solver name="glpk" /><nodes /><edges /><metadata /></pywr>'''
