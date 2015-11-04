@@ -24,14 +24,33 @@ extensions = [
               include_dirs=[np.get_include()],),
 ]
 
-extensions_optional = [
-    Extension('pywr.solvers.cython_glpk', ['pywr/solvers/cython_glpk.pyx'],
-              include_dirs=[np.get_include()],
-              libraries=['glpk'],),
-    Extension('pywr.solvers.cython_lpsolve', ['pywr/solvers/cython_lpsolve.pyx'],
-              include_dirs=[np.get_include()],
-              libraries=['lpsolve55'],),
-]
+# HACK: optional features are too difficult to do properly
+# http://stackoverflow.com/a/4056848/1300519
+optional = set()
+if '--with-glpk' in sys.argv:
+    optional.add('glpk')
+    sys.argv.remove('--with-glpk')
+if '--with-lpsolve' in sys.argv:
+    optional.add('lpsolve')
+    sys.argv.remove('--with-lpsolve')
+if not optional:
+    # default is to attempt to build everything
+    optional.add('glpk')
+    optional.add('lpsolve')
+
+extensions_optional = []
+if 'glpk' in optional:
+    extensions_optional.append(
+        Extension('pywr.solvers.cython_glpk', ['pywr/solvers/cython_glpk.pyx'],
+                  include_dirs=[np.get_include()],
+                  libraries=['glpk'],),
+    )
+if 'lpsolve' in optional:
+    extensions_optional.append(
+        Extension('pywr.solvers.cython_lpsolve', ['pywr/solvers/cython_lpsolve.pyx'],
+                  include_dirs=[np.get_include()],
+                  libraries=['lpsolve55'],),
+    )
 
 # Optional extension code from Bob Ippolito's simplejson project
 # https://github.com/simplejson/simplejson
@@ -86,6 +105,6 @@ setup_kwargs['ext_modules'] = cythonize(extensions)
 del(setup_kwargs['cmdclass']['build_ext'])
 setup(**setup_kwargs)
 
-print('Successfully built pywr with the following extensions:')
+print('\nSuccessfully built pywr with the following extensions:')
 for extension in success:
     print('  * {}'.format(extension.name))
