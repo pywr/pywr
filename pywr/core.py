@@ -47,32 +47,39 @@ class Timestepper(object):
         If start is None it resets to the original self.start, otherwise
         start is used as the new starting point.
         """
+        self._current = None
         if start is None:
-            self.current = self.start
-            self.index = 0
+            self._next = _core.Timestep(self.start, 0, self.delta.days)
             return
 
         # Calculate actual index from new position
         diff = start - self.start
         if diff.days % self.delta.days != 0:
             raise ValueError('New starting position is not compatible with the existing starting position and timestep.')
-        self.index = diff.days / self.delta.days
-        self.current = start
+        index = diff.days / self.delta.days
+        self._next = _core.Timestep(start, index, self.delta.days)
 
     def __next__(self, ):
         return self.next()
 
     def next(self, ):
-        current = self.current
-        index = self.index
-        if current > self.end:
+        self._current = current = self._next
+        if current.datetime > self.end:
             raise StopIteration()
 
         # Increment to next timestep
-        self.current += self.delta
-        self.index += 1
+        self._next = _core.Timestep(current.datetime + self.delta, current.index + 1, self.delta.days)
+
         # Return this timestep
-        return _core.Timestep(current, index, self.delta.days)
+        return current
+
+    @property
+    def current(self, ):
+        """ Return the current Timestep.
+
+        If iteration has not begun this will return the starting Timestep.
+        """
+        return self._next
 
 
 class Scenario(_core.Scenario):
