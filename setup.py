@@ -24,6 +24,8 @@ extensions = [
               include_dirs=[np.get_include()],),
     Extension('pywr._parameters', ['pywr/_parameters.pyx'],
               include_dirs=[np.get_include()],),
+    Extension('pywr._recorders', ['pywr/_recorders.pyx'],
+              include_dirs=[np.get_include()],),
 ]
 
 # HACK: optional features are too difficult to do properly

@@ -1,5 +1,5 @@
 from _parameters cimport Parameter
-from _parameters import Parameter
+from _recorders cimport Recorder
 
 cdef class Scenario:
     cdef str _name
@@ -18,12 +18,6 @@ cdef class Timestep:
     cdef object _datetime
     cdef int _index
     cdef double _days
-
-cdef class Recorder:
-    cpdef setup(self, model)
-    cpdef reset(self)
-    cpdef int commit(self, Timestep ts, int scenario_index, double value) except -1
-    cpdef int commit_all(self, Timestep ts, double[:] value) except -1
 
 cdef class Domain:
     cdef object name
