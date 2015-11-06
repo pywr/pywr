@@ -1,5 +1,6 @@
 
-from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, Parameter, ParameterFunction, pop_kwarg_parameter
+from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink
+from pywr.parameters import Parameter, pop_kwarg_parameter
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 

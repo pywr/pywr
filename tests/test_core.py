@@ -3,12 +3,13 @@
 
 from __future__ import print_function
 
-import os
 import pytest
-
 from pywr._core import Timestep
+
 from pywr.core import *
 from pywr.domains.river import *
+from pywr.parameters import Parameter, Timeseries
+
 
 def test_names(solver):
     '''Test node names'''
