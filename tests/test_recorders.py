@@ -25,4 +25,4 @@ def test_numpy_recorder(simple_linear_model):
     model.run()
 
     assert rec.data.shape == (365, 1)
-    assert np.all(rec.data == 10.0)
+    assert np.all((rec.data - 10.0) < 1e-12)
