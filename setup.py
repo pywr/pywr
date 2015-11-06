@@ -22,6 +22,8 @@ setup_kwargs = {
 extensions = [
     Extension('pywr._core', ['pywr/_core.pyx'],
               include_dirs=[np.get_include()],),
+    Extension('pywr._parameter', ['pywr/_parameter.pyx'],
+              include_dirs=[np.get_include()],),
 ]
 
 # HACK: optional features are too difficult to do properly
