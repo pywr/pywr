@@ -3,10 +3,10 @@
 
 from __future__ import print_function
 
-from pywr import _core, _parameter
+from pywr import _core, _parameters
 
 # Cython objects availble in the core namespace
-from pywr._parameter import ParameterConstantScenario, ParameterArrayIndexed, \
+from pywr._parameters import ParameterConstantScenario, ParameterArrayIndexed, \
     ParameterArrayIndexedScenarioMonthlyFactors
 from pywr._core import BaseInput, BaseLink, BaseOutput, \
     StorageInput, StorageOutput
@@ -463,7 +463,7 @@ def pop_kwarg_parameter(kwargs, key, default):
         return value
 
 
-class Parameter(_parameter.Parameter):
+class Parameter(_parameters.Parameter):
     def value(self, ts, scenario_indices=[0]):
         raise NotImplementedError()
 

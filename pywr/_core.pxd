@@ -1,5 +1,5 @@
-from _parameter cimport Parameter
-from _parameter import Parameter
+from _parameters cimport Parameter
+from _parameters import Parameter
 
 cdef class Scenario:
     cdef str _name
