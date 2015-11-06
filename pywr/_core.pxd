@@ -26,7 +26,7 @@ cdef class AbstractNode:
     cdef double[:] _prev_flow
     cdef double[:] _flow
     cdef double _cost
-    cdef Recorder _recorder
+    cdef list _recorders
     cdef Domain _domain
     cdef AbstractNode _parent
     cdef object _model

@@ -77,7 +77,9 @@ class Timestepper(object):
 
         If iteration has not begun this will return the starting Timestep.
         """
-        return self._next
+        if self._current is None:
+            return self._next
+        return self._current
 
 
 class Scenario(_core.Scenario):
@@ -137,9 +139,9 @@ class Model(object):
             # use default solver
             self.solver = SolverMeta.get_default()()
 
-
         self.node = {}
         self.group = {}
+        self.recorders = []
         self.scenarios = ScenarioCollection()
 
         self.reset()
@@ -306,6 +308,8 @@ class Model(object):
         ntimesteps = len(self.timestepper)
         for node in self.nodes():
             node.setup(self)
+        for recorder in self.recorders:
+            recorder.setup()
         self.solver.setup(self)
         self.reset()
         self.dirty = False
@@ -315,6 +319,8 @@ class Model(object):
         self.timestepper.reset(start=start)
         for node in self.nodes():
             node.reset()
+        for recorder in self.recorders:
+            recorder.reset()
 
     def before(self):
         for node in self.nodes():
@@ -323,6 +329,8 @@ class Model(object):
     def after(self):
         for node in self.nodes():
             node.after(self.timestep)
+        for recorder in self.recorders:
+            recorder.save()
 
     def xml(self):
         """Serialize the Model to XML"""

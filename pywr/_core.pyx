@@ -4,8 +4,6 @@ import itertools
 import numpy as np
 cimport numpy as np
 
-from _recorders import NumpyArrayRecorder
-
 cdef double inf = float('inf')
 
 def product(sizes):
@@ -88,8 +86,7 @@ cdef class AbstractNode:
 
         self._parent = kwargs.pop('parent', None)
         self._domain = kwargs.pop('domain', None)
-        # TODO fix this default hack
-        self._recorder = kwargs.pop('recorder', NumpyArrayRecorder(len(model.timestepper)))
+        self._recorders = []
 
     property cost:
         """The cost per unit flow via the node
@@ -140,15 +137,6 @@ cdef class AbstractNode:
         def __set__(self, value):
             self._model = value
 
-    property recorder:
-        """The recorder for the node, e.g. a NumpyArrayRecorder
-        """
-        def __get__(self):
-            return self._recorder
-
-        def __set__(self, value):
-            self._recorder = value
-
     property domain:
         def __get__(self):
             if self._domain is None and self._parent is not None:
@@ -175,20 +163,14 @@ cdef class AbstractNode:
         """Called before the first run of the model"""
         cdef int ncomb = len(model.scenarios.combinations)
         self._flow = np.empty(ncomb, dtype=np.float64)
-        if self._recorder is not None:
-            self._recorder.setup(model)
         if self._cost_param is not None:
             self._cost_param.setup(model)
-        if self._recorder is not None:
-            self._recorder.setup(model)
 
     cpdef reset(self):
         """Called at the beginning of a run"""
         cdef int i
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
-        if self._recorder is not None:
-            self._recorder.reset()
 
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""
@@ -230,7 +212,6 @@ cdef class Node(AbstractNode):
         self._max_flow_param = None
         self._cost_param = None
         self._conversion_factor_param = None
-        self._recorder = None
         self._domain = None
 
     property prev_flow:
@@ -336,14 +317,11 @@ cdef class Node(AbstractNode):
             self._max_flow_param.setup(model)
         if self._cost_param is not None:
             self._cost_param.setup(model)
-        if self._recorder is not None:
-            self._recorder.setup(model)
 
     cpdef after(self, Timestep ts):
         """Called at the end of the timestep"""
         self._prev_flow[:] = self._flow[:]
-        if self._recorder is not None:
-            self._recorder.commit_all(ts, self._flow)
+
 
 cdef class BaseLink(Node):
     pass
@@ -414,7 +392,6 @@ cdef class Storage(AbstractNode):
         self._min_volume_param = None
         self._max_volume_param = None
         self._cost_param = None
-        self._recorder = None
         self._domain = None
 
     property volume:
@@ -466,13 +443,6 @@ cdef class Storage(AbstractNode):
         def __get__(self, ):
             return np.array(self._volume[:]) / self._max_volume
 
-    property recorder:
-        def __get__(self, ):
-            return self._recorder
-
-        def __set__(self, value):
-            self._recorder = value
-
     property domain:
         def __get__(self):
             return self._domain
@@ -498,5 +468,3 @@ cdef class Storage(AbstractNode):
         cdef int i
         for i in range(self._flow.shape[0]):
             self._volume[i] += self._flow[i]*ts._days
-        if self._recorder is not None:
-            self._recorder.commit_all(ts, self._volume)

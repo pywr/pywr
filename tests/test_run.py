@@ -25,13 +25,16 @@ def test_run_simple1(solver):
 
     # run the model
     t0 = model.timestepper.current
-    result = model.step()
+    model.step()
 
     # check results
     demand1 = model.node['demand1']
     assert_allclose(demand1.flow, 10.0, atol=1e-7)
-    print(t0.datetime, model.timestepper.current.datetime)
+    # initially the timestepper returns the first time-step, so timestepper.current
+    # does not change after the first 'step'.
+    assert(model.timestepper.current.datetime - t0.datetime == datetime.timedelta(0))
     # check the timestamp incremented
+    model.step()
     assert(model.timestepper.current.datetime - t0.datetime == datetime.timedelta(1))
 
 
@@ -367,10 +370,10 @@ def test_new_storage(solver):
 
     model.run()
 
-    assert_allclose(supply1.recorder.data, [[45]], atol=1e-7)
-    assert_allclose(splitter.recorder.data, [[0]], atol=1e-7)  # New volume is zero
-    assert_allclose(demand1.recorder.data, [[20]], atol=1e-7)
-    assert_allclose(demand2.recorder.data, [[30]], atol=1e-7)
+    assert_allclose(supply1.flow, [45], atol=1e-7)
+    assert_allclose(splitter.volume, [0], atol=1e-7)  # New volume is zero
+    assert_allclose(demand1.flow, [20], atol=1e-7)
+    assert_allclose(demand2.flow, [30], atol=1e-7)
 
 def test_reset(solver):
     """Test model reset"""
