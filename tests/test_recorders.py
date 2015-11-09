@@ -8,7 +8,7 @@ import pywr.core
 import numpy as np
 import pytest
 from test_analytical import simple_linear_model
-from pywr.recorders import NumpyArrayNodeRecorder, CSVRecorder
+from pywr.recorders import NumpyArrayNodeRecorder, CSVRecorder, TablesRecorder
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -58,6 +58,28 @@ def test_csv_recorder(simple_linear_model, tmpdir):
                 assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
             assert expected == actual
 
+
+def test_hdf5_recorder(simple_linear_model, tmpdir):
+    """
+    Test the TablesRecorder
+
+    """
+    model = simple_linear_model
+    otpt = model.node['Output']
+    model.node['Input'].max_flow = 10.0
+    otpt.cost = -2.0
+
+    h5file = tmpdir.join('output.h5')
+    import tables
+    h5f = tables.open_file(str(h5file), 'w')
+    rec = TablesRecorder(model, h5f.root)
+
+    model.run()
+
+    for node_name in model.node.keys():
+        ca = h5f.get_node('/', node_name)
+        assert ca.shape == (365, 1)
+        assert np.all((ca[...] - 10.0) < 1e-12)
 
 
 

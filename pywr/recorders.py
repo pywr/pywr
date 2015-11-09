@@ -67,6 +67,59 @@ class CSVRecorder(Recorder):
         self._fh.close()
 
 
+class TablesRecorder(Recorder):
+    """
+    A recorder that saves to PyTables CArray
 
+    This Recorder creates a CArray for every node passed to the constructor.
+    Each CArray stores the data for all scenarios on the specific node. This
+    is useful for analysis of Node statistics across multiple scenarios.
+    """
+    def __init__(self, model, parent, nodes=None):
+        """
 
+        :param model: The model to record nodes from.
+        :param parent: The tables parent node to attach the CArray objects to.
+        :param nodes: An iterable of nodes to save data. It defaults
+        to None which is all nodes in the model
+        """
+        super(TablesRecorder, self).__init__(model)
 
+        self.parent = parent
+        self.nodes = nodes
+
+        self._arrays = None
+
+    def setup(self):
+        """
+        Setup the tables
+        """
+        import tables
+        shape = len(self.model.timestepper), len(self.model.scenarios.combinations)
+        atom = tables.Float64Atom()
+        # Create a CArray for each node
+        self._arrays = {}
+
+        # Default to all nodes if None given.
+        if self.nodes is None:
+            nodes = self.model.node.values()
+        else:
+            nodes = self.nodes
+
+        for node in nodes:
+            self._arrays[node] = tables.CArray(self.parent, node.name, atom, shape)
+
+    def save(self):
+        """
+        Save data to the tables
+        """
+        from pywr._core import Node, Storage
+        idx = self.model.timestepper.current.index
+
+        for node, ca in self._arrays.items():
+            if isinstance(node, Node):
+                ca[idx, :] = node.flow
+            elif isinstance(node, Storage):
+                ca[idx, :] = node.volume
+            else:
+                raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
