@@ -295,6 +295,7 @@ class Model(object):
                 return timestep
             elif timestep.datetime > self.parameters['timestamp_finish']:
                 return timestep
+        self.finish()
         try:
             # Can only return timestep object if the iterator went
             # through at least one iteration
@@ -331,6 +332,10 @@ class Model(object):
             node.after(self.timestep)
         for recorder in self.recorders:
             recorder.save()
+
+    def finish(self):
+        for recorder in self.recorders:
+            recorder.finish()
 
     def xml(self):
         """Serialize the Model to XML"""

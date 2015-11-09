@@ -15,6 +15,14 @@ cdef class Recorder:
     cpdef int save(self) except -1:
         return 0
 
+    cpdef finish(self):
+        pass
+
+    property model:
+        def __get__(self, ):
+            return self._model
+
+
 cdef class NodeRecorder(Recorder):
     def __init__(self, model, Node node):
         Recorder.__init__(self, model)
