@@ -53,9 +53,9 @@ def test_csv_recorder(simple_linear_model, tmpdir):
                 actual = row
             else:
                 dt = model.timestepper.start+(irow-1)*model.timestepper.delta
-                expected = [dt.isoformat(), 10.0, 10.0, 10.0]
-                actual = [row[0]] + [float(v) for v in row[1:]]
-
+                expected = [dt.isoformat()]
+                actual = [row[0]]
+                assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
             assert expected == actual
 
 
