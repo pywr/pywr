@@ -38,6 +38,11 @@ if not optional:
     optional.add('glpk')
     optional.add('lpsolve')
 
+compiler_directives = {}
+if '--enable-profiling' in sys.argv:
+     compiler_directives['profile'] = True
+     sys.argv.remove('--enable-profiling')
+
 extensions_optional = []
 if 'glpk' in optional:
     extensions_optional.append(
@@ -88,7 +93,7 @@ setup_kwargs['cmdclass'] = {}
 success = []
 failure = []
 for extension in extensions_optional:
-    setup_kwargs['ext_modules'] = cythonize([extension])
+    setup_kwargs['ext_modules'] = cythonize([extension], compiler_directives=compiler_directives)
     setup_kwargs['cmdclass']['build_ext'] = ve_build_ext
     try:
         setup(**setup_kwargs)
@@ -101,7 +106,7 @@ if not success:
     raise BuildFailed('None of the solvers managed to build')
 
 # build the core extension(s)
-setup_kwargs['ext_modules'] = cythonize(extensions)
+setup_kwargs['ext_modules'] = cythonize(extensions, compiler_directives=compiler_directives)
 del(setup_kwargs['cmdclass']['build_ext'])
 setup(**setup_kwargs)
 
