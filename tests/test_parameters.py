@@ -2,7 +2,8 @@
 Test for individual Parameter classes
 """
 from pywr.core import Model, Timestep, Scenario
-from pywr.parameters import ParameterArrayIndexed, ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors
+from pywr.parameters import (ParameterArrayIndexed, ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors,
+                             ParameterMonthlyProfile, ParameterDailyProfile)
 
 import datetime
 import numpy as np
@@ -75,3 +76,33 @@ def test_parameter_array_indexed_scenario_monthly_factors(model):
         for a, b in itertools.product(range(scA.size), range(scB.size)):
             f = factors[b, imth]
             np.testing.assert_allclose(p.value(ts, np.array([a, b], dtype=np.int32)), v*f)
+
+
+def test_parameter_monthly_profile(model):
+    """
+    Test ParameterMonthlyProfile
+
+    """
+    values = np.arange(12, dtype=np.float64)
+    p = ParameterMonthlyProfile(values)
+    p.setup(model)
+
+    # Iterate in time
+    for ts in model.timestepper:
+        imth = ts.datetime.month - 1
+        np.testing.assert_allclose(p.value(ts, np.array([0], dtype=np.int32)), values[imth])
+
+
+def test_parameter_daily_profile(model):
+    """
+    Test ParameterDailyProfile
+
+    """
+    values = np.arange(366, dtype=np.float64)
+    p = ParameterDailyProfile(values)
+    p.setup(model)
+
+    # Iterate in time
+    for ts in model.timestepper:
+        iday = ts.datetime.dayofyear - 1
+        np.testing.assert_allclose(p.value(ts, np.array([0], dtype=np.int32)), values[iday])
