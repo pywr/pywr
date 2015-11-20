@@ -11,8 +11,8 @@ import pytest
 import itertools
 
 @pytest.fixture
-def model():
-    return Model()
+def model(solver):
+    return Model(solver=solver)
 
 
 def test_parameter_array_indexed(model):
