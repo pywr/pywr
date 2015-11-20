@@ -1,6 +1,7 @@
 import datetime
 from xml.etree import ElementTree as ET
-from pywr._parameters import Parameter as BaseParameter, ParameterConstantScenario
+from pywr._parameters import (Parameter as BaseParameter, ParameterConstantScenario, ParameterArrayIndexed,
+                              ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors)
 import pandas
 
 

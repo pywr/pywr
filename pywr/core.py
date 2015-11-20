@@ -7,7 +7,7 @@ from pywr import _core
 # Cython objects availble in the core namespace
 from pywr.parameters import pop_kwarg_parameter
 from pywr._core import BaseInput, BaseLink, BaseOutput, \
-    StorageInput, StorageOutput
+    StorageInput, StorageOutput, Timestep
 from pywr._core import Node as BaseNode
 import os
 import networkx as nx

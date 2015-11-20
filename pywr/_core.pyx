@@ -33,6 +33,9 @@ cdef class Scenario:
         self._name = name
         self._size = size
 
+    property size:
+        def __get__(self, ):
+            return self._size
 
 cdef class ScenarioCollection:
     def __init__(self, ):

@@ -10,8 +10,10 @@ cdef class Parameter:
 
 cdef class ParameterArrayIndexed(Parameter):
     """Time varying parameter using an array and Timestep._index
+
+    The values in this parameter are constant across all scenarios.
     """
-    def __cinit__(self, double[:] values):
+    def __init__(self, double[:] values):
         self.values = values
 
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
@@ -20,8 +22,14 @@ cdef class ParameterArrayIndexed(Parameter):
         return self.values[ts._index]
 
 cdef class ParameterConstantScenario(Parameter):
-    """A Scenario varying Parameter"""
+    """A Scenario varying Parameter
+
+    The values in this parameter are constant in time, but vary within a single Scenario.
+    """
     def __init__(self, Scenario scenario, values):
+        """
+        values should be an iterable that is the same length as scenario.size
+        """
         cdef int i
         if scenario._size != len(values):
             raise ValueError("The number of values must equal the size of the scenario.")
@@ -49,6 +57,11 @@ cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
     multiplicative factors per Scenario
     """
     def __init__(self, Scenario scenario, double[:] values, double[:, :] factors):
+        """
+        values is the baseline timeseries data that is perturbed by a factor. The
+        factor is taken from factors which is shape (scenario.size, 12). Therefore
+        factors vary with the individual scenarios in scenario and month.
+        """
         if scenario._size != factors.shape[0]:
             raise ValueError("First dimension of factors must be the same size as scenario.")
         if factors.shape[1] != 12:
