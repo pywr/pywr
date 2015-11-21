@@ -12,6 +12,8 @@ import numpy as np
 import pytest
 from helpers import assert_model
 
+import pywr.parameters
+
 
 @pytest.fixture()
 def simple_linear_model(request, solver):
@@ -338,7 +340,7 @@ def make_simple_model(supply_amplitude, demand, frequency,
     supply = pywr.core.Supply(model, name='supply', max_flow=supply_func)
     demand = pywr.core.Demand(model, name='demand', demand=demand)
     res = pywr.core.Reservoir(model, name='reservoir')
-    res.properties['max_volume'] = pywr.core.ParameterConstant(1e6)
+    res.properties['max_volume'] = pywr.parameters.ParameterConstant(1e6)
     res.properties['current_volume'] = pywr.core.Variable(initial_volume)
 
     supply_res_link = pywr.core.Link(model, name='link1')

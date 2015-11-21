@@ -1,5 +1,5 @@
 # cython: profile=False
-from pywr._core cimport *
+
 import itertools
 import numpy as np
 cimport numpy as np
@@ -33,6 +33,9 @@ cdef class Scenario:
         self._name = name
         self._size = size
 
+    property size:
+        def __get__(self, ):
+            return self._size
 
 cdef class ScenarioCollection:
     def __init__(self, ):
@@ -72,112 +75,6 @@ cdef class Timestep:
         def __get__(self, ):
             return self._days
 
-cdef class Recorder:
-    cpdef setup(self, model):
-        pass
-
-    cpdef reset(self):
-        pass
-
-    cpdef int commit(self, Timestep ts, int scenario_index, double value) except -1:
-        return 0
-
-    cpdef int commit_all(self, Timestep ts, double[:] value) except -1:
-        return 0
-
-
-cdef class NumpyArrayRecorder(Recorder):
-    cdef double[:, :] _data
-    cpdef setup(self, model):
-        cdef int ncomb = len(model.scenarios.combinations)
-        cdef int nts = len(model.timestepper)
-        self._data = np.zeros((nts, ncomb))
-
-    cpdef reset(self):
-        self._data[:, :] = 0.0
-
-    cpdef int commit(self, Timestep ts, int scenario_index, double value) except -1:
-        self._data[ts._index, scenario_index] = value
-
-    cpdef int commit_all(self, Timestep ts, double[:] value) except -1:
-        cdef int i
-        for i in range(self._data.shape[1]):
-            self._data[ts._index,i] = value[i]
-
-    property data:
-        def __get__(self, ):
-            return np.array(self._data)
-
-
-cdef class Parameter:
-    cpdef setup(self, model):
-        pass
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
-        return 0
-
-cdef class ParameterArrayIndexed(Parameter):
-    """Time varying parameter using an array and Timestep._index
-    """
-    def __cinit__(self, double[:] values):
-        self.values = values
-
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
-        """Returns the value of the parameter at a given timestep
-        """
-        return self.values[ts._index]
-
-cdef class ParameterConstantScenario(Parameter):
-    """A Scenario varying Parameter"""
-    def __init__(self, Scenario scenario, values):
-        cdef int i
-        if scenario._size != len(values):
-            raise ValueError("The number of values must equal the size of the scenario.")
-        self._values = np.empty(scenario._size)
-        for i in range(scenario._size):
-            self._values[i] = values[i]
-        self._scenario = scenario
-
-    cpdef setup(self, model):
-        # This setup must find out the index of self._scenario in the model
-        # so that it can return the correct value in value()
-        self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
-
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
-        # This is a bit confusing.
-        # scenario_indices contains the current scenario number for all
-        # the Scenario objects in the model run. We have cached the
-        # position of self._scenario in self._scenario_index to lookup the
-        # correct number to use in this instance.
-        return self._values[scenario_indices[self._scenario_index]]
-
-
-cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
-    """Time varying parameter using an array and Timestep._index with
-    multiplicative factors per Scenario
-    """
-    def __init__(self, Scenario scenario, double[:] values, double[:, :] factors):
-        if scenario._size != factors.shape[0]:
-            raise ValueError("First dimension of factors must be the same size as scenario.")
-        if factors.shape[1] != 12:
-            raise ValueError("Second dimension of factors must be 12.")
-        self._scenario = scenario
-        self._values = values
-        self._factors = factors
-
-    cpdef setup(self, model):
-        # This setup must find out the index of self._scenario in the model
-        # so that it can return the correct value in value()
-        self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
-
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
-        # This is a bit confusing.
-        # scenario_indices contains the current scenario number for all
-        # the Scenario objects in the model run. We have cached the
-        # position of self._scenario in self._scenario_index to lookup the
-        # correct number to use in this instance.
-        cdef int imth = ts.datetime.month-1
-        return self._values[ts._index]*self._factors[scenario_indices[self._scenario_index], imth]
-
 cdef class Domain:
     """ Domain class which all Node objects must have. """
     def __init__(self, name):
@@ -192,8 +89,7 @@ cdef class AbstractNode:
 
         self._parent = kwargs.pop('parent', None)
         self._domain = kwargs.pop('domain', None)
-        # TODO fix this default hack
-        self._recorder = kwargs.pop('recorder', NumpyArrayRecorder(len(model.timestepper)))
+        self._recorders = []
 
     property cost:
         """The cost per unit flow via the node
@@ -244,15 +140,6 @@ cdef class AbstractNode:
         def __set__(self, value):
             self._model = value
 
-    property recorder:
-        """The recorder for the node, e.g. a NumpyArrayRecorder
-        """
-        def __get__(self):
-            return self._recorder
-
-        def __set__(self, value):
-            self._recorder = value
-
     property domain:
         def __get__(self):
             if self._domain is None and self._parent is not None:
@@ -279,20 +166,14 @@ cdef class AbstractNode:
         """Called before the first run of the model"""
         cdef int ncomb = len(model.scenarios.combinations)
         self._flow = np.empty(ncomb, dtype=np.float64)
-        if self._recorder is not None:
-            self._recorder.setup(model)
         if self._cost_param is not None:
             self._cost_param.setup(model)
-        if self._recorder is not None:
-            self._recorder.setup(model)
 
     cpdef reset(self):
         """Called at the beginning of a run"""
         cdef int i
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
-        if self._recorder is not None:
-            self._recorder.reset()
 
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""
@@ -334,7 +215,6 @@ cdef class Node(AbstractNode):
         self._max_flow_param = None
         self._cost_param = None
         self._conversion_factor_param = None
-        self._recorder = None
         self._domain = None
 
     property prev_flow:
@@ -440,14 +320,11 @@ cdef class Node(AbstractNode):
             self._max_flow_param.setup(model)
         if self._cost_param is not None:
             self._cost_param.setup(model)
-        if self._recorder is not None:
-            self._recorder.setup(model)
 
     cpdef after(self, Timestep ts):
         """Called at the end of the timestep"""
         self._prev_flow[:] = self._flow[:]
-        if self._recorder is not None:
-            self._recorder.commit_all(ts, self._flow)
+
 
 cdef class BaseLink(Node):
     pass
@@ -518,7 +395,6 @@ cdef class Storage(AbstractNode):
         self._min_volume_param = None
         self._max_volume_param = None
         self._cost_param = None
-        self._recorder = None
         self._domain = None
 
     property volume:
@@ -570,13 +446,6 @@ cdef class Storage(AbstractNode):
         def __get__(self, ):
             return np.array(self._volume[:]) / self._max_volume
 
-    property recorder:
-        def __get__(self, ):
-            return self._recorder
-
-        def __set__(self, value):
-            self._recorder = value
-
     property domain:
         def __get__(self):
             return self._domain
@@ -602,5 +471,3 @@ cdef class Storage(AbstractNode):
         cdef int i
         for i in range(self._flow.shape[0]):
             self._volume[i] += self._flow[i]*ts._days
-        if self._recorder is not None:
-            self._recorder.commit_all(ts, self._volume)

@@ -14,6 +14,9 @@ import pywr.licenses
 import pytest
 from helpers import load_model
 
+import pywr.parameters
+
+
 @pytest.mark.xfail
 def test_simple1():
     '''Test parsing a simple XML document'''
@@ -62,7 +65,7 @@ def test_timestamps():
 def test_xml_parameter_constant_float():
     """Test serialisation/deserialisation of a constant parameter"""
     model = pywr.core.Model()
-    parameter = pywr.core.ParameterConstant(42.0)
+    parameter = pywr.parameters.ParameterConstant(42.0)
 
     # to xml
     parameter_xml = parameter.xml('max_flow')
@@ -71,7 +74,7 @@ def test_xml_parameter_constant_float():
     assert(parameter_xml.get('type') == 'const')
 
     # and back again
-    key, parameter = pywr.core.ParameterConstant.from_xml(model, parameter_xml)
+    key, parameter = pywr.parameters.ParameterConstant.from_xml(model, parameter_xml)
     assert(key == 'max_flow')
     assert(parameter._value == 42.0)
 
@@ -79,7 +82,7 @@ def test_xml_parameter_constant_float():
 def test_xml_parameter_constant_datetime():
     """Test serialisation/deserialisation of a datetime parameter"""
     model = pywr.core.Model()
-    parameter = pywr.core.ParameterConstant(pandas.to_datetime('2015-01-01'))
+    parameter = pywr.parameters.ParameterConstant(pandas.to_datetime('2015-01-01'))
 
     # to xml
     parameter_xml = parameter.xml('test')
@@ -87,14 +90,14 @@ def test_xml_parameter_constant_datetime():
     assert(parameter_xml.get('type') == 'datetime')
 
     # and back again
-    key, parameter = pywr.core.ParameterConstant.from_xml(model, parameter_xml)
+    key, parameter = pywr.parameters.ParameterConstant.from_xml(model, parameter_xml)
     assert(parameter == pandas.to_datetime('2015-01-01'))
 
 @pytest.mark.xfail
 def test_xml_parameter_constant_timedelta():
     """Test serialisation/deserialisation of a timedelta parameter"""
     model = pywr.core.Model()
-    parameter = pywr.core.ParameterConstant(datetime.timedelta(days=2))
+    parameter = pywr.parameters.ParameterConstant(datetime.timedelta(days=2))
 
     # to xml
     parameter_xml = parameter.xml('test')
@@ -112,7 +115,7 @@ def test_xml_parameter_constant_timedelta():
     assert(seconds == 172800)
 
     # and back again
-    key, parameter = pywr.core.ParameterConstant.from_xml(model, parameter_xml)
+    key, parameter = pywr.parameters.ParameterConstant.from_xml(model, parameter_xml)
     assert(parameter == datetime.timedelta(days=2))
 
 @pytest.mark.xfail
@@ -120,7 +123,7 @@ def test_xml_node():
     """Test serialisation/deserialisation of a generic node"""
     model = pywr.core.Model()
     node = pywr.core.Node(model, name='node1', position=(3, 4))
-    node.properties['max_flow'] = pywr.core.ParameterConstant(42.0)
+    node.properties['max_flow'] = pywr.parameters.ParameterConstant(42.0)
     node.check()
 
     # to xml
@@ -138,7 +141,7 @@ def test_xml_node():
     node = pywr.core.Node.from_xml(model, node_xml)
     assert(node.name == 'node1')
     assert('max_flow' in node.properties)
-    assert(isinstance(node.properties['max_flow'], pywr.core.ParameterConstant))
+    assert(isinstance(node.properties['max_flow'], pywr.parameters.ParameterConstant))
     assert(node.properties['max_flow'].value(None) == 42.0)
     assert(node.position == (3, 4))
 
@@ -219,10 +222,10 @@ def test_xml_timeseries():
         'path': 'tests/timeseries1.csv',
         'column': 'Data',
     }
-    ts = pywr.core.Timeseries('test1', None, metadata)
+    ts = pywr.parameters.Timeseries('test1', None, metadata)
     xml = ts.xml('test1')
     del(ts)
-    ts = pywr.core.Timeseries.from_xml(model, xml)
+    ts = pywr.parameters.Timeseries.from_xml(model, xml)
     assert(ts.name == 'test1')
     assert(ts.metadata['path'] == 'tests/timeseries1.csv')
     assert(ts.df['2015-01-01'] == 23.92)

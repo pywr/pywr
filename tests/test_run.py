@@ -15,6 +15,9 @@ import pywr.domains.river
 
 from helpers import load_model
 
+import pywr.parameters
+
+
 def test_run_simple1(solver):
     '''Test the most basic model possible'''
     # parse the XML into a model
@@ -22,13 +25,16 @@ def test_run_simple1(solver):
 
     # run the model
     t0 = model.timestepper.current
-    result = model.step()
+    model.step()
 
     # check results
     demand1 = model.node['demand1']
     assert_allclose(demand1.flow, 10.0, atol=1e-7)
-    print(t0.datetime, model.timestepper.current.datetime)
+    # initially the timestepper returns the first time-step, so timestepper.current
+    # does not change after the first 'step'.
+    assert(model.timestepper.current.datetime - t0.datetime == datetime.timedelta(0))
     # check the timestamp incremented
+    model.step()
     assert(model.timestepper.current.datetime - t0.datetime == datetime.timedelta(1))
 
 
@@ -229,7 +235,7 @@ def test_run_mrf(solver):
         0.0: 12.0,
     }
     for mrf_value, expected_supply in data.items():
-        river_gauge.properties['mrf'] = pywr.core.ParameterConstant(mrf_value)
+        river_gauge.properties['mrf'] = pywr.parameters.ParameterConstant(mrf_value)
         result = model.step()
         assert(result[0:3] == ('optimal', 12.0, expected_supply))
 
@@ -318,17 +324,17 @@ def test_run_demand_discharge(solver):
 
     # when consumption is 100% there is not enough water
     # 8 + 5 > 10
-    demand1.properties['consumption'] = pywr.core.ParameterConstant(1.0)
+    demand1.properties['consumption'] = pywr.parameters.ParameterConstant(1.0)
     result = model.step()
     assert(model.failure)
 
     # when demand #1 consumes 90% of it's supply there still isn't enough
-    demand1.properties['consumption'] = pywr.core.ParameterConstant(0.9)
+    demand1.properties['consumption'] = pywr.parameters.ParameterConstant(0.9)
     result = model.step()
     assert(model.failure)
 
     # when demand #1 only consumes 50% of it's supply there is enough for all
-    demand1.properties['consumption'] = pywr.core.ParameterConstant(0.5)
+    demand1.properties['consumption'] = pywr.parameters.ParameterConstant(0.5)
     result = model.step()
     assert(not model.failure)
 
@@ -364,10 +370,10 @@ def test_new_storage(solver):
 
     model.run()
 
-    assert_allclose(supply1.recorder.data, [[45]], atol=1e-7)
-    assert_allclose(splitter.recorder.data, [[0]], atol=1e-7)  # New volume is zero
-    assert_allclose(demand1.recorder.data, [[20]], atol=1e-7)
-    assert_allclose(demand2.recorder.data, [[30]], atol=1e-7)
+    assert_allclose(supply1.flow, [45], atol=1e-7)
+    assert_allclose(splitter.volume, [0], atol=1e-7)  # New volume is zero
+    assert_allclose(demand1.flow, [20], atol=1e-7)
+    assert_allclose(demand2.flow, [30], atol=1e-7)
 
 def test_reset(solver):
     """Test model reset"""
@@ -413,7 +419,7 @@ def test_run_until_failure(solver):
     demand1 = model.node['demand1']
     def demand_func(node, timestamp):
         return timestamp.datetime.day
-    demand1.min_flow = pywr.core.ParameterFunction(demand1, demand_func)
+    demand1.min_flow = pywr.parameters.ParameterFunction(demand1, demand_func)
     timesteps = model.run(until_failure=True)
     assert(model.failure)
     assert(timesteps == 16)

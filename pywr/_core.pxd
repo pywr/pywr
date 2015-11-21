@@ -1,3 +1,6 @@
+from _parameters cimport Parameter
+from _recorders cimport Recorder
+
 cdef class Scenario:
     cdef str _name
     cdef int _size
@@ -16,30 +19,6 @@ cdef class Timestep:
     cdef int _index
     cdef double _days
 
-cdef class Parameter:
-    cpdef setup(self, model)
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1
-
-cdef class ParameterArrayIndexed(Parameter):
-    cdef double[:] values
-
-cdef class ParameterConstantScenario(Parameter):
-    cdef Scenario _scenario
-    cdef double[:] _values
-    cdef int _scenario_index
-
-cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
-    cdef double[:] _values
-    cdef double[:, :] _factors
-    cdef Scenario _scenario
-    cdef int _scenario_index
-
-cdef class Recorder:
-    cpdef setup(self, model)
-    cpdef reset(self)
-    cpdef int commit(self, Timestep ts, int scenario_index, double value) except -1
-    cpdef int commit_all(self, Timestep ts, double[:] value) except -1
-
 cdef class Domain:
     cdef object name
 
@@ -47,7 +26,7 @@ cdef class AbstractNode:
     cdef double[:] _prev_flow
     cdef double[:] _flow
     cdef double _cost
-    cdef Recorder _recorder
+    cdef list _recorders
     cdef Domain _domain
     cdef AbstractNode _parent
     cdef object _model
