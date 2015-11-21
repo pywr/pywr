@@ -1,5 +1,4 @@
-# cython: profile=False
-
+from pywr._core cimport *
 import itertools
 import numpy as np
 cimport numpy as np

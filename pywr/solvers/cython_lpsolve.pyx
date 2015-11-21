@@ -1,4 +1,3 @@
-# cython: profile=False
 from libc.float cimport DBL_MAX
 from libc.stdlib cimport malloc, free
 
