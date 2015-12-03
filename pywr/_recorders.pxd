@@ -18,3 +18,6 @@ cdef class StorageRecorder(Recorder):
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
     cdef double[:, :] _data
+
+cdef class NumpyArrayStorageRecorder(StorageRecorder):
+    cdef double[:, :] _data

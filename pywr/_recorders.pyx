@@ -56,3 +56,24 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
+
+
+cdef class NumpyArrayStorageRecorder(StorageRecorder):
+    cpdef setup(self):
+        cdef int ncomb = len(self._model.scenarios.combinations)
+        cdef int nts = len(self._model.timestepper)
+        self._data = np.zeros((nts, ncomb))
+
+    cpdef reset(self):
+        self._data[:, :] = 0.0
+
+    cpdef int save(self) except -1:
+        cdef int i
+        cdef Timestep ts = self._model.timestepper.current
+        for i in range(self._data.shape[1]):
+            self._data[ts._index,i] = self._node._volume[i]
+        return 0
+
+    property data:
+        def __get__(self, ):
+            return np.array(self._data)
