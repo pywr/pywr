@@ -130,6 +130,10 @@ cdef class AbstractNode:
             self._name = name
             self.model.node[name] = self
 
+    property recorders:
+        def __get__(self):
+            return self._recorders
+
     property model:
         """The recorder for the node, e.g. a NumpyArrayRecorder
         """
