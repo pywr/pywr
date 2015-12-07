@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 from distutils.extension import Extension
 from distutils.errors import CCompilerError, DistutilsExecError, \
     DistutilsPlatformError
@@ -74,7 +74,9 @@ else:
     ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError)
 
 class BuildFailed(Exception):
-    pass
+    def __init__(self, exc_info):
+        self.exc_info = exc_info
+
 
 class ve_build_ext(build_ext):
     # This class allows C extension building to fail.
@@ -83,13 +85,13 @@ class ve_build_ext(build_ext):
         try:
             build_ext.run(self)
         except DistutilsPlatformError:
-            raise BuildFailed()
+            raise BuildFailed(e)
 
     def build_extension(self, ext):
         try:
             build_ext.build_extension(self, ext)
         except ext_errors:
-            raise BuildFailed()
+            raise BuildFailed(sys.exc_info())
 
 setup_kwargs['cmdclass'] = {}
 
@@ -101,12 +103,16 @@ for extension in extensions_optional:
     setup_kwargs['cmdclass']['build_ext'] = ve_build_ext
     try:
         setup(**setup_kwargs)
-    except BuildFailed:
-        failure.append(extension)
+    except BuildFailed as e:
+        failure.append((extension, e))
     else:
         success.append(extension)
 
 if not success:
+    for ext, excep in failure:
+        print('Build failed for extension: {}'.format(ext.name))
+        import traceback
+        traceback.print_exception(*excep.exc_info)
     raise BuildFailed('None of the solvers managed to build')
 
 # build the core extension(s)
