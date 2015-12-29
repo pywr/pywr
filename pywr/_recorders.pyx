@@ -24,7 +24,7 @@ cdef class Recorder:
 
 
 cdef class NodeRecorder(Recorder):
-    def __init__(self, model, Node node):
+    def __init__(self, model, AbstractNode node):
         Recorder.__init__(self, model)
         self._node = node
         node._recorders.append(self)

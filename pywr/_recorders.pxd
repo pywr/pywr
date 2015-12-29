@@ -1,6 +1,6 @@
 cdef class Recorder
 
-from _core cimport Timestep, Node, Storage
+from _core cimport Timestep, AbstractNode, Storage
 
 cdef class Recorder:
     cdef object _model
@@ -10,7 +10,7 @@ cdef class Recorder:
     cpdef finish(self)
 
 cdef class NodeRecorder(Recorder):
-    cdef Node _node
+    cdef AbstractNode _node
 
 
 cdef class StorageRecorder(Recorder):
