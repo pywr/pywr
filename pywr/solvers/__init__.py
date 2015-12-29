@@ -56,6 +56,10 @@ else:
         def solve(self, model):
             return self._cy_solver.solve(model)
 
+        @property
+        def stats(self):
+            return self._cy_solver.stats
+
 
 try:
     from .cython_lpsolve import CythonLPSolveSolver as cy_CythonLPSolveSolver

@@ -2,7 +2,7 @@ from libc.stdlib cimport malloc, free
 
 from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
-
+import time
 include "glpk.pxi"
 
 cdef class CythonGLPKSolver:
@@ -16,6 +16,7 @@ cdef class CythonGLPKSolver:
     cdef object routes
     cdef object non_storages
     cdef object storages
+    cdef public object stats
 
     def __cinit__(self):
         # create a new problem
@@ -23,6 +24,9 @@ cdef class CythonGLPKSolver:
         # disable console messages
         glp_init_smcp(&self.smcp)
         self.smcp.msg_lev = GLP_MSG_ERR
+
+    def __init__(self):
+        self.stats = None
 
     def __dealloc__(self):
         # free the problem
@@ -147,11 +151,16 @@ cdef class CythonGLPKSolver:
         self.non_storages = non_storages
         self.storages = storages
 
+        # reset stats
+        self.stats = {'total': 0.0, 'lp_solve': 0.0, 'bounds_update': 0.0, 'result_update': 0.0}
+
     cpdef object solve(self, model):
+        t0 = time.time()
         cdef int[:] scenario_combination
         cdef int scenario_id
         for scenario_id, scenario_combination in enumerate(model.scenarios.combinations):
             self._solve_scenario(model, scenario_id, scenario_combination)
+        self.stats['total'] += time.time() - t0
 
     cdef object _solve_scenario(self, model, int scenario_id, int[:] scenario_indices):
         cdef Node node
@@ -168,6 +177,7 @@ cdef class CythonGLPKSolver:
         cdef int status
         cdef cross_domain_col
 
+        t0 = time.time()
         timestep = model.timestep
         routes = self.routes
         non_storages = self.non_storages
@@ -198,12 +208,19 @@ cdef class CythonGLPKSolver:
             ub = (max_volume-storage._volume[scenario_id])/timestep.days
             glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
+        self.stats['bounds_update'] += time.time() - t0
+
         # attempt to solve the linear programme
+        t0 = time.time()
         glp_simplex(self.prob, &self.smcp)
+
 
         status = glp_get_status(self.prob)
         if status != GLP_OPT:
             raise RuntimeError(status_string[status])
+
+        self.stats['lp_solve'] += time.time() - t0
+        t0 = time.time()
 
         route_flow = [glp_get_col_prim(self.prob, col+1) for col in range(0, len(routes))]
         change_in_storage = [glp_get_row_prim(self.prob, self.idx_row_storages+col) for col in range(0, len(storages))]
@@ -218,4 +235,5 @@ cdef class CythonGLPKSolver:
                 if isinstance(node, BaseLink):
                     node.commit(scenario_id, flow)
 
+        self.stats['result_update'] += time.time() - t0
         return route_flow, change_in_storage
