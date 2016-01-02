@@ -11,26 +11,10 @@ import datetime
 import numpy as np
 import pytest
 from helpers import assert_model
+from fixtures import simple_linear_model
 
 import pywr.parameters
 
-
-@pytest.fixture()
-def simple_linear_model(request, solver):
-    """
-    Make a simple model with a single Input and Output.
-
-    Input -> Link -> Output
-
-    """
-    model = pywr.core.Model(solver=solver)
-    inpt = pywr.core.Input(model, name="Input")
-    lnk = pywr.core.Link(model, name="Link", cost=1.0)
-    inpt.connect(lnk)
-    otpt = pywr.core.Output(model, name="Output")
-    lnk.connect(otpt)
-
-    return model
 
 @pytest.mark.parametrize("in_flow, out_flow, benefit",
                          [(10.0, 10.0, 10.0), (10.0, 0.0, 0.0)])

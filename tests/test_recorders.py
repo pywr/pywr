@@ -7,8 +7,10 @@ from __future__ import print_function
 import pywr.core
 import numpy as np
 import pytest
-from test_analytical import simple_linear_model
-from pywr.recorders import NumpyArrayNodeRecorder, CSVRecorder, TablesRecorder
+from numpy.testing import assert_allclose
+from fixtures import simple_linear_model, simple_storage_model
+from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, \
+                           CSVRecorder, TablesRecorder
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -26,6 +28,22 @@ def test_numpy_recorder(simple_linear_model):
 
     assert rec.data.shape == (365, 1)
     assert np.all((rec.data - 10.0) < 1e-12)
+
+
+def test_numpy_storage_recorder(simple_storage_model):
+    """
+    Test the NumpyArrayStorageRecorder
+    """
+    model = simple_storage_model
+    
+    res = model.node['Storage']
+
+    rec = NumpyArrayStorageRecorder(model, res)
+    
+    model.run()
+    
+    assert(rec.data.shape == (5, 1))
+    assert_allclose(rec.data, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
 
 
 def test_csv_recorder(simple_linear_model, tmpdir):
