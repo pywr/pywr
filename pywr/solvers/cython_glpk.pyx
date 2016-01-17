@@ -1,5 +1,7 @@
 from libc.stdlib cimport malloc, free
 
+cimport cython
+
 from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
 
@@ -13,9 +15,9 @@ cdef class CythonGLPKSolver:
     cdef int idx_row_cross_domain
     cdef int idx_row_storages
 
-    cdef object routes
-    cdef object non_storages
-    cdef object storages
+    cdef list routes
+    cdef list non_storages
+    cdef list storages
 
     def __cinit__(self):
         # create a new problem
@@ -153,11 +155,14 @@ cdef class CythonGLPKSolver:
         for scenario_id, scenario_combination in enumerate(model.scenarios.combinations):
             self._solve_scenario(model, scenario_id, scenario_combination)
 
+    @cython.boundscheck(False)
     cdef object _solve_scenario(self, model, int scenario_id, int[:] scenario_indices):
         cdef Node node
+        cdef Storage storage
         cdef double min_flow
         cdef double max_flow
         cdef double cost
+        cdef double max_volume
         cdef double avail_volume
         cdef int col
         cdef int* ind
@@ -167,6 +172,7 @@ cdef class CythonGLPKSolver:
         cdef Timestep timestep
         cdef int status
         cdef cross_domain_col
+        cdef list route
 
         timestep = model.timestep
         routes = self.routes
@@ -207,8 +213,6 @@ cdef class CythonGLPKSolver:
 
         route_flow = [glp_get_col_prim(self.prob, col+1) for col in range(0, len(routes))]
         change_in_storage = [glp_get_row_prim(self.prob, self.idx_row_storages+col) for col in range(0, len(storages))]
-
-        result = {}
 
         for route, flow in zip(routes, route_flow):
             # TODO make this cleaner.
