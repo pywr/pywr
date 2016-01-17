@@ -90,6 +90,8 @@ cdef class AbstractNode:
         self._domain = kwargs.pop('domain', None)
         self._recorders = []
 
+        self._flow = np.empty([0,], np.float64)
+
     property cost:
         """The cost per unit flow via the node
 

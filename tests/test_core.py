@@ -174,3 +174,11 @@ def test_shorthand_property(solver):
         with pytest.raises(TypeError):
             setattr(node, attr, '123')
             setattr(node, attr, None)
+
+
+def test_reset_before_run(solver):
+    # See issue #82. Previously this would raise:
+    #    AttributeError: Memoryview is not initialized
+    model = Model(solver=solver)
+    node = Node(model, 'node')
+    model.reset()
