@@ -89,15 +89,12 @@ def test_hdf5_recorder(simple_linear_model, tmpdir):
 
     h5file = tmpdir.join('output.h5')
     import tables
-    h5f = tables.open_file(str(h5file), 'w')
-    rec = TablesRecorder(model, h5f.root)
+    with tables.open_file(str(h5file), 'w') as h5f:
+        rec = TablesRecorder(model, h5f.root)
 
-    model.run()
+        model.run()
 
-    for node_name in model.node.keys():
-        ca = h5f.get_node('/', node_name)
-        assert ca.shape == (365, 1)
-        assert np.all((ca[...] - 10.0) < 1e-12)
-
-
-
+        for node_name in model.node.keys():
+            ca = h5f.get_node('/', node_name)
+            assert ca.shape == (365, 1)
+            assert np.all((ca[...] - 10.0) < 1e-12)

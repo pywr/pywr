@@ -90,6 +90,13 @@ class TablesRecorder(Recorder):
 
         self._arrays = None
 
+    def __del__(self):
+        if self._arrays is not None:
+            for arr in self._arrays.values():
+                arr.close()
+        del(self._arrays)
+                
+
     def setup(self):
         """
         Setup the tables
