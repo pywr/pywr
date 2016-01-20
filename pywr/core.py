@@ -154,6 +154,20 @@ class Model(object):
         nodes = self.graph.nodes()
         for node in nodes:
             node.check()
+        self.check_graph()
+
+    def check_graph(self):
+        all_nodes = set(self.graph.nodes())
+        routes = self.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
+        # identify nodes that aren't in at least one route
+        seen = set()
+        for route in routes:
+            for node in route:
+                seen.add(node)
+        isolated_nodes = all_nodes ^ seen
+        for node in isolated_nodes:
+            if node.allow_isolated is False:
+                raise ModelStructureError("Node is not part of a valid route: {}".format(node.name))
 
     def nodes(self):
         """Returns a list of Nodes in the model"""
@@ -572,10 +586,7 @@ class XMLSeriaizable(object):
         from pywr.parameters import Parameter, ParameterConstant
         tag = xml.tag.lower()
         node_cls = node_registry[tag]
-        name = xml.get('name')
-        x = float(xml.get('x'))
-        y = float(xml.get('y'))
-        node = node_cls(model, name=name, position=(x, y,))
+        node = node_cls(model, **xml.attrib)
         for prop_xml in xml.findall('parameter'):
             key, prop = Parameter.from_xml(model, prop_xml)
             # TODO fix this hack by making Parameter loading better
@@ -621,6 +632,13 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseN
         """
         super(Node, self).__init__(model, name, **kwargs)
         self.color = 'black'
+
+        try:
+            x = float(kwargs['x'])
+            y = float(kwargs['y'])
+            self.position = (x, y,)
+        except KeyError:
+            pass
 
         self.slots = {}
         self.min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
@@ -770,6 +788,11 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
     def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
         super(Storage, self).__init__(model, name, **kwargs)
 
+        # cast number of inputs/outputs to integer
+        # this is needed if values come in as strings from xml
+        num_outputs = int(num_outputs)
+        num_inputs = int(num_inputs)
+
         self.outputs = []
         for n in range(0, num_outputs):
             self.outputs.append(StorageOutput(model, name="{} Output #{}".format(self.name, n), parent=self))
@@ -797,11 +820,15 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
+            if not self.inputs:
+                raise StopIteration
             if slot_name is None:
                 yield self.inputs[0]
             else:
                 yield self.inputs[slot_name]
         else:
+            if not self.outputs:
+                raise StopIteration
             if slot_name is None:
                 yield self.outputs[0]
             else:
@@ -939,4 +966,8 @@ class Group(object):
         if xml_licensecollection:
             group.licenses = LicenseCollection.from_xml(xml_licensecollection)
         return group
+
+
+class ModelStructureError(Exception):
+    pass
 

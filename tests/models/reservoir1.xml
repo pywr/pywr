@@ -7,7 +7,7 @@
         </description>
     </metadata>
     <nodes>
-        <reservoir name="supply1" x="1" y="1">
+        <reservoir name="supply1" x="1" y="1" num_inputs="1" num_outputs="0">
             <parameter type="constant" key="max_volume">35</parameter>
             <parameter type="constant" key="volume">35</parameter>
         </reservoir>
@@ -18,7 +18,7 @@
         </demandcentre>
     </nodes>
     <edges>
-        <edge from="supply1" to="link1" />
+        <edge from="supply1" to="link1" from_slot="0" />
         <edge from="link1" to="demand1" />
     </edges>
 </pywr>
