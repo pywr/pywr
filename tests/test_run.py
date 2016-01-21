@@ -375,6 +375,46 @@ def test_new_storage(solver):
     assert_allclose(demand1.flow, [20], atol=1e-7)
     assert_allclose(demand2.flow, [30], atol=1e-7)
 
+
+def test_storage_spill_compensation(solver):
+    """Test storage spill and compensation flows
+
+    The upstream catchment has min_flow == max_flow, so it "pushes" water into
+    the reservoir. The reservoir is already at it's maximum volume, so the
+    water must go *somewhere*. The compensation flow has the most negative cost,
+    so that is satisfied first. Once that is full, the demand is supplied.
+    Finally, any surplus is forced into the spill despite the cost.
+
+    Catchment -> Reservoir -> Demand
+                         |--> Spill        --|
+                         |--> Compensation --|
+                                             |--> Terminator
+    """
+    model = pywr.core.Model(solver=solver)
+
+    catchment = pywr.core.Input(model, name="Input", min_flow=10.0, max_flow=10.0, cost=1)
+    reservoir = pywr.core.Storage(model, name="Storage", max_volume=100, volume=100.0)
+    spill = pywr.core.Link(model, name="Spill", cost=1.0)
+    compensation = pywr.core.Link(model, name="Compensation", max_flow=3.0, cost=-999)
+    terminator = pywr.core.Output(model, name="Terminator", cost=-1.0)
+    demand = pywr.core.Output(model, name="Demand", max_flow=5.0, cost=-500)
+
+    catchment.connect(reservoir)
+    reservoir.connect(spill)
+    reservoir.connect(compensation)
+    reservoir.connect(demand)
+    spill.connect(terminator)
+    compensation.connect(terminator)
+
+    model.check()
+    model.run()
+    assert(catchment.flow[0] == 10.0)
+    assert(demand.flow[0] == 5.0)
+    assert(compensation.flow[0] == 3.0)
+    assert(spill.flow[0] == 2.0)
+    assert(terminator.flow[0] == (compensation.flow[0] + spill.flow[0]))
+
+
 def test_reset(solver):
     """Test model reset"""
     model = load_model('license1.xml', solver=solver)
