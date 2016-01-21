@@ -216,29 +216,6 @@ def test_run_bottleneck(solver):
     d2 = model.node['demand2']
     assert_allclose(d1.flow+d2.flow, 15.0, atol=1e-7)
 
-
-@pytest.mark.xfail
-def test_run_mrf(solver):
-    '''Test minimum residual flow constraint'''
-    model = load_model('river_mrf1.xml', solver=solver)
-
-    # check mrf value was parsed from xml
-    river_gauge = model.node['gauge1']
-    assert_allclose(river_gauge.properties['mrf'].value(model.timestamp), 10.5)
-
-    # test model result
-    data = {
-        None: 12.0,
-        100: 0.0,
-        10.5: 8.5,
-        11.75: 7.25,
-        0.0: 12.0,
-    }
-    for mrf_value, expected_supply in data.items():
-        river_gauge.properties['mrf'] = pywr.parameters.ParameterConstant(mrf_value)
-        result = model.step()
-        assert(result[0:3] == ('optimal', 12.0, expected_supply))
-
 def test_run_discharge_upstream(solver):
     '''Test river with inline discharge (upstream)
 
