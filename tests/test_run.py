@@ -473,13 +473,14 @@ def test_run_until_date(solver):
     assert(timestep.index == 20)
 
 
-# TODO: this fails if glpk solver wasn't built
-@pytest.mark.xfail
-def test_solver_glpk():
-    '''Test specifying the solver in XML'''
-    data = '''<pywr><solver name="glpk" /><nodes /><edges /><metadata /></pywr>'''
-    model = load_model(data=data)
-    assert(model.solver.name.lower() == 'glpk')
+def test_select_solver_xml():
+    """Test specifying the solver in XML"""
+    solver_names = list(pywr.solvers.SolverMeta.solvers.keys())
+    solver_names.remove('default')  # not helpful for this test
+    for solver_name in solver_names:
+        data = '''<pywr><solver name="{}" /><nodes /><edges /><metadata /></pywr>'''.format(solver_name)
+        model = load_model(data=data)
+        assert(model.solver.name.lower() == solver_name)
 
 
 def test_solver_unrecognised():
