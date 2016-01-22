@@ -385,11 +385,11 @@ def test_storage_spill_compensation(solver):
 
     model.check()
     model.run()
-    assert(catchment.flow[0] == 10.0)
-    assert(demand.flow[0] == 5.0)
-    assert(compensation.flow[0] == 3.0)
-    assert(spill.flow[0] == 2.0)
-    assert(terminator.flow[0] == (compensation.flow[0] + spill.flow[0]))
+    assert_allclose(catchment.flow[0], 10.0, atol=1e-7)
+    assert_allclose(demand.flow[0], 5.0, atol=1e-7)
+    assert_allclose(compensation.flow[0], 3.0, atol=1e-7)
+    assert_allclose(spill.flow[0], 2.0, atol=1e-7)
+    assert_allclose(terminator.flow[0], (compensation.flow[0] + spill.flow[0]), atol=1e-7)
 
 
 def test_reset(solver):
