@@ -507,7 +507,7 @@ class Connectable(object):
                 self.model.graph.add_edge(node1, node2)
         self.model.dirty = True
 
-    def disconnect(self, node=None):
+    def disconnect(self, node=None, slot_name=None):
         """Remove a connection from this Node to another Node
 
         Parameters
@@ -515,23 +515,34 @@ class Connectable(object):
         node : Node (optional)
             The node to remove the connection to. If another node is not
             specified, all connections from this node will be removed.
+        slot_name : integer (optional)
+            If specified, only remove the connection to a specific slot name.
+            Otherwise connections from all slots are removed.
         """
         if node is not None:
-            self._disconnect(node)
+            self._disconnect(node, slot_name=slot_name)
         else:
             neighbors = self.model.graph.neighbors(self)
             for neighbor in neighbors:
-                self._disconnect(neighbor)
+                self._disconnect(neighbor, slot_name=slot_name)
 
-    def _disconnect(self, node):
+    def _disconnect(self, node, slot_name=None):
         """As disconnect, except node argument is required"""
-        self.model.graph.remove_edge(self, node)
-        for slot, slot_node in node.slots.items():
-            if slot_node is self:
-                node.slots[slot] = None
-        for slot, slot_node in self.slots.items():
-            if slot_node is node:
-                self.slots[slot] = None
+        disconnected = False
+        try:
+            self.model.graph.remove_edge(self, node)
+        except:
+            for node_slot in node.iter_slots(slot_name=slot_name, is_connector=False):
+                try:
+                    self.model.graph.remove_edge(self, node_slot)
+                except nx.exception.NetworkXError:
+                    pass
+                else:
+                    disconnected = True
+        else:
+            disconnected = True
+        if not disconnected:
+            raise nx.exception.NetworkXError('{} is not connected to {}'.format(self, node))
         self.model.dirty = True
 
 
@@ -798,12 +809,14 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
             if slot_name is None:
-                yield self.inputs[0]
+                for node in self.inputs:
+                    yield node
             else:
                 yield self.inputs[slot_name]
         else:
             if slot_name is None:
-                yield self.outputs[0]
+                for node in self.outputs:
+                    yield node
             else:
                 yield self.outputs[slot_name]
 

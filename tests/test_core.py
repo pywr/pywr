@@ -42,41 +42,57 @@ def test_names(solver):
         node4 = Input(model)
 
 
-# TODO Update this test. Blender is not implemented.
-@pytest.mark.xfail
-def test_slots_to(solver):
+def test_slots_connect_disconnect(solver):
+    """Test connection and disconnection to storage node slots
+    """
     model = Model(solver=solver)
 
     supply1 = Input(model, name='supply1')
     supply2 = Input(model, name='supply2')
-    blender = Blender(model, name='blender', ratio=0.5)
+    storage = Storage(model, name='storage', num_inputs=2, num_outputs=2)
+
+    storage_inputs = [[x for x in storage.iter_slots(slot_name=n, is_connector=True)][0] for n in (0, 1)]
+    storage_outputs = [[x for x in storage.iter_slots(slot_name=n, is_connector=False)][0] for n in (0, 1)]
 
     # attempt to connect to invalid slot
-    with pytest.raises(ValueError):
-        supply1.connect(blender, to_slot=3)
-    assert((supply1, blender) not in model.edges())
+    # an error is raised, and no connection is made
+    with pytest.raises(IndexError):
+        supply1.connect(storage, to_slot=3)
+    assert((supply1, storage_inputs[0]) not in model.edges())
+    assert((supply1, storage_inputs[1]) not in model.edges())
 
-    supply1.connect(blender, to_slot=1)
-    assert((supply1, blender) in model.edges())
+    # connect node to storage slot 0
+    supply1.connect(storage, to_slot=0)
+    assert((supply1, storage_outputs[0]) in model.edges())
+    assert((supply1, storage_inputs[1]) not in model.edges())
 
-    # a node can connect to multiple slots
-    supply1.connect(blender, to_slot=2)
-    assert(blender.slots[1] is supply1)
-    assert(blender.slots[2] is supply1)
+    # the same node can be connected to multiple slots
+    # connect node to storage slot 1
+    supply1.connect(storage, to_slot=1)
+    assert((supply1, storage_outputs[0]) in model.edges())
+    assert((supply1, storage_outputs[1]) in model.edges())
 
-    supply1.disconnect(blender)
-    assert((supply1, blender) not in model.edges())
-    # as well as removing the edge, the node should be removed from the slot
-    assert(supply1 not in blender.slots.values())
+    # disconnect the node from a particular slot (recommended method)
+    supply1.disconnect(storage, slot_name=0)
+    assert((supply1, storage_outputs[0]) not in model.edges())
+    assert((supply1, storage_outputs[1]) in model.edges())
 
-    # override slot with another node
-    supply1.connect(blender, to_slot=1)
-    supply1.connect(blender, to_slot=2)
-    supply2.connect(blender, to_slot=2)
-    assert((supply1, blender) in model.edges())
-    assert((supply2, blender) in model.edges())
-    assert(blender.slots[1] is supply1)
-    assert(blender.slots[2] is supply2)
+    # disconnect the node from a particular slot (direct, not recommended)
+    supply1.connect(storage, to_slot=0)
+    supply1.disconnect(storage_outputs[0])
+    assert((supply1, storage_outputs[0]) not in model.edges())
+    assert((supply1, storage_outputs[1]) in model.edges())
+
+    # specifying the storage in general removes the connection from all slots
+    supply1.connect(storage, to_slot=0)
+    supply1.disconnect(storage)
+    assert((supply1, storage_outputs[0]) not in model.edges())
+    assert((supply1, storage_outputs[1]) not in model.edges())
+
+    # it's an error to attempt to disconnect if nodes aren't connected
+    with pytest.raises(Exception):
+        supply1.disconnect(storage)
+
 
 # TODO Update this test. RiverSplit is deprecated.
 @pytest.mark.xfail
