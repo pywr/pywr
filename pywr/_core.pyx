@@ -95,6 +95,10 @@ cdef class AbstractNode:
 
         self._flow = np.empty([0,], np.float64)
 
+        # there shouldn't be any unhandled keyword arguments by this point
+        if kwargs:
+            raise TypeError("__init__() got an unexpected keyword argument '{}'".format(list(kwargs.items())[0]))
+
     property allow_isolated:
         def __get__(self):
             return self._allow_isolated

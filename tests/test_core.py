@@ -43,6 +43,21 @@ def test_names(solver):
         node4 = Input(model)
 
 
+def test_unexpected_kwarg(solver):
+    model = Model(solver=solver)
+
+    with pytest.raises(TypeError):
+        node = Node(model, 'test_node', invalid=True)
+    with pytest.raises(TypeError):
+        inpt = Input(model, 'test_input', invalid=True)
+    with pytest.raises(TypeError):
+        storage = Storage(model, 'test_storage', invalid=True)
+    # none of the nodes should have been added to the model as they all
+    # raised exceptions during __init__
+    # TODO FIXME: nodes are still added, even if __init__ raises exception
+    # assert(not model.nodes())
+
+
 # TODO Update this test. Blender is not implemented.
 @pytest.mark.xfail
 def test_slots_to(solver):
@@ -194,9 +209,9 @@ def test_check_isolated_nodes(simple_linear_model):
     # add a node, but don't connect it to the network
     isolated_node = Input(model, 'isolated')
     with pytest.raises(ModelStructureError):
-        model.check
+        model.check()
 
-def test_check_isolated_nodes(solver):
+def test_check_isolated_nodes_storage(solver):
     """Test model structure checker with Storage
     
     The Storage node itself doesn't have any connections, but it's child
