@@ -6,7 +6,7 @@ status_string = [
     'solution is feasible',
     'solution is infeasible',
     'no feasible solution exists',
-    'solutioj is optimal',
+    'solution is optimal',
     'solution is unbounded',
 ]
 
