@@ -450,6 +450,16 @@ def test_run_until_date(solver):
     assert(timestep.index == 20)
 
 
+def test_run_is_infeasible(solver):
+    model = pywr.core.Model(solver=solver)
+    catchment = pywr.core.Input(model, name="Input", min_flow=10.0, max_flow=10.0, cost=1)
+    demand = pywr.core.Output(model, name="Demand", max_flow=5.0, cost=-500)
+    catchment.connect(demand)
+    # problem is infeasible, because catchment.min_flow > demand.max_flow
+    with pytest.raises(RuntimeError):
+        model.run()
+
+
 def test_select_solver_xml():
     """Test specifying the solver in XML"""
     solver_names = list(pywr.solvers.SolverMeta.solvers.keys())

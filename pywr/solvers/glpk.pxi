@@ -44,6 +44,10 @@ cdef extern from "glpk.h":
         pass
     ctypedef struct glp_smcp:
         int msg_lev
+        int presolve
+
+    int GLP_ON = 1 # on
+    int GLP_OFF = 0 # off
 
     int GLP_MIN = 1 # minimization
     int GLP_MAX = 2 # maximization
@@ -77,6 +81,9 @@ cdef extern from "glpk.h":
     void glp_set_mat_row(glp_prob *P, int i, int len, const int ind[], const double val[]);
     void glp_set_mat_col(glp_prob *P, int j, int len, const int ind[], const double val[]);
 
+    void glp_set_row_name(glp_prob *P, int i, const char *name)
+    void glp_set_col_name(glp_prob *P, int j, const char *name)
+
     void glp_set_row_bnds(glp_prob *P, int i, int type, double lb, double ub)
     void glp_set_col_bnds(glp_prob *P, int j, int type, double lb, double ub)
 
@@ -88,5 +95,13 @@ cdef extern from "glpk.h":
 
     int glp_get_status(glp_prob *P)
     
+    int glp_get_mat_row(glp_prob *P, int i, int ind[], double val[])
+
+    int glp_get_num_cols(glp_prob *P)
+    int glp_get_num_rows(glp_prob *P)
+
     double glp_get_row_prim(glp_prob *P, int i)
     double glp_get_col_prim(glp_prob *P, int j)
+
+    const char *glp_get_row_name(glp_prob *P, int i)
+    const char *glp_get_col_name(glp_prob *P, int j)

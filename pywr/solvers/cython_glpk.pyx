@@ -47,6 +47,8 @@ cdef class CythonGLPKSolver:
         cdef int status
         cdef cross_domain_row
 
+        self.smcp.presolve = GLP_ON
+
         routes = model.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
         # Find cross-domain routes
         cross_domain_routes = model.find_all_routes(BaseOutput, BaseInput, max_length=2, domain_match='different')
@@ -89,9 +91,15 @@ cdef class CythonGLPKSolver:
 
         # constrain supply minimum and maximum flow
         self.idx_row_non_storages = glp_add_rows(self.prob, len(non_storages))
+        for r in range(0, len(non_storages)):
+            name = non_storages[r].name.format(r).encode('utf-8')
+            glp_set_row_name(self.prob, self.idx_row_non_storages+r, name)
         # Add rows for the cross-domain routes.
         if len(cross_domain_cols) > 0:
             self.idx_row_cross_domain = glp_add_rows(self.prob, len(cross_domain_cols))
+            for r in range(0, len(cross_domain_cols)):
+                name = 'cross domain col #{}'.format(r).encode('utf-8')
+                glp_set_row_name(self.prob, self.idx_row_cross_domain+r, name)
 
         cross_domain_row = 0
         for row, some_node in enumerate(non_storages):
@@ -132,6 +140,9 @@ cdef class CythonGLPKSolver:
         # storage
         if len(storages):
             self.idx_row_storages = glp_add_rows(self.prob, len(storages))
+            for r in range(0, len(storages)):
+                name = storages[r].name.format(r).encode('utf-8')
+                glp_set_row_name(self.prob, self.idx_row_storages+r, name)
         for col, storage in enumerate(storages):
             cols_output = [n for n, route in enumerate(routes) if route[-1] in storage.outputs]
             cols_input = [n for n, route in enumerate(routes) if route[0] in storage.inputs]
@@ -206,9 +217,30 @@ cdef class CythonGLPKSolver:
 
         # attempt to solve the linear programme
         glp_simplex(self.prob, &self.smcp)
+        self.smcp.presolve = GLP_OFF
 
         status = glp_get_status(self.prob)
         if status != GLP_OPT:
+            # add slack variables to explore infeasibility
+            num_cols = glp_get_num_cols(self.prob)
+            num_rows = glp_get_num_rows(self.prob)
+            col = glp_add_cols(self.prob, <int>num_rows)
+            for r in range(0, num_rows):
+                glp_set_col_bnds(self.prob, num_cols+r+1, GLP_LO, 0.0, DBL_MAX)
+                nz = glp_get_mat_row(self.prob, r+1, NULL, NULL)
+                ind = <int*>malloc((nz+2) * sizeof(int))
+                val = <double*>malloc((nz+2) * sizeof(double))
+                glp_get_mat_row(self.prob, r+1, ind, val)
+                ind[nz+1] = col+r
+                val[nz+1] = 1.0
+                glp_set_mat_row(self.prob, r+1, nz+1, ind, val)
+            glp_simplex(self.prob, &self.smcp)
+            new_status = glp_get_status(self.prob)
+            assert(new_status == GLP_OPT)  # slack variables should ensure problem is feasible
+            # print debugging information
+            for r in range(0, num_rows):
+                name = glp_get_row_name(self.prob, r+1)
+                print('{} [row {}]: {}'.format(name.decode('utf-8'), r, glp_get_col_prim(self.prob, col+r)))
             raise RuntimeError(status_string[status])
 
         route_flow = [glp_get_col_prim(self.prob, col+1) for col in range(0, len(routes))]
