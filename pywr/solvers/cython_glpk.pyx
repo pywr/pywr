@@ -155,12 +155,12 @@ cdef class CythonGLPKSolver:
         self.stats = {'total': 0.0, 'lp_solve': 0.0, 'bounds_update': 0.0, 'result_update': 0.0}
 
     cpdef object solve(self, model):
-        t0 = time.time()
+        t0 = time.clock()
         cdef int[:] scenario_combination
         cdef int scenario_id
         for scenario_id, scenario_combination in enumerate(model.scenarios.combinations):
             self._solve_scenario(model, scenario_id, scenario_combination)
-        self.stats['total'] += time.time() - t0
+        self.stats['total'] += time.clock() - t0
 
     cdef object _solve_scenario(self, model, int scenario_id, int[:] scenario_indices):
         cdef Node node
@@ -177,7 +177,7 @@ cdef class CythonGLPKSolver:
         cdef int status
         cdef cross_domain_col
 
-        t0 = time.time()
+        t0 = time.clock()
         timestep = model.timestep
         routes = self.routes
         non_storages = self.non_storages
@@ -208,10 +208,10 @@ cdef class CythonGLPKSolver:
             ub = (max_volume-storage._volume[scenario_id])/timestep.days
             glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
-        self.stats['bounds_update'] += time.time() - t0
+        self.stats['bounds_update'] += time.clock() - t0
 
         # attempt to solve the linear programme
-        t0 = time.time()
+        t0 = time.clock()
         glp_simplex(self.prob, &self.smcp)
 
 
@@ -219,8 +219,8 @@ cdef class CythonGLPKSolver:
         if status != GLP_OPT:
             raise RuntimeError(status_string[status])
 
-        self.stats['lp_solve'] += time.time() - t0
-        t0 = time.time()
+        self.stats['lp_solve'] += time.clock() - t0
+        t0 = time.clock()
 
         route_flow = [glp_get_col_prim(self.prob, col+1) for col in range(0, len(routes))]
         change_in_storage = [glp_get_row_prim(self.prob, self.idx_row_storages+col) for col in range(0, len(storages))]
@@ -235,5 +235,5 @@ cdef class CythonGLPKSolver:
                 if isinstance(node, BaseLink):
                     node.commit(scenario_id, flow)
 
-        self.stats['result_update'] += time.time() - t0
+        self.stats['result_update'] += time.clock() - t0
         return route_flow, change_in_storage
