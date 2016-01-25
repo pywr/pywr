@@ -154,7 +154,7 @@ cdef class CythonLPSolveSolver:
         supplys = []
         demands = []
         storages = []
-        for some_node in model.nodes():
+        for some_node in model.graph.nodes():
             if isinstance(some_node, (BaseInput, BaseLink)):
                 supplys.append(some_node)
             if isinstance(some_node, BaseOutput):

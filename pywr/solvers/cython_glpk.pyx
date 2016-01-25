@@ -57,7 +57,7 @@ cdef class CythonGLPKSolver:
 
         non_storages = []
         storages = []
-        for some_node in model.nodes():
+        for some_node in model.graph.nodes():
             if isinstance(some_node, (BaseInput, BaseLink, BaseOutput)):
                 non_storages.append(some_node)
             elif isinstance(some_node, Storage):

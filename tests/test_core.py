@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import pytest
+from fixtures import *
 from pywr._core import Timestep
 
 from pywr.core import *
@@ -35,11 +36,31 @@ def test_names(solver):
     # attempt name collision (via new)
     with pytest.raises(ValueError):
         node3 = Input(model, name='C')
-    assert(len(model.node) == 2)
+    assert(len(model.node) == 2)  # node3 not added to graph
 
     # attempt to create a node without a name
     with pytest.raises(TypeError):
         node4 = Input(model)
+
+
+def test_model_nodes(model):
+    """Test Model.nodes API"""
+    node = Input(model, 'test')
+
+    # test node by index
+    assert(model.nodes['test'] is node)
+
+    with pytest.raises(KeyError):
+        model.nodes['invalid']
+
+    # test node iterator
+    all_nodes = [node for node in model.nodes]
+    assert(all_nodes == [node])
+
+    # support for item deletion
+    del(model.nodes['test'])
+    all_nodes = [node for node in model.nodes]
+    assert(all_nodes == [])
 
 
 def test_slots_connect_disconnect(solver):
