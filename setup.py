@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 
-from setuptools import setup
-from distutils.extension import Extension
+try:
+    from setuptools import setup
+    from setuptools import Extension
+    print('Using setuptools for setup!')
+except ImportError:
+    from distutils.core import setup
+    from distutils.extension import Extension
+    print('Using distutils for setup!')
 from distutils.errors import CCompilerError, DistutilsExecError, \
     DistutilsPlatformError
 from Cython.Distutils import build_ext
