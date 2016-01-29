@@ -63,6 +63,20 @@ def test_model_nodes(model):
     assert(all_nodes == [])
 
 
+def test_unexpected_kwarg(solver):
+    model = Model(solver=solver)
+
+    with pytest.raises(TypeError):
+        node = Node(model, 'test_node', invalid=True)
+    with pytest.raises(TypeError):
+        inpt = Input(model, 'test_input', invalid=True)
+    with pytest.raises(TypeError):
+        storage = Storage(model, 'test_storage', invalid=True)
+    # none of the nodes should have been added to the model as they all
+    # raised exceptions during __init__
+    assert(not model.nodes())
+
+
 def test_slots_connect_disconnect(solver):
     """Test connection and disconnection to storage node slots
     """
@@ -219,3 +233,34 @@ def test_reset_before_run(solver):
     model = Model(solver=solver)
     node = Node(model, 'node')
     model.reset()
+
+
+def test_check_isolated_nodes(simple_linear_model):
+    """Test model storage checker"""
+    # the simple model shouldn't have any isolated nodes
+    model = simple_linear_model
+    model.check()
+    
+    # add a node, but don't connect it to the network
+    isolated_node = Input(model, 'isolated')
+    with pytest.raises(ModelStructureError):
+        model.check()
+
+def test_check_isolated_nodes_storage(solver):
+    """Test model structure checker with Storage
+    
+    The Storage node itself doesn't have any connections, but it's child
+    nodes do need to be connected.
+    """
+    model = Model(solver=solver)
+    
+    # add a storage, but don't connect it's outflow to anything
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    with pytest.raises(ModelStructureError):
+        model.check()
+
+    # add a demand node and connect it to the storage outflow
+    demand = Output(model, 'demand')
+    storage.connect(demand, from_slot=0)
+    model.check()
+

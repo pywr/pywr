@@ -80,6 +80,9 @@ cdef class Domain:
         self.name = name
 
 cdef class AbstractNode:
+    def __cinit__(self):
+        self._allow_isolated = False
+
     def __init__(self, model, name, **kwargs):
         self._model = model
         self.name = name
@@ -89,6 +92,16 @@ cdef class AbstractNode:
         self._recorders = []
 
         self._flow = np.empty([0,], np.float64)
+
+        # there shouldn't be any unhandled keyword arguments by this point
+        if kwargs:
+            raise TypeError("__init__() got an unexpected keyword argument '{}'".format(list(kwargs.items())[0]))
+
+    property allow_isolated:
+        def __get__(self):
+            return self._allow_isolated
+        def __set__(self, value):
+            self._allow_isolated = value
 
     property cost:
         """The cost per unit flow via the node
@@ -393,6 +406,7 @@ cdef class Storage(AbstractNode):
         self._max_volume_param = None
         self._cost_param = None
         self._domain = None
+        self._allow_isolated = True
 
     property volume:
         def __get__(self, ):

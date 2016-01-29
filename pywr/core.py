@@ -222,6 +222,20 @@ class Model(object):
         nodes = self.graph.nodes()
         for node in nodes:
             node.check()
+        self.check_graph()
+
+    def check_graph(self):
+        all_nodes = set(self.graph.nodes())
+        routes = self.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
+        # identify nodes that aren't in at least one route
+        seen = set()
+        for route in routes:
+            for node in route:
+                seen.add(node)
+        isolated_nodes = all_nodes ^ seen
+        for node in isolated_nodes:
+            if node.allow_isolated is False:
+                raise ModelStructureError("Node is not part of a valid route: {}".format(node.name))
 
     @property
     def nodes(self):
@@ -654,10 +668,7 @@ class XMLSeriaizable(object):
         from pywr.parameters import Parameter, ParameterConstant
         tag = xml.tag.lower()
         node_cls = node_registry[tag]
-        name = xml.get('name')
-        x = float(xml.get('x'))
-        y = float(xml.get('y'))
-        node = node_cls(model, name=name, position=(x, y,))
+        node = node_cls(model, **xml.attrib)
         for prop_xml in xml.findall('parameter'):
             key, prop = Parameter.from_xml(model, prop_xml)
             # TODO fix this hack by making Parameter loading better
@@ -709,14 +720,29 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseN
         name : string
             A unique name for the node
         """
+
+        x = kwargs.pop('x', None)
+        y = kwargs.pop('y', None)
+        if x is not None and y is not None:
+            position = (float(x), float(y),)
+        else:
+            position = None
+
+        color = kwargs.pop('color', 'black')
+        min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
+        max_flow = pop_kwarg_parameter(kwargs, 'max_flow', float('inf'))
+        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+        conversion_factor = pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
+
         super(Node, self).__init__(model, name, **kwargs)
-        self.color = 'black'
 
         self.slots = {}
-        self.min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
-        self.max_flow = pop_kwarg_parameter(kwargs, 'max_flow', float('inf'))
-        self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
-        self.conversion_factor = pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
+        self.color = color
+        self.min_flow = min_flow
+        self.max_flow = max_flow
+        self.cost = cost
+        self.conversion_factor = conversion_factor
+        self.position = position
 
     def __repr__(self):
         if self.name:
@@ -858,6 +884,23 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
     sub-nodes record flow as normal.
     """
     def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
+        # cast number of inputs/outputs to integer
+        # this is needed if values come in as strings from xml
+        num_outputs = int(num_outputs)
+        num_inputs = int(num_inputs)
+
+        min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
+        volume = kwargs.pop('volume', 0.0)
+        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+
+        x = kwargs.pop('x', None)
+        y = kwargs.pop('y', None)
+        if x is not None and y is not None:
+            position = (float(x), float(y),)
+        else:
+            position = None
+
         super(Storage, self).__init__(model, name, **kwargs)
 
         self.outputs = []
@@ -868,10 +911,20 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
         for n in range(0, num_inputs):
             self.inputs.append(StorageInput(model, name="[input{}]".format(n), parent=self))
 
-        self.min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
-        self.max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        self.volume = kwargs.pop('volume', 0.0)
-        self.cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+        self.min_volume = min_volume
+        self.max_volume = max_volume
+        self.volume = volume
+        self.cost = cost
+        self.position = position
+
+        # TODO FIXME!
+        # StorageOutput and StorageInput are Cython classes, which do not have
+        # NodeMeta as their metaclass, therefore they don't get added to the
+        # model graph automatically.
+        for node in self.outputs:
+            self.model.graph.add_node(node)
+        for node in self.inputs:
+            self.model.graph.add_node(node)
 
         # TODO: keyword arguments for input and output nodes specified with prefix
         '''
@@ -887,12 +940,16 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
+            if not self.inputs:
+                raise StopIteration
             if slot_name is None:
                 for node in self.inputs:
                     yield node
             else:
                 yield self.inputs[slot_name]
         else:
+            if not self.outputs:
+                raise StopIteration
             if slot_name is None:
                 for node in self.outputs:
                     yield node
@@ -1031,4 +1088,8 @@ class Group(object):
         if xml_licensecollection:
             group.licenses = LicenseCollection.from_xml(xml_licensecollection)
         return group
+
+
+class ModelStructureError(Exception):
+    pass
 

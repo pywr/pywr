@@ -31,6 +31,7 @@ cdef class AbstractNode:
     cdef AbstractNode _parent
     cdef object _model
     cdef object _name
+    cdef bint _allow_isolated
 
     cdef Parameter _cost_param
     cpdef get_cost(self, Timestep ts, int[:] scenario_indices=*)
