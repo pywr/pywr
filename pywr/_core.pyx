@@ -82,8 +82,6 @@ cdef class Domain:
 cdef class AbstractNode:
     def __init__(self, model, name, **kwargs):
         self._model = model
-        model.graph.add_node(self)
-        model.dirty = True
         self.name = name
 
         self._parent = kwargs.pop('parent', None)
@@ -121,16 +119,10 @@ cdef class AbstractNode:
 
         def __set__(self, name):
             # check for name collision
-            if name in self.model.node:
+            if name in self.model.nodes.keys():
                 raise ValueError('A node with the name "{}" already exists.'.format(name))
-            # remove old name
-            try:
-                del(self.model.node[self._name])
-            except KeyError:
-                pass
             # apply new name
             self._name = name
-            self.model.node[name] = self
 
     property recorders:
         def __get__(self):

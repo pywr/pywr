@@ -9,6 +9,11 @@ import datetime
 import pytest
 
 @pytest.fixture()
+def model(request, solver):
+    model = Model(solver=solver)
+    return model
+
+@pytest.fixture()
 def simple_linear_model(request, solver):
     """
     Make a simple model with a single Input and Output.

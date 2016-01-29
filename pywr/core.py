@@ -92,6 +92,75 @@ class ScenarioCollection(_core.ScenarioCollection):
     pass
 
 
+class NodeIterator(object):
+    """Iterator for Nodes in a Model which also supports indexing
+
+    Notes
+    -----
+    Although it's not very efficient to have to read through all of the nodes
+    in a model when accessing one by name (e.g. model.nodes['reservoir']), it's
+    easier than having to keep a dictionary up to date. The solvers should
+    avoid using this class, and use Model.graph.nodes() directly.
+    """
+    def __init__(self, model):
+        self.model = model
+        self.position = 0
+        self.length = None
+
+    def _nodes(self):
+        for node in self.model.graph.nodes():
+            if node.parent is None:  # don't return child nodes (e.g. StorageInput)
+                yield node
+        raise StopIteration()
+
+    def __getitem__(self, key):
+        """Get a node from the graph by it's name"""
+        for node in self._nodes():
+            if node.name == key:
+                return node
+        raise KeyError("'{}'".format(key))
+
+    def __delitem__(self, key):
+        """Remove a node from the graph by it's name"""
+        node = self[key]
+        self.model.graph.remove_node(node)
+
+    def keys(self):
+        for node in self._nodes():
+            yield node.name
+
+    def values(self):
+        for node in self._nodes():
+            yield node
+
+    def items(self):
+        for node in self._nodes():
+            yield (node.name, node)
+
+    def __len__(self):
+        """Returns the number of nodes in the model"""
+        return len(list(self._nodes()))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.next()
+
+    def next(self):
+        if self.position == 0:
+            self.nodes = list(self._nodes())
+            self.length = len(self.nodes)
+        if self.position < self.length:
+            node = self.nodes[self.position]
+            self.position += 1
+            return node
+        raise StopIteration()
+
+    def __call__(self):
+        # support for old API
+        return self
+
 class Model(object):
     """Model of a water supply network"""
     def __init__(self, solver=None, parameters=None):
@@ -139,7 +208,6 @@ class Model(object):
             # use default solver
             self.solver = SolverMeta.get_default()()
 
-        self.node = {}
         self.group = {}
         self.recorders = []
         self.scenarios = ScenarioCollection()
@@ -155,9 +223,12 @@ class Model(object):
         for node in nodes:
             node.check()
 
+    @property
     def nodes(self):
-        """Returns a list of Nodes in the model"""
-        return self.graph.nodes()
+        """Returns a model node iterator"""
+        return NodeIterator(self)
+    # support for old API
+    node = nodes
 
     def edges(self):
         """Returns a list of Edges in the model
@@ -307,7 +378,7 @@ class Model(object):
         """Setup the model for the first time or if it has changed since
         last run."""
         ntimesteps = len(self.timestepper)
-        for node in self.nodes():
+        for node in self.graph.nodes():
             node.setup(self)
         for recorder in self.recorders:
             recorder.setup()
@@ -318,17 +389,17 @@ class Model(object):
     def reset(self, start=None):
         """Reset model to it's initial conditions"""
         self.timestepper.reset(start=start)
-        for node in self.nodes():
+        for node in self.nodes:
             node.reset()
         for recorder in self.recorders:
             recorder.reset()
 
     def before(self):
-        for node in self.nodes():
+        for node in self.graph.nodes():
             node.before(self.timestep)
 
     def after(self):
-        for node in self.nodes():
+        for node in self.graph.nodes():
             node.after(self.timestep)
         for recorder in self.recorders:
             recorder.save()
@@ -356,7 +427,7 @@ class Model(object):
             xml_data.append(xml_ts)
 
         xml_nodes = ET.SubElement(xml_model, 'nodes')
-        for node in self.nodes():
+        for node in self.graph.nodes():
             xml_node = node.xml()
             xml_nodes.append(xml_node)
 
@@ -610,6 +681,14 @@ class NodeMeta(type):
     def __init__(cls, name, bases, dct):
         super(NodeMeta, cls).__init__(name, bases, dct)
         node_registry[name.lower()] = cls
+    def __call__(cls, *args, **kwargs):
+        # Create new instance of Node (or subclass thereof)
+        node = type.__call__(cls, *args, **kwargs)
+        # Add node to Model graph. This needs to be done here, so that if the
+        # __init__ method of Node raises an exception it is not added.
+        node.model.graph.add_node(node)
+        node.model.dirty = True
+        return node
 
 
 class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseNode)):
@@ -783,11 +862,11 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
 
         self.outputs = []
         for n in range(0, num_outputs):
-            self.outputs.append(StorageOutput(model, name="{} Output #{}".format(self.name, n), parent=self))
+            self.outputs.append(StorageOutput(model, name="[output{}]".format(n), parent=self))
 
         self.inputs = []
         for n in range(0, num_inputs):
-            self.inputs.append(StorageInput(model, name="{} Input #{}".format(self.name, n), parent=self))
+            self.inputs.append(StorageInput(model, name="[input{}]".format(n), parent=self))
 
         self.min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         self.max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
