@@ -27,6 +27,59 @@ class Parameter(BaseParameter):
         parameter_type = xml.get('type')
         return parameter_types[parameter_type].from_xml(model, xml)
 
+class ParameterCollection(Parameter):
+    """A collection of Parameters
+
+    This object behaves like a set. Licenses can be added to or removed from it.
+
+    """
+    def __init__(self, parameters=None):
+        if parameters is None:
+            self._parameters = []
+        else:
+            self._parameters = set(parameters)
+            for param in self._parameters:
+                param.parent = self
+
+    def add(self, parameter):
+        self._parameters.add(parameter)
+        parameter.parent = self
+
+    def remove(self, parameter):
+        self._parameters.remove(parameter)
+        parameter.parent = None
+
+    def __len__(self):
+        return len(self._parameters)
+
+    def value(self, timestep, scenario_indices=[0]):
+        raise NotImplementedError()
+
+
+    def after(self, timestep):
+        for parameter in self._parameters:
+            parameter.after(timestep)
+
+    def reset(self):
+        for parameter in self._parameters:
+            parameter.reset()
+
+
+class MinimumParameterCollection(ParameterCollection):
+    def value(self, timestep, scenario_indices=[0]):
+        min_available = float('inf')
+        for parameter in self._parameters:
+            min_available = min(parameter.value(timestep, scenario_indices), min_available)
+        return min_available
+
+
+class MaximumParameterCollection(ParameterCollection):
+    def value(self, timestep, scenario_indices=[0]):
+        max_available = -float('inf')
+        for parameter in self._parameters:
+            max_available = max(parameter.value(timestep, scenario_indices), max_available)
+        return max_available
+
 
 class ParameterConstant(Parameter):
     def __init__(self, value=None):

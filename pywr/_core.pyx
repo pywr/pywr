@@ -53,6 +53,13 @@ cdef class ScenarioCollection:
     def __len__(self):
         return len(self._scenarios)
 
+    property shape:
+        def __get__(self):
+            return (sc._size for sc in self._collection._scenarios)
+
+    cpdef int ravel_indices(self, int[:] scenario_indices):
+        return np.ravel_multi_index(scenario_indices, self.shape)
+
 
 cdef class Timestep:
     def __init__(self, object datetime, int index, double days):
@@ -115,6 +122,7 @@ cdef class AbstractNode:
         def __set__(self, value):
             if isinstance(value, Parameter):
                 self._cost_param = value
+                value.node = self
             else:
                 self._cost_param = None
                 self._cost = value
@@ -202,7 +210,8 @@ cdef class AbstractNode:
             self._flow[i] += value[i]
 
     cpdef after(self, Timestep ts):
-        pass
+        if self._cost_param is not None:
+            self._cost_param.after(ts)
 
     cpdef check(self,):
         pass
@@ -251,6 +260,7 @@ cdef class Node(AbstractNode):
         def __set__(self, value):
             if isinstance(value, Parameter):
                 self._min_flow_param = value
+                value.node = self
             else:
                 self._min_flow_param = None
                 self._min_flow = value
@@ -273,6 +283,7 @@ cdef class Node(AbstractNode):
                 self._max_flow = inf
             elif isinstance(value, Parameter):
                 self._max_flow_param = value
+                value.node = self
             else:
                 self._max_flow_param = None
                 self._max_flow = value
@@ -333,44 +344,20 @@ cdef class Node(AbstractNode):
 
     cpdef after(self, Timestep ts):
         """Called at the end of the timestep"""
+        AbstractNode.after(self, ts)
         self._prev_flow[:] = self._flow[:]
-
+        # Complete any parameter calculations
+        if self._max_flow_param is not None:
+            self._max_flow_param.after(ts)
+        if self._min_flow_param is not None:
+            self._min_flow_param.after(ts)
 
 cdef class BaseLink(Node):
     pass
 
 
 cdef class BaseInput(Node):
-    def __init__(self, *args, **kwargs):
-        self._licenses = None
-        super(BaseInput, self).__init__(*args, **kwargs)
-
-    property licenses:
-        def __get__(self):
-            return self._licenses
-        def __set__(self, value):
-            self._licenses = value
-
-    cpdef get_max_flow(self, Timestep timestep, int[:] scenario_indices=None):
-        """ Calculate maximum flow including licenses """
-        max_flow = Node.get_max_flow(self, timestep, scenario_indices)
-        if self._licenses is not None:
-            # TODO make licences Scenario aware
-            if len(scenario_indices) > 0:
-                import warnings
-                warnings.warn("Licences are not scenario aware!")
-            max_flow = min(max_flow, self._licenses.available(timestep))
-        return max_flow
-
-    cpdef reset(self, ):
-        if self._licenses is not None:
-            self._licenses.reset()
-        Node.reset(self)
-
-    cpdef commit(self, int scenario_index, double value):
-        if self._licenses is not None:
-            self._licenses.commit(scenario_index, value)
-        Node.commit(self, scenario_index, value)
+    pass
 
 
 cdef class BaseOutput(Node):
@@ -431,6 +418,7 @@ cdef class Storage(AbstractNode):
             self._min_volume_param = None
             if isinstance(value, Parameter):
                 self._min_volume_param = value
+                value.node = self
             else:
                 self._min_volume = value
 
@@ -444,6 +432,7 @@ cdef class Storage(AbstractNode):
             self._max_volume_param = None
             if isinstance(value, Parameter):
                 self._max_volume_param = value
+                value.node = self
             else:
                 self._max_volume = value
 
@@ -482,3 +471,8 @@ cdef class Storage(AbstractNode):
         cdef int i
         for i in range(self._flow.shape[0]):
             self._volume[i] += self._flow[i]*ts._days
+
+        if self._max_volume_param is not None:
+            self._max_volume_param.after(ts)
+        if self._min_volume_param is not None:
+            self._min_volume_param.after(ts)
