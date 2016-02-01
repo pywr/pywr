@@ -5,11 +5,14 @@ cdef class ParameterArrayIndexed
 cdef class ParameterConstantScenario
 cdef class ParameterArrayIndexedScenarioMonthlyFactors
 
-from _core cimport Timestep, Scenario
+from _core cimport Timestep, Scenario, AbstractNode
 
 cdef class Parameter:
+    cdef AbstractNode _node
+    cdef Parameter _parent
     cpdef setup(self, model)
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1
+    cpdef after(self, Timestep ts)
 
 cdef class ParameterArrayIndexed(Parameter):
     cdef double[:] values

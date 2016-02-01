@@ -22,7 +22,6 @@ import warnings
 warnings.simplefilter(action = "ignore", category = FutureWarning)
 warnings.simplefilter(action = "ignore", category = UnicodeWarning)
 
-from .licenses import LicenseCollection
 
 class Timestepper(object):
     def __init__(self, start=pandas.to_datetime('2015-01-01'),
@@ -776,19 +775,6 @@ class Input(Node, BaseInput):
         super(Input, self).__init__(*args, **kwargs)
         self.color = '#F26C4F' # light red
 
-    def xml(self):
-        xml = super(Supply, self).xml()
-        if self.licenses is not None:
-            xml.append(self.licenses.xml())
-        return xml
-
-    @classmethod
-    def from_xml(cls, model, xml):
-        node = Node.from_xml(model, xml)
-        licensecollection_xml = xml.find('licensecollection')
-        if licensecollection_xml is not None:
-            node.licenses = LicenseCollection.from_xml(licensecollection_xml)
-        return node
 
 class InputFromOtherDomain(Input):
     """A input in to the network that is connected to an output from another domain

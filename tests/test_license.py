@@ -3,7 +3,9 @@
 import pytest
 from datetime import datetime
 from pywr._core import Timestep
-from pywr.licenses import License, TimestepLicense, AnnualLicense, LicenseCollection
+from pywr.licenses import License, TimestepLicense, AnnualLicense
+from fixtures import simple_linear_model
+
 
 def test_base_license():
     with pytest.raises(TypeError):
@@ -14,48 +16,47 @@ def test_daily_license():
 
     lic = TimestepLicense(42.0)
     assert(isinstance(lic, License))
-    assert(lic.available(Timestep(datetime(2015, 1, 1), 0, 0)) == 42.0)
+    assert(lic.value(Timestep(datetime(2015, 1, 1), 0, 0)) == 42.0)
 
     # daily licences don't have resource state
     assert(lic.resource_state(Timestep(datetime(2015, 1, 1), 0, 0)) is None)
 
-def test_annual_license():
-    '''Test annual license'''
 
-    lic = AnnualLicense(365.0)
-    assert(isinstance(lic, License))
-    assert(lic.available(Timestep(datetime(2015, 1, 1), 0, 0)) == 365.0)
-    assert(lic.resource_state(Timestep(datetime(2015, 1, 1), 0, 0)) == 1.0)
+def test_simple_model_with_annual_licence(simple_linear_model):
+    m = simple_linear_model
 
-    # use some water and check the remaining decreases
-    lic.commit(0, 181.0)
-    assert(lic.available(Timestep(datetime(2015, 1, 1), 0, 0)) == 184.0)
+    annual_total = 365
+    lic = AnnualLicense(annual_total)
+    # Apply licence to the model
+    m.node["Input"].max_flow = lic
+    m.node["Output"].max_flow = 10.0
+    m.node["Output"].cost = -10.0
+    m.setup()
+    print(lic)
+    # timestepper.current is the next time step (because model has not begun)
+    assert lic.value(m.timestepper.current) == annual_total/365
+    m.step()
 
-    # check resource state
-    assert(lic.resource_state(Timestep(datetime(2015, 7, 1), 0, 0)) == 1.0) # as expected
-    assert(lic.resource_state(Timestep(datetime(2015, 8, 1), 0, 0)) > 1.0) # better than expected
-    assert(lic.resource_state(Timestep(datetime(2015, 6, 1), 0, 0)) < 1.0) # worse than expected
+    # Licence is a hard constraint of 1.0
+    # timestepper.current is no end of the first day
+    assert m.node["Output"].flow == 1.0
+    # Check the constraint for the next timestep.
+    assert lic.value(m.timestepper._next) == 1.0
 
-    # on last day, resource state is inf
-    assert(lic.resource_state(Timestep(datetime(2015, 12, 31), 0, 0)) == float('inf'))
+    # Now constrain the demand so that licence is not fully used
+    m.node["Output"].max_flow = 0.5
+    m.step()
 
-    # after a refresh, licence is restored to original state
-    lic.reset()
-    assert(lic.available(Timestep(datetime(2015, 1, 1), 0, 0)) == 365.0)
-    assert(lic.resource_state(Timestep(datetime(2015, 1, 1), 0, 0)) == 1.0)
+    assert m.node["Output"].flow == 0.5
+    # Check the constraint for the next timestep. The available amount should now be large
+    # due to the reduced use
+    remaining = (annual_total-1.5)
+    assert lic.value(m.timestepper._next) == remaining / (365 - 2)
 
-def test_license_collection():
-    '''Test license collection'''
-    daily_lic = TimestepLicense(42.0)
-    annual_lic = AnnualLicense(365.0)
-    collection = LicenseCollection([daily_lic, annual_lic])
-
-    assert(len(collection) == 2)
-
-    assert(collection.available(Timestep(datetime(2015, 1, 1), 0, 0)) == 42.0)
-    assert(collection.resource_state(Timestep(datetime(2015, 1, 1), 0, 0)) == 1.0)
-    assert(collection.resource_state(Timestep(datetime(2015, 2, 1), 0, 0)) > 1.0)
-
-    collection.commit(0, 360.0)
-    assert(collection.available(Timestep(datetime(2015, 12, 1), 0, 0)) == 5.0)
-    assert(collection.resource_state(Timestep(datetime(2015, 12, 1), 0, 0)) < 1.0)
+    # Unconstrain the demand
+    m.node["Output"].max_flow = 10.0
+    m.step()
+    assert m.node["Output"].flow == remaining / (365 - 2)
+    # Licence should now be on track for an expected value of 1.0
+    remaining -= remaining / (365 - 2)
+    assert lic.value(m.timestepper._next) == remaining / (365 - 3)
