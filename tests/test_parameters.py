@@ -3,7 +3,7 @@ Test for individual Parameter classes
 """
 from pywr.core import Model, Timestep, Scenario
 from pywr.parameters import (ParameterArrayIndexed, ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors,
-                             ParameterMonthlyProfile, ParameterDailyProfile)
+                             ParameterMonthlyProfile, ParameterDailyProfile, ParameterMinimumCollection, ParameterMaximumCollection)
 
 import datetime
 import numpy as np
@@ -106,3 +106,39 @@ def test_parameter_daily_profile(model):
     for ts in model.timestepper:
         iday = ts.datetime.dayofyear - 1
         np.testing.assert_allclose(p.value(ts, np.array([0], dtype=np.int32)), values[iday])
+
+
+def test_parameter_min(model):
+    # Add two scenarios
+    scA = Scenario(model, 'Scenario A', size=2)
+    scB = Scenario(model, 'Scenario B', size=5)
+
+    values = np.arange(366, dtype=np.float64)
+    p1 = ParameterDailyProfile(values)
+    p2 = ParameterConstantScenario(scB, np.arange(scB.size, dtype=np.float64))
+
+    p = ParameterMinimumCollection([p1, p2])
+    p.setup(model)
+
+    for ts in model.timestepper:
+        iday = ts.datetime.dayofyear - 1
+        for i in range(scB.size):
+            np.testing.assert_allclose(p.value(ts, np.array([0, i], dtype=np.int32)), min(values[iday], i))
+
+
+def test_parameter_max(model):
+    # Add two scenarios
+    scA = Scenario(model, 'Scenario A', size=2)
+    scB = Scenario(model, 'Scenario B', size=5)
+
+    values = np.arange(366, dtype=np.float64)
+    p1 = ParameterDailyProfile(values)
+    p2 = ParameterConstantScenario(scB, np.arange(scB.size, dtype=np.float64))
+
+    p = ParameterMaximumCollection([p1, p2])
+    p.setup(model)
+
+    for ts in model.timestepper:
+        iday = ts.datetime.dayofyear - 1
+        for i in range(scB.size):
+            np.testing.assert_allclose(p.value(ts, np.array([0, i], dtype=np.int32)), max(values[iday], i))
