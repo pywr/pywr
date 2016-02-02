@@ -55,6 +55,9 @@ class ParameterCollection(Parameter):
     def value(self, timestep, scenario_indices=[0]):
         raise NotImplementedError()
 
+    def setup(self, model):
+        for parameter in self._parameters:
+            parameter.setup(model)
 
     def after(self, timestep):
         for parameter in self._parameters:
@@ -65,7 +68,7 @@ class ParameterCollection(Parameter):
             parameter.reset()
 
 
-class MinimumParameterCollection(ParameterCollection):
+class ParameterMinimumCollection(ParameterCollection):
     def value(self, timestep, scenario_indices=[0]):
         min_available = float('inf')
         for parameter in self._parameters:
@@ -73,7 +76,7 @@ class MinimumParameterCollection(ParameterCollection):
         return min_available
 
 
-class MaximumParameterCollection(ParameterCollection):
+class ParameterMaximumCollection(ParameterCollection):
     def value(self, timestep, scenario_indices=[0]):
         max_available = -float('inf')
         for parameter in self._parameters:
