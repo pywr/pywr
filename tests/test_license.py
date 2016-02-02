@@ -32,7 +32,7 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     m.node["Output"].max_flow = 10.0
     m.node["Output"].cost = -10.0
     m.setup()
-    print(lic)
+
     # timestepper.current is the next time step (because model has not begun)
     assert_allclose(lic.value(m.timestepper.current), annual_total/365)
     m.step()
