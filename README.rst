@@ -33,7 +33,8 @@ To run the unit tests:
 License
 =======
 
-Copyright (C) 2015  Joshua Arnott
+Copyright (C) 2015-16 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
