@@ -91,7 +91,8 @@ class StorageLicense(License):
         return self._remaining[i]
 
     def after(self, timestep):
-        self._remaining -= self.node.flow
+        self._remaining -= self.node.flow*timestep.days
+        self._remaining[self._remaining < 0] = 0.0
 
     def reset(self):
         self._remaining[...] = self._amount
@@ -99,6 +100,11 @@ class StorageLicense(License):
 
 class AnnualLicense(StorageLicense):
     """An annual license"""
+    def __init__(self, amount):
+        super(AnnualLicense, self).__init__(amount)
+        # Record year ready to reset licence when the year changes.
+        self._prev_year = None
+
     def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
         i = self.node.model.scenarios.ravel_indices(scenario_indices)
         timetuple = timestep.datetime.timetuple()
@@ -107,9 +113,13 @@ class AnnualLicense(StorageLicense):
         if day_of_year == days_in_year:
             return self._remaining[i]
         else:
-            print(self._remaining, days_in_year, day_of_year)
             return self._remaining[i] / (days_in_year - day_of_year + 1)
 
+    def before(self, timestep):
+        # Reset licence if year changes.
+        if self._prev_year != timestep.datetime.year:
+            self.reset()
+            self._prev_year = timestep.datetime.year
 
     def xml(self):
         xml = ET.Element('license')
