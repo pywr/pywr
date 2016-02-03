@@ -11,6 +11,8 @@ cdef class Parameter:
     cdef AbstractNode _node
     cdef Parameter _parent
     cpdef setup(self, model)
+    cpdef reset(self)
+    cpdef before(self, Timestep ts)
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1
     cpdef after(self, Timestep ts)
 
