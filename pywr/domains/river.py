@@ -1,6 +1,7 @@
 
 from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink
-from pywr.parameters import Parameter, pop_kwarg_parameter
+from pywr.parameters import pop_kwarg_parameter, ParameterConstant, BaseParameter
+from pywr.control_curves import ParameterControlCurvePiecewise
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 
@@ -67,25 +68,41 @@ class Reservoir(RiverDomainMixin, Storage):
         Keywords:
             control_curve - A Parameter object that can return the control curve position,
                 as a percentage of fill, for the given timestep.
-            above_curve_cost - The cost to apply when the reservoir is above its curve.
         """
-        self.control_curve = pop_kwarg_parameter(kwargs, 'control_curve', None)
-        self.above_curve_cost = kwargs.pop('above_curve_cost', 0.0)
+        control_curve = pop_kwarg_parameter(kwargs, 'control_curve', None)
+        above_curve_cost = kwargs.pop('above_curve_cost', None)
+        cost = kwargs.pop('cost', 0.0)
+        if above_curve_cost is not None:
+            if not isinstance(cost, BaseParameter):
+                # In the case where an above_curve_cost is given and cost is not a Parameter
+                # a default cost Parameter is created.
+                kwargs['cost'] = ParameterControlCurvePiecewise(above_curve_cost, cost)
+            else:
+                raise ValueError('If an above_curve_cost is given cost must not be a Parameter.')
+        else:
+            # reinstate the given cost parameter to pass to the parent constructors
+            kwargs['cost'] = cost
         super(Reservoir, self).__init__(*args, **kwargs)
 
-    def get_cost(self, ts, scenario_indices):
-        # If no control curve given behaves like a normal Storage
-        if self.control_curve is None:
-            return super(Reservoir, self).get_cost(ts, scenario_indices)
+        if control_curve is None:
+            # Make a default control curve at 100% capacity
+            control_curve = ParameterConstant(1.0)
+        elif not isinstance(control_curve, BaseParameter):
+            # Assume parameter is some kind of constant and coerce to ParameterConstant
+            control_curve = ParameterConstant(control_curve)
+        self.control_curve = control_curve
 
-        if isinstance(self.control_curve, Parameter):
-            control_curve = self.control_curve.value(ts)
-        else:
-            control_curve = self.control_curve
-        # If level above control curve then return above_curve_cost
-        if self.current_pc >= control_curve:
-            return self.above_curve_cost
-        return super(Reservoir, self).get_cost(ts, scenario_indices)
+    def setup(self, model):
+        super(Reservoir, self).setup(model)
+        self.control_curve.setup(model)
+
+    def before(self, timestep):
+        super(Reservoir, self).before(timestep)
+        self.control_curve.before(timestep)
+
+    def after(self, timestep):
+        super(Reservoir, self).after(timestep)
+        self.control_curve.after(timestep)
 
 
 class River(RiverDomainMixin, Link):
