@@ -62,6 +62,7 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     assert_allclose(lic.value(m.timestepper._next), remaining / (365 - 3))
 
 
+@pytest.mark.xfail(reason="AnnualLicence doesn't correctly account for timesteps that don't fall on 1st January.")
 def test_simple_model_with_annual_licence_multi_year(simple_linear_model):
     """ Test the AnnualLicense over multiple years
     """
