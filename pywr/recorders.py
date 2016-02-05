@@ -1,3 +1,5 @@
+import sys
+import os
 from pywr._recorders import Recorder, NodeRecorder, StorageRecorder, NumpyArrayNodeRecorder, NumpyArrayStorageRecorder
 
 
@@ -40,7 +42,10 @@ class CSVRecorder(Recorder):
             self.node_names = sorted(n.name for n in self.nodes)
 
         import csv
-        self._fh = open(self.csvfile, 'w')
+        if sys.version_info.major >= 3:
+            self._fh = open(self.csvfile, 'w', newline='')
+        else:
+            self._fh = open(self.csvfile, 'w')
         self._writer = csv.writer(self._fh, **self.csv_kwargs)
         # Write header data
         self._writer.writerow(['Datetime']+self.node_names)
@@ -95,7 +100,7 @@ class TablesRecorder(Recorder):
             for arr in self._arrays.values():
                 arr.close()
         del(self._arrays)
-                
+
 
     def setup(self):
         """
