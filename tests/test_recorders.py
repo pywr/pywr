@@ -35,13 +35,13 @@ def test_numpy_storage_recorder(simple_storage_model):
     Test the NumpyArrayStorageRecorder
     """
     model = simple_storage_model
-    
+
     res = model.node['Storage']
 
     rec = NumpyArrayStorageRecorder(model, res)
-    
+
     model.run()
-    
+
     assert(rec.data.shape == (5, 1))
     assert_allclose(rec.data, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
 
@@ -65,7 +65,10 @@ def test_csv_recorder(simple_linear_model, tmpdir):
 
     import csv
     with open(str(csvfile), 'r') as fh:
-        for irow, row in enumerate(csv.reader(fh)):
+        dialect = csv.Sniffer().sniff(fh.read(1024))
+        fh.seek(0)
+        reader = csv.reader(fh, dialect)
+        for irow, row in enumerate(reader):
             if irow == 0:
                 expected = ['Datetime', 'Input', 'Link', 'Output']
                 actual = row
