@@ -62,15 +62,15 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     assert_allclose(lic.value(m.timestepper._next), remaining / (365 - 3))
 
 
-@pytest.mark.xfail(reason="AnnualLicence doesn't correctly account for timesteps that don't fall on 1st January.")
 def test_simple_model_with_annual_licence_multi_year(simple_linear_model):
     """ Test the AnnualLicense over multiple years
     """
     import pandas as pd
     import datetime, calendar
     m = simple_linear_model
-    # Modify model to run for 5 years on 30 days timestep
-    m.timestepper.end = pd.to_datetime('2020-12-31')
+    # Modify model to run for 3 years of non-leap years at 30 day time-step.
+    m.timestepper.start = pd.to_datetime('2017-1-1')
+    m.timestepper.end = pd.to_datetime('2020-1-1')
     m.timestepper.delta = datetime.timedelta(30)
 
     annual_total = 365.0

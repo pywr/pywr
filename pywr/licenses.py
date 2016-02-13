@@ -119,6 +119,14 @@ class AnnualLicense(StorageLicense):
         # Reset licence if year changes.
         if self._prev_year != timestep.datetime.year:
             self.reset()
+
+            # The number of days in the year before the first timestep of that year
+            timetuple = timestep.datetime.timetuple()
+            days_before_reset = timetuple.tm_yday - 1
+            # Adjust the license by the rate in previous timestep. This is needed for timesteps greater
+            # than 1 day where the license reset is not exactly on the anniversary
+            self._remaining[...] -= days_before_reset*self.node.prev_flow
+
             self._prev_year = timestep.datetime.year
 
     def xml(self):
