@@ -72,9 +72,10 @@ def test_control_curve(solver):
     catchment.connect(lnk)
     demand = river.DemandCentre(model, name="Demand", cost=-10.0, max_flow=10)
     lnk.connect(demand)
-
+    from pywr.parameters import ParameterConstant
+    control_curve = ParameterConstant(0.8)
     reservoir = river.Reservoir(model, name="Reservoir", max_volume=10, cost=-20, above_curve_cost=0.0,
-                                control_curve=0.8, volume=10)
+                                control_curve=control_curve, volume=10)
     reservoir.inputs[0].max_flow = 2.0
     reservoir.outputs[0].max_flow = 2.0
     lnk.connect(reservoir)
@@ -96,7 +97,7 @@ def test_control_curve(solver):
     assert(demand.flow == 6)
     # Set the above_curve_cost function to keep filling
     from pywr.control_curves import ParameterControlCurvePiecewise
-    reservoir.cost = ParameterControlCurvePiecewise(-20.0, -20.0)
+    reservoir.cost = ParameterControlCurvePiecewise(control_curve, -20.0, -20.0)
     model.step()
     assert(reservoir.volume == 10)
     assert(demand.flow == 6)

@@ -73,36 +73,23 @@ class Reservoir(RiverDomainMixin, Storage):
         above_curve_cost = kwargs.pop('above_curve_cost', None)
         cost = kwargs.pop('cost', 0.0)
         if above_curve_cost is not None:
+            if control_curve is None:
+                # Make a default control curve at 100% capacity
+                control_curve = ParameterConstant(1.0)
+            elif not isinstance(control_curve, BaseParameter):
+                # Assume parameter is some kind of constant and coerce to ParameterConstant
+                control_curve = ParameterConstant(control_curve)
+
             if not isinstance(cost, BaseParameter):
                 # In the case where an above_curve_cost is given and cost is not a Parameter
                 # a default cost Parameter is created.
-                kwargs['cost'] = ParameterControlCurvePiecewise(above_curve_cost, cost)
+                kwargs['cost'] = ParameterControlCurvePiecewise(control_curve, above_curve_cost, cost)
             else:
                 raise ValueError('If an above_curve_cost is given cost must not be a Parameter.')
         else:
             # reinstate the given cost parameter to pass to the parent constructors
             kwargs['cost'] = cost
         super(Reservoir, self).__init__(*args, **kwargs)
-
-        if control_curve is None:
-            # Make a default control curve at 100% capacity
-            control_curve = ParameterConstant(1.0)
-        elif not isinstance(control_curve, BaseParameter):
-            # Assume parameter is some kind of constant and coerce to ParameterConstant
-            control_curve = ParameterConstant(control_curve)
-        self.control_curve = control_curve
-
-    def setup(self, model):
-        super(Reservoir, self).setup(model)
-        self.control_curve.setup(model)
-
-    def before(self, timestep):
-        super(Reservoir, self).before(timestep)
-        self.control_curve.before(timestep)
-
-    def after(self, timestep):
-        super(Reservoir, self).after(timestep)
-        self.control_curve.after(timestep)
 
 
 class River(RiverDomainMixin, Link):
