@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import calendar
+import calendar, datetime
 import xml.etree.ElementTree as ET
 from ._parameters import Parameter as BaseParameter
 import numpy as np
@@ -126,3 +126,34 @@ class AnnualLicense(StorageLicense):
         xml.set('type', 'annual')
         xml.text = str(self._amount)
         return xml
+
+
+class AnnualExponentialCostLicense(AnnualLicense):
+    def __init__(self, amount, max_cost, k=1.0):
+        super(AnnualExponentialCostLicense, self).__init__(amount)
+
+        self._max_cost = max_cost
+        self._k = k
+
+    def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
+
+        remaining = super(AnnualExponentialCostLicense, self).value(timestep, scenario_indices)
+        expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
+        x = remaining / expected
+        return self._max_cost * np.exp(-x/self._k)
+
+class AnnualHyperbolaCostLicense(AnnualLicense):
+    def __init__(self, amount, cost):
+        super(AnnualHyperbolaCostLicense, self).__init__(amount)
+
+        self._cost = cost
+
+    def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
+
+        remaining = super(AnnualHyperbolaCostLicense, self).value(timestep, scenario_indices)
+        expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
+        x = remaining / expected
+        try:
+            return self._cost / x
+        except ZeroDivisionError:
+            return inf
