@@ -1,0 +1,37 @@
+build: false
+
+environment:
+  matrix:
+    - PYTHON_VERSION: 2.7
+      PYTHON_ARCH: 32
+      MINICONDA: C:\Miniconda
+
+    - PYTHON_VERSION: 2.7
+      PYTHON_ARCH: 64
+      MINICONDA: C:\Miniconda-x64
+
+    - PYTHON_VERSION: 3.4
+      PYTHON_ARCH: 32
+      MINICONDA: C:\Miniconda3
+
+    - PYTHON_VERSION: 3.4
+      PYTHON_ARCH: 64
+      MINICONDA: C:\Miniconda3-x64
+      DISTUTILS_USE_SDK: 1
+
+init:
+  - "ECHO %PYTHON_VERSION% %MINICONDA%"
+
+install:
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - conda install -q conda-build anaconda-client
+  # Configure MSVC. This should come after activating the conda envionment to
+  # avoid issues with the length of PATH.
+  - appveyor\build.cmd
+  # Add channel for dependencies
+  - conda config --add channels snorfalorpagus
+  # Build package
+  - "conda build -q conda-recipe --python %PYTHON_VERSION% --numpy 1.10"
