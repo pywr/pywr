@@ -344,7 +344,7 @@ cdef class Node(AbstractNode):
         AbstractNode.setup(self, model)
         cdef int ncomb = len(model.scenarios.combinations)
         self._flow = np.empty(ncomb, dtype=np.float64)
-        self._prev_flow = np.empty(ncomb, dtype=np.float64)
+        self._prev_flow = np.zeros(ncomb, dtype=np.float64)
         # Setup any Parameters and Recorders
         if self._min_flow_param is not None:
             self._min_flow_param.setup(model)
