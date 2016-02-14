@@ -11,6 +11,7 @@ from pywr.core import *
 from pywr.domains.river import *
 from pywr.parameters import Parameter, Timeseries
 
+TEST_FOLDER = os.path.dirname(__file__)
 
 def test_names(solver):
     '''Test node names'''
@@ -154,23 +155,26 @@ def test_slots_from(solver):
 
 def test_timeseries_csv(solver):
     model = Model(solver=solver)
-    ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
+    filename = os.path.join(TEST_FOLDER, 'timeseries1.csv')
+    ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
     timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
     assert(ts.value(timestep) == 21.92)
 
 
 def test_timeseries_excel(solver):
     model = Model(solver=solver)
-    ts = Timeseries.read(model, name='ts', path='tests/timeseries1.xlsx', sheet='mydata', column='Data')
+    filename = os.path.join(TEST_FOLDER, 'timeseries1.xlsx')
+    ts = Timeseries.read(model, name='ts', path=filename, sheet='mydata', column='Data')
     timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
     assert(ts.value(timestep) == 21.92)
 
 
 def test_timeseries_name_collision(solver):
     model = Model(solver=solver)
-    ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
+    filename = os.path.join(TEST_FOLDER, 'timeseries1.csv')
+    ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
     with pytest.raises(ValueError):
-        ts = Timeseries.read(model, name='ts1', path='tests/timeseries1.csv', column='Data')
+        ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
 
 
 def test_dirty_model(solver):
