@@ -34,7 +34,7 @@ install:
   # Add channel for dependencies
   - conda config --add channels snorfalorpagus
   # Build package
-  - "conda build -q conda-recipe --python %PYTHON_VERSION% --numpy 1.10 --numpy 1.9"
+  - "conda build -q conda-recipe --python %PYTHON_VERSION% --numpy 1.10"
 
 after_test:
   - "mkdir dist"
