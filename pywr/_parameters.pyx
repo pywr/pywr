@@ -7,6 +7,26 @@ cdef class Parameter:
         pass
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
         return 0
+    cpdef after(self, Timestep ts):
+        pass
+
+    property node:
+        def __get__(self):
+            print(self, self._parent, self._node)
+            if self._parent is not None:
+                return self._parent.node
+            return self._node
+        def __set__(self, value):
+            self._node = value
+
+    property parent:
+        """The parent Parameter of this object.
+        """
+        def __get__(self):
+            return self._parent
+
+        def __set__(self, value):
+            self._parent = value
 
 cdef class ParameterArrayIndexed(Parameter):
     """Time varying parameter using an array and Timestep._index
