@@ -101,6 +101,13 @@ class StorageLicense(License):
 class AnnualLicense(StorageLicense):
     """An annual license"""
     def __init__(self, amount):
+        """
+        Parameters
+        ----------
+        amount : float
+            The total annual volume for this license
+
+        """
         super(AnnualLicense, self).__init__(amount)
         # Record year ready to reset licence when the year changes.
         self._prev_year = None
@@ -136,32 +143,69 @@ class AnnualLicense(StorageLicense):
         return xml
 
 
-class AnnualExponentialCostLicense(AnnualLicense):
-    def __init__(self, amount, max_cost, k=1.0):
-        super(AnnualExponentialCostLicense, self).__init__(amount)
+class AnnualLicenseExponential(AnnualLicense):
+    """ An annual license that returns a value based on an exponential function of the license's current state.
 
-        self._max_cost = max_cost
+    The exponential function takes the form,
+
+    .. math::
+        f(t) = \mathit{max_value}e^{-x/k}
+
+    Where :math:`x` is the ratio of actual daily averaged remaining license (as calculated by AnnualLicense) to the
+    expected daily averaged remaining licence. I.e. if the license is on track the ratio is 1.0.
+    """
+    def __init__(self, amount, max_value, k=1.0):
+        """
+
+        Parameters
+        ----------
+        amount : float
+            The total annual volume for this license
+        max_value : float
+            The maximum value that can be returned. This is used to scale the exponential function
+        k : float
+            A scale factor for the exponent of the exponential function
+        """
+        super(AnnualLicenseExponential, self).__init__(amount)
+        self._max_value = max_value
         self._k = k
 
     def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
-
-        remaining = super(AnnualExponentialCostLicense, self).value(timestep, scenario_indices)
+        remaining = super(AnnualLicenseExponential, self).value(timestep, scenario_indices)
         expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
         x = remaining / expected
-        return self._max_cost * np.exp(-x/self._k)
+        return self._max_value * np.exp(-x / self._k)
 
-class AnnualHyperbolaCostLicense(AnnualLicense):
-    def __init__(self, amount, cost):
-        super(AnnualHyperbolaCostLicense, self).__init__(amount)
 
-        self._cost = cost
+class AnnualLicenseHyperbola(AnnualLicense):
+    """ An annual license that returns a value based on an hyperbola (1/x) function of the license's current state.
+
+    The hyperbola function takes the form,
+
+    .. math::
+        f(t) = \mathit{value}/x
+
+    Where :math:`x` is the ratio of actual daily averaged remaining license (as calculated by AnnualLicense) to the
+    expected daily averaged remaining licence. I.e. if the license is on track the ratio is 1.0.
+    """
+    def __init__(self, amount, value):
+        """
+
+        Parameters
+        ----------
+        amount : float
+            The total annual volume for this license
+        value : float
+            The value used to scale the hyperbola function
+        """
+        super(AnnualLicenseHyperbola, self).__init__(amount)
+        self._value = value
 
     def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
-
-        remaining = super(AnnualHyperbolaCostLicense, self).value(timestep, scenario_indices)
+        remaining = super(AnnualLicenseHyperbola, self).value(timestep, scenario_indices)
         expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
         x = remaining / expected
         try:
-            return self._cost / x
+            return self._value / x
         except ZeroDivisionError:
             return inf
