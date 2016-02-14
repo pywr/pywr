@@ -117,7 +117,8 @@ def test_parameter_min(model):
     p1 = ParameterDailyProfile(values)
     p2 = ParameterConstantScenario(scB, np.arange(scB.size, dtype=np.float64))
 
-    p = ParameterMinimumCollection([p1, p2])
+    p = ParameterMinimumCollection([p1, ])
+    p.add(p2)
     p.setup(model)
 
     for ts in model.timestepper:

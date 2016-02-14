@@ -5,6 +5,13 @@ cimport numpy as np
 cdef class Parameter:
     cpdef setup(self, model):
         pass
+
+    cpdef reset(self):
+        pass
+
+    cpdef before(self, Timestep ts):
+        pass
+
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
         return 0
     cpdef after(self, Timestep ts):
@@ -12,7 +19,6 @@ cdef class Parameter:
 
     property node:
         def __get__(self):
-            print(self, self._parent, self._node)
             if self._parent is not None:
                 return self._parent.node
             return self._node

@@ -55,10 +55,15 @@ cdef class ScenarioCollection:
 
     property shape:
         def __get__(self):
-            return (sc._size for sc in self._collection._scenarios)
+            if len(self._scenarios) == 0:
+                return (1, )
+            return (sc._size for sc in self._scenarios)
 
     cpdef int ravel_indices(self, int[:] scenario_indices):
-        return np.ravel_multi_index(scenario_indices, self.shape)
+        # Case where scenario_indices is empty for no scenarios defined
+        if scenario_indices.size == 0:
+            return 0
+        return np.ravel_multi_index(scenario_indices, np.array(self.shape))
 
 
 cdef class Timestep:
@@ -193,11 +198,17 @@ cdef class AbstractNode:
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
 
+        if self._cost_param is not None:
+            self._cost_param.reset()
+
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""
         cdef int i
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
+
+        if self._cost_param is not None:
+            self._cost_param.before(ts)
 
     cpdef commit(self, int scenario_index, double value):
         """Called once for each route the node is a member of"""
@@ -333,14 +344,29 @@ cdef class Node(AbstractNode):
         AbstractNode.setup(self, model)
         cdef int ncomb = len(model.scenarios.combinations)
         self._flow = np.empty(ncomb, dtype=np.float64)
-        self._prev_flow = np.empty(ncomb, dtype=np.float64)
+        self._prev_flow = np.zeros(ncomb, dtype=np.float64)
         # Setup any Parameters and Recorders
         if self._min_flow_param is not None:
             self._min_flow_param.setup(model)
         if self._max_flow_param is not None:
             self._max_flow_param.setup(model)
-        if self._cost_param is not None:
-            self._cost_param.setup(model)
+
+    cpdef reset(self):
+        # Reset any Parameters and Recorders
+        if self._min_flow_param is not None:
+            self._min_flow_param.reset()
+        if self._max_flow_param is not None:
+            self._max_flow_param.reset()
+
+    cpdef before(self, Timestep ts):
+        """Called at the beginning of the timestep"""
+        AbstractNode.before(self, ts)
+
+        # Complete any parameter calculations
+        if self._max_flow_param is not None:
+            self._max_flow_param.before(ts)
+        if self._min_flow_param is not None:
+            self._min_flow_param.before(ts)
 
     cpdef after(self, Timestep ts):
         """Called at the end of the timestep"""
@@ -465,6 +491,21 @@ cdef class Storage(AbstractNode):
         cdef int i
         for i in range(self._volume.shape[0]):
             self._volume[i] = self._initial_volume
+
+        if self._max_volume_param is not None:
+            self._max_volume_param.reset()
+        if self._min_volume_param is not None:
+            self._min_volume_param.reset()
+
+    cpdef before(self, Timestep ts):
+        """Called at the beginning of the timestep"""
+        AbstractNode.before(self, ts)
+
+        # Complete any parameter calculations
+        if self._max_volume_param is not None:
+            self._max_volume_param.before(ts)
+        if self._min_volume_param is not None:
+            self._min_volume_param.before(ts)
 
     cpdef after(self, Timestep ts):
         AbstractNode.after(self, ts)
