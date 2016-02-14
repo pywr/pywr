@@ -19,6 +19,8 @@ class BaseParameterControlCurve(BaseParameter):
             The Parameter object to use as a control_curve. It should not be shared with other
             Nodes and Parameters because this object becomes control_curve.parent
         """
+        if control_curve.parent is not None:
+            raise RuntimeError('control_curve already has a parent.')
         control_curve.parent = self
         self.control_curve = control_curve
 
