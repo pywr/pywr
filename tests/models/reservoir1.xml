@@ -9,7 +9,7 @@
     <nodes>
         <reservoir name="supply1" x="1" y="1" num_inputs="1" num_outputs="0">
             <parameter type="constant" key="max_volume">35</parameter>
-            <parameter type="constant" key="volume">35</parameter>
+            <parameter type="constant" key="initial_volume">35</parameter>
         </reservoir>
         <river name="link1" x="2" y="1" />
         <demandcentre name="demand1" x="3" y="1">
