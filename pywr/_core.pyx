@@ -124,6 +124,11 @@ cdef class AbstractNode:
         benefit) or netural. Typically supply nodes will have an associated
         cost and demands will provide a benefit.
         """
+        def __get__(self):
+            if self._cost_param is None:
+                return self._cost
+            return self._cost_param
+
         def __set__(self, value):
             if isinstance(value, Parameter):
                 self._cost_param = value
@@ -266,6 +271,8 @@ cdef class Node(AbstractNode):
         Parameter.
         """
         def __get__(self):
+            if self._min_flow_param is None:
+                return self._min_flow
             return self._min_flow_param
 
         def __set__(self, value):
@@ -289,6 +296,11 @@ cdef class Node(AbstractNode):
         The maximum flow may be set to either a constant (i.e. a float) or a
         Parameter.
         """
+        def __get__(self):
+            if self._max_flow_param is None:
+                return self._max_flow
+            return self._max_flow_param
+
         def __set__(self, value):
             if value is None:
                 self._max_flow = inf
@@ -433,6 +445,11 @@ cdef class Storage(AbstractNode):
             self._initial_volume = value
 
     property min_volume:
+        def __get__(self):
+            if self._min_volume_param is None:
+                return self._min_volume
+            return self._min_volume_param
+
         def __set__(self, value):
             self._min_volume_param = None
             if isinstance(value, Parameter):
@@ -447,6 +464,11 @@ cdef class Storage(AbstractNode):
         return self._min_volume_param.value(ts, scenario_indices)
 
     property max_volume:
+        def __get__(self):
+            if self._max_volume_param is None:
+                return self._max_volume
+            return self._max_volume_param
+
         def __set__(self, value):
             self._max_volume_param = None
             if isinstance(value, Parameter):
