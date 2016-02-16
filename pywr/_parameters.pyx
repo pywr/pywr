@@ -34,6 +34,20 @@ cdef class Parameter:
         def __set__(self, value):
             self._parent = value
 
+    property size:
+        def __get__(self):
+            return self._size
+
+        def __set__(self, value):
+            self._size = value
+
+    property is_variable:
+        def __get__(self):
+            return self._is_variable
+
+        def __set__(self, value):
+            self._is_variable = value
+
 cdef class ParameterArrayIndexed(Parameter):
     """Time varying parameter using an array and Timestep._index
 

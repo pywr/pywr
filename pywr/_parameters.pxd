@@ -8,6 +8,8 @@ cdef class ParameterArrayIndexedScenarioMonthlyFactors
 from _core cimport Timestep, Scenario, AbstractNode
 
 cdef class Parameter:
+    cdef int _size
+    cdef bint _is_variable
     cdef AbstractNode _node
     cdef Parameter _parent
     cpdef setup(self, model)
