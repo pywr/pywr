@@ -5,10 +5,12 @@ A series of tests of the Scenario objects and associated infrastructure
 
 """
 import pywr.core
+from pywr.core import Model, Input, Output, Link, Storage
+from pywr.recorders import NumpyArrayStorageRecorder
 from helpers import assert_model
 # To get simple_linear_model fixture
 from fixtures import simple_linear_model
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_allclose
 
 
 def test_scenario_collection(solver):
@@ -85,3 +87,31 @@ def test_scenario_two_parameter(simple_linear_model, ):
     }
 
     assert_model(model, expected_node_results)
+
+
+def test_scenario_storage(solver):
+    """Test the behaviour of Storage nodes with multiple scenarios
+
+    The model defined has two inflow scenarios: 5 and 10. It is expected that
+    the volume in the storage node should increase at different rates in the
+    two scenarios.
+    """
+    model = Model(solver=solver)
+
+    i = Input(model, 'input', max_flow=999)
+    s = Storage(model, 'storage', num_inputs=1, num_outputs=1, max_volume=1000, volume=500)
+    o = Output(model, 'output', max_flow=999)
+
+    scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
+    i.min_flow = pywr.parameters.ParameterConstantScenario(scenario_input, [5.0, 10.0])
+
+    i.connect(s)
+    s.connect(o)
+
+    s_rec = NumpyArrayStorageRecorder(model, s)
+
+    model.run()
+
+    assert_allclose(i.flow, [5, 10])
+    assert_allclose(s_rec.data[0], [505, 510])
+    assert_allclose(s_rec.data[1], [510, 520])

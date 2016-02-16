@@ -397,21 +397,14 @@ cdef class Storage(AbstractNode):
 
     property volume:
         def __get__(self, ):
-            return self._volume[0]
-
-        def __set__(self, value):
-            # This actually sets the initial volume
-            # TODO provide a method to set the _volume for a given scenario(s).
-            import warnings
-            warnings.warn("Setting volume property directly is not supported. This method is updating the initial storage volume.")
-            self._initial_volume = value
+            return np.asarray(self._volume)
 
     property initial_volume:
         def __get__(self, ):
             return self._initial_volume
 
         def __set__(self, value):
-            self._initial_volume
+            self._initial_volume = value
 
     property min_volume:
         def __set__(self, value):

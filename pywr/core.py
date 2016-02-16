@@ -877,7 +877,11 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
 
         min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        volume = kwargs.pop('volume', 0.0)
+        if 'volume' in kwargs:
+            # support older API where volume kwarg was the initial volume
+            initial_volume = kwargs.pop('volume')
+        else:
+            initial_volume = kwargs.pop('initial_volume', 0.0)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
 
         x = kwargs.pop('x', None)
@@ -899,7 +903,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
 
         self.min_volume = min_volume
         self.max_volume = max_volume
-        self.volume = volume
+        self.initial_volume = initial_volume
         self.cost = cost
         self.position = position
 
