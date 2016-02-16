@@ -978,6 +978,7 @@ class PiecewiseLink(Node):
         cost : iterable
             A list of costs corresponding to the max_flow steps
         """
+        self.allow_isolated = True
         costs = kwargs.pop('cost')
         max_flows = kwargs.pop('max_flow')
         super(PiecewiseLink, self).__init__(*args, **kwargs)

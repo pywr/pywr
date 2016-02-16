@@ -35,7 +35,7 @@ class ParameterCollection(Parameter):
     """
     def __init__(self, parameters=None):
         if parameters is None:
-            self._parameters = []
+            self._parameters = set()
         else:
             self._parameters = set(parameters)
             for param in self._parameters:
