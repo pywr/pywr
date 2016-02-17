@@ -22,6 +22,13 @@ cdef class Recorder:
         def __get__(self, ):
             return self._model
 
+    property is_objective:
+        def __get__(self):
+            return self._is_objective
+
+        def __set__(self, value):
+            self._is_objective = value
+
 
 cdef class NodeRecorder(Recorder):
     def __init__(self, model, AbstractNode node):
@@ -29,6 +36,9 @@ cdef class NodeRecorder(Recorder):
         self._node = node
         node._recorders.append(self)
 
+    property node:
+        def __get__(self):
+            return self._node
 
 cdef class StorageRecorder(Recorder):
     def __init__(self, model, Storage node):

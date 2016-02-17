@@ -3,6 +3,7 @@ cdef class Recorder
 from _core cimport Timestep, AbstractNode, Storage
 
 cdef class Recorder:
+    cdef bint _is_objective
     cdef object _model
     cpdef setup(self)
     cpdef reset(self)
