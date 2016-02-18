@@ -7,7 +7,7 @@ import pandas
 import numpy as np
 import inspyred
 from pywr.core import Model, Input, Output, Link, Storage
-from pywr.parameters import Parameter, ParameterArrayIndexed, ParameterMonthlyProfile
+from pywr.parameters import Parameter, ParameterArrayIndexed, ParameterMonthlyProfile, ParameterAnnualHarmonicSeries
 from pywr.recorders import NodeRecorder, Recorder
 
 
@@ -160,7 +160,7 @@ class OptimisationModel(Model):
         return candidate
 
 
-def create_model(harmonic=False):
+def create_model(harmonic=True):
     # import flow timeseries for catchments
     flow = pandas.read_csv(os.path.join('data', 'Not a real flow series.csv'))
 
@@ -183,7 +183,7 @@ def create_model(harmonic=False):
     reservoir2 = Storage(model, 'reservoir2', min_volume=3000, max_volume=20000, volume=16000)
 
     if harmonic:
-        pass
+        control_curve = ParameterAnnualHarmonicSeries(0.5, [0.5], [0.0], mean_upper_bounds=1.0, amplitude_upper_bounds=1.0)
     else:
         control_curve = ParameterMonthlyProfile(np.array([0.0]*12, np.float32), lower_bounds=0.0, upper_bounds=1.0)
 
@@ -227,7 +227,7 @@ def create_model(harmonic=False):
 
 
 
-def main(prng=None, display=False):
+def main(prng=None, display=False, harmonic=False):
     from random import Random
     from time import time
 
@@ -235,7 +235,7 @@ def main(prng=None, display=False):
         prng = Random()
         prng.seed(time())
 
-    problem = create_model()
+    problem = create_model(harmonic=harmonic)
     problem.setup()
     ea = inspyred.ec.emo.NSGA2(prng)
     ea.variator = [inspyred.ec.variators.blend_crossover,
@@ -249,7 +249,7 @@ def main(prng=None, display=False):
                           pop_size=25,
                           bounder=problem.bounder,
                           maximize=False,
-                          max_generations=5)
+                          max_generations=20)
 
     if display:
         from matplotlib import pylab
@@ -268,12 +268,16 @@ def main(prng=None, display=False):
         pylab.scatter(x, y, c='b')
         pylab.xlabel('Maximum demand deficit [Ml/d]')
         pylab.ylabel('Transferred volume [Ml/d]')
-        pylab.savefig('{0} Example ({1}).pdf'.format(ea.__class__.__name__,
-                                                     problem.__class__.__name__),
-                      format='pdf')
+        title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
+        pylab.savefig('{0} Example ({1}).pdf'.format(ea.__class__.__name__, title), format='pdf')
         pylab.show()
     return ea
 
 if __name__ == '__main__':
+    import argparse
 
-    main(display=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--harmonic', action='store_true', help='Use an harmonic control curve.')
+    args = parser.parse_args()
+
+    main(display=True, harmonic=args.harmonic)
