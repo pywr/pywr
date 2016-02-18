@@ -17,6 +17,9 @@ cdef class Parameter:
     cpdef before(self, Timestep ts)
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1
     cpdef after(self, Timestep ts)
+    cpdef update(self, double[:] values)
+    cpdef double[:] lower_bounds(self)
+    cpdef double[:] upper_bounds(self)
 
 cdef class ParameterArrayIndexed(Parameter):
     cdef double[:] values

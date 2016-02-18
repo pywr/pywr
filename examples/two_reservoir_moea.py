@@ -7,7 +7,7 @@ import pandas
 import numpy as np
 import inspyred
 from pywr.core import Model, Input, Output, Link, Storage
-from pywr.parameters import Parameter, ParameterArrayIndexed
+from pywr.parameters import Parameter, ParameterArrayIndexed, ParameterMonthlyProfile
 from pywr.recorders import NodeRecorder, Recorder
 
 
@@ -74,13 +74,12 @@ class TransferController(Parameter):
         super(TransferController, self).__init__()
         self.reservoir1 = reservoir1
         self.control_curve = control_curve
-        self.size = len(control_curve)
+        control_curve.parent = self
 
     def value(self, timestep, *args, **kwargs):
         percent_full = self.reservoir1._volume[0] / 20000.0  # TODO: this doesn't work with scenarios
-        month = timestep.datetime.month
-        control_curve = self.control_curve[month-1]
-        control_curve = max(0, min(1, control_curve))
+
+        control_curve = self.control_curve.value(timestep, *args)
 
         if percent_full < control_curve:
             max_flow = 10.0
@@ -88,11 +87,25 @@ class TransferController(Parameter):
             max_flow = 0.0
         return max_flow
 
+    @property
+    def is_variable(self):
+        return self.control_curve.is_variable
+
+    @property
+    def size(self):
+        return self.control_curve.size
+
     def update(self, values):
-        self.control_curve[...] = values
+        self.control_curve.update(values)
+
+    def lower_bounds(self):
+        return self.control_curve.lower_bounds()
+
+    def upper_bounds(self):
+        return self.control_curve.upper_bounds()
+
 
 class OptimisationModel(Model):
-
 
     def _cache_variable_parameters(self):
         variables = []
@@ -128,7 +141,6 @@ class OptimisationModel(Model):
         fitness = []
         for i, candidate in enumerate(candidates):
             print('Running candidiate: {:03d}'.format(i))
-
             for ivar, var in enumerate(self._variables):
                 j = slice(self._variable_map[ivar], self._variable_map[ivar+1])
                 var.update(candidate[j])
@@ -139,8 +151,16 @@ class OptimisationModel(Model):
             fitness.append(inspyred.ec.emo.Pareto([r.value() for r in self._objectives]))
         return fitness
 
+    def bounder(self, candidate, args):
+        for ivar, var in enumerate(self._variables):
+            lower = var.lower_bounds()
+            upper = var.upper_bounds()
+            j = slice(self._variable_map[ivar], self._variable_map[ivar+1])
+            candidate[j] = np.minimum(upper, np.maximum(lower, candidate[j]))
+        return candidate
 
-def create_model():
+
+def create_model(harmonic=False):
     # import flow timeseries for catchments
     flow = pandas.read_csv(os.path.join('data', 'Not a real flow series.csv'))
 
@@ -162,12 +182,13 @@ def create_model():
     reservoir1 = Storage(model, 'reservoir1', min_volume=3000, max_volume=20000, volume=16000)
     reservoir2 = Storage(model, 'reservoir2', min_volume=3000, max_volume=20000, volume=16000)
 
-    # default control curve - this will be overwritten
-    control_curve = np.array([0.0]*12, np.float32)
+    if harmonic:
+        pass
+    else:
+        control_curve = ParameterMonthlyProfile(np.array([0.0]*12, np.float32), lower_bounds=0.0, upper_bounds=1.0)
 
-
+    control_curve.is_variable = True
     controller = TransferController(reservoir1, control_curve)
-    controller.is_variable = True
     transfer = Link(model, 'transfer', max_flow=controller, cost=-500)
 
     demand1 = Output(model, 'demand1', max_flow=100.0, cost=-101)
@@ -225,10 +246,10 @@ def main(prng=None, display=False):
     ]
     final_pop = ea.evolve(generator=problem.generator,
                           evaluator=problem.evaluator,
-                          pop_size=100,
-                          bounder=inspyred.ec.Bounder(0.0, 1.0),
+                          pop_size=25,
+                          bounder=problem.bounder,
                           maximize=False,
-                          max_generations=100)
+                          max_generations=5)
 
     if display:
         from matplotlib import pylab

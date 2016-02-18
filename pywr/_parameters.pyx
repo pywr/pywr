@@ -14,8 +14,18 @@ cdef class Parameter:
 
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
         return 0
+
     cpdef after(self, Timestep ts):
         pass
+
+    cpdef update(self, double[:] values):
+        raise NotImplementedError()
+
+    cpdef double[:] lower_bounds(self):
+        raise NotImplementedError()
+
+    cpdef double[:] upper_bounds(self):
+        raise NotImplementedError()
 
     property node:
         def __get__(self):

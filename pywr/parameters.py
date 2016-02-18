@@ -2,8 +2,8 @@ import datetime
 from xml.etree import ElementTree as ET
 from pywr._parameters import (Parameter as BaseParameter, ParameterConstantScenario, ParameterArrayIndexed,
                               ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors)
+import numpy as np
 import pandas
-
 
 class Parameter(BaseParameter):
     def value(self, ts, scenario_indices=[0]):
@@ -165,13 +165,25 @@ class ParameterFunction(Parameter):
 
 
 class ParameterMonthlyProfile(Parameter):
-    def __init__(self, values):
-        if len(values) != 12:
+    def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf):
+        self.size = 12
+        if len(values) != self.size:
             raise ValueError("12 values must be given for a monthly profile.")
-        self._values = values
+        self._values = np.array(values)
+        self._lower_bounds = np.ones(self.size)*lower_bounds
+        self._upper_bounds = np.ones(self.size)*upper_bounds
 
     def value(self, ts, scenario_indices=[0]):
         return self._values[ts.datetime.month-1]
+
+    def update(self, values):
+        self._values[...] = values
+
+    def lower_bounds(self):
+        return self._lower_bounds
+
+    def upper_bounds(self):
+        return self._upper_bounds
 
     @classmethod
     def from_xml(cls, xml):
