@@ -204,6 +204,41 @@ class ParameterDailyProfile(Parameter):
         raise NotImplementedError('TODO')
 
 
+class ParameterAnnualHarmonicSeries(Parameter):
+    def __init__(self, mean, amplitudes, phases, **kwargs):
+        if len(amplitudes) != len(phases):
+            raise ValueError("The number  of amplitudes and phases must be the same.")
+        n = len(amplitudes)
+        self.size = 1 + 2*n
+        self.mean = mean
+        self.amplitudes = np.array(amplitudes)
+        self.phases = np.array(phases)
+
+        self._mean_lower_bounds = kwargs.pop('mean_lower_bounds', 0.0)
+        self._mean_upper_bounds = kwargs.pop('mean_upper_bounds', np.inf)
+        self._amplitude_lower_bounds = np.ones(n)*kwargs.pop('amplitude_lower_bounds', 0.0)
+        self._amplitude_upper_bounds = np.ones(n)*kwargs.pop('amplitude_upper_bounds', np.inf)
+        self._phase_lower_bounds = np.ones(n)*kwargs.pop('phase_lower_bounds', 0.0)
+        self._phase_upper_bounds = np.ones(n)*kwargs.pop('phase_upper_bounds', np.pi*2)
+
+    def value(self, ts, scenario_indices=[0]):
+        doy = ts.datetime.dayofyear
+        n = len(self.amplitudes)
+        return self.mean + sum(self.amplitudes[i]*np.cos(doy*(i+1)*np.pi*2/365 + self.phases[i]) for i in range(n))
+
+    def update(self, values):
+        n = len(self.amplitudes)
+        self.mean = values[0]
+        self.amplitudes[...] = values[1:n+1]
+        self.phases[...] = values[n+1:]
+
+    def lower_bounds(self):
+        return np.r_[self._mean_lower_bounds, self._amplitude_lower_bounds, self._phase_lower_bounds]
+
+    def upper_bounds(self):
+        return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
+
+
 class Timeseries(Parameter):
     def __init__(self, name, df, metadata=None):
         self.name = name
