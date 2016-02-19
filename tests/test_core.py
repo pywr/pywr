@@ -64,7 +64,7 @@ def test_model_nodes(model):
     assert(all_nodes == [])
 
 
-def test_unexpected_kwarg(solver):
+def test_unexpected_kwarg_node(solver):
     model = Model(solver=solver)
 
     with pytest.raises(TypeError):
@@ -77,6 +77,11 @@ def test_unexpected_kwarg(solver):
     # raised exceptions during __init__
     assert(not model.nodes())
 
+
+def test_unexpected_kwarg_model(solver):
+    with pytest.raises(TypeError):
+        model = Model(solver=solver, thisisgoingtofail=True)
+    model = Model(solver=solver)
 
 def test_slots_connect_disconnect(solver):
     """Test connection and disconnection to storage node slots

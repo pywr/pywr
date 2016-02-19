@@ -39,11 +39,9 @@ def simple_storage_model(request, solver):
     """
 
     model = pywr.core.Model(
-        parameters={
-            'timestamp_start': pandas.to_datetime('2016-01-01'),
-            'timestamp_finish': pandas.to_datetime('2016-01-05'),
-            'timestep': datetime.timedelta(1),
-        },
+        start=pandas.to_datetime('2016-01-01'),
+        end=pandas.to_datetime('2016-01-05'),
+        timestep=datetime.timedelta(1),
         solver=solver
     )
 
