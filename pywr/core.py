@@ -160,6 +160,14 @@ class NodeIterator(object):
         # support for old API
         return self
 
+model = None
+def gcm():
+    global model
+    return model
+def clm():
+    global model
+    model = None
+
 class Model(object):
     """Model of a water supply network"""
     def __init__(self, **kwargs):
@@ -215,6 +223,9 @@ class Model(object):
         if kwargs:
             key = list(kwargs.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
+
+        global model
+        model = self
 
         self.reset()
 
@@ -672,7 +683,7 @@ class XMLSeriaizable(object):
         from pywr.parameters import Parameter, ParameterConstant
         tag = xml.tag.lower()
         node_cls = node_registry[tag]
-        node = node_cls(model, **xml.attrib)
+        node = node_cls(model=model, **xml.attrib)
         for prop_xml in xml.findall('parameter'):
             key, prop = Parameter.from_xml(model, prop_xml)
             # TODO fix this hack by making Parameter loading better
@@ -714,13 +725,11 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseN
     class for other Node types (e.g. StorageInput) that are not directly
     Connectable.
     """
-    def __init__(self, model, name, **kwargs):
+    def __init__(self, name, **kwargs):
         """Initialise a new Node object
 
         Parameters
         ----------
-        model : Model
-            The model the node belongs to
         name : string
             A unique name for the node
         """
@@ -738,7 +747,7 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseN
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
         conversion_factor = pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
 
-        super(Node, self).__init__(model, name, **kwargs)
+        super(Node, self).__init__(name, **kwargs)
 
         self.slots = {}
         self.color = color
@@ -874,7 +883,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
     records changes in storage. Any recorders set on the output or input
     sub-nodes record flow as normal.
     """
-    def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
+    def __init__(self, name, num_outputs=1, num_inputs=1, *args, **kwargs):
         # cast number of inputs/outputs to integer
         # this is needed if values come in as strings from xml
         num_outputs = int(num_outputs)
@@ -896,15 +905,15 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
         else:
             position = None
 
-        super(Storage, self).__init__(model, name, **kwargs)
+        super(Storage, self).__init__(name, **kwargs)
 
         self.outputs = []
         for n in range(0, num_outputs):
-            self.outputs.append(StorageOutput(model, name="[output{}]".format(n), parent=self))
+            self.outputs.append(StorageOutput(model=self.model, name="[output{}]".format(n), parent=self))
 
         self.inputs = []
         for n in range(0, num_inputs):
-            self.inputs.append(StorageInput(model, name="[input{}]".format(n), parent=self))
+            self.inputs.append(StorageInput(model=self.model, name="[input{}]".format(n), parent=self))
 
         self.min_volume = min_volume
         self.max_volume = max_volume
@@ -995,15 +1004,15 @@ class PiecewiseLink(Node):
         # Input/Output instead of BaseInput/BaseOutput because of a different
         # domain is required on the sub-nodes and they need to be connected
         self.sub_domain = Domain()
-        self.input = Input(self.model, name='{} Input'.format(self.name), parent=self)
-        self.output = Output(self.model, name='{} Output'.format(self.name), parent=self)
+        self.input = Input(model=self.model, name='{} Input'.format(self.name), parent=self)
+        self.output = Output(model=self.model, name='{} Output'.format(self.name), parent=self)
 
-        self.sub_output = Output(self.model, name='{} Sub Output'.format(self.name), parent=self,
+        self.sub_output = Output(model=self.model, name='{} Sub Output'.format(self.name), parent=self,
                              domain=self.sub_domain)
         self.sub_output.connect(self.input)
         self.sublinks = []
         for max_flow, cost in zip(max_flows, costs):
-            self.sublinks.append(Input(self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
+            self.sublinks.append(Input(model=self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
                                       cost=cost, max_flow=max_flow, parent=self, domain=self.sub_domain))
             self.sublinks[-1].connect(self.sub_output)
             self.output.connect(self.sublinks[-1])

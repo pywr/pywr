@@ -25,10 +25,10 @@ def simple_gauge_model(request, solver):
     min_flow_req = 5.0
 
     model = pywr.core.Model(solver=solver)
-    inpt = river.Catchment(model, name="Catchment", flow=in_flow)
-    lnk = river.RiverGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-1.0)
+    inpt = river.Catchment(model=model, name="Catchment", flow=in_flow)
+    lnk = river.RiverGauge(model=model, name="Gauge", mrf=min_flow_req, mrf_cost=-1.0)
     inpt.connect(lnk)
-    otpt = river.DemandCentre(model, name="Demand", max_flow=out_flow, cost=-benefit)
+    otpt = river.DemandCentre(model=model, name="Demand", max_flow=out_flow, cost=-benefit)
     lnk.connect(otpt)
 
     default = inpt.domain
@@ -67,14 +67,14 @@ def test_control_curve(solver):
     in_flow = 8
 
     model = pywr.core.Model(solver=solver)
-    catchment = river.Catchment(model, name="Catchment", flow=in_flow)
-    lnk = river.River(model, name="River")
+    catchment = river.Catchment(model=model, name="Catchment", flow=in_flow)
+    lnk = river.River(model=model, name="River")
     catchment.connect(lnk)
-    demand = river.DemandCentre(model, name="Demand", cost=-10.0, max_flow=10)
+    demand = river.DemandCentre(model=model, name="Demand", cost=-10.0, max_flow=10)
     lnk.connect(demand)
     from pywr.parameters import ParameterConstant
     control_curve = ParameterConstant(0.8)
-    reservoir = river.Reservoir(model, name="Reservoir", max_volume=10, cost=-20, above_curve_cost=0.0,
+    reservoir = river.Reservoir(model=model, name="Reservoir", max_volume=10, cost=-20, above_curve_cost=0.0,
                                 control_curve=control_curve, volume=10)
     reservoir.inputs[0].max_flow = 2.0
     reservoir.outputs[0].max_flow = 2.0

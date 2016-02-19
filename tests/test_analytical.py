@@ -57,13 +57,13 @@ def linear_model_with_storage(request, solver):
     max_volume = 10.0
 
     model = pywr.core.Model(solver=solver)
-    inpt = pywr.core.Input(model, name="Input", min_flow=in_flow, max_flow=in_flow)
-    lnk = pywr.core.Link(model, name="Link", cost=0.1)
+    inpt = pywr.core.Input(model=model, name="Input", min_flow=in_flow, max_flow=in_flow)
+    lnk = pywr.core.Link(model=model, name="Link", cost=0.1)
     inpt.connect(lnk)
-    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-out_benefit)
+    otpt = pywr.core.Output(model=model, name="Output", min_flow=out_flow, cost=-out_benefit)
     lnk.connect(otpt)
 
-    strg = pywr.core.Storage(model, name="Storage", max_volume=max_volume, min_volume=min_volume,
+    strg = pywr.core.Storage(model=model, name="Storage", max_volume=max_volume, min_volume=min_volume,
                              volume=current_volume, cost=-strg_benefit)
 
     strg.connect(otpt)
@@ -106,17 +106,17 @@ def two_domain_linear_model(request, solver):
 
     model = pywr.core.Model(solver=solver)
     # Create river network
-    river_inpt = pywr.core.Input(model, name="Catchment", max_flow=river_flow, domain=river_domain)
-    river_lnk = pywr.core.Link(model, name="Reach", domain=river_domain)
+    river_inpt = pywr.core.Input(model=model, name="Catchment", max_flow=river_flow, domain=river_domain)
+    river_lnk = pywr.core.Link(model=model, name="Reach", domain=river_domain)
     river_inpt.connect(river_lnk)
-    river_otpt = pywr.core.Output(model, name="Abstraction", domain=river_domain, cost=0.0)
+    river_otpt = pywr.core.Output(model=model, name="Abstraction", domain=river_domain, cost=0.0)
     river_lnk.connect(river_otpt)
     # Create grid network
-    grid_inpt = pywr.core.Input(model, name="Power Plant", max_flow=power_plant_cap, domain=grid_domain,
+    grid_inpt = pywr.core.Input(model=model, name="Power Plant", max_flow=power_plant_cap, domain=grid_domain,
                                                conversion_factor=1/power_plant_flow_req)
-    grid_lnk = pywr.core.Link(model, name="Transmission", cost=1.0, domain=grid_domain)
+    grid_lnk = pywr.core.Link(model=model, name="Transmission", cost=1.0, domain=grid_domain)
     grid_inpt.connect(grid_lnk)
-    grid_otpt = pywr.core.Output(model, name="Substation", max_flow=power_demand,
+    grid_otpt = pywr.core.Output(model=model, name="Substation", max_flow=power_demand,
                                  cost=-power_benefit, domain=grid_domain)
     grid_lnk.connect(grid_otpt)
     # Connect grid to river
@@ -162,17 +162,17 @@ def two_cross_domain_output_single_input(request, solver):
 
     model = pywr.core.Model(solver=solver)
     # Create grid network
-    grid_inpt = pywr.core.Input(model, name="Input", domain='grid',)
-    grid_lnk = pywr.core.Link(model, name="Link", cost=1.0, domain='grid')
+    grid_inpt = pywr.core.Input(model=model, name="Input", domain='grid',)
+    grid_lnk = pywr.core.Link(model=model, name="Link", cost=1.0, domain='grid')
     grid_inpt.connect(grid_lnk)
-    grid_otpt = pywr.core.Output(model, name="Output", max_flow=50.0, cost=-10.0, domain='grid')
+    grid_otpt = pywr.core.Output(model=model, name="Output", max_flow=50.0, cost=-10.0, domain='grid')
     grid_lnk.connect(grid_otpt)
     # Create river network
     for i in range(2):
-        river_inpt = pywr.core.Input(model, name="Catchment {}".format(i), max_flow=river_flow, domain='river')
-        river_lnk = pywr.core.Link(model, name="Reach {}".format(i), domain='river')
+        river_inpt = pywr.core.Input(model=model, name="Catchment {}".format(i), max_flow=river_flow, domain='river')
+        river_lnk = pywr.core.Link(model=model, name="Reach {}".format(i), domain='river')
         river_inpt.connect(river_lnk)
-        river_otpt = pywr.core.Output(model, name="Abstraction {}".format(i), domain='river', cost=0.0)
+        river_otpt = pywr.core.Output(model=model, name="Abstraction {}".format(i), domain='river', cost=0.0)
         river_lnk.connect(river_otpt)
         # Connect grid to river
         river_otpt.connect(grid_inpt)
@@ -209,14 +209,14 @@ def simple_linear_inline_model(request, solver):
 
     """
     model = pywr.core.Model(solver=solver)
-    inpt0 = pywr.core.Input(model, name="Input 0")
-    inpt1 = pywr.core.Input(model, name="Input 1")
+    inpt0 = pywr.core.Input(model=model, name="Input 0")
+    inpt1 = pywr.core.Input(model=model, name="Input 1")
     inpt0.connect(inpt1)
-    lnk = pywr.core.Link(model, name="Link", cost=1.0)
+    lnk = pywr.core.Link(model=model, name="Link", cost=1.0)
     inpt1.connect(lnk)
-    otpt0 = pywr.core.Output(model, name="Output 0")
+    otpt0 = pywr.core.Output(model=model, name="Output 0")
     lnk.connect(otpt0)
-    otpt1 = pywr.core.Output(model, name="Output 1")
+    otpt1 = pywr.core.Output(model=model, name="Output 1")
     otpt0.connect(otpt1)
 
     return model
@@ -263,10 +263,10 @@ def bidirectional_model(request, solver):
     """
     model = pywr.core.Model(solver=solver)
     for i in range(2):
-        inpt = pywr.core.Input(model, name="Input {}".format(i))
-        lnk = pywr.core.Link(model, name="Link {}".format(i))
+        inpt = pywr.core.Input(model=model, name="Input {}".format(i))
+        lnk = pywr.core.Link(model=model, name="Link {}".format(i))
         inpt.connect(lnk)
-        otpt = pywr.core.Output(model, name="Output {}".format(i))
+        otpt = pywr.core.Output(model=model, name="Output {}".format(i))
         lnk.connect(otpt)
 
     # Create bidirectional link (i.e. a cycle)
@@ -321,14 +321,14 @@ def make_simple_model(supply_amplitude, demand, frequency,
         t = parent.model.timestamp.timetuple().tm_yday
         return S*np.cos(t*w)+S
 
-    supply = pywr.core.Supply(model, name='supply', max_flow=supply_func)
-    demand = pywr.core.Demand(model, name='demand', demand=demand)
-    res = pywr.core.Reservoir(model, name='reservoir')
+    supply = pywr.core.Supply(model=model, name='supply', max_flow=supply_func)
+    demand = pywr.core.Demand(model=model, name='demand', demand=demand)
+    res = pywr.core.Reservoir(model=model, name='reservoir')
     res.properties['max_volume'] = pywr.parameters.ParameterConstant(1e6)
     res.properties['current_volume'] = pywr.core.Variable(initial_volume)
 
-    supply_res_link = pywr.core.Link(model, name='link1')
-    res_demand_link = pywr.core.Link(model, name='link2')
+    supply_res_link = pywr.core.Link(model=model, name='link1')
+    res_demand_link = pywr.core.Link(model=model, name='link2')
 
     supply.connect(supply_res_link)
     supply_res_link.connect(res)

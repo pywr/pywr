@@ -98,9 +98,9 @@ def test_scenario_storage(solver):
     """
     model = Model(solver=solver)
 
-    i = Input(model, 'input', max_flow=999)
-    s = Storage(model, 'storage', num_inputs=1, num_outputs=1, max_volume=1000, volume=500)
-    o = Output(model, 'output', max_flow=999)
+    i = Input(model=model, name='input', max_flow=999)
+    s = Storage(model=model, name='storage', num_inputs=1, num_outputs=1, max_volume=1000, volume=500)
+    o = Output(model=model, name='output', max_flow=999)
 
     scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
     i.min_flow = pywr.parameters.ParameterConstantScenario(scenario_input, [5.0, 10.0])

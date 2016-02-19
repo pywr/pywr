@@ -95,8 +95,16 @@ cdef class AbstractNode:
     def __cinit__(self):
         self._allow_isolated = False
 
-    def __init__(self, model, name, **kwargs):
+    def __init__(self, name, **kwargs):
+        model = kwargs.pop('model', None)
+        if model is None:
+            # if model was not specified get current
+            from pywr.core import gcm
+            model = gcm()
+            if model is None:
+                raise RuntimeError("A Model must be created before a Node")
         self._model = model
+        
         self.name = name
 
         self._parent = kwargs.pop('parent', None)
