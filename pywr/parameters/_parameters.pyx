@@ -64,6 +64,7 @@ cdef class ArrayIndexedParameter(Parameter):
     The values in this parameter are constant across all scenarios.
     """
     def __init__(self, double[:] values):
+        super(ArrayIndexedParameter, self).__init__()
         self.values = values
 
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
@@ -80,6 +81,7 @@ cdef class ConstantScenarioParameter(Parameter):
         """
         values should be an iterable that is the same length as scenario.size
         """
+        super(ConstantScenarioParameter, self).__init__()
         cdef int i
         if scenario._size != len(values):
             raise ValueError("The number of values must equal the size of the scenario.")
@@ -112,6 +114,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         factor is taken from factors which is shape (scenario.size, 12). Therefore
         factors vary with the individual scenarios in scenario and month.
         """
+        super(ArrayIndexedScenarioMonthlyFactorsParameter, self).__init__()
         if scenario._size != factors.shape[0]:
             raise ValueError("First dimension of factors must be the same size as scenario.")
         if factors.shape[1] != 12:
@@ -137,6 +140,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
 
 cdef class DailyProfileParameter(Parameter):
     def __init__(self, values):
+        super(DailyProfileParameter, self).__init__()
         v = np.squeeze(np.array(values))
         if v.ndim != 1:
             raise ValueError("values must be 1-dimensional.")

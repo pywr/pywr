@@ -34,6 +34,7 @@ class ParameterCollection(Parameter):
 
     """
     def __init__(self, parameters=None):
+        super(ParameterCollection, self).__init__()
         if parameters is None:
             self._parameters = set()
         else:
@@ -86,6 +87,7 @@ class MaximumParameterCollection(ParameterCollection):
 
 class ConstantParameter(Parameter):
     def __init__(self, value=None):
+        super(ConstantParameter, self).__init__()
         self._value = value
 
     def value(self, ts, scenario_indices=[0]):
@@ -153,6 +155,7 @@ class ConstantParameter(Parameter):
 
 class FunctionParameter(Parameter):
     def __init__(self, parent, func):
+        super(FunctionParameter, self).__init__()
         self._parent = parent
         self._func = func
 
@@ -166,6 +169,7 @@ class FunctionParameter(Parameter):
 
 class MonthlyProfileParameter(Parameter):
     def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf):
+        super(MonthlyProfileParameter, self).__init__()
         self.size = 12
         if len(values) != self.size:
             raise ValueError("12 values must be given for a monthly profile.")
@@ -192,6 +196,7 @@ class MonthlyProfileParameter(Parameter):
 
 class AnnualHarmonicSeriesParameter(Parameter):
     def __init__(self, mean, amplitudes, phases, **kwargs):
+        super(AnnualHarmonicSeriesParameter, self).__init__()
         if len(amplitudes) != len(phases):
             raise ValueError("The number  of amplitudes and phases must be the same.")
         n = len(amplitudes)
@@ -227,6 +232,7 @@ class AnnualHarmonicSeriesParameter(Parameter):
 
 class Timeseries(Parameter):
     def __init__(self, name, df, metadata=None):
+        super(Timeseries, self).__init__()
         self.name = name
         self.df = df
         if metadata is None:
