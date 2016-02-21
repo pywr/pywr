@@ -58,7 +58,7 @@ cdef class Parameter:
         def __set__(self, value):
             self._is_variable = value
 
-cdef class ParameterArrayIndexed(Parameter):
+cdef class ArrayIndexedParameter(Parameter):
     """Time varying parameter using an array and Timestep._index
 
     The values in this parameter are constant across all scenarios.
@@ -71,7 +71,7 @@ cdef class ParameterArrayIndexed(Parameter):
         """
         return self.values[ts._index]
 
-cdef class ParameterConstantScenario(Parameter):
+cdef class ConstantScenarioParameter(Parameter):
     """A Scenario varying Parameter
 
     The values in this parameter are constant in time, but vary within a single Scenario.
@@ -102,7 +102,7 @@ cdef class ParameterConstantScenario(Parameter):
         return self._values[scenario_indices[self._scenario_index]]
 
 
-cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
+cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
     """Time varying parameter using an array and Timestep._index with
     multiplicative factors per Scenario
     """
@@ -135,7 +135,7 @@ cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
         return self._values[ts._index]*self._factors[scenario_indices[self._scenario_index], imth]
 
 
-cdef class ParameterDailyProfile(Parameter):
+cdef class DailyProfileParameter(Parameter):
     def __init__(self, values):
         v = np.squeeze(np.array(values))
         if v.ndim != 1:

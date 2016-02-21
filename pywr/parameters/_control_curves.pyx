@@ -1,7 +1,7 @@
 import numpy as np
 cimport numpy as np
 
-cdef class BaseParameterControlCurve(Parameter):
+cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
 
     """
@@ -21,19 +21,19 @@ cdef class BaseParameterControlCurve(Parameter):
 
     cpdef setup(self, model):
         self.control_curve.setup(model)
-        super(BaseParameterControlCurve, self).setup(model)
+        super(BaseControlCurveParameter, self).setup(model)
 
     cpdef reset(self):
         self.control_curve.reset()
-        super(BaseParameterControlCurve, self).reset()
+        super(BaseControlCurveParameter, self).reset()
 
     cpdef before(self, Timestep ts):
         self.control_curve.before(ts)
-        super(BaseParameterControlCurve, self).before(ts)
+        super(BaseControlCurveParameter, self).before(ts)
 
     cpdef after(self, Timestep ts):
         self.control_curve.after(ts)
-        super(BaseParameterControlCurve, self).after(ts)
+        super(BaseControlCurveParameter, self).after(ts)
 
     property control_curve:
         def __get__(self):
@@ -42,11 +42,11 @@ cdef class BaseParameterControlCurve(Parameter):
             self._control_curve = value
 
 
-cdef class ParameterControlCurveInterpolated(BaseParameterControlCurve):
+cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     """ A control curve Parameter that interpolates between three values.
     """
     def __init__(self, control_curve, values):
-        super(ParameterControlCurveInterpolated, self).__init__(control_curve)
+        super(ControlCurveInterpolatedParameter, self).__init__(control_curve)
         values = np.array(values)
         if len(values) != 3:
             raise ValueError("Three values must be given to define the interpolation knots.")

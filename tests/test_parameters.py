@@ -2,8 +2,8 @@
 Test for individual Parameter classes
 """
 from pywr.core import Model, Timestep, Scenario
-from pywr.parameters import (ParameterArrayIndexed, ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors,
-                             ParameterMonthlyProfile, ParameterDailyProfile, ParameterMinimumCollection, ParameterMaximumCollection)
+from pywr.parameters import (ArrayIndexedParameter, ConstantScenarioParameter, ArrayIndexedScenarioMonthlyFactorsParameter,
+                             MonthlyProfileParameter, DailyProfileParameter, MinimumParameterCollection, MaximumParameterCollection)
 
 import datetime
 import numpy as np
@@ -17,11 +17,11 @@ def model(solver):
 
 def test_parameter_array_indexed(model):
     """
-    Test ParameterArrayIndexed
+    Test ArrayIndexedParameter
 
     """
     A = np.arange(len(model.timestepper), dtype=np.float64)
-    p = ParameterArrayIndexed(A)
+    p = ArrayIndexedParameter(A)
     p.setup(model)
     # scenario indices (not used for this test)
     si = np.array([0], dtype=np.int32)
@@ -36,14 +36,14 @@ def test_parameter_array_indexed(model):
 
 def test_parameter_constant_scenario(model):
     """
-    Test ParameterConstantScenario
+    Test ConstantScenarioParameter
 
     """
     # Add two scenarios
     scA = Scenario(model, 'Scenario A', size=2)
     scB = Scenario(model, 'Scenario B', size=5)
 
-    p = ParameterConstantScenario(scB, np.arange(scB.size, dtype=np.float64))
+    p = ConstantScenarioParameter(scB, np.arange(scB.size, dtype=np.float64))
     p.setup(model)
     ts = model.timestepper.current
     # Now ensure the appropriate value is returned for the Scenario B indices.
@@ -53,7 +53,7 @@ def test_parameter_constant_scenario(model):
 
 def test_parameter_array_indexed_scenario_monthly_factors(model):
     """
-    Test ParameterArrayIndexedScenarioMonthlyFactors
+    Test ArrayIndexedParameterScenarioMonthlyFactors
 
     """
     # Baseline timeseries data
@@ -66,7 +66,7 @@ def test_parameter_array_indexed_scenario_monthly_factors(model):
     # Random factors for each Scenario B value per month
     factors = np.random.rand(scB.size, 12)
 
-    p = ParameterArrayIndexedScenarioMonthlyFactors(scB, values, factors)
+    p = ArrayIndexedScenarioMonthlyFactorsParameter(scB, values, factors)
     p.setup(model)
 
     # Iterate in time
@@ -80,11 +80,11 @@ def test_parameter_array_indexed_scenario_monthly_factors(model):
 
 def test_parameter_monthly_profile(model):
     """
-    Test ParameterMonthlyProfile
+    Test MonthlyProfileParameter
 
     """
     values = np.arange(12, dtype=np.float64)
-    p = ParameterMonthlyProfile(values)
+    p = MonthlyProfileParameter(values)
     p.setup(model)
 
     # Iterate in time
@@ -95,11 +95,11 @@ def test_parameter_monthly_profile(model):
 
 def test_parameter_daily_profile(model):
     """
-    Test ParameterDailyProfile
+    Test DailyProfileParameter
 
     """
     values = np.arange(366, dtype=np.float64)
-    p = ParameterDailyProfile(values)
+    p = DailyProfileParameter(values)
     p.setup(model)
 
     # Iterate in time
@@ -114,10 +114,10 @@ def test_parameter_min(model):
     scB = Scenario(model, 'Scenario B', size=5)
 
     values = np.arange(366, dtype=np.float64)
-    p1 = ParameterDailyProfile(values)
-    p2 = ParameterConstantScenario(scB, np.arange(scB.size, dtype=np.float64))
+    p1 = DailyProfileParameter(values)
+    p2 = ConstantScenarioParameter(scB, np.arange(scB.size, dtype=np.float64))
 
-    p = ParameterMinimumCollection([p1, ])
+    p = MinimumParameterCollection([p1, ])
     p.add(p2)
 
     p.setup(model)
@@ -133,10 +133,10 @@ def test_parameter_max(model):
     scB = Scenario(model, 'Scenario B', size=5)
 
     values = np.arange(366, dtype=np.float64)
-    p1 = ParameterDailyProfile(values)
-    p2 = ParameterConstantScenario(scB, np.arange(scB.size, dtype=np.float64))
+    p1 = DailyProfileParameter(values)
+    p2 = ConstantScenarioParameter(scB, np.arange(scB.size, dtype=np.float64))
 
-    p = ParameterMaximumCollection([p1, p2])
+    p = MaximumParameterCollection([p1, p2])
     p.setup(model)
 
     for ts in model.timestepper:

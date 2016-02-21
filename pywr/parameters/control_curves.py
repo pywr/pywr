@@ -2,16 +2,16 @@
 This module contains a set of pywr._core.Parameter subclasses for defining control curve based parameters.
 """
 
-from ._control_curves import BaseParameterControlCurve, ParameterControlCurveInterpolated
+from ._control_curves import BaseControlCurveParameter, ControlCurveInterpolatedParameter
 
 
-class ParameterControlCurvePiecewise(BaseParameterControlCurve):
+class ControlCurvePiecewiseParameter(BaseControlCurveParameter):
     """ A control curve Parameter that returns one of two values depending on whether the current
     volume is above or below the control curve.
 
     """
     def __init__(self, control_curve, above_curve_value, below_curve_value):
-        super(ParameterControlCurvePiecewise, self).__init__(control_curve)
+        super(ControlCurvePiecewiseParameter, self).__init__(control_curve)
 
         self.above_curve_value = above_curve_value
         self.below_curve_value = below_curve_value

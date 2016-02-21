@@ -1,7 +1,7 @@
 import datetime
 from xml.etree import ElementTree as ET
-from ._parameters import (Parameter as BaseParameter, ParameterConstantScenario, ParameterArrayIndexed,
-                              ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors, ParameterDailyProfile)
+from ._parameters import (Parameter as BaseParameter, ConstantScenarioParameter, ArrayIndexedParameter,
+                              ConstantScenarioParameter, ArrayIndexedScenarioMonthlyFactorsParameter, DailyProfileParameter)
 import numpy as np
 import pandas
 
@@ -16,13 +16,13 @@ class Parameter(BaseParameter):
     def from_xml(cls, model, xml):
         # TODO: this doesn't look nice - need to rethink xml specification?
         parameter_types = {
-            'const': ParameterConstant,
-            'constant': ParameterConstant,
-            'timestamp': ParameterConstant,
-            'timedelta': ParameterConstant,
-            'datetime': ParameterConstant,
-            'timeseries': ParameterConstant,
-            'python': ParameterFunction,
+            'const': ConstantParameter,
+            'constant': ConstantParameter,
+            'timestamp': ConstantParameter,
+            'timedelta': ConstantParameter,
+            'datetime': ConstantParameter,
+            'timeseries': ConstantParameter,
+            'python': FunctionParameter,
         }
         parameter_type = xml.get('type')
         return parameter_types[parameter_type].from_xml(model, xml)
@@ -68,7 +68,7 @@ class ParameterCollection(Parameter):
             parameter.reset()
 
 
-class ParameterMinimumCollection(ParameterCollection):
+class MinimumParameterCollection(ParameterCollection):
     def value(self, timestep, scenario_indices=[0]):
         min_available = float('inf')
         for parameter in self._parameters:
@@ -76,7 +76,7 @@ class ParameterMinimumCollection(ParameterCollection):
         return min_available
 
 
-class ParameterMaximumCollection(ParameterCollection):
+class MaximumParameterCollection(ParameterCollection):
     def value(self, timestep, scenario_indices=[0]):
         max_available = -float('inf')
         for parameter in self._parameters:
@@ -84,7 +84,7 @@ class ParameterMaximumCollection(ParameterCollection):
         return max_available
 
 
-class ParameterConstant(Parameter):
+class ConstantParameter(Parameter):
     def __init__(self, value=None):
         self._value = value
 
@@ -131,7 +131,7 @@ class ParameterConstant(Parameter):
                 value = float(xml.text)
             except:
                 value = xml.text
-            return key, ParameterConstant(value=value)
+            return key, ConstantParameter(value=value)
         elif parameter_type == 'timeseries':
             name = xml.text
             return key, model.data[name]
@@ -151,7 +151,7 @@ class ParameterConstant(Parameter):
             raise NotImplementedError('Unknown parameter type: {}'.format(parameter_type))
 
 
-class ParameterFunction(Parameter):
+class FunctionParameter(Parameter):
     def __init__(self, parent, func):
         self._parent = parent
         self._func = func
@@ -164,7 +164,7 @@ class ParameterFunction(Parameter):
         raise NotImplementedError('TODO')
 
 
-class ParameterMonthlyProfile(Parameter):
+class MonthlyProfileParameter(Parameter):
     def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf):
         self.size = 12
         if len(values) != self.size:
@@ -190,7 +190,7 @@ class ParameterMonthlyProfile(Parameter):
         raise NotImplementedError('TODO')
 
 
-class ParameterAnnualHarmonicSeries(Parameter):
+class AnnualHarmonicSeriesParameter(Parameter):
     def __init__(self, mean, amplitudes, phases, **kwargs):
         if len(amplitudes) != len(phases):
             raise ValueError("The number  of amplitudes and phases must be the same.")
@@ -325,7 +325,8 @@ def pop_kwarg_parameter(kwargs, key, default):
     if isinstance(value, Parameter):
         return value
     elif callable(value):
-        return ParameterFunction(self, value)
+        # TODO this is broken?
+        return FunctionParameter(self, value)
     else:
         return value
 
@@ -333,5 +334,5 @@ def pop_kwarg_parameter(kwargs, key, default):
 class PropertiesDict(dict):
     def __setitem__(self, key, value):
         if not isinstance(value, Property):
-            value = ParameterConstant(value)
+            value = ConstantParameter(value)
         dict.__setitem__(self, key, value)

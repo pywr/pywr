@@ -1,9 +1,9 @@
 
 # Forward declations
 cdef class Parameter
-cdef class ParameterArrayIndexed
-cdef class ParameterConstantScenario
-cdef class ParameterArrayIndexedScenarioMonthlyFactors
+cdef class ArrayIndexedParameter
+cdef class ConstantScenarioParameter
+cdef class ArrayIndexedScenarioMonthlyFactorsParameter
 
 from .._core cimport Timestep, Scenario, AbstractNode
 
@@ -21,19 +21,19 @@ cdef class Parameter:
     cpdef double[:] lower_bounds(self)
     cpdef double[:] upper_bounds(self)
 
-cdef class ParameterArrayIndexed(Parameter):
+cdef class ArrayIndexedParameter(Parameter):
     cdef double[:] values
 
-cdef class ParameterConstantScenario(Parameter):
+cdef class ConstantScenarioParameter(Parameter):
     cdef Scenario _scenario
     cdef double[:] _values
     cdef int _scenario_index
 
-cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
+cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
     cdef double[:] _values
     cdef double[:, :] _factors
     cdef Scenario _scenario
     cdef int _scenario_index
 
-cdef class ParameterDailyProfile(Parameter):
+cdef class DailyProfileParameter(Parameter):
     cdef double[:] _values
