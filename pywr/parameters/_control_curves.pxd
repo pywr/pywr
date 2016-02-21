@@ -1,5 +1,5 @@
-from _core cimport Timestep, Scenario, AbstractNode
-from _parameters cimport Parameter
+from .._core cimport Timestep, Scenario, AbstractNode
+from ._parameters cimport Parameter
 
 cdef class BaseParameterControlCurve(Parameter):
     cdef Parameter _control_curve

@@ -1,7 +1,7 @@
 
 from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink
 from pywr.parameters import pop_kwarg_parameter, ParameterConstant, BaseParameter
-from pywr.control_curves import ParameterControlCurvePiecewise
+from pywr.parameters.control_curves import ParameterControlCurvePiecewise
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 

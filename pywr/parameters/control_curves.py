@@ -2,7 +2,7 @@
 This module contains a set of pywr._core.Parameter subclasses for defining control curve based parameters.
 """
 
-from _control_curves import BaseParameterControlCurve, ParameterControlCurveInterpolated
+from ._control_curves import BaseParameterControlCurve, ParameterControlCurveInterpolated
 
 
 class ParameterControlCurvePiecewise(BaseParameterControlCurve):
@@ -20,6 +20,7 @@ class ParameterControlCurvePiecewise(BaseParameterControlCurve):
         i = self.node.model.scenarios.ravel_indices(scenario_indices)
         control_curve = self.control_curve.value(ts, scenario_indices)
         # If level above control curve then return above_curve_cost
+        #print(control_curve, self.node.current_pc[i])
         if self.node.current_pc[i] >= control_curve:
             return self.above_curve_value
         return self.below_curve_value

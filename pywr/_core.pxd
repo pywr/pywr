@@ -1,4 +1,4 @@
-from _parameters cimport Parameter
+from .parameters._parameters cimport Parameter
 from _recorders cimport Recorder
 
 cdef class Scenario:

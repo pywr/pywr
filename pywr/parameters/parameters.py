@@ -1,6 +1,6 @@
 import datetime
 from xml.etree import ElementTree as ET
-from pywr._parameters import (Parameter as BaseParameter, ParameterConstantScenario, ParameterArrayIndexed,
+from ._parameters import (Parameter as BaseParameter, ParameterConstantScenario, ParameterArrayIndexed,
                               ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors, ParameterDailyProfile)
 import numpy as np
 import pandas

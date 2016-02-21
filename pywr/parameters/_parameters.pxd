@@ -5,7 +5,7 @@ cdef class ParameterArrayIndexed
 cdef class ParameterConstantScenario
 cdef class ParameterArrayIndexedScenarioMonthlyFactors
 
-from _core cimport Timestep, Scenario, AbstractNode
+from .._core cimport Timestep, Scenario, AbstractNode
 
 cdef class Parameter:
     cdef int _size

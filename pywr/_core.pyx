@@ -539,6 +539,8 @@ cdef class Storage(AbstractNode):
         cdef int i
         for i in range(self._volume.shape[0]):
             self._volume[i] = self._initial_volume
+            # TODO fix this for variable max_volume
+            self._current_pc[i] = self._volume[i] / self._max_volume
 
         if self._max_volume_param is not None:
             self._max_volume_param.reset()

@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime
 from pywr._core import Timestep
-from pywr.licenses import License, TimestepLicense, AnnualLicense, AnnualLicenseExponential, AnnualLicenseHyperbola
+from pywr.parameters.licenses import License, TimestepLicense, AnnualLicense, AnnualLicenseExponential, AnnualLicenseHyperbola
 from fixtures import simple_linear_model
 from numpy.testing import assert_allclose
 import numpy as np
