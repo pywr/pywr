@@ -5,7 +5,7 @@ cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
 
     """
-    def __init__(self, control_curve):
+    def __init__(self, control_curve, Storage storage_node=None):
         """
 
         Parameters
@@ -19,6 +19,7 @@ cdef class BaseControlCurveParameter(Parameter):
             raise RuntimeError('control_curve already has a parent.')
         control_curve.parent = self
         self._control_curve = control_curve
+        self._storage_node = storage_node
 
     cpdef setup(self, model):
         self.control_curve.setup(model)
@@ -42,6 +43,12 @@ cdef class BaseControlCurveParameter(Parameter):
         def __set__(self, value):
             self._control_curve = value
 
+    property storage_node:
+        def __get__(self):
+            return self._storage_node
+        def __set__(self, value):
+            self._storage_node = value
+
 
 cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     """ A control curve Parameter that interpolates between three values.
@@ -56,9 +63,9 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
         cdef int i = self.node.model.scenarios.ravel_indices(scenario_indices)
         cdef double control_curve = self._control_curve.value(ts, scenario_indices)
-
+        cdef Storage node = self.node if self._storage_node is None else self._storage_node
         # return the interpolated value for the current level.
-        cdef double current_pc = self.node._current_pc[i]
+        cdef double current_pc = node._current_pc[i]
         cdef double weight
         if current_pc < 0.0:
             raise ValueError("Storage out of lower bounds.")
