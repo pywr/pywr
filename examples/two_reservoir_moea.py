@@ -7,7 +7,8 @@ import pandas
 import numpy as np
 import inspyred
 from pywr.core import Model, Input, Output, Link, Storage
-from pywr.parameters import Parameter, ParameterArrayIndexed, ParameterMonthlyProfile, ParameterAnnualHarmonicSeries
+from pywr.parameters import ArrayIndexedParameter, MonthlyProfileParameter, AnnualHarmonicSeriesParameter
+from pywr.parameters.control_curves import ControlCurvePiecewiseParameter
 from pywr.recorders import NodeRecorder, Recorder
 
 
@@ -67,42 +68,7 @@ class AggregatedRecorder(Recorder):
         return agg_func([r.value() for r in self.recorders])
 
 
-class TransferController(Parameter):
-    """ Control the flow based on a control_curve
-    """
-    def __init__(self, reservoir1, control_curve):
-        super(TransferController, self).__init__()
-        self.reservoir1 = reservoir1
-        self.control_curve = control_curve
-        control_curve.parent = self
 
-    def value(self, timestep, *args, **kwargs):
-        percent_full = self.reservoir1._volume[0] / 20000.0  # TODO: this doesn't work with scenarios
-
-        control_curve = self.control_curve.value(timestep, *args)
-
-        if percent_full < control_curve:
-            max_flow = 10.0
-        else:
-            max_flow = 0.0
-        return max_flow
-
-    @property
-    def is_variable(self):
-        return self.control_curve.is_variable
-
-    @property
-    def size(self):
-        return self.control_curve.size
-
-    def update(self, values):
-        self.control_curve.update(values)
-
-    def lower_bounds(self):
-        return self.control_curve.lower_bounds()
-
-    def upper_bounds(self):
-        return self.control_curve.upper_bounds()
 
 
 class OptimisationModel(Model):
@@ -143,7 +109,7 @@ class OptimisationModel(Model):
             print('Running candidiate: {:03d}'.format(i))
             for ivar, var in enumerate(self._variables):
                 j = slice(self._variable_map[ivar], self._variable_map[ivar+1])
-                var.update(candidate[j])
+                var.update(np.array(candidate[j]))
 
             self.reset()
             self.run()
@@ -166,7 +132,7 @@ def create_model(harmonic=True):
 
     flow['Date'] = flow['Date'].apply(pandas.to_datetime)
     flow.set_index('Date', inplace=True)
-    flow_parameter = ParameterArrayIndexed(flow['Flow'].values)
+    flow_parameter = ArrayIndexedParameter(flow['Flow'].values)
 
     model = OptimisationModel(
         solver='glpk',
@@ -183,12 +149,12 @@ def create_model(harmonic=True):
     reservoir2 = Storage(model, 'reservoir2', min_volume=3000, max_volume=20000, volume=16000)
 
     if harmonic:
-        control_curve = ParameterAnnualHarmonicSeries(0.5, [0.5], [0.0], mean_upper_bounds=1.0, amplitude_upper_bounds=1.0)
+        control_curve = AnnualHarmonicSeriesParameter(0.5, [0.5], [0.0], mean_upper_bounds=1.0, amplitude_upper_bounds=1.0)
     else:
-        control_curve = ParameterMonthlyProfile(np.array([0.0]*12, np.float32), lower_bounds=0.0, upper_bounds=1.0)
+        control_curve = MonthlyProfileParameter(np.array([0.0]*12, np.float32), lower_bounds=0.0, upper_bounds=1.0)
 
     control_curve.is_variable = True
-    controller = TransferController(reservoir1, control_curve)
+    controller = ControlCurvePiecewiseParameter(control_curve, 10.0, 0.0, storage_node=reservoir1)
     transfer = Link(model, 'transfer', max_flow=controller, cost=-500)
 
     demand1 = Output(model, 'demand1', max_flow=100.0, cost=-101)
