@@ -64,6 +64,7 @@ cdef class BaseInput(Node):
 
 cdef class Storage(AbstractNode):
     cdef public double[:] _volume
+    cdef public double[:] _current_pc
     cdef double _initial_volume
     cdef double _min_volume
     cdef double _max_volume

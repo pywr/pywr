@@ -501,7 +501,7 @@ cdef class Storage(AbstractNode):
     property current_pc:
         " Current percentage full "
         def __get__(self, ):
-            return np.array(self._volume[:]) / self._max_volume
+            return np.asarray(self._current_pc)
 
     property domain:
         def __get__(self):
@@ -531,6 +531,7 @@ cdef class Storage(AbstractNode):
         AbstractNode.setup(self, model)
         cdef int ncomb = len(model.scenarios.combinations)
         self._volume = np.empty(ncomb, dtype=np.float64)
+        self._current_pc = np.empty(ncomb, dtype=np.float64)
 
     cpdef reset(self):
         """Called at the beginning of a run"""
@@ -559,6 +560,8 @@ cdef class Storage(AbstractNode):
         cdef int i
         for i in range(self._flow.shape[0]):
             self._volume[i] += self._flow[i]*ts._days
+            # TODO fix this for variable max_volume
+            self._current_pc[i] = self._volume[i] / self._max_volume
 
         if self._max_volume_param is not None:
             self._max_volume_param.after(ts)
