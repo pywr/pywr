@@ -32,6 +32,8 @@ extensions = [
               include_dirs=[np.get_include()],),
     Extension('pywr._recorders', ['pywr/_recorders.pyx'],
               include_dirs=[np.get_include()],),
+    Extension('pywr._control_curves', ['pywr/_control_curves.pyx'],
+              include_dirs=[np.get_include()],),
 ]
 
 # HACK: optional features are too difficult to do properly
