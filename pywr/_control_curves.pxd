@@ -5,5 +5,6 @@ cdef class BaseParameterControlCurve(Parameter):
     cdef Parameter _control_curve
 
 cdef class ParameterControlCurveInterpolated(BaseParameterControlCurve):
-    cdef double[:] _interp_values
-    cdef double[:] values
+    cdef double lower_value
+    cdef double curve_value
+    cdef double upper_value

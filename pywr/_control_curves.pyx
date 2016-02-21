@@ -50,12 +50,25 @@ cdef class ParameterControlCurveInterpolated(BaseParameterControlCurve):
         values = np.array(values)
         if len(values) != 3:
             raise ValueError("Three values must be given to define the interpolation knots.")
-        self.values = values
-        # x values of interp, the parameter will updated the middle entry during execution
-        self._interp_values = np.array([0.0, 0.5, 1.0])
+        self.lower_value, self.curve_value, self.upper_value = values
 
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
         cdef int i = self.node.model.scenarios.ravel_indices(scenario_indices)
-        self._interp_values[1] = self._control_curve.value(ts, scenario_indices)
+        cdef double control_curve = self._control_curve.value(ts, scenario_indices)
+
         # return the interpolated value for the current level.
-        return np.interp(self.node.current_pc[i], self._interp_values, self.values)
+        cdef double current_pc = self.node._current_pc[i]
+        cdef double weight
+        if current_pc < 0.0:
+            raise ValueError("Storage out of lower bounds.")
+        elif current_pc < control_curve:
+            weight = (control_curve - current_pc) / control_curve
+            return self.lower_value*weight + self.curve_value*(1.0 - weight)
+        elif control_curve == 1.0:
+            return self.curve_value
+        elif current_pc <= 1.0:
+            weight = (1.0 - current_pc) / (1.0 - control_curve)
+            return self.curve_value*weight + self.upper_value*(1.0 - weight)
+        else:
+            raise ValueError("Storage out of upper bounds.")
+
