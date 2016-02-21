@@ -34,3 +34,6 @@ cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
     cdef double[:, :] _factors
     cdef Scenario _scenario
     cdef int _scenario_index
+
+cdef class ParameterDailyProfile(Parameter):
+    cdef double[:] _values

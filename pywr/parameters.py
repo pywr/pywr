@@ -1,7 +1,7 @@
 import datetime
 from xml.etree import ElementTree as ET
 from pywr._parameters import (Parameter as BaseParameter, ParameterConstantScenario, ParameterArrayIndexed,
-                              ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors)
+                              ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors, ParameterDailyProfile)
 import numpy as np
 import pandas
 
@@ -184,20 +184,6 @@ class ParameterMonthlyProfile(Parameter):
 
     def upper_bounds(self):
         return self._upper_bounds
-
-    @classmethod
-    def from_xml(cls, xml):
-        raise NotImplementedError('TODO')
-
-
-class ParameterDailyProfile(Parameter):
-    def __init__(self, values):
-        if len(values) != 366:
-            raise ValueError("366 values must be given for a daily profile.")
-        self._values = values
-
-    def value(self, ts, scenario_indices=[0]):
-        return self._values[ts.datetime.dayofyear-1]
 
     @classmethod
     def from_xml(cls, xml):

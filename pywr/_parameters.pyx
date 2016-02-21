@@ -133,3 +133,17 @@ cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
         # correct number to use in this instance.
         cdef int imth = ts.datetime.month-1
         return self._values[ts._index]*self._factors[scenario_indices[self._scenario_index], imth]
+
+
+cdef class ParameterDailyProfile(Parameter):
+    def __init__(self, values):
+        v = np.squeeze(np.array(values))
+        if v.ndim != 1:
+            raise ValueError("values must be 1-dimensional.")
+        if len(values) != 366:
+            raise ValueError("366 values must be given for a daily profile.")
+        self._values = v
+
+    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
+        cdef int i = ts.datetime.dayofyear-1
+        return self._values[i]
