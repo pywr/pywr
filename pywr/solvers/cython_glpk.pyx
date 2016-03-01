@@ -160,12 +160,14 @@ cdef class CythonGLPKSolver:
         t0 = time.clock()
         cdef int[:] scenario_combination
         cdef int scenario_id
+        cdef ScenarioIndex scenario_index
         for scenario_id, scenario_combination in enumerate(model.scenarios.combinations):
-            self._solve_scenario(model, scenario_id, scenario_combination)
+            scenario_index = ScenarioIndex(scenario_id, scenario_combination)
+            self._solve_scenario(model, scenario_index)
         self.stats['total'] += time.clock() - t0
 
     @cython.boundscheck(False)
-    cdef object _solve_scenario(self, model, int scenario_id, int[:] scenario_indices):
+    cdef object _solve_scenario(self, model, ScenarioIndex scenario_index):
         cdef Node node
         cdef Storage storage
         cdef double min_flow
@@ -191,27 +193,27 @@ cdef class CythonGLPKSolver:
 
         # update route properties
         for col, route in enumerate(routes):
-            cost = route[0].get_cost(timestep, scenario_indices)
+            cost = route[0].get_cost(timestep, scenario_index)
             for node in route[1:-1]:
                 if isinstance(node, BaseLink):
-                    cost += node.get_cost(timestep, scenario_indices)
-            cost += route[-1].get_cost(timestep, scenario_indices)
+                    cost += node.get_cost(timestep, scenario_index)
+            cost += route[-1].get_cost(timestep, scenario_index)
             glp_set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
         # update non-storage properties
         for col, node in enumerate(non_storages):
-            min_flow = inf_to_dbl_max(node.get_min_flow(timestep, scenario_indices))
-            max_flow = inf_to_dbl_max(node.get_max_flow(timestep, scenario_indices))
+            min_flow = inf_to_dbl_max(node.get_min_flow(timestep, scenario_index))
+            max_flow = inf_to_dbl_max(node.get_max_flow(timestep, scenario_index))
             glp_set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         # update storage node constraint
         for col, storage in enumerate(storages):
-            max_volume = storage.get_max_volume(timestep, scenario_indices)
-            avail_volume = max(storage._volume[scenario_id] - storage.get_min_volume(timestep, scenario_indices), 0.0)
+            max_volume = storage.get_max_volume(timestep, scenario_index)
+            avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep.days
-            ub = (max_volume-storage._volume[scenario_id])/timestep.days
+            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
             glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update'] += time.clock() - t0
@@ -232,11 +234,11 @@ cdef class CythonGLPKSolver:
 
         for route, flow in zip(routes, route_flow):
             # TODO make this cleaner.
-            route[0].commit(scenario_id, flow)
-            route[-1].commit(scenario_id, flow)
+            route[0].commit(scenario_index._global_id, flow)
+            route[-1].commit(scenario_index._global_id, flow)
             for node in route[1:-1]:
                 if isinstance(node, BaseLink):
-                    node.commit(scenario_id, flow)
+                    node.commit(scenario_index._global_id, flow)
 
         self.stats['result_update'] += time.clock() - t0
         return route_flow, change_in_storage

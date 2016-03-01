@@ -12,7 +12,7 @@ cdef class Parameter:
     cpdef before(self, Timestep ts):
         pass
 
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return 0
 
     cpdef after(self, Timestep ts):
@@ -67,7 +67,7 @@ cdef class ArrayIndexedParameter(Parameter):
         super(ArrayIndexedParameter, self).__init__()
         self.values = values
 
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the parameter at a given timestep
         """
         return self.values[ts._index]
@@ -95,13 +95,13 @@ cdef class ConstantScenarioParameter(Parameter):
         # so that it can return the correct value in value()
         self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
 
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is a bit confusing.
         # scenario_indices contains the current scenario number for all
         # the Scenario objects in the model run. We have cached the
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
-        return self._values[scenario_indices[self._scenario_index]]
+        return self._values[scenario_index._indices[self._scenario_index]]
 
 
 cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
@@ -128,14 +128,14 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         # so that it can return the correct value in value()
         self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
 
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is a bit confusing.
         # scenario_indices contains the current scenario number for all
         # the Scenario objects in the model run. We have cached the
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
         cdef int imth = ts.datetime.month-1
-        return self._values[ts._index]*self._factors[scenario_indices[self._scenario_index], imth]
+        return self._values[ts._index]*self._factors[scenario_index._indices[self._scenario_index], imth]
 
 
 cdef class DailyProfileParameter(Parameter):
@@ -148,6 +148,6 @@ cdef class DailyProfileParameter(Parameter):
             raise ValueError("366 values must be given for a daily profile.")
         self._values = v
 
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.datetime.dayofyear-1
         return self._values[i]

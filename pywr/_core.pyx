@@ -67,6 +67,19 @@ cdef class ScenarioCollection:
             return 0
         return np.ravel_multi_index(scenario_indices, np.array(self.shape))
 
+cdef class ScenarioIndex:
+    def __init__(self, int global_id, int[:] indices):
+        self._global_id = global_id
+        self._indices = indices
+
+    property global_id:
+        def __get__(self):
+            return self._global_id
+
+    property indices:
+        def __get__(self):
+            return np.array(self._indices)
+
 
 cdef class Timestep:
     def __init__(self, object datetime, int index, double days):
@@ -139,12 +152,12 @@ cdef class AbstractNode:
                 self._cost_param = None
                 self._cost = value
 
-    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
+    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
         """Get the cost per unit flow at a given timestep
         """
         if self._cost_param is None:
             return self._cost
-        return self._cost_param.value(ts, scenario_indices)
+        return self._cost_param.value(ts, scenario_index)
 
     property name:
         def __get__(self):
@@ -285,12 +298,12 @@ cdef class Node(AbstractNode):
                 self._min_flow_param = None
                 self._min_flow = value
 
-    cpdef get_min_flow(self, Timestep ts, int[:] scenario_indices=None):
+    cpdef get_min_flow(self, Timestep ts, ScenarioIndex scenario_index):
         """Get the minimum flow at a given timestep
         """
         if self._min_flow_param is None:
             return self._min_flow
-        return self._min_flow_param.value(ts, scenario_indices)
+        return self._min_flow_param.value(ts, scenario_index)
 
     property max_flow:
         """The maximum flow constraint on the node
@@ -313,12 +326,12 @@ cdef class Node(AbstractNode):
                 self._max_flow_param = None
                 self._max_flow = value
 
-    cpdef get_max_flow(self, Timestep ts, int[:] scenario_indices=None):
+    cpdef get_max_flow(self, Timestep ts, ScenarioIndex scenario_index):
         """Get the maximum flow at a given timestep
         """
         if self._max_flow_param is None:
             return self._max_flow
-        return self._max_flow_param.value(ts, scenario_indices)
+        return self._max_flow_param.value(ts, scenario_index)
 
     property conversion_factor:
         """The conversion between inflow and outflow for the node
@@ -356,18 +369,18 @@ cdef class Node(AbstractNode):
         """
         return self._conversion_factor
 
-    cdef set_parameters(self, Timestep ts, int[:] scenario_indices=None):
+    cdef set_parameters(self, Timestep ts, ScenarioIndex scenario_index):
         """Update the constant attributes by evaluating any Parameter objects
 
         This is useful when the `get_` functions need to be accessed multiple
         times and there is a benefit to caching the values.
         """
         if self._min_flow_param is not None:
-            self._min_flow = self._min_flow_param.value(ts, scenario_indices)
+            self._min_flow = self._min_flow_param.value(ts, scenario_index)
         if self._max_flow_param is not None:
-            self._max_flow = self._max_flow_param.value(ts, scenario_indices)
+            self._max_flow = self._max_flow_param.value(ts, scenario_index)
         if self._cost_param is not None:
-            self._cost = self._cost_param.value(ts, scenario_indices)
+            self._cost = self._cost_param.value(ts, scenario_index)
 
     cpdef setup(self, model):
         """Called before the first run of the model"""
@@ -425,18 +438,18 @@ cdef class StorageInput(BaseInput):
         BaseInput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, -volume)
 
-    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
+    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
         # Return negative of parent cost
-        return -self.parent.get_cost(ts, scenario_indices)
+        return -self.parent.get_cost(ts, scenario_index)
 
 cdef class StorageOutput(BaseOutput):
     cpdef commit(self, int scenario_index, double volume):
         BaseOutput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, volume)
 
-    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=None):
+    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
         # Return parent cost
-        return self.parent.get_cost(ts, scenario_indices)
+        return self.parent.get_cost(ts, scenario_index)
 
 cdef class Storage(AbstractNode):
     def __cinit__(self, ):
@@ -476,10 +489,10 @@ cdef class Storage(AbstractNode):
             else:
                 self._min_volume = value
 
-    cpdef get_min_volume(self, Timestep ts, int[:] scenario_indices=None):
+    cpdef get_min_volume(self, Timestep ts, ScenarioIndex scenario_index):
         if self._min_volume_param is None:
             return self._min_volume
-        return self._min_volume_param.value(ts, scenario_indices)
+        return self._min_volume_param.value(ts, scenario_index)
 
     property max_volume:
         def __get__(self):
@@ -495,10 +508,10 @@ cdef class Storage(AbstractNode):
             else:
                 self._max_volume = value
 
-    cpdef get_max_volume(self, Timestep ts, int[:] scenario_indices=None):
+    cpdef get_max_volume(self, Timestep ts, ScenarioIndex scenario_index):
         if self._max_volume_param is None:
             return self._max_volume
-        return self._max_volume_param.value(ts, scenario_indices)
+        return self._max_volume_param.value(ts, scenario_index)
 
     property current_pc:
         " Current percentage full "

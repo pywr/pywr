@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime
-from pywr._core import Timestep
+from pywr.core import Timestep, ScenarioIndex
 from pywr.parameters.licenses import License, TimestepLicense, AnnualLicense, AnnualExponentialLicense, AnnualHyperbolaLicense
 from fixtures import simple_linear_model
 from numpy.testing import assert_allclose
@@ -15,10 +15,10 @@ def test_base_license():
 
 def test_daily_license():
     '''Test daily licence'''
-
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
     lic = TimestepLicense(42.0)
     assert(isinstance(lic, License))
-    assert(lic.value(Timestep(datetime(2015, 1, 1), 0, 0)) == 42.0)
+    assert(lic.value(Timestep(datetime(2015, 1, 1), 0, 0), si) == 42.0)
 
     # daily licences don't have resource state
     assert(lic.resource_state(Timestep(datetime(2015, 1, 1), 0, 0)) is None)
@@ -26,6 +26,7 @@ def test_daily_license():
 
 def test_simple_model_with_annual_licence(simple_linear_model):
     m = simple_linear_model
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
     annual_total = 365
     lic = AnnualLicense(annual_total)
@@ -36,14 +37,14 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     m.setup()
 
     # timestepper.current is the next time step (because model has not begun)
-    assert_allclose(lic.value(m.timestepper.current), annual_total/365)
+    assert_allclose(lic.value(m.timestepper.current, si), annual_total/365)
     m.step()
 
     # Licence is a hard constraint of 1.0
     # timestepper.current is now end of the first day
     assert_allclose(m.node["Output"].flow, 1.0)
     # Check the constraint for the next timestep.
-    assert_allclose(lic.value(m.timestepper._next), 1.0)
+    assert_allclose(lic.value(m.timestepper._next, si), 1.0)
 
     # Now constrain the demand so that licence is not fully used
     m.node["Output"].max_flow = 0.5
@@ -53,7 +54,7 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     # Check the constraint for the next timestep. The available amount should now be larger
     # due to the reduced use
     remaining = (annual_total-1.5)
-    assert_allclose(lic.value(m.timestepper._next), remaining / (365 - 2))
+    assert_allclose(lic.value(m.timestepper._next, si), remaining / (365 - 2))
 
     # Unconstrain the demand
     m.node["Output"].max_flow = 10.0
@@ -61,7 +62,7 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     assert_allclose(m.node["Output"].flow, remaining / (365 - 2))
     # Licence should now be on track for an expected value of 1.0
     remaining -= remaining / (365 - 2)
-    assert_allclose(lic.value(m.timestepper._next), remaining / (365 - 3))
+    assert_allclose(lic.value(m.timestepper._next, si), remaining / (365 - 3))
 
 
 def test_simple_model_with_annual_licence_multi_year(simple_linear_model):
@@ -91,6 +92,7 @@ def test_simple_model_with_annual_licence_multi_year(simple_linear_model):
 
 def test_simple_model_with_exponential_license(simple_linear_model):
     m = simple_linear_model
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
     annual_total = 365
     # Expoential licence with max_value of e should give a hard constraint of 1.0 when on track
@@ -102,14 +104,14 @@ def test_simple_model_with_exponential_license(simple_linear_model):
     m.setup()
 
     # timestepper.current is the next time step (because model has not begun)
-    assert_allclose(lic.value(m.timestepper.current), annual_total/365)
+    assert_allclose(lic.value(m.timestepper.current, si), annual_total/365)
     m.step()
 
     # Licence is a hard constraint of 1.0
     # timestepper.current is now end of the first day
     assert_allclose(m.node["Output"].flow, 1.0)
     # Check the constraint for the next timestep.
-    assert_allclose(lic.value(m.timestepper._next), 1.0)
+    assert_allclose(lic.value(m.timestepper._next, si), 1.0)
 
     # Now constrain the demand so that licence is not fully used
     m.node["Output"].max_flow = 0.5
@@ -119,7 +121,7 @@ def test_simple_model_with_exponential_license(simple_linear_model):
     # Check the constraint for the next timestep. The available amount should now be larger
     # due to the reduced use
     remaining = (annual_total-1.5)
-    assert_allclose(lic.value(m.timestepper._next), np.exp(-remaining / (365 - 2) + 1))
+    assert_allclose(lic.value(m.timestepper._next, si), np.exp(-remaining / (365 - 2) + 1))
 
     # Unconstrain the demand
     m.node["Output"].max_flow = 10.0
@@ -127,11 +129,12 @@ def test_simple_model_with_exponential_license(simple_linear_model):
     assert_allclose(m.node["Output"].flow, np.exp(-remaining / (365 - 2) + 1))
     # Licence should now be on track for an expected value of 1.0
     remaining -= np.exp(-remaining / (365 - 2) + 1)
-    assert_allclose(lic.value(m.timestepper._next), np.exp(-remaining / (365 - 3) + 1))
+    assert_allclose(lic.value(m.timestepper._next, si), np.exp(-remaining / (365 - 3) + 1))
 
 
 def test_simple_model_with_hyperbola_license(simple_linear_model):
     m = simple_linear_model
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
     annual_total = 365
     # Expoential licence with max_value of e should give a hard constraint of 1.0 when on track
@@ -143,14 +146,14 @@ def test_simple_model_with_hyperbola_license(simple_linear_model):
     m.setup()
 
     # timestepper.current is the next time step (because model has not begun)
-    assert_allclose(lic.value(m.timestepper.current), annual_total/365)
+    assert_allclose(lic.value(m.timestepper.current, si), annual_total/365)
     m.step()
 
     # Licence is a hard constraint of 1.0
     # timestepper.current is now end of the first day
     assert_allclose(m.node["Output"].flow, 1.0)
     # Check the constraint for the next timestep.
-    assert_allclose(lic.value(m.timestepper._next), 1.0)
+    assert_allclose(lic.value(m.timestepper._next, si), 1.0)
 
     # Now constrain the demand so that licence is not fully used
     m.node["Output"].max_flow = 0.5
@@ -160,7 +163,7 @@ def test_simple_model_with_hyperbola_license(simple_linear_model):
     # Check the constraint for the next timestep. The available amount should now be larger
     # due to the reduced use
     remaining = (annual_total-1.5)
-    assert_allclose(lic.value(m.timestepper._next), (365 - 2) / remaining)
+    assert_allclose(lic.value(m.timestepper._next, si), (365 - 2) / remaining)
 
     # Unconstrain the demand
     m.node["Output"].max_flow = 10.0
@@ -168,4 +171,4 @@ def test_simple_model_with_hyperbola_license(simple_linear_model):
     assert_allclose(m.node["Output"].flow, (365 - 2) / remaining)
     # Licence should now be on track for an expected value of 1.0
     remaining -= (365 - 2) / remaining
-    assert_allclose(lic.value(m.timestepper._next), (365 - 3) / remaining)
+    assert_allclose(lic.value(m.timestepper._next, si), (365 - 3) / remaining)

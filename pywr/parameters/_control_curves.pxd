@@ -1,4 +1,4 @@
-from .._core cimport Timestep, Scenario, AbstractNode, Storage
+from .._core cimport Timestep, Scenario, ScenarioIndex, AbstractNode, Storage
 from ._parameters cimport Parameter
 
 cdef class BaseControlCurveParameter(Parameter):

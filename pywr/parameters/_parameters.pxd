@@ -5,7 +5,7 @@ cdef class ArrayIndexedParameter
 cdef class ConstantScenarioParameter
 cdef class ArrayIndexedScenarioMonthlyFactorsParameter
 
-from .._core cimport Timestep, Scenario, AbstractNode
+from .._core cimport Timestep, Scenario, ScenarioIndex, AbstractNode
 
 cdef class Parameter:
     cdef int _size
@@ -15,7 +15,7 @@ cdef class Parameter:
     cpdef setup(self, model)
     cpdef reset(self)
     cpdef before(self, Timestep ts)
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cpdef after(self, Timestep ts)
     cpdef update(self, double[:] values)
     cpdef double[:] lower_bounds(self)
