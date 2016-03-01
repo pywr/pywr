@@ -57,9 +57,9 @@ cdef class ScenarioCollection:
         def __get__(self):
             if len(self._scenarios) == 0:
                 return (1, )
-            return (sc._size for sc in self._scenarios)
+            return tuple(sc.size for sc in self._scenarios)
 
-    cpdef int ravel_indices(self, int[:] scenario_indices):
+    cpdef int ravel_indices(self, int[:] scenario_indices) except? -1:
         # Case where scenario_indices is empty for no scenarios defined
         if scenario_indices.size == 0:
             return 0
