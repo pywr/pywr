@@ -3,9 +3,15 @@ from pywr.parameters import ConstantParameter
 from pywr.parameters.control_curves import ControlCurvePiecewiseParameter, ControlCurveInterpolatedParameter
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
-def test_control_curve_piecewise():
-    m = Model()
+@pytest.fixture
+def model(solver):
+    return Model(solver=solver)
+
+
+def test_control_curve_piecewise(model):
+    m = model
     s = Storage(m, 'Storage', max_volume=100.0)
 
     cc = ConstantParameter(0.8)
@@ -33,9 +39,9 @@ def test_control_curve_piecewise():
     assert_allclose(l.get_cost(m.timestepper.current), 10.0)
 
 
-def test_control_curve_interpolated():
+def test_control_curve_interpolated(model):
 
-    m = Model()
+    m = model
     s = Storage(m, 'Storage', max_volume=100.0)
 
     cc = ConstantParameter(0.8)
