@@ -28,7 +28,7 @@ setup_kwargs = {
 extensions = [
     Extension('pywr._core', ['pywr/_core.pyx'],
               include_dirs=[np.get_include()],),
-    Extension('pywr..parameters._parameters', ['pywr/parameters/_parameters.pyx'],
+    Extension('pywr.parameters._parameters', ['pywr/parameters/_parameters.pyx'],
               include_dirs=[np.get_include()],),
     Extension('pywr._recorders', ['pywr/_recorders.pyx'],
               include_dirs=[np.get_include()],),
