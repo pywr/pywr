@@ -86,7 +86,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         cdef double current_pc = node._current_pc[i]
         cdef double weight
         if current_pc < 0.0:
-            raise ValueError("Storage out of lower bounds.")
+            return self.lower_value
         elif current_pc < control_curve:
             weight = (control_curve - current_pc) / control_curve
             return self.lower_value*weight + self.curve_value*(1.0 - weight)
@@ -96,5 +96,4 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             weight = (1.0 - current_pc) / (1.0 - control_curve)
             return self.curve_value*weight + self.upper_value*(1.0 - weight)
         else:
-            raise ValueError("Storage out of upper bounds.")
-
+            return self.upper_value
