@@ -60,6 +60,8 @@ cdef class ScenarioCollection:
             return tuple(sc.size for sc in self._scenarios)
 
     cpdef int ravel_indices(self, int[:] scenario_indices) except? -1:
+        if scenario_indices is None:
+            return 0
         # Case where scenario_indices is empty for no scenarios defined
         if scenario_indices.size == 0:
             return 0
