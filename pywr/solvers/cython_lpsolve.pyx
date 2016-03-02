@@ -281,10 +281,12 @@ cdef class CythonLPSolveSolver:
     cpdef object solve(self, model):
         cdef int[:] scenario_combination
         cdef int scenario_id
+        cdef ScenarioIndex scenario_index
         for scenario_id, scenario_combination in enumerate(model.scenarios.combinations):
-            self._solve_scenario(model, scenario_id, scenario_combination)
+            scenario_index = ScenarioIndex(scenario_id, scenario_combination)
+            self._solve_scenario(model, scenario_index)
 
-    cdef object _solve_scenario(self, model, int scenario_id, int[:] scenario_indices):
+    cdef object _solve_scenario(self, model, ScenarioIndex scenario_index):
         cdef Node supply
         cdef Node demand
         cdef Node node
@@ -312,35 +314,35 @@ cdef class CythonLPSolveSolver:
 
         # update route properties
         for col, route in enumerate(routes):
-            cost = route[0].get_cost(timestep, scenario_indices)
+            cost = route[0].get_cost(timestep, scenario_index)
             for node in route[1:-1]:
                 if isinstance(node, BaseLink):
-                    cost += node.get_cost(timestep, scenario_indices)
+                    cost += node.get_cost(timestep, scenario_index)
             set_obj(self.prob, self.idx_col_routes+col, cost)
 
         # update supply properties
         for col, supply in enumerate(supplys):
-            min_flow = inf_to_dbl_max(supply.get_min_flow(timestep, scenario_indices))
-            max_flow = inf_to_dbl_max(supply.get_max_flow(timestep, scenario_indices))
+            min_flow = inf_to_dbl_max(supply.get_min_flow(timestep, scenario_index))
+            max_flow = inf_to_dbl_max(supply.get_max_flow(timestep, scenario_index))
             set_row_bnds(self.prob, self.idx_row_supplys+col, min_flow, max_flow)
 
 
         # update demand properties
         for col, demand in enumerate(demands):
-            min_flow = inf_to_dbl_max(demand.get_min_flow(timestep, scenario_indices))
-            max_flow = inf_to_dbl_max(demand.get_max_flow(timestep, scenario_indices))
-            cost = demand.get_cost(timestep, scenario_indices)
+            min_flow = inf_to_dbl_max(demand.get_min_flow(timestep, scenario_index))
+            max_flow = inf_to_dbl_max(demand.get_max_flow(timestep, scenario_index))
+            cost = demand.get_cost(timestep, scenario_index)
             set_bounds(self.prob, self.idx_col_demands+col, min_flow, max_flow)
             set_obj(self.prob, self.idx_col_demands+col, cost)
 
         # update storage node constraint
         for col, storage in enumerate(storages):
-            max_volume = storage.get_max_volume(timestep, scenario_indices)
-            avail_volume = max(storage._volume[scenario_id] - storage.get_min_volume(timestep), 0.0)
+            max_volume = storage.get_max_volume(timestep, scenario_index)
+            avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep.days
-            ub = (max_volume-storage._volume[scenario_id])/timestep.days
+            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
             set_row_bnds(self.prob, self.idx_row_storages+col, lb, ub)
 
         #print_lp(self.prob)
@@ -360,10 +362,10 @@ cdef class CythonLPSolveSolver:
 
         for route, flow in zip(routes, route_flow):
             # TODO make this cleaner.
-            route[0].commit(scenario_id, flow)
-            route[-1].commit(scenario_id, flow)
+            route[0].commit(scenario_index._global_id, flow)
+            route[-1].commit(scenario_index._global_id, flow)
             for node in route[1:-1]:
                 if isinstance(node, BaseLink):
-                    node.commit(scenario_id, flow)
+                    node.commit(scenario_index._global_id, flow)
 
         return route_flow, change_in_storage
