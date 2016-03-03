@@ -338,7 +338,7 @@ cdef class CythonLPSolveSolver:
         # update storage node constraint
         for col, storage in enumerate(storages):
             max_volume = storage.get_max_volume(timestep, scenario_index)
-            avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep), 0.0)
+            avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep.days
