@@ -160,13 +160,13 @@ class NodeIterator(object):
         # support for old API
         return self
 
-model = None
+_model = None
 def gcm():
-    global model
-    return model
+    global _model
+    return _model
 def clm():
-    global model
-    model = None
+    global _model
+    _model = None
 
 class Model(object):
     """Model of a water supply network"""
@@ -224,8 +224,8 @@ class Model(object):
             key = list(kwargs.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
 
-        global model
-        model = self
+        global _model
+        _model = self
 
         self.reset()
 
