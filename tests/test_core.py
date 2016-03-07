@@ -3,13 +3,13 @@
 
 from __future__ import print_function
 
-import pytest
-from fixtures import *
 from pywr._core import Timestep
-
 from pywr.core import *
 from pywr.domains.river import *
 from pywr.parameters import Parameter, Timeseries
+
+import pytest
+from fixtures import *
 
 TEST_FOLDER = os.path.dirname(__file__)
 
@@ -17,8 +17,8 @@ def test_names(solver):
     '''Test node names'''
     model = Model(solver=solver)
 
-    node1 = Input(model, name='A')
-    node2 = Output(model, name='B')
+    node1 = Input(name='A')
+    node2 = Output(name='B')
     assert(model.node['A'] is node1)
     assert(model.node['B'] is node2)
 
@@ -36,17 +36,17 @@ def test_names(solver):
 
     # attempt name collision (via new)
     with pytest.raises(ValueError):
-        node3 = Input(model, name='C')
+        node3 = Input(name='C')
     assert(len(model.node) == 2)  # node3 not added to graph
 
     # attempt to create a node without a name
     with pytest.raises(TypeError):
-        node4 = Input(model)
+        node4 = Input()
 
 
 def test_model_nodes(model):
     """Test Model.nodes API"""
-    node = Input(model, 'test')
+    node = Input('test')
 
     # test node by index
     assert(model.nodes['test'] is node)
@@ -68,11 +68,11 @@ def test_unexpected_kwarg_node(solver):
     model = Model(solver=solver)
 
     with pytest.raises(TypeError):
-        node = Node(model, 'test_node', invalid=True)
+        node = Node('test_node', invalid=True)
     with pytest.raises(TypeError):
-        inpt = Input(model, 'test_input', invalid=True)
+        inpt = Input('test_input', invalid=True)
     with pytest.raises(TypeError):
-        storage = Storage(model, 'test_storage', invalid=True)
+        storage = Storage('test_storage', invalid=True)
     # none of the nodes should have been added to the model as they all
     # raised exceptions during __init__
     assert(not model.nodes())
@@ -88,9 +88,9 @@ def test_slots_connect_disconnect(solver):
     """
     model = Model(solver=solver)
 
-    supply1 = Input(model, name='supply1')
-    supply2 = Input(model, name='supply2')
-    storage = Storage(model, name='storage', num_inputs=2, num_outputs=2)
+    supply1 = Input(name='supply1')
+    supply2 = Input(name='supply2')
+    storage = Storage(name='storage', num_inputs=2, num_outputs=2)
 
     storage_inputs = [[x for x in storage.iter_slots(slot_name=n, is_connector=True)][0] for n in (0, 1)]
     storage_outputs = [[x for x in storage.iter_slots(slot_name=n, is_connector=False)][0] for n in (0, 1)]
@@ -140,9 +140,9 @@ def test_slots_connect_disconnect(solver):
 def test_slots_from(solver):
     model = Model(solver=solver)
 
-    riversplit = RiverSplit(model, name='split')
-    river1 = River(model, name='river1')
-    river2 = River(model, name='river2')
+    riversplit = RiverSplit(name='split')
+    river1 = River(name='river1')
+    river2 = River(name='river2')
 
     riversplit.connect(river1, from_slot=1)
     assert((riversplit, river1) in model.edges())
@@ -161,7 +161,7 @@ def test_slots_from(solver):
 def test_timeseries_csv(solver):
     model = Model(solver=solver)
     filename = os.path.join(TEST_FOLDER, 'timeseries1.csv')
-    ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
+    ts = Timeseries.read(model=model, name='ts1', path=filename, column='Data')
     timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
     assert(ts.value(timestep) == 21.92)
 
@@ -169,7 +169,7 @@ def test_timeseries_csv(solver):
 def test_timeseries_excel(solver):
     model = Model(solver=solver)
     filename = os.path.join(TEST_FOLDER, 'timeseries1.xlsx')
-    ts = Timeseries.read(model, name='ts', path=filename, sheet='mydata', column='Data')
+    ts = Timeseries.read(model=model, name='ts', path=filename, sheet='mydata', column='Data')
     timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
     assert(ts.value(timestep) == 21.92)
 
@@ -177,9 +177,9 @@ def test_timeseries_excel(solver):
 def test_timeseries_name_collision(solver):
     model = Model(solver=solver)
     filename = os.path.join(TEST_FOLDER, 'timeseries1.csv')
-    ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
+    ts = Timeseries.read(model=model, name='ts1', path=filename, column='Data')
     with pytest.raises(ValueError):
-        ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
+        ts = Timeseries.read(model=model, name='ts1', path=filename, column='Data')
 
 
 def test_dirty_model(solver):
@@ -189,19 +189,19 @@ def test_dirty_model(solver):
     assert(model.dirty)
 
     # add some nodes, still dirty
-    supply1 = Input(model, 'supply1')
-    demand1 = Output(model, 'demand1')
+    supply1 = Input('supply1')
+    demand1 = Output('demand1')
     supply1.connect(demand1)
     assert(model.dirty)
 
-    # run the model, clean
+    # run the clean
     result = model.step()
     assert(not model.dirty)
 
     # add a new node, dirty
-    supply2 = Input(model, 'supply2')
+    supply2 = Input('supply2')
 
-    # run the model, clean
+    # run the clean
     result = model.step()
     assert(not model.dirty)
 
@@ -209,7 +209,7 @@ def test_dirty_model(solver):
     supply2.connect(demand1)
     assert(model.dirty)
 
-    # run the model, clean
+    # run the clean
     result = model.step()
     assert(not model.dirty)
 
@@ -221,7 +221,7 @@ def test_dirty_model(solver):
 def test_shorthand_property(solver):
     # test shorthand assignment of constant properties
     model = Model(solver=solver)
-    node = Node(model, 'node')
+    node = Node('node')
     for attr in ('min_flow', 'max_flow', 'cost', 'conversion_factor'):
         # should except int, float or Paramter
         setattr(node, attr, 123)
@@ -240,7 +240,7 @@ def test_reset_before_run(solver):
     # See issue #82. Previously this would raise:
     #    AttributeError: Memoryview is not initialized
     model = Model(solver=solver)
-    node = Node(model, 'node')
+    node = Node('node')
     model.reset()
 
 
@@ -251,7 +251,7 @@ def test_check_isolated_nodes(simple_linear_model):
     model.check()
     
     # add a node, but don't connect it to the network
-    isolated_node = Input(model, 'isolated')
+    isolated_node = Input('isolated')
     with pytest.raises(ModelStructureError):
         model.check()
 
@@ -264,12 +264,61 @@ def test_check_isolated_nodes_storage(solver):
     model = Model(solver=solver)
     
     # add a storage, but don't connect it's outflow to anything
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    storage = Storage('storage', num_inputs=1, num_outputs=0)
     with pytest.raises(ModelStructureError):
         model.check()
 
     # add a demand node and connect it to the storage outflow
-    demand = Output(model, 'demand')
+    demand = Output('demand')
     storage.connect(demand, from_slot=0)
     model.check()
 
+
+def test_default_model(solver):
+    model = Model(solver=solver)
+    
+    assert(gcm() is model)
+    
+    supply1 = Input(name='supply1', max_flow=10)
+    demand1 = Output(name='demand1', max_flow=15, cost=-20)
+    supply1.connect(demand1)
+    
+    model.run()
+    assert(supply1.flow == [10])
+
+
+def test_no_model(solver):
+    clm()  # clear last model
+    with pytest.raises(RuntimeError):
+        supply1 = Input(name='supply1', max_flow=10)
+
+
+def test_explicit_model(solver):
+    model = Model(solver=solver)
+    # name as kwarg
+    supply1 = Input(name='supply1', model=model)
+    # name as arg
+    demand1 = Output('demand1', model=model)
+
+
+def test_two_models(solver):
+    model1 = Model(solver=solver)
+    model2 = Model(solver=solver)
+    
+    supply1 = Input(name='supply1', max_flow=10, model=model1)
+    demand1 = Output(name='demand1', max_flow=15, cost=-20, model=model1)
+    supply1.connect(demand1)
+
+    supply2 = Input(name='supply2', max_flow=100, model=model2)
+    demand2 = Output(name='demand2', max_flow=150, cost=-200, model=model2)
+    supply2.connect(demand2)
+    
+    model1.run()
+    model2.run()
+    assert(supply1.flow == [10])
+    assert(supply2.flow == [100])
+
+    # attempt connection between models
+    with pytest.raises(RuntimeError):
+        supply1.connect(demand2)
+    

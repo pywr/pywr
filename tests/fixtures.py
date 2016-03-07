@@ -22,10 +22,10 @@ def simple_linear_model(request, solver):
 
     """
     model = Model(solver=solver)
-    inpt = Input(model, name="Input")
-    lnk = Link(model, name="Link", cost=1.0)
+    inpt = Input(name="Input")
+    lnk = Link(name="Link", cost=1.0)
     inpt.connect(lnk)
-    otpt = Output(model, name="Output")
+    otpt = Output(name="Output")
     lnk.connect(otpt)
 
     return model
@@ -45,9 +45,9 @@ def simple_storage_model(request, solver):
         solver=solver
     )
 
-    inpt = Input(model, name="Input", max_flow=5.0, cost=-1)
-    res = Storage(model, name="Storage", num_outputs=1, num_inputs=1, max_volume=20, volume=10)
-    otpt = Output(model, name="Output", max_flow=8, cost=-999)
+    inpt = Input(model=model, name="Input", max_flow=5.0, cost=-1)
+    res = Storage(model=model, name="Storage", num_outputs=1, num_inputs=1, max_volume=20, volume=10)
+    otpt = Output(model=model, name="Output", max_flow=8, cost=-999)
     
     inpt.connect(res)
     res.connect(otpt)

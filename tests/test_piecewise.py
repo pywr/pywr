@@ -19,11 +19,11 @@ def simple_piecewise_model(request, solver):
     min_flow_req = 5.0
 
     model = pywr.core.Model(solver=solver)
-    inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
-    lnk = pywr.core.PiecewiseLink(model, name="Link", cost=[-1.0, 0.0], max_flow=[min_flow_req, None])
+    inpt = pywr.core.Input(model=model, name="Input", max_flow=in_flow)
+    lnk = pywr.core.PiecewiseLink(model=model, name="Link", cost=[-1.0, 0.0], max_flow=[min_flow_req, None])
 
     inpt.connect(lnk)
-    otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-benefit)
+    otpt = pywr.core.Output(model=model, name="Output", min_flow=out_flow, cost=-benefit)
     lnk.connect(otpt)
 
     default = inpt.domain

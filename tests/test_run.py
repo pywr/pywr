@@ -286,13 +286,13 @@ def test_run_blender2(solver):
 def test_run_demand_discharge(solver):
     """Test demand discharge node"""
     model = pywr.core.Model(solver=solver)
-    catchment = pywr.core.Catchment(model, 'catchment', flow=10.0)
-    abstraction1 = pywr.core.RiverAbstraction(model, 'abstraction1', max_flow=100)
-    demand1 = pywr.core.Demand(model, 'demand1', demand=8.0)
-    discharge = pywr.core.DemandDischarge(model, 'discharge')
-    abstraction2 = pywr.core.RiverAbstraction(model, 'abstraction2', max_flow=100)
-    demand2 = pywr.core.Demand(model, 'demand2', demand=5.0)
-    term = pywr.core.Terminator(model, 'term')
+    catchment = pywr.core.Catchment(model=model, name='catchment', flow=10.0)
+    abstraction1 = pywr.core.RiverAbstraction(model=model, name='abstraction1', max_flow=100)
+    demand1 = pywr.core.Demand(model=model, name='demand1', demand=8.0)
+    discharge = pywr.core.DemandDischarge(model=model, name='discharge')
+    abstraction2 = pywr.core.RiverAbstraction(model=model, name='abstraction2', max_flow=100)
+    demand2 = pywr.core.Demand(model=model, name='demand2', demand=5.0)
+    term = pywr.core.Terminator(model=model, name='term')
     catchment.connect(abstraction1)
     abstraction1.connect(demand1)
     abstraction1.connect(discharge)
@@ -326,12 +326,12 @@ def test_new_storage(solver):
         solver=solver
     )
 
-    supply1 = pywr.core.Input(model, 'supply1')
+    supply1 = pywr.core.Input(model=model, name='supply1')
 
-    splitter = pywr.core.Storage(model, 'splitter', num_outputs=1, num_inputs=2, max_volume=10, volume=5)
+    splitter = pywr.core.Storage(model=model, name='splitter', num_outputs=1, num_inputs=2, max_volume=10, volume=5)
 
-    demand1 = pywr.core.Output(model, 'demand1')
-    demand2 = pywr.core.Output(model, 'demand2')
+    demand1 = pywr.core.Output(model=model, name='demand1')
+    demand2 = pywr.core.Output(model=model, name='demand2')
 
     supply1.connect(splitter)
 
@@ -369,12 +369,12 @@ def test_storage_spill_compensation(solver):
     """
     model = pywr.core.Model(solver=solver)
 
-    catchment = pywr.core.Input(model, name="Input", min_flow=10.0, max_flow=10.0, cost=1)
-    reservoir = pywr.core.Storage(model, name="Storage", max_volume=100, volume=100.0)
-    spill = pywr.core.Link(model, name="Spill", cost=1.0)
-    compensation = pywr.core.Link(model, name="Compensation", max_flow=3.0, cost=-999)
-    terminator = pywr.core.Output(model, name="Terminator", cost=-1.0)
-    demand = pywr.core.Output(model, name="Demand", max_flow=5.0, cost=-500)
+    catchment = pywr.core.Input(model=model, name="Input", min_flow=10.0, max_flow=10.0, cost=1)
+    reservoir = pywr.core.Storage(model=model, name="Storage", max_volume=100, volume=100.0)
+    spill = pywr.core.Link(model=model, name="Spill", cost=1.0)
+    compensation = pywr.core.Link(model=model, name="Compensation", max_flow=3.0, cost=-999)
+    terminator = pywr.core.Output(model=model, name="Terminator", cost=-1.0)
+    demand = pywr.core.Output(model=model, name="Demand", max_flow=5.0, cost=-500)
 
     catchment.connect(reservoir)
     reservoir.connect(spill)
