@@ -5,6 +5,7 @@ This example shows the trade-off of deficit against cost by altering a reservoir
 import os
 import pandas
 import numpy as np
+import datetime
 import inspyred
 from pywr.core import Model, Input, Output, Link, Storage
 from pywr.parameters import ArrayIndexedParameter, MonthlyProfileParameter, AnnualHarmonicSeriesParameter
@@ -15,17 +16,20 @@ from pywr.optimisation.moea import InspyredOptimisationModel
 
 def create_model(harmonic=True):
     # import flow timeseries for catchments
-    flow = pandas.read_csv(os.path.join('data', 'Not a real flow series.csv'))
+    flow = pandas.read_csv(os.path.join('data', 'thames_stochastic_flow.csv'))
 
     flow['Date'] = flow['Date'].apply(pandas.to_datetime)
     flow.set_index('Date', inplace=True)
+    # resample input to weekly average
+    flow = flow.resample('7D', how='mean')
     flow_parameter = ArrayIndexedParameter(flow['Flow'].values)
 
     model = InspyredOptimisationModel(
         solver='glpk',
         parameters={
             'timestamp_start': flow.index[0],
-            'timestamp_finish': flow.index[-1],
+            'timestamp_finish': flow.index[365*10],  # roughly 10 years
+            'timestep': datetime.timedelta(7),  # weekly time-step
         }
     )
 
@@ -44,15 +48,15 @@ def create_model(harmonic=True):
     controller = ControlCurvePiecewiseParameter(control_curve, 10.0, 0.0, storage_node=reservoir1)
     transfer = Link(model, 'transfer', max_flow=controller, cost=-500)
 
-    demand1 = Output(model, 'demand1', max_flow=100.0, cost=-101)
-    demand2 = Output(model, 'demand2', max_flow=81.0, cost=-100)
+    demand1 = Output(model, 'demand1', max_flow=50.0, cost=-101)
+    demand2 = Output(model, 'demand2', max_flow=30.0, cost=-100)
 
     river1 = Link(model, 'river1')
     river2 = Link(model, 'river2')
 
     # compensation flows from reservoirs
-    compensation1 = Link(model, 'compensation1', max_flow=5.0, cost=-9999)
-    compensation2 = Link(model, 'compensation2', max_flow=5.0, cost=-9998)
+    #compensation1 = Link(model, 'compensation1', max_flow=5.0, cost=-9999)
+    #compensation2 = Link(model, 'compensation2', max_flow=5.0, cost=-9998)
 
     terminator = Output(model, 'terminator', cost=1.0)
 
@@ -66,8 +70,8 @@ def create_model(harmonic=True):
     reservoir2.connect(river2)
     river1.connect(terminator)
     river2.connect(terminator)
-    compensation1.connect(terminator)
-    compensation2.connect(terminator)
+    #compensation1.connect(terminator)
+    #compensation2.connect(terminator)
 
     r1 = TotalDeficitNodeRecorder(model, demand1)
     r2 = TotalDeficitNodeRecorder(model, demand2)
@@ -119,8 +123,8 @@ def main(prng=None, display=False, harmonic=False):
             y.append(f.fitness[1])
 
         pylab.scatter(x, y, c='b')
-        pylab.xlabel('Maximum demand deficit [Ml/d]')
-        pylab.ylabel('Transferred volume [Ml/d]')
+        pylab.xlabel('Total demand deficit [Ml/d]')
+        pylab.ylabel('Total Transferred volume [Ml/d]')
         title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
         pylab.savefig('{0} Example ({1}).pdf'.format(ea.__class__.__name__, title), format='pdf')
         pylab.show()
