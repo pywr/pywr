@@ -29,6 +29,9 @@ cdef class Recorder:
         def __set__(self, value):
             self._is_objective = value
 
+    cpdef value(self):
+        raise NotImplementedError("Implement value() in subclasses to return an aggregated values.")
+
 
 cdef class NodeRecorder(Recorder):
     def __init__(self, model, AbstractNode node):
