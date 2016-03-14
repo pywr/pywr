@@ -115,10 +115,10 @@ def test_total_deficit_node_recorder(simple_linear_model):
     rec = TotalDeficitNodeRecorder(model, otpt)
 
     model.step()
-    assert rec.value() == 20.0
+    assert_allclose(20.0, rec.value(), atol=1e-7)
 
     model.step()
-    assert rec.value() == 40.0
+    assert_allclose(40.0, rec.value(), atol=1e-7)
 
 
 def test_total_flow_node_recorder(simple_linear_model):
@@ -133,10 +133,10 @@ def test_total_flow_node_recorder(simple_linear_model):
     rec = TotalFlowRecorder(model, otpt)
 
     model.step()
-    assert rec.value() == 10.0
+    assert_allclose(10.0, rec.value(), atol=1e-7)
 
     model.step()
-    assert rec.value() == 20.0
+    assert_allclose(20.0, rec.value(), atol=1e-7)
 
 
 def test_aggregated_recorder(simple_linear_model):
@@ -151,8 +151,8 @@ def test_aggregated_recorder(simple_linear_model):
     rec = AggregatedRecorder(model, [rec1, rec2], agg_func=np.max)
 
     model.step()
-    assert rec.value() == 20.0
+    assert_allclose(20.0, rec.value(), atol=1e-7)
 
     model.step()
-    assert rec.value() == 40.0
+    assert_allclose(40.0, rec.value(), atol=1e-7)
 
