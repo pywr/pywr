@@ -16,13 +16,13 @@ from pywr.optimisation.moea import InspyredOptimisationModel
 
 def create_model(harmonic=True):
     # import flow timeseries for catchments
-    flow = pandas.read_csv(os.path.join('data', 'thames_stochastic_flow.csv'))
+    flow = pandas.read_csv(os.path.join('data', 'thames_stochastic_flow.gz'))
 
     flow['Date'] = flow['Date'].apply(pandas.to_datetime)
     flow.set_index('Date', inplace=True)
     # resample input to weekly average
     flow = flow.resample('7D', how='mean')
-    flow_parameter = ArrayIndexedParameter(flow['Flow'].values)
+    flow_parameter = ArrayIndexedParameter(flow['flow'].values)
 
     model = InspyredOptimisationModel(
         solver='glpk',
