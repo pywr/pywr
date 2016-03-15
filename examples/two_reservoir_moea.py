@@ -54,10 +54,6 @@ def create_model(harmonic=True):
     river1 = Link(model, 'river1')
     river2 = Link(model, 'river2')
 
-    # compensation flows from reservoirs
-    #compensation1 = Link(model, 'compensation1', max_flow=5.0, cost=-9999)
-    #compensation2 = Link(model, 'compensation2', max_flow=5.0, cost=-9998)
-
     terminator = Output(model, 'terminator', cost=1.0)
 
     catchment1.connect(reservoir1)
@@ -70,8 +66,6 @@ def create_model(harmonic=True):
     reservoir2.connect(river2)
     river1.connect(terminator)
     river2.connect(terminator)
-    #compensation1.connect(terminator)
-    #compensation2.connect(terminator)
 
     r1 = TotalDeficitNodeRecorder(model, demand1)
     r2 = TotalDeficitNodeRecorder(model, demand2)
@@ -83,14 +77,17 @@ def create_model(harmonic=True):
     return model
 
 
-
-def main(prng=None, display=False, harmonic=False):
+def moea_main(prng=None, display=False, harmonic=False):
     from random import Random
     from time import time
 
     if prng is None:
         prng = Random()
         prng.seed(time())
+
+    script_name = os.path.splitext(os.path.basename(__file__))[0]
+    stats_file = open('{}-{}-statistics-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
+    individuals_file = open('{}-{}-individuals-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
 
     problem = create_model(harmonic=harmonic)
     problem.setup()
@@ -106,7 +103,9 @@ def main(prng=None, display=False, harmonic=False):
                           pop_size=25,
                           bounder=problem.bounder,
                           maximize=False,
-                          max_generations=20)
+                          max_generations=20,
+                          statistics_file=stats_file,
+                          individuals_file=individuals_file)
 
     if display:
         from matplotlib import pylab
@@ -137,4 +136,4 @@ if __name__ == '__main__':
     parser.add_argument('--harmonic', action='store_true', help='Use an harmonic control curve.')
     args = parser.parse_args()
 
-    main(display=True, harmonic=args.harmonic)
+    moea_main(display=True, harmonic=args.harmonic)
