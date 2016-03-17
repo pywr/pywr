@@ -27,7 +27,7 @@ def test_scenario_collection(solver):
     assert(len(model.scenarios.combinations) == 6)
     assert(len(model.scenarios) == 2)
 
-    assert_equal([comb for comb in model.scenarios.combinations],
+    assert_equal([comb.indices for comb in model.scenarios.combinations],
                  [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
 
 

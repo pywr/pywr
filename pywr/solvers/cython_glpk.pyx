@@ -161,8 +161,7 @@ cdef class CythonGLPKSolver:
         cdef int[:] scenario_combination
         cdef int scenario_id
         cdef ScenarioIndex scenario_index
-        for scenario_id, scenario_combination in enumerate(model.scenarios.combinations):
-            scenario_index = ScenarioIndex(scenario_id, scenario_combination)
+        for scenario_index in model.scenarios.combinations:
             self._solve_scenario(model, scenario_index)
         self.stats['total'] += time.clock() - t0
 

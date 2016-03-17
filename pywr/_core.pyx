@@ -11,14 +11,17 @@ def product(sizes):
     for comb in itertools.product(*[range(s) for s in sizes]):
         yield np.array(comb, dtype=np.int32)
 
-# TODO can this be a cdef class?
+
 cdef class ScenarioCombinations:
     def __init__(self, ScenarioCollection collection):
         self._collection = collection
 
     def __iter__(self, ):
         cdef Scenario sc
-        return product([sc._size for sc in self._collection._scenarios])
+        cdef int i
+        cdef int[:] indices
+        for i, indices in enumerate(product([sc._size for sc in self._collection._scenarios])):
+            yield ScenarioIndex(i, indices)
 
     def __len__(self, ):
         cdef Scenario sc
