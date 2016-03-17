@@ -46,8 +46,8 @@ def create_model(harmonic=True):
     catchment1 = Input(model, 'catchment1', min_flow=flow_parameter, max_flow=flow_parameter)
     catchment2 = Input(model, 'catchment2', min_flow=flow_parameter, max_flow=flow_parameter)
 
-    reservoir1 = Storage(model, 'reservoir1', min_volume=3000, max_volume=30000, volume=16000)
-    reservoir2 = Storage(model, 'reservoir2', min_volume=3000, max_volume=30000, volume=16000)
+    reservoir1 = Storage(model, 'reservoir1', min_volume=3000, max_volume=20000, volume=16000)
+    reservoir2 = Storage(model, 'reservoir2', min_volume=3000, max_volume=20000, volume=16000)
 
     if harmonic:
         control_curve = AnnualHarmonicSeriesParameter(0.5, [0.5], [0.0], mean_upper_bounds=1.0, amplitude_upper_bounds=1.0)
@@ -58,8 +58,8 @@ def create_model(harmonic=True):
     controller = ControlCurvePiecewiseParameter(control_curve, 0.0, 10.0, storage_node=reservoir1)
     transfer = Link(model, 'transfer', max_flow=controller, cost=-500)
 
-    demand1 = Output(model, 'demand1', max_flow=50.0, cost=-101)
-    demand2 = Output(model, 'demand2', max_flow=25.0, cost=-100)
+    demand1 = Output(model, 'demand1', max_flow=45.0, cost=-101)
+    demand2 = Output(model, 'demand2', max_flow=20.0, cost=-100)
 
     river1 = Link(model, 'river1')
     river2 = Link(model, 'river2')
@@ -183,7 +183,7 @@ def animate_generations(objective_data, colors):
                 df = dfs[key]
 
                 scat = ax.scatter(df.loc[i][0], df.loc[i][1], alpha=0.8**(gen-i), color=c,
-                              label=key if i == gen else None)
+                              label=key if i == gen else None, clip_on=True, zorder=100)
                 artists.append(scat)
 
         ax.set_title('Generation: {:d}'.format(gen))
@@ -197,10 +197,12 @@ def animate_generations(objective_data, colors):
 
     fig, ax = plt.subplots(figsize=(10, 10))
 
-    xmax = max(df[0].max() for df in objective_data.values())
-    ymax = max(df[1].max() for df in objective_data.values())
+    last_gen = objective_data.values()[0].index[-1][0]
 
-    line_ani = animation.FuncAnimation(fig, update_line, objective_data.values()[0].index[-1][0]+1,
+    xmax = max(df.loc[last_gen][0].max() for df in objective_data.values())
+    ymax = max(df.loc[last_gen][1].max() for df in objective_data.values())
+
+    line_ani = animation.FuncAnimation(fig, update_line, last_gen+1,
                                        fargs=(objective_data, ax, xmax, ymax), interval=400, repeat=False)
 
     line_ani.save('generations.mp4', bitrate=1024,)
