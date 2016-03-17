@@ -1,144 +1,45 @@
 """
-This example shows the trade-off of deficit against cost by altering a reservoir control curve.
+This example shows the trade-off (pareto frontier) of deficit against cost by altering a reservoir control curve.
+
+Two types of control curve are possible. The first is a monthly control curve containing one value for each
+month. The second is a harmonic control curve with cosine terms around a mean. Both Parameter objects
+are part of pywr.parameters.
+
+Inspyred is used in this example to perform a multi-objective optimisation using the NSGA-II algorithm. The
+script should be run twice (once with --harmonic) to generate results for both types of control curve. Following
+this --plot can be used to generate an animation and PNG of the pareto frontier.
+
 """
 
 import os
-import pandas
+import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import datetime
 import inspyred
 from pywr.core import Model, Input, Output, Link, Storage
 from pywr.parameters import ArrayIndexedParameter, MonthlyProfileParameter, AnnualHarmonicSeriesParameter
 from pywr.parameters.control_curves import ControlCurvePiecewiseParameter
-from pywr.recorders import NodeRecorder, Recorder
-
-
-class BaseConstantNodeRecorder(NodeRecorder):
-    """
-    Base class for NodeRecorder classes with a single value for each scenario combination
-    """
-    def __init__(self, *args, **kwargs):
-        super(BaseConstantNodeRecorder, self).__init__(*args, **kwargs)
-        self._values = None
-
-    def setup(self):
-        self._values = np.zeros(len(self.model.scenarios.combinations))
-
-    def reset(self):
-        self._values[...] = 0.0
-
-    def save(self):
-        raise NotImplementedError()
-
-    def value(self, agg_func=np.mean):
-        return agg_func(self._values)
-
-
-class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
-    """
-    Recorder to total the difference between modelled flow and max_flow for a Node
-    """
-    def save(self):
-        ts = self.model.timestepper.current
-        node = self.node
-        for i, scenario_combination in enumerate(self.model.scenarios.combinations):
-            max_flow = node.get_max_flow(ts, scenario_combination)
-            self._values[i] += max_flow - node.flow[i]
-
-
-class TotalFlowRecorder(BaseConstantNodeRecorder):
-    """
-    Recorder to total the flow for a Node.
-
-    A factor can be provided to scale the total flow (e.g. for calculating operational costs).
-    """
-    def __init__(self, *args, factor=1.0, **kwargs):
-        super(TotalFlowRecorder, self).__init__(*args, **kwargs)
-        self.factor = factor
-
-    def save(self):
-        self._values += self.node.flow*self.factor
-
-
-class AggregatedRecorder(Recorder):
-    def __init__(self, model, recorders):
-        super(AggregatedRecorder, self).__init__(model)
-        self.recorders = recorders
-
-    def value(self, agg_func=np.max):
-        return agg_func([r.value() for r in self.recorders])
-
-
-
-
-
-class OptimisationModel(Model):
-
-    def _cache_variable_parameters(self):
-        variables = []
-        variable_map = [0, ]
-        for node in self.nodes:
-            for var in node.variables:
-                variable_map.append(variable_map[-1]+var.size)
-                variables.append(var)
-
-        self._variables = variables
-        self._variable_map = variable_map
-
-    def _cache_objectives(self):
-        objectives = []
-        for r in self.recorders:
-            if r.is_objective:
-                objectives.append(r)
-
-        self._objectives = objectives
-
-    def setup(self):
-        super(OptimisationModel, self).setup()
-        self._cache_variable_parameters()
-        self._cache_objectives()
-
-    def generator(self, random, args):
-        size = self._variable_map[-1]
-
-        return [random.uniform(0.0, 1.0) for i in range(size)]
-
-    def evaluator(self, candidates, args):
-
-        fitness = []
-        for i, candidate in enumerate(candidates):
-            print('Running candidiate: {:03d}'.format(i))
-            for ivar, var in enumerate(self._variables):
-                j = slice(self._variable_map[ivar], self._variable_map[ivar+1])
-                var.update(np.array(candidate[j]))
-
-            self.reset()
-            self.run()
-
-            fitness.append(inspyred.ec.emo.Pareto([r.value() for r in self._objectives]))
-        return fitness
-
-    def bounder(self, candidate, args):
-        for ivar, var in enumerate(self._variables):
-            lower = var.lower_bounds()
-            upper = var.upper_bounds()
-            j = slice(self._variable_map[ivar], self._variable_map[ivar+1])
-            candidate[j] = np.minimum(upper, np.maximum(lower, candidate[j]))
-        return candidate
+from pywr.recorders import TotalDeficitNodeRecorder, TotalFlowRecorder, AggregatedRecorder
+from pywr.optimisation.moea import InspyredOptimisationModel
 
 
 def create_model(harmonic=True):
     # import flow timeseries for catchments
-    flow = pandas.read_csv(os.path.join('data', 'Not a real flow series.csv'))
+    flow = pd.read_csv(os.path.join('data', 'thames_stochastic_flow.gz'))
 
-    flow['Date'] = flow['Date'].apply(pandas.to_datetime)
+    flow['Date'] = flow['Date'].apply(pd.to_datetime)
     flow.set_index('Date', inplace=True)
-    flow_parameter = ArrayIndexedParameter(flow['Flow'].values)
+    # resample input to weekly average
+    flow = flow.resample('7D', how='mean')
+    flow_parameter = ArrayIndexedParameter(flow['flow'].values)
 
-    model = OptimisationModel(
+    model = InspyredOptimisationModel(
         solver='glpk',
         parameters={
             'timestamp_start': flow.index[0],
-            'timestamp_finish': flow.index[-1],
+            'timestamp_finish': flow.index[365*10],  # roughly 10 years
+            'timestep': datetime.timedelta(7),  # weekly time-step
         }
     )
 
@@ -151,14 +52,14 @@ def create_model(harmonic=True):
     if harmonic:
         control_curve = AnnualHarmonicSeriesParameter(0.5, [0.5], [0.0], mean_upper_bounds=1.0, amplitude_upper_bounds=1.0)
     else:
-        control_curve = MonthlyProfileParameter(np.array([0.0]*12, np.float32), lower_bounds=0.0, upper_bounds=1.0)
+        control_curve = MonthlyProfileParameter(np.array([0.0]*12), lower_bounds=0.0, upper_bounds=1.0)
 
     control_curve.is_variable = True
-    controller = ControlCurvePiecewiseParameter(control_curve, 10.0, 0.0, storage_node=reservoir1)
+    controller = ControlCurvePiecewiseParameter(control_curve, 0.0, 10.0, storage_node=reservoir1)
     transfer = Link(model, 'transfer', max_flow=controller, cost=-500)
 
-    demand1 = Output(model, 'demand1', max_flow=100.0, cost=-101)
-    demand2 = Output(model, 'demand2', max_flow=81.0, cost=-100)
+    demand1 = Output(model, 'demand1', max_flow=45.0, cost=-101)
+    demand2 = Output(model, 'demand2', max_flow=20.0, cost=-100)
 
     river1 = Link(model, 'river1')
     river2 = Link(model, 'river2')
@@ -179,6 +80,9 @@ def create_model(harmonic=True):
     reservoir2.connect(river2)
     river1.connect(terminator)
     river2.connect(terminator)
+
+    reservoir1.connect(compensation1)
+    reservoir2.connect(compensation2)
     compensation1.connect(terminator)
     compensation2.connect(terminator)
 
@@ -192,14 +96,17 @@ def create_model(harmonic=True):
     return model
 
 
-
-def main(prng=None, display=False, harmonic=False):
+def moea_main(prng=None, display=False, harmonic=False):
     from random import Random
     from time import time
 
     if prng is None:
         prng = Random()
         prng.seed(time())
+
+    script_name = os.path.splitext(os.path.basename(__file__))[0]
+    stats_file = open('{}-{}-statistics-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
+    individuals_file = open('{}-{}-individuals-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
 
     problem = create_model(harmonic=harmonic)
     problem.setup()
@@ -215,15 +122,16 @@ def main(prng=None, display=False, harmonic=False):
                           pop_size=25,
                           bounder=problem.bounder,
                           maximize=False,
-                          max_generations=20)
+                          max_generations=20,
+                          statistics_file=stats_file,
+                          individuals_file=individuals_file)
 
     if display:
-        from matplotlib import pylab
         final_arc = ea.archive
         print('Best Solutions: \n')
         for f in final_arc:
             print(f)
-        import pylab
+
         x = []
         y = []
 
@@ -231,19 +139,90 @@ def main(prng=None, display=False, harmonic=False):
             x.append(f.fitness[0])
             y.append(f.fitness[1])
 
-        pylab.scatter(x, y, c='b')
-        pylab.xlabel('Maximum demand deficit [Ml/d]')
-        pylab.ylabel('Transferred volume [Ml/d]')
+        plt.scatter(x, y, c='b')
+        plt.xlabel('Total demand deficit [Ml/d]')
+        plt.ylabel('Total Transferred volume [Ml/d]')
         title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
-        pylab.savefig('{0} Example ({1}).pdf'.format(ea.__class__.__name__, title), format='pdf')
-        pylab.show()
+        plt.savefig('{0} Example ({1}).pdf'.format(ea.__class__.__name__, title), format='pdf')
+        plt.show()
     return ea
+
+
+def load_individuals(filename):
+    """ Read an inspyred individuals file in to two pandas.DataFrame objects.
+
+    There is one DataFrame for the objectives and another for the variables.
+    """
+    import ast
+
+    index = []
+    all_objs = []
+    all_vars = []
+    with open(filename, 'rb') as f:
+        for row in f.readlines():
+            gen, pop_id, objs, vars = ast.literal_eval(row)
+            index.append((gen, pop_id))
+            all_objs.append(objs)
+            all_vars.append(vars)
+
+    index = pd.MultiIndex.from_tuples(index, names=['generation', 'individual'])
+    return pd.DataFrame(all_objs, index=index), pd.DataFrame(all_vars, index=index)
+
+
+def animate_generations(objective_data, colors):
+    """
+    Animate the pareto frontier plot over the saved generations.
+    """
+    import matplotlib.animation as animation
+
+    def update_line(gen, dfs, ax, xmax, ymax):
+        ax.cla()
+        artists = []
+        for i in range(gen+1):
+            for c, key in zip(colors, sorted(dfs.keys())):
+                df = dfs[key]
+
+                scat = ax.scatter(df.loc[i][0], df.loc[i][1], alpha=0.8**(gen-i), color=c,
+                              label=key if i == gen else None, clip_on=True, zorder=100)
+                artists.append(scat)
+
+        ax.set_title('Generation: {:d}'.format(gen))
+        ax.set_xlabel('Total demand deficit [Ml/d]')
+        ax.set_ylabel('Total Transferred volume [Ml/d]')
+        ax.set_xlim(0, xmax)
+        ax.set_ylim(0, ymax)
+        ax.legend()
+        ax.grid()
+        return artists
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    last_gen = objective_data.values()[0].index[-1][0]
+
+    xmax = max(df.loc[last_gen][0].max() for df in objective_data.values())
+    ymax = max(df.loc[last_gen][1].max() for df in objective_data.values())
+
+    line_ani = animation.FuncAnimation(fig, update_line, last_gen+1,
+                                       fargs=(objective_data, ax, xmax, ymax), interval=400, repeat=False)
+
+    line_ani.save('generations.mp4', bitrate=1024,)
+    fig.savefig('generations.png')
+
 
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--harmonic', action='store_true', help='Use an harmonic control curve.')
+    parser.add_argument('--plot', action='store_true', help='Plot the pareto frontier.')
     args = parser.parse_args()
 
-    main(display=True, harmonic=args.harmonic)
+    if args.plot:
+        objs, vars = {}, {}
+        for cctype in ('monthly', 'harmonic'):
+            objs[cctype], vars[cctype] = load_individuals('two_reservoir_moea-{}-individuals-file.csv'.format(cctype))
+
+        animate_generations(objs, ('b', 'r'))
+        plt.show()
+    else:
+        moea_main(display=True, harmonic=args.harmonic)

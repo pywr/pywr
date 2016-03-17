@@ -9,6 +9,7 @@ cdef class Recorder:
     cpdef reset(self)
     cpdef int save(self) except -1
     cpdef finish(self)
+    cpdef value(self)
 
 cdef class NodeRecorder(Recorder):
     cdef AbstractNode _node

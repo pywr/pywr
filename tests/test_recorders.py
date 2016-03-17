@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from fixtures import simple_linear_model, simple_storage_model
-from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, \
-                           CSVRecorder, TablesRecorder
+from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, AggregatedRecorder, \
+                           CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder, TotalFlowRecorder
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -101,3 +101,58 @@ def test_hdf5_recorder(simple_linear_model, tmpdir):
             ca = h5f.get_node('/', node_name)
             assert ca.shape == (365, 1)
             assert np.all((ca[...] - 10.0) < 1e-12)
+
+
+def test_total_deficit_node_recorder(simple_linear_model):
+    """
+    Test TotalDeficitNodeRecorder
+    """
+    model = simple_linear_model
+    otpt = model.node['Output']
+    otpt.max_flow = 30.0
+    model.node['Input'].max_flow = 10.0
+    otpt.cost = -2.0
+    rec = TotalDeficitNodeRecorder(model, otpt)
+
+    model.step()
+    assert_allclose(20.0, rec.value(), atol=1e-7)
+
+    model.step()
+    assert_allclose(40.0, rec.value(), atol=1e-7)
+
+
+def test_total_flow_node_recorder(simple_linear_model):
+    """
+    Test TotalDeficitNodeRecorder
+    """
+    model = simple_linear_model
+    otpt = model.node['Output']
+    otpt.max_flow = 30.0
+    model.node['Input'].max_flow = 10.0
+    otpt.cost = -2.0
+    rec = TotalFlowRecorder(model, otpt)
+
+    model.step()
+    assert_allclose(10.0, rec.value(), atol=1e-7)
+
+    model.step()
+    assert_allclose(20.0, rec.value(), atol=1e-7)
+
+
+def test_aggregated_recorder(simple_linear_model):
+    model = simple_linear_model
+    otpt = model.node['Output']
+    otpt.max_flow = 30.0
+    model.node['Input'].max_flow = 10.0
+    otpt.cost = -2.0
+    rec1 = TotalFlowRecorder(model, otpt)
+    rec2 = TotalDeficitNodeRecorder(model, otpt)
+
+    rec = AggregatedRecorder(model, [rec1, rec2], agg_func=np.max)
+
+    model.step()
+    assert_allclose(20.0, rec.value(), atol=1e-7)
+
+    model.step()
+    assert_allclose(40.0, rec.value(), atol=1e-7)
+
