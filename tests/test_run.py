@@ -320,11 +320,9 @@ def test_run_demand_discharge(solver):
 def test_new_storage(solver):
     """Test new-style storage node with multiple inputs"""
     model = pywr.core.Model(
-        parameters={
-            'timestamp_start': pandas.to_datetime('1888-01-01'),
-            'timestamp_finish': pandas.to_datetime('1888-01-01'),
-            'timestep': datetime.timedelta(1),
-        },
+        start=pandas.to_datetime('1888-01-01'),
+        end=pandas.to_datetime('1888-01-01'),
+        timestep=datetime.timedelta(1),
         solver=solver
     )
 
