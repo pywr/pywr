@@ -143,7 +143,7 @@ class AnnualLicense(StorageLicense):
         return xml
 
 
-class AnnualLicenseExponential(AnnualLicense):
+class AnnualExponentialLicense(AnnualLicense):
     """ An annual license that returns a value based on an exponential function of the license's current state.
 
     The exponential function takes the form,
@@ -166,18 +166,18 @@ class AnnualLicenseExponential(AnnualLicense):
         k : float
             A scale factor for the exponent of the exponential function
         """
-        super(AnnualLicenseExponential, self).__init__(amount)
+        super(AnnualExponentialLicense, self).__init__(amount)
         self._max_value = max_value
         self._k = k
 
     def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
-        remaining = super(AnnualLicenseExponential, self).value(timestep, scenario_indices)
+        remaining = super(AnnualExponentialLicense, self).value(timestep, scenario_indices)
         expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
         x = remaining / expected
         return self._max_value * np.exp(-x / self._k)
 
 
-class AnnualLicenseHyperbola(AnnualLicense):
+class AnnualHyperbolaLicense(AnnualLicense):
     """ An annual license that returns a value based on an hyperbola (1/x) function of the license's current state.
 
     The hyperbola function takes the form,
@@ -198,11 +198,11 @@ class AnnualLicenseHyperbola(AnnualLicense):
         value : float
             The value used to scale the hyperbola function
         """
-        super(AnnualLicenseHyperbola, self).__init__(amount)
+        super(AnnualHyperbolaLicense, self).__init__(amount)
         self._value = value
 
     def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
-        remaining = super(AnnualLicenseHyperbola, self).value(timestep, scenario_indices)
+        remaining = super(AnnualHyperbolaLicense, self).value(timestep, scenario_indices)
         expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
         x = remaining / expected
         try:

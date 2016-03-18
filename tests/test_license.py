@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime
 from pywr._core import Timestep
-from pywr.licenses import License, TimestepLicense, AnnualLicense, AnnualLicenseExponential, AnnualLicenseHyperbola
+from pywr.parameters.licenses import License, TimestepLicense, AnnualLicense, AnnualExponentialLicense, AnnualHyperbolaLicense
 from fixtures import simple_linear_model
 from numpy.testing import assert_allclose
 import numpy as np
@@ -94,7 +94,7 @@ def test_simple_model_with_exponential_license(simple_linear_model):
 
     annual_total = 365
     # Expoential licence with max_value of e should give a hard constraint of 1.0 when on track
-    lic = AnnualLicenseExponential(annual_total, np.e)
+    lic = AnnualExponentialLicense(annual_total, np.e)
     # Apply licence to the model
     m.node["Input"].max_flow = lic
     m.node["Output"].max_flow = 10.0
@@ -135,7 +135,7 @@ def test_simple_model_with_hyperbola_license(simple_linear_model):
 
     annual_total = 365
     # Expoential licence with max_value of e should give a hard constraint of 1.0 when on track
-    lic = AnnualLicenseHyperbola(annual_total, 1.0)
+    lic = AnnualHyperbolaLicense(annual_total, 1.0)
     # Apply licence to the model
     m.node["Input"].max_flow = lic
     m.node["Output"].max_flow = 10.0

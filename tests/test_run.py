@@ -10,7 +10,7 @@ import pandas
 from numpy.testing import assert_allclose
 
 import pywr.core
-import pywr.licenses
+import pywr.parameters.licenses
 import pywr.domains.river
 
 from helpers import load_model

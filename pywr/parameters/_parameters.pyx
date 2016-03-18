@@ -14,8 +14,18 @@ cdef class Parameter:
 
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
         return 0
+
     cpdef after(self, Timestep ts):
         pass
+
+    cpdef update(self, double[:] values):
+        raise NotImplementedError()
+
+    cpdef double[:] lower_bounds(self):
+        raise NotImplementedError()
+
+    cpdef double[:] upper_bounds(self):
+        raise NotImplementedError()
 
     property node:
         def __get__(self):
@@ -34,12 +44,27 @@ cdef class Parameter:
         def __set__(self, value):
             self._parent = value
 
-cdef class ParameterArrayIndexed(Parameter):
+    property size:
+        def __get__(self):
+            return self._size
+
+        def __set__(self, value):
+            self._size = value
+
+    property is_variable:
+        def __get__(self):
+            return self._is_variable
+
+        def __set__(self, value):
+            self._is_variable = value
+
+cdef class ArrayIndexedParameter(Parameter):
     """Time varying parameter using an array and Timestep._index
 
     The values in this parameter are constant across all scenarios.
     """
     def __init__(self, double[:] values):
+        super(ArrayIndexedParameter, self).__init__()
         self.values = values
 
     cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
@@ -47,7 +72,7 @@ cdef class ParameterArrayIndexed(Parameter):
         """
         return self.values[ts._index]
 
-cdef class ParameterConstantScenario(Parameter):
+cdef class ConstantScenarioParameter(Parameter):
     """A Scenario varying Parameter
 
     The values in this parameter are constant in time, but vary within a single Scenario.
@@ -56,6 +81,7 @@ cdef class ParameterConstantScenario(Parameter):
         """
         values should be an iterable that is the same length as scenario.size
         """
+        super(ConstantScenarioParameter, self).__init__()
         cdef int i
         if scenario._size != len(values):
             raise ValueError("The number of values must equal the size of the scenario.")
@@ -78,7 +104,7 @@ cdef class ParameterConstantScenario(Parameter):
         return self._values[scenario_indices[self._scenario_index]]
 
 
-cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
+cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
     """Time varying parameter using an array and Timestep._index with
     multiplicative factors per Scenario
     """
@@ -88,6 +114,7 @@ cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
         factor is taken from factors which is shape (scenario.size, 12). Therefore
         factors vary with the individual scenarios in scenario and month.
         """
+        super(ArrayIndexedScenarioMonthlyFactorsParameter, self).__init__()
         if scenario._size != factors.shape[0]:
             raise ValueError("First dimension of factors must be the same size as scenario.")
         if factors.shape[1] != 12:
@@ -109,3 +136,18 @@ cdef class ParameterArrayIndexedScenarioMonthlyFactors(Parameter):
         # correct number to use in this instance.
         cdef int imth = ts.datetime.month-1
         return self._values[ts._index]*self._factors[scenario_indices[self._scenario_index], imth]
+
+
+cdef class DailyProfileParameter(Parameter):
+    def __init__(self, values):
+        super(DailyProfileParameter, self).__init__()
+        v = np.squeeze(np.array(values))
+        if v.ndim != 1:
+            raise ValueError("values must be 1-dimensional.")
+        if len(values) != 366:
+            raise ValueError("366 values must be given for a daily profile.")
+        self._values = v
+
+    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
+        cdef int i = ts.datetime.dayofyear-1
+        return self._values[i]

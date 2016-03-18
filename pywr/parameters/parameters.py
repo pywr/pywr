@@ -1,9 +1,9 @@
 import datetime
 from xml.etree import ElementTree as ET
-from pywr._parameters import (Parameter as BaseParameter, ParameterConstantScenario, ParameterArrayIndexed,
-                              ParameterConstantScenario, ParameterArrayIndexedScenarioMonthlyFactors)
+from ._parameters import (Parameter as BaseParameter, ConstantScenarioParameter, ArrayIndexedParameter,
+                              ConstantScenarioParameter, ArrayIndexedScenarioMonthlyFactorsParameter, DailyProfileParameter)
+import numpy as np
 import pandas
-
 
 class Parameter(BaseParameter):
     def value(self, ts, scenario_indices=[0]):
@@ -16,13 +16,13 @@ class Parameter(BaseParameter):
     def from_xml(cls, model, xml):
         # TODO: this doesn't look nice - need to rethink xml specification?
         parameter_types = {
-            'const': ParameterConstant,
-            'constant': ParameterConstant,
-            'timestamp': ParameterConstant,
-            'timedelta': ParameterConstant,
-            'datetime': ParameterConstant,
-            'timeseries': ParameterConstant,
-            'python': ParameterFunction,
+            'const': ConstantParameter,
+            'constant': ConstantParameter,
+            'timestamp': ConstantParameter,
+            'timedelta': ConstantParameter,
+            'datetime': ConstantParameter,
+            'timeseries': ConstantParameter,
+            'python': FunctionParameter,
         }
         parameter_type = xml.get('type')
         return parameter_types[parameter_type].from_xml(model, xml)
@@ -34,6 +34,7 @@ class ParameterCollection(Parameter):
 
     """
     def __init__(self, parameters=None):
+        super(ParameterCollection, self).__init__()
         if parameters is None:
             self._parameters = set()
         else:
@@ -68,7 +69,7 @@ class ParameterCollection(Parameter):
             parameter.reset()
 
 
-class ParameterMinimumCollection(ParameterCollection):
+class MinimumParameterCollection(ParameterCollection):
     def value(self, timestep, scenario_indices=[0]):
         min_available = float('inf')
         for parameter in self._parameters:
@@ -76,7 +77,7 @@ class ParameterMinimumCollection(ParameterCollection):
         return min_available
 
 
-class ParameterMaximumCollection(ParameterCollection):
+class MaximumParameterCollection(ParameterCollection):
     def value(self, timestep, scenario_indices=[0]):
         max_available = -float('inf')
         for parameter in self._parameters:
@@ -84,8 +85,9 @@ class ParameterMaximumCollection(ParameterCollection):
         return max_available
 
 
-class ParameterConstant(Parameter):
+class ConstantParameter(Parameter):
     def __init__(self, value=None):
+        super(ConstantParameter, self).__init__()
         self._value = value
 
     def value(self, ts, scenario_indices=[0]):
@@ -131,7 +133,7 @@ class ParameterConstant(Parameter):
                 value = float(xml.text)
             except:
                 value = xml.text
-            return key, ParameterConstant(value=value)
+            return key, ConstantParameter(value=value)
         elif parameter_type == 'timeseries':
             name = xml.text
             return key, model.data[name]
@@ -151,8 +153,9 @@ class ParameterConstant(Parameter):
             raise NotImplementedError('Unknown parameter type: {}'.format(parameter_type))
 
 
-class ParameterFunction(Parameter):
+class FunctionParameter(Parameter):
     def __init__(self, parent, func):
+        super(FunctionParameter, self).__init__()
         self._parent = parent
         self._func = func
 
@@ -164,36 +167,72 @@ class ParameterFunction(Parameter):
         raise NotImplementedError('TODO')
 
 
-class ParameterMonthlyProfile(Parameter):
-    def __init__(self, values):
-        if len(values) != 12:
+class MonthlyProfileParameter(Parameter):
+    def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf):
+        super(MonthlyProfileParameter, self).__init__()
+        self.size = 12
+        if len(values) != self.size:
             raise ValueError("12 values must be given for a monthly profile.")
-        self._values = values
+        self._values = np.array(values)
+        self._lower_bounds = np.ones(self.size)*lower_bounds
+        self._upper_bounds = np.ones(self.size)*upper_bounds
 
     def value(self, ts, scenario_indices=[0]):
         return self._values[ts.datetime.month-1]
 
+    def update(self, values):
+        self._values[...] = values
+
+    def lower_bounds(self):
+        return self._lower_bounds
+
+    def upper_bounds(self):
+        return self._upper_bounds
+
     @classmethod
     def from_xml(cls, xml):
         raise NotImplementedError('TODO')
 
 
-class ParameterDailyProfile(Parameter):
-    def __init__(self, values):
-        if len(values) != 366:
-            raise ValueError("366 values must be given for a daily profile.")
-        self._values = values
+class AnnualHarmonicSeriesParameter(Parameter):
+    def __init__(self, mean, amplitudes, phases, **kwargs):
+        super(AnnualHarmonicSeriesParameter, self).__init__()
+        if len(amplitudes) != len(phases):
+            raise ValueError("The number  of amplitudes and phases must be the same.")
+        n = len(amplitudes)
+        self.size = 1 + 2*n
+        self.mean = mean
+        self.amplitudes = np.array(amplitudes)
+        self.phases = np.array(phases)
+
+        self._mean_lower_bounds = kwargs.pop('mean_lower_bounds', 0.0)
+        self._mean_upper_bounds = kwargs.pop('mean_upper_bounds', np.inf)
+        self._amplitude_lower_bounds = np.ones(n)*kwargs.pop('amplitude_lower_bounds', 0.0)
+        self._amplitude_upper_bounds = np.ones(n)*kwargs.pop('amplitude_upper_bounds', np.inf)
+        self._phase_lower_bounds = np.ones(n)*kwargs.pop('phase_lower_bounds', 0.0)
+        self._phase_upper_bounds = np.ones(n)*kwargs.pop('phase_upper_bounds', np.pi*2)
 
     def value(self, ts, scenario_indices=[0]):
-        return self._values[ts.datetime.dayofyear-1]
+        doy = ts.datetime.dayofyear
+        n = len(self.amplitudes)
+        return self.mean + sum(self.amplitudes[i]*np.cos(doy*(i+1)*np.pi*2/365 + self.phases[i]) for i in range(n))
 
-    @classmethod
-    def from_xml(cls, xml):
-        raise NotImplementedError('TODO')
+    def update(self, values):
+        n = len(self.amplitudes)
+        self.mean = values[0]
+        self.amplitudes[...] = values[1:n+1]
+        self.phases[...] = values[n+1:]
+
+    def lower_bounds(self):
+        return np.r_[self._mean_lower_bounds, self._amplitude_lower_bounds, self._phase_lower_bounds]
+
+    def upper_bounds(self):
+        return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
 
 
 class Timeseries(Parameter):
     def __init__(self, name, df, metadata=None):
+        super(Timeseries, self).__init__()
         self.name = name
         self.df = df
         if metadata is None:
@@ -246,7 +285,6 @@ class Timeseries(Parameter):
                 path,
                 sheet,
                 index_col=0,
-                parse_dates=True,
                 dayfirst=True,
             )
 
@@ -292,7 +330,8 @@ def pop_kwarg_parameter(kwargs, key, default):
     if isinstance(value, Parameter):
         return value
     elif callable(value):
-        return ParameterFunction(self, value)
+        # TODO this is broken?
+        return FunctionParameter(self, value)
     else:
         return value
 
@@ -300,5 +339,5 @@ def pop_kwarg_parameter(kwargs, key, default):
 class PropertiesDict(dict):
     def __setitem__(self, key, value):
         if not isinstance(value, Property):
-            value = ParameterConstant(value)
+            value = ConstantParameter(value)
         dict.__setitem__(self, key, value)

@@ -22,15 +22,17 @@ setup_kwargs = {
     'author': 'Joshua Arnott',
     'author_email': 'josh@snorfalorpagus.net',
     'url': 'http://snorf.net/pywr/',
-    'packages': ['pywr', 'pywr.solvers', 'pywr.domains'],
+    'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters'],
 }
 
 extensions = [
     Extension('pywr._core', ['pywr/_core.pyx'],
               include_dirs=[np.get_include()],),
-    Extension('pywr._parameters', ['pywr/_parameters.pyx'],
+    Extension('pywr.parameters._parameters', ['pywr/parameters/_parameters.pyx'],
               include_dirs=[np.get_include()],),
     Extension('pywr._recorders', ['pywr/_recorders.pyx'],
+              include_dirs=[np.get_include()],),
+    Extension('pywr.parameters._control_curves', ['pywr/parameters/_control_curves.pyx'],
               include_dirs=[np.get_include()],),
 ]
 

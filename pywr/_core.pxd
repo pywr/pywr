@@ -1,4 +1,4 @@
-from _parameters cimport Parameter
+from .parameters._parameters cimport Parameter
 from _recorders cimport Recorder
 
 cdef class Scenario:
@@ -10,7 +10,7 @@ cdef class ScenarioCollection:
     cdef public ScenarioCombinations combinations
     cpdef get_scenario_index(self, Scenario sc)
     cpdef add_scenario(self, Scenario sc)
-    cpdef int ravel_indices(self, int[:] scenario_indices)
+    cpdef int ravel_indices(self, int[:] scenario_indices) except? -1
 
 cdef class ScenarioCombinations:
     cdef ScenarioCollection _collection
@@ -64,6 +64,7 @@ cdef class BaseInput(Node):
 
 cdef class Storage(AbstractNode):
     cdef public double[:] _volume
+    cdef public double[:] _current_pc
     cdef double _initial_volume
     cdef double _min_volume
     cdef double _max_volume

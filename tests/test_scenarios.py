@@ -36,7 +36,7 @@ def test_scenario(simple_linear_model, ):
     model = simple_linear_model  # Convenience renaming
 
     scenario = pywr.core.Scenario(model, 'Inflow', size=2)
-    model.node["Input"].max_flow = pywr.parameters.ParameterConstantScenario(scenario, [5.0, 10.0])
+    model.node["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario, [5.0, 10.0])
 
     model.node["Output"].max_flow = 5.0
     model.node["Output"].cost = -2.0
@@ -55,10 +55,10 @@ def test_two_scenarios(simple_linear_model, ):
     model = simple_linear_model  # Convenience renaming
 
     scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
-    model.node["Input"].max_flow = pywr.parameters.ParameterConstantScenario(scenario_input, [5.0, 10.0])
+    model.node["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
     scenario_outflow = pywr.core.Scenario(model, 'Outflow', size=2)
-    model.node["Output"].max_flow = pywr.parameters.ParameterConstantScenario(scenario_outflow, [3.0, 8.0])
+    model.node["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
     model.node["Output"].cost = -2.0
 
     expected_node_results = {
@@ -75,9 +75,9 @@ def test_scenario_two_parameter(simple_linear_model, ):
     model = simple_linear_model  # Convenience renaming
 
     scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
-    model.node["Input"].max_flow = pywr.parameters.ParameterConstantScenario(scenario_input, [5.0, 10.0])
+    model.node["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
-    model.node["Output"].max_flow = pywr.parameters.ParameterConstantScenario(scenario_input, [8.0, 3.0])
+    model.node["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [8.0, 3.0])
     model.node["Output"].cost = -2.0
 
     expected_node_results = {
@@ -103,7 +103,7 @@ def test_scenario_storage(solver):
     o = Output(model, 'output', max_flow=999)
 
     scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
-    i.min_flow = pywr.parameters.ParameterConstantScenario(scenario_input, [5.0, 10.0])
+    i.min_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
     i.connect(s)
     s.connect(o)

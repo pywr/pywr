@@ -57,9 +57,11 @@ cdef class ScenarioCollection:
         def __get__(self):
             if len(self._scenarios) == 0:
                 return (1, )
-            return (sc._size for sc in self._scenarios)
+            return tuple(sc.size for sc in self._scenarios)
 
-    cpdef int ravel_indices(self, int[:] scenario_indices):
+    cpdef int ravel_indices(self, int[:] scenario_indices) except? -1:
+        if scenario_indices is None:
+            return 0
         # Case where scenario_indices is empty for no scenarios defined
         if scenario_indices.size == 0:
             return 0
@@ -124,6 +126,11 @@ cdef class AbstractNode:
         benefit) or netural. Typically supply nodes will have an associated
         cost and demands will provide a benefit.
         """
+        def __get__(self):
+            if self._cost_param is None:
+                return self._cost
+            return self._cost_param
+
         def __set__(self, value):
             if isinstance(value, Parameter):
                 self._cost_param = value
@@ -266,6 +273,8 @@ cdef class Node(AbstractNode):
         Parameter.
         """
         def __get__(self):
+            if self._min_flow_param is None:
+                return self._min_flow
             return self._min_flow_param
 
         def __set__(self, value):
@@ -289,6 +298,11 @@ cdef class Node(AbstractNode):
         The maximum flow may be set to either a constant (i.e. a float) or a
         Parameter.
         """
+        def __get__(self):
+            if self._max_flow_param is None:
+                return self._max_flow
+            return self._max_flow_param
+
         def __set__(self, value):
             if value is None:
                 self._max_flow = inf
@@ -318,6 +332,22 @@ cdef class Node(AbstractNode):
                 raise ValueError("Conversion factor can not be a Parameter.")
             else:
                 self._conversion_factor = value
+
+    property variables:
+        """ Returns a list of any set Parameters with is_variable == True
+        """
+        def __get__(self):
+            variables = []
+            if self._cost_param is not None:
+                if self._cost_param.is_variable:
+                    variables.append(self._cost_param)
+            if self._min_flow_param is not None:
+                if self._min_flow_param.is_variable:
+                    variables.append(self._min_flow_param)
+            if self._max_flow_param is not None:
+                if self._max_flow_param.is_variable:
+                    variables.append(self._max_flow_param)
+            return variables
 
     cpdef get_conversion_factor(self):
         """Get the conversion factor
@@ -433,6 +463,11 @@ cdef class Storage(AbstractNode):
             self._initial_volume = value
 
     property min_volume:
+        def __get__(self):
+            if self._min_volume_param is None:
+                return self._min_volume
+            return self._min_volume_param
+
         def __set__(self, value):
             self._min_volume_param = None
             if isinstance(value, Parameter):
@@ -447,6 +482,11 @@ cdef class Storage(AbstractNode):
         return self._min_volume_param.value(ts, scenario_indices)
 
     property max_volume:
+        def __get__(self):
+            if self._max_volume_param is None:
+                return self._max_volume
+            return self._max_volume_param
+
         def __set__(self, value):
             self._max_volume_param = None
             if isinstance(value, Parameter):
@@ -463,7 +503,7 @@ cdef class Storage(AbstractNode):
     property current_pc:
         " Current percentage full "
         def __get__(self, ):
-            return np.array(self._volume[:]) / self._max_volume
+            return np.asarray(self._current_pc)
 
     property domain:
         def __get__(self):
@@ -472,11 +512,28 @@ cdef class Storage(AbstractNode):
         def __set__(self, value):
             self._domain = value
 
+    property variables:
+        """ Returns a list of any set Parameters with is_variable == True
+        """
+        def __get__(self):
+            variables = []
+            if self._cost_param is not None:
+                if self._cost_param.is_variable:
+                    variables.append(self._cost_param)
+            if self._min_volume_param is not None:
+                if self._min_volume_param.is_variable:
+                    variables.append(self._min_volume_param)
+            if self._max_volume_param is not None:
+                if self._max_volume_param.is_variable:
+                    variables.append(self._max_volume_param)
+            return variables
+
     cpdef setup(self, model):
         """Called before the first run of the model"""
         AbstractNode.setup(self, model)
         cdef int ncomb = len(model.scenarios.combinations)
         self._volume = np.empty(ncomb, dtype=np.float64)
+        self._current_pc = np.empty(ncomb, dtype=np.float64)
 
     cpdef reset(self):
         """Called at the beginning of a run"""
@@ -484,6 +541,8 @@ cdef class Storage(AbstractNode):
         cdef int i
         for i in range(self._volume.shape[0]):
             self._volume[i] = self._initial_volume
+            # TODO fix this for variable max_volume
+            self._current_pc[i] = self._volume[i] / self._max_volume
 
         if self._max_volume_param is not None:
             self._max_volume_param.reset()
@@ -505,6 +564,8 @@ cdef class Storage(AbstractNode):
         cdef int i
         for i in range(self._flow.shape[0]):
             self._volume[i] += self._flow[i]*ts._days
+            # TODO fix this for variable max_volume
+            self._current_pc[i] = self._volume[i] / self._max_volume
 
         if self._max_volume_param is not None:
             self._max_volume_param.after(ts)

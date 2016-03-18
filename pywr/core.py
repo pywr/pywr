@@ -669,7 +669,7 @@ class XMLSeriaizable(object):
 
         Returns a Node instance, or an instance of the appropriate subclass.
         """
-        from pywr.parameters import Parameter, ParameterConstant
+        from pywr.parameters import Parameter, ConstantParameter
         tag = xml.tag.lower()
         node_cls = node_registry[tag]
         node = node_cls(model, **xml.attrib)
@@ -678,7 +678,7 @@ class XMLSeriaizable(object):
             # TODO fix this hack by making Parameter loading better
             # volume and flow attributes can not be Parameter objects,
             # but doubles only.
-            if isinstance(prop, ParameterConstant):
+            if isinstance(prop, ConstantParameter):
                 setattr(node, key, prop._value)
             else:
                 setattr(node, key, prop)
