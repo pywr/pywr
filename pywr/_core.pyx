@@ -555,15 +555,22 @@ cdef class Storage(AbstractNode):
         """Called at the beginning of a run"""
         AbstractNode.reset(self)
         cdef int i
-        for i in range(self._volume.shape[0]):
-            self._volume[i] = self._initial_volume
-            # TODO fix this for variable max_volume
-            self._current_pc[i] = self._volume[i] / self._max_volume
+        cdef float mxv = self._max_volume
+        cdef ScenarioIndex si
 
+        # Parameters reset first
         if self._max_volume_param is not None:
             self._max_volume_param.reset()
         if self._min_volume_param is not None:
             self._min_volume_param.reset()
+
+        for i, si in enumerate(self.model.scenarios.combinations):
+            self._volume[i] = self._initial_volume
+            # Ensure variable maximum volume is taken in to account
+            if self._max_volume_param is not None:
+                mxv = self._max_volume_param.value(self.model.timestepper.current, si)
+
+            self._current_pc[i] = self._volume[i] / mxv
 
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""
@@ -578,12 +585,19 @@ cdef class Storage(AbstractNode):
     cpdef after(self, Timestep ts):
         AbstractNode.after(self, ts)
         cdef int i
-        for i in range(self._flow.shape[0]):
-            self._volume[i] += self._flow[i]*ts._days
-            # TODO fix this for variable max_volume
-            self._current_pc[i] = self._volume[i] / self._max_volume
+        cdef float mxv = self._max_volume
+        cdef ScenarioIndex si
 
         if self._max_volume_param is not None:
             self._max_volume_param.after(ts)
         if self._min_volume_param is not None:
             self._min_volume_param.after(ts)
+
+        for i, si in enumerate(self.model.scenarios.combinations):
+            self._volume[i] += self._flow[i]*ts._days
+            # Ensure variable maximum volume is taken in to account
+            if self._max_volume_param is not None:
+                mxv = self._max_volume_param.value(self.model.timestepper.current, si)
+            self._current_pc[i] = self._volume[i] / mxv
+
+
