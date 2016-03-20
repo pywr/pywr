@@ -36,11 +36,9 @@ def create_model(harmonic=True):
 
     model = InspyredOptimisationModel(
         solver='glpk',
-        parameters={
-            'timestamp_start': flow.index[0],
-            'timestamp_finish': flow.index[365*10],  # roughly 10 years
-            'timestep': datetime.timedelta(7),  # weekly time-step
-        }
+        start=flow.index[0],
+        end=flow.index[365*10],  # roughly 10 years
+        timestep=datetime.timedelta(7),  # weekly time-step
     )
 
     catchment1 = Input(model, 'catchment1', min_flow=flow_parameter, max_flow=flow_parameter)
