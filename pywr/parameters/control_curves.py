@@ -24,9 +24,9 @@ class ControlCurvePiecewiseParameter(BaseControlCurveParameter):
         self.above_curve_value = above_curve_value
         self.below_curve_value = below_curve_value
 
-    def value(self, ts, scenario_indices=[0]):
-        i = self.node.model.scenarios.ravel_indices(scenario_indices)
-        control_curve = self.control_curve.value(ts, scenario_indices)
+    def value(self, ts, scenario_index):
+        i = scenario_index.global_id
+        control_curve = self.control_curve.value(ts, scenario_index)
         node = self.node if self.storage_node is None else self.storage_node
         # If level above control curve then return above_curve_cost
         if node.current_pc[i] >= control_curve:

@@ -1,7 +1,7 @@
 """
 Test for individual Parameter classes
 """
-from pywr.core import Model, Timestep, Scenario
+from pywr.core import Model, Timestep, Scenario, ScenarioIndex
 from pywr.parameters import (ArrayIndexedParameter, ConstantScenarioParameter, ArrayIndexedScenarioMonthlyFactorsParameter,
                              MonthlyProfileParameter, DailyProfileParameter, MinimumParameterCollection, MaximumParameterCollection)
 
@@ -24,7 +24,7 @@ def test_parameter_array_indexed(model):
     p = ArrayIndexedParameter(A)
     p.setup(model)
     # scenario indices (not used for this test)
-    si = np.array([0], dtype=np.int32)
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
     for v, ts in zip(A, model.timestepper):
         np.testing.assert_allclose(p.value(ts, si), v)
 
@@ -47,8 +47,9 @@ def test_parameter_constant_scenario(model):
     p.setup(model)
     ts = model.timestepper.current
     # Now ensure the appropriate value is returned for the Scenario B indices.
-    for a, b in itertools.product(range(scA.size), range(scB.size)):
-        np.testing.assert_allclose(p.value(ts, np.array([a, b], dtype=np.int32)), float(b))
+    for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
+        si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
+        np.testing.assert_allclose(p.value(ts, si), float(b))
 
 
 def test_parameter_array_indexed_scenario_monthly_factors(model):
@@ -73,9 +74,10 @@ def test_parameter_array_indexed_scenario_monthly_factors(model):
     for v, ts in zip(values, model.timestepper):
         imth = ts.datetime.month - 1
         # Now ensure the appropriate value is returned for the Scenario B indices.
-        for a, b in itertools.product(range(scA.size), range(scB.size)):
+        for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
             f = factors[b, imth]
-            np.testing.assert_allclose(p.value(ts, np.array([a, b], dtype=np.int32)), v*f)
+            si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
+            np.testing.assert_allclose(p.value(ts, si), v*f)
 
 
 def test_parameter_monthly_profile(model):
@@ -90,7 +92,8 @@ def test_parameter_monthly_profile(model):
     # Iterate in time
     for ts in model.timestepper:
         imth = ts.datetime.month - 1
-        np.testing.assert_allclose(p.value(ts, np.array([0], dtype=np.int32)), values[imth])
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        np.testing.assert_allclose(p.value(ts, si), values[imth])
 
 
 def test_parameter_daily_profile(model):
@@ -105,7 +108,8 @@ def test_parameter_daily_profile(model):
     # Iterate in time
     for ts in model.timestepper:
         iday = ts.datetime.dayofyear - 1
-        np.testing.assert_allclose(p.value(ts, np.array([0], dtype=np.int32)), values[iday])
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        np.testing.assert_allclose(p.value(ts, si), values[iday])
 
 
 def test_parameter_min(model):
@@ -124,7 +128,8 @@ def test_parameter_min(model):
     for ts in model.timestepper:
         iday = ts.datetime.dayofyear - 1
         for i in range(scB.size):
-            np.testing.assert_allclose(p.value(ts, np.array([0, i], dtype=np.int32)), min(values[iday], i))
+            si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
+            np.testing.assert_allclose(p.value(ts, si), min(values[iday], i))
 
 
 def test_parameter_max(model):
@@ -142,4 +147,5 @@ def test_parameter_max(model):
     for ts in model.timestepper:
         iday = ts.datetime.dayofyear - 1
         for i in range(scB.size):
-            np.testing.assert_allclose(p.value(ts, np.array([0, i], dtype=np.int32)), max(values[iday], i))
+            si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
+            np.testing.assert_allclose(p.value(ts, si), max(values[iday], i))

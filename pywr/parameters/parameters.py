@@ -6,7 +6,7 @@ import numpy as np
 import pandas
 
 class Parameter(BaseParameter):
-    def value(self, ts, scenario_indices=[0]):
+    def value(self, ts, scenario_index):
         raise NotImplementedError()
 
     def xml(*args, **kwargs):
@@ -53,7 +53,7 @@ class ParameterCollection(Parameter):
     def __len__(self):
         return len(self._parameters)
 
-    def value(self, timestep, scenario_indices=[0]):
+    def value(self, timestep, scenario_index):
         raise NotImplementedError()
 
     def setup(self, model):
@@ -70,18 +70,18 @@ class ParameterCollection(Parameter):
 
 
 class MinimumParameterCollection(ParameterCollection):
-    def value(self, timestep, scenario_indices=[0]):
+    def value(self, timestep, scenario_index):
         min_available = float('inf')
         for parameter in self._parameters:
-            min_available = min(parameter.value(timestep, scenario_indices), min_available)
+            min_available = min(parameter.value(timestep, scenario_index), min_available)
         return min_available
 
 
 class MaximumParameterCollection(ParameterCollection):
-    def value(self, timestep, scenario_indices=[0]):
+    def value(self, timestep, scenario_index):
         max_available = -float('inf')
         for parameter in self._parameters:
-            max_available = max(parameter.value(timestep, scenario_indices), max_available)
+            max_available = max(parameter.value(timestep, scenario_index), max_available)
         return max_available
 
 
@@ -90,7 +90,7 @@ class ConstantParameter(Parameter):
         super(ConstantParameter, self).__init__()
         self._value = value
 
-    def value(self, ts, scenario_indices=[0]):
+    def value(self, ts, scenario_index):
         return self._value
 
     def xml(self, key):
@@ -159,8 +159,8 @@ class FunctionParameter(Parameter):
         self._parent = parent
         self._func = func
 
-    def value(self, ts, scenario_indices=[0]):
-        return self._func(self._parent, ts, scenario_indices)
+    def value(self, ts, scenario_index):
+        return self._func(self._parent, ts, scenario_index)
 
     @classmethod
     def from_xml(cls, xml):
@@ -177,7 +177,7 @@ class MonthlyProfileParameter(Parameter):
         self._lower_bounds = np.ones(self.size)*lower_bounds
         self._upper_bounds = np.ones(self.size)*upper_bounds
 
-    def value(self, ts, scenario_indices=[0]):
+    def value(self, ts, scenario_index):
         return self._values[ts.datetime.month-1]
 
     def update(self, values):
@@ -212,7 +212,7 @@ class AnnualHarmonicSeriesParameter(Parameter):
         self._phase_lower_bounds = np.ones(n)*kwargs.pop('phase_lower_bounds', 0.0)
         self._phase_upper_bounds = np.ones(n)*kwargs.pop('phase_upper_bounds', np.pi*2)
 
-    def value(self, ts, scenario_indices=[0]):
+    def value(self, ts, scenario_index):
         doy = ts.datetime.dayofyear
         n = len(self.amplitudes)
         return self.mean + sum(self.amplitudes[i]*np.cos(doy*(i+1)*np.pi*2/365 + self.phases[i]) for i in range(n))
@@ -239,7 +239,7 @@ class Timeseries(Parameter):
             metadata = {}
         self.metadata = metadata
 
-    def value(self, ts, scenario_indices=[0]):
+    def value(self, ts, scenario_index):
         return self.df[ts.datetime]
 
     def xml(self, name):

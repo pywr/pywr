@@ -15,6 +15,10 @@ cdef class ScenarioCollection:
 cdef class ScenarioCombinations:
     cdef ScenarioCollection _collection
 
+cdef class ScenarioIndex:
+    cdef int _global_id
+    cdef int[:] _indices
+
 cdef class Timestep:
     cdef object _datetime
     cdef int _index
@@ -35,7 +39,7 @@ cdef class AbstractNode:
     cdef bint _allow_isolated
 
     cdef Parameter _cost_param
-    cpdef get_cost(self, Timestep ts, int[:] scenario_indices=*)
+    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index)
 
     cpdef setup(self, model)
     cpdef reset(self)
@@ -54,10 +58,10 @@ cdef class Node(AbstractNode):
 
     cdef Parameter _conversion_factor_param
 
-    cpdef get_min_flow(self, Timestep ts, int[:] scenario_indices=*)
-    cpdef get_max_flow(self, Timestep ts, int[:] scenario_indices=*)
+    cpdef get_min_flow(self, Timestep ts, ScenarioIndex scenario_index)
+    cpdef get_max_flow(self, Timestep ts, ScenarioIndex scenario_index)
     cpdef get_conversion_factor(self)
-    cdef set_parameters(self, Timestep ts, int[:] scenario_indices=*)
+    cdef set_parameters(self, Timestep ts, ScenarioIndex scenario_index)
 
 cdef class BaseInput(Node):
     cdef object _licenses
@@ -71,5 +75,5 @@ cdef class Storage(AbstractNode):
     cdef Parameter _min_volume_param
     cdef Parameter _max_volume_param
 
-    cpdef get_min_volume(self, Timestep ts, int[:] scenario_indices=*)
-    cpdef get_max_volume(self, Timestep ts, int[:] scenario_indices=*)
+    cpdef get_min_volume(self, Timestep ts, ScenarioIndex scenario_index)
+    cpdef get_max_volume(self, Timestep ts, ScenarioIndex scenario_index)

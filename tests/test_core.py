@@ -163,7 +163,7 @@ def test_timeseries_csv(solver):
     filename = os.path.join(TEST_FOLDER, 'timeseries1.csv')
     ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
     timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
-    assert(ts.value(timestep) == 21.92)
+    assert(ts.value(timestep, None) == 21.92)
 
 
 def test_timeseries_excel(solver):
@@ -171,7 +171,7 @@ def test_timeseries_excel(solver):
     filename = os.path.join(TEST_FOLDER, 'timeseries1.xlsx')
     ts = Timeseries.read(model, name='ts', path=filename, sheet='mydata', column='Data')
     timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
-    assert(ts.value(timestep) == 21.92)
+    assert(ts.value(timestep, None) == 21.92)
 
 
 def test_timeseries_name_collision(solver):

@@ -166,9 +166,9 @@ class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
     def save(self):
         ts = self.model.timestepper.current
         node = self.node
-        for i, scenario_combination in enumerate(self.model.scenarios.combinations):
-            max_flow = node.get_max_flow(ts, scenario_combination)
-            self._values[i] += max_flow - node.flow[i]
+        for scenario_index in self.model.scenarios.combinations:
+            max_flow = node.get_max_flow(ts, scenario_index)
+            self._values[scenario_index.global_id] += max_flow - node.flow[scenario_index.global_id]
 
 
 class TotalFlowRecorder(BaseConstantNodeRecorder):

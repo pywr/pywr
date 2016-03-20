@@ -51,7 +51,7 @@ class TimestepLicense(License):
             The maximum volume available in each timestep
         """
         self._amount = amount
-    def value(self, timestep, scenario_indices=[0]):
+    def value(self, timestep, scenario_index):
         return self._amount
     def resource_state(self, timestep):
         return None
@@ -86,9 +86,8 @@ class StorageLicense(License):
         # Create a state array for the remaining licence volume.
         self._remaining = np.ones(len(model.scenarios.combinations))*self._amount
 
-    def value(self, timestep, scenario_indices=[0]):
-        i = self.node.model.scenarios.ravel_indices(scenario_indices)
-        return self._remaining[i]
+    def value(self, timestep, scenario_index):
+        return self._remaining[scenario_index.global_id]
 
     def after(self, timestep):
         self._remaining -= self.node.flow*timestep.days
@@ -112,8 +111,8 @@ class AnnualLicense(StorageLicense):
         # Record year ready to reset licence when the year changes.
         self._prev_year = None
 
-    def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
-        i = self.node.model.scenarios.ravel_indices(scenario_indices)
+    def value(self, timestep, scenario_index):
+        i = scenario_index.global_id
         timetuple = timestep.datetime.timetuple()
         day_of_year = timetuple.tm_yday
         days_in_year = 365 + int(calendar.isleap(timestep.datetime.year))
@@ -170,8 +169,8 @@ class AnnualExponentialLicense(AnnualLicense):
         self._max_value = max_value
         self._k = k
 
-    def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
-        remaining = super(AnnualExponentialLicense, self).value(timestep, scenario_indices)
+    def value(self, timestep, scenario_index):
+        remaining = super(AnnualExponentialLicense, self).value(timestep, scenario_index)
         expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
         x = remaining / expected
         return self._max_value * np.exp(-x / self._k)
@@ -201,8 +200,8 @@ class AnnualHyperbolaLicense(AnnualLicense):
         super(AnnualHyperbolaLicense, self).__init__(amount)
         self._value = value
 
-    def value(self, timestep, scenario_indices=np.array([0], dtype=np.int32)):
-        remaining = super(AnnualHyperbolaLicense, self).value(timestep, scenario_indices)
+    def value(self, timestep, scenario_index):
+        remaining = super(AnnualHyperbolaLicense, self).value(timestep, scenario_index)
         expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
         x = remaining / expected
         try:

@@ -78,9 +78,9 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             raise ValueError("Three values must be given to define the interpolation knots.")
         self.lower_value, self.curve_value, self.upper_value = values
 
-    cpdef double value(self, Timestep ts, int[:] scenario_indices) except? -1:
-        cdef int i = self.node.model.scenarios.ravel_indices(scenario_indices)
-        cdef double control_curve = self._control_curve.value(ts, scenario_indices)
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = scenario_index._global_id
+        cdef double control_curve = self._control_curve.value(ts, scenario_index)
         cdef Storage node = self.node if self._storage_node is None else self._storage_node
         # return the interpolated value for the current level.
         cdef double current_pc = node._current_pc[i]
