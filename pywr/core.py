@@ -162,7 +162,7 @@ class NodeIterator(object):
 
 class Model(object):
     """Model of a water supply network"""
-    def __init__(self, solver=None, parameters=None):
+    def __init__(self, **kwargs):
         """Initialise a new Model instance
 
         Parameters
@@ -170,26 +170,27 @@ class Model(object):
         solver : string
             The name of the underlying solver to use. See the `pywr.solvers`
             package. If no value is given, the default GLPK solver is used.
-        parameters : dict of Parameters
-            A dictionary of parameters to initialise the model with. Parameters
-            can also be added, modified or removed after the Model has been
-            initialised.
+        start : pandas.Timestamp
+            The date of the first timestep in the model
+        end : pandas.Timestamp
+            The date of the last timestep in the model
+        timestep : int or datetime.timedelta
+            Number of days in each timestep
         """
         self.graph = nx.DiGraph()
         self.xml_path = None  # keep track of XML location, for relative paths
         self.metadata = {}
-        self.parameters = {
-            # default parameter values
-            'timestamp_start': pandas.to_datetime('2015-01-01'),
-            'timestamp_finish': pandas.to_datetime('2015-12-31'),
-            'timestep': datetime.timedelta(1),
-        }
-        if parameters is not None:
-            self.parameters.update(parameters)
 
-        self.timestepper = Timestepper(self.parameters['timestamp_start'],
-                                       self.parameters['timestamp_finish'],
-                                       self.parameters['timestep'])
+        solver = kwargs.pop('solver', None)
+
+        # time arguments
+        start = self.start = kwargs.pop('start', pandas.to_datetime('2015-01-01'))
+        end = self.end = kwargs.pop('end', pandas.to_datetime('2015-12-31'))
+        timestep = self.timestep = kwargs.pop('timestep', 1)
+        if not isinstance(timestep, datetime.timedelta):
+            timestep = datetime.timedelta(timestep)
+        self.timestepper = Timestepper(start, end, timestep)
+
         self.data = {}
         self.failure = set()
         self.dirty = True
@@ -210,6 +211,10 @@ class Model(object):
         self.group = {}
         self.recorders = []
         self.scenarios = ScenarioCollection()
+
+        if kwargs:
+            key = list(kwargs.keys())[0]
+            raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
 
         self.reset()
 
@@ -377,7 +382,7 @@ class Model(object):
                 return timestep
             elif until_date and timestep.datetime > until_date:
                 return timestep
-            elif timestep.datetime > self.parameters['timestamp_finish']:
+            elif timestep.datetime > self.end:
                 return timestep
         self.finish()
         try:
