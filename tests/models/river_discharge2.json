@@ -1,0 +1,54 @@
+{
+    "metadata": {
+        "title": "River Discharge 2",
+        "description": "A model with a discharge upstream from an abstraction."
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "catchment1",
+            "type": "catchment",
+            "flow": 5
+        },
+        {
+            "name": "discharge1",
+            "type": "input",
+            "min_flow": 3,
+            "max_flow": 3
+        },
+        {
+            "name": "river1",
+            "type": "link"
+        },
+        {
+            "name": "abs1",
+            "type": "link"
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        },
+        {
+            "name": "term1",
+            "type": "output"
+        }
+    ],
+    "edges": [
+        ["catchment1", "river1"],
+        ["river1", "abs1"],
+        ["abs1", "link1"],
+        ["link1", "demand1"],
+        ["abs1", "discharge1"],
+        ["discharge1", "term1"]
+    ]
+}

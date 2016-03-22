@@ -2,6 +2,8 @@ import sys
 import numpy as np
 from pywr._recorders import (Recorder, NodeRecorder, StorageRecorder,
     NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayLevelRecorder)
+from pywr._recorders import recorder_registry
+from pywr._core import Storage
 
 
 class CSVRecorder(Recorder):
@@ -71,6 +73,7 @@ class CSVRecorder(Recorder):
 
     def finish(self):
         self._fh.close()
+recorder_registry.add(CSVRecorder)
 
 
 class TablesRecorder(Recorder):
@@ -136,6 +139,7 @@ class TablesRecorder(Recorder):
                 ca[idx, :] = node.volume
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
+recorder_registry.add(TablesRecorder)
 
 
 class BaseConstantNodeRecorder(NodeRecorder):
@@ -170,6 +174,7 @@ class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(ts, scenario_index)
             self._values[scenario_index.global_id] += max_flow - node.flow[scenario_index.global_id]
+recorder_registry.add(TotalDeficitNodeRecorder)
 
 
 class TotalFlowRecorder(BaseConstantNodeRecorder):
@@ -184,13 +189,54 @@ class TotalFlowRecorder(BaseConstantNodeRecorder):
 
     def save(self):
         self._values += self.node.flow*self.factor
+recorder_registry.add(TotalFlowRecorder)
 
 
+# TODO: safe evaluation of arbitrary aggregation functions from strings (e.g. "min(a, b) + c")
+agg_funcs = {
+    "mean": np.mean,
+    "sum": np.sum,
+    "max": np.max,
+    "min": np.min,
+}
 class AggregatedRecorder(Recorder):
     def __init__(self, model, recorders, **kwargs):
         self.agg_func = kwargs.pop('agg_func', np.mean)
+        if isinstance(self.agg_func, str):
+            self.agg_func = agg_funcs[self.agg_func]
         super(AggregatedRecorder, self).__init__(model, **kwargs)
         self.recorders = recorders
 
     def value(self):
         return self.agg_func([r.value() for r in self.recorders])
+
+    @classmethod
+    def load(cls, model, data):
+        recorder_names = data["recorders"]
+        recorders = [model.recorders[name] for name in recorder_names]
+        print(recorders)
+        del(data["recorders"])
+        rec = cls(model, recorders, **data)
+        print(rec.name)
+
+recorder_registry.add(AggregatedRecorder)
+
+
+def load_recorder(model, data):
+    recorder_type = data['type']
+    
+    # lookup the recorder class in the registry
+    cls = None
+    name2 = recorder_type.lower().replace('recorder', '')
+    for recorder_class in recorder_registry:
+        name1 = recorder_class.__name__.lower().replace('recorder', '')
+        if name1 == name2:
+            cls = recorder_class
+
+    if cls is None:
+        raise NotImplementedError('Unrecognised recorder type "{}"'.format(recorder_type))
+
+    del(data["type"])
+    rec = cls.load(model, data)
+    
+    return rec  # not strictly needed

@@ -11,6 +11,7 @@ from numpy.testing import assert_allclose
 
 import pywr.core
 from pywr.core import Model, Storage, Input, Output, Link
+import pywr.solvers
 import pywr.parameters.licenses
 import pywr.domains.river
 
@@ -21,8 +22,8 @@ import pywr.parameters
 
 def test_run_simple1(solver):
     '''Test the most basic model possible'''
-    # parse the XML into a model
-    model = load_model('simple1.xml', solver=solver)
+    # parse the JSON into a model
+    model = load_model('simple1.json', solver=None)
 
     # run the model
     t0 = model.timestepper.current
@@ -44,7 +45,7 @@ def test_run_reservoir1(solver):
 
     Without an additional supply the reservoir should empty and cause a failure.
     '''
-    model = load_model('reservoir1.xml', solver=solver)
+    model = load_model('reservoir1.json', solver=solver)
     demand1 = model.node['demand1']
     supply1 = model.node['supply1']
     for demand, stored in [(10.0, 25.0), (10.0, 15.0), (10.0, 5.0), (5.0, 0.0), (0.0, 0.0)]:
@@ -59,14 +60,16 @@ def test_run_reservoir2(solver):
     The river abstraction should refill the reservoir, but not quickly enough
     to keep up with the demand.
     '''
-    model = load_model('reservoir2.xml', solver=solver)
+    model = load_model('reservoir2.json', solver=solver)
 
     demand1 = model.node['demand1']
     supply1 = model.node['supply1']
+    catchment = model.node['catchment1']
+    assert(catchment.min_flow == 5)
     for demand, stored in [(15.0, 25.0), (15.0, 15.0), (15.0, 5.0), (10.0, 0.0), (5.0, 0.0)]:
         result = model.step()
-        assert_allclose(demand1.flow, demand, atol=1e-7)
-        assert_allclose(supply1.volume,  stored, atol=1e-7)
+        assert_allclose(demand1.flow[0], demand, atol=1e-7)
+        assert_allclose(supply1.volume[0], stored, atol=1e-7)
 
 def test_empty_storage_min_flow(solver):
 
@@ -81,7 +84,7 @@ def test_empty_storage_min_flow(solver):
 
 def test_run_river1(solver):
     '''Test a river abstraction with a simple catchment'''
-    model = load_model('river1.xml', solver=solver)
+    model = load_model('river1.json', solver=solver)
 
     result = model.step()
     demand1 = model.node['demand1']
@@ -102,7 +105,7 @@ def test_run_river2(solver):
 # Contains an out of range date for pandas.to_datetime
 @pytest.mark.xfail
 def test_run_timeseries1(solver):
-    model = load_model('timeseries1.xml', solver=solver)
+    model = load_model('timeseries1.json', solver=solver)
 
     # check first day initalised
     assert(model.timestepper.start == datetime.datetime(2015, 1, 1))
@@ -119,7 +122,7 @@ def test_run_timeseries1(solver):
         assert_allclose(demand1.flow, expected, atol=1e-7)
 
 def test_run_cost1(solver):
-    model = load_model('cost1.xml', solver=solver)
+    model = load_model('cost1.json', solver=solver)
 
     supply1 = model.node['supply1']
     supply2 = model.node['supply2']
@@ -223,7 +226,7 @@ def test_run_license_group(solver):
 
 def test_run_bottleneck(solver):
     '''Test max flow constraint on intermediate nodes is upheld'''
-    model = load_model('bottleneck.xml', solver=solver)
+    model = load_model('bottleneck.json', solver=solver)
     result = model.step()
     d1 = model.node['demand1']
     d2 = model.node['demand2']
@@ -235,7 +238,7 @@ def test_run_discharge_upstream(solver):
     In this instance the discharge is upstream of the abstraction, and so can
     be abstracted in the same way as the water from the catchment
     '''
-    model = load_model('river_discharge1.xml', solver=solver)
+    model = load_model('river_discharge1.json', solver=solver)
     model.step()
     demand = model.node['demand1']
     term = model.node['term1']
@@ -248,7 +251,7 @@ def test_run_discharge_downstream(solver):
     In this instance the discharge is downstream of the abstraction, so the
     water shouldn't be available.
     '''
-    model = load_model('river_discharge2.xml', solver=solver)
+    model = load_model('river_discharge2.json', solver=solver)
     model.step()
     demand = model.node['demand1']
     term = model.node['term1']
@@ -419,7 +422,7 @@ def test_reset(solver):
 
 
 def test_run(solver):
-    model = load_model('simple1.xml', solver=solver)
+    model = load_model('simple1.json', solver=solver)
 
     # run model from start to finish
     timestep = model.run()
@@ -455,25 +458,25 @@ def test_run_until_failure(solver):
 
 
 def test_run_until_date(solver):
-    model = load_model('simple1.xml', solver=solver)
+    model = load_model('simple1.json', solver=solver)
 
     # run until date
     timestep = model.run(until_date=pandas.to_datetime('2015-01-20'))
     assert(timestep.index == 20)
 
 
-def test_select_solver_xml():
+def test_select_solver():
     """Test specifying the solver in XML"""
-    solver_names = list(pywr.solvers.SolverMeta.solvers.keys())
-    solver_names.remove('default')  # not helpful for this test
+    solver_names = [solver.name for solver in pywr.solvers.solver_registry]
     for solver_name in solver_names:
-        data = '''<pywr><solver name="{}" /><nodes /><edges /><metadata /></pywr>'''.format(solver_name)
+        data = '''{"metadata": {}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s"}}''' % solver_name
         model = load_model(data=data)
         assert(model.solver.name.lower() == solver_name)
 
 
 def test_solver_unrecognised():
     '''Test specifying an unrecognised solver XML'''
-    data = '''<pywr><solver name="foobar" /><nodes /><edges /><metadata /></pywr>'''
+    solver_name = 'foobar'
+    data = '''{"metadata": {}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s"}}''' % solver_name
     with pytest.raises(KeyError):
         model = load_model(data=data)

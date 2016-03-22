@@ -1,5 +1,6 @@
 import numpy as np
 cimport numpy as np
+from .parameters import parameter_registry
 
 cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
@@ -65,7 +66,7 @@ cdef class BaseControlCurveParameter(Parameter):
 
     cpdef double[:] upper_bounds(self):
         return self._control_curve.upper_bounds()
-
+parameter_registry.add(BaseControlCurveParameter)
 
 
 cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
@@ -97,3 +98,4 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             return self.curve_value*weight + self.upper_value*(1.0 - weight)
         else:
             return self.upper_value
+parameter_registry.add(ControlCurveInterpolatedParameter)

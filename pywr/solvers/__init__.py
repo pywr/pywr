@@ -9,22 +9,10 @@ Currently there are only linear programme based solvers using,
     - LPSolve55
 
 """
-from six import with_metaclass
 
+solver_registry = []
 
-class SolverMeta(type):
-    """Solver metaclass used to keep a registry of Solver classes"""
-    solvers = {}
-    def __new__(cls, clsname, bases, attrs):
-        newclass = super(SolverMeta, cls).__new__(cls, clsname, bases, attrs)
-        cls.solvers[newclass.name.lower()] = newclass
-        return newclass
-    @classmethod
-    def get_default(cls, ):
-        return cls.solvers['glpk']
-
-
-class Solver(with_metaclass(SolverMeta)):
+class Solver(object):
     """Solver base class from which all solvers should inherit"""
     name = 'default'
     def setup(self, model):
@@ -44,7 +32,7 @@ else:
 
         This is required to subclass Solver and get the metaclass magic.
         """
-        name = 'GLPK'
+        name = 'glpk'
 
         def __init__(self, *args, **kwargs):
             super(CythonGLPKSolver, self).__init__(*args, **kwargs)
@@ -59,6 +47,7 @@ else:
         @property
         def stats(self):
             return self._cy_solver.stats
+    solver_registry.append(CythonGLPKSolver)
 
 
 try:
@@ -82,3 +71,4 @@ else:
 
         def solve(self, model):
             return self._cy_solver.solve(model)
+    solver_registry.append(CythonLPSolveSolver)

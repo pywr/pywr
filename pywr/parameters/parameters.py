@@ -1,31 +1,18 @@
+import os
 import datetime
-from xml.etree import ElementTree as ET
-from ._parameters import (Parameter as BaseParameter, ConstantScenarioParameter, ArrayIndexedParameter, ArrayIndexedScenarioParameter,
-                              ConstantScenarioParameter, ArrayIndexedScenarioMonthlyFactorsParameter, DailyProfileParameter)
+from ._parameters import (
+    Parameter as BaseParameter, parameter_registry,
+    ConstantScenarioParameter,
+    ArrayIndexedParameter, ConstantScenarioParameter,
+    ArrayIndexedScenarioMonthlyFactorsParameter,
+    DailyProfileParameter,
+    load_parameter, load_parameter_values)
 import numpy as np
 import pandas
 
 class Parameter(BaseParameter):
     def value(self, ts, scenario_index):
         raise NotImplementedError()
-
-    def xml(*args, **kwargs):
-        raise NotImplementedError()
-
-    @classmethod
-    def from_xml(cls, model, xml):
-        # TODO: this doesn't look nice - need to rethink xml specification?
-        parameter_types = {
-            'const': ConstantParameter,
-            'constant': ConstantParameter,
-            'timestamp': ConstantParameter,
-            'timedelta': ConstantParameter,
-            'datetime': ConstantParameter,
-            'timeseries': ConstantParameter,
-            'python': FunctionParameter,
-        }
-        parameter_type = xml.get('type')
-        return parameter_types[parameter_type].from_xml(model, xml)
 
 class ParameterCollection(Parameter):
     """A collection of Parameters
@@ -67,6 +54,7 @@ class ParameterCollection(Parameter):
     def reset(self):
         for parameter in self._parameters:
             parameter.reset()
+parameter_registry.add(ParameterCollection)
 
 
 class MinimumParameterCollection(ParameterCollection):
@@ -75,6 +63,7 @@ class MinimumParameterCollection(ParameterCollection):
         for parameter in self._parameters:
             min_available = min(parameter.value(timestep, scenario_index), min_available)
         return min_available
+parameter_registry.add(MinimumParameterCollection)
 
 
 class MaximumParameterCollection(ParameterCollection):
@@ -83,6 +72,7 @@ class MaximumParameterCollection(ParameterCollection):
         for parameter in self._parameters:
             max_available = max(parameter.value(timestep, scenario_index), max_available)
         return max_available
+parameter_registry.add(MaximumParameterCollection)
 
 
 class ConstantParameter(Parameter):
@@ -104,66 +94,7 @@ class ConstantParameter(Parameter):
 
     def upper_bounds(self):
         return self._upper_bounds
-
-    def xml(self, key):
-        parameter_xml = ET.Element('parameter')
-        parameter_xml.set('key', key)
-        if isinstance(self._value, float):
-            parameter_type = 'const'
-            parameter_xml.text = str(self._value)
-        elif isinstance(self._value, pandas.tslib.Timestamp):
-            parameter_type = 'datetime'
-            parameter_xml.text = str(self._value)
-        elif isinstance(self._value, datetime.timedelta):
-            parameter_type = 'timedelta'
-            # try to represent the timedelta in sensible units
-            total_seconds = self._value.total_seconds()
-            if total_seconds % (60*60*24) == 0:
-                units = 'days'
-                parameter_xml.text = str(int(total_seconds / (60*60*24)))
-            elif total_seconds % (60*60) == 0:
-                units = 'hours'
-                parameter_xml.text = str(int(total_seconds / (60*60)))
-            elif total_seconds % (60) == 0:
-                units = 'minutes'
-                parameter_xml.text = str(int(total_seconds / 60))
-            else:
-                units = 'seconds'
-                parameter_xml.text = str(int(total_seconds))
-            parameter_xml.set('units', units)
-        else:
-            raise TypeError()
-        parameter_xml.set('type', parameter_type)
-        return parameter_xml
-
-    @classmethod
-    def from_xml(cls, model, xml):
-        parameter_type = xml.get('type')
-        key = xml.get('key')
-        if parameter_type == 'const' or parameter_type == 'constant':
-            try:
-                value = float(xml.text)
-            except:
-                value = xml.text
-            return key, ConstantParameter(value=value)
-        elif parameter_type == 'timeseries':
-            name = xml.text
-            return key, model.data[name]
-        elif parameter_type == 'datetime':
-            return key, pandas.to_datetime(xml.text)
-        elif parameter_type == 'timedelta':
-            units = xml.get('units')
-            value = float(xml.text)
-            if units is None:
-                units = 'seconds'
-            units = units.lower()
-            if units[-1] != 's':
-                units = units + 's'
-            td = datetime.timedelta(**{units: value})
-            return key, td
-        else:
-            raise NotImplementedError('Unknown parameter type: {}'.format(parameter_type))
-
+parameter_registry.add(ConstantParameter)
 
 class FunctionParameter(Parameter):
     def __init__(self, parent, func):
@@ -173,10 +104,7 @@ class FunctionParameter(Parameter):
 
     def value(self, ts, scenario_index):
         return self._func(self._parent, ts, scenario_index)
-
-    @classmethod
-    def from_xml(cls, xml):
-        raise NotImplementedError('TODO')
+parameter_registry.add(FunctionParameter)
 
 
 class MonthlyProfileParameter(Parameter):
@@ -200,10 +128,7 @@ class MonthlyProfileParameter(Parameter):
 
     def upper_bounds(self):
         return self._upper_bounds
-
-    @classmethod
-    def from_xml(cls, xml):
-        raise NotImplementedError('TODO')
+parameter_registry.add(MonthlyProfileParameter)
 
 
 class AnnualHarmonicSeriesParameter(Parameter):
@@ -240,6 +165,7 @@ class AnnualHarmonicSeriesParameter(Parameter):
 
     def upper_bounds(self):
         return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
+parameter_registry.add(AnnualHarmonicSeriesParameter)
 
 
 class Timeseries(Parameter):
@@ -253,14 +179,6 @@ class Timeseries(Parameter):
 
     def value(self, ts, scenario_index):
         return self.df[ts.datetime]
-
-    def xml(self, name):
-        xml_ts = ET.Element('timeseries')
-        xml_ts.set('name', self.name)
-        for key, value in self.metadata.items():
-            xml_meta = ET.SubElement(xml_ts, key)
-            xml_meta.text = value
-        return xml_ts
 
     @classmethod
     def read(self, model, **kwargs):
@@ -282,8 +200,10 @@ class Timeseries(Parameter):
         # TODO: other filetypes (SQLite? HDF5?)
         if filetype is None:
             raise ValueError('Unknown timeseries type.')
+        path = kwargs['path']
+        if not os.path.isabs(path) and model.path is not None:
+            path = os.path.join(model.path, path)
         if filetype == 'csv':
-            path = model.path_rel_to_xml(kwargs['path'])
             df = pandas.read_csv(
                 path,
                 index_col=0,
@@ -291,7 +211,6 @@ class Timeseries(Parameter):
                 dayfirst=True,
             )
         elif filetype == 'excel':
-            path = model.path_rel_to_xml(kwargs['path'])
             sheet = kwargs['sheet']
             df = pandas.read_excel(
                 path,
@@ -306,22 +225,7 @@ class Timeseries(Parameter):
         # register the timeseries in the model
         model.data[name] = ts
         return ts
-
-    @classmethod
-    def from_xml(self, model, xml):
-        name = xml.get('name')
-        properties = {}
-        for child in xml.getchildren():
-            properties[child.tag.lower()] = child.text
-        properties['name'] = name
-
-        if 'dayfirst' not in properties:
-            # default to british dates
-            properties['dayfirst'] = True
-
-        ts = self.read(model, **properties)
-
-        return ts
+parameter_registry.add(Timeseries)
 
 
 class InterpolatedLevelParameter(Parameter):

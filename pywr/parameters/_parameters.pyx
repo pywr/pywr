@@ -1,6 +1,9 @@
-
+import os
 import numpy as np
 cimport numpy as np
+import pandas
+
+parameter_registry = set()
 
 cdef class Parameter:
     cpdef setup(self, model):
@@ -58,6 +61,13 @@ cdef class Parameter:
         def __set__(self, value):
             self._is_variable = value
 
+    @classmethod
+    def load(cls, model, data):
+        values = load_parameter_values(model, data)
+        return cls(values)
+
+parameter_registry.add(Parameter)
+
 cdef class ArrayIndexedParameter(Parameter):
     """Time varying parameter using an array and Timestep._index
 
@@ -71,6 +81,7 @@ cdef class ArrayIndexedParameter(Parameter):
         """Returns the value of the parameter at a given timestep
         """
         return self.values[ts._index]
+parameter_registry.add(ArrayIndexedParameter)
 
 
 cdef class ArrayIndexedScenarioParameter(Parameter):
@@ -133,6 +144,7 @@ cdef class ConstantScenarioParameter(Parameter):
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
         return self._values[scenario_index._indices[self._scenario_index]]
+parameter_registry.add(ConstantScenarioParameter)
 
 
 cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
@@ -167,6 +179,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         # correct number to use in this instance.
         cdef int imth = ts.datetime.month-1
         return self._values[ts._index]*self._factors[scenario_index._indices[self._scenario_index], imth]
+parameter_registry.add(ArrayIndexedScenarioMonthlyFactorsParameter)
 
 
 cdef class DailyProfileParameter(Parameter):
@@ -182,3 +195,74 @@ cdef class DailyProfileParameter(Parameter):
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.datetime.dayofyear-1
         return self._values[i]
+parameter_registry.add(DailyProfileParameter)
+
+def load_parameter(model, data):
+    """Load a parameter from a dict"""
+    if isinstance(data, str):
+        # parameter is a reference
+        parameter = model._parameters[data]
+    elif isinstance(data, (float, int)) or data is None:
+        # parameter is a constant
+        parameter = data
+    else:
+        # parameter is dynamic
+        parameter_type = data['type']
+
+        cls = None
+        name2 = parameter_type.lower().replace('parameter', '')
+        for parameter_class in parameter_registry:
+            name1 = parameter_class.__name__.lower().replace('parameter', '')
+            if name1 == name2:
+                cls = parameter_class
+
+        if cls is None:
+            raise TypeError('Unknown parameter type: "{}"'.format(parameter_type))
+
+        del(data["type"])
+        parameter = cls.load(model, data)
+    
+    return parameter
+
+# TODO: add support for date index in dataframes
+def load_parameter_values(model, data):
+    if 'values' in data:
+        # values are given as an array
+        values = np.array(data['values'], np.float64)
+    else:
+        # values reference data in an external file
+        url = data['url']
+        if not os.path.isabs(url) and model.path is not None:
+            url = os.path.join(model.path, url)
+        try:
+            filetype = data['filetype']
+        except KeyError:
+            # guess file type based on extension
+            if url.endswith(('.xls', '.xlsx')):
+                filetype = "excel"
+            elif url.endswith(('.csv', '.gz')):
+                filetype = "csv"
+            elif url.endswith(('.hdf', '.hdf5', '.h5')):
+                filetype = "hdf"
+            else:
+                raise NotImplementedError('Unknown file extension: "{}"'.format(url))
+        column = data.get("column", None)
+        if filetype == "csv":
+            df = pandas.read_csv(url) # automatically decompressed gzipped data!
+        elif filetype == "excel":
+            df = pandas.read_excel(url)
+        elif filetype == "hdf":
+            try:
+                key = data["key"]
+            except KeyError:
+                key = None
+            df = pandas.read_hdf(url, key=key, column=None)
+        # if column is not specified, use the last column
+        if column is None:
+            column = df.columns[-1]
+        try:
+            values = df[column].values
+        except KeyError:
+            raise KeyError('Column "{}" not found in dataset "{}"'.format(column, url))
+    
+    return values

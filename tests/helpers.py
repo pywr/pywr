@@ -1,8 +1,8 @@
 import os
-import xml.etree.ElementTree as ET
 from numpy.testing import assert_allclose
 import pywr.core
 from pywr.domains import river
+from pywr.core import Model
 
 
 def load_model(filename=None, data=None, solver=None):
@@ -13,8 +13,9 @@ def load_model(filename=None, data=None, solver=None):
             data = f.read()
     else:
         path = None
-    xml = ET.fromstring(data)
-    model = pywr.core.Model.from_xml(xml, path=path, solver=solver)
+    #xml = ET.fromstring(data)
+    #model = pywr.core.Model.from_xml(xml, path=path, solver=solver)
+    model = Model.loads(data)
     model.check()
     return model
 

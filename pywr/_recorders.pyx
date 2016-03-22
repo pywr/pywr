@@ -1,6 +1,8 @@
 import numpy as np
 cimport numpy as np
 
+recorder_registry = set()
+
 cdef class Recorder:
     def __init__(self, model, name=None):
         self._model = model
@@ -46,6 +48,16 @@ cdef class Recorder:
     cpdef value(self):
         raise NotImplementedError("Implement value() in subclasses to return an aggregated values.")
 
+    @classmethod
+    def load(cls, model, data):
+        try:
+            node_name = data["node"]
+        except KeyError:
+            pass
+        else:
+            node = model.nodes[node_name]
+            data["node"] = node
+        return cls(model, **data)
 
 cdef class NodeRecorder(Recorder):
     def __init__(self, model, AbstractNode node, name=None):
@@ -58,6 +70,8 @@ cdef class NodeRecorder(Recorder):
     property node:
         def __get__(self):
             return self._node
+recorder_registry.add(NodeRecorder)
+
 
 cdef class StorageRecorder(Recorder):
     def __init__(self, model, Storage node, name=None):
@@ -66,6 +80,7 @@ cdef class StorageRecorder(Recorder):
         Recorder.__init__(self, model, name=name)
         self._node = node
         node._recorders.append(self)
+recorder_registry.add(StorageRecorder)
 
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
@@ -87,6 +102,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
+recorder_registry.add(NumpyArrayNodeRecorder)
 
 
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
@@ -108,6 +124,7 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
+recorder_registry.add(NumpyArrayStorageRecorder)
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
     cpdef setup(self):
@@ -129,3 +146,4 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
+recorder_registry.add(NumpyArrayLevelRecorder)

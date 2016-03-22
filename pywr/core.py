@@ -5,16 +5,16 @@ from __future__ import print_function
 
 from pywr import _core
 # Cython objects availble in the core namespace
-from pywr.parameters import pop_kwarg_parameter
+from pywr.parameters import *
 from pywr._core import BaseInput, BaseLink, BaseOutput, \
     StorageInput, StorageOutput, Timestep, ScenarioIndex
 from pywr._core import Node as BaseNode
+from pywr.recorders import load_recorder
 import os
 import networkx as nx
 import inspect
 import pandas
 import datetime
-import xml.etree.ElementTree as ET
 from six import with_metaclass
 
 import warnings
@@ -223,10 +223,9 @@ class Model(object):
             Number of days in each timestep
         """
         self.graph = nx.DiGraph()
-        self.xml_path = None  # keep track of XML location, for relative paths
         self.metadata = {}
 
-        solver = kwargs.pop('solver', None)
+        solver_name = kwargs.pop('solver', None)
 
         # time arguments
         start = self.start = kwargs.pop('start', pandas.to_datetime('2015-01-01'))
@@ -237,21 +236,31 @@ class Model(object):
         self.timestepper = Timestepper(start, end, timestep)
 
         self.data = {}
+        self._parameters = {}
         self.failure = set()
         self.dirty = True
+        
+        self.path = kwargs.pop('path', None)
+        if self.path is not None:
+            if os.path.exists(self.path) and not os.path.isdir(self.path):
+                self.path = os.path.dirname(self.path)
 
         # Import this here once everything else is defined.
         # This avoids circular references in the solver classes
-        from .solvers import SolverMeta
-        if solver is not None:
+        from .solvers import solver_registry
+        if solver_name is not None:
             # use specific solver
-            try:
-                self.solver = SolverMeta.solvers[solver.lower()]()
-            except KeyError:
-                raise KeyError('Unrecognised solver: {}'.format(solver))
+            solver = None
+            name1 = solver_name.lower()
+            for cls in solver_registry:
+                if name1 == cls.name.lower():
+                    solver = cls
+            if solver is None:
+                raise KeyError('Unrecognised solver: {}'.format(solver_name))
         else:
             # use default solver
-            self.solver = SolverMeta.get_default()()
+            solver = solver_registry[0]
+        self.solver = solver()
 
         self.group = {}
         self.recorders = RecorderIterator()
@@ -299,6 +308,85 @@ class Model(object):
         An edge is described as a 2-tuple of the source and dest Nodes.
         """
         return self.graph.edges()
+
+    @classmethod
+    def loads(cls, data, *args, **kwargs):
+        """Read JSON data from a string and parse it as a model document"""
+        import json
+        data = json.loads(data)
+        return cls.load(data, *args, **kwargs)
+
+    @classmethod
+    def load(cls, data, model=None, path=None, solver=None):
+        """Load an existing model
+        
+        Parameters
+        ----------
+        data : file-like, or dict
+            A file-like object to read JSON data from, or a parsed dict
+        model : Model (optional)
+            An existing model to append to
+        path : str (optional)
+            Path to the model document for relative pathnames
+        """
+        if hasattr(data, 'read'):
+            data = data.read()
+            return cls.loads(data, model, path)
+        
+        try:
+            solver_data = data['solver']
+        except KeyError:
+            solver_name = solver
+        else:
+            solver_name = data['solver']['name']
+        
+        try:
+            timestepper_data = data['timestepper']
+        except KeyError:
+            start = end = None
+            timestep = 1
+        else:
+            start = pandas.to_datetime(timestepper_data['start'])
+            end = pandas.to_datetime(timestepper_data['end'])
+            timestep = int(timestepper_data['timestep'])
+        
+        if model is None:
+            model = Model(
+                solver=solver_name,
+                start=start,
+                end=end,
+                timestep=timestep,
+                path=path,
+            )
+        
+        model.metadata = data["metadata"]
+        
+        if 'parameters' in data:
+            for parameter_name, parameter_data in data['parameters'].items():
+                parameter = load_parameter(model, parameter_data)
+                model._parameters[parameter_name] = parameter
+
+        for node_data in data['nodes']:
+            node_type = node_data['type'].lower()
+            cls = node_registry[node_type]
+            node = cls.load(node_data, model)
+        
+        for edge_data in data['edges']:
+            node_from_name = edge_data[0]
+            node_to_name = edge_data[1]
+            if len(edge_data) > 2:
+                slot_from, slot_to = edge_data[2:]
+            else:
+                slot_from = slot_to = None
+            node_from = model.nodes[node_from_name]
+            node_to = model.nodes[node_to_name]
+            node_from.connect(node_to, from_slot=slot_from, to_slot=slot_to)
+        
+        if 'recorders' in data:
+            for recorder_data in data['recorders']:
+                load_recorder(model, recorder_data)
+        
+        return model
 
     def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):
         """Find all routes between two nodes or types of node
@@ -481,118 +569,6 @@ class Model(object):
         for recorder in self.recorders:
             recorder.finish()
 
-    def xml(self):
-        """Serialize the Model to XML"""
-        xml_model = ET.Element('pywr')
-
-        xml_metadata = ET.SubElement(xml_model, 'metadata')
-        for key, value in self.metadata.items():
-            xml_metadata_item = ET.SubElement(xml_metadata, key)
-            xml_metadata_item.text = value
-
-        xml_parameters = ET.SubElement(xml_model, 'parameters')
-        for key, value in self.parameters.items():
-            pass # TODO
-
-        xml_data = ET.SubElement(xml_model, 'data')
-        for name, ts in self.data.items():
-            xml_ts = ts.xml(name)
-            xml_data.append(xml_ts)
-
-        xml_nodes = ET.SubElement(xml_model, 'nodes')
-        for node in self.graph.nodes():
-            xml_node = node.xml()
-            xml_nodes.append(xml_node)
-
-        xml_edges = ET.SubElement(xml_model, 'edges')
-        for edge in self.edges():
-            node_from, node_to = edge
-            xml_edge = ET.SubElement(xml_edges, 'edge')
-            xml_edge.set('from', node_from.name)
-            xml_edge.set('to', node_to.name)
-
-        xml_groups = ET.SubElement(xml_model, 'groups')
-        for name, group in self.group.items():
-            xml_group = group.xml()
-            xml_groups.append(xml_group)
-
-        return xml_model
-
-    @classmethod
-    def from_xml(cls, xml, path=None, solver=None):
-        """Deserialize a Model from XML"""
-        if solver is None:
-            xml_solver = xml.find('solver')
-            if xml_solver is not None:
-                solver = xml_solver.get('name')
-            else:
-                solver = None
-
-        model = Model(solver=solver)
-
-        # parse metadata
-        xml_metadata = xml.find('metadata')
-        if xml_metadata is not None:
-            for xml_metadata_item in xml_metadata.getchildren():
-                key = xml_metadata_item.tag.lower()
-                value = xml_metadata_item.text.strip()
-                model.metadata[key] = value
-
-        if path:
-            model.xml_path = os.path.abspath(path)
-        else:
-            model.xml_path = None
-
-        # parse model parameters
-        for xml_parameters in xml.findall('parameters'):
-            for xml_parameter in xml_parameters.getchildren():
-                key, parameter = Parameter.from_xml(model, xml_parameter)
-                model.parameters[key] = parameter
-
-        # parse data
-        xml_datas = xml.find('data')
-        if xml_datas:
-            for xml_data in xml_datas.getchildren():
-                ts = Timeseries.from_xml(model, xml_data)
-
-        # parse nodes
-        for node_xml in xml.find('nodes'):
-            tag = node_xml.tag.lower()
-            node_cls = node_registry[tag]
-            node = node_cls.from_xml(model, node_xml)
-
-        # parse edges
-        xml_edges = xml.find('edges')
-        for xml_edge in xml_edges.getchildren():
-            tag = xml_edge.tag.lower()
-            if tag != 'edge':
-                raise ValueError()
-            from_name = xml_edge.get('from')
-            to_name = xml_edge.get('to')
-            from_node = model.node[from_name]
-            to_node = model.node[to_name]
-            from_slot = xml_edge.get('from_slot')
-            if from_slot is not None:
-                from_slot = int(from_slot)
-            to_slot = xml_edge.get('to_slot')
-            if to_slot is not None:
-                to_slot = int(to_slot)
-            from_node.connect(to_node, from_slot=from_slot, to_slot=to_slot)
-
-        # parse groups
-        xml_groups = xml.find('groups')
-        if xml_groups:
-            for xml_group in xml_groups.getchildren():
-                group = Group.from_xml(model, xml_group)
-
-        return model
-
-    def path_rel_to_xml(self, path):
-        if self.xml_path is None:
-            return os.path.abspath(path)
-        else:
-            return os.path.abspath(os.path.join(os.path.dirname(self.xml_path), path))
-
 
 class Domain(_core.Domain):
     def __init__(self, name='default', **kwargs):
@@ -690,58 +666,6 @@ class Connectable(object):
         self.model.dirty = True
 
 
-class XMLSeriaizable(object):
-    """Mixin class to proivide XML serialization for node-like objects"""
-
-    def xml(self):
-        """Serialize the node to an XML object
-
-        The tag of the XML node returned is the same as the class name. For the
-        base Node object a <node /> is returned, but this will differ for
-        subclasses, e.g. Supply.xml returns a <supply /> element.
-
-        Returns an xml.etree.ElementTree.Element object
-        """
-        xml = ET.fromstring('<{} />'.format(self.__class__.__name__.lower()))
-        xml.set('name', self.name)
-        xml.set('x', str(self.position[0]))
-        xml.set('y', str(self.position[1]))
-        for key, prop in self.properties.items():
-            prop_xml = prop.xml(key)
-            xml.append(prop_xml)
-        return xml
-
-    @classmethod
-    def from_xml(cls, model, xml):
-        """Deserialize a node from an XML object
-
-        Parameters
-        ----------
-        model : Model
-            The model to add the node to
-        xml : xml.etree.ElementTree.Element
-            The XML element representing the node
-
-        Returns a Node instance, or an instance of the appropriate subclass.
-        """
-        from pywr.parameters import Parameter, ConstantParameter
-        tag = xml.tag.lower()
-        node_cls = node_registry[tag]
-        node = node_cls(model, **xml.attrib)
-        for prop_xml in xml.findall('parameter'):
-            key, prop = Parameter.from_xml(model, prop_xml)
-            # TODO fix this hack by making Parameter loading better
-            # volume and flow attributes can not be Parameter objects,
-            # but doubles only.
-            if isinstance(prop, ConstantParameter):
-                setattr(node, key, prop._value)
-            else:
-                setattr(node, key, prop)
-        for var_xml in xml.findall('variable'):
-            key, prop = Variable.from_xml(model, var_xml)
-            setattr(node, key, prop)
-        return node
-
 # node subclasses are stored in a dict for convenience
 node_registry = {}
 class NodeMeta(type):
@@ -761,7 +685,7 @@ class NodeMeta(type):
         return node
 
 
-class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseNode)):
+class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
     """Base object from which all other nodes inherit
 
     This BaseNode is not connectable by default, and the Node class should
@@ -789,6 +713,8 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseN
 
         color = kwargs.pop('color', 'black')
         min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
+        if min_flow is None:
+            min_flow = 0.0
         max_flow = pop_kwarg_parameter(kwargs, 'max_flow', float('inf'))
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
         conversion_factor = pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
@@ -816,6 +742,35 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, BaseN
         Raises an exception if the node is invalid
         """
         pass
+
+    @classmethod
+    def load(cls, data, model):
+        name = data.pop('name')
+
+        cost = data.pop('cost', 0.0)
+        cost = load_parameter(model, cost)
+
+        min_flow = data.pop('min_flow', None)
+        min_flow = load_parameter(model, min_flow)
+
+        max_flow = data.pop('max_flow', None)
+        max_flow = load_parameter(model, max_flow)
+
+        try:
+            x = float(data.pop('x'))
+            y = float(data.pop('y'))
+        except KeyError:
+            try:
+                position = data.pop('position')
+                x, y = position
+                x = float(x)
+                y = float(y)
+            except KeyError:
+                x = None
+                y = None
+        data.pop('type')
+        node = cls(model=model, name=name, min_flow=min_flow, max_flow=max_flow, cost=cost, x=x, y=y, **data)
+        return node
 
 
 class Input(Node, BaseInput):
@@ -907,7 +862,7 @@ class Blender(Link):
         self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
 
-class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _core.Storage)):
+class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
     """A generic storage Node
 
     In terms of connections in the network the Storage node behaves like any
@@ -931,11 +886,13 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
     """
     def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
         # cast number of inputs/outputs to integer
-        # this is needed if values come in as strings from xml
+        # this is needed if values come in as strings sometimes
         num_outputs = int(num_outputs)
         num_inputs = int(num_inputs)
 
         min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        if min_volume is None:
+            min_volume = 0.0
         max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
         if 'volume' in kwargs:
             # support older API where volume kwarg was the initial volume
@@ -999,7 +956,10 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
                 else:
                     raise ValueError("Must specify slot identifier.")
             else:
-                yield self.inputs[slot_name]
+                try:
+                    yield self.inputs[slot_name]
+                except IndexError:
+                    raise IndexError('{} does not have slot: {}'.format(self, slot_name))
         else:
             if not self.outputs:
                 raise StopIteration
@@ -1014,6 +974,37 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
 
     def check(self):
         pass  # TODO
+
+    @classmethod
+    def load(cls, data, model):
+        name = data.pop('name')
+        num_inputs = int(data.pop('inputs', 1))
+        num_outputs = int(data.pop('outputs', 1))
+        initial_volume = float(data.pop('initial_volume'))
+        max_volume = float(data.pop('max_volume'))
+        min_volume = data.pop('min_volume', None)
+        if min_volume is not None:
+            min_volume = float(min_volume)
+        try:
+            cost = float(data.pop('cost'))
+        except KeyError:
+            cost = 0.0
+        try:
+            x = float(data.pop('x'))
+            y = float(data.pop('y'))
+        except KeyError:
+            x = None
+            y = None
+        data.pop('type', None)
+        node = cls(
+            model=model, name=name, num_inputs=num_inputs,
+            num_outputs=num_outputs, initial_volume=initial_volume,
+            max_volume=max_volume, min_volume=min_volume, cost=cost, x=x, y=y,
+            **data
+        )
+
+    def __repr__(self):
+        return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
 
 class PiecewiseLink(Node):
@@ -1116,36 +1107,8 @@ class Group(object):
         self.__name = name
         self.model.group[name] = self
 
-    def xml(self):
-        xml = ET.Element('group')
-        xml.set('name', self.name)
-        # members
-        xml_members = ET.SubElement(xml, 'members')
-        for node in self.nodes:
-            member = ET.SubElement(xml_members, 'member')
-            member.set('name', node.name)
-        # licenses
-        if self.licenses:
-            xml_licensecollection = self.licenses.xml()
-            xml.append(xml_licensecollection)
-        return xml
-
-    @classmethod
-    def from_xml(cls, model, xml):
-        name = xml.get('name')
-        group = Group(model, name)
-        # members
-        xml_members = xml.find('members')
-        for xml_member in xml_members:
-            name = xml_member.get('name')
-            node = model.node[name]
-            group.nodes.add(node)
-        # licenses
-        xml_licensecollection = xml.find('licensecollection')
-        if xml_licensecollection:
-            group.licenses = LicenseCollection.from_xml(xml_licensecollection)
-        return group
-
 
 class ModelStructureError(Exception):
     pass
+
+from .domains.river import *

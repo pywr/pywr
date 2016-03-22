@@ -1,14 +1,14 @@
 
 from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink
-from pywr.parameters import pop_kwarg_parameter, ConstantParameter, BaseParameter
+from pywr.parameters import pop_kwarg_parameter, ConstantParameter, BaseParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurvePiecewiseParameter
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 
 class RiverDomainMixin(object):
     def __init__(self, *args, **kwargs):
-        if 'domain' not in kwargs:
-            kwargs['domain'] = DEFAULT_RIVER_DOMAIN
+        # if 'domain' not in kwargs:
+        #     kwargs['domain'] = DEFAULT_RIVER_DOMAIN
         if 'color' not in kwargs:
             self.color = '#6ECFF6' # blue
         super(RiverDomainMixin, self).__init__(*args, **kwargs)
@@ -52,6 +52,15 @@ class Catchment(RiverDomainMixin, Input):
             self.max_flow = value
             return
         super(Catchment, self).__setattr__(name, value)
+
+    @classmethod
+    def load(cls, data, model):
+        flow = data.pop('flow', None)
+        if flow is not None:
+            flow = load_parameter(model, flow)
+        node = super(Catchment, cls).load(data, model)
+        node.flow = flow
+        return node
 
 
 class Reservoir(RiverDomainMixin, Storage):
@@ -166,7 +175,7 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         # create keyword arguments for PiecewiseLink
         cost = kwargs.pop('cost', 0.0)
         kwargs['cost'] = [kwargs.pop('mrf_cost', 0.0), cost]
-        kwargs['max_flow'] = [kwargs.pop('mrf'), None]
+        kwargs['max_flow'] = [kwargs.pop('mrf', 0.0), None]
         super(RiverGauge, self).__init__(*args, **kwargs)
 
     @property

@@ -1,0 +1,52 @@
+{
+    "metadata": {
+        "title": "Reservoir 2",
+        "description": "Model with a reservoir, fed by a river abstraction"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Storage",
+            "max_volume": 35,
+            "initial_volume": 35
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 15,
+            "cost": -10
+        },
+        {
+            "name": "catchment1",
+            "type": "Input",
+            "max_flow": 5,
+            "min_flow": 5
+        },
+        {
+            "name": "abs1",
+            "type": "Link",
+            "max_flow": 5
+        },
+        {
+            "name": "term1",
+            "type": "Output",
+            "cost": 1
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"],
+        ["catchment1", "abs1"],
+        ["abs1", "supply1"],
+        ["abs1", "term1"]
+    ]
+}

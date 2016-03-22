@@ -1,0 +1,48 @@
+{
+    "metadata": {
+        "title": "River 1",
+        "description": "A model with a river abstraction."
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "catchment1",
+            "type": "catchment",
+            "flow": 5
+        },
+        {
+            "name": "river1",
+            "type": "river"
+        },
+        {
+            "name": "abs1",
+            "type": "riverabstraction",
+            "max_flow": 15
+        },
+        {
+            "name": "link1",
+            "type": "river"
+        },
+        {
+            "name": "term1",
+            "type": "terminator"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["catchment1", "river1"],
+        ["river1", "abs1"],
+        ["abs1", "link1"],
+        ["link1", "demand1"],
+        ["abs1", "term1"]
+    ]
+}

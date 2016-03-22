@@ -3,7 +3,7 @@ This module contains a set of pywr._core.Parameter subclasses for defining contr
 """
 
 from ._control_curves import BaseControlCurveParameter, ControlCurveInterpolatedParameter
-
+from .parameters import parameter_registry
 
 class ControlCurvePiecewiseParameter(BaseControlCurveParameter):
     """ A control curve Parameter that returns one of two values depending on whether the current
@@ -32,3 +32,4 @@ class ControlCurvePiecewiseParameter(BaseControlCurveParameter):
         if node.current_pc[i] >= control_curve:
             return self.above_curve_value
         return self.below_curve_value
+parameter_registry.add(ControlCurvePiecewiseParameter)
