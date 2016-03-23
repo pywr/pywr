@@ -14,6 +14,7 @@ from Cython.Distutils import build_ext
 from Cython.Build import cythonize
 import numpy as np
 import sys
+import os
 
 setup_kwargs = {
     'name': 'pywr',
@@ -63,10 +64,14 @@ if 'glpk' in optional:
                   libraries=['glpk'],),
     )
 if 'lpsolve' in optional:
+    define_macros = []
+    if os.name == 'nt':
+        define_macros.append(('WIN32', 1))
     extensions_optional.append(
         Extension('pywr.solvers.cython_lpsolve', ['pywr/solvers/cython_lpsolve.pyx'],
                   include_dirs=[np.get_include()],
-                  libraries=['lpsolve55'],),
+                  libraries=['lpsolve55'],
+                  define_macros=define_macros),
     )
 
 # build the core extension(s)
