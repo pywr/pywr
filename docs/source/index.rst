@@ -1,7 +1,7 @@
 Welcome to Pywr's documentation!
 ================================
 
-Pywr is a generalised network resource allocation model written in Python. It intends to be fast, free and extenable.
+Pywr is a generalised network resource allocation model written in Python. It intends to be fast, free and extendible.
 
 
 
