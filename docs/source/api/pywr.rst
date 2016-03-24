@@ -22,14 +22,6 @@ pywr.core module
     :undoc-members:
     :show-inheritance:
 
-pywr.interior_point module
---------------------------
-
-.. automodule:: pywr.interior_point
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pywr.recorders module
 ---------------------
 

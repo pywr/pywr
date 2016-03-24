@@ -1,9 +1,11 @@
 Welcome to Pywr's documentation!
 ================================
 
-Pywr is a conjunctive use water resource model written in Python.
+Pywr is a generalised network resource allocation model written in Python. It intends to be fast, free and extenable.
 
-It aims to be fast, free, and extendable.
+
+
+
 
 Contents:
 
