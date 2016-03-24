@@ -36,11 +36,9 @@ def create_model(harmonic=True):
 
     model = InspyredOptimisationModel(
         solver='glpk',
-        parameters={
-            'timestamp_start': flow.index[0],
-            'timestamp_finish': flow.index[365*10],  # roughly 10 years
-            'timestep': datetime.timedelta(7),  # weekly time-step
-        }
+        start=flow.index[0],
+        end=flow.index[365*10],  # roughly 10 years
+        timestep=datetime.timedelta(7),  # weekly time-step
     )
 
     catchment1 = Input(model, 'catchment1', min_flow=flow_parameter, max_flow=flow_parameter)
@@ -122,9 +120,15 @@ def moea_main(prng=None, display=False, harmonic=False):
                           pop_size=25,
                           bounder=problem.bounder,
                           maximize=False,
-                          max_generations=20,
+                          max_generations=50,
                           statistics_file=stats_file,
                           individuals_file=individuals_file)
+
+    # Save the final population archive  to CSV files
+    stats_file = open('{}-{}-final-statistics-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
+    individuals_file = open('{}-{}-final-individuals-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
+    inspyred.ec.observers.file_observer(ea.archive, 'final', None,
+                                        args={'statistics_file': stats_file, 'individuals_file': individuals_file})
 
     if display:
         final_arc = ea.archive
@@ -158,9 +162,9 @@ def load_individuals(filename):
     index = []
     all_objs = []
     all_vars = []
-    with open(filename, 'rb') as f:
+    with open(filename, 'r') as f:
         for row in f.readlines():
-            gen, pop_id, objs, vars = ast.literal_eval(row)
+            gen, pop_id, objs, vars = ast.literal_eval(row.strip())
             index.append((gen, pop_id))
             all_objs.append(objs)
             all_vars.append(vars)
@@ -196,8 +200,8 @@ def animate_generations(objective_data, colors):
         return artists
 
     fig, ax = plt.subplots(figsize=(10, 10))
-
-    last_gen = objective_data.values()[0].index[-1][0]
+    last_gen = list(objective_data.values())[0].index[-1][0]
+    last_gen = int(last_gen)
 
     xmax = max(df.loc[last_gen][0].max() for df in objective_data.values())
     ymax = max(df.loc[last_gen][1].max() for df in objective_data.values())

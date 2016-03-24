@@ -3,16 +3,8 @@ build: false
 environment:
   matrix:
     - PYTHON_VERSION: 2.7
-      PYTHON_ARCH: 32
-      MINICONDA: C:\Miniconda
-
-    - PYTHON_VERSION: 2.7
       PYTHON_ARCH: 64
       MINICONDA: C:\Miniconda-x64
-
-    - PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 32
-      MINICONDA: C:\Miniconda3
 
     - PYTHON_VERSION: 3.4
       PYTHON_ARCH: 64

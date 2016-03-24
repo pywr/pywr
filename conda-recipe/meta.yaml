@@ -15,12 +15,14 @@ requirements:
     - numpy x.x
     - cython
     - glpk
+    - lpsolve
   run:
     - python
     - numpy x.x
     - pandas
     - networkx
     - glpk
+    - lpsolve
     - pytables
     - xlrd
 
