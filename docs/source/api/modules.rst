@@ -1,5 +1,5 @@
-pywr
-====
+API Reference
+=============
 
 .. toctree::
    :maxdepth: 4
