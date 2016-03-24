@@ -12,8 +12,8 @@ Contents:
 .. toctree::
    :maxdepth: 1
 
-   installation
-   tutorial
-   formulation
-   license
-   api/modules
+   install.rst
+   tutorial.rst
+   formulation.rst
+   license.rst
+   autodoc_core.rst
