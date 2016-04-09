@@ -53,13 +53,13 @@ Next we need to tell the model how long to run for. As an example, we'll use a d
         datetime.timedelta(1)  # interval
     )
 
-In order to capture the output from the model we need to use a recorder, such as the :func:`pywr.core.NumpyArrayRecorder`. The recorder takes one argument: the number of timesteps in the model, in this case 365 (the number of days in 2015). For convenience we use the :func:`len()` method to calculate this.
+In order to capture the output from the model we need to use a recorder, such as the :func:`pywr.recorders.NumpyArrayNodeRecorder`.
 
 .. code-block:: python
 
-    from pywr._core import NumpyArrayRecorder
+    from pywr.recorders import NumpyArrayNodeRecorder
 
-    supply.recorder = NumpyArrayRecorder(len(model.timestepper))
+    recorder = NumpyArrayNodeRecorder(model, supply)
 
 Finally we are ready to run our model:
 
@@ -72,6 +72,8 @@ We can check the result for the first timestep by accessing the recorder's data 
 
 .. code-block:: python
 
-    print(supply.recorder.data[0])  # prints 6.0
+    scenario = 0
+    timestep = 0
+    print(recorder.data[scenario][timestep])  # prints 6.0
 
 The result of this example model is trivial: the supply exceeds the demand, so the maximum flow at the demand is the limiting factor.
