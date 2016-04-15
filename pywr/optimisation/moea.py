@@ -36,9 +36,14 @@ class InspyredOptimisationModel(Model):
         self._cache_objectives()
 
     def generator(self, random, args):
-        size = self._variable_map[-1]
 
-        return [random.uniform(0.0, 1.0) for i in range(size)]
+        values = []
+        for var in self._variables:
+            l, u = var.lower_bounds(), var.upper_bounds()
+            for i in range(var.size):
+                values.append(random.uniform(l[i], u[i]))
+
+        return values
 
     def evaluator(self, candidates, args):
 
