@@ -86,12 +86,24 @@ class MaximumParameterCollection(ParameterCollection):
 
 
 class ConstantParameter(Parameter):
-    def __init__(self, value=None):
+    def __init__(self, value=None, lower_bounds=0.0, upper_bounds=np.inf):
         super(ConstantParameter, self).__init__()
         self._value = value
+        self.size = 1
+        self._lower_bounds = np.ones(self.size) * lower_bounds
+        self._upper_bounds = np.ones(self.size) * upper_bounds
 
     def value(self, ts, scenario_index):
         return self._value
+
+    def update(self, values):
+        self._value = values[0]
+
+    def lower_bounds(self):
+        return self._lower_bounds
+
+    def upper_bounds(self):
+        return self._upper_bounds
 
     def xml(self, key):
         parameter_xml = ET.Element('parameter')
