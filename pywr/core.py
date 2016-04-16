@@ -160,6 +160,45 @@ class NodeIterator(object):
         # support for old API
         return self
 
+
+class RecorderIterator(object):
+    """ Iterator for Recorder objects in a model that also supports indexing by name """
+
+    def __init__(self):
+        self._recorders = []
+
+    def __getitem__(self, key):
+        """Get a node from the graph by it's name"""
+        for rec in self._recorders:
+            if rec.name == key:
+                return rec
+        raise KeyError("'{}'".format(key))
+
+    def __delitem__(self, key):
+        """Remove a node from the graph by it's name"""
+        rec = self[key]
+        self._recorders.remove(rec)
+
+    def keys(self):
+        for rec in self._recorders:
+            yield rec.name
+
+    def values(self):
+        for rec in self._recorders:
+            yield rec
+
+    def items(self):
+        for rec in self._recorders:
+            yield (rec.name, rec)
+
+    def __len__(self):
+        """Returns the number of nodes in the model"""
+        return len(self._recorders)
+
+    def __iter__(self):
+        return iter(self._recorders)
+
+
 class Model(object):
     """Model of a water supply network"""
     def __init__(self, **kwargs):
@@ -209,7 +248,7 @@ class Model(object):
             self.solver = SolverMeta.get_default()()
 
         self.group = {}
-        self.recorders = []
+        self.recorders = RecorderIterator()
         self.scenarios = ScenarioCollection()
 
         if kwargs:

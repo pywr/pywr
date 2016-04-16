@@ -24,6 +24,14 @@ def test_numpy_recorder(simple_linear_model):
     otpt.cost = -2.0
     rec = NumpyArrayNodeRecorder(model, otpt)
 
+    # test retrieval of recorder
+    assert model.recorders['numpyarraynoderecorder.Output'] == rec
+    # test changing name of recorder
+    rec.name = 'timeseries.Output'
+    assert model.recorders['timeseries.Output'] == rec
+    with pytest.raises(KeyError):
+        model.recorders['numpyarraynoderecorder.Output']
+
     model.run()
 
     assert rec.data.shape == (365, 1)
