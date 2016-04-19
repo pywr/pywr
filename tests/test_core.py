@@ -236,6 +236,24 @@ def test_shorthand_property(solver):
             setattr(node, attr, None)
 
 
+def test_shorthand_property_storage(solver):
+    # test shorthand assignment of constant properties
+    model = Model(solver=solver)
+    node = Storage(model, 'node')
+    for attr in ('min_volume', 'max_volume', 'cost', 'level'):
+        # should except int, float or Paramter
+        setattr(node, attr, 123)
+        if attr == 'conversion_factor':
+            with pytest.raises(ValueError):
+                setattr(node, attr, Parameter())
+        else:
+            setattr(node, attr, Parameter())
+
+        with pytest.raises(TypeError):
+            setattr(node, attr, '123')
+            setattr(node, attr, None)
+
+
 def test_reset_before_run(solver):
     # See issue #82. Previously this would raise:
     #    AttributeError: Memoryview is not initialized
