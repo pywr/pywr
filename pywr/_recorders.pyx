@@ -5,7 +5,7 @@ cdef class Recorder:
     def __init__(self, model, name=None):
         self._model = model
         if name is None:
-            name == self.__class__.__name__.lower()
+            name = self.__class__.__name__.lower()
         self.name = name
         model.recorders._recorders.append(self)
 
