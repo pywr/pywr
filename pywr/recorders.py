@@ -21,9 +21,9 @@ class CSVRecorder(Recorder):
         object
 
         """
-        super(CSVRecorder, self).__init__(model)
+        super(CSVRecorder, self).__init__(model, **kwargs)
         self.csvfile = csvfile
-        self.scenario_index = 0
+        self.scenario_index = scenario_index
         self.nodes = nodes
         self.csv_kwargs = kwargs.pop('csv_kwargs', {})
         self.node_names = None
@@ -80,7 +80,7 @@ class TablesRecorder(Recorder):
     Each CArray stores the data for all scenarios on the specific node. This
     is useful for analysis of Node statistics across multiple scenarios.
     """
-    def __init__(self, model, parent, nodes=None):
+    def __init__(self, model, parent, nodes=None, **kwargs):
         """
 
         :param model: The model to record nodes from.
@@ -88,7 +88,7 @@ class TablesRecorder(Recorder):
         :param nodes: An iterable of nodes to save data. It defaults
         to None which is all nodes in the model
         """
-        super(TablesRecorder, self).__init__(model)
+        super(TablesRecorder, self).__init__(model, **kwargs)
 
         self.parent = parent
         self.nodes = nodes
