@@ -2,9 +2,23 @@ import numpy as np
 cimport numpy as np
 
 cdef class Recorder:
-    def __init__(self, model):
+    def __init__(self, model, name=None):
         self._model = model
-        model.recorders.append(self)
+        if name is None:
+            name = self.__class__.__name__.lower()
+        self.name = name
+        model.recorders._recorders.append(self)
+
+    property name:
+        def __get__(self):
+            return self._name
+
+        def __set__(self, name):
+            # check for name collision
+            if name in self.model.recorders.keys():
+                raise ValueError('A recorder with the name "{}" already exists.'.format(name))
+            # apply new name
+            self._name = name
 
     cpdef setup(self):
         pass
@@ -34,8 +48,10 @@ cdef class Recorder:
 
 
 cdef class NodeRecorder(Recorder):
-    def __init__(self, model, AbstractNode node):
-        Recorder.__init__(self, model)
+    def __init__(self, model, AbstractNode node, name=None):
+        if name is None:
+            name = "{}.{}".format(self.__class__.__name__.lower(), node.name)
+        Recorder.__init__(self, model, name=name)
         self._node = node
         node._recorders.append(self)
 
@@ -44,8 +60,10 @@ cdef class NodeRecorder(Recorder):
             return self._node
 
 cdef class StorageRecorder(Recorder):
-    def __init__(self, model, Storage node):
-        Recorder.__init__(self, model)
+    def __init__(self, model, Storage node, name=None):
+        if name is None:
+            name = "{}.{}".format(self.__class__.__name__.lower(), node.name)
+        Recorder.__init__(self, model, name=name)
         self._node = node
         node._recorders.append(self)
 
