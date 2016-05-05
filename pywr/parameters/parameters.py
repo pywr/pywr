@@ -312,6 +312,22 @@ class Timeseries(Parameter):
         return ts
 
 
+class InterpolatedLevelParameter(Parameter):
+    """
+    Level parameter calculated by interpolation from current volume
+    """
+    def __init__(self, volumes, levels, kind='linear'):
+        from scipy.interpolate import interp1d
+        # Create level interpolator
+        self.interp = interp1d(volumes, levels, bounds_error=True, kind=kind)
+
+    def value(self, ts, scenario_index):
+        # Return interpolated value from current volume
+        v = self.node.volume[scenario_index.global_id]
+        level = self.interp(v)
+        return level
+
+
 def pop_kwarg_parameter(kwargs, key, default):
     """Pop a parameter from the keyword arguments dictionary
 
