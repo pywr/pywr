@@ -37,32 +37,17 @@ class KeatingStreamFlowParameter(Parameter):
         self.coefficient = coefficient
 
     def value(self, ts, scenario_index):
+        # Get the current level of the aquifer
         level = self.storage_node.get_level(ts, scenario_index)
 
-        # Get current values of transmissivity and storage based on aquifer level
-        T = self.transmissivity
         # Coefficient
         C = self.coefficient
 
-        # Winterbourne flow component
+        # Calculate flow at each stream level
         Q = 0.0
-
-        # Iterate all but one of the levels
-        levels = self.levels
-        for i in range(len(levels)-1):
-            if level >= levels[i]:
-                # interpolate transmissivity to the next level
-                # This is used in a simple integration so we take half the value to represent the triangular
-                # part between the two levels.
-                t = T[i] + (level - levels[i])*(T[i+1] - T[i])/(levels[i+1] - levels[i]) / 2
-                Q += 2*t*C*(level - levels[i])
+        for n, stream_flow_level in enumerate(self.levels):
+            T = self.transmissivity[n]
+            if level > stream_flow_level:
+                Q += 2 * T * C * (level - stream_flow_level)
 
         return Q
-
-
-
-
-
-
-
-
