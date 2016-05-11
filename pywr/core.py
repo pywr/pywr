@@ -596,7 +596,7 @@ class Connectable(object):
                 self.model.graph.add_edge(node1, node2)
         self.model.dirty = True
 
-    def disconnect(self, node=None, slot_name=None):
+    def disconnect(self, node=None, slot_name=None, all_slots=True):
         """Remove a connection from this Node to another Node
 
         Parameters
@@ -609,19 +609,19 @@ class Connectable(object):
             Otherwise connections from all slots are removed.
         """
         if node is not None:
-            self._disconnect(node, slot_name=slot_name)
+            self._disconnect(node, slot_name=slot_name, all_slots=all_slots)
         else:
             neighbors = self.model.graph.neighbors(self)
             for neighbor in neighbors:
-                self._disconnect(neighbor, slot_name=slot_name)
+                self._disconnect(neighbor, slot_name=slot_name, all_slots=all_slots)
 
-    def _disconnect(self, node, slot_name=None):
+    def _disconnect(self, node, slot_name=None, all_slots=True):
         """As disconnect, except node argument is required"""
         disconnected = False
         try:
             self.model.graph.remove_edge(self, node)
         except:
-            for node_slot in node.iter_slots(slot_name=slot_name, is_connector=False):
+            for node_slot in node.iter_slots(slot_name=slot_name, is_connector=False, all_slots=all_slots):
                 try:
                     self.model.graph.remove_edge(self, node_slot)
                 except nx.exception.NetworkXError:
@@ -933,21 +933,27 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
         '''
 
 
-    def iter_slots(self, slot_name=None, is_connector=True):
+    def iter_slots(self, slot_name=None, is_connector=True, all_slots=False):
         if is_connector:
             if not self.inputs:
                 raise StopIteration
             if slot_name is None:
-                for node in self.inputs:
-                    yield node
+                if all_slots or len(self.inputs) == 1:
+                    for node in self.inputs:
+                        yield node
+                else:
+                    raise ValueError("Must specify slot identifier.")
             else:
                 yield self.inputs[slot_name]
         else:
             if not self.outputs:
                 raise StopIteration
             if slot_name is None:
-                for node in self.outputs:
-                    yield node
+                if all_slots or len(self.outputs) == 1:
+                    for node in self.outputs:
+                        yield node
+                else:
+                    raise ValueError("Must specify slot identifier.")
             else:
                 yield self.outputs[slot_name]
 
@@ -1088,4 +1094,3 @@ class Group(object):
 
 class ModelStructureError(Exception):
     pass
-
