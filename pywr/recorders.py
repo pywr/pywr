@@ -1,6 +1,7 @@
 import sys
 import numpy as np
-from pywr._recorders import Recorder, NodeRecorder, StorageRecorder, NumpyArrayNodeRecorder, NumpyArrayStorageRecorder
+from pywr._recorders import (Recorder, NodeRecorder, StorageRecorder,
+    NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayLevelRecorder)
 
 
 class CSVRecorder(Recorder):

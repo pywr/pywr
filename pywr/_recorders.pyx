@@ -90,3 +90,24 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
+
+cdef class NumpyArrayLevelRecorder(StorageRecorder):
+    cpdef setup(self):
+        cdef int ncomb = len(self._model.scenarios.combinations)
+        cdef int nts = len(self._model.timestepper)
+        self._data = np.zeros((nts, ncomb))
+
+    cpdef reset(self):
+        self._data[:, :] = 0.0
+
+    cpdef int save(self) except -1:
+        cdef int i
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self._model.timestepper.current
+        for i, scenario_index in enumerate(self._model.scenarios.combinations):
+            self._data[ts._index,i] = self._node.get_level(ts, scenario_index)
+        return 0
+
+    property data:
+        def __get__(self, ):
+            return np.array(self._data)
