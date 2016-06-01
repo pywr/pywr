@@ -31,12 +31,10 @@ class KeatingAquifer(Storage):
         stream_flow_levels : list of list of floats
             For each stream a list of levels to pass to the keating streamflow
             parameter.
-        transmissivity : list of list of floats
-            For each stream a list of transmissivity values to pass to the
-            keating streamflow parameter.
-        coefficient : list of list of floats
-            For each stream a list of coefficients to pass to the keating
-            streamflow parameter.
+        transmissivity : list of floats
+            The transmissivity for each stream flow level.
+        coefficient : list of floats
+            The coefficient for each stream flow level.
 
         See also documentation for the `KeatingStreamFlowParameter`.
         """
@@ -50,7 +48,7 @@ class KeatingAquifer(Storage):
         # initialise streamflow parameters
         for n, node in enumerate(self.inputs[0:num_streams]):
             parameter = KeatingStreamFlowParameter(self, stream_flow_levels[n],
-                                                   transmissivity[n],
-                                                   coefficient[n])
+                                                   transmissivity,
+                                                   coefficient)
             node.max_flow = parameter
             node.min_flow = parameter
