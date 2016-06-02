@@ -24,6 +24,11 @@ cdef class Parameter:
 cdef class ArrayIndexedParameter(Parameter):
     cdef double[:] values
 
+cdef class ArrayIndexedScenarioParameter(Parameter):
+    cdef Scenario _scenario
+    cdef double[:, :] values
+    cdef int _scenario_index
+
 cdef class ConstantScenarioParameter(Parameter):
     cdef Scenario _scenario
     cdef double[:] _values
