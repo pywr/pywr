@@ -217,6 +217,28 @@ def test_dirty_model(solver):
     supply2.disconnect()
     assert(model.dirty)
 
+def test_reset_initial_volume(solver):
+    """
+    If the model doesn't reset correctly changing the initial volume and
+    re-running will cause an exception.
+    """
+    model = Model(
+        solver=solver,
+        start=pandas.to_datetime('2016-01-01'),
+        end=pandas.to_datetime('2016-01-01')
+    )
+
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    otpt = Output(model, 'output', max_flow=99999, cost=-99999)
+    storage.connect(otpt)
+
+    model.check()
+
+    for initial_volume in (50, 100):
+        storage.max_volume = initial_volume
+        storage.initial_volume = initial_volume
+        model.run()
+        assert(otpt.flow == initial_volume)
 
 def test_shorthand_property(solver):
     # test shorthand assignment of constant properties
@@ -267,7 +289,7 @@ def test_check_isolated_nodes(simple_linear_model):
     # the simple model shouldn't have any isolated nodes
     model = simple_linear_model
     model.check()
-    
+
     # add a node, but don't connect it to the network
     isolated_node = Input(model, 'isolated')
     with pytest.raises(ModelStructureError):
@@ -275,12 +297,12 @@ def test_check_isolated_nodes(simple_linear_model):
 
 def test_check_isolated_nodes_storage(solver):
     """Test model structure checker with Storage
-    
+
     The Storage node itself doesn't have any connections, but it's child
     nodes do need to be connected.
     """
     model = Model(solver=solver)
-    
+
     # add a storage, but don't connect it's outflow to anything
     storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
     with pytest.raises(ModelStructureError):
@@ -290,4 +312,3 @@ def test_check_isolated_nodes_storage(solver):
     demand = Output(model, 'demand')
     storage.connect(demand, from_slot=0)
     model.check()
-

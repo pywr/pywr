@@ -375,6 +375,8 @@ class Model(object):
         """
         if self.dirty:
             self.setup()
+        else:
+            self.reset()
         for timestep in self.timestepper:
             self.timestep = timestep
             ret = self._step()
