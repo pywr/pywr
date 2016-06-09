@@ -2,6 +2,7 @@ from ..core import Storage
 from ..parameters import InterpolatedLevelParameter
 from ..parameters.groundwater import KeatingStreamFlowParameter
 
+import numbers
 from scipy.interpolate import interp1d
 
 
@@ -59,11 +60,11 @@ class KeatingAquifer(Storage):
         for i in stream_flow_levels:
             if len(i) != len(transmissivity):
                 raise ValueError("Items in stream flow levels should have the same length as transmissivity")
-        if not isinstance(coefficient, (int, float)):
+        if not isinstance(coefficient, numbers.Number):
             raise ValueError("Coefficient must be a scalar")
 
         if volumes is None:
-            if not isinstance(area, (int, float)):
+            if not isinstance(area, numbers.Number):
                 raise ValueError("Area must be a scalar")
             if len(storativity) != (len(levels) - 1):
                 raise ValueError("Storativity must have one less item than levels")
