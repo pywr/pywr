@@ -8,3 +8,9 @@ def pytest_addoption(parser):
 @pytest.fixture
 def solver(request):
     return request.config.getoption("--solver")
+
+def pytest_report_header(config):
+    headers = []
+    solver_name = config.getoption("--solver")
+    headers.append('solver: {}'.format(solver_name))
+    return '\n'.join(headers)
