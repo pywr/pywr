@@ -415,11 +415,10 @@ def test_run(solver):
     assert(timestep.index == 364)
 
     # try to run finished model
-    timestep = model.run()
+    timestep = model.run(reset=False)
     assert(timestep is None)
 
     # reset model and run again
-    model.reset()
     timestep = model.run()
     assert(timestep.index == 364)
 

@@ -5,7 +5,9 @@ Test the Recorder object API
 """
 from __future__ import print_function
 import pywr.core
+from pywr.core import Model, Input, Output
 import numpy as np
+import pandas
 import pytest
 from numpy.testing import assert_allclose
 from fixtures import simple_linear_model, simple_storage_model
@@ -156,3 +158,22 @@ def test_aggregated_recorder(simple_linear_model):
     model.step()
     assert_allclose(40.0, rec.value(), atol=1e-7)
 
+
+def test_reset_timestepper_recorder(solver):
+    model = Model(
+        solver=solver,
+        start=pandas.to_datetime('2016-01-01'),
+        end=pandas.to_datetime('2016-01-01')
+    )
+
+    inpt = Input(model, "input", max_flow=10)
+    otpt = Output(model, "output", max_flow=50, cost=-10)
+    inpt.connect(otpt)
+
+    rec = NumpyArrayNodeRecorder(model, otpt)
+
+    model.run()
+
+    model.timestepper.end = pandas.to_datetime("2016-01-02")
+
+    model.run()

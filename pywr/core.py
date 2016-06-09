@@ -30,6 +30,7 @@ class Timestepper(object):
         self.start = start
         self.end = end
         self.delta = delta
+        self._last_length = None
         self.reset()
 
     def __iter__(self, ):
@@ -45,16 +46,21 @@ class Timestepper(object):
         start is used as the new starting point.
         """
         self._current = None
+        current_length = len(self)
+
         if start is None:
             self._next = _core.Timestep(self.start, 0, self.delta.days)
-            return
+        else:
+            # Calculate actual index from new position
+            diff = start - self.start
+            if diff.days % self.delta.days != 0:
+                raise ValueError('New starting position is not compatible with the existing starting position and timestep.')
+            index = diff.days / self.delta.days
+            self._next = _core.Timestep(start, index, self.delta.days)
 
-        # Calculate actual index from new position
-        diff = start - self.start
-        if diff.days % self.delta.days != 0:
-            raise ValueError('New starting position is not compatible with the existing starting position and timestep.')
-        index = diff.days / self.delta.days
-        self._next = _core.Timestep(start, index, self.delta.days)
+        length_changed = self._last_length != current_length
+        self._last_length = current_length
+        return length_changed
 
     def __next__(self, ):
         return self.next()
@@ -361,7 +367,7 @@ class Model(object):
         """Call solver to solve the current timestep"""
         return self.solver.solve(self)
 
-    def run(self, until_date=None, until_failure=False):
+    def run(self, until_date=None, until_failure=False, reset=True):
         """Run model until exit condition is reached
 
         Parameters
@@ -370,12 +376,16 @@ class Model(object):
             Stop model when date is reached
         until_failure: bool (optional)
             Stop model run when failure condition occurs
+        reset : bool (optional)
+            If true, start the run from the beginning. Otherwise continue
+            from the current state.
 
         Returns the number of last Timestep that was run.
         """
         if self.dirty:
             self.setup()
-        else:
+            self.timestepper.reset()
+        elif reset:
             self.reset()
         for timestep in self.timestepper:
             self.timestep = timestep
@@ -397,7 +407,7 @@ class Model(object):
     def setup(self, ):
         """Setup the model for the first time or if it has changed since
         last run."""
-        ntimesteps = len(self.timestepper)
+        length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
             node.setup(self)
         for recorder in self.recorders:
@@ -408,10 +418,14 @@ class Model(object):
 
     def reset(self, start=None):
         """Reset model to it's initial conditions"""
-        self.timestepper.reset(start=start)
+        length_changed = self.timestepper.reset(start=start)
         for node in self.nodes:
+            if length_changed:
+                node.setup(self)
             node.reset()
         for recorder in self.recorders:
+            if length_changed:
+                recorder.setup()
             recorder.reset()
 
     def before(self):
