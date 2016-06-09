@@ -3,6 +3,7 @@ from libc.stdlib cimport malloc, free
 
 from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
+from pywr.core import ModelStructureError
 
 cdef extern from "lpsolve/lp_lib.h":
     cdef struct _lprec:
@@ -162,9 +163,10 @@ cdef class CythonLPSolveSolver:
             if isinstance(some_node, Storage):
                 storages.append(some_node)
 
-        assert(routes)
-        assert(supplys)
-        assert(demands)
+        if len(routes) == 0:
+            raise ModelStructureError("Model has no valid routes")
+        if (len(supplys) + len(demands)) == 0:
+            raise ModelStructureError("Model has no non-storage nodes")
 
         # clear the previous problem
         ret = resize_lp(self.prob, 0, 0)

@@ -4,6 +4,7 @@ cimport cython
 
 from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
+from pywr.core import ModelStructureError
 import time
 include "glpk.pxi"
 
@@ -63,8 +64,10 @@ cdef class CythonGLPKSolver:
             elif isinstance(some_node, Storage):
                 storages.append(some_node)
 
-        assert(routes)
-        assert(non_storages)
+        if len(routes) == 0:
+            raise ModelStructureError("Model has no valid routes")
+        if len(non_storages) == 0:
+            raise ModelStructureError("Model has no non-storage nodes")
 
         # clear the previous problem
         glp_erase_prob(self.prob)
