@@ -9,7 +9,7 @@ class KeatingAquifer(Storage):
     def __init__(self, model, name,
                  num_streams, num_additional_inputs,
                  stream_flow_levels, transmissivity, coefficient,
-                 levels, volumes=None, area=None, storitivity=None,
+                 levels, volumes=None, area=None, storativity=None,
                  **kwargs):
         """Storage node with one or more Keating outflows
 
@@ -39,13 +39,13 @@ class KeatingAquifer(Storage):
             should be the same as `levels`.
         area : float (optional)
             Area of the aquifer in m2.
-        storitivity : list of floats (optional)
-            Storitivity of the aquifer as a factor (e.g. 0.05). This defines
+        storativity : list of floats (optional)
+            Storativity of the aquifer as a factor (e.g. 0.05). This defines
             part of the volume-level relationship. The length should be one
             less than `levels`.
 
         Either supply the `volumes` argument or both the `area` and
-        `storitivity` arguments.
+        `storativity` arguments.
 
         See also documentation for the `KeatingStreamFlowParameter`.
         """
@@ -65,11 +65,11 @@ class KeatingAquifer(Storage):
         if volumes is None:
             if not isinstance(area, (int, float)):
                 raise ValueError("Area must be a scalar")
-            if len(storitivity) != (len(levels) - 1):
-                raise ValueError("Storitivity must have one less item than levels")
+            if len(storativity) != (len(levels) - 1):
+                raise ValueError("Storativity must have one less item than levels")
             heights = [levels[n+1] - levels[n] for n in range(0, len(levels)-1)]
             volumes = [0.0]
-            for n, (s, h) in enumerate(zip(storitivity, heights)):
+            for n, (s, h) in enumerate(zip(storativity, heights)):
                 volumes.append(volumes[-1] + area * s * h * 0.001)
         else:
             # check volumes

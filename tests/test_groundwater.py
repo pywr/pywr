@@ -13,7 +13,7 @@ stream_flow_levels = [[100.0, 125.0]] # m
 transmissivity = [1000, 20000] # m2/d
 transmissivity = [t * 0.001 for t in transmissivity] # m3 to Ml
 coefficient = 1 # no units
-storitivity = [0.05] # %
+storativity = [0.05] # %
 levels = [0.0, 1000.0] # m
 area = 50000 * 50000 # m2
 
@@ -34,7 +34,7 @@ def test_keating_aquifer(solver):
         coefficient,
         levels,
         area=area,
-        storitivity=storitivity,
+        storativity=storativity,
     )
 
     catchment = Input(model, 'catchment', max_flow=0)
@@ -58,7 +58,7 @@ def test_keating_aquifer(solver):
         # set the inital aquifer level and therefor the initial volume
         aqfer.initial_level = initial_level
         initial_volume = aqfer.initial_volume
-        assert(initial_volume == (area * storitivity[0] * initial_level * 0.001))
+        assert(initial_volume == (area * storativity[0] * initial_level * 0.001))
         # run the model (for one timestep only)
         model.run()
         # manually calculate keating streamflow and check model flows are OK
