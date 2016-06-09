@@ -72,8 +72,11 @@ cdef class Storage(AbstractNode):
     cdef double _initial_volume
     cdef double _min_volume
     cdef double _max_volume
+    cdef double _level
     cdef Parameter _min_volume_param
     cdef Parameter _max_volume_param
+    cdef Parameter _level_param
 
     cpdef get_min_volume(self, Timestep ts, ScenarioIndex scenario_index)
     cpdef get_max_volume(self, Timestep ts, ScenarioIndex scenario_index)
+    cpdef get_level(self, Timestep ts, ScenarioIndex scenario_index)

@@ -25,6 +25,7 @@ requirements:
     - lpsolve
     - pytables
     - xlrd
+    - scipy
 
 test:
   requires:

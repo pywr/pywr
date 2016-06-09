@@ -30,6 +30,7 @@ class Timestepper(object):
         self.start = start
         self.end = end
         self.delta = delta
+        self._last_length = None
         self.reset()
 
     def __iter__(self, ):
@@ -45,16 +46,21 @@ class Timestepper(object):
         start is used as the new starting point.
         """
         self._current = None
+        current_length = len(self)
+
         if start is None:
             self._next = _core.Timestep(self.start, 0, self.delta.days)
-            return
+        else:
+            # Calculate actual index from new position
+            diff = start - self.start
+            if diff.days % self.delta.days != 0:
+                raise ValueError('New starting position is not compatible with the existing starting position and timestep.')
+            index = diff.days / self.delta.days
+            self._next = _core.Timestep(start, index, self.delta.days)
 
-        # Calculate actual index from new position
-        diff = start - self.start
-        if diff.days % self.delta.days != 0:
-            raise ValueError('New starting position is not compatible with the existing starting position and timestep.')
-        index = diff.days / self.delta.days
-        self._next = _core.Timestep(start, index, self.delta.days)
+        length_changed = self._last_length != current_length
+        self._last_length = current_length
+        return length_changed
 
     def __next__(self, ):
         return self.next()
@@ -400,7 +406,7 @@ class Model(object):
         """Call solver to solve the current timestep"""
         return self.solver.solve(self)
 
-    def run(self, until_date=None, until_failure=False):
+    def run(self, until_date=None, until_failure=False, reset=True):
         """Run model until exit condition is reached
 
         Parameters
@@ -409,11 +415,17 @@ class Model(object):
             Stop model when date is reached
         until_failure: bool (optional)
             Stop model run when failure condition occurs
+        reset : bool (optional)
+            If true, start the run from the beginning. Otherwise continue
+            from the current state.
 
         Returns the number of last Timestep that was run.
         """
         if self.dirty:
             self.setup()
+            self.timestepper.reset()
+        elif reset:
+            self.reset()
         for timestep in self.timestepper:
             self.timestep = timestep
             ret = self._step()
@@ -434,7 +446,7 @@ class Model(object):
     def setup(self, ):
         """Setup the model for the first time or if it has changed since
         last run."""
-        ntimesteps = len(self.timestepper)
+        length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
             node.setup(self)
         for recorder in self.recorders:
@@ -445,10 +457,14 @@ class Model(object):
 
     def reset(self, start=None):
         """Reset model to it's initial conditions"""
-        self.timestepper.reset(start=start)
+        length_changed = self.timestepper.reset(start=start)
         for node in self.nodes:
+            if length_changed:
+                node.setup(self)
             node.reset()
         for recorder in self.recorders:
+            if length_changed:
+                recorder.setup()
             recorder.reset()
 
     def before(self):
@@ -635,7 +651,7 @@ class Connectable(object):
                 self.model.graph.add_edge(node1, node2)
         self.model.dirty = True
 
-    def disconnect(self, node=None, slot_name=None):
+    def disconnect(self, node=None, slot_name=None, all_slots=True):
         """Remove a connection from this Node to another Node
 
         Parameters
@@ -648,19 +664,19 @@ class Connectable(object):
             Otherwise connections from all slots are removed.
         """
         if node is not None:
-            self._disconnect(node, slot_name=slot_name)
+            self._disconnect(node, slot_name=slot_name, all_slots=all_slots)
         else:
             neighbors = self.model.graph.neighbors(self)
             for neighbor in neighbors:
-                self._disconnect(neighbor, slot_name=slot_name)
+                self._disconnect(neighbor, slot_name=slot_name, all_slots=all_slots)
 
-    def _disconnect(self, node, slot_name=None):
+    def _disconnect(self, node, slot_name=None, all_slots=True):
         """As disconnect, except node argument is required"""
         disconnected = False
         try:
             self.model.graph.remove_edge(self, node)
         except:
-            for node_slot in node.iter_slots(slot_name=slot_name, is_connector=False):
+            for node_slot in node.iter_slots(slot_name=slot_name, is_connector=False, all_slots=all_slots):
                 try:
                     self.model.graph.remove_edge(self, node_slot)
                 except nx.exception.NetworkXError:
@@ -972,21 +988,27 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, XMLSeriaizable, _c
         '''
 
 
-    def iter_slots(self, slot_name=None, is_connector=True):
+    def iter_slots(self, slot_name=None, is_connector=True, all_slots=False):
         if is_connector:
             if not self.inputs:
                 raise StopIteration
             if slot_name is None:
-                for node in self.inputs:
-                    yield node
+                if all_slots or len(self.inputs) == 1:
+                    for node in self.inputs:
+                        yield node
+                else:
+                    raise ValueError("Must specify slot identifier.")
             else:
                 yield self.inputs[slot_name]
         else:
             if not self.outputs:
                 raise StopIteration
             if slot_name is None:
-                for node in self.outputs:
-                    yield node
+                if all_slots or len(self.outputs) == 1:
+                    for node in self.outputs:
+                        yield node
+                else:
+                    raise ValueError("Must specify slot identifier.")
             else:
                 yield self.outputs[slot_name]
 
@@ -1127,4 +1149,3 @@ class Group(object):
 
 class ModelStructureError(Exception):
     pass
-

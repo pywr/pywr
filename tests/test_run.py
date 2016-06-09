@@ -10,6 +10,7 @@ import pandas
 from numpy.testing import assert_allclose
 
 import pywr.core
+from pywr.core import Model, Storage, Input, Output, Link
 import pywr.parameters.licenses
 import pywr.domains.river
 
@@ -67,6 +68,16 @@ def test_run_reservoir2(solver):
         assert_allclose(demand1.flow, demand, atol=1e-7)
         assert_allclose(supply1.volume,  stored, atol=1e-7)
 
+def test_empty_storage_min_flow(solver):
+
+    model = Model(solver=solver)
+    storage = Storage(model, "storage", initial_volume=100, max_volume=100, num_inputs=1, num_outputs=0)
+    otpt = Output(model, "output", min_flow=75)
+    storage.connect(otpt)
+    model.check()
+    model.step()
+    with pytest.raises(RuntimeError):
+        model.step()
 
 def test_run_river1(solver):
     '''Test a river abstraction with a simple catchment'''
@@ -415,11 +426,10 @@ def test_run(solver):
     assert(timestep.index == 364)
 
     # try to run finished model
-    timestep = model.run()
+    timestep = model.run(reset=False)
     assert(timestep is None)
 
     # reset model and run again
-    model.reset()
     timestep = model.run()
     assert(timestep.index == 364)
 

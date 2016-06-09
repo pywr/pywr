@@ -463,6 +463,7 @@ cdef class Storage(AbstractNode):
 
         self._min_volume_param = None
         self._max_volume_param = None
+        self._level_param = None
         self._cost_param = None
         self._domain = None
         self._allow_isolated = True
@@ -515,6 +516,25 @@ cdef class Storage(AbstractNode):
         if self._max_volume_param is None:
             return self._max_volume
         return self._max_volume_param.value(ts, scenario_index)
+
+    property level:
+        def __get__(self):
+            if self._level_param is None:
+                return self._level
+            return self._level_param
+
+        def __set__(self, value):
+            self._level_param = None
+            if isinstance(value, Parameter):
+                self._level_param = value
+                value.node = self
+            else:
+                self._level = value
+
+    cpdef get_level(self, Timestep ts, ScenarioIndex scenario_index):
+        if self._level_param is None:
+            return self._level
+        return self._level_param.value(ts, scenario_index)
 
     property current_pc:
         " Current percentage full "
