@@ -312,3 +312,23 @@ def test_check_isolated_nodes_storage(solver):
     demand = Output(model, 'demand')
     storage.connect(demand, from_slot=0)
     model.check()
+
+def test_invalid_max_storage_volume_exception(solver):
+    """Test a useful exception is raised when Storage has an invalid volume during a solve
+
+    """
+
+    model = Model(
+        solver=solver,
+        start=pandas.to_datetime('2016-01-01'),
+        end=pandas.to_datetime('2016-01-01')
+    )
+
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    otpt = Output(model, 'output', max_flow=99999, cost=-99999)
+    storage.connect(otpt)
+
+    storage.max_volume = 0
+
+    with pytest.raises(ValueError):
+        model.run()

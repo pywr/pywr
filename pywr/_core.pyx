@@ -589,8 +589,10 @@ cdef class Storage(AbstractNode):
             # Ensure variable maximum volume is taken in to account
             if self._max_volume_param is not None:
                 mxv = self._max_volume_param.value(self.model.timestepper.current, si)
-
-            self._current_pc[i] = self._volume[i] / mxv
+            try:
+                self._current_pc[i] = self._volume[i] / mxv
+            except ZeroDivisionError:
+                raise ValueError("Zero maximum volume is invalid on Storage object: {}".format(self))
 
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""
