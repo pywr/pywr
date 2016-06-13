@@ -312,3 +312,23 @@ def test_check_isolated_nodes_storage(solver):
     demand = Output(model, 'demand')
     storage.connect(demand, from_slot=0)
     model.check()
+
+def test_storage_max_volume_zero(solver):
+    """Test a that an max_volume of zero results in a NaN for current_pc and no exception
+
+    """
+
+    model = Model(
+        solver=solver,
+        start=pandas.to_datetime('2016-01-01'),
+        end=pandas.to_datetime('2016-01-01')
+    )
+
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    otpt = Output(model, 'output', max_flow=99999, cost=-99999)
+    storage.connect(otpt)
+
+    storage.max_volume = 0
+
+    model.run()
+    assert np.isnan(storage.current_pc)
