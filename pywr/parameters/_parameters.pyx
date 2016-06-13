@@ -6,6 +6,9 @@ import pandas
 parameter_registry = set()
 
 cdef class Parameter:
+    def __init__(self):
+        self._children = set()
+
     cpdef setup(self, model):
         pass
 
@@ -44,8 +47,19 @@ cdef class Parameter:
         def __get__(self):
             return self._parent
 
-        def __set__(self, value):
+        def __set__(self, Parameter value):
+            if self._parent is not None:
+                # If we have a current parent remove ourselves as a child
+                self._parent._children.remove(self)
+            # Update parent value
             self._parent = value
+            if self._parent is not None:
+                # If we have a new parent add ourselves as a child
+                self._parent._children.add(self)
+
+    property children:
+        def __get__(self):
+            return self._children
 
     property size:
         def __get__(self):
@@ -61,12 +75,23 @@ cdef class Parameter:
         def __set__(self, value):
             self._is_variable = value
 
+    property variables:
+        def __get__(self):
+            cdef Parameter var
+            vars = []
+            if self._is_variable:
+                vars.append(self)
+            for var in self._children:
+                vars.extend(var.variables)
+            return vars
+
     @classmethod
     def load(cls, model, data):
         values = load_parameter_values(model, data)
         return cls(values)
 
 parameter_registry.add(Parameter)
+
 
 cdef class ArrayIndexedParameter(Parameter):
     """Time varying parameter using an array and Timestep._index
