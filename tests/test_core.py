@@ -313,8 +313,8 @@ def test_check_isolated_nodes_storage(solver):
     storage.connect(demand, from_slot=0)
     model.check()
 
-def test_invalid_max_storage_volume_exception(solver):
-    """Test a useful exception is raised when Storage has an invalid volume during a solve
+def test_storage_max_volume_zero(solver):
+    """Test a that an max_volume of zero results in a NaN for current_pc and no exception
 
     """
 
@@ -330,5 +330,5 @@ def test_invalid_max_storage_volume_exception(solver):
 
     storage.max_volume = 0
 
-    with pytest.raises(ValueError):
-        model.run()
+    model.run()
+    assert np.isnan(storage.current_pc)
