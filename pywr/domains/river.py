@@ -84,10 +84,10 @@ class Reservoir(RiverDomainMixin, Storage):
         if above_curve_cost is not None:
             if control_curve is None:
                 # Make a default control curve at 100% capacity
-                control_curve = ParameterConstant(1.0)
+                control_curve = ConstantParameter(1.0)
             elif not isinstance(control_curve, BaseParameter):
-                # Assume parameter is some kind of constant and coerce to ParameterConstant
-                control_curve = ParameterConstant(control_curve)
+                # Assume parameter is some kind of constant and coerce to ConstantParameter
+                control_curve = ConstantParameter(control_curve)
 
             if not isinstance(cost, BaseParameter):
                 # In the case where an above_curve_cost is given and cost is not a Parameter

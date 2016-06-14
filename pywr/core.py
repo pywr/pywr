@@ -239,7 +239,7 @@ class Model(object):
         self._parameters = {}
         self.failure = set()
         self.dirty = True
-        
+
         self.path = kwargs.pop('path', None)
         if self.path is not None:
             if os.path.exists(self.path) and not os.path.isdir(self.path):
@@ -319,7 +319,7 @@ class Model(object):
     @classmethod
     def load(cls, data, model=None, path=None, solver=None):
         """Load an existing model
-        
+
         Parameters
         ----------
         data : file-like, or dict
@@ -332,14 +332,14 @@ class Model(object):
         if hasattr(data, 'read'):
             data = data.read()
             return cls.loads(data, model, path)
-        
+
         try:
             solver_data = data['solver']
         except KeyError:
             solver_name = solver
         else:
             solver_name = data['solver']['name']
-        
+
         try:
             timestepper_data = data['timestepper']
         except KeyError:
@@ -349,7 +349,7 @@ class Model(object):
             start = pandas.to_datetime(timestepper_data['start'])
             end = pandas.to_datetime(timestepper_data['end'])
             timestep = int(timestepper_data['timestep'])
-        
+
         if model is None:
             model = Model(
                 solver=solver_name,
@@ -358,9 +358,9 @@ class Model(object):
                 timestep=timestep,
                 path=path,
             )
-        
+
         model.metadata = data["metadata"]
-        
+
         if 'parameters' in data:
             for parameter_name, parameter_data in data['parameters'].items():
                 parameter = load_parameter(model, parameter_data)
@@ -370,7 +370,7 @@ class Model(object):
             node_type = node_data['type'].lower()
             cls = node_registry[node_type]
             node = cls.load(node_data, model)
-        
+
         for edge_data in data['edges']:
             node_from_name = edge_data[0]
             node_to_name = edge_data[1]
@@ -381,11 +381,11 @@ class Model(object):
             node_from = model.nodes[node_from_name]
             node_to = model.nodes[node_to_name]
             node_from.connect(node_to, from_slot=slot_from, to_slot=slot_to)
-        
+
         if 'recorders' in data:
             for recorder_data in data['recorders']:
                 load_recorder(model, recorder_data)
-        
+
         return model
 
     def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):
@@ -985,10 +985,8 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         min_volume = data.pop('min_volume', None)
         if min_volume is not None:
             min_volume = float(min_volume)
-        try:
-            cost = float(data.pop('cost'))
-        except KeyError:
-            cost = 0.0
+        cost = data.pop('cost', 0.0)
+        cost = load_parameter(model, cost)
         try:
             x = float(data.pop('x'))
             y = float(data.pop('y'))
