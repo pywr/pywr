@@ -2,6 +2,7 @@ from pywr._core cimport *
 import itertools
 import numpy as np
 cimport numpy as np
+import pandas as pd
 
 cdef double inf = float('inf')
 
@@ -61,6 +62,18 @@ cdef class ScenarioCollection:
             raise ValueError("The same scenario can not be added twice.")
         self._scenarios.append(sc)
 
+    property combination_names:
+        def __get__(self):
+            cdef ScenarioIndex si
+            cdef Scenario sc
+            cdef int i
+            cdef list names
+            for si in self.combinations:
+                names = []
+                for i, sc in enumerate(self._scenarios):
+                    names.append('{}.{:03d}'.format(sc._name, si._indices[i]))
+                yield '-'.join(names)
+
     def __len__(self):
         return len(self._scenarios)
 
@@ -69,6 +82,16 @@ cdef class ScenarioCollection:
             if len(self._scenarios) == 0:
                 return (1, )
             return tuple(sc.size for sc in self._scenarios)
+
+    property multiindex:
+        def __get__(self):
+            cdef Scenario sc
+            if len(self._scenarios) == 0:
+                return pd.MultiIndex.from_product([range(1),], names=[''])
+            else:
+                ranges = [range(sc._size) for sc in self._scenarios]
+                names = [sc._name for sc in self._scenarios]
+                return pd.MultiIndex.from_product(ranges, names=names)
 
     cpdef int ravel_indices(self, int[:] scenario_indices) except? -1:
         if scenario_indices is None:

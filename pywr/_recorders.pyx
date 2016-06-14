@@ -1,6 +1,8 @@
 import numpy as np
 cimport numpy as np
 
+import pandas as pd
+
 recorder_registry = set()
 
 cdef class Recorder:
@@ -102,6 +104,19 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self.model.timestepper.datetime_index
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
+
 recorder_registry.add(NumpyArrayNodeRecorder)
 
 
@@ -124,6 +139,19 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self.model.timestepper.datetime_index
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
+
 recorder_registry.add(NumpyArrayStorageRecorder)
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
@@ -146,4 +174,5 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
+
 recorder_registry.add(NumpyArrayLevelRecorder)

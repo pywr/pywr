@@ -30,6 +30,15 @@ def test_scenario_collection(solver):
     assert_equal([comb.indices for comb in model.scenarios.combinations],
                  [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
 
+    names = model.scenarios.combination_names
+    for n, (ia, ib) in zip(names, [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]]):
+        assert n == 'Scenario A.{:03d}-Scenario B.{:03d}'.format(ia, ib)
+
+    index = model.scenarios.multiindex
+    assert_equal(index.tolist(),
+                 [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
+    assert_equal(index.names, ['Scenario A', 'Scenario B'])
+
 
 def test_scenario(simple_linear_model, ):
     """Basic test of Scenario functionality"""
