@@ -1,6 +1,7 @@
 import numpy as np
 cimport numpy as np
 from .parameters import parameter_registry
+from ._parameters import load_parameter
 
 cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
@@ -98,4 +99,12 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             return self.curve_value*weight + self.upper_value*(1.0 - weight)
         else:
             return self.upper_value
+
+    @classmethod
+    def load(cls, model, data):
+        control_curve = load_parameter(model, data["control_curve"])
+        values = data["values"]
+        parameter = cls(control_curve, values)
+        return parameter
+
 parameter_registry.add(ControlCurveInterpolatedParameter)

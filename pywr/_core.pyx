@@ -619,5 +619,3 @@ cdef class Storage(AbstractNode):
             if self._max_volume_param is not None:
                 mxv = self._max_volume_param.value(self.model.timestepper.current, si)
             self._current_pc[i] = self._volume[i] / mxv
-
-
