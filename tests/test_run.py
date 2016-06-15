@@ -103,23 +103,19 @@ def test_run_river2(solver):
 
 
 # Contains an out of range date for pandas.to_datetime
-@pytest.mark.xfail
 def test_run_timeseries1(solver):
     model = load_model('timeseries1.json', solver=solver)
 
     # check first day initalised
     assert(model.timestepper.start == datetime.datetime(2015, 1, 1))
 
-    # check timeseries has been loaded correctly
-    from pywr._core import Timestep
-    assert_allclose(model.data['riverflow1'].value(Timestep(datetime.datetime(2015, 1, 1), 0, 0)), 23.92)
-    assert_allclose(model.data['riverflow1'].value(Timestep(datetime.datetime(2015, 1, 2), 1, 0)), 22.14)
-
     # check results
     demand1 = model.node['demand1']
-    for expected in (23.0, 22.14, 22.57, 23.0, 23.0):
+    catchment1 = model.node['catchment1']
+    for expected in (23.92, 22.14, 22.57, 24.97, 27.59):
         result = model.step()
-        assert_allclose(demand1.flow, expected, atol=1e-7)
+        assert_allclose(catchment1.flow, expected, atol=1e-7)
+        assert_allclose(demand1.flow, min(expected, 23.0), atol=1e-7)
 
 def test_run_cost1(solver):
     model = load_model('cost1.json', solver=solver)
