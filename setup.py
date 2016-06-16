@@ -74,6 +74,10 @@ if 'lpsolve' in optional:
                   define_macros=define_macros),
     )
 
+setup_kwargs['package_data'] = {
+    'pywr.notebook': ['*.js', '*.css']
+}
+
 # build the core extension(s)
 setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional, compiler_directives=compiler_directives)
 setup(**setup_kwargs)
