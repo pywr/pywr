@@ -171,6 +171,10 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         ----------
         mrf : float
             The minimum residual flow (MRF) at the gauge
+        mrf_cost : float
+            The cost of the route via the MRF
+        cost : float
+            The cost of the other (unconstrained) route
         """
         # create keyword arguments for PiecewiseLink
         cost = kwargs.pop('cost', 0.0)
@@ -178,13 +182,30 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         kwargs['max_flow'] = [kwargs.pop('mrf', 0.0), None]
         super(RiverGauge, self).__init__(*args, **kwargs)
 
-    @property
-    def mrf(self, ):
-        return self.sublinks[0].max_flow
+    def mrf():
+        def fget(self):
+            return self.sublinks[0].max_flow
+        def fset(self, value):
+            self.sublinks[0].max_flow = value
+        return locals()
+    mrf = property(**mrf())
 
-    @mrf.setter
-    def mrf(self, value):
-        self.sublinks[0].max_flow = value
+    def mrf_cost():
+        def fget(self):
+            return self.sublinks[0].cost
+        def fset(self, value):
+            self.sublinks[0].cost = value
+        return locals()
+    mrf_cost = property(**mrf_cost())
+
+    @classmethod
+    def load(cls, data, model):
+        mrf = load_parameter(model, data.pop("mrf"))
+        mrf_cost = load_parameter(model, data.pop("mrf_cost"))
+        cost = load_parameter(model, data.pop("cost", 0.0))
+        del(data["type"])
+        node = cls(model, mrf=mrf, mrf_cost=mrf_cost, cost=cost, **data)
+        return node
 
 
 class RiverAbstraction(RiverDomainMixin, Output):

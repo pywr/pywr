@@ -1,0 +1,47 @@
+{
+    "metadata": {
+        "title": "River with MRF",
+        "description": "Example of a minimum residual flow constraint"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "catchment",
+            "type": "catchment",
+            "flow": 100
+        },
+        {
+            "name": "river",
+            "type": "river"
+        },
+        {
+            "name": "mrf",
+            "type": "rivergauge",
+            "mrf": {
+                "type": "monthlyprofile",
+                "values": [20, 20, 20, 20, 20, 60, 60, 60, 60, 60, 20, 20]
+            },
+            "mrf_cost": -1000
+        },
+        {
+            "name": "waste",
+            "type": "output"
+        },
+        {
+            "name": "demand",
+            "type": "output",
+            "max_flow": 200,
+            "cost": -500
+        }
+    ],
+    "edges": [
+        ["catchment", "river"],
+        ["river", "mrf"],
+        ["mrf", "waste"],
+        ["river", "demand"]
+    ]
+}
