@@ -13,7 +13,7 @@ def nx_to_json(model):
     """Convert a Pywr graph to a structure d3 can display"""
     nodes = []
     for node in model.graph.nodes():
-        if not isinstance(node, (StorageInput, StorageOutput)):
+        if node.parent is None:
             nodes.append(node.name)
 
     edges = []
@@ -21,10 +21,14 @@ def nx_to_json(model):
         node_source, node_target = edge
         
         # where a link is to/from a subnode, display a link to the parent instead
-        if isinstance(node_source, (StorageInput, StorageOutput)):
+        if node_source.parent is not None:
             node_source = node_source.parent
-        if isinstance(node_target, (StorageInput, StorageOutput)):
+        if node_target.parent is not None:
             node_target = node_target.parent
+        
+        if node_source is node_target:
+            # link is between two subnodes
+            continue
 
         index_source = nodes.index(node_source.name)
         index_target = nodes.index(node_target.name)

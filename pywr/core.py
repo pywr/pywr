@@ -112,15 +112,15 @@ class NodeIterator(object):
         self.position = 0
         self.length = None
 
-    def _nodes(self):
+    def _nodes(self, hide_children=True):
         for node in self.model.graph.nodes():
-            if node.parent is None:  # don't return child nodes (e.g. StorageInput)
+            if hide_children is False or node.parent is None:  # don't return child nodes (e.g. StorageInput)
                 yield node
         raise StopIteration()
 
     def __getitem__(self, key):
         """Get a node from the graph by it's name"""
-        for node in self._nodes():
+        for node in self._nodes(hide_children=False):
             if node.name == key:
                 return node
         raise KeyError("'{}'".format(key))
