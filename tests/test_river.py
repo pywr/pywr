@@ -6,12 +6,15 @@ are tested here.
 """
 from __future__ import print_function
 import pywr.core
+from pywr.core import Model, RiverGauge, Input, Output
+from pywr.parameters import MonthlyProfileParameter
 from pywr.domains import river
 import datetime
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 
-from helpers import assert_model
+from helpers import assert_model, load_model
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
 def simple_gauge_model(request, solver):
@@ -43,6 +46,31 @@ def simple_gauge_model(request, solver):
         "Demand": expected_sent,
     }
     return model, expected_node_results
+
+def test_river_gauge(solver):
+    """
+    Test loading a model with a RiverGauge from JSON, modifying it, then running it
+    """
+    model = load_model("river_mrf1.json", solver=solver)
+    
+    node = model.nodes["mrf"]
+    demand = model.nodes["demand"]
+    
+    # test getting properties
+    assert(isinstance(node.mrf, MonthlyProfileParameter))
+    assert_allclose(node.mrf_cost, -1000)
+    assert_allclose(node.cost, 0.0)
+    
+    # test setting properties
+    node.mrf = 40
+    node.mrf_cost = -999
+    assert_allclose(node.mrf, 40)
+    assert_allclose(node.mrf_cost, -999)
+    
+    # run the model and see if it works
+    model.run()
+    assert_allclose(node.flow, 40)
+    assert_allclose(demand.flow, 60)
 
 
 def test_piecewise_model(simple_gauge_model):
