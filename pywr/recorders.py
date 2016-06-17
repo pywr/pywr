@@ -160,8 +160,11 @@ class BaseConstantNodeRecorder(NodeRecorder):
     def save(self):
         raise NotImplementedError()
 
-    def value(self):
-        return self.agg_func(self._values)
+    def value(self, aggregate=True):
+        if aggregate:
+            return self.agg_func(self._values)
+        else:
+            return self._values
 
 
 class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
@@ -200,15 +203,57 @@ agg_funcs = {
     "min": np.min,
 }
 class AggregatedRecorder(Recorder):
+    """
+    This Recorder is used to aggregate across multiple other Recorder objects.
+
+    The class provides a method to produce a complex aggregated recorder by taking
+     the results of other records. The value() method first collects unaggregated values
+     from the provided recorders. These are then aggregated on a per scenario basis before
+     aggregation across the scenarios to a single value (assuming aggregate=True).
+
+    By default the same `agg_func` function is used for both steps, but an optional
+     `recorder_agg_func` can undertake a different aggregation across scenarios. For
+      example summing recorders per scenario, and then taking a mean of the sum totals.
+
+    This method allows `AggregatedRecorder` to be used as a recorder for in other
+     `AggregatedRecorder` instances.
+    """
     def __init__(self, model, recorders, **kwargs):
+        """
+
+        :param model: pywr.core.Model instance
+        :param recorders: iterable of `Recorder` objects to aggregate
+        :keyword agg_func: function used for aggregating across the recorders.
+            Numpy style functions that support an axis argument are supported.
+        :keyword recorder_agg_func: optional different function for aggregating
+            across scenarios.
+        """
         self.agg_func = kwargs.pop('agg_func', np.mean)
         if isinstance(self.agg_func, str):
             self.agg_func = agg_funcs[self.agg_func]
+
+        # Opitional different method for aggregating across self.recorders scenarios
+        self.recorder_agg_func = kwargs.pop('recorder_agg_func', None)
+        if isinstance(self.recorder_agg_func, str):
+            self.recorder_agg_func = agg_funcs[self.recorder_agg_func]
+
         super(AggregatedRecorder, self).__init__(model, **kwargs)
         self.recorders = recorders
 
-    def value(self):
-        return self.agg_func([r.value() for r in self.recorders])
+    def value(self, aggregate=True):
+        # First aggregate across the recorders
+        agg_func = self.recorder_agg_func
+        # If no specific recorder aggregation function is given, we use the scenario one
+        if agg_func is None:
+            agg_func = self.agg_func
+
+        values = agg_func(np.r_[[r.value(aggregate=False) for r in self.recorders]], axis=0)
+
+        # Finally perform the aggregation across scenarios if requested.
+        if aggregate:
+            return self.agg_func(values)
+        else:
+            return values
 
     @classmethod
     def load(cls, model, data):

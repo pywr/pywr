@@ -2,8 +2,9 @@
 Test for individual Parameter classes
 """
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex
-from pywr.parameters import (ArrayIndexedParameter, ConstantScenarioParameter, ArrayIndexedScenarioMonthlyFactorsParameter,
-                             MonthlyProfileParameter, DailyProfileParameter, MinimumParameterCollection, MaximumParameterCollection)
+from pywr.parameters import BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter, \
+    ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter, \
+    MinimumParameterCollection, MaximumParameterCollection
 
 import datetime
 import numpy as np
@@ -149,3 +150,54 @@ def test_parameter_max(model):
         for i in range(scB.size):
             si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
             np.testing.assert_allclose(p.value(ts, si), max(values[iday], i))
+
+
+def test_parameter_child_variables():
+
+    p1 = BaseParameter()
+    # Default parameter
+    assert p1 not in p1.variables
+    assert len(p1.variables) == 0
+    assert p1.parent is None
+    assert len(p1.children) == 0
+
+    c1 = BaseParameter()
+    c1.parent = p1
+    assert len(p1.children) == 1
+    assert c1 in p1.children
+    assert c1.parent == p1
+
+    assert p1 not in p1.variables
+    assert len(p1.variables) == 0
+
+    c1.is_variable = True
+    # Now parent should see find child as a variable
+    assert p1 not in p1.variables
+    assert c1 in p1.variables
+    assert len(p1.variables) == 1
+
+    # Test third level
+    c2 = BaseParameter()
+    c2.parent = c1
+    c2.is_variable = True
+    assert p1 not in p1.variables
+    assert c1 in p1.variables
+    assert c2 in p1.variables
+    assert len(p1.variables) == 2
+
+    # Disable middle parameter as variable
+    c1.is_variable = False
+    assert p1 not in p1.variables
+    assert c1 not in p1.variables
+    assert c2 in p1.variables
+    assert len(p1.variables) == 1
+
+    # Disable parent
+    c1.parent = None
+
+    assert len(p1.variables) == 0
+    assert len(p1.children) == 0
+    # Child variables still OK.
+    assert c1 not in c1.variables
+    assert c2 in c1.variables
+    assert len(c1.variables) == 1

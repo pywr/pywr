@@ -12,6 +12,7 @@ cdef class Parameter:
     cdef bint _is_variable
     cdef AbstractNode _node
     cdef Parameter _parent
+    cdef object _children
     cpdef setup(self, model)
     cpdef reset(self)
     cpdef before(self, Timestep ts)

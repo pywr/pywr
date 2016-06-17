@@ -51,22 +51,6 @@ cdef class BaseControlCurveParameter(Parameter):
         def __set__(self, value):
             self._storage_node = value
 
-    property size:
-        def __get__(self):
-            return self._control_curve.size
-
-    property is_variable:
-        def __get__(self):
-            return self._control_curve.is_variable
-
-    cpdef update(self, double[:] values):
-        self._control_curve.update(values)
-
-    cpdef double[:] lower_bounds(self):
-        return self._control_curve.lower_bounds()
-
-    cpdef double[:] upper_bounds(self):
-        return self._control_curve.upper_bounds()
 parameter_registry.add(BaseControlCurveParameter)
 
 

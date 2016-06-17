@@ -39,10 +39,18 @@ cdef class Scenario:
         def __get__(self, ):
             return self._size
 
+    property name:
+        def __get__(self):
+            return self._name
+
 cdef class ScenarioCollection:
     def __init__(self, ):
         self._scenarios = []
         self.combinations = ScenarioCombinations(self)
+
+    property scenarios:
+        def __get__(self):
+            return self._scenarios
 
     cpdef get_scenario_index(self, Scenario sc):
         """Return the index of Scenario in this controller."""
@@ -355,14 +363,11 @@ cdef class Node(AbstractNode):
         def __get__(self):
             variables = []
             if self._cost_param is not None:
-                if self._cost_param.is_variable:
-                    variables.append(self._cost_param)
+                variables.extend(self._cost_param.variables)
             if self._min_flow_param is not None:
-                if self._min_flow_param.is_variable:
-                    variables.append(self._min_flow_param)
+                variables.extend(self._min_flow_param.variables)
             if self._max_flow_param is not None:
-                if self._max_flow_param.is_variable:
-                    variables.append(self._max_flow_param)
+                variables.extend(self._max_flow_param.variables)
             return variables
 
     cpdef get_conversion_factor(self):
@@ -554,14 +559,11 @@ cdef class Storage(AbstractNode):
         def __get__(self):
             variables = []
             if self._cost_param is not None:
-                if self._cost_param.is_variable:
-                    variables.append(self._cost_param)
+                variables.extend(self._cost_param.variables)
             if self._min_volume_param is not None:
-                if self._min_volume_param.is_variable:
-                    variables.append(self._min_volume_param)
+                variables.extend(self._min_volume_param.variables)
             if self._max_volume_param is not None:
-                if self._max_volume_param.is_variable:
-                    variables.append(self._max_volume_param)
+                variables.extend(self._max_volume_param.variables)
             return variables
 
     cpdef setup(self, model):
