@@ -406,6 +406,87 @@ def test_storage_spill_compensation(solver):
     assert_allclose(terminator.flow[0], (compensation.flow[0] + spill.flow[0]), atol=1e-7)
 
 
+def test_reservoir_circle(solver):
+    """
+    Issue #140. A model with a circular route, from a reservoir Input back
+    around to it's own Output.
+    
+                 Demand
+                    ^
+                    |
+                Reservoir <- Pumping
+                    |           ^ 
+                    v           |
+              Compensation      |
+                    |           |
+                    v           |
+    Catchment -> River 1 -> River 2 ----> MRFA -> Waste
+                                    |              ^
+                                    |---> MRFB ----|
+    """
+    model = Model(solver=solver)
+
+    catchment = Input(model, "catchment", max_flow=500, min_flow=500)
+    
+    reservoir = Storage(model, "reservoir", max_volume=10000, initial_volume=5000)
+    
+    demand = Output(model, "demand", max_flow=50, cost=-100)
+    pumping_station = Link(model, "pumping station", max_flow=100, cost=-10)
+    river1 = Link(model, "river1")
+    river2 = Link(model, "river2")
+    compensation = Link(model, "compensation", cost=600)
+    mrfA = Link(model, "mrfA", cost=-500, max_flow=50)
+    mrfB = Link(model, "mrfB")
+    waste = Output(model, "waste")
+
+    catchment.connect(river1)
+    river1.connect(river2)
+    river2.connect(mrfA)
+    river2.connect(mrfB)
+    mrfA.connect(waste)
+    mrfB.connect(waste)
+    river2.connect(pumping_station)
+    pumping_station.connect(reservoir)
+    reservoir.connect(compensation)
+    compensation.connect(river1)
+    reservoir.connect(demand)
+
+    model.check()
+    model.setup()
+    
+    # not limited by mrf, pump capacity is constraint
+    model.step()
+    assert_allclose(catchment.flow, 500)
+    assert_allclose(waste.flow, 400)
+    assert_allclose(compensation.flow, 0)
+    assert_allclose(pumping_station.flow, 100)
+    assert_allclose(demand.flow, 50)
+    
+    # limited by mrf
+    catchment.min_flow = catchment.max_flow = 100
+    model.step()
+    assert_allclose(waste.flow, 50)
+    assert_allclose(compensation.flow, 0)
+    assert_allclose(pumping_station.flow, 50)
+    assert_allclose(demand.flow, 50)
+    
+    # reservoir can support mrf, but doesn't need to
+    compensation.cost = 200
+    model.step()
+    assert_allclose(waste.flow, 50)
+    assert_allclose(compensation.flow, 0)
+    assert_allclose(pumping_station.flow, 50)
+    assert_allclose(demand.flow, 50)
+    
+    # reservoir supporting mrf
+    catchment.min_flow = catchment.max_flow = 0
+    model.step()
+    assert_allclose(waste.flow, 50)
+    assert_allclose(compensation.flow, 50)
+    assert_allclose(pumping_station.flow, 0)
+    assert_allclose(demand.flow, 50)
+
+
 # Licence XML needs addressing
 @pytest.mark.xfail
 def test_reset(solver):
