@@ -124,11 +124,11 @@ def test_control_curve(solver):
     assert(reservoir.volume == 8)
     assert(demand.flow == 6)
     # Set the above_curve_cost function to keep filling
-    from pywr.parameters.control_curves import ControlCurvePiecewiseParameter
+    from pywr.parameters.control_curves import ControlCurveParameter
     # We know what we're doing with the control_curve Parameter so unset its parent before overriding
     # the cost parameter.
     control_curve.parent = None
-    reservoir.cost = ControlCurvePiecewiseParameter(control_curve, -20.0, -20.0)
+    reservoir.cost = ControlCurveParameter(control_curve, [-20.0, -20.0])
     model.step()
     assert(reservoir.volume == 10)
     assert(demand.flow == 6)
