@@ -14,7 +14,7 @@
             "type": "Input",
             "max_flow": {
                 "type": "dataframe",
-                "url" : "tests/models/timeseries1.csv",
+                "url" : "timeseries1.csv",
                 "parse_dates": true,
                 "dayfirst": true,
                 "index_col": 0

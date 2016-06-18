@@ -1,21 +1,19 @@
 import os
 from numpy.testing import assert_allclose
 import pywr.core
-from pywr.domains import river
 from pywr.core import Model
 
 
 def load_model(filename=None, data=None, solver=None):
     '''Load a test model and check it'''
     if data is None:
-        path = os.path.join(os.path.dirname(__file__), 'models', filename)
-        with open(path, 'r') as f:
+        path = os.path.join(os.path.dirname(__file__), 'models')
+        with open(os.path.join(path, filename), 'r') as f:
             data = f.read()
     else:
         path = None
-    #xml = ET.fromstring(data)
-    #model = pywr.core.Model.from_xml(xml, path=path, solver=solver)
-    model = Model.loads(data)
+
+    model = Model.loads(data, path=path)
     model.check()
     return model
 
