@@ -367,7 +367,7 @@ class Model(object):
                 timestep=timestep,
                 path=path,
             )
-
+        print(path)
         model.metadata = data["metadata"]
 
         if 'parameters' in data:
