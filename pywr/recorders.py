@@ -201,6 +201,7 @@ agg_funcs = {
     "sum": np.sum,
     "max": np.max,
     "min": np.min,
+    "product": np.product,
 }
 class AggregatedRecorder(Recorder):
     """
