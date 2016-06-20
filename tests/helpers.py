@@ -1,7 +1,8 @@
 import os
 from numpy.testing import assert_allclose
 import pywr.core
-from pywr.core import Model
+from pywr.core import Model, Timestep
+import pandas
 
 
 def load_model(filename=None, data=None, solver=None):
@@ -28,3 +29,8 @@ def assert_model(model, expected_node_results):
                 assert_allclose(expected_node_results[node.name], node.flow, atol=1e-7)
             elif isinstance(node, pywr.core.Storage):
                 assert_allclose(expected_node_results[node.name], node.volume, atol=1e-7)
+
+def build_timestep(model, date):
+    dt = pandas.to_datetime(date)
+    timestep = Timestep(dt, (dt - model.timestepper.start).days, 1)
+    return timestep

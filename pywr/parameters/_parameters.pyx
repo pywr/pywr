@@ -283,11 +283,14 @@ def load_dataframe(model, data):
     column = data.pop("column", None)
 
     if filetype == "csv":
+        data["parse_dates"] = True
+        if "dayfirst" not in data.keys():
+            data["dayfirst"] = True # we're bias towards non-American dates here
         df = pandas.read_csv(url, **data) # automatically decompressed gzipped data!
     elif filetype == "excel":
         df = pandas.read_excel(url, **data)
     elif filetype == "hdf":
-        df = pandas.read_hdf(url, **data)
+        df = pandas.read_hdf(url, columns=[column], **data)
 
     # if column is not specified, use the whole dataframe
     if column is not None:
@@ -297,5 +300,8 @@ def load_dataframe(model, data):
             raise KeyError('Column "{}" not found in dataset "{}"'.format(column, url))
 
     # Convert to regular frequency
-    df = df.asfreq(df.index.inferred_freq)
+    freq = df.index.inferred_freq
+    if freq is None:
+        raise IndexError("Failed to identify frequency of dataset \"{}\"".format(url))
+    df = df.asfreq(freq)
     return df
