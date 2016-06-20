@@ -249,45 +249,53 @@ def load_parameter(model, data):
     
     return parameter
 
-# TODO: add support for date index in dataframes
+
 def load_parameter_values(model, data):
     if 'values' in data:
         # values are given as an array
         values = np.array(data['values'], np.float64)
     else:
-        # values reference data in an external file
         url = data['url']
-        if not os.path.isabs(url) and model.path is not None:
-            url = os.path.join(model.path, url)
+        df = load_dataframe(model, data)
+        values = np.squeeze(df.values.astype(np.float64))
+    return values
+
+
+def load_dataframe(model, data):
+
+    # values reference data in an external file
+    url = data.pop('url')
+    if not os.path.isabs(url) and model.path is not None:
+        url = os.path.join(model.path, url)
+    try:
+        filetype = data['filetype']
+    except KeyError:
+        # guess file type based on extension
+        if url.endswith(('.xls', '.xlsx')):
+            filetype = "excel"
+        elif url.endswith(('.csv', '.gz')):
+            filetype = "csv"
+        elif url.endswith(('.hdf', '.hdf5', '.h5')):
+            filetype = "hdf"
+        else:
+            raise NotImplementedError('Unknown file extension: "{}"'.format(url))
+
+    column = data.pop("column", None)
+
+    if filetype == "csv":
+        df = pandas.read_csv(url, **data) # automatically decompressed gzipped data!
+    elif filetype == "excel":
+        df = pandas.read_excel(url, **data)
+    elif filetype == "hdf":
+        df = pandas.read_hdf(url, **data)
+
+    # if column is not specified, use the whole dataframe
+    if column is not None:
         try:
-            filetype = data['filetype']
-        except KeyError:
-            # guess file type based on extension
-            if url.endswith(('.xls', '.xlsx')):
-                filetype = "excel"
-            elif url.endswith(('.csv', '.gz')):
-                filetype = "csv"
-            elif url.endswith(('.hdf', '.hdf5', '.h5')):
-                filetype = "hdf"
-            else:
-                raise NotImplementedError('Unknown file extension: "{}"'.format(url))
-        column = data.get("column", None)
-        if filetype == "csv":
-            df = pandas.read_csv(url) # automatically decompressed gzipped data!
-        elif filetype == "excel":
-            df = pandas.read_excel(url)
-        elif filetype == "hdf":
-            try:
-                key = data["key"]
-            except KeyError:
-                key = None
-            df = pandas.read_hdf(url, key=key, column=None)
-        # if column is not specified, use the last column
-        if column is None:
-            column = df.columns[-1]
-        try:
-            values = df[column].values
+            df = df[column]
         except KeyError:
             raise KeyError('Column "{}" not found in dataset "{}"'.format(column, url))
-    
-    return values
+
+    # Convert to regular frequency
+    df = df.asfreq(df.index.inferred_freq)
+    return df

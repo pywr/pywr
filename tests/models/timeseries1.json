@@ -1,42 +1,50 @@
 {
     "metadata": {
         "title": "Timeseries example",
-        "description": "A model with a timeseries",
+        "description": "A model with a timeseries"
     },
     "timestepper": {
-        "start": "1970-01-01",
-        "end": "3027-08-22",
-        "timestep": 1,
+        "start": "2015-01-01",
+        "end": "2015-01-31",
+        "timestep": 1
     },
     "nodes": [
         {
             "name": "catchment1",
             "type": "Input",
-            "max_flow": 15,
+            "max_flow": {
+                "type": "dataframe",
+                "url" : "timeseries1.csv",
+                "parse_dates": true,
+                "dayfirst": true,
+                "index_col": 0
+            }
         },
         {
             "name": "river1",
-            "type": "Link",
+            "type": "Link"
         },
         {
             "name": "abs1",
-            "max_flow": 50,
+            "type": "link",
+            "max_flow": 50
         },
         {
             "name": "demand1",
             "type": "Output",
-            "max_flow": 10,
-            "cost": -10,
+            "max_flow": 23.0,
+            "cost": -10
         },
         {
             "name": "term1",
             "type": "Output",
+            "cost": -5
         }
     ],
     "edges": [
         ["catchment1", "river1"],
         ["river1", "abs1"],
         ["abs1", "demand1"],
-        ["river1", "term1"],
+        ["river1", "term1"]
     ]
 }

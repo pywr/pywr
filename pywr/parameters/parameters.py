@@ -5,8 +5,8 @@ from ._parameters import (
     ConstantScenarioParameter,
     ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter,
-    DailyProfileParameter,
-    load_parameter, load_parameter_values)
+    DailyProfileParameter, ArrayIndexedScenarioParameter,
+    load_parameter, load_dataframe)
 import numpy as np
 import pandas
 
@@ -168,17 +168,74 @@ class AnnualHarmonicSeriesParameter(Parameter):
 parameter_registry.add(AnnualHarmonicSeriesParameter)
 
 
-class Timeseries(Parameter):
-    def __init__(self, name, df, metadata=None):
-        super(Timeseries, self).__init__()
-        self.name = name
+def align_and_resample_dataframe(df, datetime_index):
+    # Must resample and align the DataFrame to the model.
+    start = datetime_index[0]
+    end = datetime_index[-1]
+
+    df_index = df.index
+
+    if df_index[0] > start:
+        raise ValueError('DataFrame data begins after the index start date.')
+    if df_index[-1] < end:
+        raise ValueError('DataFrame data ends before the index end date.')
+
+    # Downsampling (i.e. from high freq to lower model freq)
+    if datetime_index.freq >= df_index.freq:
+        # Slice to required dates
+        df = df[start:end]
+        if df.index[0] != start:
+            raise ValueError('Start date of DataFrame can not be aligned with the desired index start date.')
+        # Take mean at the model's frequency
+        df = df.resample(datetime_index.freq).mean()
+    else:
+        raise NotImplementedError('Upsampling DataFrame not implemented.')
+
+    return df
+
+
+class DataFrameParameter(Parameter):
+    def __init__(self, df, scenario=None, metadata=None):
+        super(DataFrameParameter, self).__init__()
         self.df = df
         if metadata is None:
             metadata = {}
         self.metadata = metadata
+        self.scenario = scenario
+        self._param = None
+
+    @classmethod
+    def load(cls, model, data):
+        scenario = data.pop('scenario', None)
+        if scenario is not None:
+            raise NotImplementedError('Loading Scenarios not implemented in JSON.')
+        df = load_dataframe(model, data)
+        return cls(df, scenario=scenario)
+
+    def setup(self, model):
+
+        df = align_and_resample_dataframe(self.df, model.timestepper.datetime_index)
+
+        if df.ndim == 1:
+            # Single timeseries for the entire run
+            param = ArrayIndexedParameter(df.values.astype(dtype=np.float64))
+        elif df.shape[1] == 1:
+            # DataFrame with one column for the entire run
+            param = ArrayIndexedParameter(df.values[:, 0].astype(dtype=np.float64))
+        else:
+            if self.scenario is None:
+                raise ValueError("Scenario must be given for a DataFrame input with multiple columns.")
+            if self.scenario.size != df.shape[1]:
+                raise ValueError("Scenario size ({}) is different to the number of columns ({}) "
+                                 "in the DataFrame input.".format(self.scenario.size, df.shape[1]))
+            # We assume the columns are in the correct order for the scenario.
+            param = ArrayIndexedScenarioParameter(self.scenario, df.values.astype(dtype=np.float64))
+
+        param.parent = self
+        self._param = param
 
     def value(self, ts, scenario_index):
-        return self.df[ts.datetime]
+        return self._param.value(ts, scenario_index)
 
     @classmethod
     def read(self, model, **kwargs):
@@ -225,7 +282,7 @@ class Timeseries(Parameter):
         # register the timeseries in the model
         model.data[name] = ts
         return ts
-parameter_registry.add(Timeseries)
+parameter_registry.add(DataFrameParameter)
 
 
 class InterpolatedLevelParameter(Parameter):

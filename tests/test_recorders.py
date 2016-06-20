@@ -5,7 +5,7 @@ Test the Recorder object API
 """
 from __future__ import print_function
 import pywr.core
-from pywr.core import Model, Input, Output
+from pywr.core import Model, Input, Output, Scenario
 import numpy as np
 import pandas
 import pytest
@@ -39,6 +39,10 @@ def test_numpy_recorder(simple_linear_model):
     assert rec.data.shape == (365, 1)
     assert np.all((rec.data - 10.0) < 1e-12)
 
+    df = rec.to_dataframe()
+    assert df.shape == (365, 1)
+    assert np.all((df.values - 10.0) < 1e-12)
+
 
 def test_numpy_storage_recorder(simple_storage_model):
     """
@@ -54,6 +58,36 @@ def test_numpy_storage_recorder(simple_storage_model):
 
     assert(rec.data.shape == (5, 1))
     assert_allclose(rec.data, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
+
+
+    df = rec.to_dataframe()
+    assert df.shape == (5, 1)
+    assert_allclose(df.values, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
+
+
+def test_concatenated_dataframes(simple_storage_model):
+    """
+    Test that Model.to_dataframe returns something sensible.
+
+    """
+    model = simple_storage_model
+
+    scA = Scenario(model, 'A', size=2)
+    scB = Scenario(model, 'B', size=3)
+
+    res = model.node['Storage']
+    rec1 = NumpyArrayStorageRecorder(model, res)
+    otpt = model.node['Output']
+    rec2 = NumpyArrayNodeRecorder(model, otpt)
+    # The following can't return a DataFrame; is included to check
+    # it doesn't cause any issues
+    rec3 = TotalDeficitNodeRecorder(model, otpt)
+
+    model.run()
+
+    df = model.to_dataframe()
+    assert df.shape == (5, 2*2*3)
+    assert df.columns.names == ['Recorder', 'A', 'B']
 
 
 def test_csv_recorder(simple_linear_model, tmpdir):
