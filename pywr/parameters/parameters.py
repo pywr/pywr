@@ -236,52 +236,6 @@ class DataFrameParameter(Parameter):
 
     def value(self, ts, scenario_index):
         return self._param.value(ts, scenario_index)
-
-    @classmethod
-    def read(self, model, **kwargs):
-        name = kwargs['name']
-        if name in model.data:
-            raise ValueError('Timeseries with name "{}" already exists.'.format(name))
-
-        filetype = None
-        if 'type' in kwargs:
-            filetype = kwargs['type']
-        elif 'path' in kwargs:
-            ext = kwargs['path'].split('.')[-1].lower()
-            if ext == 'csv':
-                filetype = 'csv'
-            elif ext in ('xls', 'xlsx', 'xlsm'):
-                filetype = 'excel'
-            else:
-                raise ValueError('Unrecognised timeseries type: {}'.format(ext))
-        # TODO: other filetypes (SQLite? HDF5?)
-        if filetype is None:
-            raise ValueError('Unknown timeseries type.')
-        path = kwargs['path']
-        if not os.path.isabs(path) and model.path is not None:
-            path = os.path.join(model.path, path)
-        if filetype == 'csv':
-            df = pandas.read_csv(
-                path,
-                index_col=0,
-                parse_dates=True,
-                dayfirst=True,
-            )
-        elif filetype == 'excel':
-            sheet = kwargs['sheet']
-            df = pandas.read_excel(
-                path,
-                sheet,
-                index_col=0,
-                dayfirst=True,
-            )
-
-        df = df[kwargs['column']]
-        # create a new timeseries object
-        ts = Timeseries(name, df, metadata=kwargs)
-        # register the timeseries in the model
-        model.data[name] = ts
-        return ts
 parameter_registry.add(DataFrameParameter)
 
 
