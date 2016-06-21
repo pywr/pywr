@@ -87,10 +87,10 @@ def test_two_scenarios(simple_linear_model, ):
     # combine recorder outputs to a single dataframe
     df = model.to_dataframe()
     assert(df.shape == (365, 2 * 2 * 2))
-    assert(df["input", 0, 0].iloc[0] == 3.0)
-    assert(df["input", 0, 1].iloc[0] == 5.0)
-    assert(df["input", 1, 0].iloc[0] == 3.0)
-    assert(df["input", 1, 1].iloc[0] == 8.0)
+    assert_allclose(df["input", 0, 0].iloc[0], 3.0)
+    assert_allclose(df["input", 0, 1].iloc[0], 5.0)
+    assert_allclose(df["input", 1, 0].iloc[0], 3.0)
+    assert_allclose(df["input", 1, 1].iloc[0], 8.0)
 
 
 def test_scenario_two_parameter(simple_linear_model, ):
