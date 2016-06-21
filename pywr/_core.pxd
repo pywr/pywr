@@ -30,7 +30,6 @@ cdef class Domain:
 cdef class AbstractNode:
     cdef double[:] _prev_flow
     cdef double[:] _flow
-    cdef double _cost
     cdef list _recorders
     cdef Domain _domain
     cdef AbstractNode _parent
@@ -39,7 +38,6 @@ cdef class AbstractNode:
     cdef bint _allow_isolated
 
     cdef Parameter _cost_param
-    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index)
 
     cpdef setup(self, model)
     cpdef reset(self)
@@ -50,6 +48,7 @@ cdef class AbstractNode:
     cpdef check(self,)
 
 cdef class Node(AbstractNode):
+    cdef double _cost
     cdef double _min_flow
     cdef double _max_flow
     cdef double _conversion_factor
@@ -57,18 +56,25 @@ cdef class Node(AbstractNode):
     cdef Parameter _max_flow_param
 
     cdef Parameter _conversion_factor_param
-
+    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index)
     cpdef get_min_flow(self, Timestep ts, ScenarioIndex scenario_index)
     cpdef get_max_flow(self, Timestep ts, ScenarioIndex scenario_index)
     cpdef get_conversion_factor(self)
     cdef set_parameters(self, Timestep ts, ScenarioIndex scenario_index)
 
+cdef class AggregatedNode(AbstractNode):
+    cdef list _nodes
+    # TODO Add min/max flow parameters, and add to solvers.
+
 cdef class BaseInput(Node):
     cdef object _licenses
 
-cdef class Storage(AbstractNode):
+cdef class AbstractStorage(AbstractNode):
     cdef public double[:] _volume
     cdef public double[:] _current_pc
+
+cdef class Storage(AbstractStorage):
+    cdef double _cost
     cdef double _initial_volume
     cdef double _min_volume
     cdef double _max_volume
@@ -76,7 +82,10 @@ cdef class Storage(AbstractNode):
     cdef Parameter _min_volume_param
     cdef Parameter _max_volume_param
     cdef Parameter _level_param
-
+    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index)
     cpdef get_min_volume(self, Timestep ts, ScenarioIndex scenario_index)
     cpdef get_max_volume(self, Timestep ts, ScenarioIndex scenario_index)
     cpdef get_level(self, Timestep ts, ScenarioIndex scenario_index)
+
+cdef class AggregatedStorage(AbstractStorage):
+    cdef list _storage_nodes
