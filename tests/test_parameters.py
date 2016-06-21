@@ -1,7 +1,7 @@
 """
 Test for individual Parameter classes
 """
-from pywr.core import Model, Timestep, Scenario, ScenarioIndex
+from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link
 from pywr.parameters import BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter, \
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter, \
     AggregatedParameter, load_parameter, DataFrameParameter
@@ -257,9 +257,11 @@ def test_parameter_child_variables():
     assert len(c1.variables) == 1
 
 
+def test_scaled_profile_nested_load(model):
+    """ Test `ScaledProfileParameter` loading with `AggregatedParameter` """
 
-def test_with_a_better_name():
-
+    s = Storage(model, 'Storage', max_volume=100.0)
+    l = Link(model, 'Link')
     data = {
         'type': 'scaledprofile',
         'scale': 50.0,
@@ -269,17 +271,45 @@ def test_with_a_better_name():
             'parameters': [
                 {
                     'type': 'monthlyprofile',
-                    'values': [1.0]*12
+                    'values': [0.5]*12
                 },
                 {
-                    'type': 'controlcurvemonthlyprofile',
-                    'control_curve': [0.8, 0.6],
-                    'values': [[1.05]*12,
-                               [1.1]*12]
+                    'type': 'monthlyprofilecontrolcurve',
+                    'control_curves': [0.8, 0.6],
+                    'values': [[1.0]*12, [0.7]*np.arange(12), [0.3]*12],
+                    'storage_node': 'Storage'
                 }
             ]
         }
     }
+
+    l.max_flow = p = load_parameter(model, data)
+    p.setup(model)
+
+    # Test correct aggregation is performed
+
+    s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
+
+    s.initial_volume = 90.0
+    model.reset()  # Set initial volume on storage
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for mth in range(1, 13):
+        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+        np.testing.assert_allclose(p.value(ts, si), 50.0*0.5*1.0)
+
+    s.initial_volume = 70.0
+    model.reset()  # Set initial volume on storage
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for mth in range(1, 13):
+        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+        np.testing.assert_allclose(p.value(ts, si), 50.0 * 0.5 * 0.7*(mth - 1))
+
+    s.initial_volume = 30.0
+    model.reset()  # Set initial volume on storage
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for mth in range(1, 13):
+        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+        np.testing.assert_allclose(p.value(ts, si), 50.0 * 0.5 * 0.3)
 
 
 def test_parameter_df_upsampling(model):

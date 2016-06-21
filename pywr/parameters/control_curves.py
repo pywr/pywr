@@ -3,7 +3,7 @@ This module contains a set of pywr._core.Parameter subclasses for defining contr
 """
 
 from ._control_curves import BaseControlCurveParameter, ControlCurveInterpolatedParameter
-from .parameters import parameter_registry, load_parameter_values, load_parameter
+from .parameters import parameter_registry, load_parameter_values, load_parameter, BaseParameter
 import numpy as np
 
 
@@ -28,7 +28,7 @@ class ControlCurveParameter(BaseControlCurveParameter):
         The values to return if the `Storage` object is above the correspond control curve.
         I.e. the first value is returned if the current volume is above the first control curve,
         and second value if above the second control curve, and so on. The length of `values`
-        must be one more than than the length of `control_curves`. I
+        must be one more than than the length of `control_curves`.
     parameters : iterable `Parameter` objects or `None`, optional
         If `values` is `None` then `parameters` can specify a `Parameter` object to use at level
         of the control curves. In the same way as `values` the first `Parameter` is used if
@@ -51,10 +51,6 @@ class ControlCurveParameter(BaseControlCurveParameter):
     """
     def __init__(self, control_curves, values=None, parameters=None, storage_node=None,
                  upper_bounds=None, lower_bounds=None):
-        """
-
-
-        """
         super(ControlCurveParameter, self).__init__(control_curves, storage_node=storage_node)
         # Expected number of values is number of control curves plus one.
         self.size = nvalues = len(self.control_curves) + 1
@@ -142,3 +138,160 @@ class ControlCurveParameter(BaseControlCurveParameter):
         return self._upper_bounds
 
 parameter_registry.add(ControlCurveParameter)
+
+
+class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
+    _profile_size = None
+
+    def __init__(self, control_curves, values, storage_node=None, profile=None, scale=1.0):
+        super(AbstractProfileControlCurveParameter, self).__init__(control_curves, storage_node=storage_node)
+
+        nvalues = len(self.control_curves) + 1
+
+        values = np.array(values)
+        if values.ndim != 2:
+            raise ValueError('Values must be two dimensional.')
+        if values.shape[0] != nvalues:
+            raise ValueError('First dimension of values should be one more than the number of '
+                             'control curves ({}).'.format(nvalues))
+        if values.shape[1] != self._profile_size:
+            raise ValueError("Second dimension values must be size 12.".format(self._profile_size))
+        self.values = values
+
+        if isinstance(profile,  BaseParameter):
+            self.profile = profile
+        elif profile is not None:
+            profile = np.array(profile)
+            if profile.shape[0] != self._profile_size:
+                raise ValueError("Length of profile must be size 12.".format(self._profile_size))
+            self.profile = profile
+        else:
+            self.profile = np.ones(self._profile_size)
+        self.scale = scale
+
+    @classmethod
+    def load(cls, model, data):
+        control_curves = super(AbstractProfileControlCurveParameter, cls)._load_control_curves(model, data)
+        storage_node = super(AbstractProfileControlCurveParameter, cls)._load_storage_node(model, data)
+        values = load_parameter_values(model, data)
+        # Now try loading a profile
+        if 'profile' in data:
+            # Profile is present, and this is the data
+            pdata = data['profile']
+            if 'type' in pdata:
+                # If it contains a 'type', assume a `Parameter` object and attempt load
+                profile = load_parameter(model, pdata)
+            else:
+                # Otherwise try to coerce to a numpy array
+                profile = np.array(pdata)
+        else:
+            profile = None
+
+        # Now load a scale if one is present. This should be a simple float
+        if 'scale' in data:
+            scale = float(data['scale'])
+        else:
+            scale = 1.0
+
+        return cls(control_curves, values=values, storage_node=storage_node, profile=profile, scale=scale)
+
+    def _profile_index(self, ts, scenario_index):
+        raise NotImplementedError()
+
+    def value(self, ts, scenario_index):
+        i = scenario_index.global_id
+        node = self.node if self.storage_node is None else self.storage_node
+        iprofile = self._profile_index(ts, scenario_index)
+
+        # Assumes control_curves is sorted highest to lowest
+        for j, cc_param in enumerate(self.control_curves):
+            cc = cc_param.value(ts, scenario_index)
+            # If level above control curve then return this level's value
+            if node.current_pc[i] >= cc:
+                val = self.values[j, iprofile]
+                break
+        else:
+            val = self.values[-1, iprofile]
+
+        # Now scale the control curve value by the scale and profile
+        scale = self.scale
+        if isinstance(self.profile, BaseParameter):
+            scale *= self.profile.value(ts, scenario_index)
+        else:
+            scale *= self.profile[iprofile]
+        return val * scale
+
+
+class MonthlyProfileControlCurveParameter(AbstractProfileControlCurveParameter):
+    """ A control curve Parameter that returns values from a set of monthly profiles.
+
+    Parameters
+    ----------
+    control_curves : `float`, `int` or `Parameter` object, or iterable thereof
+        The position of the control curves. Internally `float` or `int` types are cast to
+        `ConstantParameter`. Multiple values correspond to multiple control curve positions.
+        These should be specified in descending order.
+    values : array_like
+        A two dimensional array_like where the first dimension corresponds to the current level
+        of the corresponding `Storage` and the second dimension is of size 12, corresponding to
+        the monthly value to return based on current time-step.
+    storage_node : `Storage` or `None`, optional
+        An optional `Storage` node that can be used to query the current percentage volume. If
+        not specified it is assumed that this object is attached to a `Storage` node and therefore
+        `self.node` is used.
+    profile : 'Parameter` or array_like of length 12, optional
+        An optional profile `Parameter` or monthly array to factor the values by. The default is
+        np.ones(12) to have no scaling effect on the returned values.
+    scale : float, optional
+        An optional constant to factor the values by. The default is 1.0 to have scaling effect on
+        the returned values.
+
+
+    See also
+    --------
+    `BaseControlCurveParameter`
+    `DailyProfileControlCurveParameter`
+    """
+    _profile_size = 12
+
+    def _profile_index(self, ts, scenario_index):
+        return ts.datetime.month - 1
+
+parameter_registry.add(MonthlyProfileControlCurveParameter)
+
+
+class DailyProfileControlCurveParameter(AbstractProfileControlCurveParameter):
+    """ A control curve Parameter that returns values from a set of daily profiles.
+
+    Parameters
+    ----------
+    control_curves : `float`, `int` or `Parameter` object, or iterable thereof
+        The position of the control curves. Internally `float` or `int` types are cast to
+        `ConstantParameter`. Multiple values correspond to multiple control curve positions.
+        These should be specified in descending order.
+    values : array_like
+        A two dimensional array_like where the first dimension corresponds to the current level
+        of the corresponding `Storage` and the second dimension is of size 366, corresponding to
+        the monthly value to return based on current time-step.
+    storage_node : `Storage` or `None`, optional
+        An optional `Storage` node that can be used to query the current percentage volume. If
+        not specified it is assumed that this object is attached to a `Storage` node and therefore
+        `self.node` is used.
+    profile : 'Parameter` or array_like of length 12, optional
+        An optional profile `Parameter` or monthly array to factor the values by. The default is
+        np.ones(366) to have no scaling effect on the returned values.
+    scale : float, optional
+        An optional constant to factor the values by. The default is 1.0 to have scaling effect on
+        the returned values.
+
+    See also
+    --------
+    `BaseControlCurveParameter`
+    `MonthlyProfileControlCurveParameter`
+    """
+    _profile_size = 366
+
+    def _profile_index(self, ts, scenario_index):
+        return ts.datetime.dayofyear - 1
+
+parameter_registry.add(DailyProfileControlCurveParameter)

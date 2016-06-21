@@ -1,9 +1,11 @@
-from pywr.core import Model, Storage, Link, ScenarioIndex
+from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep
 from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter
 import numpy as np
+import pandas as pd
 from numpy.testing import assert_allclose
 import pytest
+import datetime
 
 from helpers import load_model
 
@@ -235,3 +237,152 @@ def test_control_curve_interpolated_json(solver):
         assert_allclose(value, expected_cc)
         assert((cost >= -6) == expected_cost)
 
+
+class TestMonthlyProfileControlCurveParameter:
+    """ Test `MonthlyProfileControlCurveParameter` """
+    def _assert_results(self, model, s, p, scale=1.0):
+        # Test correct aggregation is performed
+
+        s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
+
+        s.initial_volume = 90.0
+        model.reset()  # Set initial volume on storage
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        for mth in range(1, 13):
+            ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+            np.testing.assert_allclose(p.value(ts, si), 1.0*scale)
+
+        s.initial_volume = 70.0
+        model.reset()  # Set initial volume on storage
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        for mth in range(1, 13):
+            ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+            np.testing.assert_allclose(p.value(ts, si), 0.7 * (mth - 1)*scale)
+
+        s.initial_volume = 30.0
+        model.reset()  # Set initial volume on storage
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        for mth in range(1, 13):
+            ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+            np.testing.assert_allclose(p.value(ts, si), 0.3*scale)
+
+    def test_no_scale_no_profile(self, model):
+        """ No scale or profile specified """
+
+        s = Storage(model, 'Storage', max_volume=100.0)
+        l = Link(model, 'Link')
+
+        data = {
+            'type': 'monthlyprofilecontrolcurve',
+            'control_curves': [0.8, 0.6],
+            'values': [[1.0]*12, [0.7]*np.arange(12), [0.3]*12],
+            'storage_node': 'Storage'
+        }
+
+        l.max_flow = p = load_parameter(model, data)
+        p.setup(model)
+
+        self._assert_results(model, s, p)
+
+    def test_scale_no_profile(self, model):
+        """ Test `MonthlyProfileControlCurveParameter` """
+
+        s = Storage(model, 'Storage', max_volume=100.0)
+        l = Link(model, 'Link')
+
+        data = {
+            'type': 'monthlyprofilecontrolcurve',
+            'control_curves': [0.8, 0.6],
+            'values': [[1.0] * 12, [0.7] * np.arange(12), [0.3] * 12],
+            'storage_node': 'Storage',
+            'scale': 1.5
+        }
+
+        l.max_flow = p = load_parameter(model, data)
+        p.setup(model)
+
+        self._assert_results(model, s, p, scale=1.5)
+
+    def test_no_scale_profile_param(self, model):
+        """ No scale, but profile `Parameter` specified """
+
+        s = Storage(model, 'Storage', max_volume=100.0)
+        l = Link(model, 'Link')
+
+        data = {
+            'type': 'monthlyprofilecontrolcurve',
+            'control_curves': [0.8, 0.6],
+            'values': [[1.0] * 12, [0.7] * np.arange(12), [0.3] * 12],
+            'storage_node': 'Storage',
+            'profile': {
+                'type': 'dailyprofile',
+                'values': [1.5]*366
+            }
+        }
+
+        l.max_flow = p = load_parameter(model, data)
+        p.setup(model)
+
+        self._assert_results(model, s, p, scale=1.5)
+
+    def test_no_scale_profile(self, model):
+        """ No scale, but profile array specified """
+
+        s = Storage(model, 'Storage', max_volume=100.0)
+        l = Link(model, 'Link')
+
+        data = {
+            'type': 'monthlyprofilecontrolcurve',
+            'control_curves': [0.8, 0.6],
+            'values': [[1.0] * 12, [0.7] * np.arange(12), [0.3] * 12],
+            'storage_node': 'Storage',
+            'profile': [1.5]*12
+        }
+
+        l.max_flow = p = load_parameter(model, data)
+        p.setup(model)
+
+        self._assert_results(model, s, p, scale=1.5)
+
+
+def test_daily_profile_control_curve(model):
+    """ Test `DailyProfileControlCurveParameter` """
+
+    s = Storage(model, 'Storage', max_volume=100.0)
+    l = Link(model, 'Link')
+
+    data = {
+        'type': 'dailyprofilecontrolcurve',
+        'control_curves': [0.8, 0.6],
+        'values': [[1.0]*366, [0.7]*np.arange(366), [0.3]*366],
+        'storage_node': 'Storage'
+    }
+
+    l.max_flow = p = load_parameter(model, data)
+    p.setup(model)
+
+    # Test correct aggregation is performed
+
+    s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
+
+    s.initial_volume = 90.0
+    model.reset()  # Set initial volume on storage
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for mth in range(1, 13):
+        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+        np.testing.assert_allclose(p.value(ts, si), 1.0)
+
+    s.initial_volume = 70.0
+    model.reset()  # Set initial volume on storage
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for mth in range(1, 13):
+        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+        doy = ts.datetime.dayofyear
+        np.testing.assert_allclose(p.value(ts, si), 0.7*(doy - 1))
+
+    s.initial_volume = 30.0
+    model.reset()  # Set initial volume on storage
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for mth in range(1, 13):
+        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+        np.testing.assert_allclose(p.value(ts, si), 0.3)
