@@ -250,10 +250,23 @@ def load_parameter(model, data):
     return parameter
 
 
-def load_parameter_values(model, data):
-    if 'values' in data:
+def load_parameter_values(model, data, values_key='values'):
+    """ Function to load values from a data dictionary.
+
+    This function tries to load values in to a `np.ndarray` if 'values_key' is
+    in 'data'. Otherwise it tries to `load_dataframe` from a 'url' key.
+
+    Parameters
+    ----------
+    model - `Model` instance
+    data - dict
+    values_key - str
+        Key in data to load values directly to a `np.ndarray`
+
+    """
+    if values_key in data:
         # values are given as an array
-        values = np.array(data['values'], np.float64)
+        values = np.array(data[values_key], np.float64)
     else:
         url = data['url']
         df = load_dataframe(model, data)

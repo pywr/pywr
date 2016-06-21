@@ -153,15 +153,16 @@ class ScaledProfileParameter(Parameter):
             profile.parent = self
         self.profile = profile
 
+    @classmethod
+    def load(cls, model, data):
+        scale = float(data['scale'])
+        profile = load_parameter(model, data['profile'])
+        return cls(scale, profile)
+
     def value(self, ts, si):
         p = self.profile.value(ts, si)
         return self.scale * p
-
-
-
-
-
-
+parameter_registry.add(ScaledProfileParameter)
 
 
 class AnnualHarmonicSeriesParameter(Parameter):

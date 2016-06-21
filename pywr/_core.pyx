@@ -116,8 +116,8 @@ cdef class ScenarioIndex:
 
 
 cdef class Timestep:
-    def __init__(self, object datetime, int index, double days):
-        self._datetime = datetime
+    def __init__(self, datetime, int index, double days):
+        self._datetime = pd.Timestamp(datetime)
         self._index = index
         self._days = days
 

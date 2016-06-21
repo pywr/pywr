@@ -13,9 +13,13 @@ cdef class BaseControlCurveParameter(Parameter):
 
         Parameters
         ----------
-        control_curve : iterable of Parameter objects or single Parameter
+        control_curves : iterable of Parameter objects or single Parameter
             The Parameter objects to use as a control curve(s). These should not be shared with other
             Nodes and Parameters because this object becomes control_curve.parent
+        storage_node : `Storage` or `None`, optional
+            An optional `Storage` node that can be used to query the current percentage volume. If
+            not specified it is assumed that this object is attached to a `Storage` node and therefore
+            `self.node` is used.
         """
         super(BaseControlCurveParameter, self).__init__()
         self.control_curves = control_curves
