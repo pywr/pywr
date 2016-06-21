@@ -1,4 +1,0 @@
-Installation
-============
-
-To be completed!
