@@ -15,5 +15,6 @@ Contents:
    install.rst
    tutorial.rst
    formulation.rst
+   json.rst
+   Python API reference <api/modules.rst>
    license.rst
-   autodoc_core.rst
