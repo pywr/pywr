@@ -118,6 +118,10 @@ cdef class Domain:
         self.name = name
 
 cdef class AbstractNode:
+    """ Base class for all nodes in Pywr.
+
+    This class is not intended to be used directly.
+    """
     def __cinit__(self):
         self._allow_isolated = False
 
@@ -136,41 +140,14 @@ cdef class AbstractNode:
             raise TypeError("__init__() got an unexpected keyword argument '{}'".format(list(kwargs.items())[0]))
 
     property allow_isolated:
+        """ A property to flag whether this Node can be unconnected in a network. """
         def __get__(self):
             return self._allow_isolated
         def __set__(self, value):
             self._allow_isolated = value
 
-    property cost:
-        """The cost per unit flow via the node
-
-        The cost may be set to either a constant (i.e. a float) or a Parameter.
-
-        The value returned can be positive (i.e. a cost), negative (i.e. a
-        benefit) or netural. Typically supply nodes will have an associated
-        cost and demands will provide a benefit.
-        """
-        def __get__(self):
-            if self._cost_param is None:
-                return self._cost
-            return self._cost_param
-
-        def __set__(self, value):
-            if isinstance(value, Parameter):
-                self._cost_param = value
-                value.node = self
-            else:
-                self._cost_param = None
-                self._cost = value
-
-    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
-        """Get the cost per unit flow at a given timestep
-        """
-        if self._cost_param is None:
-            return self._cost
-        return self._cost_param.value(ts, scenario_index)
-
     property name:
+        """ Name of the node. """
         def __get__(self):
             return self._name
 
@@ -182,6 +159,12 @@ cdef class AbstractNode:
             self._name = name
 
     property recorders:
+        """ Returns a list of `Recorder` objects attached to this node.
+
+         See also
+         --------
+         `Recorder`
+         """
         def __get__(self):
             return self._recorders
 
@@ -215,13 +198,24 @@ cdef class AbstractNode:
         def __set__(self, value):
             self._parent = value
 
+    property prev_flow:
+        """Total flow via this node in the previous timestep
+        """
+        def __get__(self):
+            return np.array(self._prev_flow)
+
+    property flow:
+        """Total flow via this node in the current timestep
+        """
+        def __get__(self):
+            return np.array(self._flow)
+
 
     cpdef setup(self, model):
         """Called before the first run of the model"""
         cdef int ncomb = len(model.scenarios.combinations)
         self._flow = np.empty(ncomb, dtype=np.float64)
-        if self._cost_param is not None:
-            self._cost_param.setup(model)
+        self._prev_flow = np.zeros(ncomb, dtype=np.float64)
 
     cpdef reset(self):
         """Called at the beginning of a run"""
@@ -229,17 +223,11 @@ cdef class AbstractNode:
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
 
-        if self._cost_param is not None:
-            self._cost_param.reset()
-
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""
         cdef int i
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
-
-        if self._cost_param is not None:
-            self._cost_param.before(ts)
 
     cpdef commit(self, int scenario_index, double value):
         """Called once for each route the node is a member of"""
@@ -252,14 +240,13 @@ cdef class AbstractNode:
             self._flow[i] += value[i]
 
     cpdef after(self, Timestep ts):
-        if self._cost_param is not None:
-            self._cost_param.after(ts)
+        pass
 
     cpdef check(self,):
         pass
 
 cdef class Node(AbstractNode):
-    """Node class from which all others inherit
+    """ Node class from which all others inherit
     """
     def __cinit__(self):
         """Initialise the node attributes
@@ -278,17 +265,34 @@ cdef class Node(AbstractNode):
         self._conversion_factor_param = None
         self._domain = None
 
-    property prev_flow:
-        """Total flow via this node in the previous timestep
-        """
-        def __get__(self):
-            return np.array(self._prev_flow)
+    property cost:
+        """The cost per unit flow via the node
 
-    property flow:
-        """Total flow via this node in the current timestep
+        The cost may be set to either a constant (i.e. a float) or a Parameter.
+
+        The value returned can be positive (i.e. a cost), negative (i.e. a
+        benefit) or netural. Typically supply nodes will have an associated
+        cost and demands will provide a benefit.
         """
         def __get__(self):
-            return np.array(self._flow)
+            if self._cost_param is None:
+                return self._cost
+            return self._cost_param
+
+        def __set__(self, value):
+            if isinstance(value, Parameter):
+                self._cost_param = value
+                value.node = self
+            else:
+                self._cost_param = None
+                self._cost = value
+
+    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
+        """Get the cost per unit flow at a given timestep
+        """
+        if self._cost_param is None:
+            return self._cost
+        return self._cost_param.value(ts, scenario_index)
 
     property min_flow:
         """The minimum flow constraint on the node
@@ -393,10 +397,9 @@ cdef class Node(AbstractNode):
     cpdef setup(self, model):
         """Called before the first run of the model"""
         AbstractNode.setup(self, model)
-        cdef int ncomb = len(model.scenarios.combinations)
-        self._flow = np.empty(ncomb, dtype=np.float64)
-        self._prev_flow = np.zeros(ncomb, dtype=np.float64)
         # Setup any Parameters and Recorders
+        if self._cost_param is not None:
+            self._cost_param.setup(model)
         if self._min_flow_param is not None:
             self._min_flow_param.setup(model)
         if self._max_flow_param is not None:
@@ -404,6 +407,8 @@ cdef class Node(AbstractNode):
 
     cpdef reset(self):
         # Reset any Parameters and Recorders
+        if self._cost_param is not None:
+            self._cost_param.reset()
         if self._min_flow_param is not None:
             self._min_flow_param.reset()
         if self._max_flow_param is not None:
@@ -414,6 +419,8 @@ cdef class Node(AbstractNode):
         AbstractNode.before(self, ts)
 
         # Complete any parameter calculations
+        if self._cost_param is not None:
+            self._cost_param.before(ts)
         if self._max_flow_param is not None:
             self._max_flow_param.before(ts)
         if self._min_flow_param is not None:
@@ -424,6 +431,8 @@ cdef class Node(AbstractNode):
         AbstractNode.after(self, ts)
         self._prev_flow[:] = self._flow[:]
         # Complete any parameter calculations
+        if self._cost_param is not None:
+            self._cost_param.after(ts)
         if self._max_flow_param is not None:
             self._max_flow_param.after(ts)
         if self._min_flow_param is not None:
@@ -440,6 +449,31 @@ cdef class BaseInput(Node):
 cdef class BaseOutput(Node):
     pass
 
+
+cdef class AggregatedNode(AbstractNode):
+    """ Base class for a special type of node that is the aggregated sum of `Node` objects.
+
+    This class is intended to be used isolated from the network.
+    """
+    def __cinit__(self, ):
+        self._allow_isolated = True
+
+    property nodes:
+        def __get__(self):
+            return self._nodes
+
+        def __set__(self, value):
+            self._nodes = list(value)
+
+    cpdef after(self, Timestep ts):
+        AbstractStorage.after(self, ts)
+        cdef int i
+        cdef Node n
+
+        for i, si in enumerate(self.model.scenarios.combinations):
+            self._flow[i] = 0.0
+            for n in self._nodes:
+                self._flow[i] += n._flow[i]
 
 cdef class StorageInput(BaseInput):
     cpdef commit(self, int scenario_index, double volume):
@@ -459,7 +493,33 @@ cdef class StorageOutput(BaseOutput):
         # Return parent cost
         return self.parent.get_cost(ts, scenario_index)
 
-cdef class Storage(AbstractNode):
+
+cdef class AbstractStorage(AbstractNode):
+
+    property volume:
+        def __get__(self, ):
+            return np.asarray(self._volume)
+
+    property current_pc:
+        """ Current percentage full """
+        def __get__(self, ):
+            return np.asarray(self._current_pc)
+
+    cpdef setup(self, model):
+        """ Called before the first run of the model"""
+        AbstractNode.setup(self, model)
+        cdef int ncomb = len(model.scenarios.combinations)
+        self._volume = np.empty(ncomb, dtype=np.float64)
+        self._current_pc = np.empty(ncomb, dtype=np.float64)
+
+
+cdef class Storage(AbstractStorage):
+    """ Base class for all Storage objects.
+
+    Notes
+    -----
+    Do not initialise this class directly. Use `pywr.core.Storage`.
+    """
     def __cinit__(self, ):
         self._initial_volume = 0.0
         self._min_volume = 0.0
@@ -473,9 +533,34 @@ cdef class Storage(AbstractNode):
         self._domain = None
         self._allow_isolated = True
 
-    property volume:
-        def __get__(self, ):
-            return np.asarray(self._volume)
+    property cost:
+        """The cost per unit increased in volume stored
+
+        The cost may be set to either a constant (i.e. a float) or a Parameter.
+
+        The value returned can be positive (i.e. a cost), negative (i.e. a
+        benefit) or netural. Typically supply nodes will have an associated
+        cost and demands will provide a benefit.
+        """
+        def __get__(self):
+            if self._cost_param is None:
+                return self._cost
+            return self._cost_param
+
+        def __set__(self, value):
+            if isinstance(value, Parameter):
+                self._cost_param = value
+                value.node = self
+            else:
+                self._cost_param = None
+                self._cost = value
+
+    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
+        """Get the cost per unit flow at a given timestep
+        """
+        if self._cost_param is None:
+            return self._cost
+        return self._cost_param.value(ts, scenario_index)
 
     property initial_volume:
         def __get__(self, ):
@@ -541,11 +626,6 @@ cdef class Storage(AbstractNode):
             return self._level
         return self._level_param.value(ts, scenario_index)
 
-    property current_pc:
-        " Current percentage full "
-        def __get__(self, ):
-            return np.asarray(self._current_pc)
-
     property domain:
         def __get__(self):
             return self._domain
@@ -568,19 +648,25 @@ cdef class Storage(AbstractNode):
 
     cpdef setup(self, model):
         """Called before the first run of the model"""
-        AbstractNode.setup(self, model)
-        cdef int ncomb = len(model.scenarios.combinations)
-        self._volume = np.empty(ncomb, dtype=np.float64)
-        self._current_pc = np.empty(ncomb, dtype=np.float64)
+        AbstractStorage.setup(self, model)
+        # Setup any Parameters and Recorders
+        if self._cost_param is not None:
+            self._cost_param.setup(model)
+        if self._min_volume_param is not None:
+            self._min_volume_param.setup(model)
+        if self._max_volume_param is not None:
+            self._max_volume_param.setup(model)
 
     cpdef reset(self):
         """Called at the beginning of a run"""
-        AbstractNode.reset(self)
+        AbstractStorage.reset(self)
         cdef int i
-        cdef float mxv = self._max_volume
+        cdef double mxv = self._max_volume
         cdef ScenarioIndex si
 
         # Parameters reset first
+        if self._cost_param is not None:
+            self._cost_param.reset()
         if self._max_volume_param is not None:
             self._max_volume_param.reset()
         if self._min_volume_param is not None:
@@ -598,20 +684,24 @@ cdef class Storage(AbstractNode):
 
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""
-        AbstractNode.before(self, ts)
+        AbstractStorage.before(self, ts)
 
         # Complete any parameter calculations
+        if self._cost_param is not None:
+            self._cost_param.before(ts)
         if self._max_volume_param is not None:
             self._max_volume_param.before(ts)
         if self._min_volume_param is not None:
             self._min_volume_param.before(ts)
 
     cpdef after(self, Timestep ts):
-        AbstractNode.after(self, ts)
+        AbstractStorage.after(self, ts)
         cdef int i
-        cdef float mxv = self._max_volume
+        cdef double mxv = self._max_volume
         cdef ScenarioIndex si
 
+        if self._cost_param is not None:
+            self._cost_param.after(ts)
         if self._max_volume_param is not None:
             self._max_volume_param.after(ts)
         if self._min_volume_param is not None:
@@ -628,3 +718,58 @@ cdef class Storage(AbstractNode):
                 self._current_pc[i] = np.nan
 
 
+cdef class AggregatedStorage(AbstractStorage):
+    """ Base class for a special type of storage node that is the aggregated sum of `Storage` objects.
+
+    This class is intended to be used isolated from the network.
+    """
+    def __cinit__(self, ):
+        self._allow_isolated = True
+
+    property storage_nodes:
+        def __get__(self):
+            return self._storage_nodes
+
+        def __set__(self, value):
+            self._storage_nodes = list(value)
+
+    property initial_volume:
+        def __get__(self, ):
+            cdef Storage s
+            return np.sum([s._initial_volume for s in self._storage_nodes])
+
+    cpdef reset(self):
+        cdef int i
+        cdef double mxv = 0.0
+        cdef ScenarioIndex si
+
+        for i, si in enumerate(self.model.scenarios.combinations):
+            for s in self._storage_nodes:
+                mxv += s.get_max_volume(self.model.timestepper.current, si)
+
+            self._volume[i] = self.initial_volume
+            # Ensure variable maximum volume is taken in to account
+            try:
+                self._current_pc[i] = self._volume[i] / mxv
+            except ZeroDivisionError:
+                self._current_pc[i] = np.nan
+
+    cpdef after(self, Timestep ts):
+        AbstractStorage.after(self, ts)
+        cdef int i
+        cdef Storage s
+        cdef double mxv
+
+        for i, si in enumerate(self.model.scenarios.combinations):
+            self._flow[i] = 0.0
+            mxv = 0.0
+            for s in self._storage_nodes:
+                self._flow[i] += s._flow[i]
+                mxv += s.get_max_volume(ts, si)
+            self._volume[i] += self._flow[i]*ts._days
+
+            # Ensure variable maximum volume is taken in to account
+            try:
+                self._current_pc[i] = self._volume[i] / mxv
+            except ZeroDivisionError:
+                self._current_pc[i] = np.nan

@@ -619,6 +619,8 @@ class Connectable(object):
         """
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
+        if not isinstance(node, Connectable):
+            raise TypeError("Other node ({}) is not connectable.".format(node))
 
         # Get slot from this node
         for node1 in self.iter_slots(slot_name=from_slot, is_connector=True):
@@ -1105,6 +1107,51 @@ class Group(object):
         self.__name = name
         self.model.group[name] = self
 
+
+class AggregatedStorage(with_metaclass(NodeMeta, Drawable, _core.AggregatedStorage)):
+    """ An aggregated sum of other `Storage` nodes
+
+    This object should behave like `Storage` by returning current `flow`, `volume` and `current_pc`.
+    However this object can not be connected to others within the network.
+
+    Parameters
+    ----------
+    model - `Model` instance
+    name - str
+    storage_nodes - list or iterable of `Storage` objects
+        The `Storage` objects which to return the sum total of
+
+    Notes
+    -----
+    This node can not be connected to other nodes in the network.
+
+    """
+    def __init__(self, model, name, storage_nodes, **kwargs):
+        super(AggregatedStorage, self).__init__(model, name, **kwargs)
+        self.storage_nodes = storage_nodes
+
+
+class AggregatedNode(with_metaclass(NodeMeta, Drawable, _core.AggregatedNode)):
+    """ An aggregated sum of other `Node` nodes
+
+    This object should behave like `Node` by returning current `flow`.
+    However this object can not be connected to others within the network.
+
+    Parameters
+    ----------
+    model - `Model` instance
+    name - str
+    nodes - list or iterable of `Node` objects
+        The `Node` objects which to return the sum total of
+
+    Notes
+    -----
+    This node can not be connected to other nodes in the network.
+
+    """
+    def __init__(self, model, name, nodes, **kwargs):
+        super(AggregatedNode, self).__init__(model, name, **kwargs)
+        self.nodes = nodes
 
 class ModelStructureError(Exception):
     pass
