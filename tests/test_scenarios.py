@@ -6,7 +6,7 @@ A series of tests of the Scenario objects and associated infrastructure
 """
 import pywr.core
 from pywr.core import Model, Input, Output, Link, Storage
-from pywr.recorders import NumpyArrayStorageRecorder
+from pywr.recorders import NumpyArrayStorageRecorder, NumpyArrayNodeRecorder
 from helpers import assert_model
 # To get simple_linear_model fixture
 from fixtures import simple_linear_model
@@ -29,6 +29,15 @@ def test_scenario_collection(solver):
 
     assert_equal([comb.indices for comb in model.scenarios.combinations],
                  [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
+
+    names = model.scenarios.combination_names
+    for n, (ia, ib) in zip(names, [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]]):
+        assert n == 'Scenario A.{:03d}-Scenario B.{:03d}'.format(ia, ib)
+
+    index = model.scenarios.multiindex
+    assert_equal(index.tolist(),
+                 [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
+    assert_equal(index.names, ['Scenario A', 'Scenario B'])
 
 
 def test_scenario(simple_linear_model, ):
@@ -60,6 +69,10 @@ def test_two_scenarios(simple_linear_model, ):
     scenario_outflow = pywr.core.Scenario(model, 'Outflow', size=2)
     model.node["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
     model.node["Output"].cost = -2.0
+    
+    # add numpy recorders to input and output nodes
+    NumpyArrayNodeRecorder(model, model.node["Input"], "input")
+    NumpyArrayNodeRecorder(model, model.node["Output"], "output")
 
     expected_node_results = {
         "Input": [3.0, 5.0, 3.0, 8.0],
@@ -68,6 +81,16 @@ def test_two_scenarios(simple_linear_model, ):
     }
 
     assert_model(model, expected_node_results)
+    
+    model.run()
+    
+    # combine recorder outputs to a single dataframe
+    df = model.to_dataframe()
+    assert(df.shape == (365, 2 * 2 * 2))
+    assert_allclose(df["input", 0, 0].iloc[0], 3.0)
+    assert_allclose(df["input", 0, 1].iloc[0], 5.0)
+    assert_allclose(df["input", 1, 0].iloc[0], 3.0)
+    assert_allclose(df["input", 1, 1].iloc[0], 8.0)
 
 
 def test_scenario_two_parameter(simple_linear_model, ):

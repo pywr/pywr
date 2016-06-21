@@ -1,1 +1,17 @@
-$PYTHON setup.py install
+#!/bin/sh
+
+# clean up before building
+# assumes all .c files were compiled from .pyx and should be removed
+rm -rf build dist
+find . | grep -E "(__pycache__|\.pyc|\.pyo|\.pyd|\.so|\.c$)" | xargs rm -rf
+
+export C_INCLUDE_PATH=${PREFIX}/include
+
+if [ `uname` == "Darwin" ]; then
+  # define rpath (runtime search path for shared libraries)
+  # conda will automatically convert this to a relocatable path in the package
+  export CFLAGS="-Wl,-rpath,${PREFIX}/lib"
+fi
+
+$PYTHON setup.py build_ext --with-glpk --with-lpsolve install
+

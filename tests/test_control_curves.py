@@ -1,17 +1,18 @@
 from pywr.core import Model, Storage, Link, ScenarioIndex
-from pywr.parameters import ConstantParameter, load_parameter
+from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
+from helpers import load_model
 
 @pytest.fixture
 def model(solver):
     return Model(solver=solver)
 
 
-class TestPiecewiseControlCurveParameter:
+class TestControlCurveParameter:
     """Tests for ControlCurveParameter """
 
     @staticmethod
@@ -209,3 +210,28 @@ def test_control_curve_interpolated(model):
     s.initial_volume == 0.0
     s.reset()
     assert_allclose(s.get_cost(m.timestepper.current, si), values[0])
+
+
+@pytest.mark.xfail
+def test_control_curve_interpolated_json(solver):
+    """Test loading a reservoir with a daily profile control curve from JSON"""
+    model = load_model("reservoir_with_cc.json", solver=solver)
+    
+    storage = model.nodes["reservoir1"]
+    assert(isinstance(storage.cost, ControlCurveInterpolatedParameter))
+    assert(isinstance(storage.cost.control_curve, DailyProfileParameter))
+
+    model.setup()
+
+    cc_values = [0.604, 0.608, 0.612]
+    cost_values = [True, False, False]
+    
+    scenario_index = ScenarioIndex(0, np.array([], dtype=np.int32))
+    
+    for expected_cc, expected_cost in zip(cc_values, cost_values):
+        model.step()
+        value = storage.cost.control_curve.value(model.timestep, scenario_index)
+        cost = storage.cost.value(model.timestep, scenario_index)
+        assert_allclose(value, expected_cc)
+        assert((cost >= -6) == expected_cost)
+

@@ -5,11 +5,12 @@ from __future__ import print_function
 
 import pytest
 from fixtures import *
-from pywr._core import Timestep
+from helpers import *
+from pywr._core import Timestep, ScenarioIndex
 
 from pywr.core import *
 from pywr.domains.river import *
-from pywr.parameters import Parameter, Timeseries
+from pywr.parameters import Parameter
 
 TEST_FOLDER = os.path.dirname(__file__)
 
@@ -157,30 +158,31 @@ def test_slots_from(solver):
     riversplit.disconnect()
     assert(len(model.edges()) == 0)
 
+test_data = ["timeseries1.xlsx", os.path.join("models", "timeseries1.csv")]
+@pytest.mark.parametrize("filename", test_data)
+def test_timeseries_excel(simple_linear_model, filename):
+    """Test creation of a DataFrameParameter from external data (e.g. CSV)"""
+    model = simple_linear_model
 
-def test_timeseries_csv(solver):
-    model = Model(solver=solver)
-    filename = os.path.join(TEST_FOLDER, 'timeseries1.csv')
-    ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
-    timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
-    assert(ts.value(timestep, None) == 21.92)
+    # create DataFrameParameter from external data
+    filename = os.path.join(TEST_FOLDER, filename)
+    data = {"url": filename, "column": "Data", "index_col": "Timestamp"}
+    if filename.endswith(".csv"):
+        data.update({"parse_dates": True, "dayfirst":True})
+    ts = DataFrameParameter.load(model, data)
 
+    # model (intentionally not aligned)
+    model.timestepper.start = ts.df.index[0] + 5
+    model.timestepper.end = ts.df.index[-1] - 12
 
-def test_timeseries_excel(solver):
-    model = Model(solver=solver)
-    filename = os.path.join(TEST_FOLDER, 'timeseries1.xlsx')
-    ts = Timeseries.read(model, name='ts', path=filename, sheet='mydata', column='Data')
-    timestep = Timestep(pandas.to_datetime('2015-01-31'), 0, 1)
-    assert(ts.value(timestep, None) == 21.92)
+    # need to assign parameter for it's setup method to be called
+    model.nodes["Input"].max_flow = ts
+    model.setup()
 
-
-def test_timeseries_name_collision(solver):
-    model = Model(solver=solver)
-    filename = os.path.join(TEST_FOLDER, 'timeseries1.csv')
-    ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
-    with pytest.raises(ValueError):
-        ts = Timeseries.read(model, name='ts1', path=filename, column='Data')
-
+    # test accessing a specific value
+    timestep = build_timestep(model, '2015-01-15')
+    scenario_index = ScenarioIndex(0, np.array([], dtype=np.int32))
+    assert(ts.value(timestep, scenario_index) == 28.24)
 
 def test_dirty_model(solver):
     """Test that the LP is updated when the model structure is redefined"""

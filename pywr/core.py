@@ -86,6 +86,15 @@ class Timestepper(object):
             return self._next
         return self._current
 
+    @property
+    def datetime_index(self):
+        """ Return a `pandas.DatetimeIndex` using the start, end and delta of this object
+
+        This is useful for creating `pandas.DataFrame` objects from Model results
+        """
+        freq = '{}D'.format(self.delta.days)
+        return pandas.date_range(self.start, self.end, freq=freq)
+
 
 class Scenario(_core.Scenario):
     def __init__(self, model, name, size=1):
@@ -358,7 +367,6 @@ class Model(object):
                 timestep=timestep,
                 path=path,
             )
-
         model.metadata = data["metadata"]
 
         if 'parameters' in data:
@@ -568,6 +576,15 @@ class Model(object):
     def finish(self):
         for recorder in self.recorders:
             recorder.finish()
+
+    def to_dataframe(self):
+        """ Return a DataFrame from any Recorders with a `to_dataframe` attribute
+
+        """
+        dfs = {r.name: r.to_dataframe() for r in self.recorders if hasattr(r, 'to_dataframe')}
+        df = pandas.concat(dfs, axis=1)
+        df.columns.set_names('Recorder', level=0, inplace=True)
+        return df
 
 
 class Domain(_core.Domain):

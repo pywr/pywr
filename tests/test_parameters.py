@@ -4,10 +4,11 @@ Test for individual Parameter classes
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex
 from pywr.parameters import BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter, \
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter, \
-    AggregatedParameter, load_parameter
+    AggregatedParameter, load_parameter, DataFrameParameter
 
 import datetime
 import numpy as np
+import pandas as pd
 import pytest
 import itertools
 
@@ -34,6 +35,29 @@ def test_parameter_array_indexed(model):
     with pytest.raises(IndexError):
         p.value(ts, si)
 
+
+def test_parameter_array_indexed_json_load(model, tmpdir):
+    """Test ArrayIndexedParameter can be loaded from json dict"""
+    # Daily time-step
+    index = pd.date_range('2015-01-01', periods=365, freq='D', name='date')
+    df = pd.DataFrame(np.arange(365), index=index, columns=['data'])
+    df_path = tmpdir.join('df.csv')
+    df.to_csv(str(df_path))
+
+    data = {
+        'type': 'arrayindexed',
+        'url': str(df_path),
+        'index_col': 'date',
+        'parse_dates': True,
+        'column': 'data',
+    }
+
+    p = load_parameter(model, data)
+    p.setup(model)
+
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for v, ts in enumerate(model.timestepper):
+        np.testing.assert_allclose(p.value(ts, si), v)
 
 def test_parameter_constant_scenario(model):
     """
@@ -233,6 +257,7 @@ def test_parameter_child_variables():
     assert len(c1.variables) == 1
 
 
+
 def test_with_a_better_name():
 
     data = {
@@ -255,3 +280,104 @@ def test_with_a_better_name():
             ]
         }
     }
+
+
+def test_parameter_df_upsampling(model):
+    """ Test that the `DataFrameParameter` can upsample data from a `pandas.DataFrame` and return that correctly
+    """
+    # scenario indices (not used for this test)
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+    # Use a 7 day timestep for this test and run 2015
+    model.timestepper.delta = datetime.timedelta(7)
+    model.timestepper.start = pd.to_datetime('2015-01-01')
+    model.timestepper.end = pd.to_datetime('2015-12-31')
+
+    # Daily time-step
+    index = pd.date_range('2015-01-01', periods=365, freq='D')
+    series = pd.Series(np.arange(365), index=index)
+
+    p = DataFrameParameter(series)
+    p.setup(model)
+
+    A = series.resample('7D').mean()
+    for v, ts in zip(A, model.timestepper):
+        np.testing.assert_allclose(p.value(ts, si), v)
+
+    model.reset()
+    # Daily time-step that requires aligning
+    index = pd.date_range('2014-12-31', periods=366, freq='D')
+    series = pd.Series(np.arange(366), index=index)
+
+    p = DataFrameParameter(series)
+    p.setup(model)
+
+    # offset the resample appropriately for the test
+    A = series[1:].resample('7D').mean()
+    for v, ts in zip(A, model.timestepper):
+        np.testing.assert_allclose(p.value(ts, si), v)
+
+    model.reset()
+    # Daily time-step that is not covering the require range
+    index = pd.date_range('2015-02-01', periods=365, freq='D')
+    series = pd.Series(np.arange(365), index=index)
+
+    p = DataFrameParameter(series)
+    with pytest.raises(ValueError):
+        p.setup(model)
+
+    model.reset()
+    # Daily time-step that is not covering the require range
+    index = pd.date_range('2014-11-01', periods=365, freq='D')
+    series = pd.Series(np.arange(365), index=index)
+
+    p = DataFrameParameter(series)
+    with pytest.raises(ValueError):
+        p.setup(model)
+
+
+def test_parameter_df_upsampling_multiple_columns(model):
+    """ Test that the `DataFrameParameter` works with multiple columns that map to a `Scenario`
+    """
+    scA = Scenario(model, 'A', size=20)
+    scB = Scenario(model, 'B', size=2)
+    # scenario indices (not used for this test)
+
+    # Use a 7 day timestep for this test and run 2015
+    model.timestepper.delta = datetime.timedelta(7)
+    model.timestepper.start = pd.to_datetime('2015-01-01')
+    model.timestepper.end = pd.to_datetime('2015-12-31')
+
+    # Daily time-step
+    index = pd.date_range('2015-01-01', periods=365, freq='D')
+    df = pd.DataFrame(np.random.rand(365, 20), index=index)
+
+    p = DataFrameParameter(df, scenario=scA)
+    p.setup(model)
+
+    A = df.resample('7D', axis=0).mean()
+    for v, ts in zip(A.values, model.timestepper):
+        np.testing.assert_allclose([p.value(ts, ScenarioIndex(i, np.array([i], dtype=np.int32))) for i in range(20)], v)
+
+    p = DataFrameParameter(df, scenario=scB)
+    with pytest.raises(ValueError):
+        p.setup(model)
+
+
+def test_parameter_df_json_load(model, tmpdir):
+
+    # Daily time-step
+    index = pd.date_range('2015-01-01', periods=365, freq='D', name='date')
+    df = pd.DataFrame(np.random.rand(365), index=index, columns=['data'])
+    df_path = tmpdir.join('df.csv')
+    df.to_csv(str(df_path))
+
+    data = {
+        'type': 'dataframe',
+        'url': str(df_path),
+        'index_col': 'date',
+        'parse_dates': True,
+    }
+
+    p = load_parameter(model, data)
+    p.setup(model)

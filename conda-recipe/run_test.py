@@ -2,6 +2,7 @@ import os
 import sys
 import pytest
 
+os.chdir(os.environ['SRC_DIR'])
 tests_folder = os.path.join(os.environ['SRC_DIR'], 'tests')
 
 for solver in ('glpk', 'lpsolve'):
