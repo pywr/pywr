@@ -1,12 +1,13 @@
 from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep
 from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
-from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter
+from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter, MonthlyProfileControlCurveParameter
 import numpy as np
 import pandas as pd
 from numpy.testing import assert_allclose
 import pytest
 import datetime
 
+from helpers import load_model
 
 @pytest.fixture
 def model(solver):
@@ -155,11 +156,13 @@ class TestPiecewiseControlCurveParameter:
         l.cost = ControlCurveParameter(s, cc, [10.0, 0.0])
 
         s.setup(m)  # Init memory view on storage (bypasses usual `Model.setup`)
+        print(s.volume)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         assert_allclose(l.get_cost(m.timestepper.current, si), 0.0)
         # When storage volume changes, the cost of the link changes.
         s.initial_volume = 90.0
         m.reset()
+        print(s.volume)
         assert_allclose(l.get_cost(m.timestepper.current, si), 10.0)
 
     def test_with_nonstorage_load(self, model):
@@ -180,6 +183,7 @@ class TestPiecewiseControlCurveParameter:
 
         s.setup(m)  # Init memory view on storage (bypasses usual `Model.setup`)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        print(s.volume)
         assert_allclose(l.get_cost(m.timestepper.current, si), 0.0)
         # When storage volume changes, the cost of the link changes.
         s.initial_volume = 90.0
@@ -321,6 +325,37 @@ class TestMonthlyProfileControlCurveParameter:
         p.setup(model)
 
         self._assert_results(model, s, p, scale=1.5)
+
+    def test_json_load(self, solver):
+
+        model = load_model("demand_saving.json", solver=solver)
+
+        storage = model.nodes["supply1"]
+        demand = model.nodes["demand1"]
+        assert (isinstance(demand.max_flow, MonthlyProfileControlCurveParameter))
+
+        model.setup()
+
+        profile = np.array([1.0, 1.0, 1.0, 1.0, 1.2, 1.2, 1.2, 1.2, 1.0, 1.0, 1.0, 1.0]) * 10.0
+        saving = np.array([
+                    [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                    [0.8, 0.8, 0.8, 0.8, 0.7, 0.7, 0.7, 0.7, 0.8, 0.8, 0.8, 0.8]
+                ])
+
+        scenario_index = ScenarioIndex(0, np.array([], dtype=np.int32))
+
+        for i in range(12):
+            model.step()
+            # First two timesteps should result in storage above 50% control curve
+            # Therefore no demand saving
+            if i < 2:
+                expected_max_flow = profile[i] * saving[0, i]
+            else:
+                expected_max_flow = profile[i] * saving[1, i]
+
+            value = demand.max_flow.value(model.timestepper.current, scenario_index)
+            assert_allclose(value, expected_max_flow)
+
 
 
 def test_daily_profile_control_curve(model):

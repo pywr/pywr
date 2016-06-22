@@ -529,8 +529,8 @@ cdef class AbstractStorage(AbstractNode):
         """ Called before the first run of the model"""
         AbstractNode.setup(self, model)
         cdef int ncomb = len(model.scenarios.combinations)
-        self._volume = np.empty(ncomb, dtype=np.float64)
-        self._current_pc = np.empty(ncomb, dtype=np.float64)
+        self._volume = np.zeros(ncomb, dtype=np.float64)
+        self._current_pc = np.zeros(ncomb, dtype=np.float64)
 
 
 cdef class Storage(AbstractStorage):

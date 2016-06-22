@@ -1,0 +1,43 @@
+{
+    "metadata": {
+        "title": "Demand saving",
+        "description": "A model with demand based on a reservoir."
+    },
+    "timestepper": {
+        "start": "2015-01-15",
+        "end": "2015-12-31",
+        "timestep": 30
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Storage",
+            "max_volume": 1400,
+            "initial_volume": 1400,
+            "outputs": 0
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": {
+                "type": "monthlyprofilecontrolcurve",
+                "storage_node": "supply1",
+                "scale": 10,
+                "profile": [1.0, 1.0, 1.0, 1.0, 1.2, 1.2, 1.2, 1.2, 1.0, 1.0, 1.0, 1.0],
+                "control_curve": 0.5,
+                "values": [
+                    [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                    [0.8, 0.8, 0.8, 0.8, 0.7, 0.7, 0.7, 0.7, 0.8, 0.8, 0.8, 0.8]
+                ]},
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ]
+}
