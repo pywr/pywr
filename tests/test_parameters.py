@@ -1,11 +1,10 @@
 """
 Test for individual Parameter classes
 """
-from pywr.core import Model, Timestep, Scenario, ScenarioIndex
+from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link
 from pywr.parameters import (BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
-    MinimumParameterCollection, MaximumParameterCollection, DataFrameParameter,
-    AggregatedParameter, load_parameter)
+    DataFrameParameter, AggregatedParameter, load_parameter)
 
 import datetime
 import numpy as np
