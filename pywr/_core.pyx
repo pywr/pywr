@@ -305,7 +305,6 @@ cdef class Node(AbstractNode):
         def __set__(self, value):
             if isinstance(value, Parameter):
                 self._cost_param = value
-                value.node = self
             else:
                 self._cost_param = None
                 self._cost = value
@@ -331,7 +330,6 @@ cdef class Node(AbstractNode):
         def __set__(self, value):
             if isinstance(value, Parameter):
                 self._min_flow_param = value
-                value.node = self
             else:
                 self._min_flow_param = None
                 self._min_flow = value
@@ -359,7 +357,6 @@ cdef class Node(AbstractNode):
                 self._max_flow = inf
             elif isinstance(value, Parameter):
                 self._max_flow_param = value
-                value.node = self
             else:
                 self._max_flow_param = None
                 self._max_flow = value
@@ -573,7 +570,6 @@ cdef class Storage(AbstractStorage):
         def __set__(self, value):
             if isinstance(value, Parameter):
                 self._cost_param = value
-                value.node = self
             else:
                 self._cost_param = None
                 self._cost = value
@@ -602,7 +598,6 @@ cdef class Storage(AbstractStorage):
             self._min_volume_param = None
             if isinstance(value, Parameter):
                 self._min_volume_param = value
-                value.node = self
             else:
                 self._min_volume = value
 
@@ -621,7 +616,6 @@ cdef class Storage(AbstractStorage):
             self._max_volume_param = None
             if isinstance(value, Parameter):
                 self._max_volume_param = value
-                value.node = self
             else:
                 self._max_volume = value
 
@@ -640,7 +634,6 @@ cdef class Storage(AbstractStorage):
             self._level_param = None
             if isinstance(value, Parameter):
                 self._level_param = value
-                value.node = self
             else:
                 self._level = value
 

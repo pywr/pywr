@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import calendar, datetime
-import xml.etree.ElementTree as ET
 from ._parameters import Parameter as BaseParameter
 import numpy as np
 
@@ -19,21 +18,12 @@ class License(BaseParameter):
         else:
             return BaseParameter.__new__(cls)
 
+    def __init__(self, node):
+        self._node = node
+
     def resource_state(self, timestep):
         raise NotImplementedError()
 
-
-    @classmethod
-    def from_xml(cls, xml):
-        lic_type = xml.get('type')
-        amount = float(xml.text)
-        lic_types = {
-            'annual': AnnualLicense,
-            'daily': TimestepLicense,
-            'timestep': TimestepLicense,
-        }
-        lic = lic_types[lic_type](amount)
-        return lic
 
 class TimestepLicense(License):
     """License limiting volume for a single timestep
@@ -42,7 +32,7 @@ class TimestepLicense(License):
     is a fixed value. There is no resource state, as use today does not
     impact availability tomorrow.
     """
-    def __init__(self, amount):
+    def __init__(self, node, amount):
         """Initialise a new TimestepLicense
 
         Parameters
@@ -50,17 +40,15 @@ class TimestepLicense(License):
         amount : float
             The maximum volume available in each timestep
         """
+        super(TimestepLicense, self).__init__(node)
         self._amount = amount
+
     def value(self, timestep, scenario_index):
         return self._amount
+
     def resource_state(self, timestep):
         return None
 
-    def xml(self):
-        xml = ET.Element('license')
-        xml.set('type', 'timestep')
-        xml.text = str(self._amount)
-        return xml
 
 # for now, assume a daily timestep
 # in the future this will need to be more clever
@@ -68,7 +56,7 @@ class DailyLicense(TimestepLicense):
     pass
 
 class StorageLicense(License):
-    def __init__(self, amount):
+    def __init__(self, node, amount):
         """A license with a volume to be spent over multiple timesteps
 
         This class should not be instantiated directly. Instead, use one of the
@@ -79,7 +67,7 @@ class StorageLicense(License):
         amount : float
             The volume of water available in each period
         """
-        super(StorageLicense, self).__init__()
+        super(StorageLicense, self).__init__(node)
         self._amount = amount
 
     def setup(self, model):
@@ -90,7 +78,7 @@ class StorageLicense(License):
         return self._remaining[scenario_index.global_id]
 
     def after(self, timestep):
-        self._remaining -= self.node.flow*timestep.days
+        self._remaining -= self._node.flow*timestep.days
         self._remaining[self._remaining < 0] = 0.0
 
     def reset(self):
@@ -99,7 +87,7 @@ class StorageLicense(License):
 
 class AnnualLicense(StorageLicense):
     """An annual license"""
-    def __init__(self, amount):
+    def __init__(self, node, amount):
         """
         Parameters
         ----------
@@ -107,7 +95,7 @@ class AnnualLicense(StorageLicense):
             The total annual volume for this license
 
         """
-        super(AnnualLicense, self).__init__(amount)
+        super(AnnualLicense, self).__init__(node, amount)
         # Record year ready to reset licence when the year changes.
         self._prev_year = None
 
@@ -131,15 +119,9 @@ class AnnualLicense(StorageLicense):
             days_before_reset = timetuple.tm_yday - 1
             # Adjust the license by the rate in previous timestep. This is needed for timesteps greater
             # than 1 day where the license reset is not exactly on the anniversary
-            self._remaining[...] -= days_before_reset*self.node.prev_flow
+            self._remaining[...] -= days_before_reset*self._node.prev_flow
 
             self._prev_year = timestep.datetime.year
-
-    def xml(self):
-        xml = ET.Element('license')
-        xml.set('type', 'annual')
-        xml.text = str(self._amount)
-        return xml
 
 
 class AnnualExponentialLicense(AnnualLicense):
@@ -153,7 +135,7 @@ class AnnualExponentialLicense(AnnualLicense):
     Where :math:`x` is the ratio of actual daily averaged remaining license (as calculated by AnnualLicense) to the
     expected daily averaged remaining licence. I.e. if the license is on track the ratio is 1.0.
     """
-    def __init__(self, amount, max_value, k=1.0):
+    def __init__(self, node, amount, max_value, k=1.0):
         """
 
         Parameters
@@ -165,7 +147,7 @@ class AnnualExponentialLicense(AnnualLicense):
         k : float
             A scale factor for the exponent of the exponential function
         """
-        super(AnnualExponentialLicense, self).__init__(amount)
+        super(AnnualExponentialLicense, self).__init__(node, amount)
         self._max_value = max_value
         self._k = k
 
@@ -187,7 +169,7 @@ class AnnualHyperbolaLicense(AnnualLicense):
     Where :math:`x` is the ratio of actual daily averaged remaining license (as calculated by AnnualLicense) to the
     expected daily averaged remaining licence. I.e. if the license is on track the ratio is 1.0.
     """
-    def __init__(self, amount, value):
+    def __init__(self, node, amount, value):
         """
 
         Parameters
@@ -197,7 +179,7 @@ class AnnualHyperbolaLicense(AnnualLicense):
         value : float
             The value used to scale the hyperbola function
         """
-        super(AnnualHyperbolaLicense, self).__init__(amount)
+        super(AnnualHyperbolaLicense, self).__init__(node, amount)
         self._value = value
 
     def value(self, timestep, scenario_index):

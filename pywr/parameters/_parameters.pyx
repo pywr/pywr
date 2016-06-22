@@ -33,14 +33,6 @@ cdef class Parameter:
     cpdef double[:] upper_bounds(self):
         raise NotImplementedError()
 
-    property node:
-        def __get__(self):
-            if self._parent is not None:
-                return self._parent.node
-            return self._node
-        def __set__(self, value):
-            self._node = value
-
     property parent:
         """The parent Parameter of this object.
         """

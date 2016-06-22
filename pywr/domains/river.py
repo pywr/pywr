@@ -92,7 +92,7 @@ class Reservoir(RiverDomainMixin, Storage):
             if not isinstance(cost, BaseParameter):
                 # In the case where an above_curve_cost is given and cost is not a Parameter
                 # a default cost Parameter is created.
-                kwargs['cost'] = ControlCurveParameter(control_curve, [above_curve_cost, cost])
+                kwargs['cost'] = ControlCurveParameter(self, control_curve, [above_curve_cost, cost])
             else:
                 raise ValueError('If an above_curve_cost is given cost must not be a Parameter.')
         else:

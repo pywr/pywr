@@ -49,9 +49,9 @@ class ControlCurveParameter(BaseControlCurveParameter):
     `BaseControlCurveParameter`
 
     """
-    def __init__(self, control_curves, values=None, parameters=None, storage_node=None,
+    def __init__(self, storage_node, control_curves, values=None, parameters=None,
                  upper_bounds=None, lower_bounds=None):
-        super(ControlCurveParameter, self).__init__(control_curves, storage_node=storage_node)
+        super(ControlCurveParameter, self).__init__(storage_node, control_curves)
         # Expected number of values is number of control curves plus one.
         self.size = nvalues = len(self.control_curves) + 1
         self.values = None
@@ -107,7 +107,7 @@ class ControlCurveParameter(BaseControlCurveParameter):
             for pdata in parameters_data:
                 parameters.append(load_parameter(model, pdata))
 
-        return cls(control_curves, values=values, parameters=parameters, storage_node=storage_node)
+        return cls(storage_node, control_curves, values=values, parameters=parameters)
 
     def value(self, ts, scenario_index):
         i = scenario_index.global_id
@@ -143,8 +143,8 @@ parameter_registry.add(ControlCurveParameter)
 class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
     _profile_size = None
 
-    def __init__(self, control_curves, values, storage_node=None, profile=None, scale=1.0):
-        super(AbstractProfileControlCurveParameter, self).__init__(control_curves, storage_node=storage_node)
+    def __init__(self, storage_node, control_curves, values, profile=None, scale=1.0):
+        super(AbstractProfileControlCurveParameter, self).__init__(storage_node, control_curves)
 
         nvalues = len(self.control_curves) + 1
 
@@ -193,7 +193,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
         else:
             scale = 1.0
 
-        return cls(control_curves, values=values, storage_node=storage_node, profile=profile, scale=scale)
+        return cls(storage_node, control_curves, values=values, profile=profile, scale=scale)
 
     def _profile_index(self, ts, scenario_index):
         raise NotImplementedError()

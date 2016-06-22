@@ -8,7 +8,7 @@ cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
 
     """
-    def __init__(self, control_curves, Storage storage_node=None):
+    def __init__(self, Storage storage_node, control_curves):
         """
 
         Parameters
@@ -23,6 +23,8 @@ cdef class BaseControlCurveParameter(Parameter):
         """
         super(BaseControlCurveParameter, self).__init__()
         self.control_curves = control_curves
+        if storage_node is None:
+            raise ValueError("storage_node is required")
         self._storage_node = storage_node
 
     cpdef setup(self, model):
@@ -90,9 +92,7 @@ cdef class BaseControlCurveParameter(Parameter):
     @classmethod
     def _load_storage_node(cls, model, data):
         """ Private class method to load storage node from dict. """
-        if 'storage_node' in data:
-            return model.node[data['storage_node']]
-        return None
+        return model.node[data['storage_node']]
 
 
 parameter_registry.add(BaseControlCurveParameter)
@@ -101,8 +101,8 @@ parameter_registry.add(BaseControlCurveParameter)
 cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     """ A control curve Parameter that interpolates between three values.
     """
-    def __init__(self, control_curves, values):
-        super(ControlCurveInterpolatedParameter, self).__init__(control_curves)
+    def __init__(self, storage_node, control_curves, values):
+        super(ControlCurveInterpolatedParameter, self).__init__(storage_node, control_curves)
         # Expected number of values is number of control curves plus one.
         nvalues = len(self.control_curves) + 2
         if len(values) != nvalues:
@@ -121,7 +121,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         cdef int j
         cdef Parameter cc_param
         cdef double cc, cc_prev
-        cdef Storage node = self.node if self._storage_node is None else self._storage_node
+        cdef Storage node = self._storage_node
         # return the interpolated value for the current level.
         cdef double current_pc = node._current_pc[i]
         cdef double weight

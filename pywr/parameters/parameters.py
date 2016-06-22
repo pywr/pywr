@@ -277,14 +277,15 @@ class InterpolatedLevelParameter(Parameter):
     """
     Level parameter calculated by interpolation from current volume
     """
-    def __init__(self, volumes, levels, kind='linear'):
+    def __init__(self, node, volumes, levels, kind='linear'):
         from scipy.interpolate import interp1d
         # Create level interpolator
         self.interp = interp1d(volumes, levels, bounds_error=True, kind=kind)
+        self._node = node
 
     def value(self, ts, scenario_index):
         # Return interpolated value from current volume
-        v = self.node.volume[scenario_index.global_id]
+        v = self._node.volume[scenario_index.global_id]
         level = self.interp(v)
         return level
 

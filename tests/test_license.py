@@ -16,7 +16,7 @@ def test_base_license():
 def test_daily_license():
     '''Test daily licence'''
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    lic = TimestepLicense(42.0)
+    lic = TimestepLicense(None, 42.0)
     assert(isinstance(lic, License))
     assert(lic.value(Timestep(datetime(2015, 1, 1), 0, 0), si) == 42.0)
 
@@ -29,7 +29,7 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
     annual_total = 365
-    lic = AnnualLicense(annual_total)
+    lic = AnnualLicense(m.node["Input"], annual_total)
     # Apply licence to the model
     m.node["Input"].max_flow = lic
     m.node["Output"].max_flow = 10.0
@@ -77,7 +77,7 @@ def test_simple_model_with_annual_licence_multi_year(simple_linear_model):
     m.timestepper.delta = datetime.timedelta(30)
 
     annual_total = 365.0
-    lic = AnnualLicense(annual_total)
+    lic = AnnualLicense(m.node["Input"], annual_total)
     # Apply licence to the model
     m.node["Input"].max_flow = lic
     m.node["Output"].max_flow = 10.0
@@ -96,7 +96,7 @@ def test_simple_model_with_exponential_license(simple_linear_model):
 
     annual_total = 365
     # Expoential licence with max_value of e should give a hard constraint of 1.0 when on track
-    lic = AnnualExponentialLicense(annual_total, np.e)
+    lic = AnnualExponentialLicense(m.node["Input"], annual_total, np.e)
     # Apply licence to the model
     m.node["Input"].max_flow = lic
     m.node["Output"].max_flow = 10.0
@@ -138,7 +138,7 @@ def test_simple_model_with_hyperbola_license(simple_linear_model):
 
     annual_total = 365
     # Expoential licence with max_value of e should give a hard constraint of 1.0 when on track
-    lic = AnnualHyperbolaLicense(annual_total, 1.0)
+    lic = AnnualHyperbolaLicense(m.node["Input"], annual_total, 1.0)
     # Apply licence to the model
     m.node["Input"].max_flow = lic
     m.node["Output"].max_flow = 10.0

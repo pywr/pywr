@@ -40,7 +40,7 @@ class TestPiecewiseControlCurveParameter:
         s = Storage(m, 'Storage', max_volume=100.0)
 
         # Return 10.0 when above 0.0 when below
-        s.cost = ControlCurveParameter([0.8, 0.6], [1.0, 0.7, 0.4])
+        s.cost = ControlCurveParameter(s, [0.8, 0.6], [1.0, 0.7, 0.4])
         self._assert_results(m, s)
 
     def test_with_parameters(self, model):
@@ -55,7 +55,7 @@ class TestPiecewiseControlCurveParameter:
         params = [
             ConstantParameter(1.0), ConstantParameter(0.7), ConstantParameter(0.4)
         ]
-        s.cost = ControlCurveParameter(cc, parameters=params)
+        s.cost = ControlCurveParameter(s, cc, parameters=params)
 
         self._assert_results(m, s)
 
@@ -68,7 +68,8 @@ class TestPiecewiseControlCurveParameter:
         data = {
             "type": "controlcurve",
             "control_curves": [0.8, 0.6],
-            "values": [1.0, 0.7, 0.4]
+            "values": [1.0, 0.7, 0.4],
+            "storage_node": "Storage"
         }
 
         s.cost = p = load_parameter(model, data)
@@ -83,6 +84,7 @@ class TestPiecewiseControlCurveParameter:
 
         data = {
             "type": "controlcurve",
+            "storage_node": "Storage",
             "control_curves": [
                 {
                     "type": "constant",
@@ -124,6 +126,7 @@ class TestPiecewiseControlCurveParameter:
 
         data = {
             "type": "controlcurve",
+            "storage_node": "Storage",
             "control_curve": 0.8,
         }
 
@@ -149,7 +152,7 @@ class TestPiecewiseControlCurveParameter:
 
         l = Link(m, 'Link')
         cc = ConstantParameter(0.8)
-        l.cost = ControlCurveParameter(cc, [10.0, 0.0], storage_node=s)
+        l.cost = ControlCurveParameter(s, cc, [10.0, 0.0])
 
         s.setup(m)  # Init memory view on storage (bypasses usual `Model.setup`)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
@@ -192,7 +195,7 @@ def test_control_curve_interpolated(model):
 
     cc = ConstantParameter(0.8)
     values = [20.0, 5.0, 0.0]
-    s.cost = ControlCurveInterpolatedParameter(cc, values)
+    s.cost = ControlCurveInterpolatedParameter(s, cc, values)
     s.setup(m)
 
     for v in (0.0, 10.0, 50.0, 80.0, 90.0, 100.0):

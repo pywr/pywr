@@ -128,7 +128,7 @@ def test_control_curve(solver):
     # We know what we're doing with the control_curve Parameter so unset its parent before overriding
     # the cost parameter.
     control_curve.parent = None
-    reservoir.cost = ControlCurveParameter(control_curve, [-20.0, -20.0])
+    reservoir.cost = ControlCurveParameter(reservoir, control_curve, [-20.0, -20.0])
     model.step()
     assert(reservoir.volume == 10)
     assert(demand.flow == 6)
