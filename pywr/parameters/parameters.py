@@ -36,7 +36,7 @@ class AggregatedParameter(Parameter):
         else:
             self._parameters = set(parameters)
             for param in self._parameters:
-                param.parent = self
+                param.parents.add(self)
 
         self.agg_func = agg_func
         if isinstance(self.agg_func, str):
@@ -59,11 +59,11 @@ class AggregatedParameter(Parameter):
 
     def add(self, parameter):
         self._parameters.add(parameter)
-        parameter.parent = self
+        parameter.parents.add(self)
 
     def remove(self, parameter):
         self._parameters.remove(parameter)
-        parameter.parent = None
+        parameter.parent.remove(self)
 
     def __len__(self):
         return len(self._parameters)
@@ -148,9 +148,7 @@ class ScaledProfileParameter(Parameter):
         super(ScaledProfileParameter, self).__init__()
         self.scale = scale
 
-        if profile.parent is not None and profile.parent is not self:
-            raise RuntimeError('profile Parameter already has a different parent.')
-            profile.parent = self
+        profile.parents.add(self)
         self.profile = profile
 
     @classmethod
@@ -265,7 +263,7 @@ class DataFrameParameter(Parameter):
             # We assume the columns are in the correct order for the scenario.
             param = ArrayIndexedScenarioParameter(self.scenario, df.values.astype(dtype=np.float64))
 
-        param.parent = self
+        param.parents.add(self)
         self._param = param
 
     def value(self, ts, scenario_index):

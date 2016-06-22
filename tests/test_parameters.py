@@ -212,14 +212,14 @@ def test_parameter_child_variables():
     # Default parameter
     assert p1 not in p1.variables
     assert len(p1.variables) == 0
-    assert p1.parent is None
+    assert len(p1.parents) == 0
     assert len(p1.children) == 0
 
     c1 = BaseParameter()
-    c1.parent = p1
+    c1.parents.add(p1)
     assert len(p1.children) == 1
     assert c1 in p1.children
-    assert c1.parent == p1
+    assert p1 in c1.parents
 
     assert p1 not in p1.variables
     assert len(p1.variables) == 0
@@ -232,7 +232,7 @@ def test_parameter_child_variables():
 
     # Test third level
     c2 = BaseParameter()
-    c2.parent = c1
+    c2.parents.add(c1)
     c2.is_variable = True
     assert p1 not in p1.variables
     assert c1 in p1.variables
@@ -247,7 +247,7 @@ def test_parameter_child_variables():
     assert len(p1.variables) == 1
 
     # Disable parent
-    c1.parent = None
+    c1.parents.clear()
 
     assert len(p1.variables) == 0
     assert len(p1.children) == 0

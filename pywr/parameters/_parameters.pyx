@@ -5,24 +5,61 @@ import pandas
 
 parameter_registry = set()
 
+class PairedSet(set):
+    def __init__(self, obj, *args, **kwargs):
+        set.__init__(self)
+        self.obj = obj
+
+    def add(self, item):
+        set.add(self, item)
+        if(self is self.obj.parents):
+            set.add(item.children, self.obj)
+        else:
+            set.add(item.parents, self.obj)
+
+    def remove(self, item):
+        set.remove(self, item)
+        if(self is self.obj.parents):
+            set.remove(item.children, self.obj)
+        else:
+            set.remove(item.parents, self.obj)
+
+    def clear(self):
+        if(self is self.obj.parents):
+            for parent in list(self):
+                set.remove(parent.children, self.obj)
+        else:
+            for child in list(self):
+                set.remove(child.parents, self.obj)
+        set.clear(self)
+
 cdef class Parameter:
     def __init__(self):
-        self._children = set()
+        self.parents = PairedSet(self)
+        self.children = PairedSet(self)
 
     cpdef setup(self, model):
-        pass
+        cdef Parameter child
+        for child in self.children:
+            child.setup(model)
 
     cpdef reset(self):
-        pass
+        cdef Parameter child
+        for child in self.children:
+            child.reset()
 
     cpdef before(self, Timestep ts):
-        pass
+        cdef Parameter child
+        for child in self.children:
+            child.before(ts)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return 0
 
     cpdef after(self, Timestep ts):
-        pass
+        cdef Parameter child
+        for child in self.children:
+            child.after(ts)
 
     cpdef update(self, double[:] values):
         raise NotImplementedError()
@@ -32,26 +69,6 @@ cdef class Parameter:
 
     cpdef double[:] upper_bounds(self):
         raise NotImplementedError()
-
-    property parent:
-        """The parent Parameter of this object.
-        """
-        def __get__(self):
-            return self._parent
-
-        def __set__(self, Parameter value):
-            if self._parent is not None:
-                # If we have a current parent remove ourselves as a child
-                self._parent._children.remove(self)
-            # Update parent value
-            self._parent = value
-            if self._parent is not None:
-                # If we have a new parent add ourselves as a child
-                self._parent._children.add(self)
-
-    property children:
-        def __get__(self):
-            return self._children
 
     property size:
         def __get__(self):
@@ -73,7 +90,7 @@ cdef class Parameter:
             vars = []
             if self._is_variable:
                 vars.append(self)
-            for var in self._children:
+            for var in self.children:
                 vars.extend(var.variables)
             return vars
 

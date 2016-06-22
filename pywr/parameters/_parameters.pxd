@@ -11,8 +11,8 @@ cdef class Parameter:
     cdef int _size
     cdef bint _is_variable
     cdef AbstractNode _node
-    cdef Parameter _parent
-    cdef object _children
+    cdef readonly object parents
+    cdef readonly object children
     cpdef setup(self, model)
     cpdef reset(self)
     cpdef before(self, Timestep ts)

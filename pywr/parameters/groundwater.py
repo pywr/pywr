@@ -27,6 +27,7 @@ class KeatingStreamFlowParameter(Parameter):
         :param transmissivity:
         :param coefficient:
         """
+        super(KeatingStreamFlowParameter, self).__init__()
         self.storage_node = storage_node
 
         if len(levels) != len(transmissivity):

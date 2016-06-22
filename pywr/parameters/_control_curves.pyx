@@ -14,8 +14,7 @@ cdef class BaseControlCurveParameter(Parameter):
         Parameters
         ----------
         control_curves : iterable of Parameter objects or single Parameter
-            The Parameter objects to use as a control curve(s). These should not be shared with other
-            Nodes and Parameters because this object becomes control_curve.parent
+            The Parameter objects to use as a control curve(s).
         storage_node : `Storage` or `None`, optional
             An optional `Storage` node that can be used to query the current percentage volume. If
             not specified it is assumed that this object is attached to a `Storage` node and therefore
@@ -27,30 +26,6 @@ cdef class BaseControlCurveParameter(Parameter):
             raise ValueError("storage_node is required")
         self._storage_node = storage_node
 
-    cpdef setup(self, model):
-        cdef Parameter cc
-        for cc in self.control_curves:
-            cc.setup(model)
-        super(BaseControlCurveParameter, self).setup(model)
-
-    cpdef reset(self):
-        cdef Parameter cc
-        for cc in self.control_curves:
-            cc.reset()
-        super(BaseControlCurveParameter, self).reset()
-
-    cpdef before(self, Timestep ts):
-        cdef Parameter cc
-        for cc in self.control_curves:
-            cc.before(ts)
-        super(BaseControlCurveParameter, self).before(ts)
-
-    cpdef after(self, Timestep ts):
-        cdef Parameter cc
-        for cc in self.control_curves:
-            cc.after(ts)
-        super(BaseControlCurveParameter, self).after(ts)
-
     property control_curves:
         def __get__(self):
             return self._control_curves
@@ -58,6 +33,11 @@ cdef class BaseControlCurveParameter(Parameter):
             # Accept a single Parameter and convert to a list internally
             if isinstance(control_curves, Parameter):
                 control_curves = [control_curves]
+            
+            # remove existing control curves (if any)
+            if self._control_curves is not None:
+                for control_curve in self._control_curves:
+                    control_curve.parents.remove(self)
 
             _new_control_curves = []
             for control_curve in control_curves:
@@ -65,9 +45,7 @@ cdef class BaseControlCurveParameter(Parameter):
                 if isinstance(control_curve, (float, int)):
                     control_curve = ConstantParameter(control_curve)
 
-                if control_curve.parent is not None and control_curve.parent is not self:
-                    raise RuntimeError('control_curve already has a different parent.')
-                control_curve.parent = self
+                control_curve.parents.add(self)
                 _new_control_curves.append(control_curve)
             self._control_curves = list(_new_control_curves)
 
