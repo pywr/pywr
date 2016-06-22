@@ -767,13 +767,8 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
         name = data.pop('name')
 
         cost = data.pop('cost', 0.0)
-        cost = load_parameter(model, cost)
-
         min_flow = data.pop('min_flow', None)
-        min_flow = load_parameter(model, min_flow)
-
         max_flow = data.pop('max_flow', None)
-        max_flow = load_parameter(model, max_flow)
 
         try:
             x = float(data.pop('x'))
@@ -788,7 +783,21 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
                 x = None
                 y = None
         data.pop('type')
-        node = cls(model=model, name=name, min_flow=min_flow, max_flow=max_flow, cost=cost, x=x, y=y, **data)
+        node = cls(model=model, name=name, x=x, y=y, **data)
+        
+        cost = load_parameter(model, cost)
+        min_flow = load_parameter(model, min_flow)
+        max_flow = load_parameter(model, max_flow)
+        if cost is None:
+            cost = 0.0
+        if min_flow is None:
+            min_flow = 0.0
+        if max_flow is None:
+            max_flow = np.inf
+        node.cost = cost
+        node.min_flow = min_flow
+        node.max_flow = max_flow
+
         return node
 
 
@@ -1005,7 +1014,6 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         if min_volume is not None:
             min_volume = float(min_volume)
         cost = data.pop('cost', 0.0)
-        cost = load_parameter(model, cost)
         try:
             x = float(data.pop('x'))
             y = float(data.pop('y'))
@@ -1016,9 +1024,14 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         node = cls(
             model=model, name=name, num_inputs=num_inputs,
             num_outputs=num_outputs, initial_volume=initial_volume,
-            max_volume=max_volume, min_volume=min_volume, cost=cost, x=x, y=y,
+            max_volume=max_volume, min_volume=min_volume, x=x, y=y,
             **data
         )
+        
+        cost = load_parameter(model, cost)
+        if cost is None:
+            cost = 0.0
+        node.cost = cost
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)

@@ -140,8 +140,8 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     def load(cls, model, data):
         control_curves = super(ControlCurveInterpolatedParameter, cls)._load_control_curves(model, data)
         storage_node = super(ControlCurveInterpolatedParameter, cls)._load_storage_node(model, data)
-        values = load_parameter_values(data["values"])
-        parameter = cls(control_curves, values)
+        values = load_parameter_values(model, data)
+        parameter = cls(storage_node, control_curves, values)
         return parameter
 
 parameter_registry.add(ControlCurveInterpolatedParameter)

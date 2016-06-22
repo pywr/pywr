@@ -1,0 +1,40 @@
+{
+    "metadata": {
+        "title": "Reservoir with cc",
+        "description": "A model with a reservoir and control curve"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "reservoir1",
+            "type": "Storage",
+            "max_volume": 1000,
+            "initial_volume": 1000,
+            "outputs": 0,
+            "cost": {
+                "type": "ControlCurveInterpolated",
+                "control_curve": {
+                    "type": "dailyprofile",
+                    "url": "control_curve.csv",
+                    "parse_dates": false,
+                    "column": "Control Curve"
+                },
+                "storage_node": "reservoir1",
+                "values": [-8, -6, -4]
+            }
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 300,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["reservoir1", "demand1"]
+    ]
+}
