@@ -1,10 +1,10 @@
 """
 Test for individual Parameter classes
 """
-from pywr.core import Model, Timestep, Scenario, ScenarioIndex
+from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link
 from pywr.parameters import BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter, \
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter, \
-    MinimumParameterCollection, MaximumParameterCollection, DataFrameParameter, load_parameter
+    AggregatedParameter, load_parameter, DataFrameParameter
 
 import datetime
 import numpy as np
@@ -137,43 +137,73 @@ def test_parameter_daily_profile(model):
         np.testing.assert_allclose(p.value(ts, si), values[iday])
 
 
-def test_parameter_min(model):
-    # Add two scenarios
-    scA = Scenario(model, 'Scenario A', size=2)
-    scB = Scenario(model, 'Scenario B', size=5)
+class TestAggregatedParameter:
+    """ Tests for AggregatedParameter"""
 
-    values = np.arange(366, dtype=np.float64)
-    p1 = DailyProfileParameter(values)
-    p2 = ConstantScenarioParameter(scB, np.arange(scB.size, dtype=np.float64))
+    def test_min(self, model):
+        # Add two scenarios
+        scA = Scenario(model, 'Scenario A', size=2)
+        scB = Scenario(model, 'Scenario B', size=5)
 
-    p = MinimumParameterCollection([p1, ])
-    p.add(p2)
+        values = np.arange(366, dtype=np.float64)
+        p1 = DailyProfileParameter(values)
+        p2 = ConstantScenarioParameter(scB, np.arange(scB.size, dtype=np.float64))
 
-    p.setup(model)
-    for ts in model.timestepper:
-        iday = ts.datetime.dayofyear - 1
-        for i in range(scB.size):
-            si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
-            np.testing.assert_allclose(p.value(ts, si), min(values[iday], i))
+        p = AggregatedParameter([p1, ], agg_func='min')
+        p.add(p2)
 
+        p.setup(model)
+        for ts in model.timestepper:
+            iday = ts.datetime.dayofyear - 1
+            for i in range(scB.size):
+                si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
+                np.testing.assert_allclose(p.value(ts, si), min(values[iday], i))
 
-def test_parameter_max(model):
-    # Add two scenarios
-    scA = Scenario(model, 'Scenario A', size=2)
-    scB = Scenario(model, 'Scenario B', size=5)
+    def test_max(self, model):
+        # Add two scenarios
+        scA = Scenario(model, 'Scenario A', size=2)
+        scB = Scenario(model, 'Scenario B', size=5)
 
-    values = np.arange(366, dtype=np.float64)
-    p1 = DailyProfileParameter(values)
-    p2 = ConstantScenarioParameter(scB, np.arange(scB.size, dtype=np.float64))
+        values = np.arange(366, dtype=np.float64)
+        p1 = DailyProfileParameter(values)
+        p2 = ConstantScenarioParameter(scB, np.arange(scB.size, dtype=np.float64))
 
-    p = MaximumParameterCollection([p1, p2])
-    p.setup(model)
+        p = AggregatedParameter([p1, p2], agg_func='max')
+        p.setup(model)
 
-    for ts in model.timestepper:
-        iday = ts.datetime.dayofyear - 1
-        for i in range(scB.size):
-            si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
-            np.testing.assert_allclose(p.value(ts, si), max(values[iday], i))
+        for ts in model.timestepper:
+            iday = ts.datetime.dayofyear - 1
+            for i in range(scB.size):
+                si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
+                np.testing.assert_allclose(p.value(ts, si), max(values[iday], i))
+
+    def test_load(self, model):
+        """ Test load from JSON dict"""
+        data = {
+            "type": "aggregated",
+            "agg_func": "product",
+            "parameters": [
+                {
+                    "type": "constant",
+                    "values": 0.8
+                },
+                {
+                    "type": "monthlyprofile",
+                    "values": list(range(12))
+                }
+            ]
+        }
+
+        p = load_parameter(model, data)
+        # Correct instance is loaded
+        assert isinstance(p, AggregatedParameter)
+
+        # Test correct aggregation is performed
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        for mth in range(1, 13):
+            ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+            np.testing.assert_allclose(p.value(ts, si), (mth-1)*0.8)
+
 
 
 def test_parameter_child_variables():
@@ -226,6 +256,60 @@ def test_parameter_child_variables():
     assert c2 in c1.variables
     assert len(c1.variables) == 1
 
+
+def test_scaled_profile_nested_load(model):
+    """ Test `ScaledProfileParameter` loading with `AggregatedParameter` """
+
+    s = Storage(model, 'Storage', max_volume=100.0)
+    l = Link(model, 'Link')
+    data = {
+        'type': 'scaledprofile',
+        'scale': 50.0,
+        'profile': {
+            'type': 'aggregated',
+            'agg_func': 'product',
+            'parameters': [
+                {
+                    'type': 'monthlyprofile',
+                    'values': [0.5]*12
+                },
+                {
+                    'type': 'monthlyprofilecontrolcurve',
+                    'control_curves': [0.8, 0.6],
+                    'values': [[1.0]*12, [0.7]*np.arange(12), [0.3]*12],
+                    'storage_node': 'Storage'
+                }
+            ]
+        }
+    }
+
+    l.max_flow = p = load_parameter(model, data)
+    p.setup(model)
+
+    # Test correct aggregation is performed
+
+    s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
+
+    s.initial_volume = 90.0
+    model.reset()  # Set initial volume on storage
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for mth in range(1, 13):
+        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+        np.testing.assert_allclose(p.value(ts, si), 50.0*0.5*1.0)
+
+    s.initial_volume = 70.0
+    model.reset()  # Set initial volume on storage
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for mth in range(1, 13):
+        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+        np.testing.assert_allclose(p.value(ts, si), 50.0 * 0.5 * 0.7*(mth - 1))
+
+    s.initial_volume = 30.0
+    model.reset()  # Set initial volume on storage
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    for mth in range(1, 13):
+        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
+        np.testing.assert_allclose(p.value(ts, si), 50.0 * 0.5 * 0.3)
 
 
 def test_parameter_df_upsampling(model):
@@ -327,5 +411,3 @@ def test_parameter_df_json_load(model, tmpdir):
 
     p = load_parameter(model, data)
     p.setup(model)
-
-

@@ -1,7 +1,7 @@
 
 from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink
 from pywr.parameters import pop_kwarg_parameter, ConstantParameter, BaseParameter, load_parameter
-from pywr.parameters.control_curves import ControlCurvePiecewiseParameter
+from pywr.parameters.control_curves import ControlCurveParameter
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 
@@ -92,7 +92,7 @@ class Reservoir(RiverDomainMixin, Storage):
             if not isinstance(cost, BaseParameter):
                 # In the case where an above_curve_cost is given and cost is not a Parameter
                 # a default cost Parameter is created.
-                kwargs['cost'] = ControlCurvePiecewiseParameter(control_curve, above_curve_cost, cost)
+                kwargs['cost'] = ControlCurveParameter(control_curve, [above_curve_cost, cost])
             else:
                 raise ValueError('If an above_curve_cost is given cost must not be a Parameter.')
         else:

@@ -6,7 +6,7 @@ from ._parameters import (
     ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter,
     DailyProfileParameter, ArrayIndexedScenarioParameter,
-    load_parameter, load_dataframe)
+    load_parameter, load_dataframe, load_parameter_values)
 import numpy as np
 import pandas
 
@@ -14,20 +14,48 @@ class Parameter(BaseParameter):
     def value(self, ts, scenario_index):
         raise NotImplementedError()
 
-class ParameterCollection(Parameter):
+
+# TODO shared dict with pywr.recorders
+agg_funcs = {
+    "mean": np.mean,
+    "sum": np.sum,
+    "max": np.max,
+    "min": np.min,
+    "product": np.product,
+}
+class AggregatedParameter(Parameter):
     """A collection of Parameters
 
     This object behaves like a set. Licenses can be added to or removed from it.
 
     """
-    def __init__(self, parameters=None):
-        super(ParameterCollection, self).__init__()
+    def __init__(self, parameters=None, agg_func='mean'):
+        super(AggregatedParameter, self).__init__()
         if parameters is None:
             self._parameters = set()
         else:
             self._parameters = set(parameters)
             for param in self._parameters:
                 param.parent = self
+
+        self.agg_func = agg_func
+        if isinstance(self.agg_func, str):
+            self.agg_func = agg_funcs[self.agg_func]
+
+    @classmethod
+    def load(cls, model, data):
+
+        try:
+            parameters_data = data['parameters']
+        except KeyError:
+            parameters_data = []
+
+        parameters = []
+        for pdata in parameters_data:
+            parameters.append(load_parameter(model, pdata))
+
+        agg_func = data.get('agg_func', 'mean')
+        return cls(parameters=parameters, agg_func=agg_func)
 
     def add(self, parameter):
         self._parameters.add(parameter)
@@ -40,8 +68,9 @@ class ParameterCollection(Parameter):
     def __len__(self):
         return len(self._parameters)
 
-    def value(self, timestep, scenario_index):
-        raise NotImplementedError()
+    def value(self, ts, si):
+        values = [p.value(ts, si) for p in self._parameters]
+        return self.agg_func(values)
 
     def setup(self, model):
         for parameter in self._parameters:
@@ -54,25 +83,7 @@ class ParameterCollection(Parameter):
     def reset(self):
         for parameter in self._parameters:
             parameter.reset()
-parameter_registry.add(ParameterCollection)
-
-
-class MinimumParameterCollection(ParameterCollection):
-    def value(self, timestep, scenario_index):
-        min_available = float('inf')
-        for parameter in self._parameters:
-            min_available = min(parameter.value(timestep, scenario_index), min_available)
-        return min_available
-parameter_registry.add(MinimumParameterCollection)
-
-
-class MaximumParameterCollection(ParameterCollection):
-    def value(self, timestep, scenario_index):
-        max_available = -float('inf')
-        for parameter in self._parameters:
-            max_available = max(parameter.value(timestep, scenario_index), max_available)
-        return max_available
-parameter_registry.add(MaximumParameterCollection)
+parameter_registry.add(AggregatedParameter)
 
 
 class ConstantParameter(Parameter):
@@ -95,6 +106,7 @@ class ConstantParameter(Parameter):
     def upper_bounds(self):
         return self._upper_bounds
 parameter_registry.add(ConstantParameter)
+
 
 class FunctionParameter(Parameter):
     def __init__(self, parent, func):
@@ -129,6 +141,28 @@ class MonthlyProfileParameter(Parameter):
     def upper_bounds(self):
         return self._upper_bounds
 parameter_registry.add(MonthlyProfileParameter)
+
+
+class ScaledProfileParameter(Parameter):
+    def __init__(self, scale, profile):
+        super(ScaledProfileParameter, self).__init__()
+        self.scale = scale
+
+        if profile.parent is not None and profile.parent is not self:
+            raise RuntimeError('profile Parameter already has a different parent.')
+            profile.parent = self
+        self.profile = profile
+
+    @classmethod
+    def load(cls, model, data):
+        scale = float(data['scale'])
+        profile = load_parameter(model, data['profile'])
+        return cls(scale, profile)
+
+    def value(self, ts, si):
+        p = self.profile.value(ts, si)
+        return self.scale * p
+parameter_registry.add(ScaledProfileParameter)
 
 
 class AnnualHarmonicSeriesParameter(Parameter):
