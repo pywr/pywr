@@ -3,6 +3,8 @@ import numpy as np
 cimport numpy as np
 import pandas
 
+from past.builtins import basestring
+
 parameter_registry = set()
 
 class PairedSet(set):
@@ -267,7 +269,7 @@ parameter_registry.add(IndexedArrayParameter)
 
 def load_parameter(model, data):
     """Load a parameter from a dict"""
-    if isinstance(data, str):
+    if isinstance(data, basestring):
         # parameter is a reference
         try:
             parameter = model._parameters[data]

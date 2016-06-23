@@ -16,6 +16,7 @@ requirements:
     - cython
     - glpk
     - lpsolve
+    - future
   run:
     - python
     - numpy x.x
@@ -26,6 +27,7 @@ requirements:
     - pytables
     - xlrd
     - scipy
+    - future
 
 test:
   requires:
