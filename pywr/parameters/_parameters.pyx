@@ -231,6 +231,40 @@ cdef class DailyProfileParameter(Parameter):
         return self._values[i]
 parameter_registry.add(DailyProfileParameter)
 
+cdef class IndexParameter(Parameter):
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        # return index as a float
+        return float(self.index(timestep, scenario_index))
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        # return index as an integer
+        return 0
+parameter_registry.add(IndexParameter)
+
+cdef class IndexedArrayParameter(Parameter):
+    def __init__(self, index_parameter=None, params=None, **kwargs):
+        super(IndexedArrayParameter, self).__init__(**kwargs)
+        assert(isinstance(index_parameter, IndexParameter))
+        self.index_parameter = index_parameter
+        self.params = params
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef int index
+        index = self.index_parameter.index(timestep, scenario_index)
+        parameter = self.params[index]
+        if isinstance(parameter, Parameter):
+            value = parameter.value(timestep, scenario_index)
+        else:
+            value = parameter
+        return value
+
+    @classmethod
+    def load(cls, model, data):
+        index_parameter = load_parameter(model, data["index_parameter"])
+        params = [load_parameter(model, data) for data in data["params"]]
+        return cls(index_parameter, params)
+parameter_registry.add(IndexedArrayParameter)
+
 def load_parameter(model, data):
     """Load a parameter from a dict"""
     if isinstance(data, str):
@@ -268,8 +302,9 @@ def load_parameter(model, data):
         if cls is None:
             raise TypeError('Unknown parameter type: "{}"'.format(parameter_type))
 
-        del(data["type"])
-        parameter = cls.load(model, data)
+        kwargs = dict([(k,v) for k,v in data.items()])
+        del(kwargs["type"])
+        parameter = cls.load(model, kwargs)
     
     return parameter
 

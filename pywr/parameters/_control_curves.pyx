@@ -3,6 +3,9 @@ cimport numpy as np
 from .parameters import parameter_registry, ConstantParameter
 from ._parameters import load_parameter, load_parameter_values
 
+from ._parameters cimport Parameter, IndexParameter
+from ._parameters import Parameter, IndexParameter
+
 
 cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
@@ -146,3 +149,34 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         return parameter
 
 parameter_registry.add(ControlCurveInterpolatedParameter)
+
+cdef class ControlCurveIndexParameter(IndexParameter):
+    def __init__(self, storage_node, control_curves, **kwargs):
+        super(ControlCurveIndexParameter, self).__init__(**kwargs)
+        self.storage_node = storage_node
+        self.control_curves = control_curves
+
+        # update dependency tree
+        for control_curve in control_curves:
+            control_curve.parents.add(self)
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef double current_percentage
+        cdef double target_percentage
+        cdef int index, j
+        cdef Parameter control_curve
+        current_percentage = self.storage_node.current_pc[scenario_index.global_id]
+        index = len(self.control_curves)
+        for j, control_curve in enumerate(self.control_curves):
+            target_percentage = control_curve.value(timestep, scenario_index)
+            if current_percentage >= target_percentage:
+                index = j
+                break
+        return index
+
+    @classmethod
+    def load(cls, model, data):
+        storage_node = model._get_node_from_ref(model, data["storage_node"])
+        control_curves = [load_parameter(model, data) for data in data["control_curves"]]
+        return cls(storage_node, control_curves)
+parameter_registry.add(ControlCurveIndexParameter)

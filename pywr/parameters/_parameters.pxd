@@ -43,3 +43,10 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
 
 cdef class DailyProfileParameter(Parameter):
     cdef double[:] _values
+
+cdef class IndexParameter(Parameter):
+    cpdef int index(elf, Timestep timestep, ScenarioIndex scenario_index) except? -1
+
+cdef class IndexedArrayParameter(Parameter):
+    cdef public Parameter index_parameter
+    cdef public list params
