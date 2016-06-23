@@ -235,7 +235,22 @@ def load_parameter(model, data):
     """Load a parameter from a dict"""
     if isinstance(data, str):
         # parameter is a reference
-        parameter = model._parameters[data]
+        try:
+            parameter = model._parameters[data]
+        except KeyError:
+            parameter = None
+        if parameter is None:
+            if hasattr(model, "_parameters_to_load"):
+                # we're still in the process of loading data from JSON and
+                # the parameter requested hasn't been loaded yet - do it now
+                name = data
+                try:
+                    data = model._parameters_to_load[name]
+                except KeyError:
+                    raise KeyError("Unknown parameter: '{}'".format(data))
+                parameter = load_parameter(model, data)
+            else:
+                raise KeyError("Unknown parameter: '{}'".format(data))
     elif isinstance(data, (float, int)) or data is None:
         # parameter is a constant
         parameter = data

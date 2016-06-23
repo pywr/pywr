@@ -369,16 +369,29 @@ class Model(object):
             )
         model.metadata = data["metadata"]
 
-        if 'parameters' in data:
-            for parameter_name, parameter_data in data['parameters'].items():
-                parameter = load_parameter(model, parameter_data)
-                model._parameters[parameter_name] = parameter
+        # collect nodes to load
+        nodes_to_load = {}
+        for node_data in data["nodes"]:
+            node_name = node_data["name"]
+            nodes_to_load[node_name] = node_data
+        model._nodes_to_load = nodes_to_load
 
-        for node_data in data['nodes']:
-            node_type = node_data['type'].lower()
-            cls = node_registry[node_type]
-            node = cls.load(node_data, model)
+        # collect parameters to load
+        # don't need to load them here as they are pulled in as needed
+        try:
+            parameters_to_load = data["parameters"]
+        except KeyError:
+            parameters_to_load = {}
+        model._parameters_to_load = parameters_to_load
 
+        # load the remaining nodes
+        for node_name in list(nodes_to_load.keys()):
+            node = cls._get_node_from_ref(model, node_name)
+
+        del(model._parameters_to_load)
+        del(model._nodes_to_load)
+
+        # load edges
         for edge_data in data['edges']:
             node_from_name = edge_data[0]
             node_to_name = edge_data[1]
@@ -390,11 +403,26 @@ class Model(object):
             node_to = model.nodes[node_to_name]
             node_from.connect(node_to, from_slot=slot_from, to_slot=slot_to)
 
+        # load recorders
         if 'recorders' in data:
             for recorder_data in data['recorders']:
                 load_recorder(model, recorder_data)
 
         return model
+
+    @classmethod
+    def _get_node_from_ref(cls, model, node_name):
+        try:
+            # first check if node has already been loaded
+            node = model.nodes[node_name]
+        except KeyError:
+            # if not, load it now
+            node_data = model._nodes_to_load[node_name]
+            node_type = node_data['type'].lower()
+            cls = node_registry[node_type]
+            node = cls.load(node_data, model)
+            del(model._nodes_to_load[node_name])
+        return node
 
     def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):
         """Find all routes between two nodes or types of node
@@ -1032,6 +1060,8 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         if cost is None:
             cost = 0.0
         node.cost = cost
+
+        return node
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)

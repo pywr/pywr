@@ -1,0 +1,31 @@
+{
+    "metadata": {
+        "title": "Parameter reference",
+        "description": "Most basic example of parameter references"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": "supply_max_flow"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": "demand_cost"
+        }
+    ],
+    "parameters": {
+        "supply_max_flow": 125.0,
+        "demand_cost": -10
+    },
+    "edges": [
+        ["supply1", "demand1"]
+    ]
+}

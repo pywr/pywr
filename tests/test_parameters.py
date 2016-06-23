@@ -6,6 +6,8 @@ from pywr.parameters import (BaseParameter, ArrayIndexedParameter, ConstantScena
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, load_parameter)
 
+from helpers import load_model
+
 import datetime
 import numpy as np
 import pandas as pd
@@ -412,6 +414,11 @@ def test_parameter_df_json_load(model, tmpdir):
     p = load_parameter(model, data)
     p.setup(model)
 
+
+def test_simple_json_parameter_reference(solver):
+    model = load_model("parameter_reference.json")
+    assert(model.nodes["supply1"].max_flow == 125.0)
+    assert(model.nodes["demand1"].cost == -10)
 
 def test_with_a_better_name():
 

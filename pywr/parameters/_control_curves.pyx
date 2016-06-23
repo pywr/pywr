@@ -70,7 +70,8 @@ cdef class BaseControlCurveParameter(Parameter):
     @classmethod
     def _load_storage_node(cls, model, data):
         """ Private class method to load storage node from dict. """
-        return model.node[data['storage_node']]
+        node = model._get_node_from_ref(model, data["storage_node"])
+        return node
 
 
 parameter_registry.add(BaseControlCurveParameter)
