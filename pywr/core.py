@@ -382,6 +382,10 @@ class Model(object):
             parameters_to_load = data["parameters"]
         except KeyError:
             parameters_to_load = {}
+        else:
+            for key, value in parameters_to_load.items():
+                if isinstance(value, dict):
+                    parameters_to_load[key]["name"] = key
         model._parameters_to_load = parameters_to_load
 
         # load the remaining nodes

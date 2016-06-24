@@ -21,6 +21,7 @@ cdef class Parameter:
     cpdef update(self, double[:] values)
     cpdef double[:] lower_bounds(self)
     cpdef double[:] upper_bounds(self)
+    cdef public str name
 
 cdef class ArrayIndexedParameter(Parameter):
     cdef double[:] values
@@ -45,8 +46,18 @@ cdef class DailyProfileParameter(Parameter):
     cdef double[:] _values
 
 cdef class IndexParameter(Parameter):
-    cpdef int index(elf, Timestep timestep, ScenarioIndex scenario_index) except? -1
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
 cdef class IndexedArrayParameter(Parameter):
     cdef public Parameter index_parameter
     cdef public list params
+
+cdef class CachedParameter(IndexParameter):
+    cdef public Parameter parameter
+    cdef Timestep timestep
+    cdef ScenarioIndex scenario_index
+    cdef double cached_value
+    cdef int cached_index
+    cpdef reset(self)
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1

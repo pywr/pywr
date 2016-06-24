@@ -104,6 +104,38 @@ cdef class Parameter:
 parameter_registry.add(Parameter)
 
 
+cdef class CachedParameter(IndexParameter):
+    """Wrapper for Parameters which caches the result"""
+    def __init__(self, parameter):
+        super(IndexParameter, self).__init__()
+        self.parameter = parameter
+        self.timestep = None
+        self.scenario_index = None
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        if not timestep is self.timestep or not scenario_index is scenario_index:
+            # refresh the cache
+            self.cached_value = self.parameter.value(timestep, scenario_index)
+            self.timestep = timestep
+            self.scenario_index = scenario_index
+        return self.cached_value
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        if not timestep is self.timestep or not scenario_index is scenario_index:
+            # refresh the cache
+            self.cached_index = self.parameter.index(timestep, scenario_index)
+            self.timestep = timestep
+            self.scenario_index = scenario_index
+        return self.cached_index
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data["parameter"])
+        return cls(parameter)
+
+parameter_registry.add(CachedParameter)
+
+
 cdef class ArrayIndexedParameter(Parameter):
     """Time varying parameter using an array and Timestep._index
 
@@ -269,6 +301,7 @@ parameter_registry.add(IndexedArrayParameter)
 
 def load_parameter(model, data):
     """Load a parameter from a dict"""
+    parameter_name = None
     if isinstance(data, basestring):
         # parameter is a reference
         try:
@@ -290,9 +323,21 @@ def load_parameter(model, data):
     elif isinstance(data, (float, int)) or data is None:
         # parameter is a constant
         parameter = data
+    elif "cached" in data.keys() and data["cached"]:
+        # cached parameter wrapper
+        del(data["cached"])
+        if "name" in data:
+            parameter_name = data["name"]
+            del(data["name"])
+        param = load_parameter(model, data)
+        parameter = CachedParameter(param)
     else:
         # parameter is dynamic
         parameter_type = data['type']
+        try:
+            parameter_name = data["name"]
+        except:
+            pass
 
         cls = None
         name2 = parameter_type.lower().replace('parameter', '')
@@ -306,8 +351,15 @@ def load_parameter(model, data):
 
         kwargs = dict([(k,v) for k,v in data.items()])
         del(kwargs["type"])
+        if "name" in kwargs:
+            del(kwargs["name"])
         parameter = cls.load(model, kwargs)
-    
+
+    if parameter_name is not None:
+        # TODO FIXME: memory leak if parameter is subsequently removed from the model
+        parameter.name = parameter_name
+        model._parameters[parameter_name] = parameter
+
     return parameter
 
 
