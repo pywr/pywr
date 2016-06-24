@@ -109,9 +109,9 @@ cdef class ArrayIndexedParameter(Parameter):
 
     The values in this parameter are constant across all scenarios.
     """
-    def __init__(self, double[:] values):
+    def __init__(self, values):
         super(ArrayIndexedParameter, self).__init__()
-        self.values = values
+        self.values = np.asarray(values, dtype=np.float64)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the parameter at a given timestep
@@ -125,12 +125,15 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
 
     The values in this parameter are vary in time based on index and vary within a single Scenario.
     """
-    def __init__(self, Scenario scenario, double[:, :] values):
+    def __init__(self, Scenario scenario, values):
         """
         values should be an iterable that is the same length as scenario.size
         """
         super(ArrayIndexedScenarioParameter, self).__init__()
         cdef int i
+        values = np.asarray(values, dtype=np.float64)
+        if values.ndim != 2:
+            raise ValueError("Values must be two dimensional.")
         if scenario._size != values.shape[1]:
             raise ValueError("The size of the second dimension of values must equal the size of the scenario.")
         self.values = values
@@ -187,13 +190,19 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
     """Time varying parameter using an array and Timestep._index with
     multiplicative factors per Scenario
     """
-    def __init__(self, Scenario scenario, double[:] values, double[:, :] factors):
+    def __init__(self, Scenario scenario, values, factors):
         """
         values is the baseline timeseries data that is perturbed by a factor. The
         factor is taken from factors which is shape (scenario.size, 12). Therefore
         factors vary with the individual scenarios in scenario and month.
         """
         super(ArrayIndexedScenarioMonthlyFactorsParameter, self).__init__()
+
+        values = np.asarray(values, dtype=np.float64)
+        factors = np.asarray(factors, dtype=np.float64)
+        if factors.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+
         if scenario._size != factors.shape[0]:
             raise ValueError("First dimension of factors must be the same size as scenario.")
         if factors.shape[1] != 12:
