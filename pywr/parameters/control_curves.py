@@ -38,6 +38,12 @@ class ControlCurveParameter(BaseControlCurveParameter):
         An optional `Storage` node that can be used to query the current percentage volume. If
         not specified it is assumed that this object is attached to a `Storage` node and therefore
         `self.node` is used.
+    variable_indices : iterable of ints, optional
+        A list of indices that correspond to items in `values` which are to be considered variables
+         when `self.is_variable` is True. This mechanism allows a subset of `values` to be variable.
+    lower_bounds, upper_bounds : array_like, optional
+        Bounds of the variables. The length must correspond to the length of `variable_indices`, i.e.
+         there are bounds for each index to be considered as a variable.
 
     Notes
     -----
@@ -50,7 +56,7 @@ class ControlCurveParameter(BaseControlCurveParameter):
 
     """
     def __init__(self, storage_node, control_curves, values=None, parameters=None,
-                 upper_bounds=None, lower_bounds=None):
+                 variable_indices=None, upper_bounds=None, lower_bounds=None):
         super(ControlCurveParameter, self).__init__(storage_node, control_curves)
         # Expected number of values is number of control curves plus one.
         self.size = nvalues = len(self.control_curves) + 1
@@ -73,22 +79,27 @@ class ControlCurveParameter(BaseControlCurveParameter):
         # Default values
         self._upper_bounds = None
         self._lower_bounds = None
+        self.variable_indices = variable_indices
 
+        if variable_indices is not None:
+            self.size = len(variable_indices)
         # Bounds for use as a variable (i.e. when self.is_variable = True)
         if upper_bounds is not None:
-            if self.values is None:
-                raise ValueError('Upper bounds can only be specified if `values` is not `None`.')
-            if len(upper_bounds) != nvalues:
-                raise ValueError('Length of upper_bounds should be one more than the number of '
-                                 'control curves ({}).'.format(nvalues))
+            if self.values is None or variable_indices is None:
+                raise ValueError('Upper bounds can only be specified if `values` and `variable_indices` '
+                                 'is not `None`.')
+            if len(upper_bounds) != self.size:
+                raise ValueError('Length of upper_bounds should be equal to the length of `variable_indices` '
+                                 '({}).'.format(self.size))
             self._upper_bounds = np.array(upper_bounds)
 
         if lower_bounds is not None:
-            if self.values is None:
-                raise ValueError('Lower bounds can only be specified if `values` is not `None`.')
-            if len(lower_bounds) != nvalues:
-                raise ValueError('Length of lower_bounds should be one more than the number of '
-                                 'control curves ({}).'.format(nvalues))
+            if self.values is None or variable_indices is None:
+                raise ValueError('Lower bounds can only be specified if `values` and `variable_indices` '
+                                 'is not `None`.')
+            if len(lower_bounds) != self.size:
+                raise ValueError('Length of lower_bounds should be equal to the length of `variable_indices` '
+                                 '({}).'.format(self.size))
             self._lower_bounds = np.array(lower_bounds)
 
     @classmethod
@@ -129,7 +140,8 @@ class ControlCurveParameter(BaseControlCurveParameter):
             return self.values[-1]
 
     def update(self, values):
-        self.values = np.array(values)
+        for i, v in zip(self.variable_indices, values):
+            self.values[i] = v
 
     def lower_bounds(self):
         return self._lower_bounds
