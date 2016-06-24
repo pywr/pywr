@@ -234,6 +234,12 @@ cdef class AbstractNode:
         def __get__(self):
             return np.array(self._flow)
 
+    def __repr__(self):
+        if self.name:
+            # e.g. <Node "oxford">
+            return '<{} "{}">'.format(self.__class__.__name__, self.name)
+        else:
+            return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
 
     cpdef setup(self, model):
         """Called before the first run of the model"""

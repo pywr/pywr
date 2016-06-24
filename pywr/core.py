@@ -775,13 +775,6 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
         self.conversion_factor = conversion_factor
         self.position = position
 
-    def __repr__(self):
-        if self.name:
-            # e.g. <Node "oxford">
-            return '<{} "{}">'.format(self.__class__.__name__, self.name)
-        else:
-            return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
-
     def check(self):
         """Check the node is valid
 
