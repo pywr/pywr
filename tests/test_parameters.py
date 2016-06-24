@@ -1,6 +1,7 @@
 """
 Test for individual Parameter classes
 """
+from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link
 from pywr.parameters import (BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
@@ -155,7 +156,7 @@ class TestAnnualHarmonicSeriesParameter:
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
         for ts in model.timestepper:
-            doy = (ts.datetime.dayofyear - 1) / 365
+            doy = (ts.datetime.dayofyear - 1) /365
             expected = 0.5 + 0.25*np.cos(doy*2*np.pi + np.pi / 4) + 0.3*np.cos(doy*4*np.pi + np.pi/3)
             np.testing.assert_allclose(p1.value(ts, si), expected)
 
