@@ -97,9 +97,8 @@ class Timestepper(object):
 
 
 class Scenario(_core.Scenario):
-    def __init__(self, model, name, size=1):
-        super(Scenario, self).__init__(name, size)
-        model.scenarios.add_scenario(self)
+    pass
+
 
 
 class ScenarioCollection(_core.ScenarioCollection):
