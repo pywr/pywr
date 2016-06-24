@@ -4,7 +4,7 @@ Test for individual Parameter classes
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link
 from pywr.parameters import (BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
-    DataFrameParameter, AggregatedParameter, load_parameter)
+    AnnualHarmonicSeriesParameter, DataFrameParameter, AggregatedParameter, load_parameter)
 
 from helpers import load_model
 
@@ -137,6 +137,43 @@ def test_parameter_daily_profile(model):
         iday = ts.datetime.dayofyear - 1
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         np.testing.assert_allclose(p.value(ts, si), values[iday])
+
+
+class TestAnnualHarmonicSeriesParameter:
+    """ Tests for `AnnualHarmonicSeriesParameter` """
+    def test_single_harmonic(self, model):
+
+        p1 = AnnualHarmonicSeriesParameter(0.5, [0.25], [np.pi/4])
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        for ts in model.timestepper:
+            doy = (ts.datetime.dayofyear - 1)/365
+            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 0.25*np.cos(doy*2*np.pi + np.pi/4))
+
+    def test_double_harmonic(self, model):
+        p1 = AnnualHarmonicSeriesParameter(0.5, [0.25, 0.3], [np.pi/4, np.pi/3])
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        for ts in model.timestepper:
+            doy = (ts.datetime.dayofyear - 1) / 365
+            expected = 0.5 + 0.25*np.cos(doy*2*np.pi + np.pi / 4) + 0.3*np.cos(doy*4*np.pi + np.pi/3)
+            np.testing.assert_allclose(p1.value(ts, si), expected)
+
+    def test_load(self, model):
+
+        data = {
+            "type": "annualharmonicseries",
+            "mean": 0.5,
+            "amplitudes": [0.25],
+            "phases": [np.pi/4]
+        }
+
+        p1 = load_parameter(model, data)
+
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        for ts in model.timestepper:
+            doy = (ts.datetime.dayofyear - 1) / 365
+            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 0.25 * np.cos(doy * 2 * np.pi + np.pi / 4))
 
 
 class TestAggregatedParameter:

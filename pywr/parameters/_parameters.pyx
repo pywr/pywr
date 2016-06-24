@@ -2,7 +2,7 @@ import os
 import numpy as np
 cimport numpy as np
 import pandas
-
+from libc.math cimport cos, M_PI
 from past.builtins import basestring
 
 parameter_registry = set()
@@ -266,6 +266,100 @@ cdef class IndexedArrayParameter(Parameter):
         params = [load_parameter(model, data) for data in data["params"]]
         return cls(index_parameter, params)
 parameter_registry.add(IndexedArrayParameter)
+
+
+cdef class AnnualHarmonicSeriesParameter(Parameter):
+    """ A `Parameter` which returns the value from an annual harmonic series
+
+    This `Parameter` comprises a series N cosine function with a period of 365
+     days. The calculation is performed using the Julien day of the year minus 1
+     This causes a small discontinuity in non-leap years.
+
+    .. math:: f(t) = A + \sum_{n=1}^N A_n\cdot \cos(\tfrac{2\pi nt}{365}+\phi_n)
+
+    Parameters
+    ----------
+
+    mean : float
+        Mean value for the series (i.e. the position of zeroth harmonic)
+    amplitudes : array_like
+        The amplitudes for the N harmonic cosine functions. Must be the same
+        length as phases.
+    phases : array_like
+        The phase shift of the N harmonic cosine functions. Must be the same
+        length as amplitudes.
+
+    """
+    def __init__(self, mean, amplitudes, phases, **kwargs):
+        super(AnnualHarmonicSeriesParameter, self).__init__()
+        if len(amplitudes) != len(phases):
+            raise ValueError("The number  of amplitudes and phases must be the same.")
+        n = len(amplitudes)
+        self.size = 1 + 2*n
+        self.mean = mean
+        self._amplitudes = np.array(amplitudes)
+        self._phases = np.array(phases)
+
+        self._mean_lower_bounds = kwargs.pop('mean_lower_bounds', 0.0)
+        self._mean_upper_bounds = kwargs.pop('mean_upper_bounds', np.inf)
+        self._amplitude_lower_bounds = np.ones(n)*kwargs.pop('amplitude_lower_bounds', 0.0)
+        self._amplitude_upper_bounds = np.ones(n)*kwargs.pop('amplitude_upper_bounds', np.inf)
+        self._phase_lower_bounds = np.ones(n)*kwargs.pop('phase_lower_bounds', 0.0)
+        self._phase_upper_bounds = np.ones(n)*kwargs.pop('phase_upper_bounds', np.pi*2)
+        self._value_cache = 0.0
+        self._ts_index_cache = -1
+
+    @classmethod
+    def load(cls, model, data):
+        mean = data['mean']
+        amplitudes = data['amplitudes']
+        phases = data['phases']
+
+        return cls(mean, amplitudes, phases)
+
+    property amplitudes:
+        def __get__(self):
+            return np.array(self._amplitudes)
+
+    property phases:
+        def __get__(self):
+            return np.array(self._phases)
+
+    cpdef reset(self):
+        Parameter.reset(self)
+        self._value_cache = 0.0
+        self._ts_index_cache = -1
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef int ts_index = timestep._index
+        cdef int doy = timestep._datetime.dayofyear - 1
+        cdef int n = len(self.amplitudes)
+        cdef int i
+        cdef double val
+        if ts_index == self._ts_index_cache:
+            val = self._value_cache
+        else:
+            val = self.mean
+            for i in range(n):
+                val += self._amplitudes[i]*cos(doy*(i+1)*M_PI*2/365 + self._phases[i])
+            self._value_cache = val
+            self._ts_index_cache = ts_index
+        return val
+
+    cpdef update(self, double[:] values):
+        n = len(self.amplitudes)
+        self.mean = values[0]
+        self.amplitudes[...] = values[1:n+1]
+        self.phases[...] = values[n+1:]
+
+    cpdef double[:] lower_bounds(self):
+        return np.r_[self._mean_lower_bounds, self._amplitude_lower_bounds, self._phase_lower_bounds]
+
+    cpdef double[:] upper_bounds(self):
+        return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
+parameter_registry.add(AnnualHarmonicSeriesParameter)
+
+
 
 def load_parameter(model, data):
     """Load a parameter from a dict"""
