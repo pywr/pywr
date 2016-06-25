@@ -50,3 +50,12 @@ cdef class IndexParameter(Parameter):
 cdef class IndexedArrayParameter(Parameter):
     cdef public Parameter index_parameter
     cdef public list params
+
+cdef class AnnualHarmonicSeriesParameter(Parameter):
+    cdef public double mean
+    cdef double[:] _amplitudes, _phases
+    cdef double _mean_lower_bounds, _mean_upper_bounds
+    cdef double[:] _amplitude_lower_bounds, _amplitude_upper_bounds
+    cdef double[:] _phase_lower_bounds, _phase_upper_bounds
+    cdef double _value_cache
+    cdef int _ts_index_cache

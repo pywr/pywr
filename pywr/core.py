@@ -97,9 +97,8 @@ class Timestepper(object):
 
 
 class Scenario(_core.Scenario):
-    def __init__(self, model, name, size=1):
-        super(Scenario, self).__init__(name, size)
-        model.scenarios.add_scenario(self)
+    pass
+
 
 
 class ScenarioCollection(_core.ScenarioCollection):
@@ -775,13 +774,6 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
         self.cost = cost
         self.conversion_factor = conversion_factor
         self.position = position
-
-    def __repr__(self):
-        if self.name:
-            # e.g. <Node "oxford">
-            return '<{} "{}">'.format(self.__class__.__name__, self.name)
-        else:
-            return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
 
     def check(self):
         """Check the node is valid

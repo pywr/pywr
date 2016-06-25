@@ -32,9 +32,10 @@ cdef class ScenarioCombinations:
 
 
 cdef class Scenario:
-    def __init__(self, str name, int size):
+    def __init__(self, model, str name, int size=1):
         self._name = name
         self._size = size
+        model.scenarios.add_scenario(self)
 
     property size:
         def __get__(self, ):
@@ -233,6 +234,12 @@ cdef class AbstractNode:
         def __get__(self):
             return np.array(self._flow)
 
+    def __repr__(self):
+        if self.name:
+            # e.g. <Node "oxford">
+            return '<{} "{}">'.format(self.__class__.__name__, self.name)
+        else:
+            return '<{} "{}">'.format(self.__class__.__name__, hex(id(self)))
 
     cpdef setup(self, model):
         """Called before the first run of the model"""
