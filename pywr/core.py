@@ -750,12 +750,12 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
             A unique name for the node
         """
 
-        x = kwargs.pop('x', None)
-        y = kwargs.pop('y', None)
-        if x is not None and y is not None:
-            position = (float(x), float(y),)
-        else:
-            position = None
+        schematic_position = kwargs.pop("schematic_position", None)
+        geographic_position = kwargs.pop("geographic_position", None)
+        if schematic_position is not None:
+            schematic_position = tuple(schematic_position)
+        if geographic_position is not None:
+            geographic_position = tuple(geographic_position)
 
         color = kwargs.pop('color', 'black')
         min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
@@ -773,7 +773,8 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
         self.max_flow = max_flow
         self.cost = cost
         self.conversion_factor = conversion_factor
-        self.position = position
+        self.schematic_position = schematic_position
+        self.geographic_position = geographic_position
 
     def check(self):
         """Check the node is valid
@@ -790,21 +791,15 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
         min_flow = data.pop('min_flow', None)
         max_flow = data.pop('max_flow', None)
 
-        try:
-            x = float(data.pop('x'))
-            y = float(data.pop('y'))
-        except KeyError:
-            try:
-                position = data.pop('position')
-                x, y = position
-                x = float(x)
-                y = float(y)
-            except KeyError:
-                x = None
-                y = None
+        schematic_position = data.pop("schematic_position", None)
+        geographic_position = data.pop("geographic_position", None)
+
         data.pop('type')
-        node = cls(model=model, name=name, x=x, y=y, **data)
-        
+        node = cls(model=model, name=name,
+                   schematic_position=schematic_position,
+                   geographic_position=geographic_position,
+                   **data)
+
         cost = load_parameter(model, cost)
         min_flow = load_parameter(model, min_flow)
         max_flow = load_parameter(model, max_flow)
@@ -1047,7 +1042,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
             max_volume=max_volume, min_volume=min_volume, x=x, y=y,
             **data
         )
-        
+
         cost = load_parameter(model, cost)
         if cost is None:
             cost = 0.0

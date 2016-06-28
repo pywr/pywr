@@ -136,6 +136,27 @@ def test_slots_connect_disconnect(solver):
         supply1.disconnect(storage)
 
 
+def test_node_position(solver):
+    model = Model(solver=solver)
+
+    node1 = Input(model, "input", schematic_position=(10, 20), geographic_position=(-1, 52))
+
+    data = {
+        "name": "output",
+        "type": "output",
+        "schematic_position": [30, 40],
+        "geographic_position": [-1.5, 52.2],
+    }
+    node2 = Node.load(data, model)
+
+    assert(node1.schematic_position == (10, 20))
+    assert(node1.geographic_position == (-1, 52))
+    assert(node2.schematic_position == (30, 40))
+    assert(node2.geographic_position == (-1.5, 52.2))
+
+    node1.schematic_position = (50, 60)
+    assert(node1.schematic_position == (50, 60))
+
 # TODO Update this test. RiverSplit is deprecated.
 @pytest.mark.xfail
 def test_slots_from(solver):
