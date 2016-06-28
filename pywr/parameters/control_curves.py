@@ -20,6 +20,8 @@ class ControlCurveParameter(BaseControlCurveParameter):
 
     Parameters
     ----------
+    storage_node : `Storage`
+        An optional `Storage` node that can be used to query the current percentage volume.
     control_curves : `float`, `int` or `Parameter` object, or iterable thereof
         The position of the control curves. Internally `float` or `int` types are cast to
         `ConstantParameter`. Multiple values correspond to multiple control curve positions.
@@ -34,10 +36,6 @@ class ControlCurveParameter(BaseControlCurveParameter):
         of the control curves. In the same way as `values` the first `Parameter` is used if
         `Storage` is above the first control curve, and second `Parameter` if above the
         second control curve, and so on.
-    storage_node : `Storage` or `None`, optional
-        An optional `Storage` node that can be used to query the current percentage volume. If
-        not specified it is assumed that this object is attached to a `Storage` node and therefore
-        `self.node` is used.
     variable_indices : iterable of ints, optional
         A list of indices that correspond to items in `values` which are to be considered variables
          when `self.is_variable` is True. This mechanism allows a subset of `values` to be variable.
@@ -167,7 +165,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
             raise ValueError('First dimension of values should be one more than the number of '
                              'control curves ({}).'.format(nvalues))
         if values.shape[1] != self._profile_size:
-            raise ValueError("Second dimension values must be size 12.".format(self._profile_size))
+            raise ValueError("Second dimension values must be size {}.".format(self._profile_size))
         self.values = values
 
         if isinstance(profile,  BaseParameter):
@@ -175,7 +173,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
         elif profile is not None:
             profile = np.array(profile)
             if profile.shape[0] != self._profile_size:
-                raise ValueError("Length of profile must be size 12.".format(self._profile_size))
+                raise ValueError("Length of profile must be size {}.".format(self._profile_size))
             self.profile = profile
         else:
             self.profile = np.ones(self._profile_size)
@@ -239,6 +237,8 @@ class MonthlyProfileControlCurveParameter(AbstractProfileControlCurveParameter):
 
     Parameters
     ----------
+    storage_node : `Storage`
+        An optional `Storage` node that can be used to query the current percentage volume.
     control_curves : `float`, `int` or `Parameter` object, or iterable thereof
         The position of the control curves. Internally `float` or `int` types are cast to
         `ConstantParameter`. Multiple values correspond to multiple control curve positions.
@@ -247,10 +247,6 @@ class MonthlyProfileControlCurveParameter(AbstractProfileControlCurveParameter):
         A two dimensional array_like where the first dimension corresponds to the current level
         of the corresponding `Storage` and the second dimension is of size 12, corresponding to
         the monthly value to return based on current time-step.
-    storage_node : `Storage` or `None`, optional
-        An optional `Storage` node that can be used to query the current percentage volume. If
-        not specified it is assumed that this object is attached to a `Storage` node and therefore
-        `self.node` is used.
     profile : 'Parameter` or array_like of length 12, optional
         An optional profile `Parameter` or monthly array to factor the values by. The default is
         np.ones(12) to have no scaling effect on the returned values.
@@ -277,6 +273,8 @@ class DailyProfileControlCurveParameter(AbstractProfileControlCurveParameter):
 
     Parameters
     ----------
+    storage_node : `Storage`
+        An optional `Storage` node that can be used to query the current percentage volume.
     control_curves : `float`, `int` or `Parameter` object, or iterable thereof
         The position of the control curves. Internally `float` or `int` types are cast to
         `ConstantParameter`. Multiple values correspond to multiple control curve positions.
@@ -285,10 +283,6 @@ class DailyProfileControlCurveParameter(AbstractProfileControlCurveParameter):
         A two dimensional array_like where the first dimension corresponds to the current level
         of the corresponding `Storage` and the second dimension is of size 366, corresponding to
         the monthly value to return based on current time-step.
-    storage_node : `Storage` or `None`, optional
-        An optional `Storage` node that can be used to query the current percentage volume. If
-        not specified it is assumed that this object is attached to a `Storage` node and therefore
-        `self.node` is used.
     profile : 'Parameter` or array_like of length 12, optional
         An optional profile `Parameter` or monthly array to factor the values by. The default is
         np.ones(366) to have no scaling effect on the returned values.
