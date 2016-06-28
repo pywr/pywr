@@ -1,6 +1,7 @@
 from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep
 from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter, MonthlyProfileControlCurveParameter
+from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder
 import numpy as np
 import pandas as pd
 from numpy.testing import assert_allclose
@@ -399,3 +400,40 @@ def test_daily_profile_control_curve(model):
     for mth in range(1, 13):
         ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
         np.testing.assert_allclose(p.value(ts, si), 0.3)
+
+def test_demand_saving_with_indexed_array(solver):
+    """Test demand saving based on reservoir control curves
+
+    This is a relatively complex test to pass due to the large number of
+    dependencies of the parameters actually being tested. The test is an
+    example of how demand savings can be applied in times of drought based
+    on the state of a reservoir.
+    """
+
+    model = load_model("demand_saving2.json", solver=solver)
+
+    model.timestepper.end = pd.Timestamp("2016-01-31")
+
+    rec_demand = NumpyArrayNodeRecorder(model, model.nodes["Demand"])
+    rec_storage = NumpyArrayStorageRecorder(model, model.nodes["Reservoir"])
+
+    model.check()
+    model.run()
+
+    max_volume = model.nodes["Reservoir"].max_volume
+
+    # model starts with no demand saving
+    demand_baseline = 50.0
+    demand_factor = 0.9  # jan-apr
+    demand_saving = 1.0
+    assert_allclose(rec_demand.data[0, 0], demand_baseline * demand_factor * demand_saving)
+
+    # first control curve breached
+    demand_saving = 0.95
+    assert(rec_storage.data[4, 0] < (0.8 * max_volume) )
+    assert_allclose(rec_demand.data[5, 0], demand_baseline * demand_factor * demand_saving)
+
+    # second control curve breached
+    demand_saving = 0.5
+    assert(rec_storage.data[11, 0] < (0.5 * max_volume) )
+    assert_allclose(rec_demand.data[12, 0], demand_baseline * demand_factor * demand_saving)
