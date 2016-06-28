@@ -61,7 +61,7 @@ def nx_to_json(model):
 
     return graph
 
-def draw_graph(model, css=None):
+def draw_graph(model, width=500, height=400, css=None):
     """Display a Pywr model using D3 in Jupyter
 
     Parameters
@@ -79,6 +79,8 @@ def draw_graph(model, css=None):
     js = Javascript(
         draw_graph_template.render(
             graph=graph,
+            width=width,
+            height=height,
             css=css.replace("\n","")
         ),
     )

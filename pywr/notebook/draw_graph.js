@@ -5,8 +5,8 @@ style.html("{{ css }}");
 
 var div = d3.selectAll(element).append("div");
 
-var width = 500,
-    height = 400;
+var width = {{ width }},
+    height = {{ height }};
 
 var color = d3.scale.category20();
 
