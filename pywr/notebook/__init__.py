@@ -4,6 +4,8 @@ from jinja2 import Template
 
 from pywr.core import Model, Input, Output, Link, Storage, StorageInput, StorageOutput
 
+from .figures import *
+
 # load javascript template for d3 graph
 folder = os.path.dirname(__file__)
 with open(os.path.join(folder, "draw_graph.js"), "r") as f:
@@ -19,13 +21,13 @@ def nx_to_json(model):
     edges = []
     for edge in model.graph.edges():
         node_source, node_target = edge
-        
+
         # where a link is to/from a subnode, display a link to the parent instead
         if node_source.parent is not None:
             node_source = node_source.parent
         if node_target.parent is not None:
             node_target = node_target.parent
-        
+
         if node_source is node_target:
             # link is between two subnodes
             continue
@@ -42,12 +44,12 @@ def nx_to_json(model):
             } for n, name in enumerate(nodes)
         ],
         "links": edges}
-    
+
     return graph
 
 def draw_graph(model):
     """Display a Pywr model using D3 in Jupyter
-    
+
     Parameters
     ----------
     model : pywr.core.Model
