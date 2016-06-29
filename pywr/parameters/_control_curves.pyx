@@ -16,12 +16,10 @@ cdef class BaseControlCurveParameter(Parameter):
 
         Parameters
         ----------
+        storage_node : `Storage`
+            An optional `Storage` node that can be used to query the current percentage volume.
         control_curves : iterable of Parameter objects or single Parameter
             The Parameter objects to use as a control curve(s).
-        storage_node : `Storage` or `None`, optional
-            An optional `Storage` node that can be used to query the current percentage volume. If
-            not specified it is assumed that this object is attached to a `Storage` node and therefore
-            `self.node` is used.
         """
         super(BaseControlCurveParameter, self).__init__()
         self.control_curves = control_curves
@@ -36,7 +34,7 @@ cdef class BaseControlCurveParameter(Parameter):
             # Accept a single Parameter and convert to a list internally
             if isinstance(control_curves, Parameter):
                 control_curves = [control_curves]
-            
+
             # remove existing control curves (if any)
             if self._control_curves is not None:
                 for control_curve in self._control_curves:
@@ -151,6 +149,13 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
 parameter_registry.add(ControlCurveInterpolatedParameter)
 
 cdef class ControlCurveIndexParameter(IndexParameter):
+    """Multiple control curve holder which returns an index not a value
+
+    Parameters
+    ----------
+    storage_node : `Storage`
+    control_curves : iterable of `Parameter` instances or floats
+    """
     def __init__(self, storage_node, control_curves, **kwargs):
         super(ControlCurveIndexParameter, self).__init__(**kwargs)
         self.storage_node = storage_node
@@ -161,6 +166,13 @@ cdef class ControlCurveIndexParameter(IndexParameter):
             control_curve.parents.add(self)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns the index of the first control curve the storage is above
+
+        The index is zero-based. For example, if only one control curve is
+        supplied then the index is either 0 (above) or 1 (below). For two
+        curves the index is either 0 (above both), 1 (in between), or 2 (below
+        both), and so on.
+        """
         cdef double current_percentage
         cdef double target_percentage
         cdef int index, j

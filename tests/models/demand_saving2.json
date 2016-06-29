@@ -1,0 +1,93 @@
+{
+    "metadata": {
+        "title": "Demand Saving",
+        "description": "Demand saving using an IndexedArrayParameter"
+    },
+    "timestepper": {
+        "start": "2016-01-01",
+        "end": "2016-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "type": "catchment",
+            "name": "Inflow",
+            "flow": 0.0
+        },
+        {
+            "type": "reservoir",
+            "name": "Reservoir",
+            "max_volume": 1000,
+            "initial_volume": 1000
+        },
+        {
+            "type": "output",
+            "name": "Spill",
+            "cost": 10
+        },
+        {
+            "type": "output",
+            "name": "Demand",
+            "max_flow": "demand_max_flow",
+            "cost": -500
+        }
+    ],
+    "edges": [
+        ["Inflow", "Reservoir"],
+        ["Reservoir", "Demand"],
+        ["Reservoir", "Spill"]
+    ],
+    "parameters": {
+        "demand_baseline": {
+            "type": "constant",
+            "values": 50
+        },
+        "demand_profile": {
+            "type": "monthlyprofile",
+            "values": [0.9, 0.9, 0.9, 0.9, 1.2, 1.2, 1.2, 1.2, 0.9, 0.9, 0.9, 0.9]
+        },
+        "level1": {
+            "type": "constant",
+            "values": 0.8
+        },
+        "level2": {
+            "type": "constant",
+            "values": 0.5
+        },
+        "demand_saving_level": {
+            "type": "controlcurveindex",
+            "storage_node": "Reservoir",
+            "control_curves": [
+                "level1",
+                "level2"
+            ]
+        },
+        "demand_saving_factor": {
+            "type": "indexedarray",
+            "index_parameter": "demand_saving_level",
+            "params": [
+                {
+                    "type": "constant",
+                    "values": 1.0
+                },
+                {
+                    "type": "monthlyprofile",
+                    "values": [0.95, 0.95, 0.95, 0.95, 0.90, 0.90, 0.90, 0.90, 0.95, 0.95, 0.95, 0.95]
+                },
+                {
+                    "type": "monthlyprofile",
+                    "values": [0.5, 0.5, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5]
+                }
+            ]
+        },
+        "demand_max_flow": {
+            "type": "aggregated",
+            "agg_func": "product",
+            "parameters": [
+                "demand_baseline",
+                "demand_profile",
+                "demand_saving_factor"
+            ]
+        }
+    }
+}

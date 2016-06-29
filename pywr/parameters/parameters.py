@@ -7,6 +7,7 @@ from ._parameters import (
     ArrayIndexedScenarioMonthlyFactorsParameter,
     DailyProfileParameter, ArrayIndexedScenarioParameter,
     load_parameter, load_parameter_values, load_dataframe)
+from past.builtins import basestring
 import numpy as np
 import pandas
 
@@ -39,8 +40,10 @@ class AggregatedParameter(Parameter):
                 param.parents.add(self)
 
         self.agg_func = agg_func
-        if isinstance(self.agg_func, str):
+        if isinstance(self.agg_func, basestring):
             self.agg_func = agg_funcs[self.agg_func]
+        elif not callable(self.agg_func):
+            raise TypeError("agg_func \"{}\" is not callable")
 
     @classmethod
     def load(cls, model, data):

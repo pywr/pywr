@@ -243,16 +243,36 @@ cdef class DailyProfileParameter(Parameter):
 parameter_registry.add(DailyProfileParameter)
 
 cdef class IndexParameter(Parameter):
+    """Base parameter providing an `index` method
+
+    See also
+    --------
+    IndexedArrayParameter
+    ControlCurveIndexParameter
+    """
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns the current index as a float"""
         # return index as a float
         return float(self.index(timestep, scenario_index))
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns the current index"""
         # return index as an integer
         return 0
 parameter_registry.add(IndexParameter)
 
 cdef class IndexedArrayParameter(Parameter):
+    """Parameter which uses an IndexParameter to index an array of Parameters
+
+    An example use of this parameter is to return a demand saving factor (as
+    a float) based on the current demand saving level (calculated by an
+    `IndexParameter`).
+
+    Parameters
+    ----------
+    index_parameter : `IndexParameter`
+    params : iterable of `Parameters` or floats
+    """
     def __init__(self, index_parameter=None, params=None, **kwargs):
         super(IndexedArrayParameter, self).__init__(**kwargs)
         assert(isinstance(index_parameter, IndexParameter))
@@ -260,6 +280,7 @@ cdef class IndexedArrayParameter(Parameter):
         self.params = params
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns the value of the Parameter at the current index"""
         cdef int index
         index = self.index_parameter.index(timestep, scenario_index)
         parameter = self.params[index]
@@ -410,7 +431,7 @@ def load_parameter(model, data):
         kwargs = dict([(k,v) for k,v in data.items()])
         del(kwargs["type"])
         parameter = cls.load(model, kwargs)
-    
+
     return parameter
 
 
