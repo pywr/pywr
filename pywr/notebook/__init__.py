@@ -77,11 +77,12 @@ def draw_graph(model, width=500, height=400, css=None):
         css = draw_graph_css
 
     js = Javascript(
-        draw_graph_template.render(
+        data=draw_graph_template.render(
             graph=graph,
             width=width,
             height=height,
             css=css.replace("\n","")
         ),
+        lib="http://d3js.org/d3.v3.min.js",
     )
     display(js)

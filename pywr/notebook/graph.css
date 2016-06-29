@@ -12,6 +12,9 @@
 .node-output {
     fill: gold;
 }
+.node-storage {
+    fill: firebrick;
+}
 .node-reservoir {
     fill: firebrick;
 }
