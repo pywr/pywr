@@ -3,6 +3,10 @@
     stroke: #333;
     fill: grey;
 }
+.node:hover {
+    stroke-width: 2.5px;
+    stroke: #222;
+}
 .node-input {
     fill: dodgerblue;
 }
