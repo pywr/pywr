@@ -1,0 +1,24 @@
+.node {
+    stroke-width: 1.5px;
+    stroke: #333;
+    fill: grey;
+}
+.node:hover {
+    stroke-width: 2.5px;
+    stroke: #222;
+}
+.node-input {
+    fill: dodgerblue;
+}
+.node-link {
+    fill: grey;
+}
+.node-output {
+    fill: gold;
+}
+.node-storage {
+    fill: firebrick;
+}
+.node-reservoir {
+    fill: firebrick;
+}

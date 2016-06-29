@@ -1,9 +1,12 @@
 var graph = {{ graph }};
 
+var style = d3.selectAll(element).append("style");
+style.html("{{ css }}");
+
 var div = d3.selectAll(element).append("div");
 
-var width = 500,
-    height = 400;
+var width = {{ width }},
+    height = {{ height }};
 
 var color = d3.scale.category20();
 
@@ -49,9 +52,13 @@ var node = svg.selectAll(".node")
 .enter().append("circle")
   .attr("class", "node")
   .attr("r", node_size)
-  .style("fill", function(d) { return d.color; })
-  .style("stroke", "#333")
-  .style("stoke-width", 0.5)
+  .attr("class", function(d) {
+      var clss = "node";
+      for (var i=0; i < d.clss.length; i++) {
+          clss += " node-"+d.clss[i];
+      };
+      return clss;
+  })
   .call(force.drag);
 
 node.append("title")
