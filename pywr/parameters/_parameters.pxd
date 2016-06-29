@@ -61,3 +61,6 @@ cdef class CachedParameter(IndexParameter):
     cpdef reset(self)
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
+
+cdef class CachedTimeParameter(CachedParameter):
+    pass

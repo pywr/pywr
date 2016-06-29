@@ -6,7 +6,8 @@ from ._parameters import (
     ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter,
     DailyProfileParameter, ArrayIndexedScenarioParameter,
-    IndexParameter, CachedParameter,
+    IndexParameter,
+    CachedParameter, CachedTimeParameter,
     load_parameter, load_parameter_values, load_dataframe)
 import numpy as np
 import pandas

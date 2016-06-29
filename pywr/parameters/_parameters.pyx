@@ -103,26 +103,25 @@ cdef class Parameter:
 
 parameter_registry.add(Parameter)
 
-
 cdef class CachedParameter(IndexParameter):
-    """Wrapper for Parameters which caches the result"""
+    """Cache a parameter which varies in both time and by scenario"""
     def __init__(self, parameter):
         super(IndexParameter, self).__init__()
         self.parameter = parameter
         self.timestep = None
-        self.scenario_index = None
+        self.scenario_index = ScenarioIndex(-1, np.array([], dtype=int))
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        if not timestep is self.timestep or not scenario_index is scenario_index:
-            # refresh the cache
+        # refresh cache if timestep or scenario has changed
+        if not (timestep is self.timestep) or not (scenario_index.global_id == self.scenario_index.global_id):
             self.cached_value = self.parameter.value(timestep, scenario_index)
             self.timestep = timestep
             self.scenario_index = scenario_index
         return self.cached_value
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        if not timestep is self.timestep or not scenario_index is scenario_index:
-            # refresh the cache
+        # refresh cache if timestep or scenario has changed
+        if not (timestep is self.timestep) or not (scenario_index.global_id == self.scenario_index.global_id):
             self.cached_index = self.parameter.index(timestep, scenario_index)
             self.timestep = timestep
             self.scenario_index = scenario_index
@@ -132,9 +131,23 @@ cdef class CachedParameter(IndexParameter):
     def load(cls, model, data):
         parameter = load_parameter(model, data["parameter"])
         return cls(parameter)
-
 parameter_registry.add(CachedParameter)
 
+cdef class CachedTimeParameter(CachedParameter):
+    """Cache a parameter which varies in time but not by scenario"""
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        # refresh cache if timestep has changed
+        if not timestep is self.timestep:
+            self.cached_value = self.parameter.value(timestep, scenario_index)
+            self.timestep = timestep
+        return self.cached_value
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        # refresh cache if timestep has changed
+        if not timestep is self.timestep:
+            self.cached_index = self.parameter.index(timestep, scenario_index)
+            self.timestep = timestep
+        return self.cached_index
+parameter_registry.add(CachedTimeParameter)
 
 cdef class ArrayIndexedParameter(Parameter):
     """Time varying parameter using an array and Timestep._index
@@ -325,12 +338,21 @@ def load_parameter(model, data):
         parameter = data
     elif "cached" in data.keys() and data["cached"]:
         # cached parameter wrapper
+        cache_type = data["cached"]
+        if cache_type == "time":
+            cache_cls = CachedTimeParameter
+        elif cache_type == "scenario":
+            raise NotImplementedError("Scenario-varying cache has not been implemented (yet).")
+        elif cache_type == "both" or cache_type is True:
+            cache_cls = CachedParameter
+        else:
+            raise ValueError("""Unrecognised cache type "{}". Must be "time", "scenario" or "both".""".format(cache_type))
         del(data["cached"])
         if "name" in data:
             parameter_name = data["name"]
             del(data["name"])
         param = load_parameter(model, data)
-        parameter = CachedParameter(param)
+        parameter = cache_cls(param)
     else:
         # parameter is dynamic
         parameter_type = data['type']

@@ -416,59 +416,6 @@ def test_parameter_df_json_load(model, tmpdir):
     p = load_parameter(model, data)
     p.setup(model)
 
-def test_cached_parameter(model):
-    """
-    Test cached parameters are loaded correctly and do not affect the
-    result of the model. Also tests the cache is useful by reducing the
-    number of function calls to shared parameters.
-    """
-    inpt = Input(model, "Input")
-    otpt = Output(model, "Output", max_flow=20, cost=-1000)
-    inpt.connect(otpt)
-
-    model.timestepper.start = pd.to_datetime("2016-01-01")
-    model.timestepper.end = pd.to_datetime("2016-01-01")
-
-    data = {
-        "cached": True,
-        "type": "constant",
-        "values": 15.0
-    }
-
-    inpt.max_flow = load_parameter(model, data)
-    assert(isinstance(inpt.max_flow, CachedParameter))
-    assert(isinstance(inpt.max_flow.parameter, ConstantParameter))
-
-    model.run()
-    assert_allclose(inpt.flow, 15)
-
-    # create a parameter that tracks how many times it is called
-    def func(parent, ts, si):
-        func.count += 1
-        return 10.0
-    func.count = 0
-    parameter = FunctionParameter(inpt, func)
-
-    inpt.max_flow = parameter
-    otpt.max_flow = parameter
-
-    model.run()
-
-    # parameter is used by two nodes so called twice
-    assert(func.count == 2)
-    func.count = 0
-
-    # cache the parameter
-    cached_parameter = CachedParameter(parameter)
-    inpt.max_flow = cached_parameter
-    otpt.max_flow = cached_parameter
-
-    model.run()
-    assert_allclose(inpt.flow, 10)
-
-    # parameter is now cached, so only called once
-    assert(func.count == 1)
-
 def test_simple_json_parameter_reference(solver):
     model = load_model("parameter_reference.json")
     assert(model.nodes["supply1"].max_flow == 125.0)
