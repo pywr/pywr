@@ -32,7 +32,7 @@ def align_series(A, B, names=None, start=None, end=None):
     """
     # join series B to series A
     # TODO: better handling of heterogeneous frequencies
-    df = pandas.DataFrame(A).join(B)
+    df = pandas.concat([A, B], join="inner", axis=1)
 
     # apply names
     if names is not None:
@@ -40,16 +40,15 @@ def align_series(A, B, names=None, start=None, end=None):
     else:
         names = list(df.columns)
 
-    # clip data to overlapping section
-    idx = [max(B.index[0], A.index[0]), min(B.index[-1], A.index[-1])]
-
     # clip start and end to user-specified dates
+    idx = [df.index[0], df.index[-1]]
     if start is not None:
         idx[0] = pandas.Timestamp(start)
     if end is not None:
         idx[1] = pandas.Timestamp(end)
 
-    df = df.loc[idx[0]:idx[-1],:]
+    if start or end:
+        df = df.loc[idx[0]:idx[-1],:]
 
     A = df[names[0]]
     B = df[names[1]]
