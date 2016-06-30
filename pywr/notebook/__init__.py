@@ -5,6 +5,8 @@ from pywr.core import Node
 
 from pywr.core import Model, Input, Output, Link, Storage, StorageInput, StorageOutput
 
+from .figures import *
+
 # load javascript template for d3 graph
 folder = os.path.dirname(__file__)
 with open(os.path.join(folder, "draw_graph.js"), "r") as f:
