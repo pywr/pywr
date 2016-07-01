@@ -79,7 +79,38 @@ parameter_registry.add(BaseControlCurveParameter)
 
 
 cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
-    """ A control curve Parameter that interpolates between three values.
+    """A control curve Parameter that interpolates between three or more values
+
+    Parameters
+    ----------
+    storage_node : `Storage`
+        The storage node to compare the control curve(s) to.
+    control_curves : list of `Parameter`
+        A list of parameters representing the control curve(s). These are
+        often MonthlyProfileParameters or DailyProfileParameters, but may be
+        any Parameter that returns values between 0.0 and 1.0.
+    values : list of float
+        A list of values to return corresponding to the control curves. The
+        length of the list could be 1 + len(control_curves).
+
+    For a single control curve if the storage volume is above the curve the
+    first value is returned, otherwise the second value is returned. In the
+    case that there are multiple curves, if the storage volume falls between
+    two curves the return value is linearly interpolated between the values
+    for the two curves.
+
+    Example
+    -------
+    In the example below the cost of a storage node is related to it's volume.
+    If the volume is above 50% the cost is 0. If the volume is between 50% and
+    30% a weighted average is taken to return a cost between 0.0 and -2.0. For
+    example, at 35% the cost is -1.5. Below 30% the cost is -10.0.
+
+    >>> storage_node = Storage(model, "reservoir")
+    >>> ccs = [ConstantParameter(0.5), ConstantParameter(0.3)]
+    >>> values = [0.0, -2.0, -10.0]
+    >>> cost = ControlCurveInterpolatedParameter(storage_node, ccs, values)
+    >>> storage_node.cost = cost
     """
     def __init__(self, storage_node, control_curves, values):
         super(ControlCurveInterpolatedParameter, self).__init__(storage_node, control_curves)
