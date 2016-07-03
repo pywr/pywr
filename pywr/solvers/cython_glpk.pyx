@@ -20,6 +20,7 @@ cdef class CythonGLPKSolver:
     cdef int idx_row_non_storages
     cdef int idx_row_cross_domain
     cdef int idx_row_storages
+    cdef int idx_row_aggregated
 
     cdef list routes
     cdef list non_storages
@@ -34,6 +35,7 @@ cdef class CythonGLPKSolver:
     cdef cvarray node_flows_arr
     cdef cvarray route_flows_arr
     cdef cvarray change_in_storage_arr
+    cdef list aggregated
     cdef public object stats
 
     def __cinit__(self):
@@ -54,6 +56,7 @@ cdef class CythonGLPKSolver:
         cdef Node supply
         cdef Node demand
         cdef Node node
+        cdef AggregatedNode agg_node
         cdef double min_flow
         cdef double max_flow
         cdef double cost
@@ -91,11 +94,15 @@ cdef class CythonGLPKSolver:
 
         non_storages = []
         storages = []
+        aggregated = []
         for some_node in model.graph.nodes():
             if isinstance(some_node, (BaseInput, BaseLink, BaseOutput)):
                 non_storages.append(some_node)
             elif isinstance(some_node, Storage):
                 storages.append(some_node)
+            elif isinstance(some_node, AggregatedNode):
+                if some_node.factors is not None:
+                    aggregated.append(some_node)
 
         if len(routes) == 0:
             raise ModelStructureError("Model has no valid routes")
@@ -190,6 +197,41 @@ cdef class CythonGLPKSolver:
                 ind[1+len(cols_output)+n] = self.idx_col_routes+c
                 val[1+len(cols_output)+n] = -1
             glp_set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
+
+        # aggregated nodes
+        self.idx_row_aggregated = self.idx_row_storages + len(storages)
+        for agg_node in aggregated:
+            nodes = agg_node.nodes
+            factors = agg_node.factors
+            assert(len(nodes) == len(factors))
+
+            row = glp_add_rows(self.prob, len(agg_node.nodes)-1)
+
+            cols = []
+            for node in nodes:
+                cols.append([n for n, route in enumerate(routes) if node in route])
+
+            # TODO: move this into solve() so that factors can vary in time
+
+            # normalise factors
+            # TODO: factors could be Parameters
+            f0 = factors[0]
+            factors_norm = [1/(f/f0) for f in factors]
+
+            # update matrix
+            for n in range(len(nodes)-1):
+                length = len(cols[0])+len(cols[n+1])
+                ind = <int*>malloc(1+length * sizeof(int))
+                val = <double*>malloc(1+length * sizeof(double))
+                for i, c in enumerate(cols[0]):
+                    ind[1+i] = 1+c
+                    val[1+i] = 1.0
+                for i, c in enumerate(cols[n+1]):
+                    ind[1+len(cols[0])+i] = 1+c
+                    val[1+len(cols[0])+i] = -factors_norm[n+1]
+                glp_set_mat_row(self.prob, row+n, length, ind, val)
+
+                glp_set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
 
         # update route properties
         routes_cost = []

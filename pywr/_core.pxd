@@ -66,6 +66,9 @@ cdef class Node(AbstractNode):
 cdef class AggregatedNode(AbstractNode):
     cdef list _nodes
     # TODO Add min/max flow parameters, and add to solvers.
+    cdef double[:] _factors
+    cdef double _max_flow
+    cdef double _min_flow
 
 cdef class BaseInput(Node):
     cdef object _licenses

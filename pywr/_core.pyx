@@ -484,6 +484,7 @@ cdef class AggregatedNode(AbstractNode):
     """
     def __cinit__(self, ):
         self._allow_isolated = True
+        self._factors = None
 
     property nodes:
         def __get__(self):
@@ -501,6 +502,25 @@ cdef class AggregatedNode(AbstractNode):
             self._flow[i] = 0.0
             for n in self._nodes:
                 self._flow[i] += n._flow[i]
+
+    property factors:
+        def __get__(self):
+            return self._factors
+        def __set__(self, values):
+            values = np.array(values, np.float64)
+            self._factors = values
+
+    property max_flow:
+        def __get__(self):
+            return self._max_flow
+        def __set__(self, value):
+            self._max_flow = value
+
+    property min_flow:
+        def __get__(self):
+            return self._min_flow
+        def __set__(self, value):
+            self._min_flow = value
 
 cdef class StorageInput(BaseInput):
     cpdef commit(self, int scenario_index, double volume):
