@@ -2,11 +2,17 @@ from libc.stdlib cimport malloc, free
 
 cimport cython
 
+import numpy as np
+cimport numpy as np
+
 from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
 from pywr.core import ModelStructureError
 import time
 include "glpk.pxi"
+
+cdef class AbstractNodeData:
+    cdef public int id
 
 cdef class CythonGLPKSolver:
     cdef glp_prob* prob
@@ -19,6 +25,9 @@ cdef class CythonGLPKSolver:
     cdef list routes
     cdef list non_storages
     cdef list storages
+    cdef list routes_cost
+    cdef list nodes_with_cost
+    cdef int num_nodes
     cdef public object stats
 
     def __cinit__(self):
@@ -51,6 +60,18 @@ cdef class CythonGLPKSolver:
         cdef Timestep timestep
         cdef int status
         cdef cross_domain_row
+        cdef int n
+
+        self.nodes_with_cost = []
+
+        n = 0
+        for _node in model.graph.nodes():
+            if isinstance(_node, Node):
+                _node.__data = AbstractNodeData()
+                _node.__data.id = n
+                self.nodes_with_cost.append(_node)
+                n += 1
+        self.num_nodes = n
 
         routes = model.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
         # Find cross-domain routes
@@ -152,12 +173,35 @@ cdef class CythonGLPKSolver:
                 val[1+len(cols_output)+n] = -1
             glp_set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
 
+        # update route properties
+        routes_cost = []
+        for col, route in enumerate(routes):
+            route_cost = []
+            route_cost.append(route[0].__data.id)
+            for node in route[1:-1]:
+                if isinstance(node, BaseLink):
+                    route_cost.append(node.__data.id)
+            route_cost.append(route[-1].__data.id)
+            routes_cost.append(route_cost)
+
         self.routes = routes
         self.non_storages = non_storages
         self.storages = storages
+        self.routes_cost = routes_cost
 
         # reset stats
-        self.stats = {'total': 0.0, 'lp_solve': 0.0, 'bounds_update': 0.0, 'result_update': 0.0}
+        self.stats = {
+            'total': 0.0,
+            'lp_solve': 0.0,
+            'result_update': 0.0,
+            'bounds_update_routes': 0.0,
+            'bounds_update_nonstorage': 0.0,
+            'bounds_update_storage': 0.0
+        }
+
+        self.stats['bounds_update_routes'] = 0.0
+        self.stats['bounds_update_nonstorage'] = 0.0
+        self.stats['bounds_update_storage'] = 0.0
 
     cpdef object solve(self, model):
         t0 = time.clock()
@@ -172,6 +216,7 @@ cdef class CythonGLPKSolver:
     cdef object _solve_scenario(self, model, ScenarioIndex scenario_index):
         cdef Node node
         cdef Storage storage
+        cdef AbstractNode _node
         cdef double min_flow
         cdef double max_flow
         cdef double cost
@@ -186,27 +231,41 @@ cdef class CythonGLPKSolver:
         cdef int status
         cdef cross_domain_col
         cdef list route
+        cdef int node_id
 
-        t0 = time.clock()
         timestep = model.timestep
         routes = self.routes
         non_storages = self.non_storages
         storages = self.storages
 
-        # update route properties
+        # update route cost
+
+        t0 = time.clock()
+
+        # update the cost of each node in the model
+        cdef double[:] node_costs = np.empty(self.num_nodes, dtype=np.float64)
+        for _node in self.nodes_with_cost:
+            node_id = _node.__data.id
+            node_costs[_node.__data.id] = _node.get_cost(timestep, scenario_index)
+
+        # calculate the total cost of each route
         for col, route in enumerate(routes):
-            cost = route[0].get_cost(timestep, scenario_index)
-            for node in route[1:-1]:
-                if isinstance(node, BaseLink):
-                    cost += node.get_cost(timestep, scenario_index)
-            cost += route[-1].get_cost(timestep, scenario_index)
+            cost = 0.0
+            for node_id in self.routes_cost[col]:
+                cost += node_costs[node_id]
             glp_set_obj_coef(self.prob, self.idx_col_routes+col, cost)
+
+        self.stats['bounds_update_routes'] += time.clock() - t0
+        t0 = time.clock()
 
         # update non-storage properties
         for col, node in enumerate(non_storages):
             min_flow = inf_to_dbl_max(node.get_min_flow(timestep, scenario_index))
             max_flow = inf_to_dbl_max(node.get_max_flow(timestep, scenario_index))
             glp_set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
+
+        self.stats['bounds_update_nonstorage'] += time.clock() - t0
+        t0 = time.clock()
 
         # update storage node constraint
         for col, storage in enumerate(storages):
@@ -218,7 +277,7 @@ cdef class CythonGLPKSolver:
             ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
             glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
-        self.stats['bounds_update'] += time.clock() - t0
+        self.stats['bounds_update_storage'] += time.clock() - t0
 
         # attempt to solve the linear programme
         t0 = time.clock()

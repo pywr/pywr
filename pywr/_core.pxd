@@ -36,6 +36,7 @@ cdef class AbstractNode:
     cdef object _model
     cdef object _name
     cdef bint _allow_isolated
+    cdef public object __data
 
     cdef Parameter _cost_param
 
