@@ -21,7 +21,7 @@ cdef class Parameter:
     cpdef update(self, double[:] values)
     cpdef double[:] lower_bounds(self)
     cpdef double[:] upper_bounds(self)
-    cdef public str name
+    cdef public basestring name
 
 cdef class ArrayIndexedParameter(Parameter):
     cdef double[:] values
