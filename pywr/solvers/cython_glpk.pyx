@@ -1,9 +1,7 @@
 from libc.stdlib cimport malloc, free
+from cython.view cimport array as cvarray
 
 cimport cython
-
-import numpy as np
-cimport numpy as np
 
 from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
@@ -13,6 +11,7 @@ include "glpk.pxi"
 
 cdef class AbstractNodeData:
     cdef public int id
+    cdef public bint is_link
 
 cdef class CythonGLPKSolver:
     cdef glp_prob* prob
@@ -26,8 +25,15 @@ cdef class CythonGLPKSolver:
     cdef list non_storages
     cdef list storages
     cdef list routes_cost
+    cdef list all_nodes
     cdef list nodes_with_cost
     cdef int num_nodes
+    cdef int num_routes
+    cdef int num_storages
+    cdef cvarray node_costs_arr
+    cdef cvarray node_flows_arr
+    cdef cvarray route_flows_arr
+    cdef cvarray change_in_storage_arr
     cdef public object stats
 
     def __cinit__(self):
@@ -62,16 +68,22 @@ cdef class CythonGLPKSolver:
         cdef cross_domain_row
         cdef int n
 
+        self.all_nodes = list(model.graph.nodes())
         self.nodes_with_cost = []
 
         n = 0
-        for _node in model.graph.nodes():
-            if isinstance(_node, Node):
-                _node.__data = AbstractNodeData()
-                _node.__data.id = n
+        for _node in self.all_nodes:
+            _node.__data = AbstractNodeData()
+            _node.__data.id = n
+            if hasattr(_node, "get_cost"):
                 self.nodes_with_cost.append(_node)
-                n += 1
+            if isinstance(_node, BaseLink):
+                _node.__data.is_link = True
+            n += 1
         self.num_nodes = n
+
+        self.node_costs_arr = cvarray(shape=(self.num_nodes,), itemsize=sizeof(double), format="d")
+        self.node_flows_arr = cvarray(shape=(self.num_nodes,), itemsize=sizeof(double), format="d")
 
         routes = model.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
         # Find cross-domain routes
@@ -89,6 +101,12 @@ cdef class CythonGLPKSolver:
             raise ModelStructureError("Model has no valid routes")
         if len(non_storages) == 0:
             raise ModelStructureError("Model has no non-storage nodes")
+
+        self.num_routes = len(routes)
+        self.route_flows_arr = cvarray(shape=(self.num_routes,), itemsize=sizeof(double), format="d")
+        self.num_storages = len(storages)
+        if self.num_storages > 0:
+            self.change_in_storage_arr = cvarray(shape=(self.num_storages,), itemsize=sizeof(double), format="d")
 
         # clear the previous problem
         glp_erase_prob(self.prob)
@@ -217,6 +235,7 @@ cdef class CythonGLPKSolver:
         cdef Node node
         cdef Storage storage
         cdef AbstractNode _node
+        cdef AbstractNodeData data
         cdef double min_flow
         cdef double max_flow
         cdef double cost
@@ -232,6 +251,7 @@ cdef class CythonGLPKSolver:
         cdef cross_domain_col
         cdef list route
         cdef int node_id
+        cdef double flow
 
         timestep = model.timestep
         routes = self.routes
@@ -243,10 +263,10 @@ cdef class CythonGLPKSolver:
         t0 = time.clock()
 
         # update the cost of each node in the model
-        cdef double[:] node_costs = np.empty(self.num_nodes, dtype=np.float64)
+        cdef double[:] node_costs = self.node_costs_arr
         for _node in self.nodes_with_cost:
-            node_id = _node.__data.id
-            node_costs[_node.__data.id] = _node.get_cost(timestep, scenario_index)
+            data = _node.__data
+            node_costs[data.id] = _node.get_cost(timestep, scenario_index)
 
         # calculate the total cost of each route
         for col, route in enumerate(routes):
@@ -290,16 +310,37 @@ cdef class CythonGLPKSolver:
         self.stats['lp_solve'] += time.clock() - t0
         t0 = time.clock()
 
-        route_flow = [glp_get_col_prim(self.prob, col+1) for col in range(0, len(routes))]
-        change_in_storage = [glp_get_row_prim(self.prob, self.idx_row_storages+col) for col in range(0, len(storages))]
+        cdef double[:] route_flows = self.route_flows_arr
+        for col in range(0, self.num_routes):
+            route_flows[col] = glp_get_col_prim(self.prob, col+1)
 
-        for route, flow in zip(routes, route_flow):
-            # TODO make this cleaner.
-            route[0].commit(scenario_index._global_id, flow)
-            route[-1].commit(scenario_index._global_id, flow)
-            for node in route[1:-1]:
-                if isinstance(node, BaseLink):
-                    node.commit(scenario_index._global_id, flow)
+        cdef double[:] change_in_storage = self.change_in_storage_arr
+        for col in range(0, self.num_storages):
+            change_in_storage[col] = glp_get_row_prim(self.prob, self.idx_row_storages+col)
+
+        # collect the total flow via each node
+        cdef double[:] node_flows = self.node_flows_arr
+        node_flows[:] = 0.0
+        for n in range(0, self.num_routes):
+            route = routes[n]
+            flow = route_flows[n]
+            # first and last node
+            _node = route[0]
+            data = _node.__data
+            node_flows[data.id] += flow
+            _node = route[-1]
+            data = _node.__data
+            node_flows[data.id] += flow
+            # intermediate nodes
+            for _node in route[1:-1]:
+                data = _node.__data
+                if data.is_link:
+                    node_flows[data.id] += flow
+
+        # commit the total flows
+        for n in range(0, self.num_nodes):
+            self.all_nodes[n].commit(scenario_index._global_id, node_flows[n])
 
         self.stats['result_update'] += time.clock() - t0
-        return route_flow, change_in_storage
+
+        return route_flows, change_in_storage
