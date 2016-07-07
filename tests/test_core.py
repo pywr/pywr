@@ -139,23 +139,52 @@ def test_slots_connect_disconnect(solver):
 def test_node_position(solver):
     model = Model(solver=solver)
 
-    node1 = Input(model, "input", schematic_position=(10, 20), geographic_position=(-1, 52))
+    # node position, from kwargs
+
+    node1 = Input(model, "input", position={"schematic": (10, 20), "geographic": (-1, 52)})
+
+    # node position, from JSON
 
     data = {
         "name": "output",
         "type": "output",
-        "schematic_position": [30, 40],
-        "geographic_position": [-1.5, 52.2],
+        "position": {
+            "schematic": (30, 40),
+            "geographic": (-1.5, 52.2),
+        }
     }
     node2 = Node.load(data, model)
 
-    assert(node1.schematic_position == (10, 20))
-    assert(node1.geographic_position == (-1, 52))
-    assert(node2.schematic_position == (30, 40))
-    assert(node2.geographic_position == (-1.5, 52.2))
+    assert(node1.position["schematic"] == (10, 20))
+    assert(node1.position["geographic"] == (-1, 52))
+    assert(node2.position["schematic"] == (30, 40))
+    assert(node2.position["geographic"] == (-1.5, 52.2))
 
-    node1.schematic_position = (50, 60)
-    assert(node1.schematic_position == (50, 60))
+    node1.position["schematic"] = (50, 60)
+    assert(node1.position["schematic"] == (50, 60))
+
+    # node without position
+
+    node3 = Node(model, "node3")
+    assert(node3.position == {})
+
+    # reservoir position, from JSON
+
+    data = {
+        "name": "reservoir",
+        "type": "storage",
+        "position": {
+            "schematic": (99, 70),
+            "geographic": (-2.5, 55.6),
+        },
+        "max_volume": 1000,
+        "initial_volume": 500
+    }
+
+    storage = Storage.load(data, model)
+
+    assert(storage.position["schematic"] == (99, 70))
+    assert(storage.position["geographic"] == (-2.5, 55.6))
 
 # TODO Update this test. RiverSplit is deprecated.
 @pytest.mark.xfail

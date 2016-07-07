@@ -750,12 +750,7 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
             A unique name for the node
         """
 
-        schematic_position = kwargs.pop("schematic_position", None)
-        geographic_position = kwargs.pop("geographic_position", None)
-        if schematic_position is not None:
-            schematic_position = tuple(schematic_position)
-        if geographic_position is not None:
-            geographic_position = tuple(geographic_position)
+        position = kwargs.pop("position", {})
 
         color = kwargs.pop('color', 'black')
         min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
@@ -773,8 +768,7 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
         self.max_flow = max_flow
         self.cost = cost
         self.conversion_factor = conversion_factor
-        self.schematic_position = schematic_position
-        self.geographic_position = geographic_position
+        self.position = position
 
     def check(self):
         """Check the node is valid
@@ -791,13 +785,8 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
         min_flow = data.pop('min_flow', None)
         max_flow = data.pop('max_flow', None)
 
-        schematic_position = data.pop("schematic_position", None)
-        geographic_position = data.pop("geographic_position", None)
-
         data.pop('type')
         node = cls(model=model, name=name,
-                   schematic_position=schematic_position,
-                   geographic_position=geographic_position,
                    **data)
 
         cost = load_parameter(model, cost)
@@ -944,12 +933,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
             initial_volume = kwargs.pop('initial_volume', 0.0)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
 
-        x = kwargs.pop('x', None)
-        y = kwargs.pop('y', None)
-        if x is not None and y is not None:
-            position = (float(x), float(y),)
-        else:
-            position = None
+        position = kwargs.pop("position", {})
 
         super(Storage, self).__init__(model, name, **kwargs)
 
@@ -1029,17 +1013,11 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         if min_volume is not None:
             min_volume = float(min_volume)
         cost = data.pop('cost', 0.0)
-        try:
-            x = float(data.pop('x'))
-            y = float(data.pop('y'))
-        except KeyError:
-            x = None
-            y = None
         data.pop('type', None)
         node = cls(
             model=model, name=name, num_inputs=num_inputs,
             num_outputs=num_outputs, initial_volume=initial_volume,
-            max_volume=max_volume, min_volume=min_volume, x=x, y=y,
+            max_volume=max_volume, min_volume=min_volume,
             **data
         )
 
