@@ -10,7 +10,7 @@ from pywr._core import Timestep, ScenarioIndex
 
 from pywr.core import *
 from pywr.domains.river import *
-from pywr.parameters import Parameter
+from pywr.parameters import Parameter, ConstantParameter
 
 TEST_FOLDER = os.path.dirname(__file__)
 
@@ -384,3 +384,12 @@ def test_storage_max_volume_zero(solver):
 
     model.run()
     assert np.isnan(storage.current_pc)
+
+def test_json_include(solver):
+    """Test include in JSON document"""
+    filename = os.path.join(TEST_FOLDER, "models", "extra1.json")
+    model = Model.load(filename)
+
+    supply1 = model.nodes["supply1"]
+    supply2 = model.nodes["supply2"]
+    assert(isinstance(supply2.max_flow, ConstantParameter))
