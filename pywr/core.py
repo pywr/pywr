@@ -15,6 +15,7 @@ import networkx as nx
 import inspect
 import pandas
 import datetime
+import json
 from six import with_metaclass
 
 import warnings
@@ -318,11 +319,44 @@ class Model(object):
         return self.graph.edges()
 
     @classmethod
-    def loads(cls, data, *args, **kwargs):
+    def loads(cls, data, model=None, path=None, solver=None):
         """Read JSON data from a string and parse it as a model document"""
-        import json
         data = json.loads(data)
-        return cls.load(data, *args, **kwargs)
+        cls._load_includes(data, path)
+        return cls.load(data, model, path, solver)
+
+    @classmethod
+    def _load_includes(cls, data, path=None):
+        """Load included JSON references
+
+        Parameters
+        ----------
+        data : dict
+            The model dictionary.
+        path : str
+            Path to the model document (None if in-memory).
+
+        This method is private and shouldn't need to be called by the user.
+        Note that the data dictionary is modified in-place.
+        """
+        if "nodes" not in data.keys():
+            data["nodes"] = []
+        if "edges" not in data.keys():
+            data["edges"] = []
+        if "parameters" not in data.keys():
+            data["parameters"] = {}
+        if "includes" in data:
+            for filename in data["includes"]:
+                if path is not None:
+                    filename = os.path.join(os.path.dirname(path), filename)
+                with open(filename, "r") as f:
+                    include_data = json.loads(f.read())
+                if "nodes" in include_data.keys():
+                    data["nodes"].extend(include_data["nodes"])
+                if "edges" in include_data.keys():
+                    data["edges"].extend(include_data["edges"])
+                if "parameters" in include_data.keys():
+                    data["parameters"].update(include_data["parameters"])
 
     @classmethod
     def load(cls, data, model=None, path=None, solver=None):
@@ -330,16 +364,30 @@ class Model(object):
 
         Parameters
         ----------
-        data : file-like, or dict
-            A file-like object to read JSON data from, or a parsed dict
+        data : file-like, string, or dict
+            A file-like object to read JSON data from, a filename to read,
+            or a parsed dict
         model : Model (optional)
             An existing model to append to
         path : str (optional)
             Path to the model document for relative pathnames
+        solver : str (optional)
+            Name of the solver to use for the model. This overrides the solver
+            section of the model document.
         """
+        if isinstance(data, basestring):
+            # argument is a filename
+            path = data
+            with open(path, "r") as f:
+                data = f.read()
+            return cls.loads(data, model, path, solver)
+
         if hasattr(data, 'read'):
+            # argument is a file-like object
             data = data.read()
-            return cls.loads(data, model, path)
+            return cls.loads(data, model, path, solver)
+
+        cls._load_includes(data, path)
 
         try:
             solver_data = data['solver']
@@ -808,7 +856,7 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
                 y = None
         data.pop('type')
         node = cls(model=model, name=name, x=x, y=y, **data)
-        
+
         cost = load_parameter(model, cost)
         min_flow = load_parameter(model, min_flow)
         max_flow = load_parameter(model, max_flow)
@@ -1051,7 +1099,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
             max_volume=max_volume, min_volume=min_volume, x=x, y=y,
             **data
         )
-        
+
         cost = load_parameter(model, cost)
         if cost is None:
             cost = 0.0
