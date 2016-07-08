@@ -508,7 +508,10 @@ cdef class AggregatedNode(AbstractNode):
 
     property factors:
         def __get__(self):
-            return self._factors
+            if self._factors is None:
+                return None
+            else:
+                return np.asarray(self._factors, np.float64)
         def __set__(self, values):
             values = np.array(values, np.float64)
             self._factors = values
@@ -531,6 +534,22 @@ cdef class AggregatedNode(AbstractNode):
                 value = -inf
             self._min_flow = value
             self.model.dirty = True
+
+    @classmethod
+    def load(cls, data, model):
+        name = data["name"]
+        nodes = [model._get_node_from_ref(model, node_name) for node_name in data["nodes"]]
+        agg = cls(model, name, nodes)
+        try:
+            agg.factors = data["factors"]
+        except KeyError: pass
+        try:
+            agg.min_flow = data["min_flow"]
+        except KeyError: pass
+        try:
+            agg.max_flow = data["max_flow"]
+        except KeyError: pass
+        return agg
 
 cdef class StorageInput(BaseInput):
     cpdef commit(self, int scenario_index, double volume):
