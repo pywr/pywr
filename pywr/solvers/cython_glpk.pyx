@@ -9,6 +9,8 @@ from pywr.core import ModelStructureError
 import time
 include "glpk.pxi"
 
+inf = float('inf')
+
 cdef class AbstractNodeData:
     cdef public int id
     cdef public bint is_link
@@ -21,6 +23,7 @@ cdef class CythonGLPKSolver:
     cdef int idx_row_cross_domain
     cdef int idx_row_storages
     cdef int idx_row_aggregated
+    cdef int idx_row_aggregated_min_max
 
     cdef list routes
     cdef list non_storages
@@ -95,6 +98,7 @@ cdef class CythonGLPKSolver:
         non_storages = []
         storages = []
         aggregated = []
+        aggregated_min_max = []
         for some_node in model.graph.nodes():
             if isinstance(some_node, (BaseInput, BaseLink, BaseOutput)):
                 non_storages.append(some_node)
@@ -103,6 +107,9 @@ cdef class CythonGLPKSolver:
             elif isinstance(some_node, AggregatedNode):
                 if some_node.factors is not None:
                     aggregated.append(some_node)
+                if some_node.min_flow > -inf or \
+                   some_node.max_flow < inf:
+                    aggregated_min_max.append(some_node)
 
         if len(routes) == 0:
             raise ModelStructureError("Model has no valid routes")
@@ -163,6 +170,8 @@ cdef class CythonGLPKSolver:
             for n, c in enumerate(cols):
                 ind[1+n] = 1+c
                 val[1+n] = 1
+            free(ind)
+            free(val)
             glp_set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
             glp_set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
 
@@ -178,6 +187,8 @@ cdef class CythonGLPKSolver:
                 for n, (c, v) in enumerate(col_vals):
                     ind[1+n+len(cols)] = 1+c
                     val[1+n+len(cols)] = 1./v
+                free(ind)
+                free(val)
                 glp_set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
                 glp_set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
                 cross_domain_row += 1
@@ -196,9 +207,11 @@ cdef class CythonGLPKSolver:
             for n, c in enumerate(cols_input):
                 ind[1+len(cols_output)+n] = self.idx_col_routes+c
                 val[1+len(cols_output)+n] = -1
+            free(ind)
+            free(val)
             glp_set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
 
-        # aggregated nodes
+        # aggregated node flow ratio constraints
         self.idx_row_aggregated = self.idx_row_storages + len(storages)
         for agg_node in aggregated:
             nodes = agg_node.nodes
@@ -211,12 +224,9 @@ cdef class CythonGLPKSolver:
             for node in nodes:
                 cols.append([n for n, route in enumerate(routes) if node in route])
 
-            # TODO: move this into solve() so that factors can vary in time
-
             # normalise factors
-            # TODO: factors could be Parameters
             f0 = factors[0]
-            factors_norm = [1/(f/f0) for f in factors]
+            factors_norm = [f0/f for f in factors]
 
             # update matrix
             for n in range(len(nodes)-1):
@@ -229,9 +239,41 @@ cdef class CythonGLPKSolver:
                 for i, c in enumerate(cols[n+1]):
                     ind[1+len(cols[0])+i] = 1+c
                     val[1+len(cols[0])+i] = -factors_norm[n+1]
+                free(ind)
+                free(val)
                 glp_set_mat_row(self.prob, row+n, length, ind, val)
 
                 glp_set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
+
+        # aggregated node min/max flow constraints
+        if aggregated_min_max:
+            self.idx_row_aggregated_min_max = glp_add_rows(self.prob, len(aggregated_min_max))
+        for row, agg_node in enumerate(aggregated_min_max):
+            row = self.idx_row_aggregated_min_max + row
+            nodes = agg_node.nodes
+            min_flow = agg_node.min_flow
+            max_flow = agg_node.max_flow
+            if min_flow is None:
+                min_flow = -inf
+            if max_flow is None:
+                max_flow = inf
+            min_flow = inf_to_dbl_max(min_flow)
+            max_flow = inf_to_dbl_max(max_flow)
+            matrix = set()
+            for node in nodes:
+                for n, route in enumerate(routes):
+                    if node in route:
+                        matrix.add(n)
+            length = len(matrix)
+            ind = <int*>malloc(1+length * sizeof(int))
+            val = <double*>malloc(1+length * sizeof(double))
+            for i, col in enumerate(matrix):
+                ind[1+i] = 1+col
+                val[1+i] = 1.0
+            glp_set_mat_row(self.prob, row, length, ind, val)
+            glp_set_row_bnds(self.prob, row, constraint_type(min_flow, max_flow), min_flow, max_flow)
+            free(ind)
+            free(val)
 
         # update route properties
         routes_cost = []

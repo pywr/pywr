@@ -485,6 +485,8 @@ cdef class AggregatedNode(AbstractNode):
     def __cinit__(self, ):
         self._allow_isolated = True
         self._factors = None
+        self._min_flow = -inf
+        self._max_flow = inf
 
     property nodes:
         def __get__(self):
@@ -492,6 +494,7 @@ cdef class AggregatedNode(AbstractNode):
 
         def __set__(self, value):
             self._nodes = list(value)
+            self.model.dirty = True
 
     cpdef after(self, Timestep ts):
         AbstractStorage.after(self, ts)
@@ -509,18 +512,25 @@ cdef class AggregatedNode(AbstractNode):
         def __set__(self, values):
             values = np.array(values, np.float64)
             self._factors = values
+            self.model.dirty = True
 
     property max_flow:
         def __get__(self):
             return self._max_flow
         def __set__(self, value):
+            if value is None:
+                value = inf
             self._max_flow = value
+            self.model.dirty = True
 
     property min_flow:
         def __get__(self):
             return self._min_flow
         def __set__(self, value):
+            if value is None:
+                value = -inf
             self._min_flow = value
+            self.model.dirty = True
 
 cdef class StorageInput(BaseInput):
     cpdef commit(self, int scenario_index, double volume):
