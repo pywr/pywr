@@ -11,7 +11,7 @@ cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
 
     """
-    def __init__(self, Storage storage_node, control_curves):
+    def __init__(self, AbstractStorage storage_node, control_curves):
         """
 
         Parameters

@@ -845,3 +845,10 @@ cdef class AggregatedStorage(AbstractStorage):
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
+
+    @classmethod
+    def load(cls, data, model):
+        name = data["name"]
+        nodes = [model._get_node_from_ref(model, node_name) for node_name in data["storage_nodes"]]
+        agg = cls(model, name, nodes)
+        return agg
