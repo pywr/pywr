@@ -754,12 +754,7 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
             A unique name for the node
         """
 
-        x = kwargs.pop('x', None)
-        y = kwargs.pop('y', None)
-        if x is not None and y is not None:
-            position = (float(x), float(y),)
-        else:
-            position = None
+        position = kwargs.pop("position", {})
 
         color = kwargs.pop('color', 'black')
         min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
@@ -794,21 +789,10 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
         min_flow = data.pop('min_flow', None)
         max_flow = data.pop('max_flow', None)
 
-        try:
-            x = float(data.pop('x'))
-            y = float(data.pop('y'))
-        except KeyError:
-            try:
-                position = data.pop('position')
-                x, y = position
-                x = float(x)
-                y = float(y)
-            except KeyError:
-                x = None
-                y = None
         data.pop('type')
-        node = cls(model=model, name=name, x=x, y=y, **data)
-        
+        node = cls(model=model, name=name,
+                   **data)
+
         cost = load_parameter(model, cost)
         min_flow = load_parameter(model, min_flow)
         max_flow = load_parameter(model, max_flow)
@@ -953,12 +937,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
             initial_volume = kwargs.pop('initial_volume', 0.0)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
 
-        x = kwargs.pop('x', None)
-        y = kwargs.pop('y', None)
-        if x is not None and y is not None:
-            position = (float(x), float(y),)
-        else:
-            position = None
+        position = kwargs.pop("position", {})
 
         super(Storage, self).__init__(model, name, **kwargs)
 
@@ -1038,20 +1017,14 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         if min_volume is not None:
             min_volume = float(min_volume)
         cost = data.pop('cost', 0.0)
-        try:
-            x = float(data.pop('x'))
-            y = float(data.pop('y'))
-        except KeyError:
-            x = None
-            y = None
         data.pop('type', None)
         node = cls(
             model=model, name=name, num_inputs=num_inputs,
             num_outputs=num_outputs, initial_volume=initial_volume,
-            max_volume=max_volume, min_volume=min_volume, x=x, y=y,
+            max_volume=max_volume, min_volume=min_volume,
             **data
         )
-        
+
         cost = load_parameter(model, cost)
         if cost is None:
             cost = 0.0
