@@ -34,7 +34,7 @@ install:
     - python setup.py install --with-${PYWR_SOLVER}
 
 script:
-    - py.test tests --solver ${PYWR_SOLVER}
+    - py.test tests -v -s --solver ${PYWR_SOLVER}
 
 notifications:
     email: false
