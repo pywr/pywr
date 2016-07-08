@@ -170,10 +170,10 @@ cdef class CythonGLPKSolver:
             for n, c in enumerate(cols):
                 ind[1+n] = 1+c
                 val[1+n] = 1
-            free(ind)
-            free(val)
             glp_set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
             glp_set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
+            free(ind)
+            free(val)
 
             # Add constraint for cross-domain routes
             # i.e. those from a demand to a supply
@@ -187,10 +187,10 @@ cdef class CythonGLPKSolver:
                 for n, (c, v) in enumerate(col_vals):
                     ind[1+n+len(cols)] = 1+c
                     val[1+n+len(cols)] = 1./v
-                free(ind)
-                free(val)
                 glp_set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
                 glp_set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
+                free(ind)
+                free(val)
                 cross_domain_row += 1
 
         # storage
@@ -207,9 +207,9 @@ cdef class CythonGLPKSolver:
             for n, c in enumerate(cols_input):
                 ind[1+len(cols_output)+n] = self.idx_col_routes+c
                 val[1+len(cols_output)+n] = -1
+            glp_set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
             free(ind)
             free(val)
-            glp_set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
 
         # aggregated node flow ratio constraints
         self.idx_row_aggregated = self.idx_row_storages + len(storages)
@@ -239,9 +239,9 @@ cdef class CythonGLPKSolver:
                 for i, c in enumerate(cols[n+1]):
                     ind[1+len(cols[0])+i] = 1+c
                     val[1+len(cols[0])+i] = -factors_norm[n+1]
+                glp_set_mat_row(self.prob, row+n, length, ind, val)
                 free(ind)
                 free(val)
-                glp_set_mat_row(self.prob, row+n, length, ind, val)
 
                 glp_set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
 
