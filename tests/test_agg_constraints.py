@@ -5,6 +5,10 @@ from numpy.testing import assert_allclose
 import pandas
 from pandas import Timestamp
 
+if pytest.config.getoption("--solver") != "glpk":
+    # AggregatedNode constraints only supported by GLPK presently
+    pytestmark = pytest.mark.xfail()
+
 @pytest.fixture
 def model(solver):
     model = Model(solver=solver)
