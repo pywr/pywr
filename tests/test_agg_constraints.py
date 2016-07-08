@@ -9,6 +9,8 @@ if pytest.config.getoption("--solver") != "glpk":
     # AggregatedNode constraints only supported by GLPK presently
     pytestmark = pytest.mark.xfail()
 
+from helpers import load_model
+
 @pytest.fixture
 def model(solver):
     model = Model(solver=solver)
@@ -142,3 +144,12 @@ def test_aggregated_node_max_flow_same_route(model):
 
     assert_allclose(agg.flow, 30.0)
     assert_allclose(A.flow + B.flow, 30.0)
+
+def test_aggregated_constraint_json(model):
+    model = load_model("aggregated1.json")
+
+    agg = model.nodes["agg"]
+    assert(agg.nodes == [model.nodes["A"], model.nodes["B"]])
+    assert_allclose(agg.factors, [2.0, 4.0])
+    assert_allclose(agg.max_flow, 30.0)
+    assert_allclose(agg.min_flow, 5.0)
