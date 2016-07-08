@@ -1,0 +1,18 @@
+{
+    "nodes": [
+        {
+            "name": "supply2",
+            "type": "Input",
+            "max_flow": "supply2_max_flow"
+        }
+    ],
+    "edges": [
+        ["supply2", "link1"]
+    ],
+    "parameters": {
+        "supply2_max_flow": {
+            "type": "constant",
+            "values": 50
+        }
+    }
+}
