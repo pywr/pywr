@@ -1,4 +1,4 @@
-from pywr.core import Model, Input, Output, Link, Storage, AggregatedNode
+from pywr.core import Model, Input, Output, Link, Storage, AggregatedNode, PiecewiseLink
 
 import pytest
 from numpy.testing import assert_allclose
@@ -145,7 +145,7 @@ def test_aggregated_node_max_flow_same_route(model):
     assert_allclose(agg.flow, 30.0)
     assert_allclose(A.flow + B.flow, 30.0)
 
-def test_aggregated_constraint_json(model):
+def test_aggregated_constraint_json():
     model = load_model("aggregated1.json")
 
     agg = model.nodes["agg"]
@@ -153,3 +153,41 @@ def test_aggregated_constraint_json(model):
     assert_allclose(agg.factors, [2.0, 4.0])
     assert_allclose(agg.max_flow, 30.0)
     assert_allclose(agg.min_flow, 5.0)
+
+def test_piecewise_constraint(model):
+    """Test using an aggregated node constraint in combination with a
+    piecewise link in order to create a minimum flow constraint of the form
+    y = mx + c, where y is the MRF, x is the upstream flow and m and c are
+    constants.
+
+    TODO: build a standard class which simplifies the construction of this setup
+
+             / -->-- X0 -->-- \
+    A -->-- Xo -->-- X1 -->-- Xi -->-- C
+             \ -->-- X2 -->-- /
+                     |
+                     Bo -->-- Bi --> D
+    """
+    flow = 100
+    A = Input(model, "A", min_flow=flow, max_flow=flow)
+    X = PiecewiseLink(model, name="X", cost=[-500.0, 0, 0], max_flow=[40.0, None, None])
+    C = Output(model, "C")
+
+    A.connect(X)
+    X.connect(C)
+
+    # create a new input inside the piecewise link which only has access
+    # to flow travelling via the last sublink (X2)
+    Bo = Output(model, "Bo", domain=X.sub_domain)
+    Bi = Input(model, "Bi")
+    D = Output(model, "D", max_flow=50, cost=-100)
+    Bo.connect(Bi)
+    Bi.connect(D)
+    X.sublinks[-1].connect(Bo)
+
+
+    agg = AggregatedNode(model, "agg", X.sublinks[1:])
+    agg.factors = [3.0, 1.0]
+
+    model.step()
+    assert_allclose(D.flow, (100 - 40) * 0.25)
