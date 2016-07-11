@@ -136,6 +136,56 @@ def test_slots_connect_disconnect(solver):
         supply1.disconnect(storage)
 
 
+def test_node_position(solver):
+    model = Model(solver=solver)
+
+    # node position, from kwargs
+
+    node1 = Input(model, "input", position={"schematic": (10, 20), "geographic": (-1, 52)})
+
+    # node position, from JSON
+
+    data = {
+        "name": "output",
+        "type": "output",
+        "position": {
+            "schematic": (30, 40),
+            "geographic": (-1.5, 52.2),
+        }
+    }
+    node2 = Node.load(data, model)
+
+    assert(node1.position["schematic"] == (10, 20))
+    assert(node1.position["geographic"] == (-1, 52))
+    assert(node2.position["schematic"] == (30, 40))
+    assert(node2.position["geographic"] == (-1.5, 52.2))
+
+    node1.position["schematic"] = (50, 60)
+    assert(node1.position["schematic"] == (50, 60))
+
+    # node without position
+
+    node3 = Node(model, "node3")
+    assert(node3.position == {})
+
+    # reservoir position, from JSON
+
+    data = {
+        "name": "reservoir",
+        "type": "storage",
+        "position": {
+            "schematic": (99, 70),
+            "geographic": (-2.5, 55.6),
+        },
+        "max_volume": 1000,
+        "initial_volume": 500
+    }
+
+    storage = Storage.load(data, model)
+
+    assert(storage.position["schematic"] == (99, 70))
+    assert(storage.position["geographic"] == (-2.5, 55.6))
+
 # TODO Update this test. RiverSplit is deprecated.
 @pytest.mark.xfail
 def test_slots_from(solver):
@@ -335,6 +385,7 @@ def test_storage_max_volume_zero(solver):
     model.run()
     assert np.isnan(storage.current_pc)
 
+
 def test_json_include(solver):
     """Test include in JSON document"""
     filename = os.path.join(TEST_FOLDER, "models", "extra1.json")
@@ -343,3 +394,4 @@ def test_json_include(solver):
     supply1 = model.nodes["supply1"]
     supply2 = model.nodes["supply2"]
     assert(isinstance(supply2.max_flow, ConstantParameter))
+

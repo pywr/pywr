@@ -1,36 +1,49 @@
-build: false
+# This build script is adapted from conda-smithy, see:
+# https://github.com/conda-forge/conda-smithy-feedstock
 
 environment:
+
+  CONDA_INSTALL_LOCN: "C:\\conda"
+
+  # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
+  # /E:ON and /V:ON options are not enabled in the batch script intepreter
+  # See: http://stackoverflow.com/a/13751649/163740
+  CMD_IN_ENV: "cmd /E:ON /V:ON /C obvci_appveyor_python_build_env.cmd"
+
+  # We set a default Python version for the miniconda that is to be installed. This can be
+  # overridden in the matrix definition where appropriate.
+  CONDA_PY: "27"
+
   matrix:
-    - PYTHON_VERSION: 2.7
-      PYTHON_ARCH: 64
-      MINICONDA: C:\Miniconda-x64
+    - TARGET_ARCH: x64
+      CONDA_PY: 27
+      CONDA_NPY: 110
 
-    - PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 64
-      MINICONDA: C:\Miniconda3-x64
-      DISTUTILS_USE_SDK: 1
+    - TARGET_ARCH: x64
+      CONDA_PY: 34
+      CONDA_NPY: 110
 
-init:
-  - "ECHO %PYTHON_VERSION% %MINICONDA%"
+# We always use a 64-bit machine, but can build x86 distributions
+# with the TARGET_ARCH variable.
+platform:
+    - x64
 
 install:
-  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda info -a
-  - conda install -q conda-build anaconda-client
-  # Configure MSVC. This should come after activating the conda envionment to
-  # avoid issues with the length of PATH.
-  - appveyor\build.cmd
-  # Add channel for dependencies
-  - conda config --add channels snorfalorpagus
-  # Build package
-  - "conda build -q conda-recipe --python %PYTHON_VERSION% --numpy 1.10"
+    # Cywing's git breaks conda-build. (See https://github.com/conda-forge/conda-smithy-feedstock/pull/2.)
+    - cmd: rmdir C:\cygwin /s /q
+    - appveyor DownloadFile "https://raw.githubusercontent.com/pelson/Obvious-CI/master/bootstrap-obvious-ci-and-miniconda.py"
+    - cmd: python bootstrap-obvious-ci-and-miniconda.py %CONDA_INSTALL_LOCN% %TARGET_ARCH% %CONDA_PY:~0,1% --without-obvci
+    - cmd: set PATH=%CONDA_INSTALL_LOCN%;%CONDA_INSTALL_LOCN%\scripts;%PATH%
+    - cmd: set PYTHONUNBUFFERED=1
 
-after_test:
-  - "mkdir dist"
-  - "xcopy %MINICONDA%\\conda-bld\\win-%PYTHON_ARCH%\\*.tar.bz2 dist\\"
+    - cmd: conda config --set show_channel_urls true
+    - cmd: conda install -c pelson/channel/development --yes --quiet obvious-ci
+    - cmd: conda config --add channels snorfalorpagus
+    - cmd: conda info
+    - cmd: conda install -n root --quiet --yes conda-build anaconda-client jinja2 setuptools
 
-artifacts:
-  - path: dist\*
+# Skip .NET project specific build phase.
+build: off
+
+test_script:
+    - "%CMD_IN_ENV% conda build conda-recipe --quiet"
