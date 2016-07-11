@@ -2,6 +2,8 @@ import numpy as np
 import pytest
 from fixtures import three_storage_model
 
+from pywr.core import Model, Input, Output, Link, Storage, AggregatedStorage
+from pywr.parameters.control_curves import ControlCurveParameter
 
 def test_aggregated_storage(three_storage_model):
     """ Test `AggregatedStorage` correct sums multiple `Storage`. """
@@ -87,6 +89,39 @@ def test_aggregated_storage_attributes(three_storage_model):
 
     with pytest.raises(AttributeError):
         agg_stg.get_cost()
+
+
+def test_aggregated_storage_control_curve(three_storage_model):
+    """Test using a control curve based on an aggregate storage, rather than
+    a single storage.
+    """
+    model = three_storage_model
+
+    # create a new supply node
+    inpt = Input(model, "Input 3", cost=-1000)
+    inpt.connect(model.nodes["Output 0"])
+    inpt.connect(model.nodes["Output 1"])
+    inpt.connect(model.nodes["Output 2"])
+
+    # limit the flow of the new node using a control curve on the aggregate storage
+    curves = [0.5] # 50%
+    values = [0, 5]
+    inpt.max_flow = ControlCurveParameter(model.nodes["Total Storage"], curves, values)
+
+    # initial storage is > 50% so flow == 0
+    model.step()
+    np.testing.assert_allclose(inpt.flow, 0.0)
+
+    # set initial storage to < 50%
+    storages = [node for node in model.nodes if isinstance(node, Storage)]
+    for node, value in zip(storages, [0.6, 0.1, 0.1]):
+        if isinstance(node, Storage):
+            node.initial_volume = node.max_volume * value
+
+    # now below the control curve, so flow is allowed
+    model.reset()
+    model.step()
+    np.testing.assert_allclose(inpt.flow, 5.0)
 
 
 def test_aggregated_node(three_storage_model):
