@@ -6,6 +6,7 @@ from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, I
 from pywr.parameters import (BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
+    IndexParameter, AggregatedIndexParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 
 from helpers import load_model
@@ -246,7 +247,31 @@ class TestAggregatedParameter:
             ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
             np.testing.assert_allclose(p.value(ts, si), (mth-1)*0.8)
 
+def test_aggregated_index_parameter(model):
+    """Basic tests of AggregatedIndexParameter"""
 
+    class DummyIndexParameter(IndexParameter):
+        """A simple IndexParameter which returns a constant value"""
+        def __init__(self, index, *args, **kwargs):
+            super(DummyIndexParameter, self).__init__(*args, **kwargs)
+            self._index = index
+        def index(self, timestep, scenario_index):
+            return self._index
+
+    parameters = []
+    parameters.append(DummyIndexParameter(2))
+    parameters.append(DummyIndexParameter(3))
+
+    timestep = scenario_index = None  # lazy
+
+    agg_index = AggregatedIndexParameter(parameters, "sum")
+    assert(agg_index.index(timestep, scenario_index) == 5)
+
+    agg_index = AggregatedIndexParameter(parameters, "max")
+    assert(agg_index.index(timestep, scenario_index) == 3)
+
+    agg_index = AggregatedIndexParameter(parameters, "min")
+    assert(agg_index.index(timestep, scenario_index) == 2)
 
 def test_parameter_child_variables():
 

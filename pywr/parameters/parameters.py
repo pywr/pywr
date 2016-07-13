@@ -89,6 +89,19 @@ class AggregatedParameter(Parameter):
             parameter.reset()
 parameter_registry.add(AggregatedParameter)
 
+class AggregatedIndexParameter(AggregatedParameter, IndexParameter):
+    """A collection of index parameters
+
+    This class behaves like AggregatedParameter, except that it aggregates
+    the `index` method rather than the `value` method.
+    """
+    def __init__(self, parameters=None, agg_func="sum"):  # different agg_func default
+        super(AggregatedIndexParameter, self).__init__(parameters, agg_func)
+
+    def index(self, timestep, scenario_index):
+        indexes = [parameter.index(timestep, scenario_index) for parameter in self._parameters]
+        return int(self.agg_func(indexes))
+parameter_registry.add(AggregatedIndexParameter)
 
 class ConstantParameter(Parameter):
     def __init__(self, value=None, lower_bounds=0.0, upper_bounds=np.inf):
