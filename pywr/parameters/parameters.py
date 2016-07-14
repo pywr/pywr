@@ -7,6 +7,7 @@ from ._parameters import (
     ArrayIndexedScenarioMonthlyFactorsParameter,
     DailyProfileParameter, ArrayIndexedScenarioParameter,
     IndexParameter, CachedParameter,
+    AggregatedParameter, AggregatedIndexParameter,
     load_parameter, load_parameter_values, load_dataframe)
 from past.builtins import basestring
 import numpy as np
@@ -15,93 +16,6 @@ import pandas
 class Parameter(BaseParameter):
     def value(self, ts, scenario_index):
         raise NotImplementedError()
-
-
-# TODO shared dict with pywr.recorders
-agg_funcs = {
-    "mean": np.mean,
-    "sum": np.sum,
-    "max": np.max,
-    "min": np.min,
-    "product": np.product,
-}
-class AggregatedParameter(Parameter):
-    """A collection of Parameters
-
-    This object behaves like a set. Licenses can be added to or removed from it.
-
-    """
-    def __init__(self, parameters=None, agg_func='mean'):
-        super(AggregatedParameter, self).__init__()
-        if parameters is None:
-            self._parameters = set()
-        else:
-            self._parameters = set(parameters)
-            for param in self._parameters:
-                param.parents.add(self)
-
-        self.agg_func = agg_func
-        if isinstance(self.agg_func, basestring):
-            self.agg_func = agg_funcs[self.agg_func]
-        elif not callable(self.agg_func):
-            raise TypeError("agg_func \"{}\" is not callable")
-
-    @classmethod
-    def load(cls, model, data):
-
-        try:
-            parameters_data = data['parameters']
-        except KeyError:
-            parameters_data = []
-
-        parameters = []
-        for pdata in parameters_data:
-            parameters.append(load_parameter(model, pdata))
-
-        agg_func = data.get('agg_func', 'mean')
-        return cls(parameters=parameters, agg_func=agg_func)
-
-    def add(self, parameter):
-        self._parameters.add(parameter)
-        parameter.parents.add(self)
-
-    def remove(self, parameter):
-        self._parameters.remove(parameter)
-        parameter.parent.remove(self)
-
-    def __len__(self):
-        return len(self._parameters)
-
-    def value(self, ts, si):
-        values = [p.value(ts, si) for p in self._parameters]
-        return self.agg_func(values)
-
-    def setup(self, model):
-        for parameter in self._parameters:
-            parameter.setup(model)
-
-    def after(self, timestep):
-        for parameter in self._parameters:
-            parameter.after(timestep)
-
-    def reset(self):
-        for parameter in self._parameters:
-            parameter.reset()
-parameter_registry.add(AggregatedParameter)
-
-class AggregatedIndexParameter(AggregatedParameter, IndexParameter):
-    """A collection of index parameters
-
-    This class behaves like AggregatedParameter, except that it aggregates
-    the `index` method rather than the `value` method.
-    """
-    def __init__(self, parameters=None, agg_func="sum"):  # different agg_func default
-        super(AggregatedIndexParameter, self).__init__(parameters, agg_func)
-
-    def index(self, timestep, scenario_index):
-        indexes = [parameter.index(timestep, scenario_index) for parameter in self._parameters]
-        return int(self.agg_func(indexes))
-parameter_registry.add(AggregatedIndexParameter)
 
 class ConstantParameter(Parameter):
     def __init__(self, value=None, lower_bounds=0.0, upper_bounds=np.inf):

@@ -421,6 +421,121 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
 parameter_registry.add(AnnualHarmonicSeriesParameter)
 
+cdef class AggregatedParameterBase(IndexParameter):
+    @classmethod
+    def load(cls, model, data):
+        parameters_data = data["parameters"]
+        parameters = set()
+        for pdata in parameters_data:
+            parameters.add(load_parameter(model, pdata))
+
+        agg_func = data.get("agg_func", None)
+        return cls(parameters=parameters, agg_func=agg_func)
+
+    cpdef add(self, Parameter parameter):
+        self._parameters.add(parameter)
+        parameter.parents.add(self)
+
+    cpdef remove(self, Parameter parameter):
+        self._parameters.remove(parameter)
+        parameter.parent.remove(self)
+
+    def __len__(self):
+        return len(self._parameters)
+
+    cpdef setup(self, model):
+        for parameter in self._parameters:
+            parameter.setup(model)
+
+    cpdef after(self, Timestep timestep):
+        for parameter in self._parameters:
+            parameter.after(timestep)
+
+    cpdef reset(self):
+        for parameter in self._parameters:
+            parameter.reset()
+
+cdef class AggregatedParameter(AggregatedParameterBase):
+    """A collection of Parameters
+
+    This class behaves like a set. Parameters can be added or removed from it.
+    It's value is the value of it's child parameters aggregated using a
+    aggregating function (e.g. sum).
+
+    Parameters
+    ----------
+    parameters : iterable of `Parameter`
+        The parameters to aggregate
+    agg_func : callable or str
+        The aggregation function, e.g. `sum` or "sum"
+    """
+    def __init__(self, parameters, agg_func=None):
+        super(AggregatedParameter, self).__init__()
+        self._parameters = set(parameters)
+        if agg_func is None:
+            agg_func = np.mean # default
+        elif callable(agg_func):
+            self.agg_func = agg_func
+        elif agg_func == "sum":
+            self.agg_func = sum
+        elif agg_func == "min":
+            self.agg_func = min
+        elif agg_func == "max":
+            self.agg_func = max
+        elif agg_func == "mean":
+            self.agg_func = np.mean
+        elif agg_func == "product":
+            self.agg_func = np.product
+        else:
+            raise ValueError("Unknown aggregate function \"{}\".".format(agg_func))
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef Parameter parameter
+        return self.agg_func([parameter.value(timestep, scenario_index) for parameter in self._parameters])
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        # although AggregatedParameter inherits from IndexParameter this is
+        # merely a convenince so that it can share a common parent with
+        # AggregatedIndexParameter - it doesn't actually provide an index
+        raise NotImplementedError("AggregatedParameter does not provide an index")
+
+parameter_registry.add(AggregatedParameter)
+
+cdef class AggregatedIndexParameter(AggregatedParameterBase):
+    """A collection of IndexParameters
+
+    This class behaves like a set. Parameters can be added or removed from it.
+    It's index is the index of it's child parameters aggregated using a
+    aggregating function (e.g. sum).
+
+    Parameters
+    ----------
+    parameters : iterable of `IndexParameter`
+        The parameters to aggregate
+    agg_func : callable or str
+        The aggregation function, e.g. `sum` or "sum"
+    """
+    def __init__(self, parameters, agg_func=None):
+        super(AggregatedIndexParameter, self).__init__()
+        self._parameters = set(parameters)
+        if agg_func is None:
+            agg_func = sum # default
+        elif callable(agg_func):
+            self.agg_func = agg_func
+        elif agg_func == "sum":
+            self.agg_func = sum
+        elif agg_func == "min":
+            self.agg_func = min
+        elif agg_func == "max":
+            self.agg_func = max
+        else:
+            raise ValueError("Unknown aggregate function \"{}\".".format(agg_func))
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef IndexParameter parameter
+        return self.agg_func([parameter.index(timestep, scenario_index) for parameter in self._parameters])
+
+parameter_registry.add(AggregatedIndexParameter)
 
 
 def load_parameter(model, data):
