@@ -1,30 +1,31 @@
 #!/bin/python
 """
 This script sets up and runs the most simple model possible.
+
+  A -->-- B -->-- C
+
 """
-import pywr.core
-import pandas
+from pywr.core import Model, Input, Link, Output
 
-def make_model(solver='glpk'):
-    """
-    Make a simple model with a single Input and Output.
+def create_model():
+    # create a model
+    model = Model(start="2016-01-01", end="2019-12-31", timestep=7)
 
-    Input -> Link -> Output
+    # create three nodes (an input, a link, and an output)
+    A = Input(model, name="A", max_flow=10.0)
+    B = Link(model, name="B", cost=1.0)
+    C = Output(model, name="C", max_flow=5.0, cost=-2.0)
 
-    """
-    model = pywr.core.Model(solver=solver, parameters={
-            'timestamp_start': pandas.to_datetime('2015-01-01'),
-            'timestamp_finish': pandas.to_datetime('2115-12-31')
-    })
-    inpt = pywr.core.Input(model, name="Input", max_flow=10.0)
-    lnk = pywr.core.Link(model, name="Link", cost=1.0)
-    inpt.connect(lnk)
-    otpt = pywr.core.Output(model, name="Output", max_flow=5.0, cost=-2.0)
-    lnk.connect(otpt)
+    # connect nodes
+    A.connect(B)
+    B.connect(C)
 
     return model
 
-
 if __name__ == '__main__':
-    model = make_model()
+    model = create_model()
+    model.check()
     model.run()
+
+    # check result was as expected
+    assert(abs(model.nodes["A"].flow[0] - 5.0) < 0.000001)
