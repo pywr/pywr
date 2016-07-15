@@ -1,6 +1,7 @@
 cdef class Recorder
 
 from _core cimport Timestep, AbstractNode, Storage, ScenarioIndex
+from .parameters._parameters cimport Parameter, IndexParameter
 
 cdef class Recorder:
     cdef bint _is_objective
@@ -15,9 +16,14 @@ cdef class Recorder:
 cdef class NodeRecorder(Recorder):
     cdef AbstractNode _node
 
-
 cdef class StorageRecorder(Recorder):
     cdef Storage _node
+
+cdef class ParameterRecorder(Recorder):
+    cdef Parameter _param
+
+cdef class IndexParameterRecorder(Recorder):
+    cdef IndexParameter _param
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
     cdef double[:, :] _data
@@ -27,3 +33,9 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
     cdef double[:, :] _data
+
+cdef class NumpyArrayParameterRecorder(ParameterRecorder):
+    cdef double[:, :] _data
+
+cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
+    cdef int[:, :] _data

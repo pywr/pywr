@@ -95,12 +95,56 @@ cdef class StorageRecorder(Recorder):
         self._node = node
         node._recorders.append(self)
 
+    property node:
+        def __get__(self):
+            return self._node
+
     def __repr__(self):
         return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.node), self.name, hex(id(self)))
 
     def __repr__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 recorder_registry.add(StorageRecorder)
+
+
+cdef class ParameterRecorder(Recorder):
+    def __init__(self, model, Parameter param, name=None):
+        if name is None:
+            name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
+        Recorder.__init__(self, model, name=name)
+        self._param = param
+        param._recorders.append(self)
+
+    property parameter:
+        def __get__(self):
+            return self._param
+
+    def __repr__(self):
+        return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.parameter), self.name, hex(id(self)))
+
+    def __repr__(self):
+        return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+recorder_registry.add(ParameterRecorder)
+
+
+cdef class IndexParameterRecorder(Recorder):
+    def __init__(self, model, IndexParameter param, name=None):
+        if name is None:
+            name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
+        Recorder.__init__(self, model, name=name)
+        self._param = param
+        param._recorders.append(self)
+
+    property parameter:
+        def __get__(self):
+            return self._param
+
+    def __repr__(self):
+        return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.parameter), self.name, hex(id(self)))
+
+    def __repr__(self):
+        return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+recorder_registry.add(IndexParameterRecorder)
 
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
@@ -194,3 +238,72 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
             return np.array(self._data)
 
 recorder_registry.add(NumpyArrayLevelRecorder)
+
+
+cdef class NumpyArrayParameterRecorder(ParameterRecorder):
+    cpdef setup(self):
+        cdef int ncomb = len(self._model.scenarios.combinations)
+        cdef int nts = len(self._model.timestepper)
+        self._data = np.zeros((nts, ncomb))
+
+    cpdef reset(self):
+        self._data[:, :] = 0.0
+
+    cpdef int save(self) except -1:
+        cdef int i
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self._model.timestepper.current
+        for i, scenario_index in enumerate(self._model.scenarios.combinations):
+            self._data[ts._index, i] = self._param.value(ts, scenario_index)
+        return 0
+
+    property data:
+        def __get__(self, ):
+            return np.array(self._data)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self.model.timestepper.datetime_index
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
+recorder_registry.add(NumpyArrayParameterRecorder)
+
+cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
+    cpdef setup(self):
+        cdef int ncomb = len(self._model.scenarios.combinations)
+        cdef int nts = len(self._model.timestepper)
+        self._data = np.zeros((nts, ncomb), dtype=np.int32)
+
+    cpdef reset(self):
+        self._data[:, :] = 0
+
+    cpdef int save(self) except -1:
+        cdef int i
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self._model.timestepper.current
+        for i, scenario_index in enumerate(self._model.scenarios.combinations):
+            self._data[ts._index, i] = self._param.index(ts, scenario_index)
+        return 0
+
+    property data:
+        def __get__(self, ):
+            return np.array(self._data)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self.model.timestepper.datetime_index
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
+recorder_registry.add(NumpyArrayIndexParameterRecorder)

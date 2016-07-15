@@ -39,6 +39,7 @@ cdef class Parameter:
     def __init__(self):
         self.parents = PairedSet(self)
         self.children = PairedSet(self)
+        self._recorders = []
 
     cpdef setup(self, model):
         cdef Parameter child
@@ -95,6 +96,16 @@ cdef class Parameter:
             for var in self.children:
                 vars.extend(var.variables)
             return vars
+
+    property recorders:
+        """ Returns a list of `Recorder` objects attached to this node.
+
+         See also
+         --------
+         `Recorder`
+         """
+        def __get__(self):
+            return self._recorders
 
     @classmethod
     def load(cls, model, data):
