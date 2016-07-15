@@ -273,7 +273,7 @@ cdef class AbstractNode:
             self._flow[i] += value[i]
 
     cpdef after(self, Timestep ts):
-        pass
+        self._prev_flow[:] = self._flow[:]
 
     cpdef check(self,):
         pass
@@ -459,7 +459,7 @@ cdef class Node(AbstractNode):
     cpdef after(self, Timestep ts):
         """Called at the end of the timestep"""
         AbstractNode.after(self, ts)
-        self._prev_flow[:] = self._flow[:]
+
         # Complete any parameter calculations
         if self._cost_param is not None:
             self._cost_param.after(ts)
@@ -501,7 +501,7 @@ cdef class AggregatedNode(AbstractNode):
             self.model.dirty = True
 
     cpdef after(self, Timestep ts):
-        AbstractStorage.after(self, ts)
+        AbstractNode.after(self, ts)
         cdef int i
         cdef Node n
 
@@ -857,3 +857,25 @@ cdef class AggregatedStorage(AbstractStorage):
         nodes = [model._get_node_from_ref(model, node_name) for node_name in data["storage_nodes"]]
         agg = cls(model, name, nodes)
         return agg
+
+
+cdef class VirtualStorage(Storage):
+
+    property nodes:
+        def __get__(self):
+            return self._nodes
+
+        def __set__(self, value):
+            self._nodes = list(value)
+            self.model.dirty = True
+
+    cpdef after(self, Timestep ts):
+        cdef int i
+        cdef ScenarioIndex si
+        cdef AbstractNode n
+
+        for i, si in enumerate(self.model.scenarios.combinations):
+            self._flow[i] = 0.0
+            for n in self._nodes:
+                self._flow[i] -= n._flow[i]
+        Storage.after(self, ts)

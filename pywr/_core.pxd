@@ -95,3 +95,7 @@ cdef class Storage(AbstractStorage):
 
 cdef class AggregatedStorage(AbstractStorage):
     cdef list _storage_nodes
+
+cdef class VirtualStorage(Storage):
+    cdef list _nodes
+

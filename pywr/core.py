@@ -1104,6 +1104,32 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
 
+class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
+    def __init__(self, model, name, nodes, **kwargs):
+
+        min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        if min_volume is None:
+            min_volume = 0.0
+        max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
+        if 'volume' in kwargs:
+            # support older API where volume kwarg was the initial volume
+            initial_volume = kwargs.pop('volume')
+        else:
+            initial_volume = kwargs.pop('initial_volume', 0.0)
+        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+
+        position = kwargs.pop("position", {})
+
+        super(VirtualStorage, self).__init__(model, name, **kwargs)
+
+        self.min_volume = min_volume
+        self.max_volume = max_volume
+        self.initial_volume = initial_volume
+        self.cost = cost
+        self.position = position
+        self.nodes = nodes
+
+
 class PiecewiseLink(Node):
     """ An extension of Node that represents a non-linear Link with a piece wise cost function.
 
