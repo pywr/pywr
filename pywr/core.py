@@ -1085,7 +1085,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
 
 
 class PiecewiseLink(Node):
-    """ An extension of Nodes that represents a non-linear Link with a piece wise cost function.
+    """ An extension of Node that represents a non-linear Link with a piece wise cost function.
 
     This object is intended to model situations where there is a benefit of supplying certain flow rates
     but beyond a fixed limit there is a change in (or zero) cost.
@@ -1102,16 +1102,16 @@ class PiecewiseLink(Node):
     the sublinks and connections to the Output/Input node. The reason for this
     breaking of the route is to avoid an geometric increase in the number
     of routes when multiple PiecewiseLinks are present in the same route.
+
+    Parameters
+    ----------
+    max_flow : iterable
+        A monotonic increasing list of maximum flows for the piece wise function
+    cost : iterable
+        A list of costs corresponding to the max_flow steps
+
     """
     def __init__(self, *args, **kwargs):
-        """
-        Parameters
-        ----------
-        max_flow : iterable
-            A monotonic increasing list of maximum flows for the piece wise function
-        cost : iterable
-            A list of costs corresponding to the max_flow steps
-        """
         self.allow_isolated = True
         costs = kwargs.pop('cost')
         max_flows = kwargs.pop('max_flow')
@@ -1154,6 +1154,124 @@ class PiecewiseLink(Node):
             self.commit_all(lnk.flow)
         # Make sure save is done after setting aggregated flow
         super(PiecewiseLink, self).after(timestep)
+
+
+class MultiSplitLink(PiecewiseLink):
+    """ An extension of PiecewiseLink that includes additional additional slots to connect from.
+
+    Conceptually this node looks like the following internally,
+
+             / -->-- X0 -->-- \
+    A -->-- Xo -->-- X1 -->-- Xi -->-- C
+             \ -->-- X2 -->-- /
+                     |
+                     Bo -->-- Bi --> D
+
+    An additional sublink in the PiecewiseLink (i.e. X2 above) and nodes (i.e. Bo and Bi) in this
+     class are added for each extra slot.
+
+    Finally a mechanism is provided to (optionally) fix the ratio between the last non-split
+     sublink (i.e. X1) and each of extra sublinks (i.e. X2). This mechanism uses `AggregatedNode`
+     internally.
+
+    Parameters
+    ----------
+    max_flow : iterable
+        A monotonic increasing list of maximum flows for the piece wise function
+    cost : iterable
+        A list of costs corresponding to the max_flow steps
+    extra_slots : int, optional (default 1)
+        Number of additional slots (and sublinks) to provide. Must be greater than zero.
+    slot_names : iterable, optional (default range of ints)
+        The names to by which to refer to the slots during connection to other nodes. Length
+        must be one more than the number of extra_slots. The first item refers to the PiecewiseLink
+        connection with the following items for each extra slot.
+    ratios : iterable, optional (default None)
+        If given the length must be equal to the number of extra_slots. Each item is the proportion
+        of total flow to pass through the additional sublinks. If no ratio is required for a particular
+        sublink then use `None` for its items. The sum of the ratios must be <= 1.0.
+
+    Notes
+    -----
+    Users must be careful when using the ratio fixing mechanism. Ratios use the last non-split
+     sublink (i.e. X1 but not X0). If this link is constrained with a maximum or minimum flow,
+     or if it there is another unconstrained link (i.e. if X0 is unconstrained) then ratios
+     across this whole node may not be enforced as expected.
+
+    """
+    def __init__(self, *args, **kwargs):
+        self.allow_isolated = True
+        costs = list(kwargs.pop('cost'))
+        max_flows = list(kwargs.pop('max_flow'))
+
+        extra_slots = kwargs.pop('extra_slots', 1)
+        if extra_slots < 1:
+            raise ValueError("extra_slots must be at least 1.")
+
+        # No cost or maximum flow on the additional links
+        # The max_flows could be problematic with the aggregated node.
+        costs.extend([0.0]*extra_slots)
+        max_flows.extend([None]*extra_slots)
+        # Edit the kwargs to get the PiecewiseLink to setup as we want.
+        kwargs['cost'] = costs
+        kwargs['max_flow'] = max_flows
+
+        # Default to integer names
+        self.slot_names = list(kwargs.pop('slot_names', range(extra_slots+1)))
+        if extra_slots+1 != len(self.slot_names):
+            raise ValueError("slot_names must be one more than the number of extra_slots.")
+
+        ratios = kwargs.pop('ratios', None)
+        # Finally initialise the parent.
+        super(MultiSplitLink, self).__init__(*args, **kwargs)
+
+        self._extra_inputs = []
+        self._extra_outputs = []
+        n = len(self.sublinks) - extra_slots
+        for i in range(extra_slots):
+            # create a new input inside the piecewise link which only has access
+            # to flow travelling via the last sublink (X2)
+            otpt = Output(self.model, '{} Extra Output {}'.format(self.name, i), domain=self.sub_domain)
+            inpt = Input(self.model, '{} Extra Input {}'.format(self.name, i))
+
+            otpt.connect(inpt)
+            self.sublinks[n+i].connect(otpt)
+
+            self._extra_inputs.append(inpt)
+            self._extra_outputs.append(otpt)
+
+        # Now create an aggregated node for addition constaints if required.
+        if ratios is not None:
+            if extra_slots != len(ratios):
+                raise ValueError("ratios must have a length equal to extra_slots.")
+
+            nodes = []
+            valid_ratios = []
+            for r, nd in zip(ratios, self.sublinks[n:]):
+                if r is not None:
+                    nodes.append(nd)
+                    valid_ratios.append(r)
+
+            remaining_ratio = 1.0 - sum(valid_ratios)
+            if remaining_ratio < 0.0:
+                raise ValueError('Sum of ratios is more than 1.0.')
+
+            nodes.insert(0, self.sublinks[n-1])
+            valid_ratios.insert(0, remaining_ratio)
+
+            agg = AggregatedNode(self.model, "{} Agg".format(self.name), nodes)
+            agg.factors = valid_ratios
+
+    def iter_slots(self, slot_name=None, is_connector=True):
+        if is_connector:
+            i = self.slot_names.index(slot_name)
+            if i == 0:
+                yield self.input
+            else:
+                yield self._extra_inputs[i-1]
+        else:
+            yield self.output
+
 
 class Group(object):
     """A group of nodes

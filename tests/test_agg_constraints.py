@@ -1,4 +1,4 @@
-from pywr.core import Model, Input, Output, Link, Storage, AggregatedNode, PiecewiseLink
+from pywr.core import Model, Input, Output, Link, Storage, AggregatedNode, PiecewiseLink, MultiSplitLink
 
 import pytest
 from numpy.testing import assert_allclose
@@ -154,11 +154,15 @@ def test_aggregated_constraint_json():
     assert_allclose(agg.max_flow, 30.0)
     assert_allclose(agg.min_flow, 5.0)
 
-def test_piecewise_constraint(model):
+@pytest.mark.parametrize('flow', (100.0, 200.0, 300.0))
+def test_piecewise_constraint(model, flow):
     """Test using an aggregated node constraint in combination with a
     piecewise link in order to create a minimum flow constraint of the form
     y = mx + c, where y is the MRF, x is the upstream flow and m and c are
     constants.
+
+    Flows are tested at 100, 200 and 300 to ensure the aggregated ratio works
+    when there is too much to route entirely through to node 'D'.
 
     TODO: build a standard class which simplifies the construction of this setup
 
@@ -168,7 +172,6 @@ def test_piecewise_constraint(model):
                      |
                      Bo -->-- Bi --> D
     """
-    flow = 100
     A = Input(model, "A", min_flow=flow, max_flow=flow)
     X = PiecewiseLink(model, name="X", cost=[-500.0, 0, 0], max_flow=[40.0, None, None])
     C = Output(model, "C")
@@ -185,9 +188,29 @@ def test_piecewise_constraint(model):
     Bi.connect(D)
     X.sublinks[-1].connect(Bo)
 
-
     agg = AggregatedNode(model, "agg", X.sublinks[1:])
     agg.factors = [3.0, 1.0]
 
     model.step()
-    assert_allclose(D.flow, (100 - 40) * 0.25)
+    assert_allclose(D.flow, min((flow - 40) * 0.25, 50.0))
+
+
+@pytest.mark.parametrize('flow', (100.0, 200.0, 300.0))
+def test_multipiecewise_constraint(model, flow):
+    """ Test using an aggregated node in combination with a MultiSplitLink.
+
+    This test is the same as the `test_piecewise_constraint` but using the MultiSplitLink API
+     for brevity.
+    """
+    A = Input(model, "A", min_flow=flow, max_flow=flow)
+    X = MultiSplitLink(model, name="X", cost=[-500.0, 0], max_flow=[40.0, None],
+                       ratios=[0.25, ], extra_slots=1, slot_names=['river', 'abstraction'])
+    C = Output(model, "C")
+    D = Output(model, "D", max_flow=50, cost=-100)
+
+    A.connect(X)
+    X.connect(C, from_slot='river')
+    X.connect(D, from_slot='abstraction')
+
+    model.step()
+    assert_allclose(D.flow, min((flow - 40) * 0.25, 50.0))
