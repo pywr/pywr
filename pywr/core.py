@@ -25,12 +25,13 @@ warnings.simplefilter(action = "ignore", category = UnicodeWarning)
 
 
 class Timestepper(object):
-    def __init__(self, start=pandas.to_datetime('2015-01-01'),
-                       end=pandas.to_datetime('2015-12-31'),
-                       delta=datetime.timedelta(1)):
-        self.start = start
-        self.end = end
-        self.delta = delta
+    def __init__(self, start="2015-01-01", end="2015-12-31", delta=1):
+        self.start = pandas.to_datetime(start)
+        self.end = pandas.to_datetime(end)
+        try:
+            self.delta = pandas.Timedelta(days=delta)
+        except TypeError:
+            self.delta = pandas.to_timedelta(delta)
         self._last_length = None
         self.reset()
 
@@ -237,11 +238,9 @@ class Model(object):
         solver_name = kwargs.pop('solver', None)
 
         # time arguments
-        start = self.start = kwargs.pop('start', pandas.to_datetime('2015-01-01'))
-        end = self.end = kwargs.pop('end', pandas.to_datetime('2015-12-31'))
-        timestep = self.timestep = kwargs.pop('timestep', 1)
-        if not isinstance(timestep, datetime.timedelta):
-            timestep = datetime.timedelta(timestep)
+        start = kwargs.pop("start", "2015-01-01")
+        end = kwargs.pop("end", "2015-12-31")
+        timestep = kwargs.pop("timestep", 1)
         self.timestepper = Timestepper(start, end, timestep)
 
         self.data = {}
@@ -608,7 +607,7 @@ class Model(object):
                 return timestep
             elif until_date and timestep.datetime > until_date:
                 return timestep
-            elif timestep.datetime > self.end:
+            elif timestep.datetime > self.timestepper.end:
                 return timestep
         self.finish()
         try:
