@@ -110,11 +110,14 @@ cdef class CythonLPSolveSolver:
     cdef int idx_row_demands
     cdef int idx_row_cross_domain
     cdef int idx_row_storages
+    cdef int idx_row_aggregated
+    cdef int idx_row_aggregated_min_max
 
     cdef object routes
     cdef object supplys
     cdef object demands
     cdef object storages
+    cdef object aggregated
 
     def __cinit__(self):
         # create a new problem
@@ -133,6 +136,7 @@ cdef class CythonLPSolveSolver:
         cdef Node supply
         cdef Node demand
         cdef Node node
+        cdef AggregatedNode agg_node
         cdef double min_flow
         cdef double max_flow
         cdef double cost
@@ -155,6 +159,8 @@ cdef class CythonLPSolveSolver:
         supplys = []
         demands = []
         storages = []
+        aggregated = []
+        aggregated_min_max = []
         for some_node in model.graph.nodes():
             if isinstance(some_node, (BaseInput, BaseLink)):
                 supplys.append(some_node)
@@ -162,6 +168,12 @@ cdef class CythonLPSolveSolver:
                 demands.append(some_node)
             if isinstance(some_node, Storage):
                 storages.append(some_node)
+            elif isinstance(some_node, AggregatedNode):
+                if some_node.factors is not None:
+                    aggregated.append(some_node)
+                if some_node.min_flow > -inf or \
+                   some_node.max_flow < inf:
+                    aggregated_min_max.append(some_node)
 
         if len(routes) == 0:
             raise ModelStructureError("Model has no valid routes")
@@ -274,11 +286,80 @@ cdef class CythonLPSolveSolver:
                 val[len(cols_output)+n] = -1
             add_constraintex(self.prob, len(cols_output)+len(cols_input), val, ind, EQ, 0.0)
 
+        # aggregated node flow ratio constraints
+        if len(aggregated):
+            self.idx_row_aggregated = get_Norig_rows(self.prob)+1
+
+        for agg_node in aggregated:
+            nodes = agg_node.nodes
+            factors = agg_node.factors
+            assert(len(nodes) == len(factors))
+
+            ret = resize_lp(self.prob, get_Norig_rows(self.prob)+len(agg_node.nodes)-1, get_Norig_columns(self.prob))
+            row = get_Norig_rows(self.prob)+1
+
+            cols = []
+            for node in nodes:
+                cols.append([n for n, route in enumerate(routes) if node in route])
+
+            # normalise factors
+            f0 = factors[0]
+            factors_norm = [f0/f for f in factors]
+
+            # update matrix
+            for n in range(len(nodes)-1):
+                length = len(cols[0])+len(cols[n+1])
+                ind = <int*>malloc(length * sizeof(int))
+                val = <double*>malloc(length * sizeof(double))
+                for i, c in enumerate(cols[0]):
+                    ind[i] = 1+c
+                    val[i] = 1.0
+                for i, c in enumerate(cols[n+1]):
+                    ind[len(cols[0])+i] = 1+c
+                    val[len(cols[0])+i] = -factors_norm[n+1]
+
+                add_constraintex(self.prob, length, val, ind, EQ, 0.0)
+
+        # aggregated node min/max flow constraints
+        if aggregated_min_max:
+            self.idx_row_aggregated_min_max = get_Norig_rows(self.prob)+1
+            ret = resize_lp(self.prob, get_Norig_rows(self.prob)+len(aggregated_min_max), get_Norig_columns(self.prob))
+
+        for row, agg_node in enumerate(aggregated_min_max):
+            row = self.idx_row_aggregated_min_max + row
+            nodes = agg_node.nodes
+            min_flow = agg_node.min_flow
+            max_flow = agg_node.max_flow
+            if min_flow is None:
+                min_flow = -inf
+            if max_flow is None:
+                max_flow = inf
+            min_flow = inf_to_dbl_max(min_flow)
+            max_flow = inf_to_dbl_max(max_flow)
+            matrix = set()
+            for node in nodes:
+                for n, route in enumerate(routes):
+                    if node in route:
+                        matrix.add(n)
+            length = len(matrix)
+            ind = <int*>malloc(length * sizeof(int))
+            val = <double*>malloc(length * sizeof(double))
+            for i, col in enumerate(matrix):
+                ind[i] = 1+col
+                val[i] = 1.0
+            #glp_set_mat_row(self.prob, row, length, ind, val)
+            #glp_set_row_bnds(self.prob, row, constraint_type(min_flow, max_flow), min_flow, max_flow)
+            add_constraintex(self.prob, length, val, ind, EQ, 0.0)
+            set_row_bnds(self.prob, row, min_flow, max_flow)
+            free(ind)
+            free(val)
+
         ret = set_add_rowmode(self.prob, FALSE)
         self.routes = routes
         self.supplys = supplys
         self.demands = demands
         self.storages = storages
+        self.aggregated = aggregated
 
     cpdef object solve(self, model):
         cdef int[:] scenario_combination
