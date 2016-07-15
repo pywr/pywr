@@ -7,9 +7,6 @@
         "end": "2016-01-02",
         "timestep": 1
     },
-    "solver": {
-        "name": "glpk"
-    },
     "nodes": [
         {
             "name": "A",
