@@ -517,7 +517,7 @@ def test_threshold_parameter(model):
     rec = DummyRecorder(model)
 
     timestep = Timestep(datetime.datetime(2016, 1, 2), 1, 1)
-    si = ScenarioIndex(0, np.array([0]))
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
     threshold = 10.0
     values = [50.0, 60.0]
