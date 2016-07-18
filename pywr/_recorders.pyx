@@ -82,7 +82,7 @@ cdef class NodeRecorder(Recorder):
     def __repr__(self):
         return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.node), self.name, hex(id(self)))
 
-    def __repr__(self):
+    def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 recorder_registry.add(NodeRecorder)
 
@@ -102,7 +102,7 @@ cdef class StorageRecorder(Recorder):
     def __repr__(self):
         return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.node), self.name, hex(id(self)))
 
-    def __repr__(self):
+    def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 recorder_registry.add(StorageRecorder)
 
@@ -122,7 +122,7 @@ cdef class ParameterRecorder(Recorder):
     def __repr__(self):
         return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.parameter), self.name, hex(id(self)))
 
-    def __repr__(self):
+    def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
 recorder_registry.add(ParameterRecorder)
 
@@ -142,7 +142,7 @@ cdef class IndexParameterRecorder(Recorder):
     def __repr__(self):
         return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.parameter), self.name, hex(id(self)))
 
-    def __repr__(self):
+    def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
 recorder_registry.add(IndexParameterRecorder)
 
