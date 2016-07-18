@@ -160,8 +160,6 @@ def test_piecewise_constraint(model, flow):
     Flows are tested at 100, 200 and 300 to ensure the aggregated ratio works
     when there is too much to route entirely through to node 'D'.
 
-    TODO: build a standard class which simplifies the construction of this setup
-
              / -->-- X0 -->-- \
     A -->-- Xo -->-- X1 -->-- Xi -->-- C
              \ -->-- X2 -->-- /
@@ -200,7 +198,7 @@ def test_multipiecewise_constraint(model, flow):
     """
     A = Input(model, "A", min_flow=flow, max_flow=flow)
     X = MultiSplitLink(model, name="X", cost=[-500.0, 0], max_flow=[40.0, None],
-                       ratios=[0.25, ], extra_slots=1, slot_names=['river', 'abstraction'])
+                       factors=[3, 1], extra_slots=1, slot_names=['river', 'abstraction'])
     C = Output(model, "C")
     D = Output(model, "D", max_flow=50, cost=-100)
 

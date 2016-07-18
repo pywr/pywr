@@ -1186,14 +1186,14 @@ class MultiSplitLink(PiecewiseLink):
         The names to by which to refer to the slots during connection to other nodes. Length
         must be one more than the number of extra_slots. The first item refers to the PiecewiseLink
         connection with the following items for each extra slot.
-    ratios : iterable, optional (default None)
-        If given the length must be equal to the number of extra_slots. Each item is the proportion
-        of total flow to pass through the additional sublinks. If no ratio is required for a particular
-        sublink then use `None` for its items. The sum of the ratios must be <= 1.0.
+    factors : iterable, optional (default None)
+        If given the length must be equal one more than the number of extra_slots. Each item is the proportion
+        of total flow to pass through the additional sublinks. If no factor is required for a particular
+        sublink then use `None` for its items. Factors are normalised prior to use in the solver.
 
     Notes
     -----
-    Users must be careful when using the ratio fixing mechanism. Ratios use the last non-split
+    Users must be careful when using the factormechanism. Factors use the last non-split
      sublink (i.e. X1 but not X0). If this link is constrained with a maximum or minimum flow,
      or if it there is another unconstrained link (i.e. if X0 is unconstrained) then ratios
      across this whole node may not be enforced as expected.
@@ -1221,7 +1221,7 @@ class MultiSplitLink(PiecewiseLink):
         if extra_slots+1 != len(self.slot_names):
             raise ValueError("slot_names must be one more than the number of extra_slots.")
 
-        ratios = kwargs.pop('ratios', None)
+        factors = kwargs.pop('factors', None)
         # Finally initialise the parent.
         super(MultiSplitLink, self).__init__(*args, **kwargs)
 
@@ -1242,27 +1242,20 @@ class MultiSplitLink(PiecewiseLink):
             self._extra_outputs.append(otpt)
 
         # Now create an aggregated node for addition constaints if required.
-        if ratios is not None:
-            if extra_slots != len(ratios):
-                raise ValueError("ratios must have a length equal to extra_slots.")
+        if factors is not None:
+            if extra_slots+1 != len(factors):
+                raise ValueError("factors must have a length equal to extra_slots.")
 
             nodes = []
-            valid_ratios = []
-            for r, nd in zip(ratios, self.sublinks[n:]):
+            valid_factors = []
+            for r, nd in zip(factors, self.sublinks[n-1:]):
                 if r is not None:
                     nodes.append(nd)
-                    valid_ratios.append(r)
-
-            remaining_ratio = 1.0 - sum(valid_ratios)
-            if remaining_ratio < 0.0:
-                raise ValueError('Sum of ratios is more than 1.0.')
-
-            nodes.insert(0, self.sublinks[n-1])
-            valid_ratios.insert(0, remaining_ratio)
+                    valid_factors.append(r)
 
             agg = AggregatedNode(self.model, "{} Agg".format(self.name), nodes)
-            agg.factors = valid_ratios
-            print(valid_ratios, agg, nodes)
+            agg.factors = valid_factors
+
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:

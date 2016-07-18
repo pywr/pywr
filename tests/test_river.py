@@ -61,7 +61,7 @@ def simple_river_split_gauge_model(solver):
 
     inpt = river.Catchment(model, name="Catchment", flow=in_flow)
     lnk = river.RiverSplitWithGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-100,
-                                    slot_names=("river", "abstraction"), ratio=0.25)
+                                    slot_names=("river", "abstraction"), factors=[3, 1])
     inpt.connect(lnk)
     estuary = river.Terminator(model, name="Estuary")
     lnk.connect(estuary, from_slot="river")

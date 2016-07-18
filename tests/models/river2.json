@@ -26,7 +26,7 @@
         {
             "name": "river2",
             "type": "riversplit",
-            "ratio": 0.75,
+            "factors": [1, 3],
             "slot_names": ["term", "branch"]
         },
         {

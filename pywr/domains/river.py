@@ -120,10 +120,9 @@ class RiverSplit(MultiSplitLink):
 
     Parameters
     ----------
-    ratio : float or iterable of floats
-        The ratio to force on the additional splits. If a float is provided one extra_slot (as per
-        `MultiSplitLink` documentation) is assumed. An iterable can be given if multiple extra slots
-        are required.
+    factors : iterable of floats
+        The factors to force on the additional splits. Number of extra_slot is assumed to be one less
+        than the length of factors (as per `MultiSplitLink` documentation).
     slot_names : iterable
         The identifiers to refer to the slots when connect from this Node. Length must be one more than
          the number of extra slots required.
@@ -141,8 +140,8 @@ class RiverSplit(MultiSplitLink):
                 return [val]
             return val
 
-        ratio = _make_iterable(kwargs.pop('ratio'))
-        extra_slots = len(ratio)
+        factors = _make_iterable(kwargs.pop('factors'))
+        extra_slots = len(factors) - 1
 
         # These are the defaults to pass to the parent class that makes this
         # class a convenience.
@@ -150,7 +149,7 @@ class RiverSplit(MultiSplitLink):
         kwargs['cost'] = _make_iterable(kwargs.pop('cost', 0.0))
         kwargs['max_flow'] = _make_iterable(kwargs.pop('max_flow', None))
         kwargs['extra_slots'] = extra_slots
-        kwargs['ratios'] = ratio
+        kwargs['factors'] = factors
 
         super(RiverSplit, self).__init__(*args, **kwargs)
 
@@ -171,10 +170,9 @@ class RiverSplitWithGauge(RiverSplit):
         The cost of the route via the MRF
     cost : float
         The cost of the other (unconstrained) route
-    ratio : float or iterable of floats
-        The ratio to force on the additional splits. If a float is provided one extra_slot (as per
-        `MultiSplitLink` documentation) is assumed. An iterable can be given if multiple extra slots
-        are required.
+    factors : iterable of floats
+        The factors to force on the additional splits. Number of extra_slot is assumed to be one less
+        than the length of factors (as per `MultiSplitLink` documentation).
     slot_names : iterable
         The identifiers to refer to the slots when connect from this Node. Length must be one more than
          the number of extra slots required.
