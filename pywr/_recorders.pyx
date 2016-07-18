@@ -27,9 +27,6 @@ cdef class Recorder:
             self._name = name
 
     def __repr__(self):
-        return '<{} "{}" ({})>'.format(self.__class__.__name__, self.name, hex(id(self)))
-
-    def __str__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
     cpdef setup(self):
@@ -81,10 +78,8 @@ cdef class NodeRecorder(Recorder):
             return self._node
 
     def __repr__(self):
-        return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.node), self.name, hex(id(self)))
-
-    def __repr__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
+
 recorder_registry.add(NodeRecorder)
 
 
@@ -96,11 +91,13 @@ cdef class StorageRecorder(Recorder):
         self._node = node
         node._recorders.append(self)
 
-    def __repr__(self):
-        return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.node), self.name, hex(id(self)))
+    property node:
+        def __get__(self):
+            return self._node
 
     def __repr__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
+
 recorder_registry.add(StorageRecorder)
 
 
