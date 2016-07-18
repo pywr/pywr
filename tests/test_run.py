@@ -91,15 +91,16 @@ def test_run_river1(solver):
     assert_allclose(demand1.flow, 5.0, atol=1e-7)
 
 
-# Contains a RiverSplit which needs addressing
-@pytest.mark.xfail
 def test_run_river2(solver):
     '''Test a river abstraction with two catchments, a confluence and a split'''
-    model = load_model('river2.xml', solver=solver)
+    model = load_model('river2.json', solver=solver)
 
-    result = model.step()
-    assert(result[0:3] == ('optimal', 12.0, 9.25))
-    assert(model.failure)
+    model.step()
+
+    demand1 = model.node['demand1']
+    assert_allclose(demand1.flow, 7.25, atol=1e-7)
+    demand2 = model.node['demand2']
+    assert_allclose(demand2.flow, 2.0, atol=1e-7)
 
 
 # Contains an out of range date for pandas.to_datetime

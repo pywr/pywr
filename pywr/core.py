@@ -1231,8 +1231,9 @@ class MultiSplitLink(PiecewiseLink):
         for i in range(extra_slots):
             # create a new input inside the piecewise link which only has access
             # to flow travelling via the last sublink (X2)
-            otpt = Output(self.model, '{} Extra Output {}'.format(self.name, i), domain=self.sub_domain)
-            inpt = Input(self.model, '{} Extra Input {}'.format(self.name, i))
+            otpt = Output(self.model, '{} Extra Output {}'.format(self.name, i),
+                          domain=self.sub_domain, parent=self)
+            inpt = Input(self.model, '{} Extra Input {}'.format(self.name, i), parent=self)
 
             otpt.connect(inpt)
             self.sublinks[n+i].connect(otpt)
@@ -1261,6 +1262,7 @@ class MultiSplitLink(PiecewiseLink):
 
             agg = AggregatedNode(self.model, "{} Agg".format(self.name), nodes)
             agg.factors = valid_ratios
+            print(valid_ratios, agg, nodes)
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
