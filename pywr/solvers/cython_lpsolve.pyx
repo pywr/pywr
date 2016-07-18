@@ -347,8 +347,6 @@ cdef class CythonLPSolveSolver:
             for i, col in enumerate(matrix):
                 ind[i] = 1+col
                 val[i] = 1.0
-            #glp_set_mat_row(self.prob, row, length, ind, val)
-            #glp_set_row_bnds(self.prob, row, constraint_type(min_flow, max_flow), min_flow, max_flow)
             add_constraintex(self.prob, length, val, ind, EQ, 0.0)
             set_row_bnds(self.prob, row, min_flow, max_flow)
             free(ind)
