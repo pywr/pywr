@@ -27,3 +27,9 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
     cdef double[:, :] _data
+
+cdef class MeanFlowRecorder(NodeRecorder):
+    cdef int position
+    cdef int timesteps
+    cdef double[:, :] _memory
+    cdef double[:, :] _data

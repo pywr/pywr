@@ -1,9 +1,12 @@
 import sys
 import numpy as np
 from pywr._recorders import (Recorder, NodeRecorder, StorageRecorder,
-    NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayLevelRecorder)
-from pywr._recorders import recorder_registry
+    NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayLevelRecorder,
+    MeanFlowRecorder)
+from pywr._recorders import recorder_registry, load_recorder
 from pywr._core import Storage
+
+from past.builtins import basestring
 
 
 class CSVRecorder(Recorder):
@@ -266,23 +269,3 @@ class AggregatedRecorder(Recorder):
         print(rec.name)
 
 recorder_registry.add(AggregatedRecorder)
-
-
-def load_recorder(model, data):
-    recorder_type = data['type']
-    
-    # lookup the recorder class in the registry
-    cls = None
-    name2 = recorder_type.lower().replace('recorder', '')
-    for recorder_class in recorder_registry:
-        name1 = recorder_class.__name__.lower().replace('recorder', '')
-        if name1 == name2:
-            cls = recorder_class
-
-    if cls is None:
-        raise NotImplementedError('Unrecognised recorder type "{}"'.format(recorder_type))
-
-    del(data["type"])
-    rec = cls.load(model, data)
-    
-    return rec  # not strictly needed

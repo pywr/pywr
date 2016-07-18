@@ -434,6 +434,19 @@ class Model(object):
                     parameters_to_load[key]["name"] = key
         model._parameters_to_load = parameters_to_load
 
+        # collect recorders to load
+        # the recorders are loaded immediately, as they may not be referenced
+        # anywhere else
+        try:
+            recorders_to_load = data["recorders"]
+        except KeyError:
+            recorders_to_load = []
+        else:
+            for key, value in recorders_to_load.items():
+                if isinstance(value, dict):
+                    recorders_to_load[key]["name"] = key
+                load_recorder(model, recorders_to_load[key])
+
         # load the remaining nodes
         for node_name in list(nodes_to_load.keys()):
             node = cls._get_node_from_ref(model, node_name)

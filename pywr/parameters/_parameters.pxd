@@ -1,3 +1,4 @@
+from pywr._recorders cimport Recorder
 
 # Forward declations
 cdef class Parameter
@@ -86,3 +87,9 @@ cdef class AggregatedParameter(AggregatedParameterBase):
 
 cdef class AggregatedIndexParameter(AggregatedParameterBase):
     pass
+
+cdef class RecorderThresholdParameter(Parameter):
+    cdef Recorder recorder
+    cdef double threshold
+    cdef double[:] values
+    cdef int predicate

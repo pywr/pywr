@@ -6,7 +6,7 @@ from ._parameters import (
     ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter,
     DailyProfileParameter, ArrayIndexedScenarioParameter,
-    IndexParameter, CachedParameter,
+    IndexParameter, CachedParameter, RecorderThresholdParameter,
     AggregatedParameter, AggregatedIndexParameter,
     load_parameter, load_parameter_values, load_dataframe)
 from past.builtins import basestring
