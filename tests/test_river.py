@@ -6,11 +6,8 @@ are tested here.
 """
 from __future__ import print_function
 import pywr.core
-from pywr.core import Model, RiverGauge, Input, Output
 from pywr.parameters import MonthlyProfileParameter
 from pywr.domains import river
-import datetime
-import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
@@ -47,6 +44,42 @@ def simple_gauge_model(request, solver):
     }
     return model, expected_node_results
 
+
+@pytest.fixture
+def simple_river_split_gauge_model(solver):
+    """
+    Make a simple model with a single Input and Output and RiverGauge
+
+    Input -> RiverSplit -> Output 1
+                 \ --->--> Output 2
+
+    """
+    in_flow = 100.0
+    min_flow_req = 40.0
+    out_flow = 50.0
+    model = pywr.core.Model(solver=solver)
+
+    inpt = river.Catchment(model, name="Catchment", flow=in_flow)
+    lnk = river.RiverSplitWithGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-100,
+                                    slot_names=("river", "abstraction"), factors=[3, 1])
+    inpt.connect(lnk)
+    estuary = river.Terminator(model, name="Estuary")
+    lnk.connect(estuary, from_slot="river")
+    otpt = river.DemandCentre(model, name="Demand", max_flow=out_flow, cost=-10)
+    lnk.connect(otpt, from_slot="abstraction")
+
+    net_flow_after_mrf = in_flow - min_flow_req
+    expected_node_results = {
+        "Catchment": in_flow,
+        "Gauge": in_flow,
+        "Gauge Sublink 0": min_flow_req,
+        "Gauge Sublink 1": net_flow_after_mrf * 0.75,
+        "Gauge Sublink 2": net_flow_after_mrf * 0.25,
+        "Demand": min(out_flow, net_flow_after_mrf * 0.25),
+    }
+    return model, expected_node_results
+
+
 def test_river_gauge(solver):
     """
     Test loading a model with a RiverGauge from JSON, modifying it, then running it
@@ -75,6 +108,10 @@ def test_river_gauge(solver):
 
 def test_piecewise_model(simple_gauge_model):
     assert_model(*simple_gauge_model)
+
+
+def test_river_split_gauge(simple_river_split_gauge_model):
+    assert_model(*simple_river_split_gauge_model)
 
 
 def test_control_curve(solver):

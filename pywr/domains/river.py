@@ -1,5 +1,5 @@
 
-from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink
+from ..core import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink
 from pywr.parameters import pop_kwarg_parameter, ConstantParameter, BaseParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter
 
@@ -111,30 +111,81 @@ class River(RiverDomainMixin, Link):
         super(River, self).__init__(*args, **kwargs)
 
 
-class RiverSplit(River):
-    """A split in the river network"""
+class RiverSplit(MultiSplitLink):
+    """A split in the river network
+
+    RiverSplit is a specialised version of `MultiSplitLink` with a more convenient init method.
+     It is intended for a simple case of where fixed ratio of flow is required to be distributed
+     to multiple downstream routes.
+
+    Parameters
+    ----------
+    factors : iterable of floats
+        The factors to force on the additional splits. Number of extra_slot is assumed to be one less
+        than the length of factors (as per `MultiSplitLink` documentation).
+    slot_names : iterable
+        The identifiers to refer to the slots when connect from this Node. Length must be one more than
+         the number of extra slots required.
+
+    See also
+    --------
+    `MultiSplitLink`
+
+    """
+    def __init__(self, *args, **kwargs):
+        def _make_iterable(val):
+            try:
+                len(val)
+            except TypeError:
+                return [val]
+            return val
+
+        factors = _make_iterable(kwargs.pop('factors'))
+        extra_slots = len(factors) - 1
+
+        # These are the defaults to pass to the parent class that makes this
+        # class a convenience.
+        # create keyword arguments for PiecewiseLink
+        kwargs['cost'] = _make_iterable(kwargs.pop('cost', 0.0))
+        kwargs['max_flow'] = _make_iterable(kwargs.pop('max_flow', None))
+        kwargs['extra_slots'] = extra_slots
+        kwargs['factors'] = factors
+
+        super(RiverSplit, self).__init__(*args, **kwargs)
+
+
+class RiverSplitWithGauge(RiverSplit):
+    """A split in the river network with a minimum residual flow
+
+    As per `RiverSplit` but by default creates another route in the underlying object
+     to model a MRF. This route is such that the MRF is not part of forced ratios. The
+     intent of this object is to model the case where a proportion of flow can be
+     abstracted above the MRF (e.g. 90% of flow above MRF).
+
+    Parameters
+    ----------
+    mrf : float
+        The minimum residual flow (MRF) at the gauge
+    mrf_cost : float
+        The cost of the route via the MRF
+    cost : float
+        The cost of the other (unconstrained) route
+    factors : iterable of floats
+        The factors to force on the additional splits. Number of extra_slot is assumed to be one less
+        than the length of factors (as per `MultiSplitLink` documentation).
+    slot_names : iterable
+        The identifiers to refer to the slots when connect from this Node. Length must be one more than
+         the number of extra slots required.
+    """
     def __init__(self, *args, **kwargs):
         """Initialise a new RiverSplit instance
 
-        Parameters
-        ----------
-        split : float or function
-            The ratio to apportion the flow between the two downstream nodes as
-            a ratio (0.0-1.0). If no value is given a default value of 0.5 is
-            used.
         """
-        River.__init__(self, *args, **kwargs)
-        # These are the upstream slots
-        self._slots = {1: None, 2: None}
+        cost = kwargs.pop('cost', 0.0)
+        kwargs['cost'] = [kwargs.pop('mrf_cost', 0.0), cost]
+        kwargs['max_flow'] = [kwargs.pop('mrf', 0.0), None]
+        super(RiverSplitWithGauge, self).__init__(*args, **kwargs)
 
-        self.split = pop_kwarg_parameter(kwargs, 'split', 0.5)
-
-    def iter_slots(self, slot_name=None, is_connector=True):
-        # All sublinks are connected upstream and downstream
-        if not is_connector:
-            yield self._slots[slot_name]
-        for link in self.sublinks:
-            yield link
 
 class Discharge(Catchment):
     """An inline discharge to the river network

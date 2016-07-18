@@ -1,0 +1,74 @@
+{
+    "metadata": {
+        "title": "River 1",
+        "description": "A more complex river system."
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "catchment1",
+            "type": "catchment",
+            "flow": 5
+        },
+        {
+            "name": "catchment2",
+            "type": "catchment",
+            "flow": 5
+        },
+        {
+            "name": "river1",
+            "type": "river"
+        },
+        {
+            "name": "river2",
+            "type": "riversplit",
+            "factors": [1, 3],
+            "slot_names": ["term", "branch"]
+        },
+        {
+            "name": "abs1",
+            "type": "riverabstraction",
+            "max_flow": 15
+        },
+        {
+            "name": "abs2",
+            "type": "riverabstraction",
+            "max_flow": 15
+        },
+        {
+            "name": "term1",
+            "type": "terminator"
+        },
+        {
+            "name": "term2",
+            "type": "terminator"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        },
+        {
+            "name": "demand2",
+            "type": "Output",
+            "max_flow": 2,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["catchment2", "abs2"],
+        ["abs2", "river2"],
+        ["abs2", "demand2"],
+        ["river2", "river1", "branch", null],
+        ["river2", "term2", "term", null],
+        ["catchment1", "river1"],
+        ["river1", "abs1"],
+        ["abs1", "demand1"],
+        ["abs1", "term1"]
+    ]
+}
