@@ -482,8 +482,8 @@ cdef class AggregatedParameter(AggregatedParameterBase):
     agg_func : callable or str
         The aggregation function, e.g. `sum` or "sum"
     """
-    def __init__(self, parameters, *args, agg_func=None, **kwargs):
-        super(AggregatedParameter, self).__init__(*args, **kwargs)
+    def __init__(self, parameters, agg_func=None, **kwargs):
+        super(AggregatedParameter, self).__init__(**kwargs)
         self._parameters = set(parameters)
         if agg_func is None:
             agg_func = np.mean # default

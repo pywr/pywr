@@ -18,8 +18,8 @@ class Parameter(BaseParameter):
         raise NotImplementedError()
 
 class ConstantParameter(Parameter):
-    def __init__(self, value, *args, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
-        super(ConstantParameter, self).__init__(*args, **kwargs)
+    def __init__(self, value, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+        super(ConstantParameter, self).__init__(**kwargs)
         self._value = value
         self.size = 1
         self._lower_bounds = np.ones(self.size) * lower_bounds
@@ -51,8 +51,8 @@ parameter_registry.add(FunctionParameter)
 
 
 class MonthlyProfileParameter(Parameter):
-    def __init__(self, values, *args, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
-        super(MonthlyProfileParameter, self).__init__(*args, **kwargs)
+    def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+        super(MonthlyProfileParameter, self).__init__(**kwargs)
         self.size = 12
         if len(values) != self.size:
             raise ValueError("12 values must be given for a monthly profile.")
@@ -121,8 +121,8 @@ def align_and_resample_dataframe(df, datetime_index):
 
 
 class DataFrameParameter(Parameter):
-    def __init__(self, df, *args, scenario=None, metadata=None, **kwargs):
-        super(DataFrameParameter, self).__init__(*args, **kwargs)
+    def __init__(self, df, scenario=None, metadata=None, **kwargs):
+        super(DataFrameParameter, self).__init__(**kwargs)
         self.df = df
         if metadata is None:
             metadata = {}
@@ -169,8 +169,8 @@ class InterpolatedLevelParameter(Parameter):
     """
     Level parameter calculated by interpolation from current volume
     """
-    def __init__(self, node, volumes, levels, *args, kind='linear', **kwargs):
-        super(InterpolatedLevelParameter, self).__init__(*args, **kwargs)
+    def __init__(self, node, volumes, levels, kind='linear', **kwargs):
+        super(InterpolatedLevelParameter, self).__init__(**kwargs)
         from scipy.interpolate import interp1d
         # Create level interpolator
         self.interp = interp1d(volumes, levels, bounds_error=True, kind=kind)
