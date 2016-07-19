@@ -3,6 +3,7 @@ import numpy as np
 cimport numpy as np
 import pandas
 from libc.math cimport cos, M_PI
+from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
 
 parameter_registry = set()
@@ -421,7 +422,27 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
 parameter_registry.add(AnnualHarmonicSeriesParameter)
 
+cdef enum AggFuncs:
+    sum = 0
+    min = 1
+    max = 2
+    mean = 3
+    product = 4
+    custom = 5
+_agg_func_lookup = {
+    "sum": AggFuncs.sum,
+    "min": AggFuncs.min,
+    "max": AggFuncs.max,
+    "mean": AggFuncs.mean,
+    "product": AggFuncs.product,
+    "custom": AggFuncs.custom,
+}
+
 cdef class AggregatedParameterBase(IndexParameter):
+    """Base class for aggregated parameters
+
+    Do not instance this class directly. Use one of the subclasses.
+    """
     @classmethod
     def load(cls, model, data):
         parameters_data = data["parameters"]
@@ -433,30 +454,30 @@ cdef class AggregatedParameterBase(IndexParameter):
         return cls(parameters=parameters, agg_func=agg_func)
 
     cpdef add(self, Parameter parameter):
-        self._parameters.add(parameter)
+        self.parameters.add(parameter)
         parameter.parents.add(self)
 
     cpdef remove(self, Parameter parameter):
-        self._parameters.remove(parameter)
+        self.parameters.remove(parameter)
         parameter.parent.remove(self)
 
     def __len__(self):
-        return len(self._parameters)
+        return len(self.parameters)
 
     cpdef setup(self, model):
-        for parameter in self._parameters:
+        for parameter in self.parameters:
             parameter.setup(model)
 
     cpdef after(self, Timestep timestep):
-        for parameter in self._parameters:
+        for parameter in self.parameters:
             parameter.after(timestep)
 
     cpdef reset(self):
-        for parameter in self._parameters:
+        for parameter in self.parameters:
             parameter.reset()
 
 cdef class AggregatedParameter(AggregatedParameterBase):
-    """A collection of Parameters
+    """A collection of IndexParameters
 
     This class behaves like a set. Parameters can be added or removed from it.
     It's value is the value of it's child parameters aggregated using a
@@ -464,40 +485,56 @@ cdef class AggregatedParameter(AggregatedParameterBase):
 
     Parameters
     ----------
-    parameters : iterable of `Parameter`
+    parameters : iterable of `IndexParameter`
         The parameters to aggregate
     agg_func : callable or str
-        The aggregation function, e.g. `sum` or "sum"
+        The aggregation function. Must be one of {"sum", "min", "max", "mean",
+        "product"}, or a callable function which accepts a list of values.
     """
-    def __init__(self, parameters, agg_func=None):
+    def __init__(self, parameters, agg_func):
         super(AggregatedParameter, self).__init__()
-        self._parameters = set(parameters)
-        if agg_func is None:
-            agg_func = np.mean # default
+        if isinstance(agg_func, basestring):
+            agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.agg_func = agg_func
-        elif agg_func == "sum":
-            self.agg_func = sum
-        elif agg_func == "min":
-            self.agg_func = min
-        elif agg_func == "max":
-            self.agg_func = max
-        elif agg_func == "mean":
-            self.agg_func = np.mean
-        elif agg_func == "product":
-            self.agg_func = np.product
+            agg_func = AggFuncs.custom
         else:
-            raise ValueError("Unknown aggregate function \"{}\".".format(agg_func))
+            raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
+        self._agg_func = agg_func
+        self.parameters = set(parameters)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef Parameter parameter
-        return self.agg_func([parameter.value(timestep, scenario_index) for parameter in self._parameters])
-
-    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        # although AggregatedParameter inherits from IndexParameter this is
-        # merely a convenince so that it can share a common parent with
-        # AggregatedIndexParameter - it doesn't actually provide an index
-        raise NotImplementedError("AggregatedParameter does not provide an index")
+        cdef double value, value2
+        assert(len(self.parameters))
+        if self._agg_func == AggFuncs.product:
+            value = 1.0
+            for parameter in self.parameters:
+                value *= parameter.value(timestep, scenario_index)
+        elif self._agg_func == AggFuncs.sum:
+            value = 0
+            for parameter in self.parameters:
+                value += parameter.value(timestep, scenario_index)
+        elif self._agg_func == AggFuncs.max:
+            value = float("-inf")
+            for parameter in self.parameters:
+                value2 = parameter.value(timestep, scenario_index)
+                if value2 > value:
+                    value = value2
+        elif self._agg_func == AggFuncs.min:
+            value = float("inf")
+            for parameter in self.parameters:
+                value2 = parameter.value(timestep, scenario_index)
+                if value2 < value:
+                    value = value2
+        elif self._agg_func == AggFuncs.mean:
+            value = 0
+            for parameter in self.parameters:
+                value += parameter.value(timestep, scenario_index)
+            value /= len(self.parameters)
+        else:
+            value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+        return value
 
 parameter_registry.add(AggregatedParameter)
 
@@ -513,27 +550,44 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
     parameters : iterable of `IndexParameter`
         The parameters to aggregate
     agg_func : callable or str
-        The aggregation function, e.g. `sum` or "sum"
+        The aggregation function. Must be one of {"sum", "min", "max"}, or a
+        callable function which accepts a list of values.
     """
-    def __init__(self, parameters, agg_func=None):
+    def __init__(self, parameters, agg_func):
         super(AggregatedIndexParameter, self).__init__()
-        self._parameters = set(parameters)
-        if agg_func is None:
-            agg_func = sum # default
+        if isinstance(agg_func, basestring):
+            agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.agg_func = agg_func
-        elif agg_func == "sum":
-            self.agg_func = sum
-        elif agg_func == "min":
-            self.agg_func = min
-        elif agg_func == "max":
-            self.agg_func = max
+            agg_func = AggFuncs.custom
         else:
-            raise ValueError("Unknown aggregate function \"{}\".".format(agg_func))
+            raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
+        self._agg_func = agg_func
+        self.parameters = set(parameters)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef IndexParameter parameter
-        return self.agg_func([parameter.index(timestep, scenario_index) for parameter in self._parameters])
+        cdef int value, value2
+        assert(len(self.parameters))
+        if self._agg_func == AggFuncs.sum:
+            value = 0
+            for parameter in self.parameters:
+                value += parameter.index(timestep, scenario_index)
+        elif self._agg_func == AggFuncs.max:
+            value = INT_MIN
+            for parameter in self.parameters:
+                value2 = parameter.index(timestep, scenario_index)
+                if value2 > value:
+                    value = value2
+        elif self._agg_func == AggFuncs.min:
+            value = INT_MAX
+            for parameter in self.parameters:
+                value2 = parameter.index(timestep, scenario_index)
+                if value2 < value:
+                    value = value2
+        else:
+            value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+        return value
 
 parameter_registry.add(AggregatedIndexParameter)
 
