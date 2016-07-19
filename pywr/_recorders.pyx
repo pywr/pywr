@@ -11,7 +11,7 @@ cdef class Recorder:
         if name is None:
             name = self.__class__.__name__.lower()
         self.name = name
-        model.recorders._recorders.append(self)
+        model.recorders.append(self)
 
     property name:
         def __get__(self):
@@ -307,3 +307,58 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 recorder_registry.add(NumpyArrayIndexParameterRecorder)
+
+cdef class MeanParameterRecorder(ParameterRecorder):
+    """Records the mean value of a Parameter for the last N timesteps"""
+    def __init__(self, model, Parameter param, int timesteps, *args, **kwargs):
+        super(MeanParameterRecorder, self).__init__(model, param, *args, **kwargs)
+        self.timesteps = timesteps
+    
+    cpdef setup(self):
+        cdef int ncomb = len(self._model.scenarios.combinations)
+        cdef int nts = len(self._model.timestepper)
+        self._data = np.zeros((nts, ncomb,), np.float64)
+        self._memory = np.empty((nts, ncomb,), np.float64)
+        self.position = 0
+    
+    cpdef reset(self):
+        self._data[...] = 0
+        self.position = 0
+
+    cpdef int save(self) except -1:
+        cdef int i, n
+        cdef double[:] mean_value
+        cdef ScenarioIndex scenario_index
+        cdef Timestep timestep = self._model.timestepper.current
+        
+        for i, scenario_index in enumerate(self._model.scenarios.combinations):
+            self._memory[self.position, i] = self._param.value(timestep, scenario_index)
+        
+        if timestep.index < self.timesteps:
+            n = timestep.index + 1
+        else:
+            n = self.timesteps
+        
+        self._data[<int>(timestep.index), :] = np.mean(self._memory[0:n, :], axis=0)
+
+        self.position += 1
+        if self.position >= self.timesteps:
+            self.position = 0
+
+    property data:
+        def __get__(self):
+            return np.array(self._data, dtype=np.float64)
+
+    def to_dataframe(self):
+        index = self.model.timestepper.datetime_index
+        sc_index = self.model.scenarios.multiindex
+        return pd.DataFrame(data=self.data, index=index, columns=sc_index)
+
+    @classmethod
+    def load(cls, model, data):
+        from .parameters import load_parameter
+        parameter = load_parameter(model, data.pop("parameter"))
+        timesteps = int(data.pop("timesteps"))
+        return cls(model, parameter, timesteps, **data)
+
+recorder_registry.add(MeanParameterRecorder)

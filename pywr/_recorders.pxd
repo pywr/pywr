@@ -39,3 +39,10 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
 
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
     cdef int[:, :] _data
+
+cdef class MeanParameterRecorder(ParameterRecorder):
+    cdef public int timesteps
+    cdef int position
+    cdef double[:, :] _memory
+    cdef double[:, :] _data
+

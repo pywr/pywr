@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from pywr._recorders import (Recorder, NodeRecorder, StorageRecorder, ParameterRecorder, IndexParameterRecorder,
     NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayLevelRecorder, NumpyArrayParameterRecorder,
-    NumpyArrayIndexParameterRecorder)
+    NumpyArrayIndexParameterRecorder, MeanParameterRecorder)
 from pywr._recorders import recorder_registry
 from pywr._core import Storage
 

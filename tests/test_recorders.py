@@ -11,9 +11,11 @@ import pandas
 import pytest
 from numpy.testing import assert_allclose
 from fixtures import simple_linear_model, simple_storage_model
-from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, AggregatedRecorder, \
-                           CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder, TotalFlowRecorder, \
-                           NumpyArrayParameterRecorder, NumpyArrayIndexParameterRecorder
+from pywr.parameters import DailyProfileParameter
+from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
+    AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
+    TotalFlowRecorder, NumpyArrayParameterRecorder,
+    NumpyArrayIndexParameterRecorder, MeanParameterRecorder, load_recorder)
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -120,6 +122,37 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
     df = lvl_rec.to_dataframe()
     assert df.shape == (5, 1)
     assert_allclose(df.values, np.array([[0, 1, 2, 2, 2]]).T, atol=1e-7)
+
+
+def test_parameter_mean_recorder(simple_linear_model):
+    model = simple_linear_model
+    
+    node = model.nodes["Input"]
+    values = np.arange(0, 366, dtype=np.float64)
+    node.max_flow = DailyProfileParameter(values)
+    
+    timesteps = 3
+    rec = MeanParameterRecorder(model, node.max_flow, timesteps)
+    
+    model.run()
+    
+    assert_allclose(rec.data[[0, 1, 2, 3, 364], 0], [0, 0.5, 1, 2, 363])
+
+def test_parameter_mean_recorder_json(simple_linear_model):
+    model = simple_linear_model
+    node = model.nodes["Input"]
+    values = np.arange(0, 366, dtype=np.float64)
+    parameter = DailyProfileParameter(values, name="input_max_flow")
+    model.parameters.append(parameter) # HACK
+    node.max_flow = parameter
+    
+    data = {
+        "type": "meanparameter",
+        "parameter": "input_max_flow",
+        "timesteps": 3,
+    }
+    
+    rec = load_recorder(model, data)
 
 
 def test_concatenated_dataframes(simple_storage_model):
