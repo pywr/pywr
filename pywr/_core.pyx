@@ -121,6 +121,7 @@ cdef class Timestep:
         self._datetime = pd.Timestamp(datetime)
         self._index = index
         self._days = days
+        self.dayofyear = self.datetime.timetuple().tm_yday
 
     property datetime:
         """Timestep representation as a `datetime.datetime` object"""

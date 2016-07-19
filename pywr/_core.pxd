@@ -23,6 +23,7 @@ cdef class Timestep:
     cdef object _datetime
     cdef int _index
     cdef double _days
+    cdef readonly dayofyear
 
 cdef class Domain:
     cdef object name

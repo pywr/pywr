@@ -270,7 +270,7 @@ cdef class DailyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.datetime.dayofyear-1
+        cdef int i = ts.dayofyear - 1
         return self._values[i]
 parameter_registry.add(DailyProfileParameter)
 
