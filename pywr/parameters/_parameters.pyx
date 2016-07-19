@@ -131,6 +131,7 @@ cdef class CachedParameter(IndexParameter):
     def __init__(self, parameter, *args, **kwargs):
         super(IndexParameter, self).__init__(*args, **kwargs)
         self.parameter = parameter
+        self.children.add(parameter)
         self.timestep = None
         self.scenario_index = None
 
@@ -332,6 +333,8 @@ cdef class IndexedArrayParameter(Parameter):
         assert(isinstance(index_parameter, IndexParameter))
         self.index_parameter = index_parameter
         self.params = params
+        for param in params:
+            self.children.add(param)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the Parameter at the current index"""
@@ -523,6 +526,8 @@ cdef class AggregatedParameter(AggregatedParameterBase):
             raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
         self._agg_func = agg_func
         self.parameters = set(parameters)
+        for parameter in self.parameters:
+            self.children.add(parameter)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef Parameter parameter
@@ -585,6 +590,8 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
             raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
         self._agg_func = agg_func
         self.parameters = set(parameters)
+        for parameter in self.parameters:
+            self.children.add(parameter)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef IndexParameter parameter
