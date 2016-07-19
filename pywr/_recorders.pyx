@@ -8,11 +8,12 @@ import pandas as pd
 recorder_registry = set()
 
 cdef class Recorder:
-    def __init__(self, model, name=None):
+    def __init__(self, model, name=None, comment=None):
         self._model = model
         if name is None:
             name = self.__class__.__name__.lower()
         self.name = name
+        self.comment = comment
         model.recorders.append(self)
 
     property name:
@@ -66,10 +67,10 @@ cdef class Recorder:
         return cls(model, **data)
 
 cdef class NodeRecorder(Recorder):
-    def __init__(self, model, AbstractNode node, name=None):
+    def __init__(self, model, AbstractNode node, name=None, **kwargs):
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), node.name)
-        Recorder.__init__(self, model, name=name)
+        super(NodeRecorder, self).__init__(model, name=name, **kwargs)
         self._node = node
         node._recorders.append(self)
 
@@ -84,10 +85,10 @@ recorder_registry.add(NodeRecorder)
 
 
 cdef class StorageRecorder(Recorder):
-    def __init__(self, model, Storage node, name=None):
+    def __init__(self, model, Storage node, name=None, **kwargs):
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), node.name)
-        Recorder.__init__(self, model, name=name)
+        super(StorageRecorder, self).__init__(model, name=name, **kwargs)
         self._node = node
         node._recorders.append(self)
 
@@ -102,10 +103,10 @@ recorder_registry.add(StorageRecorder)
 
 
 cdef class ParameterRecorder(Recorder):
-    def __init__(self, model, Parameter param, name=None):
+    def __init__(self, model, Parameter param, name=None, **kwargs):
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
-        Recorder.__init__(self, model, name=name)
+        super(ParameterRecorder, self).__init__(model, name=name, **kwargs)
         self._param = param
         param._recorders.append(self)
 
@@ -122,10 +123,10 @@ recorder_registry.add(ParameterRecorder)
 
 
 cdef class IndexParameterRecorder(Recorder):
-    def __init__(self, model, IndexParameter param, name=None):
+    def __init__(self, model, IndexParameter param, name=None, **kwargs):
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
-        Recorder.__init__(self, model, name=name)
+        Recorder.__init__(self, model, name=name, **kwargs)
         self._param = param
         param._recorders.append(self)
 
@@ -366,8 +367,8 @@ cdef class MeanFlowRecorder(NodeRecorder):
     name : str (optional)
         The name of the recorder
     """
-    def __init__(self, model, node, timesteps, name=None):
-        super(MeanFlowRecorder, self).__init__(model, node, name=name)
+    def __init__(self, model, node, timesteps, name=None, **kwargs):
+        super(MeanFlowRecorder, self).__init__(model, node, name=name, **kwargs)
         self._model = model
         self.timesteps = timesteps
         self._data = None

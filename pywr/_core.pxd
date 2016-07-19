@@ -38,6 +38,7 @@ cdef class AbstractNode:
     cdef object _name
     cdef bint _allow_isolated
     cdef public object __data
+    cdef public basestring comment
 
     cdef Parameter _cost_param
 

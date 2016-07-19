@@ -47,8 +47,9 @@ class PairedSet(set):
         set.clear(self)
 
 cdef class Parameter:
-    def __init__(self, name=None):
+    def __init__(self, name=None, comment=None):
         self.name = name
+        self.comment = comment
         self.parents = PairedSet(self)
         self.children = PairedSet(self)
         self._recorders = []
@@ -122,8 +123,14 @@ cdef class Parameter:
     @classmethod
     def load(cls, model, data):
         values = load_parameter_values(model, data)
+        data.pop("values", None)
+        data.pop("url", None)
         name = data.pop("name", None)
-        return cls(values, name=name)
+        comment = data.pop("comment", None)
+        if data:
+            key = list(data.keys())[0]
+            raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
+        return cls(values, name=name, comment=None)
 
 parameter_registry.add(Parameter)
 
@@ -155,8 +162,8 @@ cdef class CachedParameter(IndexParameter):
 
     @classmethod
     def load(cls, model, data):
-        parameter = load_parameter(model, data["parameter"])
-        return cls(parameter)
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(parameter, **data)
 
 parameter_registry.add(CachedParameter)
 
@@ -351,9 +358,9 @@ cdef class IndexedArrayParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        index_parameter = load_parameter(model, data["index_parameter"])
-        params = [load_parameter(model, data) for data in data["params"]]
-        return cls(index_parameter, params)
+        index_parameter = load_parameter(model, data.pop("index_parameter"))
+        params = [load_parameter(model, parameter_data) for parameter_data in data.pop("params")]
+        return cls(index_parameter, params, **data)
 parameter_registry.add(IndexedArrayParameter)
 
 
@@ -400,11 +407,11 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        mean = data['mean']
-        amplitudes = data['amplitudes']
-        phases = data['phases']
+        mean = data.pop('mean')
+        amplitudes = data.pop('amplitudes')
+        phases = data.pop('phases')
 
-        return cls(mean, amplitudes, phases)
+        return cls(mean, amplitudes, phases, **data)
 
     property amplitudes:
         def __get__(self):
@@ -471,13 +478,13 @@ cdef class AggregatedParameterBase(IndexParameter):
     """
     @classmethod
     def load(cls, model, data):
-        parameters_data = data["parameters"]
+        parameters_data = data.pop("parameters")
         parameters = set()
         for pdata in parameters_data:
             parameters.add(load_parameter(model, pdata))
 
-        agg_func = data.get("agg_func", None)
-        return cls(parameters=parameters, agg_func=agg_func)
+        agg_func = data.pop("agg_func", None)
+        return cls(parameters=parameters, agg_func=agg_func, **data)
 
     cpdef add(self, Parameter parameter):
         self.parameters.add(parameter)
@@ -678,11 +685,11 @@ cdef class RecorderThresholdParameter(Parameter):
     @classmethod
     def load(cls, model, data):
         from pywr._recorders import load_recorder  # delayed to prevent circular reference
-        recorder = load_recorder(model, data["recorder"])
-        threshold = data["threshold"]
-        values = data["values"]
-        predicate = data.get("predicate", None)
-        return cls(recorder, threshold, values, predicate)
+        recorder = load_recorder(model, data.pop("recorder"))
+        threshold = data.pop("threshold")
+        values = data.pop("values")
+        predicate = data.pop("predicate", None)
+        return cls(recorder, threshold, values, predicate, **data)
 
 parameter_registry.add(RecorderThresholdParameter)
 
@@ -766,9 +773,8 @@ def load_parameter_values(model, data, values_key='values'):
     """
     if values_key in data:
         # values are given as an array
-        values = np.array(data[values_key], np.float64)
+        values = np.array(data.pop(values_key), np.float64)
     else:
-        url = data['url']
         df = load_dataframe(model, data)
         values = np.squeeze(df.values.astype(np.float64))
     return values
@@ -781,7 +787,7 @@ def load_dataframe(model, data):
     if not os.path.isabs(url) and model.path is not None:
         url = os.path.join(model.path, url)
     try:
-        filetype = data['filetype']
+        filetype = data.pop('filetype')
     except KeyError:
         # guess file type based on extension
         if url.endswith(('.xls', '.xlsx')):
@@ -805,6 +811,11 @@ def load_dataframe(model, data):
         df = pandas.read_excel(url, **data)
     elif filetype == "hdf":
         df = pandas.read_hdf(url, columns=[column], **data)
+
+    # clean up
+    data.pop("parse_dates", None)
+    data.pop("dayfirst", None)
+    data.pop("index_col", None)
 
     # if column is not specified, use the whole dataframe
     if column is not None:

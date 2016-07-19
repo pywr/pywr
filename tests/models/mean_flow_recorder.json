@@ -46,10 +46,12 @@
     ],
     "recorders": {
         "Supply": {
+            "comment": "Actual flow from supply1",
             "type": "NumpyArrayNode",
             "node": "supply1"
         },
         "Mean Flow": {
+            "comment": "Mean flow (last 3 days) from supply1",
             "type": "MeanFlow",
             "node": "supply1",
             "timesteps": 3

@@ -26,6 +26,7 @@
             "cost": 10
         },
         {
+            "comment": "The only demand in the model",
             "type": "output",
             "name": "Demand",
             "max_flow": "demand_max_flow",
@@ -43,6 +44,7 @@
             "values": 50
         },
         "demand_profile": {
+            "comment": "Monthly demand profile as a factor around the mean demand",
             "type": "monthlyprofile",
             "values": [0.9, 0.9, 0.9, 0.9, 1.2, 1.2, 1.2, 1.2, 0.9, 0.9, 0.9, 0.9]
         },
@@ -55,6 +57,7 @@
             "values": 0.5
         },
         "demand_saving_level": {
+            "comment": "The demand saving level",
             "type": "controlcurveindex",
             "storage_node": "Reservoir",
             "control_curves": [
@@ -63,6 +66,7 @@
             ]
         },
         "demand_saving_factor": {
+            "comment": "Demand saving as a factor of the base demand",
             "type": "indexedarray",
             "index_parameter": "demand_saving_level",
             "params": [
