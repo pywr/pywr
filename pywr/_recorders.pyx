@@ -11,7 +11,7 @@ cdef class Recorder:
         if name is None:
             name = self.__class__.__name__.lower()
         self.name = name
-        model.recorders._recorders.append(self)
+        model.recorders.append(self)
 
     property name:
         def __get__(self):
@@ -82,7 +82,7 @@ cdef class NodeRecorder(Recorder):
     def __repr__(self):
         return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.node), self.name, hex(id(self)))
 
-    def __repr__(self):
+    def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 recorder_registry.add(NodeRecorder)
 
@@ -95,12 +95,56 @@ cdef class StorageRecorder(Recorder):
         self._node = node
         node._recorders.append(self)
 
+    property node:
+        def __get__(self):
+            return self._node
+
     def __repr__(self):
         return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.node), self.name, hex(id(self)))
 
-    def __repr__(self):
+    def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 recorder_registry.add(StorageRecorder)
+
+
+cdef class ParameterRecorder(Recorder):
+    def __init__(self, model, Parameter param, name=None):
+        if name is None:
+            name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
+        Recorder.__init__(self, model, name=name)
+        self._param = param
+        param._recorders.append(self)
+
+    property parameter:
+        def __get__(self):
+            return self._param
+
+    def __repr__(self):
+        return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.parameter), self.name, hex(id(self)))
+
+    def __str__(self):
+        return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+recorder_registry.add(ParameterRecorder)
+
+
+cdef class IndexParameterRecorder(Recorder):
+    def __init__(self, model, IndexParameter param, name=None):
+        if name is None:
+            name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
+        Recorder.__init__(self, model, name=name)
+        self._param = param
+        param._recorders.append(self)
+
+    property parameter:
+        def __get__(self):
+            return self._param
+
+    def __repr__(self):
+        return '<{} on {} "{}" ({})>'.format(self.__class__.__name__, repr(self.parameter), self.name, hex(id(self)))
+
+    def __str__(self):
+        return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+recorder_registry.add(IndexParameterRecorder)
 
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
@@ -194,3 +238,127 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
             return np.array(self._data)
 
 recorder_registry.add(NumpyArrayLevelRecorder)
+
+
+cdef class NumpyArrayParameterRecorder(ParameterRecorder):
+    cpdef setup(self):
+        cdef int ncomb = len(self._model.scenarios.combinations)
+        cdef int nts = len(self._model.timestepper)
+        self._data = np.zeros((nts, ncomb))
+
+    cpdef reset(self):
+        self._data[:, :] = 0.0
+
+    cpdef int save(self) except -1:
+        cdef int i
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self._model.timestepper.current
+        for i, scenario_index in enumerate(self._model.scenarios.combinations):
+            self._data[ts._index, i] = self._param.value(ts, scenario_index)
+        return 0
+
+    property data:
+        def __get__(self, ):
+            return np.array(self._data)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self.model.timestepper.datetime_index
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
+recorder_registry.add(NumpyArrayParameterRecorder)
+
+cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
+    cpdef setup(self):
+        cdef int ncomb = len(self._model.scenarios.combinations)
+        cdef int nts = len(self._model.timestepper)
+        self._data = np.zeros((nts, ncomb), dtype=np.int32)
+
+    cpdef reset(self):
+        self._data[:, :] = 0
+
+    cpdef int save(self) except -1:
+        cdef int i
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self._model.timestepper.current
+        for i, scenario_index in enumerate(self._model.scenarios.combinations):
+            self._data[ts._index, i] = self._param.index(ts, scenario_index)
+        return 0
+
+    property data:
+        def __get__(self, ):
+            return np.array(self._data)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self.model.timestepper.datetime_index
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
+recorder_registry.add(NumpyArrayIndexParameterRecorder)
+
+cdef class MeanParameterRecorder(ParameterRecorder):
+    """Records the mean value of a Parameter for the last N timesteps"""
+    def __init__(self, model, Parameter param, int timesteps, *args, **kwargs):
+        super(MeanParameterRecorder, self).__init__(model, param, *args, **kwargs)
+        self.timesteps = timesteps
+    
+    cpdef setup(self):
+        cdef int ncomb = len(self._model.scenarios.combinations)
+        cdef int nts = len(self._model.timestepper)
+        self._data = np.zeros((nts, ncomb,), np.float64)
+        self._memory = np.empty((nts, ncomb,), np.float64)
+        self.position = 0
+    
+    cpdef reset(self):
+        self._data[...] = 0
+        self.position = 0
+
+    cpdef int save(self) except -1:
+        cdef int i, n
+        cdef double[:] mean_value
+        cdef ScenarioIndex scenario_index
+        cdef Timestep timestep = self._model.timestepper.current
+        
+        for i, scenario_index in enumerate(self._model.scenarios.combinations):
+            self._memory[self.position, i] = self._param.value(timestep, scenario_index)
+        
+        if timestep.index < self.timesteps:
+            n = timestep.index + 1
+        else:
+            n = self.timesteps
+        
+        self._data[<int>(timestep.index), :] = np.mean(self._memory[0:n, :], axis=0)
+
+        self.position += 1
+        if self.position >= self.timesteps:
+            self.position = 0
+
+    property data:
+        def __get__(self):
+            return np.array(self._data, dtype=np.float64)
+
+    def to_dataframe(self):
+        index = self.model.timestepper.datetime_index
+        sc_index = self.model.scenarios.multiindex
+        return pd.DataFrame(data=self.data, index=index, columns=sc_index)
+
+    @classmethod
+    def load(cls, model, data):
+        from .parameters import load_parameter
+        parameter = load_parameter(model, data.pop("parameter"))
+        timesteps = int(data.pop("timesteps"))
+        return cls(model, parameter, timesteps, **data)
+
+recorder_registry.add(MeanParameterRecorder)

@@ -36,9 +36,11 @@ class PairedSet(set):
         set.clear(self)
 
 cdef class Parameter:
-    def __init__(self):
+    def __init__(self, name=None):
+        self.name = name
         self.parents = PairedSet(self)
         self.children = PairedSet(self)
+        self._recorders = []
 
     cpdef setup(self, model):
         cdef Parameter child
@@ -96,18 +98,29 @@ cdef class Parameter:
                 vars.extend(var.variables)
             return vars
 
+    property recorders:
+        """ Returns a list of `Recorder` objects attached to this node.
+
+         See also
+         --------
+         `Recorder`
+         """
+        def __get__(self):
+            return self._recorders
+
     @classmethod
     def load(cls, model, data):
         values = load_parameter_values(model, data)
-        return cls(values)
+        name = data.pop("name", None)
+        return cls(values, name=name)
 
 parameter_registry.add(Parameter)
 
 
 cdef class CachedParameter(IndexParameter):
     """Wrapper for Parameters which caches the result"""
-    def __init__(self, parameter):
-        super(IndexParameter, self).__init__()
+    def __init__(self, parameter, *args, **kwargs):
+        super(IndexParameter, self).__init__(*args, **kwargs)
         self.parameter = parameter
         self.timestep = None
         self.scenario_index = None
@@ -141,8 +154,8 @@ cdef class ArrayIndexedParameter(Parameter):
 
     The values in this parameter are constant across all scenarios.
     """
-    def __init__(self, values):
-        super(ArrayIndexedParameter, self).__init__()
+    def __init__(self, values, *args, **kwargs):
+        super(ArrayIndexedParameter, self).__init__(*args, **kwargs)
         self.values = np.asarray(values, dtype=np.float64)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
@@ -157,11 +170,11 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
 
     The values in this parameter are vary in time based on index and vary within a single Scenario.
     """
-    def __init__(self, Scenario scenario, values):
+    def __init__(self, Scenario scenario, values, *args, **kwargs):
         """
         values should be an iterable that is the same length as scenario.size
         """
-        super(ArrayIndexedScenarioParameter, self).__init__()
+        super(ArrayIndexedScenarioParameter, self).__init__(*args, **kwargs)
         cdef int i
         values = np.asarray(values, dtype=np.float64)
         if values.ndim != 2:
@@ -190,11 +203,11 @@ cdef class ConstantScenarioParameter(Parameter):
 
     The values in this parameter are constant in time, but vary within a single Scenario.
     """
-    def __init__(self, Scenario scenario, values):
+    def __init__(self, Scenario scenario, values, *args, **kwargs):
         """
         values should be an iterable that is the same length as scenario.size
         """
-        super(ConstantScenarioParameter, self).__init__()
+        super(ConstantScenarioParameter, self).__init__(*args, **kwargs)
         cdef int i
         if scenario._size != len(values):
             raise ValueError("The number of values must equal the size of the scenario.")
@@ -222,13 +235,13 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
     """Time varying parameter using an array and Timestep._index with
     multiplicative factors per Scenario
     """
-    def __init__(self, Scenario scenario, values, factors):
+    def __init__(self, Scenario scenario, values, factors, *args, **kwargs):
         """
         values is the baseline timeseries data that is perturbed by a factor. The
         factor is taken from factors which is shape (scenario.size, 12). Therefore
         factors vary with the individual scenarios in scenario and month.
         """
-        super(ArrayIndexedScenarioMonthlyFactorsParameter, self).__init__()
+        super(ArrayIndexedScenarioMonthlyFactorsParameter, self).__init__(*args, **kwargs)
 
         values = np.asarray(values, dtype=np.float64)
         factors = np.asarray(factors, dtype=np.float64)
@@ -260,8 +273,8 @@ parameter_registry.add(ArrayIndexedScenarioMonthlyFactorsParameter)
 
 
 cdef class DailyProfileParameter(Parameter):
-    def __init__(self, values):
-        super(DailyProfileParameter, self).__init__()
+    def __init__(self, values, *args, **kwargs):
+        super(DailyProfileParameter, self).__init__(*args, **kwargs)
         v = np.squeeze(np.array(values))
         if v.ndim != 1:
             raise ValueError("values must be 1-dimensional.")
@@ -352,8 +365,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         length as amplitudes.
 
     """
-    def __init__(self, mean, amplitudes, phases, **kwargs):
-        super(AnnualHarmonicSeriesParameter, self).__init__()
+    def __init__(self, mean, amplitudes, phases, *args, **kwargs):
+        super(AnnualHarmonicSeriesParameter, self).__init__(*args, **kwargs)
         if len(amplitudes) != len(phases):
             raise ValueError("The number  of amplitudes and phases must be the same.")
         n = len(amplitudes)
@@ -469,8 +482,8 @@ cdef class AggregatedParameter(AggregatedParameterBase):
     agg_func : callable or str
         The aggregation function, e.g. `sum` or "sum"
     """
-    def __init__(self, parameters, agg_func=None):
-        super(AggregatedParameter, self).__init__()
+    def __init__(self, parameters, agg_func=None, **kwargs):
+        super(AggregatedParameter, self).__init__(**kwargs)
         self._parameters = set(parameters)
         if agg_func is None:
             agg_func = np.mean # default
@@ -515,8 +528,8 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
     agg_func : callable or str
         The aggregation function, e.g. `sum` or "sum"
     """
-    def __init__(self, parameters, agg_func=None):
-        super(AggregatedIndexParameter, self).__init__()
+    def __init__(self, parameters, agg_func=None, **kwargs):
+        super(AggregatedIndexParameter, self).__init__(**kwargs)
         self._parameters = set(parameters)
         if agg_func is None:
             agg_func = sum # default
@@ -544,7 +557,7 @@ def load_parameter(model, data):
     if isinstance(data, basestring):
         # parameter is a reference
         try:
-            parameter = model._parameters[data]
+            parameter = model.parameters[data]
         except KeyError:
             parameter = None
         if parameter is None:
@@ -597,7 +610,7 @@ def load_parameter(model, data):
     if parameter_name is not None:
         # TODO FIXME: memory leak if parameter is subsequently removed from the model
         parameter.name = parameter_name
-        model._parameters[parameter_name] = parameter
+        model.parameters[parameter_name] = parameter
 
     return parameter
 

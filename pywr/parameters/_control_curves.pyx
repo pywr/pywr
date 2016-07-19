@@ -1,10 +1,7 @@
 import numpy as np
 cimport numpy as np
 from .parameters import parameter_registry, ConstantParameter
-from ._parameters import load_parameter, load_parameter_values
-
-from ._parameters cimport Parameter, IndexParameter
-from ._parameters import Parameter, IndexParameter
+from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter
 
 
 cdef class BaseControlCurveParameter(Parameter):
@@ -192,9 +189,28 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         self.storage_node = storage_node
         self.control_curves = control_curves
 
-        # update dependency tree
-        for control_curve in control_curves:
-            control_curve.parents.add(self)
+    property control_curves:
+        def __get__(self):
+            return self._control_curves
+        def __set__(self, control_curves):
+            # Accept a single Parameter and convert to a list internally
+            if isinstance(control_curves, Parameter):
+                control_curves = [control_curves]
+
+            # remove existing control curves (if any)
+            if self._control_curves is not None:
+                for control_curve in self._control_curves:
+                    control_curve.parents.remove(self)
+
+            _new_control_curves = []
+            for control_curve in control_curves:
+                # Accept numeric inputs and convert to `ConstantParameter`
+                if isinstance(control_curve, (float, int)):
+                    control_curve = ConstantParameter(control_curve)
+
+                control_curve.parents.add(self)
+                _new_control_curves.append(control_curve)
+            self._control_curves = list(_new_control_curves)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the index of the first control curve the storage is above

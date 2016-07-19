@@ -177,42 +177,48 @@ class NodeIterator(object):
         return self
 
 
-class RecorderIterator(object):
-    """ Iterator for Recorder objects in a model that also supports indexing by name """
-
+class NamedIterator(object):
     def __init__(self):
-        self._recorders = []
+        self._objects = []
 
     def __getitem__(self, key):
         """Get a node from the graph by it's name"""
-        for rec in self._recorders:
-            if rec.name == key:
-                return rec
+        for obj in self._objects:
+            if obj.name == key:
+                return obj
         raise KeyError("'{}'".format(key))
 
     def __delitem__(self, key):
         """Remove a node from the graph by it's name"""
-        rec = self[key]
-        self._recorders.remove(rec)
+        obj = self[key]
+        self._objects.remove(rec)
+
+    def __setitem__(self, key, obj):
+        # TODO: check for name collisions / duplication
+        self._objects.append(obj)
 
     def keys(self):
-        for rec in self._recorders:
-            yield rec.name
+        for obj in self._objects:
+            yield obj.name
 
     def values(self):
-        for rec in self._recorders:
-            yield rec
+        for obj in self._objects:
+            yield obj
 
     def items(self):
-        for rec in self._recorders:
-            yield (rec.name, rec)
+        for obj in self._objects:
+            yield (obj.name, obj)
 
     def __len__(self):
         """Returns the number of nodes in the model"""
-        return len(self._recorders)
+        return len(self._objects)
 
     def __iter__(self):
-        return iter(self._recorders)
+        return iter(self._objects)
+
+    def append(self, obj):
+        # TODO: check for name collisions / duplication
+        self._objects.append(obj)
 
 
 class Model(object):
@@ -244,7 +250,6 @@ class Model(object):
         self.timestepper = Timestepper(start, end, timestep)
 
         self.data = {}
-        self._parameters = {}
         self.failure = set()
         self.dirty = True
 
@@ -271,7 +276,8 @@ class Model(object):
         self.solver = solver()
 
         self.group = {}
-        self.recorders = RecorderIterator()
+        self.parameters = NamedIterator()
+        self.recorders = NamedIterator()
         self.scenarios = ScenarioCollection()
 
         if kwargs:

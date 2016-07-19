@@ -11,8 +11,11 @@ import pandas
 import pytest
 from numpy.testing import assert_allclose
 from fixtures import simple_linear_model, simple_storage_model
-from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, AggregatedRecorder, \
-                           CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder, TotalFlowRecorder
+from pywr.parameters import DailyProfileParameter
+from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
+    AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
+    TotalFlowRecorder, NumpyArrayParameterRecorder,
+    NumpyArrayIndexParameterRecorder, MeanParameterRecorder, load_recorder)
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -63,6 +66,93 @@ def test_numpy_storage_recorder(simple_storage_model):
     df = rec.to_dataframe()
     assert df.shape == (5, 1)
     assert_allclose(df.values, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
+
+
+def test_numpy_parameter_recorder(simple_linear_model):
+    """
+    Test the NumpyArrayParameterRecorder
+    """
+    from pywr.parameters import DailyProfileParameter
+
+    model = simple_linear_model
+    otpt = model.node['Output']
+
+    p = DailyProfileParameter(np.arange(366, dtype=np.float64), )
+    p.name = 'daily profile'
+    model.node['Input'].max_flow = p
+    otpt.cost = -2.0
+    rec = NumpyArrayParameterRecorder(model, model.node['Input'].max_flow)
+
+    # test retrieval of recorder
+    assert model.recorders['numpyarrayparameterrecorder.daily profile'] == rec
+
+    model.run()
+
+    assert rec.data.shape == (365, 1)
+    assert_allclose(rec.data, np.arange(365, dtype=np.float64)[:, np.newaxis])
+
+    df = rec.to_dataframe()
+    assert df.shape == (365, 1)
+    assert_allclose(df.values, np.arange(365, dtype=np.float64)[:, np.newaxis])
+
+
+def test_numpy_index_parameter_recorder(simple_storage_model):
+    """
+    Test the NumpyArrayIndexParameterRecorder
+    """
+    from pywr.parameters.control_curves import ControlCurveIndexParameter
+
+    model = simple_storage_model
+
+    res = model.node['Storage']
+
+    p = ControlCurveIndexParameter(res, [5.0/20.0, 2.5/20.0])
+
+    res_rec = NumpyArrayStorageRecorder(model, res)
+    lvl_rec = NumpyArrayIndexParameterRecorder(model, p)
+
+    model.run()
+
+    assert(res_rec.data.shape == (5, 1))
+    assert_allclose(res_rec.data, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
+    assert (lvl_rec.data.shape == (5, 1))
+    assert_allclose(lvl_rec.data, np.array([[0, 1, 2, 2, 2]]).T, atol=1e-7)
+
+
+    df = lvl_rec.to_dataframe()
+    assert df.shape == (5, 1)
+    assert_allclose(df.values, np.array([[0, 1, 2, 2, 2]]).T, atol=1e-7)
+
+
+def test_parameter_mean_recorder(simple_linear_model):
+    model = simple_linear_model
+    
+    node = model.nodes["Input"]
+    values = np.arange(0, 366, dtype=np.float64)
+    node.max_flow = DailyProfileParameter(values)
+    
+    timesteps = 3
+    rec = MeanParameterRecorder(model, node.max_flow, timesteps)
+    
+    model.run()
+    
+    assert_allclose(rec.data[[0, 1, 2, 3, 364], 0], [0, 0.5, 1, 2, 363])
+
+def test_parameter_mean_recorder_json(simple_linear_model):
+    model = simple_linear_model
+    node = model.nodes["Input"]
+    values = np.arange(0, 366, dtype=np.float64)
+    parameter = DailyProfileParameter(values, name="input_max_flow")
+    model.parameters.append(parameter) # HACK
+    node.max_flow = parameter
+    
+    data = {
+        "type": "meanparameter",
+        "parameter": "input_max_flow",
+        "timesteps": 3,
+    }
+    
+    rec = load_recorder(model, data)
 
 
 def test_concatenated_dataframes(simple_storage_model):

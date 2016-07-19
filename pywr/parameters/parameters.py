@@ -18,8 +18,8 @@ class Parameter(BaseParameter):
         raise NotImplementedError()
 
 class ConstantParameter(Parameter):
-    def __init__(self, value=None, lower_bounds=0.0, upper_bounds=np.inf):
-        super(ConstantParameter, self).__init__()
+    def __init__(self, value, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+        super(ConstantParameter, self).__init__(**kwargs)
         self._value = value
         self.size = 1
         self._lower_bounds = np.ones(self.size) * lower_bounds
@@ -40,8 +40,8 @@ parameter_registry.add(ConstantParameter)
 
 
 class FunctionParameter(Parameter):
-    def __init__(self, parent, func):
-        super(FunctionParameter, self).__init__()
+    def __init__(self, parent, func, *args, **kwargs):
+        super(FunctionParameter, self).__init__(*args, **kwargs)
         self._parent = parent
         self._func = func
 
@@ -51,8 +51,8 @@ parameter_registry.add(FunctionParameter)
 
 
 class MonthlyProfileParameter(Parameter):
-    def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf):
-        super(MonthlyProfileParameter, self).__init__()
+    def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+        super(MonthlyProfileParameter, self).__init__(**kwargs)
         self.size = 12
         if len(values) != self.size:
             raise ValueError("12 values must be given for a monthly profile.")
@@ -75,8 +75,8 @@ parameter_registry.add(MonthlyProfileParameter)
 
 
 class ScaledProfileParameter(Parameter):
-    def __init__(self, scale, profile):
-        super(ScaledProfileParameter, self).__init__()
+    def __init__(self, scale, profile, *args, **kwargs):
+        super(ScaledProfileParameter, self).__init__(*args, **kwargs)
         self.scale = scale
 
         profile.parents.add(self)
@@ -84,9 +84,9 @@ class ScaledProfileParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        scale = float(data['scale'])
-        profile = load_parameter(model, data['profile'])
-        return cls(scale, profile)
+        scale = float(data.pop("scale"))
+        profile = load_parameter(model, data.pop("profile"))
+        return cls(scale, profile, **data)
 
     def value(self, ts, si):
         p = self.profile.value(ts, si)
@@ -121,8 +121,8 @@ def align_and_resample_dataframe(df, datetime_index):
 
 
 class DataFrameParameter(Parameter):
-    def __init__(self, df, scenario=None, metadata=None):
-        super(DataFrameParameter, self).__init__()
+    def __init__(self, df, scenario=None, metadata=None, **kwargs):
+        super(DataFrameParameter, self).__init__(**kwargs)
         self.df = df
         if metadata is None:
             metadata = {}
@@ -169,7 +169,8 @@ class InterpolatedLevelParameter(Parameter):
     """
     Level parameter calculated by interpolation from current volume
     """
-    def __init__(self, node, volumes, levels, kind='linear'):
+    def __init__(self, node, volumes, levels, kind='linear', **kwargs):
+        super(InterpolatedLevelParameter, self).__init__(**kwargs)
         from scipy.interpolate import interp1d
         # Create level interpolator
         self.interp = interp1d(volumes, levels, bounds_error=True, kind=kind)

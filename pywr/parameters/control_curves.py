@@ -2,7 +2,7 @@
 This module contains a set of pywr._core.Parameter subclasses for defining control curve based parameters.
 """
 
-from ._control_curves import BaseControlCurveParameter, ControlCurveInterpolatedParameter
+from ._control_curves import BaseControlCurveParameter, ControlCurveInterpolatedParameter, ControlCurveIndexParameter
 from .parameters import parameter_registry, load_parameter_values, load_parameter, BaseParameter
 import numpy as np
 
