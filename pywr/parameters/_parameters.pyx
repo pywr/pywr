@@ -22,6 +22,8 @@ class PairedSet(set):
         self.obj = obj
 
     def add(self, item):
+        if not isinstance(item, Parameter):
+            return
         set.add(self, item)
         if(self is self.obj.parents):
             set.add(item.children, self.obj)
