@@ -6,8 +6,9 @@ from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, I
 from pywr.parameters import (BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
-    IndexParameter, AggregatedIndexParameter,
+    IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
+from pywr.recorders import Recorder
 
 from helpers import load_model
 
@@ -506,3 +507,34 @@ def test_with_a_better_name():
             ]
         }
     }
+
+def test_threshold_parameter(model):
+    class DummyRecorder(Recorder):
+        def __init__(self, *args, **kwargs):
+            super(DummyRecorder, self).__init__(*args, **kwargs)
+            self.data = np.array([[0.0]], dtype=np.float64)
+
+    rec = DummyRecorder(model)
+
+    timestep = Timestep(datetime.datetime(2016, 1, 2), 1, 1)
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+    threshold = 10.0
+    values = [50.0, 60.0]
+
+    expected = [
+        ("LT", (1, 0, 0)),
+        ("GT", (0, 0, 1)),
+        ("EQ", (0, 1, 0)),
+        ("LE", (1, 1, 0)),
+        ("GE", (0, 1, 1)),
+    ]
+
+    for predicate, (value_lt, value_eq, value_gt) in expected:
+        param = RecorderThresholdParameter(rec, threshold, values, predicate)
+        rec.data[...] = threshold - 5  # data is below threshold
+        assert_allclose(param.value(timestep, si), values[value_lt])
+        rec.data[...] = threshold  # data is at threshold
+        assert_allclose(param.value(timestep, si), values[value_eq])
+        rec.data[...] = threshold + 5  # data is above threshold
+        assert_allclose(param.value(timestep, si), values[value_gt])

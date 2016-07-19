@@ -11,11 +11,12 @@ import pandas
 import pytest
 from numpy.testing import assert_allclose
 from fixtures import simple_linear_model, simple_storage_model
-from pywr.parameters import DailyProfileParameter
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
-    TotalFlowRecorder, NumpyArrayParameterRecorder,
+    TotalFlowRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
     NumpyArrayIndexParameterRecorder, MeanParameterRecorder, load_recorder)
+from pywr.parameters import DailyProfileParameter, FunctionParameter
+from helpers import load_model
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -309,3 +310,47 @@ def test_reset_timestepper_recorder(solver):
     model.timestepper.end = pandas.to_datetime("2016-01-02")
 
     model.run()
+
+def test_mean_flow_recorder(solver):
+    model = Model(solver=solver)
+    model.timestepper.start = pandas.to_datetime("2016-01-01")
+    model.timestepper.end = pandas.to_datetime("2016-01-04")
+
+    inpt = Input(model, "input")
+    otpt = Output(model, "output")
+    inpt.connect(otpt)
+
+    rec_flow = NumpyArrayNodeRecorder(model, inpt)
+    rec_mean = MeanFlowRecorder(model, node=inpt, timesteps=3)
+
+    inpt.max_flow = inpt.min_flow = FunctionParameter(inpt, lambda model, t, si: 2 + t.index)
+    model.run()
+
+    expected = [
+        2.0,
+        (2.0 + 3.0) / 2,
+        (2.0 + 3.0 + 4.0) / 3,
+        (3.0 + 4.0 + 5.0) / 3,  # zeroth day forgotten
+    ]
+
+    for value, expected_value in zip(rec_mean.data, expected):
+        assert_allclose(value, expected_value)
+
+def test_mean_flow_recorder_json(solver):
+    model = load_model("mean_flow_recorder.json", solver=solver)
+
+    # TODO: it's not possible to define a FunctionParameter in JSON yet
+    supply1 = model.nodes["supply1"]
+    supply1.max_flow = supply1.min_flow = FunctionParameter(supply1, lambda model, t, si: 2 + t.index)
+
+    assert(len(model.recorders) == 3)
+
+    rec_flow = model.recorders["Supply"]
+    rec_mean = model.recorders["Mean Flow"]
+    rec_check = model.recorders["Supply 2"]
+
+    model.run()
+
+    assert_allclose(rec_flow.data[:,0], [2.0, 3.0, 4.0, 5.0])
+    assert_allclose(rec_mean.data[:,0], [2.0, 2.5, 3.0, 4.0])
+    assert_allclose(rec_check.data[:,0], [50.0, 50.0, 60.0, 60.0])

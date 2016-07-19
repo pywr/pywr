@@ -6,6 +6,14 @@ from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
 
+cdef enum Predicates:
+    LT = 0
+    GT = 1
+    EQ = 2
+    LE = 3
+    GE = 4
+_predicate_lookup = {"LT": Predicates.LT, "GT": Predicates.GT, "EQ": Predicates.EQ, "LE": Predicates.LE, "GE": Predicates.GE}
+
 parameter_registry = set()
 
 class PairedSet(set):
@@ -604,6 +612,70 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
 
 parameter_registry.add(AggregatedIndexParameter)
 
+cdef class RecorderThresholdParameter(Parameter):
+    """Returns one of two values depending on a Recorder value and a threshold
+
+    Parameters
+    ----------
+    recorder : `pywr.recorder.Recorder`
+    threshold : double
+        Threshold to compare the value of the recorder to
+    values : iterable of doubles
+        If the predicate evaluates False the zeroth value is returned,
+        otherwise the first value is returned.
+    predicate : string
+        One of {"LT", "GT", "EQ", "LE", "GE"}.
+
+    Notes
+    -----
+    On the first day of the model run the recorder will not have a value for
+    the previous day. In this case the predicate evaluates to True.
+    """
+
+    def __init__(self, Recorder recorder, threshold, values, predicate=None):
+        super(RecorderThresholdParameter, self).__init__()
+        self.recorder = recorder
+        self.threshold = threshold
+        self.values = np.array(values, np.float64)
+        if predicate is None:
+            predicate = Predicates.LT
+        elif isinstance(predicate, basestring):
+            predicate = _predicate_lookup[predicate.upper()]
+        self.predicate = predicate
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef int index = timestep.index
+        cdef double x, v
+        cdef int ind
+        if index == 0:
+            # on the first day the recorder doesn't have a value so we have no
+            # threshold to compare to
+            v = self.values[1]
+        else:
+            x = self.recorder.data[index-1, scenario_index.global_id]
+            if self.predicate == Predicates.LT:
+                ind = x < self.threshold
+            elif self.predicate == Predicates.GT:
+                ind = x > self.threshold
+            elif self.predicate == Predicates.LE:
+                ind = x <= self.threshold
+            elif self.predicate == Predicates.GE:
+                ind = x >= self.threshold
+            else:
+                ind = x == self.threshold
+            v = self.values[ind]
+        return v
+
+    @classmethod
+    def load(cls, model, data):
+        from pywr._recorders import load_recorder  # delayed to prevent circular reference
+        recorder = load_recorder(model, data["recorder"])
+        threshold = data["threshold"]
+        values = data["values"]
+        predicate = data.get("predicate", None)
+        return cls(recorder, threshold, values, predicate)
+
+parameter_registry.add(RecorderThresholdParameter)
 
 def load_parameter(model, data):
     """Load a parameter from a dict"""
