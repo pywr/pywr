@@ -1,0 +1,41 @@
+{
+    "metadata": {
+        "title": "RiverSplitWithGauge",
+        "description": "Example of an abstraction with an MRF of form y=mx+c"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "Catchment",
+            "type": "catchment",
+            "flow": 100
+        },
+        {
+            "name": "Gauge",
+            "type": "RiverSplitWithGauge",
+            "mrf": 40.0,
+            "mrf_cost": -1000,
+            "factors": [3, 1],
+            "slot_names": ["river", "abstraction"]
+        },
+        {
+            "name": "Estuary",
+            "type": "output"
+        },
+        {
+            "name": "Demand",
+            "type": "Output",
+            "max_flow": 50,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["Catchment", "Gauge"],
+        ["Gauge", "Estuary", "river", null],
+        ["Gauge", "Demand", "abstraction", null]
+    ]
+}

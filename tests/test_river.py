@@ -85,21 +85,21 @@ def test_river_gauge(solver):
     Test loading a model with a RiverGauge from JSON, modifying it, then running it
     """
     model = load_model("river_mrf1.json", solver=solver)
-    
+
     node = model.nodes["mrf"]
     demand = model.nodes["demand"]
-    
+
     # test getting properties
     assert(isinstance(node.mrf, MonthlyProfileParameter))
     assert_allclose(node.mrf_cost, -1000)
     assert_allclose(node.cost, 0.0)
-    
+
     # test setting properties
     node.mrf = 40
     node.mrf_cost = -999
     assert_allclose(node.mrf, 40)
     assert_allclose(node.mrf_cost, -999)
-    
+
     # run the model and see if it works
     model.run()
     assert_allclose(node.flow, 40)
@@ -112,6 +112,22 @@ def test_piecewise_model(simple_gauge_model):
 
 def test_river_split_gauge(simple_river_split_gauge_model):
     assert_model(*simple_river_split_gauge_model)
+
+def test_river_split_gauge_json(solver):
+    """As test_river_split_gauge, but model is defined in JSON"""
+
+    model = load_model("river_split_with_gauge1.json", solver=solver)
+    model.check()
+    model.run()
+
+    catchment_flow = 100.0
+    mrf = 40.0
+    expected_demand_flow = (catchment_flow - mrf) * 0.25
+
+    catchment_node = model.nodes["Catchment"]
+    demand_node = model.nodes["Demand"]
+    assert_allclose(catchment.flow, catchment_flow)
+    assert_allclose(demand_node.flow, expected_demand_flow)
 
 
 def test_control_curve(solver):
