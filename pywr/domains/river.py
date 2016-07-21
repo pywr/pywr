@@ -181,9 +181,11 @@ class RiverSplitWithGauge(RiverSplit):
         """Initialise a new RiverSplit instance
 
         """
-        cost = kwargs.pop('cost', 0.0)
-        kwargs['cost'] = [kwargs.pop('mrf_cost', 0.0), cost]
-        kwargs['max_flow'] = [kwargs.pop('mrf', 0.0), None]
+        cost = load_parameter(self.model, kwargs.pop('cost', 0.0))
+        mrf_cost = load_parameter(self.model, kwargs.pop('mrf_cost', 0.0))
+        kwargs['cost'] = [mrf_cost, cost]
+        mrf = load_parameter(self.model, kwargs.pop('mrf', 0.0))
+        kwargs['max_flow'] = [mrf, None]
         super(RiverSplitWithGauge, self).__init__(*args, **kwargs)
 
 
