@@ -126,7 +126,7 @@ def test_river_split_gauge_json(solver):
 
     catchment_node = model.nodes["Catchment"]
     demand_node = model.nodes["Demand"]
-    assert_allclose(catchment.flow, catchment_flow)
+    assert_allclose(catchment_node.flow, catchment_flow)
     assert_allclose(demand_node.flow, expected_demand_flow)
 
 
