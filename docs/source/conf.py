@@ -34,6 +34,7 @@ import alabaster
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
+    'matplotlib.sphinxext.plot_directive',
     'alabaster',
 ]
 

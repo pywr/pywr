@@ -10,11 +10,12 @@ Pywr is a generalised network resource allocation model written in Python. It in
 Contents:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    install.rst
    tutorial.rst
    formulation.rst
    json.rst
    Python API reference <api/modules.rst>
+   cookbook/demand_saving.rst
    license.rst
