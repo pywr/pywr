@@ -238,7 +238,8 @@ cdef class CythonGLPKSolver:
             free(val)
 
         # aggregated node flow ratio constraints
-        self.idx_row_aggregated = self.idx_row_storages + len(virtual_storages)
+        if len(aggregated):
+            self.idx_row_aggregated = self.idx_row_virtual_storages + len(virtual_storages)
         for agg_node in aggregated:
             nodes = agg_node.nodes
             factors = agg_node.factors
