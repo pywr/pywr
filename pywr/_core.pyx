@@ -150,9 +150,10 @@ cdef class AbstractNode:
     def __cinit__(self):
         self._allow_isolated = False
 
-    def __init__(self, model, name, **kwargs):
+    def __init__(self, model, name, comment=None, **kwargs):
         self._model = model
         self.name = name
+        self.comment = comment
 
         self._parent = kwargs.pop('parent', None)
         self._domain = kwargs.pop('domain', None)

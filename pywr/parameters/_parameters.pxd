@@ -23,6 +23,7 @@ cdef class Parameter:
     cpdef double[:] lower_bounds(self)
     cpdef double[:] upper_bounds(self)
     cdef public basestring name
+    cdef public basestring comment
     cdef list _recorders
 
 cdef class ArrayIndexedParameter(Parameter):

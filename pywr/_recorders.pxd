@@ -7,6 +7,7 @@ cdef class Recorder:
     cdef bint _is_objective
     cdef object _name
     cdef object _model
+    cdef public basestring comment
     cpdef setup(self)
     cpdef reset(self)
     cpdef int save(self) except -1
