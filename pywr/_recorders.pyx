@@ -126,7 +126,7 @@ cdef class IndexParameterRecorder(Recorder):
     def __init__(self, model, IndexParameter param, name=None, **kwargs):
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
-        Recorder.__init__(self, model, name=name, **kwargs)
+        super(IndexParameterRecorder, self).__init__(model, name=name, **kwargs)
         self._param = param
         param._recorders.append(self)
 
