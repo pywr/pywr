@@ -37,6 +37,7 @@ cdef class AbstractNode:
     cdef object _model
     cdef object _name
     cdef bint _allow_isolated
+    cdef public bint virtual
     cdef public object __data
     cdef public basestring comment
 

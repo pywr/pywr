@@ -149,6 +149,7 @@ cdef class AbstractNode:
     """
     def __cinit__(self):
         self._allow_isolated = False
+        self.virtual = False
 
     def __init__(self, model, name, comment=None, **kwargs):
         self._model = model
@@ -486,6 +487,7 @@ cdef class AggregatedNode(AbstractNode):
     """
     def __cinit__(self, ):
         self._allow_isolated = True
+        self.virtual = True
         self._factors = None
         self._min_flow = -inf
         self._max_flow = inf

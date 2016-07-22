@@ -18,7 +18,7 @@ def nx_to_json(model):
     """Convert a Pywr graph to a structure d3 can display"""
     nodes = []
     for node in model.graph.nodes():
-        if node.parent is None:
+        if node.parent is None and node.virtual is False:
             nodes.append(node.name)
 
     edges = []
