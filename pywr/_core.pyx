@@ -860,6 +860,8 @@ cdef class AggregatedStorage(AbstractStorage):
 
 
 cdef class VirtualStorage(Storage):
+    def __cinit__(self, ):
+        self.virtual = True
 
     property nodes:
         def __get__(self):
