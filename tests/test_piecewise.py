@@ -3,9 +3,10 @@ from __future__ import print_function
 import pywr.core
 import datetime
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 
-from helpers import assert_model
+from helpers import assert_model, load_model
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
 def simple_piecewise_model(request, solver):
@@ -43,3 +44,14 @@ def simple_piecewise_model(request, solver):
 
 def test_piecewise_model(simple_piecewise_model):
     assert_model(*simple_piecewise_model)
+
+def test_piecewise_json(solver):
+    """Test loading of a piecewise link from JSON"""
+    model = load_model("piecewise1.json", solver=solver)
+    sublinks = model.nodes["link1"].sublinks
+    max_flows = [sublink.max_flow for sublink in sublinks]
+    costs = [sublink.cost for sublink in sublinks]
+    assert_allclose(max_flows, [20, np.inf])
+    assert_allclose(costs, [-10, 5])
+    model.run()
+    assert_allclose(model.nodes["demand1"].flow, 20)

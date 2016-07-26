@@ -1173,6 +1173,20 @@ class PiecewiseLink(Node):
         # Make sure save is done after setting aggregated flow
         super(PiecewiseLink, self).after(timestep)
 
+    @classmethod
+    def load(cls, data, model):
+        # accept plurals of max_flow and cost
+        try:
+            data["max_flow"] = data.pop("max_flows")
+        except KeyError:
+            pass
+        try:
+            data["cost"] = data.pop("costs")
+        except KeyError:
+            pass
+        del(data["type"])
+        return cls(model, **data)
+
 
 class MultiSplitLink(PiecewiseLink):
     """ An extension of PiecewiseLink that includes additional additional slots to connect from.
