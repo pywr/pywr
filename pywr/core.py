@@ -344,24 +344,26 @@ class Model(object):
         This method is private and shouldn't need to be called by the user.
         Note that the data dictionary is modified in-place.
         """
-        if "nodes" not in data.keys():
-            data["nodes"] = []
-        if "edges" not in data.keys():
-            data["edges"] = []
-        if "parameters" not in data.keys():
-            data["parameters"] = {}
         if "includes" in data:
             for filename in data["includes"]:
                 if path is not None:
                     filename = os.path.join(os.path.dirname(path), filename)
                 with open(filename, "r") as f:
                     include_data = json.loads(f.read())
-                if "nodes" in include_data.keys():
-                    data["nodes"].extend(include_data["nodes"])
-                if "edges" in include_data.keys():
-                    data["edges"].extend(include_data["edges"])
-                if "parameters" in include_data.keys():
-                    data["parameters"].update(include_data["parameters"])
+                for key, value in include_data.items():
+                    if isinstance(value, list):
+                        try:
+                            data[key].extend(value)
+                        except KeyError:
+                            data[key] = value
+                    elif isinstance(value, dict):
+                        try:
+                            data[key].update(value)
+                        except KeyError:
+                            data[key] = value
+                    else:
+                        raise TypeError("Invalid type for key \"{}\" in include \"{}\".".format(key, path))
+        return None  # data modified in-place
 
     @classmethod
     def load(cls, data, model=None, path=None, solver=None):
