@@ -344,6 +344,7 @@ cdef class IndexedArrayParameter(Parameter):
         self.params = params
         for param in params:
             self.children.add(param)
+        self.children.add(index_parameter)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the Parameter at the current index"""
