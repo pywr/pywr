@@ -248,16 +248,16 @@ class TestAggregatedParameter:
             ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
             np.testing.assert_allclose(p.value(ts, si), (mth-1)*0.8)
 
+class DummyIndexParameter(IndexParameter):
+    """A simple IndexParameter which returns a constant value"""
+    def __init__(self, index, *args, **kwargs):
+        super(DummyIndexParameter, self).__init__(*args, **kwargs)
+        self._index = index
+    def index(self, timestep, scenario_index):
+        return self._index
+
 def test_aggregated_index_parameter(model):
     """Basic tests of AggregatedIndexParameter"""
-
-    class DummyIndexParameter(IndexParameter):
-        """A simple IndexParameter which returns a constant value"""
-        def __init__(self, index, *args, **kwargs):
-            super(DummyIndexParameter, self).__init__(*args, **kwargs)
-            self._index = index
-        def index(self, timestep, scenario_index):
-            return self._index
 
     parameters = []
     parameters.append(DummyIndexParameter(2))
@@ -273,6 +273,18 @@ def test_aggregated_index_parameter(model):
 
     agg_index = AggregatedIndexParameter(parameters, "min")
     assert(agg_index.index(timestep, scenario_index) == 2)
+
+def test_aggregated_index_parameter_anyall(model):
+    """Test `any` and `all` predicates"""
+    timestep = scenario_index = None  # lazy
+    data = [(0, 0), (1, 0), (0, 1), (1, 1), (1, 1, 1)]
+    expected = [(False, False), (True, False), (True, False), (True, True), (True, True)]
+    for item, (expected_any, expected_all) in zip(data, expected):
+        parameters = [DummyIndexParameter(i) for i in item]
+        agg_index_any = AggregatedIndexParameter(parameters, "any")
+        agg_index_all = AggregatedIndexParameter(parameters, "all")
+        assert(agg_index_any.index(timestep, scenario_index) == int(expected_any))
+        assert(agg_index_all.index(timestep, scenario_index) == int(expected_all))
 
 def test_parameter_child_variables():
 

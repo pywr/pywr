@@ -463,6 +463,8 @@ cdef enum AggFuncs:
     MEAN = 3
     PRODUCT = 4
     CUSTOM = 5
+    ANY = 6
+    ALL = 7
 _agg_func_lookup = {
     "sum": AggFuncs.SUM,
     "min": AggFuncs.MIN,
@@ -470,6 +472,8 @@ _agg_func_lookup = {
     "mean": AggFuncs.MEAN,
     "product": AggFuncs.PRODUCT,
     "custom": AggFuncs.CUSTOM,
+    "any": AggFuncs.ANY,
+    "all": AggFuncs.ALL,
 }
 
 cdef class AggregatedParameterBase(IndexParameter):
@@ -625,6 +629,20 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
                 value2 = parameter.index(timestep, scenario_index)
                 if value2 < value:
                     value = value2
+        elif self._agg_func == AggFuncs.ANY:
+            value = 0
+            for parameter in self.parameters:
+                value2 = parameter.index(timestep, scenario_index)
+                if value2:
+                    value = 1
+                    break
+        elif self._agg_func == AggFuncs.ALL:
+            value = 1
+            for parameter in self.parameters:
+                value2 = parameter.index(timestep, scenario_index)
+                if not value2:
+                    value = 0
+                    break
         elif self._agg_func == AggFuncs.CUSTOM:
             value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
         else:
