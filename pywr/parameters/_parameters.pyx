@@ -348,6 +348,7 @@ cdef class IndexedArrayParameter(Parameter):
         super(IndexedArrayParameter, self).__init__(**kwargs)
         assert(isinstance(index_parameter, IndexParameter))
         self.index_parameter = index_parameter
+        self.children.add(index_parameter)
         self.params = params
         for param in params:
             self.children.add(param)
@@ -395,7 +396,6 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
     """
     def __init__(self, mean, amplitudes, phases, *args, **kwargs):
-        super(AnnualHarmonicSeriesParameter, self).__init__(*args, **kwargs)
         if len(amplitudes) != len(phases):
             raise ValueError("The number  of amplitudes and phases must be the same.")
         n = len(amplitudes)
@@ -410,6 +410,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         self._amplitude_upper_bounds = np.ones(n)*kwargs.pop('amplitude_upper_bounds', np.inf)
         self._phase_lower_bounds = np.ones(n)*kwargs.pop('phase_lower_bounds', 0.0)
         self._phase_upper_bounds = np.ones(n)*kwargs.pop('phase_upper_bounds', np.pi*2)
+        super(AnnualHarmonicSeriesParameter, self).__init__(*args, **kwargs)
         self._value_cache = 0.0
         self._ts_index_cache = -1
 
@@ -436,7 +437,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef int ts_index = timestep._index
-        cdef int doy = timestep._datetime.dayofyear - 1
+        cdef int doy = timestep.dayofyear - 1
         cdef int n = len(self.amplitudes)
         cdef int i
         cdef double val

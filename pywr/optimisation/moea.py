@@ -46,10 +46,8 @@ class InspyredOptimisationModel(Model):
         return values
 
     def evaluator(self, candidates, args):
-
         fitness = []
         for i, candidate in enumerate(candidates):
-            print('Running candidiate: {:03d}'.format(i))
             for ivar, var in enumerate(self._variables):
                 j = slice(self._variable_map[ivar], self._variable_map[ivar+1])
                 var.update(np.array(candidate[j]))
@@ -57,7 +55,7 @@ class InspyredOptimisationModel(Model):
             self.reset()
             self.run()
 
-            fitness.append(inspyred.ec.emo.Pareto([r.value() for r in self._objectives]))
+            fitness.append(inspyred.ec.emo.Pareto([r.aggregated_value() for r in self._objectives]))
         return fitness
 
     def bounder(self, candidate, args):
