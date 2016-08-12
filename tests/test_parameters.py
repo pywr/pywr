@@ -534,7 +534,10 @@ def test_threshold_parameter(model):
         param = RecorderThresholdParameter(rec, threshold, values, predicate)
         rec.data[...] = threshold - 5  # data is below threshold
         assert_allclose(param.value(timestep, si), values[value_lt])
+        assert(param.index(timestep, si) == value_lt)
         rec.data[...] = threshold  # data is at threshold
         assert_allclose(param.value(timestep, si), values[value_eq])
+        assert(param.index(timestep, si) == value_eq)
         rec.data[...] = threshold + 5  # data is above threshold
         assert_allclose(param.value(timestep, si), values[value_gt])
+        assert(param.index(timestep, si) == value_gt)

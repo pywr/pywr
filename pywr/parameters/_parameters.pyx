@@ -629,7 +629,7 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
 
 parameter_registry.add(AggregatedIndexParameter)
 
-cdef class RecorderThresholdParameter(Parameter):
+cdef class RecorderThresholdParameter(IndexParameter):
     """Returns one of two values depending on a Recorder value and a threshold
 
     Parameters
@@ -643,17 +643,27 @@ cdef class RecorderThresholdParameter(Parameter):
     predicate : string
         One of {"LT", "GT", "EQ", "LE", "GE"}.
 
+    Methods
+    -------
+    value(timestep, scenario_index)
+        Returns a value from the `values` attribute, using the index.
+    index(timestep, scenario_index)
+        Returns 1 if the predicate evaluates True, else 0.
+
     Notes
     -----
     On the first day of the model run the recorder will not have a value for
     the previous day. In this case the predicate evaluates to True.
     """
 
-    def __init__(self, Recorder recorder, threshold, values, predicate=None):
+    def __init__(self, Recorder recorder, threshold, values=None, predicate=None):
         super(RecorderThresholdParameter, self).__init__()
         self.recorder = recorder
         self.threshold = threshold
-        self.values = np.array(values, np.float64)
+        if values is None:
+            self.values = None
+        else:
+            self.values = np.array(values, np.float64)
         if predicate is None:
             predicate = Predicates.LT
         elif isinstance(predicate, basestring):
@@ -661,13 +671,24 @@ cdef class RecorderThresholdParameter(Parameter):
         self.predicate = predicate
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns a value from the values attribute, using the index"""
+        cdef int ind = self.index(timestep, scenario_index)
+        cdef double v
+        if self.values is not None:
+            v = self.values[ind]
+        else:
+            raise ValueError("values method called, but values not set")
+        return v
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns 1 if the predicate evalutes True, else 0"""
         cdef int index = timestep.index
-        cdef double x, v
+        cdef double x
         cdef int ind
         if index == 0:
             # on the first day the recorder doesn't have a value so we have no
             # threshold to compare to
-            v = self.values[1]
+            ind = 1
         else:
             x = self.recorder.data[index-1, scenario_index.global_id]
             if self.predicate == Predicates.LT:
@@ -680,8 +701,7 @@ cdef class RecorderThresholdParameter(Parameter):
                 ind = x >= self.threshold
             else:
                 ind = x == self.threshold
-            v = self.values[ind]
-        return v
+        return ind
 
     @classmethod
     def load(cls, model, data):
