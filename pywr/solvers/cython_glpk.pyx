@@ -9,8 +9,6 @@ from pywr.core import ModelStructureError
 import time
 include "glpk.pxi"
 
-from collections import Counter
-
 inf = float('inf')
 
 cdef class AbstractNodeData:
@@ -223,17 +221,26 @@ cdef class CythonGLPKSolver:
             self.idx_row_virtual_storages = glp_add_rows(self.prob, len(virtual_storages))
         for col, storage in enumerate(virtual_storages):
             # We need to handle the same route appearing twice here.
-            cols = [n for n, route in enumerate(routes) for some_node in route if some_node in storage.nodes]
-            # Use Counter to find the number of unique entries for routes
-            cntr = Counter(cols)
+            cols = {}
+            for n, route in enumerate(routes):
+                for some_node in route:
+                    try:
+                        i = storage.nodes.index(some_node)
+                    except ValueError:
+                        pass
+                    else:
+                        try:
+                            cols[n] += storage.factors[i]
+                        except KeyError:
+                            cols[n] = storage.factors[i]
 
-            ind = <int*>malloc((1+len(cntr)) * sizeof(int))
-            val = <double*>malloc((1+len(cntr)) * sizeof(double))
-            for n, (c, num) in enumerate(cntr.items()):
+            ind = <int*>malloc((1+len(cols)) * sizeof(int))
+            val = <double*>malloc((1+len(cols)) * sizeof(double))
+            for n, (c, f) in enumerate(cols.items()):
                 ind[1+n] = self.idx_col_routes+c
-                val[1+n] = -num
+                val[1+n] = -f
 
-            glp_set_mat_row(self.prob, self.idx_row_virtual_storages+col, len(cntr), ind, val)
+            glp_set_mat_row(self.prob, self.idx_row_virtual_storages+col, len(cols), ind, val)
             free(ind)
             free(val)
 

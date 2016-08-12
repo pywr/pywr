@@ -403,7 +403,7 @@ def test_virtual_storage_duplicate_route(solver):
     otpt = Output(model, "Output", max_flow=10, cost=-10.0)
     lnk.connect(otpt)
 
-    vs = pywr.core.VirtualStorage(model, "Licence", [lnk, otpt], initial_volume=10.0, max_volume=10.0)
+    vs = pywr.core.VirtualStorage(model, "Licence", [lnk, otpt], factors=[0.5, 1.0], initial_volume=10.0, max_volume=10.0)
 
     model.setup()
 
@@ -411,7 +411,7 @@ def test_virtual_storage_duplicate_route(solver):
 
     model.step()
 
-    assert_allclose(otpt.flow, [5], atol=1e-7)
+    assert_allclose(otpt.flow, [10/1.5], atol=1e-7)
     assert_allclose(vs.volume, [0], atol=1e-7)
 
     model.step()

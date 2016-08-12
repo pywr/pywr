@@ -88,6 +88,7 @@ cdef class Storage(AbstractStorage):
     cdef Parameter _min_volume_param
     cdef Parameter _max_volume_param
     cdef Parameter _level_param
+    cpdef _reset_storage_only(self)
     cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cpdef double get_min_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cpdef double get_max_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1
@@ -98,4 +99,4 @@ cdef class AggregatedStorage(AbstractStorage):
 
 cdef class VirtualStorage(Storage):
     cdef list _nodes
-
+    cdef double[:] _factors
