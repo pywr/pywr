@@ -855,6 +855,10 @@ def load_dataframe(model, data):
     elif filetype == "hdf":
         df = pandas.read_hdf(url, columns=[column], **data)
 
+    if df.index.dtype.name == "object":
+        # catch dates that haven't been parsed yet
+        raise TypeError("Invalid DataFrame index type \"{}\" in \"{}\".".format(df.index.dtype.name, url))
+
     # clean up
     data.pop("parse_dates", None)
     data.pop("dayfirst", None)
