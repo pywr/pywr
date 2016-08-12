@@ -457,19 +457,23 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 parameter_registry.add(AnnualHarmonicSeriesParameter)
 
 cdef enum AggFuncs:
-    sum = 0
-    min = 1
-    max = 2
-    mean = 3
-    product = 4
-    custom = 5
+    SUM = 0
+    MIN = 1
+    MAX = 2
+    MEAN = 3
+    PRODUCT = 4
+    CUSTOM = 5
+    ANY = 6
+    ALL = 7
 _agg_func_lookup = {
-    "sum": AggFuncs.sum,
-    "min": AggFuncs.min,
-    "max": AggFuncs.max,
-    "mean": AggFuncs.mean,
-    "product": AggFuncs.product,
-    "custom": AggFuncs.custom,
+    "sum": AggFuncs.SUM,
+    "min": AggFuncs.MIN,
+    "max": AggFuncs.MAX,
+    "mean": AggFuncs.MEAN,
+    "product": AggFuncs.PRODUCT,
+    "custom": AggFuncs.CUSTOM,
+    "any": AggFuncs.ANY,
+    "all": AggFuncs.ALL,
 }
 
 cdef class AggregatedParameterBase(IndexParameter):
@@ -531,7 +535,7 @@ cdef class AggregatedParameter(AggregatedParameterBase):
             agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.agg_func = agg_func
-            agg_func = AggFuncs.custom
+            agg_func = AggFuncs.CUSTOM
         else:
             raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
         self._agg_func = agg_func
@@ -543,33 +547,35 @@ cdef class AggregatedParameter(AggregatedParameterBase):
         cdef Parameter parameter
         cdef double value, value2
         assert(len(self.parameters))
-        if self._agg_func == AggFuncs.product:
+        if self._agg_func == AggFuncs.PRODUCT:
             value = 1.0
             for parameter in self.parameters:
                 value *= parameter.value(timestep, scenario_index)
-        elif self._agg_func == AggFuncs.sum:
+        elif self._agg_func == AggFuncs.SUM:
             value = 0
             for parameter in self.parameters:
                 value += parameter.value(timestep, scenario_index)
-        elif self._agg_func == AggFuncs.max:
+        elif self._agg_func == AggFuncs.MAX:
             value = float("-inf")
             for parameter in self.parameters:
                 value2 = parameter.value(timestep, scenario_index)
                 if value2 > value:
                     value = value2
-        elif self._agg_func == AggFuncs.min:
+        elif self._agg_func == AggFuncs.MIN:
             value = float("inf")
             for parameter in self.parameters:
                 value2 = parameter.value(timestep, scenario_index)
                 if value2 < value:
                     value = value2
-        elif self._agg_func == AggFuncs.mean:
+        elif self._agg_func == AggFuncs.MEAN:
             value = 0
             for parameter in self.parameters:
                 value += parameter.value(timestep, scenario_index)
             value /= len(self.parameters)
-        else:
+        elif self._agg_func == AggFuncs.CUSTOM:
             value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+        else:
+            raise ValueError("Unsupported aggregation function.")
         return value
 
 parameter_registry.add(AggregatedParameter)
@@ -595,7 +601,7 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
             agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.agg_func = agg_func
-            agg_func = AggFuncs.custom
+            agg_func = AggFuncs.CUSTOM
         else:
             raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
         self._agg_func = agg_func
@@ -607,29 +613,45 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
         cdef IndexParameter parameter
         cdef int value, value2
         assert(len(self.parameters))
-        if self._agg_func == AggFuncs.sum:
+        if self._agg_func == AggFuncs.SUM:
             value = 0
             for parameter in self.parameters:
                 value += parameter.index(timestep, scenario_index)
-        elif self._agg_func == AggFuncs.max:
+        elif self._agg_func == AggFuncs.MAX:
             value = INT_MIN
             for parameter in self.parameters:
                 value2 = parameter.index(timestep, scenario_index)
                 if value2 > value:
                     value = value2
-        elif self._agg_func == AggFuncs.min:
+        elif self._agg_func == AggFuncs.MIN:
             value = INT_MAX
             for parameter in self.parameters:
                 value2 = parameter.index(timestep, scenario_index)
                 if value2 < value:
                     value = value2
-        else:
+        elif self._agg_func == AggFuncs.ANY:
+            value = 0
+            for parameter in self.parameters:
+                value2 = parameter.index(timestep, scenario_index)
+                if value2:
+                    value = 1
+                    break
+        elif self._agg_func == AggFuncs.ALL:
+            value = 1
+            for parameter in self.parameters:
+                value2 = parameter.index(timestep, scenario_index)
+                if not value2:
+                    value = 0
+                    break
+        elif self._agg_func == AggFuncs.CUSTOM:
             value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+        else:
+            raise ValueError("Unsupported aggregation function.")
         return value
 
 parameter_registry.add(AggregatedIndexParameter)
 
-cdef class RecorderThresholdParameter(Parameter):
+cdef class RecorderThresholdParameter(IndexParameter):
     """Returns one of two values depending on a Recorder value and a threshold
 
     Parameters
@@ -643,17 +665,27 @@ cdef class RecorderThresholdParameter(Parameter):
     predicate : string
         One of {"LT", "GT", "EQ", "LE", "GE"}.
 
+    Methods
+    -------
+    value(timestep, scenario_index)
+        Returns a value from the `values` attribute, using the index.
+    index(timestep, scenario_index)
+        Returns 1 if the predicate evaluates True, else 0.
+
     Notes
     -----
     On the first day of the model run the recorder will not have a value for
     the previous day. In this case the predicate evaluates to True.
     """
 
-    def __init__(self, Recorder recorder, threshold, values, predicate=None):
+    def __init__(self, Recorder recorder, threshold, values=None, predicate=None):
         super(RecorderThresholdParameter, self).__init__()
         self.recorder = recorder
         self.threshold = threshold
-        self.values = np.array(values, np.float64)
+        if values is None:
+            self.values = None
+        else:
+            self.values = np.array(values, np.float64)
         if predicate is None:
             predicate = Predicates.LT
         elif isinstance(predicate, basestring):
@@ -661,13 +693,24 @@ cdef class RecorderThresholdParameter(Parameter):
         self.predicate = predicate
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns a value from the values attribute, using the index"""
+        cdef int ind = self.index(timestep, scenario_index)
+        cdef double v
+        if self.values is not None:
+            v = self.values[ind]
+        else:
+            raise ValueError("values method called, but values not set")
+        return v
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns 1 if the predicate evalutes True, else 0"""
         cdef int index = timestep.index
-        cdef double x, v
+        cdef double x
         cdef int ind
         if index == 0:
             # on the first day the recorder doesn't have a value so we have no
             # threshold to compare to
-            v = self.values[1]
+            ind = 1
         else:
             x = self.recorder.data[index-1, scenario_index.global_id]
             if self.predicate == Predicates.LT:
@@ -680,8 +723,7 @@ cdef class RecorderThresholdParameter(Parameter):
                 ind = x >= self.threshold
             else:
                 ind = x == self.threshold
-            v = self.values[ind]
-        return v
+        return ind
 
     @classmethod
     def load(cls, model, data):
