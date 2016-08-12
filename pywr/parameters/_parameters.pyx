@@ -457,19 +457,19 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 parameter_registry.add(AnnualHarmonicSeriesParameter)
 
 cdef enum AggFuncs:
-    sum = 0
-    min = 1
-    max = 2
-    mean = 3
-    product = 4
-    custom = 5
+    SUM = 0
+    MIN = 1
+    MAX = 2
+    MEAN = 3
+    PRODUCT = 4
+    CUSTOM = 5
 _agg_func_lookup = {
-    "sum": AggFuncs.sum,
-    "min": AggFuncs.min,
-    "max": AggFuncs.max,
-    "mean": AggFuncs.mean,
-    "product": AggFuncs.product,
-    "custom": AggFuncs.custom,
+    "sum": AggFuncs.SUM,
+    "min": AggFuncs.MIN,
+    "max": AggFuncs.MAX,
+    "mean": AggFuncs.MEAN,
+    "product": AggFuncs.PRODUCT,
+    "custom": AggFuncs.CUSTOM,
 }
 
 cdef class AggregatedParameterBase(IndexParameter):
@@ -531,7 +531,7 @@ cdef class AggregatedParameter(AggregatedParameterBase):
             agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.agg_func = agg_func
-            agg_func = AggFuncs.custom
+            agg_func = AggFuncs.CUSTOM
         else:
             raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
         self._agg_func = agg_func
@@ -543,33 +543,35 @@ cdef class AggregatedParameter(AggregatedParameterBase):
         cdef Parameter parameter
         cdef double value, value2
         assert(len(self.parameters))
-        if self._agg_func == AggFuncs.product:
+        if self._agg_func == AggFuncs.PRODUCT:
             value = 1.0
             for parameter in self.parameters:
                 value *= parameter.value(timestep, scenario_index)
-        elif self._agg_func == AggFuncs.sum:
+        elif self._agg_func == AggFuncs.SUM:
             value = 0
             for parameter in self.parameters:
                 value += parameter.value(timestep, scenario_index)
-        elif self._agg_func == AggFuncs.max:
+        elif self._agg_func == AggFuncs.MAX:
             value = float("-inf")
             for parameter in self.parameters:
                 value2 = parameter.value(timestep, scenario_index)
                 if value2 > value:
                     value = value2
-        elif self._agg_func == AggFuncs.min:
+        elif self._agg_func == AggFuncs.MIN:
             value = float("inf")
             for parameter in self.parameters:
                 value2 = parameter.value(timestep, scenario_index)
                 if value2 < value:
                     value = value2
-        elif self._agg_func == AggFuncs.mean:
+        elif self._agg_func == AggFuncs.MEAN:
             value = 0
             for parameter in self.parameters:
                 value += parameter.value(timestep, scenario_index)
             value /= len(self.parameters)
-        else:
+        elif self._agg_func == AggFuncs.CUSTOM:
             value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+        else:
+            raise ValueError("Unsupported aggregation function.")
         return value
 
 parameter_registry.add(AggregatedParameter)
@@ -595,7 +597,7 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
             agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.agg_func = agg_func
-            agg_func = AggFuncs.custom
+            agg_func = AggFuncs.CUSTOM
         else:
             raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
         self._agg_func = agg_func
@@ -607,24 +609,26 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
         cdef IndexParameter parameter
         cdef int value, value2
         assert(len(self.parameters))
-        if self._agg_func == AggFuncs.sum:
+        if self._agg_func == AggFuncs.SUM:
             value = 0
             for parameter in self.parameters:
                 value += parameter.index(timestep, scenario_index)
-        elif self._agg_func == AggFuncs.max:
+        elif self._agg_func == AggFuncs.MAX:
             value = INT_MIN
             for parameter in self.parameters:
                 value2 = parameter.index(timestep, scenario_index)
                 if value2 > value:
                     value = value2
-        elif self._agg_func == AggFuncs.min:
+        elif self._agg_func == AggFuncs.MIN:
             value = INT_MAX
             for parameter in self.parameters:
                 value2 = parameter.index(timestep, scenario_index)
                 if value2 < value:
                     value = value2
-        else:
+        elif self._agg_func == AggFuncs.CUSTOM:
             value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+        else:
+            raise ValueError("Unsupported aggregation function.")
         return value
 
 parameter_registry.add(AggregatedIndexParameter)
