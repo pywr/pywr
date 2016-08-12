@@ -13,7 +13,7 @@ from numpy.testing import assert_allclose
 from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
-    TotalFlowRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
+    TotalFlowNodeRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
     NumpyArrayIndexParameterRecorder, MeanParameterRecorder, load_recorder)
 from pywr.parameters import DailyProfileParameter, FunctionParameter
 from helpers import load_model
@@ -256,10 +256,10 @@ def test_total_deficit_node_recorder(simple_linear_model):
     rec = TotalDeficitNodeRecorder(model, otpt)
 
     model.step()
-    assert_allclose(20.0, rec.value(), atol=1e-7)
+    assert_allclose(20.0, rec.aggregated_value(), atol=1e-7)
 
     model.step()
-    assert_allclose(40.0, rec.value(), atol=1e-7)
+    assert_allclose(40.0, rec.aggregated_value(), atol=1e-7)
 
 
 def test_total_flow_node_recorder(simple_linear_model):
@@ -271,13 +271,13 @@ def test_total_flow_node_recorder(simple_linear_model):
     otpt.max_flow = 30.0
     model.node['Input'].max_flow = 10.0
     otpt.cost = -2.0
-    rec = TotalFlowRecorder(model, otpt)
+    rec = TotalFlowNodeRecorder(model, otpt)
 
     model.step()
-    assert_allclose(10.0, rec.value(), atol=1e-7)
+    assert_allclose(10.0, rec.aggregated_value(), atol=1e-7)
 
     model.step()
-    assert_allclose(20.0, rec.value(), atol=1e-7)
+    assert_allclose(20.0, rec.aggregated_value(), atol=1e-7)
 
 
 def test_aggregated_recorder(simple_linear_model):
@@ -286,16 +286,16 @@ def test_aggregated_recorder(simple_linear_model):
     otpt.max_flow = 30.0
     model.node['Input'].max_flow = 10.0
     otpt.cost = -2.0
-    rec1 = TotalFlowRecorder(model, otpt)
+    rec1 = TotalFlowNodeRecorder(model, otpt)
     rec2 = TotalDeficitNodeRecorder(model, otpt)
 
-    rec = AggregatedRecorder(model, [rec1, rec2], agg_func=np.max)
+    rec = AggregatedRecorder(model, [rec1, rec2], agg_func="max")
 
     model.step()
-    assert_allclose(20.0, rec.value(), atol=1e-7)
+    assert_allclose(20.0, rec.aggregated_value(), atol=1e-7)
 
     model.step()
-    assert_allclose(40.0, rec.value(), atol=1e-7)
+    assert_allclose(40.0, rec.aggregated_value(), atol=1e-7)
 
 
 def test_reset_timestepper_recorder(solver):

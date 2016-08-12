@@ -5,14 +5,23 @@ from .parameters._parameters cimport Parameter, IndexParameter
 
 cdef class Recorder:
     cdef bint _is_objective
+    cdef public double epsilon
     cdef object _name
     cdef object _model
     cdef public basestring comment
+    cdef object agg_func
+    cdef int _agg_func
     cpdef setup(self)
     cpdef reset(self)
     cpdef int save(self) except -1
     cpdef finish(self)
-    cpdef value(self)
+    cpdef double aggregated_value(self) except? -1
+    cpdef double[:] values(self)
+
+cdef class AggregatedRecorder(Recorder):
+    cdef object recorder_agg_func
+    cdef int _recorder_agg_func
+    cdef public list recorders
 
 cdef class NodeRecorder(Recorder):
     cdef AbstractNode _node
@@ -52,3 +61,21 @@ cdef class MeanFlowRecorder(NodeRecorder):
     cdef int timesteps
     cdef double[:, :] _memory
     cdef double[:, :] _data
+
+cdef class BaseConstantNodeRecorder(NodeRecorder):
+    cdef double[:] _values
+
+cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
+    pass
+
+cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
+    cdef public double factor
+
+cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
+    pass
+
+cdef class BaseConstantStorageRecorder(StorageRecorder):
+    cdef double[:] _values
+
+cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
+    pass
