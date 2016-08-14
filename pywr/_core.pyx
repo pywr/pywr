@@ -54,7 +54,7 @@ cdef class ScenarioCollection:
         def __get__(self):
             return self._scenarios
 
-    cpdef get_scenario_index(self, Scenario sc):
+    cpdef int get_scenario_index(self, Scenario sc) except? -1:
         """Return the index of Scenario in this controller."""
         return self._scenarios.index(sc)
 
@@ -319,7 +319,7 @@ cdef class Node(AbstractNode):
                 self._cost_param = None
                 self._cost = value
 
-    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
+    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Get the cost per unit flow at a given timestep
         """
         if self._cost_param is None:
@@ -344,7 +344,7 @@ cdef class Node(AbstractNode):
                 self._min_flow_param = None
                 self._min_flow = value
 
-    cpdef get_min_flow(self, Timestep ts, ScenarioIndex scenario_index):
+    cpdef double get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Get the minimum flow at a given timestep
         """
         if self._min_flow_param is None:
@@ -371,7 +371,7 @@ cdef class Node(AbstractNode):
                 self._max_flow_param = None
                 self._max_flow = value
 
-    cpdef get_max_flow(self, Timestep ts, ScenarioIndex scenario_index):
+    cpdef double get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Get the maximum flow at a given timestep
         """
         if self._max_flow_param is None:
@@ -404,7 +404,7 @@ cdef class Node(AbstractNode):
                 variables.extend(self._max_flow_param.variables)
             return variables
 
-    cpdef get_conversion_factor(self):
+    cpdef double get_conversion_factor(self) except? -1:
         """Get the conversion factor
 
         Note: the conversion factor must be a constant.
@@ -560,7 +560,7 @@ cdef class StorageInput(BaseInput):
         BaseInput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, -volume)
 
-    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
+    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # Return negative of parent cost
         return -self.parent.get_cost(ts, scenario_index)
 
@@ -569,7 +569,7 @@ cdef class StorageOutput(BaseOutput):
         BaseOutput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, volume)
 
-    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
+    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # Return parent cost
         return self.parent.get_cost(ts, scenario_index)
 
@@ -634,7 +634,7 @@ cdef class Storage(AbstractStorage):
                 self._cost_param = None
                 self._cost = value
 
-    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index):
+    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Get the cost per unit flow at a given timestep
         """
         if self._cost_param is None:
@@ -661,7 +661,7 @@ cdef class Storage(AbstractStorage):
             else:
                 self._min_volume = value
 
-    cpdef get_min_volume(self, Timestep ts, ScenarioIndex scenario_index):
+    cpdef double get_min_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         if self._min_volume_param is None:
             return self._min_volume
         return self._min_volume_param.value(ts, scenario_index)
@@ -679,7 +679,7 @@ cdef class Storage(AbstractStorage):
             else:
                 self._max_volume = value
 
-    cpdef get_max_volume(self, Timestep ts, ScenarioIndex scenario_index):
+    cpdef double get_max_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         if self._max_volume_param is None:
             return self._max_volume
         return self._max_volume_param.value(ts, scenario_index)
@@ -697,7 +697,7 @@ cdef class Storage(AbstractStorage):
             else:
                 self._level = value
 
-    cpdef get_level(self, Timestep ts, ScenarioIndex scenario_index):
+    cpdef double get_level(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         if self._level_param is None:
             return self._level
         return self._level_param.value(ts, scenario_index)

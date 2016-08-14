@@ -8,7 +8,7 @@ cdef class Scenario:
 cdef class ScenarioCollection:
     cdef list _scenarios
     cdef public ScenarioCombinations combinations
-    cpdef get_scenario_index(self, Scenario sc)
+    cpdef int get_scenario_index(self, Scenario sc) except? -1
     cpdef add_scenario(self, Scenario sc)
     cpdef int ravel_indices(self, int[:] scenario_indices) except? -1
 
@@ -60,10 +60,10 @@ cdef class Node(AbstractNode):
     cdef Parameter _max_flow_param
 
     cdef Parameter _conversion_factor_param
-    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index)
-    cpdef get_min_flow(self, Timestep ts, ScenarioIndex scenario_index)
-    cpdef get_max_flow(self, Timestep ts, ScenarioIndex scenario_index)
-    cpdef get_conversion_factor(self)
+    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1
+    cpdef double get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1
+    cpdef double get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1
+    cpdef double get_conversion_factor(self) except? -1
     cdef set_parameters(self, Timestep ts, ScenarioIndex scenario_index)
 
 cdef class AggregatedNode(AbstractNode):
@@ -88,10 +88,10 @@ cdef class Storage(AbstractStorage):
     cdef Parameter _min_volume_param
     cdef Parameter _max_volume_param
     cdef Parameter _level_param
-    cpdef get_cost(self, Timestep ts, ScenarioIndex scenario_index)
-    cpdef get_min_volume(self, Timestep ts, ScenarioIndex scenario_index)
-    cpdef get_max_volume(self, Timestep ts, ScenarioIndex scenario_index)
-    cpdef get_level(self, Timestep ts, ScenarioIndex scenario_index)
+    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1
+    cpdef double get_min_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1
+    cpdef double get_max_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1
+    cpdef double get_level(self, Timestep ts, ScenarioIndex scenario_index) except? -1
 
 cdef class AggregatedStorage(AbstractStorage):
     cdef list _storage_nodes
