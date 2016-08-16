@@ -17,6 +17,7 @@ import pandas
 import datetime
 import json
 from six import with_metaclass
+import copy
 
 import warnings
 
@@ -393,6 +394,9 @@ class Model(object):
             # argument is a file-like object
             data = data.read()
             return cls.loads(data, model, path, solver)
+        
+        # data is a dictionary, make a copy to avoid modify the input
+        data = copy.deepcopy(data)
 
         cls._load_includes(data, path)
 
