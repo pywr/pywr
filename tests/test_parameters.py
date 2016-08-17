@@ -139,10 +139,31 @@ def test_parameter_daily_profile(model):
 
     # Iterate in time
     for ts in model.timestepper:
-        iday = ts.datetime.dayofyear - 1
+        month = ts.datetime.month
+        day = ts.datetime.day
+        iday = int((datetime.datetime(2016, month, day) - datetime.datetime(2016, 1, 1)).days)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         np.testing.assert_allclose(p.value(ts, si), values[iday])
 
+def test_daily_profile_leap_day(model):
+    """Test behaviour of daily profile parameter for leap years
+    """
+    inpt = Input(model, "input")
+    otpt = Output(model, "otpt", max_flow=None, cost=-999)
+    inpt.connect(otpt)
+    inpt.max_flow = DailyProfileParameter(np.arange(0, 366, dtype=np.float64))
+
+    # non-leap year
+    model.timestepper.start = pd.to_datetime("2015-01-01")
+    model.timestepper.end = pd.to_datetime("2015-12-31")
+    model.run()
+    assert_allclose(inpt.flow, 365) # NOT 364
+
+    # leap year
+    model.timestepper.start = pd.to_datetime("2016-01-01")
+    model.timestepper.end = pd.to_datetime("2016-12-31")
+    model.run()
+    assert_allclose(inpt.flow, 365)
 
 class TestAnnualHarmonicSeriesParameter:
     """ Tests for `AnnualHarmonicSeriesParameter` """
@@ -216,7 +237,9 @@ class TestAggregatedParameter:
         p.setup(model)
 
         for ts in model.timestepper:
-            iday = ts.datetime.dayofyear - 1
+            month = ts.datetime.month
+            day = ts.datetime.day
+            iday = int((datetime.datetime(2016, month, day) - datetime.datetime(2016, 1, 1)).days)
             for i in range(scB.size):
                 si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
                 np.testing.assert_allclose(p.value(ts, si), max(values[iday], i))

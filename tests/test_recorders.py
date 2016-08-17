@@ -76,6 +76,9 @@ def test_numpy_parameter_recorder(simple_linear_model):
     from pywr.parameters import DailyProfileParameter
 
     model = simple_linear_model
+    # using leap year simplifies tests
+    model.timestepper.start = pandas.to_datetime("2016-01-01")
+    model.timestepper.end = pandas.to_datetime("2016-12-31")
     otpt = model.node['Output']
 
     p = DailyProfileParameter(np.arange(366, dtype=np.float64), )
@@ -89,12 +92,12 @@ def test_numpy_parameter_recorder(simple_linear_model):
 
     model.run()
 
-    assert rec.data.shape == (365, 1)
-    assert_allclose(rec.data, np.arange(365, dtype=np.float64)[:, np.newaxis])
+    assert rec.data.shape == (366, 1)
+    assert_allclose(rec.data, np.arange(366, dtype=np.float64)[:, np.newaxis])
 
     df = rec.to_dataframe()
-    assert df.shape == (365, 1)
-    assert_allclose(df.values, np.arange(365, dtype=np.float64)[:, np.newaxis])
+    assert df.shape == (366, 1)
+    assert_allclose(df.values, np.arange(366, dtype=np.float64)[:, np.newaxis])
 
 
 def test_numpy_index_parameter_recorder(simple_storage_model):
@@ -127,16 +130,19 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
 
 def test_parameter_mean_recorder(simple_linear_model):
     model = simple_linear_model
-    
+    # using leap year simplifies test
+    model.timestepper.start = pandas.to_datetime("2016-01-01")
+    model.timestepper.end = pandas.to_datetime("2016-12-31")
+
     node = model.nodes["Input"]
     values = np.arange(0, 366, dtype=np.float64)
     node.max_flow = DailyProfileParameter(values)
-    
+
     timesteps = 3
     rec = MeanParameterRecorder(model, node.max_flow, timesteps)
-    
+
     model.run()
-    
+
     assert_allclose(rec.data[[0, 1, 2, 3, 364], 0], [0, 0.5, 1, 2, 363])
 
 def test_parameter_mean_recorder_json(simple_linear_model):
@@ -146,13 +152,13 @@ def test_parameter_mean_recorder_json(simple_linear_model):
     parameter = DailyProfileParameter(values, name="input_max_flow")
     model.parameters.append(parameter) # HACK
     node.max_flow = parameter
-    
+
     data = {
         "type": "meanparameter",
         "parameter": "input_max_flow",
         "timesteps": 3,
     }
-    
+
     rec = load_recorder(model, data)
 
 
