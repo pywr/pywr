@@ -26,16 +26,8 @@ setup_kwargs = {
     'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters', 'pywr.notebook'],
 }
 
-extensions = [
-    Extension('pywr._core', ['pywr/_core.pyx'],
-              include_dirs=[np.get_include()],),
-    Extension('pywr.parameters._parameters', ['pywr/parameters/_parameters.pyx'],
-              include_dirs=[np.get_include()],),
-    Extension('pywr._recorders', ['pywr/_recorders.pyx'],
-              include_dirs=[np.get_include()],),
-    Extension('pywr.parameters._control_curves', ['pywr/parameters/_control_curves.pyx'],
-              include_dirs=[np.get_include()],),
-]
+
+define_macros = []
 
 # HACK: optional features are too difficult to do properly
 # http://stackoverflow.com/a/4056848/1300519
@@ -56,15 +48,36 @@ if '--enable-profiling' in sys.argv:
      compiler_directives['profile'] = True
      sys.argv.remove('--enable-profiling')
 
+if '--enable-trace' in sys.argv:
+    print('Tracing is enabled.')
+    compiler_directives['linetrace'] = True
+    define_macros.append(('CYTHON_TRACE', '1'))
+sys.argv.remove('--enable-trace')
+
+extensions = [
+    Extension('pywr._core', ['pywr/_core.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
+    Extension('pywr.parameters._parameters', ['pywr/parameters/_parameters.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
+    Extension('pywr._recorders', ['pywr/_recorders.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
+    Extension('pywr.parameters._control_curves', ['pywr/parameters/_control_curves.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
+]
+
 extensions_optional = []
 if 'glpk' in optional:
     extensions_optional.append(
         Extension('pywr.solvers.cython_glpk', ['pywr/solvers/cython_glpk.pyx'],
                   include_dirs=[np.get_include()],
-                  libraries=['glpk'],),
+                  libraries=['glpk'],
+                  define_macros=define_macros),
     )
 if 'lpsolve' in optional:
-    define_macros = []
     if os.name == 'nt':
         define_macros.append(('WIN32', 1))
     extensions_optional.append(
