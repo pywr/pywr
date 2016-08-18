@@ -224,7 +224,7 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         cdef double target_percentage
         cdef int index, j
         cdef Parameter control_curve
-        current_percentage = self.storage_node.current_pc[scenario_index.global_id]
+        current_percentage = self.storage_node._current_pc[scenario_index._global_id]
         index = len(self.control_curves)
         for j, control_curve in enumerate(self.control_curves):
             target_percentage = control_curve.value(timestep, scenario_index)
