@@ -26,6 +26,11 @@ cdef class Parameter:
     cdef public basestring comment
     cdef list _recorders
 
+cdef class ConstantParameter(Parameter):
+    cdef double _value
+    cdef double[:] _lower_bounds
+    cdef double[:] _upper_bounds
+
 cdef class ArrayIndexedParameter(Parameter):
     cdef double[:] values
 

@@ -213,13 +213,13 @@ def test_control_curve_interpolated(model):
         assert_allclose(s.get_cost(m.timestepper.current, si), np.interp(v/100.0, [0.0, 0.8, 1.0], values[::-1]))
 
     # special case when control curve is 100%
-    cc._value = 1.0
+    cc.update(np.array([1.0,]))
     s.initial_volume == 100.0
     s.reset()
     assert_allclose(s.get_cost(m.timestepper.current, si), values[1])
 
     # special case when control curve is 0%
-    cc._value = 0.0
+    cc.update(np.array([0.0,]))
     s.initial_volume == 0.0
     s.reset()
     assert_allclose(s.get_cost(m.timestepper.current, si), values[0])
