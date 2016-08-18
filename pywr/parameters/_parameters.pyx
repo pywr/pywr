@@ -291,6 +291,10 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
 parameter_registry.add(ArrayIndexedScenarioMonthlyFactorsParameter)
 
 
+cdef inline bint is_leap_year(int year):
+    # http://stackoverflow.com/a/11595914/1300519
+    return ((year & 3) == 0 and ((year % 25) != 0 or (year & 15) == 0))
+
 cdef class DailyProfileParameter(Parameter):
     def __init__(self, values, *args, **kwargs):
         super(DailyProfileParameter, self).__init__(*args, **kwargs)
@@ -303,6 +307,9 @@ cdef class DailyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
+        if not is_leap_year(<int>(ts._datetime.year)):
+            if i > 58: # 28th Feb
+                i += 1
         return self._values[i]
 parameter_registry.add(DailyProfileParameter)
 
