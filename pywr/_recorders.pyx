@@ -597,7 +597,12 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
         super(TotalFlowNodeRecorder, self).__init__(*args, **kwargs)
 
     cpdef int save(self) except -1:
-        self._values += self._node.flow*self.factor*self.model.timestepper.delta.days
+        cdef ScenarioIndex scenario_index
+        cdef int i
+        cdef int days = self.model.timestepper.delta.days
+        for scenario_index in self.model.scenarios.combinations:
+            i = scenario_index._global_id
+            self._values[i] += self._node._flow[i]*self.factor*days
         return 0
 recorder_registry.add(TotalFlowNodeRecorder)
 
