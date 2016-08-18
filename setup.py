@@ -52,7 +52,7 @@ if '--enable-trace' in sys.argv:
     print('Tracing is enabled.')
     compiler_directives['linetrace'] = True
     define_macros.append(('CYTHON_TRACE', '1'))
-sys.argv.remove('--enable-trace')
+    sys.argv.remove('--enable-trace')
 
 extensions = [
     Extension('pywr._core', ['pywr/_core.pyx'],
