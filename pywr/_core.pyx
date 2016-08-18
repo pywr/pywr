@@ -48,11 +48,24 @@ cdef class Scenario:
 cdef class ScenarioCollection:
     def __init__(self, ):
         self._scenarios = []
-        self.combinations = ScenarioCombinations(self)
+        self.combinations = None
 
     property scenarios:
         def __get__(self):
             return self._scenarios
+
+    def setup(self, ):
+        """ Create the list of ScenarioIndex objects based on the current Scenarios. """
+        cdef Scenario sc
+        cdef int i
+        cdef int[:] indices
+        if len(self._scenarios) == 0:
+            combinations = [ScenarioIndex(0, np.array([0], dtype=np.int32)), ]
+        else:
+            combinations = []
+            for i, indices in enumerate(product([sc._size for sc in self._scenarios])):
+                combinations.append(ScenarioIndex(i, indices))
+        self.combinations = combinations
 
     cpdef int get_scenario_index(self, Scenario sc) except? -1:
         """Return the index of Scenario in this controller."""

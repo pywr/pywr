@@ -17,13 +17,17 @@ def test_scenario_collection(solver):
     """ Basic test of Scenario and ScenarioCollection API """
 
     model = pywr.core.Model(solver=solver)
+
     # There is 1 combination when there are no Scenarios
+    model.scenarios.setup()
     assert(len(model.scenarios.combinations) == 1)
     assert(len(model.scenarios) == 0)
     scA = pywr.core.Scenario(model, 'Scenario A', size=3)
+    model.scenarios.setup()
     assert(len(model.scenarios.combinations) == 3)
     assert(len(model.scenarios) == 1)
     scA = pywr.core.Scenario(model, 'Scenario B', size=2)
+    model.scenarios.setup()
     assert(len(model.scenarios.combinations) == 6)
     assert(len(model.scenarios) == 2)
 

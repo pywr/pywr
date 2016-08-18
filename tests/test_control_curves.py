@@ -21,6 +21,7 @@ class TestPiecewiseControlCurveParameter:
     @staticmethod
     def _assert_results(m, s):
         """ Correct results for the following tests """
+        m.scenarios.setup()
         s.setup(m)  # Init memory view on storage (bypasses usual `Model.setup`)
 
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
@@ -122,8 +123,8 @@ class TestPiecewiseControlCurveParameter:
 
         This is different to the above test by using singular 'control_curve' key in the dict
         """
-
         m = model
+        m.scenarios.setup()
         s = Storage(m, 'Storage', max_volume=100.0)
 
         data = {
@@ -150,6 +151,7 @@ class TestPiecewiseControlCurveParameter:
         """ Test usage on non-`Storage` node. """
         # Now test if the parameter is used on a non storage node
         m = model
+        m.scenarios.setup()
         s = Storage(m, 'Storage', max_volume=100.0)
 
         l = Link(m, 'Link')
@@ -169,6 +171,7 @@ class TestPiecewiseControlCurveParameter:
     def test_with_nonstorage_load(self, model):
         """ Test load from dict with 'storage_node' key. """
         m = model
+        m.scenarios.setup()
         s = Storage(m, 'Storage', max_volume=100.0)
         l = Link(m, 'Link')
 
@@ -194,6 +197,7 @@ class TestPiecewiseControlCurveParameter:
 
 def test_control_curve_interpolated(model):
     m = model
+    m.scenarios.setup()
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
     s = Storage(m, 'Storage', max_volume=100.0)
@@ -264,7 +268,7 @@ class TestMonthlyProfileControlCurveParameter:
 
         l.max_flow = p = load_parameter(model, data)
         p.setup(model)
-
+        model.scenarios.setup()
         self._assert_results(model, s, p)
 
     def test_scale_no_profile(self, model):
@@ -283,7 +287,7 @@ class TestMonthlyProfileControlCurveParameter:
 
         l.max_flow = p = load_parameter(model, data)
         p.setup(model)
-
+        model.scenarios.setup()
         self._assert_results(model, s, p, scale=1.5)
 
     def test_no_scale_profile_param(self, model):
@@ -305,7 +309,7 @@ class TestMonthlyProfileControlCurveParameter:
 
         l.max_flow = p = load_parameter(model, data)
         p.setup(model)
-
+        model.scenarios.setup()
         self._assert_results(model, s, p, scale=1.5)
 
     def test_no_scale_profile(self, model):
@@ -324,7 +328,7 @@ class TestMonthlyProfileControlCurveParameter:
 
         l.max_flow = p = load_parameter(model, data)
         p.setup(model)
-
+        model.scenarios.setup()
         self._assert_results(model, s, p, scale=1.5)
 
     def test_json_load(self, solver):
@@ -376,7 +380,7 @@ def test_daily_profile_control_curve(model):
     p.setup(model)
 
     # Test correct aggregation is performed
-
+    model.scenarios.setup()
     s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
 
     s.initial_volume = 90.0
