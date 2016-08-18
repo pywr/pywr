@@ -33,6 +33,18 @@ To run the unit tests:
 
     (env)$ py.test tests
 
+To run coverage analysis on the tests (requires `coverage` module), first build with tracing:
+
+.. code-block:: console
+
+    $ python setup.py --enable-trace --with-glpk --with-lpsolve develop
+
+.. code-block:: console
+
+    $ coverage run --source pywr -m py.test tests
+    $ coverage report
+    $ coverage html
+
 License
 =======
 
