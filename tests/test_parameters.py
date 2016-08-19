@@ -387,10 +387,11 @@ def test_scaled_profile_nested_load(model):
     }
 
     l.max_flow = p = load_parameter(model, data)
+
     p.setup(model)
 
     # Test correct aggregation is performed
-
+    model.scenarios.setup()
     s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
 
     s.initial_volume = 90.0

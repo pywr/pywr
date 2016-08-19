@@ -7,7 +7,7 @@ cdef class Scenario:
 
 cdef class ScenarioCollection:
     cdef list _scenarios
-    cdef public ScenarioCombinations combinations
+    cdef public list combinations
     cpdef int get_scenario_index(self, Scenario sc) except? -1
     cpdef add_scenario(self, Scenario sc)
     cpdef int ravel_indices(self, int[:] scenario_indices) except? -1

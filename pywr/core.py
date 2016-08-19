@@ -645,6 +645,7 @@ class Model(object):
     def setup(self, ):
         """Setup the model for the first time or if it has changed since
         last run."""
+        self.scenarios.setup()
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
             node.setup(self)

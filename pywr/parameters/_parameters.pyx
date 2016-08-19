@@ -134,6 +134,27 @@ cdef class Parameter:
 
 parameter_registry.add(Parameter)
 
+cdef class ConstantParameter(Parameter):
+    def __init__(self, value, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+        super(ConstantParameter, self).__init__(**kwargs)
+        self._value = value
+        self.size = 1
+        self._lower_bounds = np.ones(self.size) * lower_bounds
+        self._upper_bounds = np.ones(self.size) * upper_bounds
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._value
+
+    cpdef update(self, double[:] values):
+        self._value = values[0]
+
+    cpdef double[:] lower_bounds(self):
+        return self._lower_bounds
+
+    cpdef double[:] upper_bounds(self):
+        return self._upper_bounds
+parameter_registry.add(ConstantParameter)
+
 
 cdef class CachedParameter(IndexParameter):
     """Wrapper for Parameters which caches the result"""
@@ -343,12 +364,25 @@ cdef class IndexedArrayParameter(Parameter):
     ----------
     index_parameter : `IndexParameter`
     params : iterable of `Parameters` or floats
+
+
+    Notes
+    -----
+    Float arguments `params` are converted to `ConstantParameter`
     """
     def __init__(self, index_parameter=None, params=None, **kwargs):
         super(IndexedArrayParameter, self).__init__(**kwargs)
         assert(isinstance(index_parameter, IndexParameter))
         self.index_parameter = index_parameter
-        self.params = params
+        self.children.add(index_parameter)
+
+        self.params = []
+        for p in params:
+            if not isinstance(p, Parameter):
+                from pywr.parameters import ConstantParameter
+                p = ConstantParameter(p)
+            self.params.append(p)
+
         for param in params:
             self.children.add(param)
         self.children.add(index_parameter)
@@ -357,12 +391,8 @@ cdef class IndexedArrayParameter(Parameter):
         """Returns the value of the Parameter at the current index"""
         cdef int index
         index = self.index_parameter.index(timestep, scenario_index)
-        parameter = self.params[index]
-        if isinstance(parameter, Parameter):
-            value = parameter.value(timestep, scenario_index)
-        else:
-            value = parameter
-        return value
+        cdef Parameter parameter = self.params[index]
+        return parameter.value(timestep, scenario_index)
 
     @classmethod
     def load(cls, model, data):
@@ -437,7 +467,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef int ts_index = timestep._index
         cdef int doy = timestep._datetime.dayofyear - 1
-        cdef int n = len(self.amplitudes)
+        cdef int n = self._amplitudes.shape[0]
         cdef int i
         cdef double val
         if ts_index == self._ts_index_cache:
