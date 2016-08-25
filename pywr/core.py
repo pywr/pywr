@@ -276,7 +276,6 @@ class Model(object):
             solver = solver_registry[0]
         self.solver = solver()
 
-        self.group = {}
         self.parameters = NamedIterator()
         self.recorders = NamedIterator()
         self.scenarios = ScenarioCollection()
@@ -1305,36 +1304,6 @@ class MultiSplitLink(PiecewiseLink):
                 yield self._extra_inputs[i-1]
         else:
             yield self.output
-
-
-class Group(object):
-    """A group of nodes
-
-    This class is useful for applying a license constraint (or set of
-    constraints) to a group of Supply nodes.
-    """
-    def __init__(self, model, name, nodes=None):
-        self.model = model
-        if nodes is None:
-            self.nodes = set()
-        else:
-            self.nodes = set(nodes)
-        self.__name = name
-        self.name = name
-        self.licenses = None
-
-    @property
-    def name(self):
-        return self.__name
-
-    @name.setter
-    def name(self, name):
-        try:
-            del(self.model.group[self.__name])
-        except KeyError:
-            pass
-        self.__name = name
-        self.model.group[name] = self
 
 
 class AggregatedStorage(with_metaclass(NodeMeta, Drawable, _core.AggregatedStorage)):
