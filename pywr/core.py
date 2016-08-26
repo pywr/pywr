@@ -394,7 +394,7 @@ class Model(object):
             # argument is a file-like object
             data = data.read()
             return cls.loads(data, model, path, solver)
-        
+
         # data is a dictionary, make a copy to avoid modify the input
         data = copy.deepcopy(data)
 
@@ -435,7 +435,9 @@ class Model(object):
         model._nodes_to_load = nodes_to_load
 
         # collect parameters to load
-        # don't need to load them here as they are pulled in as needed
+        # the parameters are loaded immediately, as they may not be referenced
+        # anywhere else (e.g. they may only be used by a node/parameter in
+        # Python-space)
         try:
             parameters_to_load = data["parameters"]
         except KeyError:
@@ -445,6 +447,8 @@ class Model(object):
                 if isinstance(value, dict):
                     parameters_to_load[key]["name"] = key
         model._parameters_to_load = parameters_to_load
+        for name, pdata in model._parameters_to_load.items():
+            load_parameter(model, pdata)
 
         # collect recorders to load
         # the recorders are loaded immediately, as they may not be referenced
