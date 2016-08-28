@@ -110,14 +110,16 @@ cdef class CythonLPSolveSolver:
     cdef int idx_row_demands
     cdef int idx_row_cross_domain
     cdef int idx_row_storages
+    cdef int idx_row_virtual_storages
     cdef int idx_row_aggregated
     cdef int idx_row_aggregated_min_max
 
-    cdef object routes
-    cdef object supplys
-    cdef object demands
-    cdef object storages
-    cdef object aggregated
+    cdef list routes
+    cdef list supplys
+    cdef list demands
+    cdef list storages
+    cdef list virtual_storages
+    cdef list aggregated
 
     def __cinit__(self):
         # create a new problem
@@ -159,6 +161,7 @@ cdef class CythonLPSolveSolver:
         supplys = []
         demands = []
         storages = []
+        virtual_storages = []
         aggregated = []
         aggregated_min_max = []
         for some_node in model.graph.nodes():
@@ -166,7 +169,9 @@ cdef class CythonLPSolveSolver:
                 supplys.append(some_node)
             if isinstance(some_node, BaseOutput):
                 demands.append(some_node)
-            if isinstance(some_node, Storage):
+            if isinstance(some_node, VirtualStorage):
+                virtual_storages.append(some_node)
+            elif isinstance(some_node, Storage):
                 storages.append(some_node)
             elif isinstance(some_node, AggregatedNode):
                 if some_node.factors is not None:
@@ -285,6 +290,32 @@ cdef class CythonLPSolveSolver:
                 ind[len(cols_output)+n] = self.idx_col_routes+c
                 val[len(cols_output)+n] = -1
             add_constraintex(self.prob, len(cols_output)+len(cols_input), val, ind, EQ, 0.0)
+        
+        if len(virtual_storages):
+            self.idx_row_virtual_storages = get_Norig_rows(self.prob) + 1
+            ret = resize_lp(self.prob, get_Norig_rows(self.prob)+len(virtual_storages), get_Norig_columns(self.prob))
+        for col, storage in enumerate(virtual_storages):
+            # We need to handle the same route appearing twice here.
+            cols = {}
+            for n, route in enumerate(routes):
+                for some_node in route:
+                    try:
+                        i = storage.nodes.index(some_node)
+                    except ValueError:
+                        pass
+                    else:
+                        try:
+                            cols[n] += storage.factors[i]
+                        except KeyError:
+                            cols[n] = storage.factors[i]
+
+            ind = <int*>malloc((len(cols)) * sizeof(int))
+            val = <double*>malloc((len(cols)) * sizeof(double))
+            for n, (c, f) in enumerate(cols.items()):
+                ind[n] = self.idx_col_routes+c
+                val[n] = -f
+
+            add_constraintex(self.prob, len(cols), val, ind, EQ, 0.0)
 
         # aggregated node flow ratio constraints
         if len(aggregated):
@@ -357,6 +388,7 @@ cdef class CythonLPSolveSolver:
         self.supplys = supplys
         self.demands = demands
         self.storages = storages
+        self.virtual_storages = virtual_storages
         self.aggregated = aggregated
 
     cpdef object solve(self, model):
@@ -392,6 +424,7 @@ cdef class CythonLPSolveSolver:
         supplys = self.supplys
         demands = self.demands
         storages = self.storages
+        virtual_storages = self.virtual_storages
 
         # update route properties
         for col, route in enumerate(routes):
@@ -425,6 +458,16 @@ cdef class CythonLPSolveSolver:
             lb = -avail_volume/timestep.days
             ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
             set_row_bnds(self.prob, self.idx_row_storages+col, lb, ub)
+
+        # update virtual storage node constraint
+        for col, storage in enumerate(virtual_storages):
+            max_volume = storage.get_max_volume(timestep, scenario_index)
+            avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
+            # change in storage cannot be more than the current volume or
+            # result in maximum volume being exceeded
+            lb = -avail_volume/timestep.days
+            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
+            set_row_bnds(self.prob, self.idx_row_virtual_storages+col, lb, ub)
 
         #print_lp(self.prob)
         #set_presolve(self.prob, PRESOLVE_ROWS | PRESOLVE_COLS, get_presolveloops(self.prob))

@@ -417,7 +417,7 @@ cdef class CythonGLPKSolver:
             ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
             glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
-        # update storage node constraint
+        # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
             max_volume = storage.get_max_volume(timestep, scenario_index)
             avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
