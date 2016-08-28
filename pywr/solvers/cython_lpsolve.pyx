@@ -240,6 +240,9 @@ cdef class CythonLPSolveSolver:
 
             #set_rowex(self.prob, self.idx_row_supplys+col, len(cols)+1, val, ind)
             #set_row_bnds(self.prob, self.idx_row_supplys+col, 0.0, 0.0)
+            
+            free(ind)
+            free(val)
 
         # link supply and demand variables
         self.idx_row_demands = get_Norig_rows(self.prob)+1
@@ -258,6 +261,8 @@ cdef class CythonLPSolveSolver:
             ind[len(cols)] = self.idx_col_demands+col
             val[len(cols)] = -1
             ret = add_constraintex(self.prob, len(cols)+1, val, ind, EQ, 0.0)
+            free(ind)
+            free(val)
 
         for col, demand in enumerate(demands):
             # Add constraint for cross-domain routes
@@ -273,6 +278,8 @@ cdef class CythonLPSolveSolver:
                 val[len(col_vals)] = -1
                 add_constraintex(self.prob, len(col_vals)+1, val, ind, EQ, 0.0)
                 cross_domain_col += 1
+                free(ind)
+                free(val)
 
         # storage
         if len(storages):
@@ -290,6 +297,8 @@ cdef class CythonLPSolveSolver:
                 ind[len(cols_output)+n] = self.idx_col_routes+c
                 val[len(cols_output)+n] = -1
             add_constraintex(self.prob, len(cols_output)+len(cols_input), val, ind, EQ, 0.0)
+            free(ind)
+            free(val)
         
         if len(virtual_storages):
             self.idx_row_virtual_storages = get_Norig_rows(self.prob) + 1
@@ -316,6 +325,9 @@ cdef class CythonLPSolveSolver:
                 val[n] = -f
 
             add_constraintex(self.prob, len(cols), val, ind, EQ, 0.0)
+            
+            free(ind)
+            free(val)
 
         # aggregated node flow ratio constraints
         if len(aggregated):
@@ -350,6 +362,9 @@ cdef class CythonLPSolveSolver:
                     val[len(cols[0])+i] = -factors_norm[n+1]
 
                 add_constraintex(self.prob, length, val, ind, EQ, 0.0)
+                
+                free(ind)
+                free(val)
 
         # aggregated node min/max flow constraints
         if aggregated_min_max:
