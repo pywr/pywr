@@ -27,12 +27,9 @@ warnings.simplefilter(action = "ignore", category = UnicodeWarning)
 
 class Timestepper(object):
     def __init__(self, start="2015-01-01", end="2015-12-31", delta=1):
-        self.start = pandas.to_datetime(start)
-        self.end = pandas.to_datetime(end)
-        try:
-            self.delta = pandas.Timedelta(days=delta)
-        except TypeError:
-            self.delta = pandas.to_timedelta(delta)
+        self.start = start
+        self.end = end
+        self.delta = delta
         self._last_length = None
         self.reset()
 
@@ -78,6 +75,39 @@ class Timestepper(object):
 
         # Return this timestep
         return current
+
+    def start():
+        def fget(self):
+            return self._start
+        def fset(self, value):
+            if isinstance(value, pandas.Timestamp):
+                self._start = value
+            else:
+                self._start = pandas.to_datetime(value)
+        return locals()
+    start = property(**start())
+
+    def end():
+        def fget(self):
+            return self._end
+        def fset(self, value):
+            if isinstance(value, pandas.Timestamp):
+                self._end = value
+            else:
+                self._end = pandas.to_datetime(value)
+        return locals()
+    end = property(**end())
+
+    def delta():
+        def fget(self):
+            return self._delta
+        def fset(self, value):
+            try:
+                self._delta = pandas.Timedelta(days=value)
+            except TypeError:
+                self._delta = pandas.to_timedelta(value)
+        return locals()
+    delta = property(**delta())
 
     @property
     def current(self, ):
