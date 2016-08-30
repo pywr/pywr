@@ -1143,8 +1143,32 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
 
 
 class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
-    def __init__(self, model, name, nodes, **kwargs):
+    """A virtual storage unit
 
+    Parameters
+    ----------
+    model: pywr.core.Model
+    name: str
+        The name of the virtual node
+    nodes: list of nodes
+        List of inflow/outflow nodes that affect the storage volume
+    factors: list of floats
+        List of factors to multiply node flow by. Positive factors remove
+        water from the storage, negative factors remove it.
+    min_volume: float or parameter
+        The minimum volume the storage is allowed to reach.
+    max_volume: float or parameter
+        The maximum volume of the storage.
+    initial_volume: float
+        The initial storage volume.
+    cost: float or parameter
+        The cost of flow into/outfrom the storage.
+
+    Notes
+    -----
+    TODO: The cost property is not currently respected. See issue #242.
+    """
+    def __init__(self, model, name, nodes, **kwargs):
         min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         if min_volume is None:
             min_volume = 0.0
@@ -1173,8 +1197,27 @@ class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
         else:
             self.factors = factors
 
+    @classmethod
+    def load(cls, data, model):
+        del(data["type"])
+        nodes = []
+        for node_name in data.pop("nodes"):
+            nodes.append(model._get_node_from_ref(model, node_name))
+        node = cls(model, nodes=nodes, **data)
+        return node
 
 class AnnualVirtualStorage(VirtualStorage):
+    """A virtual storage which resets annually, useful for licences
+
+    See documentation for `pywr.core.VirtualStorage`.
+
+    Parameters
+    ----------
+    reset_day: int
+        The day of the month (0-31) to reset the volume to the initial value.
+    reset_month: int
+        The month of the year (0-12) to reset the volume to the initial value.
+    """
     def __init__(self, *args, **kwargs):
         self.reset_day = kwargs.pop('reset_day', 1)
         self.reset_month = kwargs.pop('reset_month', 1)
