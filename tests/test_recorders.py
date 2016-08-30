@@ -342,6 +342,19 @@ def test_mean_flow_recorder(solver):
     for value, expected_value in zip(rec_mean.data, expected):
         assert_allclose(value, expected_value)
 
+def test_mean_flow_recorder_days(solver):
+    model = Model(solver=solver)
+    model.timestepper.delta = 7
+
+    inpt = Input(model, "input")
+    otpt = Output(model, "output")
+    inpt.connect(otpt)
+
+    rec_mean = MeanFlowRecorder(model, node=inpt, days=31)
+
+    model.setup()
+    assert(rec_mean.timesteps == 4)
+
 def test_mean_flow_recorder_json(solver):
     model = load_model("mean_flow_recorder.json", solver=solver)
 
