@@ -420,6 +420,17 @@ def test_virtual_storage_duplicate_route(solver):
     assert_allclose(vs.volume, [0], atol=1e-7)
 
 
+def test_annual_virtual_storage(solver):
+    model = load_model('virtual_storage1.json', solver=solver)
+    model.run()
+    node = model.nodes["supply1"]
+    rec = node.recorders[0]
+    assert_allclose(rec.data[0], 10) # licence is not a constraint
+    assert_allclose(rec.data[19], 10)
+    assert_allclose(rec.data[20], 5) # licence is constraint
+    assert_allclose(rec.data[21], 0) # licence is exhausted
+    assert_allclose(rec.data[365], 10) # licence is refreshed
+
 def test_storage_spill_compensation(solver):
     """Test storage spill and compensation flows
 
@@ -463,12 +474,12 @@ def test_reservoir_circle(solver):
     """
     Issue #140. A model with a circular route, from a reservoir Input back
     around to it's own Output.
-    
+
                  Demand
                     ^
                     |
                 Reservoir <- Pumping
-                    |           ^ 
+                    |           ^
                     v           |
               Compensation      |
                     |           |
@@ -480,9 +491,9 @@ def test_reservoir_circle(solver):
     model = Model(solver=solver)
 
     catchment = Input(model, "catchment", max_flow=500, min_flow=500)
-    
+
     reservoir = Storage(model, "reservoir", max_volume=10000, initial_volume=5000)
-    
+
     demand = Output(model, "demand", max_flow=50, cost=-100)
     pumping_station = Link(model, "pumping station", max_flow=100, cost=-10)
     river1 = Link(model, "river1")
@@ -506,7 +517,7 @@ def test_reservoir_circle(solver):
 
     model.check()
     model.setup()
-    
+
     # not limited by mrf, pump capacity is constraint
     model.step()
     assert_allclose(catchment.flow, 500)
@@ -514,7 +525,7 @@ def test_reservoir_circle(solver):
     assert_allclose(compensation.flow, 0)
     assert_allclose(pumping_station.flow, 100)
     assert_allclose(demand.flow, 50)
-    
+
     # limited by mrf
     catchment.min_flow = catchment.max_flow = 100
     model.step()
@@ -522,7 +533,7 @@ def test_reservoir_circle(solver):
     assert_allclose(compensation.flow, 0)
     assert_allclose(pumping_station.flow, 50)
     assert_allclose(demand.flow, 50)
-    
+
     # reservoir can support mrf, but doesn't need to
     compensation.cost = 200
     model.step()
@@ -530,7 +541,7 @@ def test_reservoir_circle(solver):
     assert_allclose(compensation.flow, 0)
     assert_allclose(pumping_station.flow, 50)
     assert_allclose(demand.flow, 50)
-    
+
     # reservoir supporting mrf
     catchment.min_flow = catchment.max_flow = 0
     model.step()
