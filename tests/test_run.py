@@ -364,6 +364,62 @@ def test_new_storage(solver):
     assert_allclose(demand2.flow, [30], atol=1e-7)
 
 
+def test_virtual_storage(solver):
+    """ Test the VirtualStorage node """
+
+    model = pywr.core.Model(solver=solver)
+
+    inpt = Input(model, "Input", max_flow=20)
+    lnk = Link(model, "Link")
+    inpt.connect(lnk)
+    otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+    lnk.connect(otpt)
+
+    vs = pywr.core.VirtualStorage(model, "Licence", [lnk], initial_volume=10.0, max_volume=10.0)
+
+    model.setup()
+
+    assert_allclose(vs.volume, [10], atol=1e-7)
+
+    model.step()
+
+    assert_allclose(otpt.flow, [10], atol=1e-7)
+    assert_allclose(vs.volume, [0], atol=1e-7)
+
+    model.step()
+
+    assert_allclose(otpt.flow, [0], atol=1e-7)
+    assert_allclose(vs.volume, [0], atol=1e-7)
+
+
+def test_virtual_storage_duplicate_route(solver):
+    """ Test the VirtualStorage node """
+
+    model = pywr.core.Model(solver=solver)
+
+    inpt = Input(model, "Input", max_flow=20)
+    lnk = Link(model, "Link")
+    inpt.connect(lnk)
+    otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+    lnk.connect(otpt)
+
+    vs = pywr.core.VirtualStorage(model, "Licence", [lnk, otpt], factors=[0.5, 1.0], initial_volume=10.0, max_volume=10.0)
+
+    model.setup()
+
+    assert_allclose(vs.volume, [10], atol=1e-7)
+
+    model.step()
+
+    assert_allclose(otpt.flow, [10/1.5], atol=1e-7)
+    assert_allclose(vs.volume, [0], atol=1e-7)
+
+    model.step()
+
+    assert_allclose(otpt.flow, [0], atol=1e-7)
+    assert_allclose(vs.volume, [0], atol=1e-7)
+
+
 def test_storage_spill_compensation(solver):
     """Test storage spill and compensation flows
 

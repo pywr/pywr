@@ -417,7 +417,7 @@ class Model(object):
             timestep = int(timestepper_data['timestep'])
 
         if model is None:
-            model = Model(
+            model = cls(
                 solver=solver_name,
                 start=start,
                 end=end,
@@ -1106,6 +1106,59 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
+
+
+class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
+    def __init__(self, model, name, nodes, **kwargs):
+
+        min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        if min_volume is None:
+            min_volume = 0.0
+        max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
+        if 'volume' in kwargs:
+            # support older API where volume kwarg was the initial volume
+            initial_volume = kwargs.pop('volume')
+        else:
+            initial_volume = kwargs.pop('initial_volume', 0.0)
+        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+
+        position = kwargs.pop("position", {})
+        factors = kwargs.pop('factors', None)
+
+        super(VirtualStorage, self).__init__(model, name, **kwargs)
+
+        self.min_volume = min_volume
+        self.max_volume = max_volume
+        self.initial_volume = initial_volume
+        self.cost = cost
+        self.position = position
+        self.nodes = nodes
+
+        if factors is None:
+            self.factors = [1.0 for i in range(len(nodes))]
+        else:
+            self.factors = factors
+
+
+class AnnualVirtualStorage(VirtualStorage):
+    def __init__(self, *args, **kwargs):
+        self.reset_day = kwargs.pop('reset_day', 1)
+        self.reset_month = kwargs.pop('reset_month', 1)
+        self._last_reset_year = None
+
+        super(AnnualVirtualStorage, self).__init__(*args, **kwargs)
+
+    def before(self, ts):
+        super(AnnualVirtualStorage, self).before(ts)
+
+        # Reset the storage volume if necessary
+        if ts.datetime.year != self._last_reset_year:
+            # I.e. we're in a new year and ...
+            # ... we're at or past the reset month/day
+            if ts.datetime.month > self.reset_month or \
+                    (ts.datetime.month == self.reset_month and ts.datetime.day >= self.reset_day):
+                self._reset_storage_only()
+                self._last_reset_year = ts.datetime.year
 
 
 class PiecewiseLink(Node):
