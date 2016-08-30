@@ -49,6 +49,7 @@ cdef class MeanParameterRecorder(ParameterRecorder):
 
 cdef class MeanFlowRecorder(NodeRecorder):
     cdef int position
-    cdef int timesteps
+    cdef public int timesteps
+    cdef public int days
     cdef double[:, :] _memory
     cdef double[:, :] _data
