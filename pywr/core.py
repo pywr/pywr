@@ -393,7 +393,7 @@ class Model(object):
             # argument is a file-like object
             data = data.read()
             return cls.loads(data, model, path, solver)
-        
+
         # data is a dictionary, make a copy to avoid modify the input
         data = copy.deepcopy(data)
 
@@ -434,7 +434,6 @@ class Model(object):
         model._nodes_to_load = nodes_to_load
 
         # collect parameters to load
-        # don't need to load them here as they are pulled in as needed
         try:
             parameters_to_load = data["parameters"]
         except KeyError:
@@ -446,22 +445,27 @@ class Model(object):
         model._parameters_to_load = parameters_to_load
 
         # collect recorders to load
-        # the recorders are loaded immediately, as they may not be referenced
-        # anywhere else
         try:
             recorders_to_load = data["recorders"]
         except KeyError:
-            recorders_to_load = []
+            recorders_to_load = {}
         else:
             for key, value in recorders_to_load.items():
                 if isinstance(value, dict):
                     recorders_to_load[key]["name"] = key
-                load_recorder(model, recorders_to_load[key])
+        model._recorders_to_load = recorders_to_load
+
+        # load parameters and recorders
+        for name, rdata in model._recorders_to_load.items():
+            load_recorder(model, rdata)
+        for name, pdata in model._parameters_to_load.items():
+            load_parameter(model, pdata)
 
         # load the remaining nodes
         for node_name in list(nodes_to_load.keys()):
             node = cls._get_node_from_ref(model, node_name)
 
+        del(model._recorders_to_load)
         del(model._parameters_to_load)
         del(model._nodes_to_load)
 
