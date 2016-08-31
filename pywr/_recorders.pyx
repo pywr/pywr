@@ -119,6 +119,23 @@ cdef class ParameterRecorder(Recorder):
 
     def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+
+    @classmethod
+    def load(cls, model, data):
+        # when the parameter being recorder is defined inline (i.e. not in the
+        # parameters section, but within the node) we need to make sure the
+        # node has been loaded first
+        try:
+            node_name = data["node"]
+        except KeyError:
+            node = None
+        else:
+            del(data["node"])
+            node = model._get_node_from_ref(model, node_name)
+        from .parameters import load_parameter
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+
 recorder_registry.add(ParameterRecorder)
 
 
@@ -139,6 +156,13 @@ cdef class IndexParameterRecorder(Recorder):
 
     def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+
+    @classmethod
+    def load(cls, model, data):
+        from .parameters import load_parameter
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+
 recorder_registry.add(IndexParameterRecorder)
 
 
@@ -305,14 +329,14 @@ cdef class MeanParameterRecorder(ParameterRecorder):
     def __init__(self, model, Parameter param, int timesteps, *args, **kwargs):
         super(MeanParameterRecorder, self).__init__(model, param, *args, **kwargs)
         self.timesteps = timesteps
-    
+
     cpdef setup(self):
         cdef int ncomb = len(self._model.scenarios.combinations)
         cdef int nts = len(self._model.timestepper)
         self._data = np.zeros((nts, ncomb,), np.float64)
         self._memory = np.empty((nts, ncomb,), np.float64)
         self.position = 0
-    
+
     cpdef reset(self):
         self._data[...] = 0
         self.position = 0
@@ -322,15 +346,15 @@ cdef class MeanParameterRecorder(ParameterRecorder):
         cdef double[:] mean_value
         cdef ScenarioIndex scenario_index
         cdef Timestep timestep = self._model.timestepper.current
-        
+
         for i, scenario_index in enumerate(self._model.scenarios.combinations):
             self._memory[self.position, i] = self._param.value(timestep, scenario_index)
-        
+
         if timestep.index < self.timesteps:
             n = timestep.index + 1
         else:
             n = self.timesteps
-        
+
         self._data[<int>(timestep.index), :] = np.mean(self._memory[0:n, :], axis=0)
 
         self.position += 1
