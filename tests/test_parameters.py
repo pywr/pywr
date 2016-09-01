@@ -517,9 +517,16 @@ def test_parameter_df_json_load(model, tmpdir):
     p.setup(model)
 
 def test_simple_json_parameter_reference(solver):
+    # note that parameters in the "parameters" section cannot be literals
     model = load_model("parameter_reference.json")
-    assert(model.nodes["supply1"].max_flow == 125.0)
-    assert(model.nodes["demand1"].cost == -10)
+    max_flow = model.nodes["supply1"].max_flow
+    assert(isinstance(max_flow, ConstantParameter))
+    assert(max_flow.value(None, None) == 125.0)
+    cost = model.nodes["demand1"].cost
+    assert(isinstance(cost, ConstantParameter))
+    assert(cost.value(None, None) == -10.0)
+
+    assert(len(model.parameters) == 3) # only 3 parameters are named
 
 def test_with_a_better_name():
 

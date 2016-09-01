@@ -8,6 +8,7 @@ from pywr import _core
 from pywr.parameters import *
 from pywr._core import BaseInput, BaseLink, BaseOutput, \
     StorageInput, StorageOutput, Timestep, ScenarioIndex
+from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr._core import Node as BaseNode
 from pywr.recorders import load_recorder
 import os
@@ -488,8 +489,14 @@ class Model(object):
         # load parameters and recorders
         for name, rdata in model._recorders_to_load.items():
             load_recorder(model, rdata)
-        for name, pdata in model._parameters_to_load.items():
-            load_parameter(model, pdata)
+        while True:
+            try:
+                name, pdata = model._parameters_to_load.popitem()
+            except KeyError:
+                break
+            parameter = load_parameter(model, pdata, name)
+            if not isinstance(parameter, BaseParameter):
+                raise TypeError("Named parameters cannot be literal values. Use type \"constant\" instead.")
 
         # load the remaining nodes
         for node_name in list(nodes_to_load.keys()):
