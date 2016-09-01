@@ -59,7 +59,7 @@ def test_load_cache_both(simple_model):
     data = {
         "cached": "both",
         "type": "constant",
-        "values": 15.0
+        "value": 15.0
     }
 
     inpt = model.nodes["input"]

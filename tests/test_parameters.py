@@ -252,7 +252,7 @@ class TestAggregatedParameter:
             "parameters": [
                 {
                     "type": "constant",
-                    "values": 0.8
+                    "value": 0.8
                 },
                 {
                     "type": "monthlyprofile",
