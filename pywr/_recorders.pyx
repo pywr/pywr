@@ -119,6 +119,23 @@ cdef class ParameterRecorder(Recorder):
 
     def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+
+    @classmethod
+    def load(cls, model, data):
+        # when the parameter being recorder is defined inline (i.e. not in the
+        # parameters section, but within the node) we need to make sure the
+        # node has been loaded first
+        try:
+            node_name = data["node"]
+        except KeyError:
+            node = None
+        else:
+            del(data["node"])
+            node = model._get_node_from_ref(model, node_name)
+        from .parameters import load_parameter
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+
 recorder_registry.add(ParameterRecorder)
 
 
@@ -139,6 +156,13 @@ cdef class IndexParameterRecorder(Recorder):
 
     def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+
+    @classmethod
+    def load(cls, model, data):
+        from .parameters import load_parameter
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+
 recorder_registry.add(IndexParameterRecorder)
 
 
