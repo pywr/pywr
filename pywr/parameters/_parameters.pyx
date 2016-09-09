@@ -773,9 +773,8 @@ cdef class RecorderThresholdParameter(IndexParameter):
 
 parameter_registry.add(RecorderThresholdParameter)
 
-def load_parameter(model, data):
+def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""
-    parameter_name = None
     if isinstance(data, basestring):
         # parameter is a reference
         try:
@@ -788,7 +787,7 @@ def load_parameter(model, data):
                 # the parameter requested hasn't been loaded yet - do it now
                 name = data
                 try:
-                    data = model._parameters_to_load[name]
+                    data = model._parameters_to_load.pop(name)
                 except KeyError:
                     raise KeyError("Unknown parameter: '{}'".format(data))
                 parameter = load_parameter(model, data)
