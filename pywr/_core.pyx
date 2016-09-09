@@ -48,11 +48,24 @@ cdef class Scenario:
 cdef class ScenarioCollection:
     def __init__(self, ):
         self._scenarios = []
-        self.combinations = ScenarioCombinations(self)
+        self.combinations = None
 
     property scenarios:
         def __get__(self):
             return self._scenarios
+
+    def setup(self, ):
+        """ Create the list of ScenarioIndex objects based on the current Scenarios. """
+        cdef Scenario sc
+        cdef int i
+        cdef int[:] indices
+        if len(self._scenarios) == 0:
+            combinations = [ScenarioIndex(0, np.array([0], dtype=np.int32)), ]
+        else:
+            combinations = []
+            for i, indices in enumerate(product([sc._size for sc in self._scenarios])):
+                combinations.append(ScenarioIndex(i, indices))
+        self.combinations = combinations
 
     cpdef int get_scenario_index(self, Scenario sc) except? -1:
         """Return the index of Scenario in this controller."""
@@ -273,7 +286,7 @@ cdef class AbstractNode:
             self._flow[i] += value[i]
 
     cpdef after(self, Timestep ts):
-        pass
+        self._prev_flow[:] = self._flow[:]
 
     cpdef check(self,):
         pass
@@ -459,7 +472,7 @@ cdef class Node(AbstractNode):
     cpdef after(self, Timestep ts):
         """Called at the end of the timestep"""
         AbstractNode.after(self, ts)
-        self._prev_flow[:] = self._flow[:]
+
         # Complete any parameter calculations
         if self._cost_param is not None:
             self._cost_param.after(ts)
@@ -501,7 +514,7 @@ cdef class AggregatedNode(AbstractNode):
             self.model.dirty = True
 
     cpdef after(self, Timestep ts):
-        AbstractStorage.after(self, ts)
+        AbstractNode.after(self, ts)
         cdef int i
         cdef Node n
 
@@ -736,9 +749,6 @@ cdef class Storage(AbstractStorage):
     cpdef reset(self):
         """Called at the beginning of a run"""
         AbstractStorage.reset(self)
-        cdef int i
-        cdef double mxv = self._max_volume
-        cdef ScenarioIndex si
 
         # Parameters reset first
         if self._cost_param is not None:
@@ -747,6 +757,13 @@ cdef class Storage(AbstractStorage):
             self._max_volume_param.reset()
         if self._min_volume_param is not None:
             self._min_volume_param.reset()
+
+        self._reset_storage_only()
+
+    cpdef _reset_storage_only(self):
+        cdef int i
+        cdef double mxv = self._max_volume
+        cdef ScenarioIndex si
 
         for i, si in enumerate(self.model.scenarios.combinations):
             self._volume[i] = self._initial_volume
@@ -857,3 +874,34 @@ cdef class AggregatedStorage(AbstractStorage):
         nodes = [model._get_node_from_ref(model, node_name) for node_name in data["storage_nodes"]]
         agg = cls(model, name, nodes)
         return agg
+
+
+cdef class VirtualStorage(Storage):
+    def __cinit__(self, ):
+        self.virtual = True
+
+    property nodes:
+        def __get__(self):
+            return self._nodes
+
+        def __set__(self, value):
+            self._nodes = list(value)
+            self.model.dirty = True
+
+    property factors:
+        def __get__(self):
+            return np.array(self._factors)
+
+        def __set__(self, value):
+            self._factors = np.array(value, dtype=np.float64)
+
+    cpdef after(self, Timestep ts):
+        cdef int i
+        cdef ScenarioIndex si
+        cdef AbstractNode n
+
+        for i, si in enumerate(self.model.scenarios.combinations):
+            self._flow[i] = 0.0
+            for n, f in zip(self._nodes, self._factors):
+                self._flow[i] -= f*n._flow[i]
+        Storage.after(self, ts)

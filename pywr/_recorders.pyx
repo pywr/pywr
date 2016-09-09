@@ -263,6 +263,23 @@ cdef class ParameterRecorder(Recorder):
 
     def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+
+    @classmethod
+    def load(cls, model, data):
+        # when the parameter being recorder is defined inline (i.e. not in the
+        # parameters section, but within the node) we need to make sure the
+        # node has been loaded first
+        try:
+            node_name = data["node"]
+        except KeyError:
+            node = None
+        else:
+            del(data["node"])
+            node = model._get_node_from_ref(model, node_name)
+        from .parameters import load_parameter
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+
 recorder_registry.add(ParameterRecorder)
 
 
@@ -283,6 +300,13 @@ cdef class IndexParameterRecorder(Recorder):
 
     def __str__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.parameter, self.name)
+
+    @classmethod
+    def load(cls, model, data):
+        from .parameters import load_parameter
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+
 recorder_registry.add(IndexParameterRecorder)
 
 
@@ -449,14 +473,14 @@ cdef class MeanParameterRecorder(ParameterRecorder):
     def __init__(self, model, Parameter param, int timesteps, *args, **kwargs):
         super(MeanParameterRecorder, self).__init__(model, param, *args, **kwargs)
         self.timesteps = timesteps
-    
+
     cpdef setup(self):
         cdef int ncomb = len(self._model.scenarios.combinations)
         cdef int nts = len(self._model.timestepper)
         self._data = np.zeros((nts, ncomb,), np.float64)
         self._memory = np.empty((nts, ncomb,), np.float64)
         self.position = 0
-    
+
     cpdef reset(self):
         self._data[...] = 0
         self.position = 0
@@ -466,15 +490,15 @@ cdef class MeanParameterRecorder(ParameterRecorder):
         cdef double[:] mean_value
         cdef ScenarioIndex scenario_index
         cdef Timestep timestep = self._model.timestepper.current
-        
+
         for i, scenario_index in enumerate(self._model.scenarios.combinations):
             self._memory[self.position, i] = self._param.value(timestep, scenario_index)
-        
+
         if timestep.index < self.timesteps:
             n = timestep.index + 1
         else:
             n = self.timesteps
-        
+
         self._data[<int>(timestep.index), :] = np.mean(self._memory[0:n, :], axis=0)
 
         self.position += 1
@@ -511,10 +535,19 @@ cdef class MeanFlowRecorder(NodeRecorder):
     name : str (optional)
         The name of the recorder
     """
-    def __init__(self, model, node, timesteps, name=None, **kwargs):
+    def __init__(self, model, node, timesteps=None, days=None, name=None, **kwargs):
         super(MeanFlowRecorder, self).__init__(model, node, name=name, **kwargs)
         self._model = model
-        self.timesteps = timesteps
+        if not timesteps and not days:
+            raise ValueError("Either `timesteps` or `days` must be specified.")
+        if timesteps:
+            self.timesteps = int(timesteps)
+        else:
+            self.timesteps = 0
+        if days:
+            self.days = int(days)
+        else:
+            self.days = 0
         self._data = None
 
     cpdef setup(self):
@@ -522,6 +555,10 @@ cdef class MeanFlowRecorder(NodeRecorder):
         self._memory = np.zeros([len(self._model.scenarios.combinations), self.timesteps])
         self.position = 0
         self._data = np.empty([len(self._model.timestepper), len(self._model.scenarios.combinations)])
+        if self.days:
+            self.timesteps = self.days // self._model.timestepper.delta.days
+        if self.timesteps == 0:
+            raise ValueError("Timesteps property of MeanFlowRecorder is less than 1.")
 
     cpdef int save(self) except -1:
         cdef double mean_flow
@@ -550,8 +587,15 @@ cdef class MeanFlowRecorder(NodeRecorder):
     def load(cls, model, data):
         name = data.get("name")
         node = model._get_node_from_ref(model, data["node"])
-        timesteps = int(data["timesteps"])
-        return cls(model, node, timesteps, name=name)
+        if "timesteps" in data:
+            timesteps = int(data["timesteps"])
+        else:
+            timesteps = None
+        if "days" in data:
+            days = int(data["days"])
+        else:
+            days = None
+        return cls(model, node, timesteps=timesteps, days=days, name=name)
 
 recorder_registry.add(MeanFlowRecorder)
 

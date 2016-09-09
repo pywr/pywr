@@ -7,7 +7,7 @@ cdef class Scenario:
 
 cdef class ScenarioCollection:
     cdef list _scenarios
-    cdef public ScenarioCombinations combinations
+    cdef public list combinations
     cpdef int get_scenario_index(self, Scenario sc) except? -1
     cpdef add_scenario(self, Scenario sc)
     cpdef int ravel_indices(self, int[:] scenario_indices) except? -1
@@ -88,6 +88,7 @@ cdef class Storage(AbstractStorage):
     cdef Parameter _min_volume_param
     cdef Parameter _max_volume_param
     cdef Parameter _level_param
+    cpdef _reset_storage_only(self)
     cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cpdef double get_min_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cpdef double get_max_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1
@@ -95,3 +96,7 @@ cdef class Storage(AbstractStorage):
 
 cdef class AggregatedStorage(AbstractStorage):
     cdef list _storage_nodes
+
+cdef class VirtualStorage(Storage):
+    cdef list _nodes
+    cdef double[:] _factors

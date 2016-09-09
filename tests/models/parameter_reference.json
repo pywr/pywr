@@ -12,7 +12,20 @@
         {
             "name": "supply1",
             "type": "Input",
-            "max_flow": "supply_max_flow"
+            "max_flow": "supply_max_flow",
+            "cost": {
+                "type": "constant",
+                "values": 0.0
+            }
+        },
+        {
+            "name": "link1",
+            "type": "link",
+            "max_flow": {
+                "name": "link_max_flow",
+                "type": "constant",
+                "values": 9999
+            }
         },
         {
             "name": "demand1",
@@ -22,10 +35,17 @@
         }
     ],
     "parameters": {
-        "supply_max_flow": 125.0,
-        "demand_cost": -10
+        "supply_max_flow": {
+            "type": "constant",
+            "values": 125.0
+        },
+        "demand_cost": {
+            "type": "constant",
+            "values": -10
+        }
     },
     "edges": [
-        ["supply1", "demand1"]
+        ["supply1", "link1"],
+        ["link1", "demand1"]
     ]
 }

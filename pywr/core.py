@@ -8,6 +8,7 @@ from pywr import _core
 from pywr.parameters import *
 from pywr._core import BaseInput, BaseLink, BaseOutput, \
     StorageInput, StorageOutput, Timestep, ScenarioIndex
+from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr._core import Node as BaseNode
 from pywr.recorders import load_recorder
 import os
@@ -27,12 +28,9 @@ warnings.simplefilter(action = "ignore", category = UnicodeWarning)
 
 class Timestepper(object):
     def __init__(self, start="2015-01-01", end="2015-12-31", delta=1):
-        self.start = pandas.to_datetime(start)
-        self.end = pandas.to_datetime(end)
-        try:
-            self.delta = pandas.Timedelta(days=delta)
-        except TypeError:
-            self.delta = pandas.to_timedelta(delta)
+        self.start = start
+        self.end = end
+        self.delta = delta
         self._last_length = None
         self.reset()
 
@@ -78,6 +76,39 @@ class Timestepper(object):
 
         # Return this timestep
         return current
+
+    def start():
+        def fget(self):
+            return self._start
+        def fset(self, value):
+            if isinstance(value, pandas.Timestamp):
+                self._start = value
+            else:
+                self._start = pandas.to_datetime(value)
+        return locals()
+    start = property(**start())
+
+    def end():
+        def fget(self):
+            return self._end
+        def fset(self, value):
+            if isinstance(value, pandas.Timestamp):
+                self._end = value
+            else:
+                self._end = pandas.to_datetime(value)
+        return locals()
+    end = property(**end())
+
+    def delta():
+        def fget(self):
+            return self._delta
+        def fset(self, value):
+            try:
+                self._delta = pandas.Timedelta(days=value)
+            except TypeError:
+                self._delta = pandas.to_timedelta(value)
+        return locals()
+    delta = property(**delta())
 
     @property
     def current(self, ):
@@ -276,7 +307,6 @@ class Model(object):
             solver = solver_registry[0]
         self.solver = solver()
 
-        self.group = {}
         self.parameters = NamedIterator()
         self.recorders = NamedIterator()
         self.scenarios = ScenarioCollection()
@@ -394,7 +424,7 @@ class Model(object):
             # argument is a file-like object
             data = data.read()
             return cls.loads(data, model, path, solver)
-        
+
         # data is a dictionary, make a copy to avoid modify the input
         data = copy.deepcopy(data)
 
@@ -418,7 +448,7 @@ class Model(object):
             timestep = int(timestepper_data['timestep'])
 
         if model is None:
-            model = Model(
+            model = cls(
                 solver=solver_name,
                 start=start,
                 end=end,
@@ -435,7 +465,6 @@ class Model(object):
         model._nodes_to_load = nodes_to_load
 
         # collect parameters to load
-        # don't need to load them here as they are pulled in as needed
         try:
             parameters_to_load = data["parameters"]
         except KeyError:
@@ -447,22 +476,33 @@ class Model(object):
         model._parameters_to_load = parameters_to_load
 
         # collect recorders to load
-        # the recorders are loaded immediately, as they may not be referenced
-        # anywhere else
         try:
             recorders_to_load = data["recorders"]
         except KeyError:
-            recorders_to_load = []
+            recorders_to_load = {}
         else:
             for key, value in recorders_to_load.items():
                 if isinstance(value, dict):
                     recorders_to_load[key]["name"] = key
-                load_recorder(model, recorders_to_load[key])
+        model._recorders_to_load = recorders_to_load
+
+        # load parameters and recorders
+        for name, rdata in model._recorders_to_load.items():
+            load_recorder(model, rdata)
+        while True:
+            try:
+                name, pdata = model._parameters_to_load.popitem()
+            except KeyError:
+                break
+            parameter = load_parameter(model, pdata, name)
+            if not isinstance(parameter, BaseParameter):
+                raise TypeError("Named parameters cannot be literal values. Use type \"constant\" instead.")
 
         # load the remaining nodes
         for node_name in list(nodes_to_load.keys()):
             node = cls._get_node_from_ref(model, node_name)
 
+        del(model._recorders_to_load)
         del(model._parameters_to_load)
         del(model._nodes_to_load)
 
@@ -645,6 +685,7 @@ class Model(object):
     def setup(self, ):
         """Setup the model for the first time or if it has changed since
         last run."""
+        self.scenarios.setup()
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
             node.setup(self)
@@ -1108,6 +1149,102 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
 
+class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
+    """A virtual storage unit
+
+    Parameters
+    ----------
+    model: pywr.core.Model
+    name: str
+        The name of the virtual node
+    nodes: list of nodes
+        List of inflow/outflow nodes that affect the storage volume
+    factors: list of floats
+        List of factors to multiply node flow by. Positive factors remove
+        water from the storage, negative factors remove it.
+    min_volume: float or parameter
+        The minimum volume the storage is allowed to reach.
+    max_volume: float or parameter
+        The maximum volume of the storage.
+    initial_volume: float
+        The initial storage volume.
+    cost: float or parameter
+        The cost of flow into/outfrom the storage.
+
+    Notes
+    -----
+    TODO: The cost property is not currently respected. See issue #242.
+    """
+    def __init__(self, model, name, nodes, **kwargs):
+        min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        if min_volume is None:
+            min_volume = 0.0
+        max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
+        if 'volume' in kwargs:
+            # support older API where volume kwarg was the initial volume
+            initial_volume = kwargs.pop('volume')
+        else:
+            initial_volume = kwargs.pop('initial_volume', 0.0)
+        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+
+        position = kwargs.pop("position", {})
+        factors = kwargs.pop('factors', None)
+
+        super(VirtualStorage, self).__init__(model, name, **kwargs)
+
+        self.min_volume = min_volume
+        self.max_volume = max_volume
+        self.initial_volume = initial_volume
+        self.cost = cost
+        self.position = position
+        self.nodes = nodes
+
+        if factors is None:
+            self.factors = [1.0 for i in range(len(nodes))]
+        else:
+            self.factors = factors
+
+    @classmethod
+    def load(cls, data, model):
+        del(data["type"])
+        nodes = []
+        for node_name in data.pop("nodes"):
+            nodes.append(model._get_node_from_ref(model, node_name))
+        node = cls(model, nodes=nodes, **data)
+        return node
+
+class AnnualVirtualStorage(VirtualStorage):
+    """A virtual storage which resets annually, useful for licences
+
+    See documentation for `pywr.core.VirtualStorage`.
+
+    Parameters
+    ----------
+    reset_day: int
+        The day of the month (0-31) to reset the volume to the initial value.
+    reset_month: int
+        The month of the year (0-12) to reset the volume to the initial value.
+    """
+    def __init__(self, *args, **kwargs):
+        self.reset_day = kwargs.pop('reset_day', 1)
+        self.reset_month = kwargs.pop('reset_month', 1)
+        self._last_reset_year = None
+
+        super(AnnualVirtualStorage, self).__init__(*args, **kwargs)
+
+    def before(self, ts):
+        super(AnnualVirtualStorage, self).before(ts)
+
+        # Reset the storage volume if necessary
+        if ts.datetime.year != self._last_reset_year:
+            # I.e. we're in a new year and ...
+            # ... we're at or past the reset month/day
+            if ts.datetime.month > self.reset_month or \
+                    (ts.datetime.month == self.reset_month and ts.datetime.day >= self.reset_day):
+                self._reset_storage_only()
+                self._last_reset_year = ts.datetime.year
+
+
 class PiecewiseLink(Node):
     """ An extension of Node that represents a non-linear Link with a piece wise cost function.
 
@@ -1304,36 +1441,6 @@ class MultiSplitLink(PiecewiseLink):
                 yield self._extra_inputs[i-1]
         else:
             yield self.output
-
-
-class Group(object):
-    """A group of nodes
-
-    This class is useful for applying a license constraint (or set of
-    constraints) to a group of Supply nodes.
-    """
-    def __init__(self, model, name, nodes=None):
-        self.model = model
-        if nodes is None:
-            self.nodes = set()
-        else:
-            self.nodes = set(nodes)
-        self.__name = name
-        self.name = name
-        self.licenses = None
-
-    @property
-    def name(self):
-        return self.__name
-
-    @name.setter
-    def name(self, name):
-        try:
-            del(self.model.group[self.__name])
-        except KeyError:
-            pass
-        self.__name = name
-        self.model.group[name] = self
 
 
 class AggregatedStorage(with_metaclass(NodeMeta, Drawable, _core.AggregatedStorage)):

@@ -180,7 +180,6 @@ def test_control_curve(solver):
     from pywr.parameters.control_curves import ControlCurveParameter
     # We know what we're doing with the control_curve Parameter so unset its parent before overriding
     # the cost parameter.
-    control_curve.parent = None
     reservoir.cost = ControlCurveParameter(reservoir, control_curve, [-20.0, -20.0])
     model.step()
     assert(reservoir.volume == 10)

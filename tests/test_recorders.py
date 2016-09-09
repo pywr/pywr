@@ -128,6 +128,15 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
     assert_allclose(df.values, np.array([[0, 1, 2, 2, 2]]).T, atol=1e-7)
 
 
+def test_parameter_recorder_json(solver):
+    model = load_model("parameter_recorder.json", solver=solver)
+    rec_demand = model.recorders["demand_max"]
+    rec_supply = model.recorders["supply_max"]
+    model.run()
+    assert_allclose(rec_demand.data, 10)
+    assert_allclose(rec_supply.data, 15)
+
+
 def test_parameter_mean_recorder(simple_linear_model):
     model = simple_linear_model
     # using leap year simplifies test
@@ -341,6 +350,19 @@ def test_mean_flow_recorder(solver):
 
     for value, expected_value in zip(rec_mean.data, expected):
         assert_allclose(value, expected_value)
+
+def test_mean_flow_recorder_days(solver):
+    model = Model(solver=solver)
+    model.timestepper.delta = 7
+
+    inpt = Input(model, "input")
+    otpt = Output(model, "output")
+    inpt.connect(otpt)
+
+    rec_mean = MeanFlowRecorder(model, node=inpt, days=31)
+
+    model.setup()
+    assert(rec_mean.timesteps == 4)
 
 def test_mean_flow_recorder_json(solver):
     model = load_model("mean_flow_recorder.json", solver=solver)

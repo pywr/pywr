@@ -364,6 +364,73 @@ def test_new_storage(solver):
     assert_allclose(demand2.flow, [30], atol=1e-7)
 
 
+def test_virtual_storage(solver):
+    """ Test the VirtualStorage node """
+
+    model = pywr.core.Model(solver=solver)
+
+    inpt = Input(model, "Input", max_flow=20)
+    lnk = Link(model, "Link")
+    inpt.connect(lnk)
+    otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+    lnk.connect(otpt)
+
+    vs = pywr.core.VirtualStorage(model, "Licence", [lnk], initial_volume=10.0, max_volume=10.0)
+
+    model.setup()
+
+    assert_allclose(vs.volume, [10], atol=1e-7)
+
+    model.step()
+
+    assert_allclose(otpt.flow, [10], atol=1e-7)
+    assert_allclose(vs.volume, [0], atol=1e-7)
+
+    model.step()
+
+    assert_allclose(otpt.flow, [0], atol=1e-7)
+    assert_allclose(vs.volume, [0], atol=1e-7)
+
+
+def test_virtual_storage_duplicate_route(solver):
+    """ Test the VirtualStorage node """
+
+    model = pywr.core.Model(solver=solver)
+
+    inpt = Input(model, "Input", max_flow=20)
+    lnk = Link(model, "Link")
+    inpt.connect(lnk)
+    otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+    lnk.connect(otpt)
+
+    vs = pywr.core.VirtualStorage(model, "Licence", [lnk, otpt], factors=[0.5, 1.0], initial_volume=10.0, max_volume=10.0)
+
+    model.setup()
+
+    assert_allclose(vs.volume, [10], atol=1e-7)
+
+    model.step()
+
+    assert_allclose(otpt.flow, [10/1.5], atol=1e-7)
+    assert_allclose(vs.volume, [0], atol=1e-7)
+
+    model.step()
+
+    assert_allclose(otpt.flow, [0], atol=1e-7)
+    assert_allclose(vs.volume, [0], atol=1e-7)
+
+
+def test_annual_virtual_storage(solver):
+    model = load_model('virtual_storage1.json', solver=solver)
+    model.run()
+    node = model.nodes["supply1"]
+    rec = node.recorders[0]
+    assert_allclose(rec.data[0], 10) # licence is not a constraint
+    assert_allclose(rec.data[19], 10)
+    assert_allclose(rec.data[20], 5) # licence is constraint
+    assert_allclose(rec.data[21], 0) # licence is exhausted
+    assert_allclose(rec.data[365], 10) # licence is refreshed
+
 def test_storage_spill_compensation(solver):
     """Test storage spill and compensation flows
 
@@ -407,12 +474,12 @@ def test_reservoir_circle(solver):
     """
     Issue #140. A model with a circular route, from a reservoir Input back
     around to it's own Output.
-    
+
                  Demand
                     ^
                     |
                 Reservoir <- Pumping
-                    |           ^ 
+                    |           ^
                     v           |
               Compensation      |
                     |           |
@@ -424,9 +491,9 @@ def test_reservoir_circle(solver):
     model = Model(solver=solver)
 
     catchment = Input(model, "catchment", max_flow=500, min_flow=500)
-    
+
     reservoir = Storage(model, "reservoir", max_volume=10000, initial_volume=5000)
-    
+
     demand = Output(model, "demand", max_flow=50, cost=-100)
     pumping_station = Link(model, "pumping station", max_flow=100, cost=-10)
     river1 = Link(model, "river1")
@@ -450,7 +517,7 @@ def test_reservoir_circle(solver):
 
     model.check()
     model.setup()
-    
+
     # not limited by mrf, pump capacity is constraint
     model.step()
     assert_allclose(catchment.flow, 500)
@@ -458,7 +525,7 @@ def test_reservoir_circle(solver):
     assert_allclose(compensation.flow, 0)
     assert_allclose(pumping_station.flow, 100)
     assert_allclose(demand.flow, 50)
-    
+
     # limited by mrf
     catchment.min_flow = catchment.max_flow = 100
     model.step()
@@ -466,7 +533,7 @@ def test_reservoir_circle(solver):
     assert_allclose(compensation.flow, 0)
     assert_allclose(pumping_station.flow, 50)
     assert_allclose(demand.flow, 50)
-    
+
     # reservoir can support mrf, but doesn't need to
     compensation.cost = 200
     model.step()
@@ -474,7 +541,7 @@ def test_reservoir_circle(solver):
     assert_allclose(compensation.flow, 0)
     assert_allclose(pumping_station.flow, 50)
     assert_allclose(demand.flow, 50)
-    
+
     # reservoir supporting mrf
     catchment.min_flow = catchment.max_flow = 0
     model.step()

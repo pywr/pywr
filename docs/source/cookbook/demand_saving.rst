@@ -86,7 +86,7 @@ To understand how the index works, the following equivalent Python code may help
     month = 5
     demand_saving_level = 1
     demand_factors = [[1.0, ...], [0.95, ...], [0.8, ...]]
-    demand_saving_factor = demand_factors[demand_saving_level][month]
+    demand_saving_factor = demand_factors[demand_saving_level][month-1]
 
 Finally the demand components can be combined as in the equation at the beginning using an ``AggregatedParameter``. Each timestep the value of each of the components is calculated and the values are multiplied to give the final demand value.
 
