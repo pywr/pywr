@@ -20,7 +20,7 @@ import inspyred
 from pywr.core import Model, Input, Output, Link, Storage
 from pywr.parameters import ArrayIndexedParameter, MonthlyProfileParameter, AnnualHarmonicSeriesParameter
 from pywr.parameters.control_curves import ControlCurveParameter
-from pywr.recorders import TotalDeficitNodeRecorder, TotalFlowRecorder, AggregatedRecorder
+from pywr.recorders import TotalDeficitNodeRecorder, TotalFlowNodeRecorder, AggregatedRecorder
 from pywr.optimisation.moea import InspyredOptimisationModel
 
 
@@ -53,7 +53,7 @@ def create_model(harmonic=True):
         control_curve = MonthlyProfileParameter(np.array([0.0]*12), lower_bounds=0.0, upper_bounds=1.0)
 
     control_curve.is_variable = True
-    controller = ControlCurveParameter(control_curve, 0.0, 10.0, storage_node=reservoir1)
+    controller = ControlCurveParameter(reservoir1, control_curve, [0.0, 10.0])
     transfer = Link(model, 'transfer', max_flow=controller, cost=-500)
 
     demand1 = Output(model, 'demand1', max_flow=45.0, cost=-101)
@@ -86,9 +86,9 @@ def create_model(harmonic=True):
 
     r1 = TotalDeficitNodeRecorder(model, demand1)
     r2 = TotalDeficitNodeRecorder(model, demand2)
-    r3 = AggregatedRecorder(model, [r1, r2])
+    r3 = AggregatedRecorder(model, [r1, r2], agg_func="mean")
     r3.is_objective = True
-    r4 = TotalFlowRecorder(model, transfer)
+    r4 = TotalFlowNodeRecorder(model, transfer)
     r4.is_objective = True
 
     return model

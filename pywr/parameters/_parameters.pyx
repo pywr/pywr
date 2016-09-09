@@ -425,7 +425,6 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
     """
     def __init__(self, mean, amplitudes, phases, *args, **kwargs):
-        super(AnnualHarmonicSeriesParameter, self).__init__(*args, **kwargs)
         if len(amplitudes) != len(phases):
             raise ValueError("The number  of amplitudes and phases must be the same.")
         n = len(amplitudes)
@@ -440,6 +439,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         self._amplitude_upper_bounds = np.ones(n)*kwargs.pop('amplitude_upper_bounds', np.inf)
         self._phase_lower_bounds = np.ones(n)*kwargs.pop('phase_lower_bounds', 0.0)
         self._phase_upper_bounds = np.ones(n)*kwargs.pop('phase_upper_bounds', np.pi*2)
+        super(AnnualHarmonicSeriesParameter, self).__init__(*args, **kwargs)
         self._value_cache = 0.0
         self._ts_index_cache = -1
 

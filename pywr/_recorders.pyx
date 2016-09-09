@@ -1,20 +1,48 @@
 import numpy as np
 cimport numpy as np
-
 from pywr._core cimport Timestep
-
 import pandas as pd
+from past.builtins import basestring
 
 recorder_registry = set()
 
+cdef enum AggFuncs:
+    SUM = 0
+    MIN = 1
+    MAX = 2
+    MEAN = 3
+    PRODUCT = 4
+    CUSTOM = 5
+    ANY = 6
+    ALL = 7
+_agg_func_lookup = {
+    "sum": AggFuncs.SUM,
+    "min": AggFuncs.MIN,
+    "max": AggFuncs.MAX,
+    "mean": AggFuncs.MEAN,
+    "product": AggFuncs.PRODUCT,
+    "custom": AggFuncs.CUSTOM,
+    "any": AggFuncs.ANY,
+    "all": AggFuncs.ALL,
+}
+
 cdef class Recorder:
-    def __init__(self, model, name=None, comment=None):
+    def __init__(self, model, name=None, agg_func="mean", comment=None):
         self._model = model
         if name is None:
             name = self.__class__.__name__.lower()
         self.name = name
         self.comment = comment
         model.recorders.append(self)
+
+        if isinstance(agg_func, basestring):
+            agg_func = _agg_func_lookup[agg_func.lower()]
+        elif callable(agg_func):
+            self.agg_func = agg_func
+            agg_func = AggFuncs.CUSTOM
+        else:
+            raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
+        self._agg_func = agg_func
 
     property name:
         def __get__(self):
@@ -53,8 +81,24 @@ cdef class Recorder:
         def __set__(self, value):
             self._is_objective = value
 
-    cpdef value(self):
-        raise NotImplementedError("Implement value() in subclasses to return an aggregated values.")
+    cpdef double aggregated_value(self) except? -1:
+        cdef double[:] values = self.values()
+
+        if self._agg_func == AggFuncs.PRODUCT:
+            return np.product(values)
+        elif self._agg_func == AggFuncs.SUM:
+            return np.sum(values)
+        elif self._agg_func == AggFuncs.MAX:
+            return np.max(values)
+        elif self._agg_func == AggFuncs.MIN:
+            return np.min(values)
+        elif self._agg_func == AggFuncs.MEAN:
+            return np.mean(values)
+        else:
+            return self.agg_func(np.array(values))
+
+    cpdef double[:] values(self):
+        raise NotImplementedError()
 
     @classmethod
     def load(cls, model, data):
@@ -65,6 +109,106 @@ cdef class Recorder:
         else:
             data["node"] = model._get_node_from_ref(model, node_name)
         return cls(model, **data)
+
+cdef class AggregatedRecorder(Recorder):
+    """
+    This Recorder is used to aggregate across multiple other Recorder objects.
+
+    The class provides a method to produce a complex aggregated recorder by taking
+     the results of other records. The value() method first collects unaggregated values
+     from the provided recorders. These are then aggregated on a per scenario basis before
+     aggregation across the scenarios to a single value (assuming aggregate=True).
+
+    By default the same `agg_func` function is used for both steps, but an optional
+     `recorder_agg_func` can undertake a different aggregation across scenarios. For
+      example summing recorders per scenario, and then taking a mean of the sum totals.
+
+    This method allows `AggregatedRecorder` to be used as a recorder for in other
+     `AggregatedRecorder` instances.
+    """
+    def __init__(self, model, recorders, **kwargs):
+        """
+
+        :param model: pywr.core.Model instance
+        :param recorders: iterable of `Recorder` objects to aggregate
+        :keyword agg_func: function used for aggregating across the recorders.
+            Numpy style functions that support an axis argument are supported.
+        :keyword recorder_agg_func: optional different function for aggregating
+            across scenarios.
+        """
+        # Opitional different method for aggregating across self.recorders scenarios
+        agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func'))
+
+        if isinstance(agg_func, basestring):
+            agg_func = _agg_func_lookup[agg_func.lower()]
+        elif callable(agg_func):
+            self.recorder_agg_func = agg_func
+            agg_func = AggFuncs.CUSTOM
+        else:
+            raise ValueError("Unrecognised recorder aggregation function: \"{}\".".format(agg_func))
+        self._recorder_agg_func = agg_func
+
+        super(AggregatedRecorder, self).__init__(model, **kwargs)
+        self.recorders = list(recorders)
+
+    cpdef double[:] values(self):
+        cdef Recorder recorder
+        cdef double[:] value, value2
+        assert(len(self.recorders))
+        cdef int n = len(self.model.scenarios.combinations)
+        cdef int i
+
+        if self._recorder_agg_func == AggFuncs.PRODUCT:
+            value = np.ones(n, np.float64)
+            for recorder in self.recorders:
+                value2 = recorder.values()
+                for i in range(n):
+                    value[i] *= value2[i]
+        elif self._recorder_agg_func == AggFuncs.SUM:
+            value = np.zeros(n, np.float64)
+            for recorder in self.recorders:
+                value2 = recorder.values()
+                for i in range(n):
+                    value[i] += value2[i]
+        elif self._recorder_agg_func == AggFuncs.MAX:
+            value = np.empty(n)
+            value[:] = np.NINF
+            for recorder in self.recorders:
+                value2 = recorder.values()
+                for i in range(n):
+                    if value2[i] > value[i]:
+                        value[i] = value2[i]
+        elif self._recorder_agg_func == AggFuncs.MIN:
+            value = np.empty(n)
+            value[:] = np.INF
+            for recorder in self.recorders:
+                value2 = recorder.values()
+                for i in range(n):
+                    if value2[i] < value[i]:
+                        value[i] = value2[i]
+        elif self._recorder_agg_func == AggFuncs.MEAN:
+            value = np.zeros(n, np.float64)
+            for recorder in self.recorders:
+                value2 = recorder.values()
+                for i in range(n):
+                    value[i] += value2[i]
+            for i in range(n):
+                value[i] /= len(self.recorders)
+        else:
+            value = self.recorder_agg_func([recorder.values() for recorder in self.recorders], axis=0)
+        return value
+
+    @classmethod
+    def load(cls, model, data):
+        recorder_names = data["recorders"]
+        recorders = [model.recorders[name] for name in recorder_names]
+        print(recorders)
+        del(data["recorders"])
+        rec = cls(model, recorders, **data)
+        print(rec.name)
+
+recorder_registry.add(AggregatedRecorder)
+
 
 cdef class NodeRecorder(Recorder):
     def __init__(self, model, AbstractNode node, name=None, **kwargs):
@@ -420,7 +564,7 @@ cdef class MeanFlowRecorder(NodeRecorder):
         cdef double mean_flow
         cdef Timestep timestep
         # save today's flow
-        self._memory[:, self.position] = self.node.flow
+        self._memory[:, self.position] = self._node.flow
         # calculate the mean flow
         timestep = self._model.timestepper.current
         if timestep.index < self.timesteps:
@@ -454,6 +598,111 @@ cdef class MeanFlowRecorder(NodeRecorder):
         return cls(model, node, timesteps=timesteps, days=days, name=name)
 
 recorder_registry.add(MeanFlowRecorder)
+
+cdef class BaseConstantNodeRecorder(NodeRecorder):
+    """
+    Base class for NodeRecorder classes with a single value for each scenario combination
+    """
+
+    cpdef setup(self):
+        self._values = np.zeros(len(self.model.scenarios.combinations))
+
+    cpdef reset(self):
+        self._values[...] = 0.0
+
+    cpdef int save(self) except -1:
+        raise NotImplementedError()
+
+    cpdef double[:] values(self):
+        return self._values
+
+
+cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
+    """
+    Recorder to total the difference between modelled flow and max_flow for a Node
+    """
+    cpdef int save(self) except -1:
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef AbstractNode node = self._node
+        for scenario_index in self.model.scenarios.combinations:
+            max_flow = node.get_max_flow(ts, scenario_index)
+            self._values[scenario_index._global_id] += max_flow - node._flow[scenario_index._global_id]
+
+        return 0
+recorder_registry.add(TotalDeficitNodeRecorder)
+
+
+cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
+    """
+    Recorder to total the flow for a Node.
+
+    A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+    """
+    def __init__(self, *args, **kwargs):
+        self.factor = kwargs.pop('factor', 1.0)
+        super(TotalFlowNodeRecorder, self).__init__(*args, **kwargs)
+
+    cpdef int save(self) except -1:
+        cdef ScenarioIndex scenario_index
+        cdef int i
+        cdef int days = self.model.timestepper.delta.days
+        for scenario_index in self.model.scenarios.combinations:
+            i = scenario_index._global_id
+            self._values[i] += self._node._flow[i]*self.factor*days
+        return 0
+recorder_registry.add(TotalFlowNodeRecorder)
+
+
+cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
+    """
+    Recorder to total the difference between modelled flow and max_flow for a Node
+    """
+    cpdef int save(self) except -1:
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef AbstractNode node = self._node
+        for scenario_index in self.model.scenarios.combinations:
+            max_flow = node.get_max_flow(ts, scenario_index)
+            if abs(node._flow[scenario_index._global_id] - max_flow) > 1e-6:
+                self._values[scenario_index._global_id] += 1.0
+
+    cpdef finish(self):
+        cdef int i
+        cdef int nt = self.model.timestepper.current.index
+        for i in range(self._values.shape[0]):
+            self._values[i] /= nt
+
+cdef class BaseConstantStorageRecorder(StorageRecorder):
+    """
+    Base class for StorageRecorder classes with a single value for each scenario combination
+    """
+
+    cpdef setup(self):
+        self._values = np.zeros(len(self.model.scenarios.combinations))
+
+    cpdef reset(self):
+        self._values[...] = 0.0
+
+    cpdef int save(self) except -1:
+        raise NotImplementedError()
+
+    cpdef double[:] values(self):
+        return self._values
+
+cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
+
+    cpdef reset(self):
+        self._values[...] = np.inf
+
+    cpdef int save(self) except -1:
+        cdef int i
+        for i in range(self._values.shape[0]):
+            self._values[i] = np.min([self._node._volume[i], self._values[i]])
+        return 0
+
 
 def load_recorder(model, data):
     recorder = None
