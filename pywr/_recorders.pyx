@@ -7,19 +7,23 @@ from past.builtins import basestring
 recorder_registry = set()
 
 cdef enum AggFuncs:
-    sum = 0
-    min = 1
-    max = 2
-    mean = 3
-    product = 4
-    custom = 5
+    SUM = 0
+    MIN = 1
+    MAX = 2
+    MEAN = 3
+    PRODUCT = 4
+    CUSTOM = 5
+    ANY = 6
+    ALL = 7
 _agg_func_lookup = {
-    "sum": AggFuncs.sum,
-    "min": AggFuncs.min,
-    "max": AggFuncs.max,
-    "mean": AggFuncs.mean,
-    "product": AggFuncs.product,
-    "custom": AggFuncs.custom,
+    "sum": AggFuncs.SUM,
+    "min": AggFuncs.MIN,
+    "max": AggFuncs.MAX,
+    "mean": AggFuncs.MEAN,
+    "product": AggFuncs.PRODUCT,
+    "custom": AggFuncs.CUSTOM,
+    "any": AggFuncs.ANY,
+    "all": AggFuncs.ALL,
 }
 
 cdef class Recorder:
@@ -35,7 +39,7 @@ cdef class Recorder:
             agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.agg_func = agg_func
-            agg_func = AggFuncs.custom
+            agg_func = AggFuncs.CUSTOM
         else:
             raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
         self._agg_func = agg_func
@@ -80,15 +84,15 @@ cdef class Recorder:
     cpdef double aggregated_value(self) except? -1:
         cdef double[:] values = self.values()
 
-        if self._agg_func == AggFuncs.product:
+        if self._agg_func == AggFuncs.PRODUCT:
             return np.product(values)
-        elif self._agg_func == AggFuncs.sum:
+        elif self._agg_func == AggFuncs.SUM:
             return np.sum(values)
-        elif self._agg_func == AggFuncs.max:
+        elif self._agg_func == AggFuncs.MAX:
             return np.max(values)
-        elif self._agg_func == AggFuncs.min:
+        elif self._agg_func == AggFuncs.MIN:
             return np.min(values)
-        elif self._agg_func == AggFuncs.mean:
+        elif self._agg_func == AggFuncs.MEAN:
             return np.mean(values)
         else:
             return self.agg_func(np.array(values))
@@ -139,7 +143,7 @@ cdef class AggregatedRecorder(Recorder):
             agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.recorder_agg_func = agg_func
-            agg_func = AggFuncs.custom
+            agg_func = AggFuncs.CUSTOM
         else:
             raise ValueError("Unrecognised recorder aggregation function: \"{}\".".format(agg_func))
         self._recorder_agg_func = agg_func
@@ -154,19 +158,19 @@ cdef class AggregatedRecorder(Recorder):
         cdef int n = len(self.model.scenarios.combinations)
         cdef int i
 
-        if self._recorder_agg_func == AggFuncs.product:
+        if self._recorder_agg_func == AggFuncs.PRODUCT:
             value = np.ones(n, np.float64)
             for recorder in self.recorders:
                 value2 = recorder.values()
                 for i in range(n):
                     value[i] *= value2[i]
-        elif self._recorder_agg_func == AggFuncs.sum:
+        elif self._recorder_agg_func == AggFuncs.SUM:
             value = np.zeros(n, np.float64)
             for recorder in self.recorders:
                 value2 = recorder.values()
                 for i in range(n):
                     value[i] += value2[i]
-        elif self._recorder_agg_func == AggFuncs.max:
+        elif self._recorder_agg_func == AggFuncs.MAX:
             value = np.empty(n)
             value[:] = np.NINF
             for recorder in self.recorders:
@@ -174,7 +178,7 @@ cdef class AggregatedRecorder(Recorder):
                 for i in range(n):
                     if value2[i] > value[i]:
                         value[i] = value2[i]
-        elif self._recorder_agg_func == AggFuncs.min:
+        elif self._recorder_agg_func == AggFuncs.MIN:
             value = np.empty(n)
             value[:] = np.INF
             for recorder in self.recorders:
@@ -182,7 +186,7 @@ cdef class AggregatedRecorder(Recorder):
                 for i in range(n):
                     if value2[i] < value[i]:
                         value[i] = value2[i]
-        elif self._recorder_agg_func == AggFuncs.mean:
+        elif self._recorder_agg_func == AggFuncs.MEAN:
             value = np.zeros(n, np.float64)
             for recorder in self.recorders:
                 value2 = recorder.values()
