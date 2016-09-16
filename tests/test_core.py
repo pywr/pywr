@@ -393,3 +393,9 @@ def test_json_include(solver):
     supply1 = model.nodes["supply1"]
     supply2 = model.nodes["supply2"]
     assert(isinstance(supply2.max_flow, ConstantParameter))
+
+def test_json_min_version(solver):
+    """Test warning is raised if document minimum version is more than we have"""
+    filename = os.path.join(TEST_FOLDER, "models", "version1.json")
+    with pytest.warns(RuntimeWarning):
+        model = Model.load(filename)

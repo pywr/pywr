@@ -19,7 +19,7 @@ before_install:
     - conda update --yes conda
 
     # dependencies
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib dateutil pandas statsmodels networkx xlrd cython six ipython pytables future
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib dateutil pandas statsmodels networkx xlrd cython six ipython pytables future packaging
     # pytest from conda is too old, see https://github.com/pytest-dev/pytest/issues/995
     - pip install pytest==2.8.5
 
