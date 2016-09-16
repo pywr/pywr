@@ -1,40 +1,30 @@
 language: python
 
-python:
-    - "2.7"
-    - "3.4"
+sudo: false
 
 env:
-    - "PYWR_SOLVER=glpk"
-    - "PYWR_SOLVER=lpsolve"
-
-before_install:
-    - sudo apt-get update -qq
-
-    # miniconda
-    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-    - chmod +x miniconda.sh
-    - ./miniconda.sh -b
-    - export PATH=/home/travis/miniconda3/bin:$PATH
-    - conda update --yes conda
-
-    # dependencies
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib dateutil pandas statsmodels networkx xlrd cython six ipython pytables future packaging
-    # pytest from conda is too old, see https://github.com/pytest-dev/pytest/issues/995
-    - pip install pytest==2.8.5
-
-    # system libraries
-    - sudo apt-get install -qq libgmp3-dev libglpk-dev glpk liblpsolve55-dev lp-solve
-
-    # remove lpsolve static library, which causes issues
-    - sudo rm /usr/lib/liblpsolve55.a
-    - sudo ln -s /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
+    matrix:
+        - CONDA_NPY=111  CONDA_PY=27
+        - CONDA_NPY=111  CONDA_PY=34
 
 install:
-    - python setup.py install --with-${PYWR_SOLVER}
+    - |
+      MINICONDA_URL="https://repo.continuum.io/miniconda"
+      MINICONDA_FILE="Miniconda3-latest-Linux-x86_64.sh"
+      wget ${MINICONDA_URL}/${MINICONDA_FILE}
+      bash ${MINICONDA_FILE} -b
+      export PATH=/home/travis/miniconda3/bin:$PATH
+      conda update --yes conda
+
+      conda config --add channels snorfalorpagus
+      conda config --add channels conda-forge
+
+      conda config --set show_channel_urls true
+      conda install --yes --quiet conda-forge-build-setup
+      source run_conda_forge_build_setup
 
 script:
-    - py.test tests -v -s --solver ${PYWR_SOLVER}
+    - conda build conda-recipe
 
 notifications:
     email: false
