@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Cost 1",
-        "description": "A very simple example of supply costs."
+        "description": "A very simple example of supply costs.",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

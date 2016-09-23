@@ -434,7 +434,7 @@ class Model(object):
         try:
             minimum_version = data["metadata"]["minimum_version"]
         except KeyError:
-            pass
+            warnings.warn("Missing \"minimum_version\" item in metadata.", ModelDocumentWarning)
         else:
             minimum_version = parse_version(minimum_version)
             pywr_version = parse_version(pywr.__version__)
@@ -1500,6 +1500,9 @@ class AggregatedNode(with_metaclass(NodeMeta, Drawable, _core.AggregatedNode)):
     def __init__(self, model, name, nodes, **kwargs):
         super(AggregatedNode, self).__init__(model, name, **kwargs)
         self.nodes = nodes
+
+class ModelDocumentWarning(Warning):
+    pass
 
 class ModelStructureError(Exception):
     pass

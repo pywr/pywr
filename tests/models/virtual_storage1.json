@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Annual virtual storage",
-        "description": "Annual abstraction licence implemented as an annual virtual storage"
+        "description": "Annual abstraction licence implemented as an annual virtual storage",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

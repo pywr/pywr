@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Timeseries example",
-        "description": "A model with a timeseries"
+        "description": "A model with a timeseries",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

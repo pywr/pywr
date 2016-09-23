@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "River with MRF",
-        "description": "Example of a minimum residual flow constraint"
+        "description": "Example of a minimum residual flow constraint",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

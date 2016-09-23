@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Parameter recorder",
-        "description": "JSON example of parameter recorder"
+        "description": "JSON example of parameter recorder",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

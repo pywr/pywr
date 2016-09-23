@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "River Discharge 1",
-        "description": "A model with a discharge upstream from an abstraction."
+        "description": "A model with a discharge upstream from an abstraction.",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

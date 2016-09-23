@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Piecewise link",
-        "description": "Example of a piecewise link"
+        "description": "Example of a piecewise link",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

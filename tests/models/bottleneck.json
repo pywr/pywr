@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Bottleneck",
-        "description": "A network with a bottleneck."
+        "description": "A network with a bottleneck.",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

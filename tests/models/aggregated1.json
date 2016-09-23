@@ -1,6 +1,7 @@
 {
     "metadata": {
-        "title": "Test of aggregated node constraints"
+        "title": "Test of aggregated node constraints",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2016-01-01",

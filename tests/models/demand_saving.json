@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Demand saving",
-        "description": "A model with demand based on a reservoir."
+        "description": "A model with demand based on a reservoir.",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-15",

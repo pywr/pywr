@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Reservoir 2",
-        "description": "Model with a reservoir, fed by a river abstraction"
+        "description": "Model with a reservoir, fed by a river abstraction",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",
