@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Parameter reference",
-        "description": "Most basic example of parameter references"
+        "description": "Most basic example of parameter references",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

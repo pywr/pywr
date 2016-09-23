@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Reservoir with cc",
-        "description": "A model with a reservoir and control curve"
+        "description": "A model with a reservoir and control curve",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

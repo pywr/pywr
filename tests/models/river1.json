@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "River 1",
-        "description": "A model with a river abstraction."
+        "description": "A model with a river abstraction.",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

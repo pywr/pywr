@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "Mean flow recorder",
-        "description": "A test of recorders in JSON"
+        "description": "A test of recorders in JSON",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

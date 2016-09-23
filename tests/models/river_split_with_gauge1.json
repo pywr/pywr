@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "RiverSplitWithGauge",
-        "description": "Example of an abstraction with an MRF of form y=mx+c"
+        "description": "Example of an abstraction with an MRF of form y=mx+c",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

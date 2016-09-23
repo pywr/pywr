@@ -28,6 +28,7 @@ requirements:
     - xlrd
     - scipy
     - future
+    - packaging
 
 test:
   requires:

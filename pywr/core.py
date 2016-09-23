@@ -3,6 +3,7 @@
 
 from __future__ import print_function
 
+import pywr
 from pywr import _core
 # Cython objects availble in the core namespace
 from pywr.parameters import *
@@ -19,6 +20,7 @@ import datetime
 import json
 from six import with_metaclass
 import copy
+from packaging.version import parse as parse_version
 
 import warnings
 
@@ -427,6 +429,17 @@ class Model(object):
 
         # data is a dictionary, make a copy to avoid modify the input
         data = copy.deepcopy(data)
+
+        # check minimum version
+        try:
+            minimum_version = data["metadata"]["minimum_version"]
+        except KeyError:
+            warnings.warn("Missing \"minimum_version\" item in metadata.", ModelDocumentWarning)
+        else:
+            minimum_version = parse_version(minimum_version)
+            pywr_version = parse_version(pywr.__version__)
+            if pywr_version < minimum_version:
+                warnings.warn("Document requires version {} or newer, but only have {}.".format(minimum_version, pywr_version), RuntimeWarning)
 
         cls._load_includes(data, path)
 
@@ -1487,6 +1500,9 @@ class AggregatedNode(with_metaclass(NodeMeta, Drawable, _core.AggregatedNode)):
     def __init__(self, model, name, nodes, **kwargs):
         super(AggregatedNode, self).__init__(model, name, **kwargs)
         self.nodes = nodes
+
+class ModelDocumentWarning(Warning):
+    pass
 
 class ModelStructureError(Exception):
     pass

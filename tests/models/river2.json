@@ -1,7 +1,8 @@
 {
     "metadata": {
         "title": "River 1",
-        "description": "A more complex river system."
+        "description": "A more complex river system.",
+        "minimum_version": "0.1"
     },
     "timestepper": {
         "start": "2015-01-01",

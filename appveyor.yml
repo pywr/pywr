@@ -17,11 +17,15 @@ environment:
   matrix:
     - TARGET_ARCH: x64
       CONDA_PY: 27
-      CONDA_NPY: 110
+      CONDA_NPY: 111
 
     - TARGET_ARCH: x64
       CONDA_PY: 34
-      CONDA_NPY: 110
+      CONDA_NPY: 111
+
+    - TARGET_ARCH: x64
+      CONDA_PY: 35
+      CONDA_NPY: 111
 
 # We always use a 64-bit machine, but can build x86 distributions
 # with the TARGET_ARCH variable.
@@ -38,6 +42,7 @@ install:
 
     - cmd: conda config --set show_channel_urls true
     - cmd: conda install -c pelson/channel/development --yes --quiet obvious-ci
+    - cmd: conda config --add channels conda-forge
     - cmd: conda config --add channels snorfalorpagus
     - cmd: conda info
     - cmd: conda install -n root --quiet --yes conda-build anaconda-client jinja2 setuptools
