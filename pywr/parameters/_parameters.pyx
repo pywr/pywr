@@ -156,7 +156,10 @@ cdef class ConstantParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        value = data.pop("value")
+        # accept both "value" and "values"
+        value = data.pop("values", None)
+        if value is None:
+            value = data.pop("value")
         parameter = cls(value, **data)
         return parameter
 
