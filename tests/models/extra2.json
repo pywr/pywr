@@ -12,7 +12,7 @@
     "parameters": {
         "supply2_max_flow": {
             "type": "constant",
-            "values": 50
+            "value": 50
         }
     }
 }

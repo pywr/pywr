@@ -42,7 +42,7 @@
     "parameters": {
         "demand_baseline": {
             "type": "constant",
-            "values": 50
+            "value": 50
         },
         "demand_profile": {
             "comment": "Monthly demand profile as a factor around the mean demand",
@@ -51,11 +51,11 @@
         },
         "level1": {
             "type": "constant",
-            "values": 0.8
+            "value": 0.8
         },
         "level2": {
             "type": "constant",
-            "values": 0.5
+            "value": 0.5
         },
         "demand_saving_level": {
             "comment": "The demand saving level",
@@ -73,7 +73,7 @@
             "params": [
                 {
                     "type": "constant",
-                    "values": 1.0
+                    "value": 1.0
                 },
                 {
                     "type": "monthlyprofile",

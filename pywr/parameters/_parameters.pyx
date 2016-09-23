@@ -153,6 +153,16 @@ cdef class ConstantParameter(Parameter):
 
     cpdef double[:] upper_bounds(self):
         return self._upper_bounds
+
+    @classmethod
+    def load(cls, model, data):
+        # accept both "value" and "values"
+        value = data.pop("values", None)
+        if value is None:
+            value = data.pop("value")
+        parameter = cls(value, **data)
+        return parameter
+
 parameter_registry.add(ConstantParameter)
 
 

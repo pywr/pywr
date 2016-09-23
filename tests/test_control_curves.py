@@ -92,7 +92,7 @@ class TestPiecewiseControlCurveParameter:
             "control_curves": [
                 {
                     "type": "constant",
-                    "values": 0.8
+                    "value": 0.8
                 },
                 {
                     "type": "monthlyprofile",
@@ -102,15 +102,15 @@ class TestPiecewiseControlCurveParameter:
             "parameters": [
                 {
                     "type": "constant",
-                    "values": 1.0,
+                    "value": 1.0,
                 },
                 {
                     "type": "constant",
-                    "values": 0.7
+                    "value": 0.7
                 },
                 {
                     "type": "constant",
-                    "values": 0.4
+                    "value": 0.4
                 }
             ]
         }
