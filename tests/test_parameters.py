@@ -584,3 +584,13 @@ def test_threshold_parameter(model):
         rec.data[...] = threshold + 5  # data is above threshold
         assert_allclose(param.value(timestep, si), values[value_gt])
         assert(param.index(timestep, si) == value_gt)
+
+
+def test_constant_from_df(solver):
+    """
+    Test that a dataframe can be used to provide data to ConstantParameter (single values).
+    """
+    model = load_model('simple_df.json', solver=solver)
+
+    assert isinstance(model.nodes['demand1'].max_flow, ConstantParameter)
+    assert isinstance(model.nodes['demand1'].cost, ConstantParameter)
