@@ -1,2 +1,4 @@
 node,max_flow,cost
 demand1,10,-10
+demand2,20,-20
+supply1,15,0

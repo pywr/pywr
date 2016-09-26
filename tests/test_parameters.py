@@ -592,5 +592,12 @@ def test_constant_from_df(solver):
     """
     model = load_model('simple_df.json', solver=solver)
 
+
     assert isinstance(model.nodes['demand1'].max_flow, ConstantParameter)
     assert isinstance(model.nodes['demand1'].cost, ConstantParameter)
+
+    ts = model.timestepper.next()
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+    np.testing.assert_allclose(model.nodes['demand1'].max_flow.value(ts, si), 10.0)
+    np.testing.assert_allclose(model.nodes['demand1'].cost.value(ts, si), -10.0)
