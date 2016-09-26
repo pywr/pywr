@@ -1,0 +1,45 @@
+{
+    "metadata": {
+        "title": "Multiindex 1",
+        "description": "An example of loading a multi-index parameter.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 15
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": {
+                "type": "constant",
+                "url": "multiindex_data.csv",
+                "column": "max_flow",
+                "index": [0, "demand1"],
+                "index_col": ["level", "node"]
+            },
+            "cost": {
+                "type": "constant",
+                "url": "multiindex_data.csv",
+                "column": "cost",
+                "index": [1, "demand1"],
+                "index_col": ["level", "node"]
+            }
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ]
+}

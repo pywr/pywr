@@ -601,3 +601,20 @@ def test_constant_from_df(solver):
 
     np.testing.assert_allclose(model.nodes['demand1'].max_flow.value(ts, si), 10.0)
     np.testing.assert_allclose(model.nodes['demand1'].cost.value(ts, si), -10.0)
+
+
+def test_constant_from_multiindex_df(solver):
+    """
+    Test that a dataframe can be used to provide data to ConstantParameter (single values).
+    """
+    model = load_model('multiindex_df.json', solver=solver)
+
+
+    assert isinstance(model.nodes['demand1'].max_flow, ConstantParameter)
+    assert isinstance(model.nodes['demand1'].cost, ConstantParameter)
+
+    ts = model.timestepper.next()
+    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+    np.testing.assert_allclose(model.nodes['demand1'].max_flow.value(ts, si), 10.0)
+    np.testing.assert_allclose(model.nodes['demand1'].cost.value(ts, si), -100.0)

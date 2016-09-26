@@ -893,7 +893,14 @@ def load_dataframe(model, data):
             raise NotImplementedError('Unknown file extension: "{}"'.format(url))
 
     column = data.pop("column", None)
+    if isinstance(column, list):
+        # Cast multiindex to a tuple to ensure .loc works correctly
+        column = tuple(column)
+
     index = data.pop("index", None)
+    if isinstance(index, list):
+        # Cast multiindex to a tuple to ensure .loc works correctly
+        index = tuple(index)
 
     if filetype == "csv":
         if hasattr(data, "index_col"):
