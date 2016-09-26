@@ -43,7 +43,8 @@ def nx_to_json(model):
     for n, name in enumerate(nodes):
         node = {"name": name}
         classes = []
-        cls = model.node[name].__class__
+        node_obj = model.node[name]
+        cls = node_obj.__class__
         classes.append(cls)
         while True:
             for base in cls.__bases__:
@@ -55,6 +56,10 @@ def nx_to_json(model):
                 cls = classes[-1]
         classes = classes[::-1]
         node["clss"] = [cls.__name__.lower() for cls in classes]
+        try:
+            node["position"] = node_obj.position["schematic"]
+        except KeyError:
+            pass
         json_nodes.append(node)
 
     graph = {
