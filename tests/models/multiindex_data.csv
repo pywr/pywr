@@ -1,0 +1,5 @@
+level,node,max_flow,cost
+0,demand1,10,-10
+0,demand2,20,-20
+1,demand1,100,-100
+1,demand2,200,-200
