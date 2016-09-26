@@ -34,10 +34,29 @@ var svg = div.append("svg")
     .attr("width", width)
     .attr("height", height);
 
+var posX = d3.scale.linear()
+    .range([0, width])
+    .domain([-100, 100]);
+
+var posY = d3.scale.linear()
+    .range([0, height])
+    .domain([100, -100]); // map-style, +ve is up
+
+// set initial node positions
+for (var i = 0; i < graph.nodes.length; i++) {
+    node = graph.nodes[i];
+    if (node.position != undefined) {
+        node.x = posX(node.position[0]);
+        node.y = posY(node.position[1]);
+        node.fixed = true;
+    } else {
+        node.fixed = false;
+    }
+}
+
 force
   .nodes(graph.nodes)
-  .links(graph.links)
-  .start();
+  .links(graph.links);
 
 // define end-arrow svg marker
 svg.append("svg:defs").append("svg:marker")
@@ -73,6 +92,17 @@ if(browser == "ie") {
 
 var node_size = 5;
 
+function dblclick(d) {
+  d3.select(this).classed("fixed", d.fixed = false);
+}
+
+function dragstart(d) {
+  d3.select(this).classed("fixed", d.fixed = true);
+}
+
+var drag = force.drag()
+    .on("dragstart", dragstart);
+
 var node = svg.selectAll(".node")
   .data(graph.nodes)
 .enter().append("circle")
@@ -85,7 +115,8 @@ var node = svg.selectAll(".node")
       };
       return clss;
   })
-  .call(force.drag);
+  .on("dblclick", dblclick)
+  .call(drag);
 
 node.append("title")
   .text(function(d) { return d.name; });
@@ -120,3 +151,5 @@ function tick() {
     });
 }
 force.on("tick", tick);
+
+force.start();
