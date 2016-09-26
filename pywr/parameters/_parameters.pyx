@@ -156,10 +156,14 @@ cdef class ConstantParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        # accept both "value" and "values"
-        value = data.pop("values", None)
-        if value is None:
-            value = data.pop("value")
+        # accept a dataframe
+        if 'url' in data:
+            value = load_dataframe(model, data)
+        else:
+            # accept both "value" and "values"
+            value = data.pop("values", None)
+            if value is None:
+                value = data.pop("value")
         parameter = cls(value, **data)
         return parameter
 
@@ -889,6 +893,7 @@ def load_dataframe(model, data):
             raise NotImplementedError('Unknown file extension: "{}"'.format(url))
 
     column = data.pop("column", None)
+    index = data.pop("index", None)
 
     if filetype == "csv":
         if hasattr(data, "index_col"):
@@ -901,7 +906,7 @@ def load_dataframe(model, data):
     elif filetype == "hdf":
         df = pandas.read_hdf(url, columns=[column], **data)
 
-    if df.index.dtype.name == "object":
+    if df.index.dtype.name == "object" and data.get("parse_dates", False):
         # catch dates that haven't been parsed yet
         raise TypeError("Invalid DataFrame index type \"{}\" in \"{}\".".format(df.index.dtype.name, url))
 
@@ -916,6 +921,12 @@ def load_dataframe(model, data):
             df = df[column]
         except KeyError:
             raise KeyError('Column "{}" not found in dataset "{}"'.format(column, url))
+
+    if index is not None:
+        try:
+            df = df.loc[index]
+        except KeyError:
+            raise KeyError('Index "{}" not found in dataset "{}"'.format(column, url))
 
     try:
         freq = df.index.inferred_freq
