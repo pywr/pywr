@@ -72,7 +72,7 @@ cdef class BaseControlCurveParameter(Parameter):
         return node
 
 
-parameter_registry.add(BaseControlCurveParameter)
+BaseControlCurveParameter.register()
 
 
 cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
@@ -174,7 +174,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         parameter = cls(storage_node, control_curves, values)
         return parameter
 
-parameter_registry.add(ControlCurveInterpolatedParameter)
+ControlCurveInterpolatedParameter.register()
 
 cdef class ControlCurveIndexParameter(IndexParameter):
     """Multiple control curve holder which returns an index not a value
@@ -238,4 +238,4 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         storage_node = model._get_node_from_ref(model, data["storage_node"])
         control_curves = [load_parameter(model, data) for data in data["control_curves"]]
         return cls(storage_node, control_curves)
-parameter_registry.add(ControlCurveIndexParameter)
+ControlCurveIndexParameter.register()
