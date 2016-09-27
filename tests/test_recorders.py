@@ -361,7 +361,7 @@ def test_mean_flow_recorder_days(solver):
 
     rec_mean = MeanFlowRecorder(model, node=inpt, days=31)
 
-    model.setup()
+    model.run()
     assert(rec_mean.timesteps == 4)
 
 def test_mean_flow_recorder_json(solver):
