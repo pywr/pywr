@@ -552,13 +552,13 @@ cdef class MeanFlowRecorder(NodeRecorder):
 
     cpdef setup(self):
         super(MeanFlowRecorder, self).setup()
-        self._memory = np.zeros([len(self._model.scenarios.combinations), self.timesteps])
         self.position = 0
         self._data = np.empty([len(self._model.timestepper), len(self._model.scenarios.combinations)])
         if self.days:
             self.timesteps = self.days // self._model.timestepper.delta.days
         if self.timesteps == 0:
             raise ValueError("Timesteps property of MeanFlowRecorder is less than 1.")
+        self._memory = np.zeros([len(self._model.scenarios.combinations), self.timesteps])
 
     cpdef int save(self) except -1:
         cdef double mean_flow
