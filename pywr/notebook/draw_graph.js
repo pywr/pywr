@@ -5,6 +5,9 @@ var ua = window.navigator.userAgent;
 var browser;
 if ((ua.indexOf("MSIE") != -1) || (ua.indexOf("Trident") != -1)) {
     browser = "ie";
+    var p = d3.selectAll(element).append("p");
+    p.html("Warning: Internet Explorer doesn't support directional arrows on the graph.");
+    p.style("color", "#d00");
 } else {
     browser = "something better than ie";
 }
