@@ -35,13 +35,6 @@ class Catchment(RiverDomainMixin, Input):
         super(Catchment, self).__init__(*args, **kwargs)
         self.flow = flow
 
-
-    def check(self):
-        super(Catchment, self).check()
-        successors = self.model.graph.successors(self)
-        if not len(successors) == 1:
-            raise ValueError('{} has invalid number of successors ({})'.format(self, len(successors)))
-
     def get_flow(self, timestep):
         """ flow is ensured that both min_flow and max_flow are the same. """
         return self.get_min_flow(timestep)
