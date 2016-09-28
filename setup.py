@@ -15,10 +15,17 @@ from Cython.Build import cythonize
 import numpy as np
 import sys
 import os
+from packaging.version import Version
+
+# get version string from __init__.py
+with open(os.path.join(os.path.dirname(__file__), "pywr", "__init__.py")) as f:
+    for line in f:
+        if line.startswith("__version__"):
+            version = Version(line.split("=")[1].strip().strip("\"'"))
 
 setup_kwargs = {
     'name': 'pywr',
-    'version': '0.1',
+    'version': str(version),
     'description': 'Python Water Resource model',
     'author': 'Joshua Arnott',
     'author_email': 'josh@snorfalorpagus.net',
