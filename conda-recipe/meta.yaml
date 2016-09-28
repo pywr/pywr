@@ -17,6 +17,7 @@ requirements:
     - glpk
     - lpsolve
     - future
+    - packaging
   run:
     - python
     - numpy x.x
