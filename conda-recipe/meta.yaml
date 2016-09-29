@@ -1,6 +1,12 @@
 {% set name = "pywr" %}
 {% set version = "0.2dev0" %}
 
+{% if os.environ.get("FEATURE_OLDGLIBC", "0") == "1" %}
+{% set OLDGLIBC = 1 %}
+{% else %}
+{% set OLDGLIBC = 0 %}
+{% endif %}
+
 package:
   name: {{ name }}
   version: {{ version }}
@@ -14,7 +20,7 @@ build:
   script_env:
     - FEATURE_OLDGLIBC [linux]
 
-  {% if os.environ.get("FEATURE_OLDGLIBC", "0") == "1" %}
+  {% if OLDGLIBC %}
   features:
     - oldglibc
   {% endif %}
@@ -30,6 +36,9 @@ requirements:
     - lpsolve
     - future
     - packaging
+    {% if OLDGLIBC %}
+    - oldglibc
+    {% endif %}
   run:
     - python
     - numpy x.x
@@ -42,6 +51,9 @@ requirements:
     - scipy
     - future
     - packaging
+    {% if OLDGLIBC %}
+    - oldglibc
+    {% endif %}
 
 test:
   requires:
