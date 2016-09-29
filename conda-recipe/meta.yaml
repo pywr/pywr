@@ -1,12 +1,24 @@
+{% set name = "pywr" %}
+{% set version = "0.2dev0" %}
+
 package:
-  name: pywr
-  version: "0.1"
+  name: {{ name }}
+  version: {{ version }}
 
 source:
   path: ../
 
 build:
   number: 0
+
+  script_env:
+    - FEATURE_OLDGLIBC [linux]
+
+  {% if os.environ.get("FEATURE_OLDGLIBC", "0") == "1" %}
+  features:
+    - oldglibc
+  {% endif %}
+
 
 requirements:
   build:

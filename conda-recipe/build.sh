@@ -13,5 +13,9 @@ if [ `uname` == "Darwin" ]; then
   export CFLAGS="-Wl,-rpath,${PREFIX}/lib"
 fi
 
-$PYTHON setup.py build_ext --with-glpk --with-lpsolve install
+if [ "$FEATURE_OLDGLIBC" == "1" ]; then
+  # use old version of memcpy
+  export CFLAGS="-I. -include conda-recipe/glibc_version_fix.h"
+fi
 
+$PYTHON setup.py build_ext --with-glpk --with-lpsolve install
