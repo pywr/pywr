@@ -117,15 +117,27 @@ class TablesRecorder(Recorder):
         if self.nodes is None:
             nodes = self.model.node.values()
         else:
-            nodes = self.nodes
+            nodes = []
+            for n in self.nodes:
+                # Accept a str, and lookup node by name instead.
+                if isinstance(n, basestring):
+                    nodes.append(self.model.nodes[n])
+                else:
+                    # Otherwise assume it is a node object
+                    nodes.append(n)
 
         nodes = list(nodes)
 
         if self.parameters is not None:
             for p in self.parameters:
-                if p.name is None:
+                if isinstance(p, basestring):
+                    param = self.model.parameters[p]
+                else:
+                    param = p
+
+                if param.name is None:
                     raise ValueError('Can only record named Parameter objects.')
-                nodes.append(p)
+                nodes.append(param)
 
         for node in nodes:
             if isinstance(node, IndexParameter):
