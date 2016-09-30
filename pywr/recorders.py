@@ -80,7 +80,7 @@ class TablesRecorder(Recorder):
     Each CArray stores the data for all scenarios on the specific node. This
     is useful for analysis of Node statistics across multiple scenarios.
     """
-    def __init__(self, model, parent, nodes=None, **kwargs):
+    def __init__(self, model, parent, nodes=None, parameters=None, **kwargs):
         """
 
         :param model: The model to record nodes from.
@@ -92,6 +92,7 @@ class TablesRecorder(Recorder):
 
         self.parent = parent
         self.nodes = nodes
+        self.parameters = parameters
 
         self._arrays = None
 
@@ -106,9 +107,9 @@ class TablesRecorder(Recorder):
         """
         Setup the tables
         """
+        from pywr.parameters import IndexParameter
         import tables
         shape = len(self.model.timestepper), len(self.model.scenarios.combinations)
-        atom = tables.Float64Atom()
         # Create a CArray for each node
         self._arrays = {}
 
@@ -118,7 +119,19 @@ class TablesRecorder(Recorder):
         else:
             nodes = self.nodes
 
+        nodes = list(nodes)
+
+        if self.parameters is not None:
+            for p in self.parameters:
+                if p.name is None:
+                    raise ValueError('Can only record named Parameter objects.')
+                nodes.append(p)
+
         for node in nodes:
+            if isinstance(node, IndexParameter):
+                atom = tables.Int32Atom()
+            else:
+                atom = tables.Float64Atom()
             self._arrays[node] = tables.CArray(self.parent, node.name, atom, shape)
 
     def save(self):
@@ -126,13 +139,21 @@ class TablesRecorder(Recorder):
         Save data to the tables
         """
         from pywr._core import AbstractNode, AbstractStorage
-        idx = self.model.timestepper.current.index
+        from pywr.parameters import BaseParameter, IndexParameter
+        ts = self.model.timestepper.current
+        idx = ts.index
 
         for node, ca in self._arrays.items():
             if isinstance(node, AbstractStorage):
                 ca[idx, :] = node.volume
             elif isinstance(node, AbstractNode):
                 ca[idx, :] = node.flow
+            elif isinstance(node, IndexParameter):
+                for si in self.model.scenarios.combinations:
+                    ca[idx, si.global_id] = node.index(ts, si)
+            elif isinstance(node, BaseParameter):
+                for si in self.model.scenarios.combinations:
+                    ca[idx, si.global_id] = node.value(ts, si)
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
 recorder_registry.add(TablesRecorder)

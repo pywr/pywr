@@ -260,7 +260,39 @@ class TestTablesRecorder:
                 else:
                     np.testing.assert_allclose(ca, 10.0)
 
+    def test_parameters(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
 
+        """
+        from pywr.parameters import ConstantParameter
+
+        model = simple_linear_model
+        otpt = model.node['Output']
+        inpt = model.node['Input']
+
+        p = ConstantParameter(10.0, name='max_flow')
+        inpt.max_flow = p
+
+        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+
+        inpt.max_flow = 10.0
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = TablesRecorder(model, h5f.root, parameters=[p, ])
+
+            model.run()
+
+            for node_name in model.node.keys():
+                ca = h5f.get_node('/', node_name)
+                assert ca.shape == (365, 1)
+                if node_name == 'Sum':
+                    np.testing.assert_allclose(ca, 20.0)
+                else:
+                    np.testing.assert_allclose(ca, 10.0)
 
 
 def test_total_deficit_node_recorder(simple_linear_model):
