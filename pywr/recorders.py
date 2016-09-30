@@ -80,19 +80,33 @@ class TablesRecorder(Recorder):
     Each CArray stores the data for all scenarios on the specific node. This
     is useful for analysis of Node statistics across multiple scenarios.
     """
-    def __init__(self, model, parent, nodes=None, parameters=None, **kwargs):
+    def __init__(self, model, h5file, nodes=None, parameters=None, where='/', **kwargs):
         """
 
-        :param model: The model to record nodes from.
-        :param parent: The tables parent node to attach the CArray objects to.
-        :param nodes: An iterable of nodes to save data. It defaults
-        to None which is all nodes in the model
+        Parameters
+        ----------
+        model : pywr.core.Model
+            The model to record nodes from.
+        h5file : tables.File
+            The tables file handle to attach the CArray objects to.
+        nodes : iterable or None
+            Nodes to save in the tables database. Can be an iterable of Node objects or
+            node names. It can also be a iterable of tuples with a node specific where
+            keyword as the first item and a Node object or name as the second item. If
+            an iterable of tuples is provided then the node specific where keyword is
+            used in preference to the where keyword (see below).
+        parameters : iterable or None
+            Parameters to save. Similar to the nodes keyword, except refers to Parameter
+            objects or names thereof.
+        where : string
+            Default path to create the CArrays inside the database.
         """
         super(TablesRecorder, self).__init__(model, **kwargs)
 
-        self.parent = parent
+        self.h5file = h5file
         self.nodes = nodes
         self.parameters = parameters
+        self.where = where
 
         self._arrays = None
 
@@ -115,36 +129,48 @@ class TablesRecorder(Recorder):
 
         # Default to all nodes if None given.
         if self.nodes is None:
-            nodes = self.model.node.values()
+            nodes = [(self.where, n) for n in self.model.node.values()]
         else:
             nodes = []
             for n in self.nodes:
-                # Accept a str, and lookup node by name instead.
-                if isinstance(n, basestring):
-                    nodes.append(self.model.nodes[n])
-                else:
-                    # Otherwise assume it is a node object
-                    nodes.append(n)
 
-        nodes = list(nodes)
+                try:
+                    where, node = n
+                except (TypeError, ValueError):
+                    node = n
+                    where = self.where
+
+                # Accept a str, and lookup node by name instead.
+                if isinstance(node, basestring):
+                    node = self.model.nodes[node]
+                # Otherwise assume it is a node object anyway
+
+                nodes.append((where, node))
 
         if self.parameters is not None:
             for p in self.parameters:
-                if isinstance(p, basestring):
-                    param = self.model.parameters[p]
+
+                try:
+                    where, param = p
+                except (TypeError, ValueError):
+                    param = p
+                    where = self.where
+
+                if isinstance(param, basestring):
+                    param = self.model.parameters[param]
                 else:
                     param = p
 
                 if param.name is None:
                     raise ValueError('Can only record named Parameter objects.')
-                nodes.append(param)
+                nodes.append((where, param))
 
-        for node in nodes:
+        for where, node in nodes:
             if isinstance(node, IndexParameter):
                 atom = tables.Int32Atom()
             else:
                 atom = tables.Float64Atom()
-            self._arrays[node] = tables.CArray(self.parent, node.name, atom, shape)
+            self._arrays[node] = self.h5file.create_carray(where, node.name, atom, shape, createparents=True)
 
     def save(self):
         """

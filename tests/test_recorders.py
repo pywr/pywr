@@ -248,7 +248,7 @@ class TestTablesRecorder:
         h5file = tmpdir.join('output.h5')
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
-            rec = TablesRecorder(model, h5f.root)
+            rec = TablesRecorder(model, h5f)
 
             model.run()
 
@@ -282,7 +282,7 @@ class TestTablesRecorder:
         h5file = tmpdir.join('output.h5')
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
-            rec = TablesRecorder(model, h5f.root, parameters=[p, ])
+            rec = TablesRecorder(model, h5f, parameters=[p, ])
 
             model.run()
 
@@ -313,21 +313,66 @@ class TestTablesRecorder:
         h5file = tmpdir.join('output.h5')
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
-            rec = TablesRecorder(model, h5f.root, nodes=['Output', 'Input', 'Sum'],
-                                 parameters=[p, ])
+            where = '/agroup'
+            rec = TablesRecorder(model, h5f, nodes=['Output', 'Input', 'Sum'],
+                                 parameters=[p, ], where=where)
 
             model.run()
 
             for node_name in ['Output', 'Input', 'Sum', 'max_flow']:
-                ca = h5f.get_node('/', node_name)
+                ca = h5f.get_node(where, node_name)
                 assert ca.shape == (365, 1)
                 if node_name == 'Sum':
                     np.testing.assert_allclose(ca, 20.0)
                 else:
                     np.testing.assert_allclose(ca, 10.0)
 
+    def test_demand_saving_with_indexed_array(self, solver, tmpdir):
+        """Test recording various items from demand saving example
 
+        """
+        model = load_model("demand_saving2.json", solver=solver)
 
+        model.timestepper.end = "2016-01-31"
+
+        model.check()
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+
+            nodes = [
+                ('/outputs/demand', 'Demand'),
+                ('/storage/reservoir', 'Reservoir'),
+            ]
+
+            parameters = [
+                ('/parameters/demand_saving_level', 'demand_saving_level'),
+            ]
+
+            rec = TablesRecorder(model, h5f, nodes=nodes, parameters=parameters)
+
+            model.run()
+
+            max_volume = model.nodes["Reservoir"].max_volume
+            rec_demand = h5f.get_node('/outputs/demand', 'Demand').read()
+            rec_storage = h5f.get_node('/storage/reservoir', 'Reservoir').read()
+
+            # model starts with no demand saving
+            demand_baseline = 50.0
+            demand_factor = 0.9  # jan-apr
+            demand_saving = 1.0
+            assert_allclose(rec_demand[0, 0], demand_baseline * demand_factor * demand_saving)
+
+            # first control curve breached
+            demand_saving = 0.95
+            assert (rec_storage[4, 0] < (0.8 * max_volume))
+            assert_allclose(rec_demand[5, 0], demand_baseline * demand_factor * demand_saving)
+
+            # second control curve breached
+            demand_saving = 0.5
+            assert (rec_storage[11, 0] < (0.5 * max_volume))
+            assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
 
 def test_total_deficit_node_recorder(simple_linear_model):
     """
