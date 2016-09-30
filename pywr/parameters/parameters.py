@@ -26,7 +26,7 @@ class FunctionParameter(Parameter):
 
     def value(self, ts, scenario_index):
         return self._func(self._parent, ts, scenario_index)
-parameter_registry.add(FunctionParameter)
+FunctionParameter.register()
 
 
 class MonthlyProfileParameter(Parameter):
@@ -50,7 +50,7 @@ class MonthlyProfileParameter(Parameter):
 
     def upper_bounds(self):
         return self._upper_bounds
-parameter_registry.add(MonthlyProfileParameter)
+MonthlyProfileParameter.register()
 
 
 class ScaledProfileParameter(Parameter):
@@ -70,7 +70,7 @@ class ScaledProfileParameter(Parameter):
     def value(self, ts, si):
         p = self.profile.value(ts, si)
         return self.scale * p
-parameter_registry.add(ScaledProfileParameter)
+ScaledProfileParameter.register()
 
 
 def align_and_resample_dataframe(df, datetime_index):
@@ -141,7 +141,7 @@ class DataFrameParameter(Parameter):
 
     def value(self, ts, scenario_index):
         return self._param.value(ts, scenario_index)
-parameter_registry.add(DataFrameParameter)
+DataFrameParameter.register()
 
 
 class InterpolatedLevelParameter(Parameter):
