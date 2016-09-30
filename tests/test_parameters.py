@@ -618,3 +618,26 @@ def test_constant_from_multiindex_df(solver):
 
     np.testing.assert_allclose(model.nodes['demand1'].max_flow.value(ts, si), 10.0)
     np.testing.assert_allclose(model.nodes['demand1'].cost.value(ts, si), -100.0)
+
+def test_parameter_registry_overwrite(model):
+    # define a parameter
+    class NewParameter(BaseParameter):
+        DATA = 42
+    NewParameter.register()
+    
+    # re-define a parameter
+    class NewParameter(IndexParameter):
+        DATA = 43
+        def __init__(self, *args, **kwargs):
+            IndexParameter.__init__(self)
+    NewParameter.register()
+    
+    data = {
+        "type": "new",
+        "values": 0
+    }
+    parameter = load_parameter(model, data)
+
+    # parameter is instance of new class, not old class
+    assert(isinstance(parameter, NewParameter))
+    assert(parameter.DATA == 43)

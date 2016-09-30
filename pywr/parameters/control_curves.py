@@ -147,7 +147,7 @@ class ControlCurveParameter(BaseControlCurveParameter):
     def upper_bounds(self):
         return self._upper_bounds
 
-parameter_registry.add(ControlCurveParameter)
+ControlCurveParameter.register()
 
 
 class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
@@ -265,7 +265,7 @@ class MonthlyProfileControlCurveParameter(AbstractProfileControlCurveParameter):
     def _profile_index(self, ts, scenario_index):
         return ts.datetime.month - 1
 
-parameter_registry.add(MonthlyProfileControlCurveParameter)
+MonthlyProfileControlCurveParameter.register()
 
 
 class DailyProfileControlCurveParameter(AbstractProfileControlCurveParameter):
@@ -300,4 +300,4 @@ class DailyProfileControlCurveParameter(AbstractProfileControlCurveParameter):
     def _profile_index(self, ts, scenario_index):
         return ts.datetime.dayofyear - 1
 
-parameter_registry.add(DailyProfileControlCurveParameter)
+DailyProfileControlCurveParameter.register()

@@ -6,6 +6,7 @@ are tested here.
 """
 from __future__ import print_function
 import pywr.core
+from pywr.core import Model, Input, Output, Catchment
 from pywr.parameters import MonthlyProfileParameter
 from pywr.domains import river
 from numpy.testing import assert_allclose
@@ -184,3 +185,19 @@ def test_control_curve(solver):
     model.step()
     assert(reservoir.volume == 10)
     assert(demand.flow == 6)
+
+def test_catchment_many_successors(solver):
+    """Test if node with fixed flow can have multiple successors. See #225"""
+    model = Model(solver=solver)
+    catchment = Catchment(model, "catchment", flow=100)
+    out1 = Output(model, "out1", max_flow=10, cost=-100)
+    out2 = Output(model, "out2", max_flow=15, cost=-50)
+    out3 = Output(model, "out3")
+    catchment.connect(out1)
+    catchment.connect(out2)
+    catchment.connect(out3)
+    model.check()
+    model.run()
+    assert_allclose(out1.flow, 10)
+    assert_allclose(out2.flow, 15)
+    assert_allclose(out3.flow, 75)

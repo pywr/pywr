@@ -14,7 +14,7 @@ cdef enum Predicates:
     GE = 4
 _predicate_lookup = {"LT": Predicates.LT, "GT": Predicates.GT, "EQ": Predicates.EQ, "LE": Predicates.LE, "GE": Predicates.GE}
 
-parameter_registry = set()
+parameter_registry = {}
 
 class PairedSet(set):
     def __init__(self, obj, *args, **kwargs):
@@ -53,6 +53,14 @@ cdef class Parameter:
         self.parents = PairedSet(self)
         self.children = PairedSet(self)
         self._recorders = []
+
+    @classmethod
+    def register(cls):
+        parameter_registry[cls.__name__.lower()] = cls
+
+    @classmethod
+    def unregister(cls):
+        del(parameter_registry[cls.__name__.lower()])
 
     cpdef setup(self, model):
         cdef Parameter child
@@ -132,7 +140,7 @@ cdef class Parameter:
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
         return cls(values, name=name, comment=None)
 
-parameter_registry.add(Parameter)
+Parameter.register()
 
 cdef class ConstantParameter(Parameter):
     def __init__(self, value, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
@@ -167,7 +175,7 @@ cdef class ConstantParameter(Parameter):
         parameter = cls(value, **data)
         return parameter
 
-parameter_registry.add(ConstantParameter)
+ConstantParameter.register()
 
 
 cdef class CachedParameter(IndexParameter):
@@ -200,7 +208,7 @@ cdef class CachedParameter(IndexParameter):
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(parameter, **data)
 
-parameter_registry.add(CachedParameter)
+CachedParameter.register()
 
 
 cdef class ArrayIndexedParameter(Parameter):
@@ -216,7 +224,7 @@ cdef class ArrayIndexedParameter(Parameter):
         """Returns the value of the parameter at a given timestep
         """
         return self.values[ts._index]
-parameter_registry.add(ArrayIndexedParameter)
+ArrayIndexedParameter.register()
 
 
 cdef class ArrayIndexedScenarioParameter(Parameter):
@@ -282,7 +290,7 @@ cdef class ConstantScenarioParameter(Parameter):
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
         return self._values[scenario_index._indices[self._scenario_index]]
-parameter_registry.add(ConstantScenarioParameter)
+ConstantScenarioParameter.register()
 
 
 cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
@@ -323,7 +331,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         # correct number to use in this instance.
         cdef int imth = ts.datetime.month-1
         return self._values[ts._index]*self._factors[scenario_index._indices[self._scenario_index], imth]
-parameter_registry.add(ArrayIndexedScenarioMonthlyFactorsParameter)
+ArrayIndexedScenarioMonthlyFactorsParameter.register()
 
 
 cdef inline bint is_leap_year(int year):
@@ -346,7 +354,7 @@ cdef class DailyProfileParameter(Parameter):
             if i > 58: # 28th Feb
                 i += 1
         return self._values[i]
-parameter_registry.add(DailyProfileParameter)
+DailyProfileParameter.register()
 
 cdef class IndexParameter(Parameter):
     """Base parameter providing an `index` method
@@ -365,7 +373,7 @@ cdef class IndexParameter(Parameter):
         """Returns the current index"""
         # return index as an integer
         return 0
-parameter_registry.add(IndexParameter)
+IndexParameter.register()
 
 cdef class IndexedArrayParameter(Parameter):
     """Parameter which uses an IndexParameter to index an array of Parameters
@@ -413,7 +421,7 @@ cdef class IndexedArrayParameter(Parameter):
         index_parameter = load_parameter(model, data.pop("index_parameter"))
         params = [load_parameter(model, parameter_data) for parameter_data in data.pop("params")]
         return cls(index_parameter, params, **data)
-parameter_registry.add(IndexedArrayParameter)
+IndexedArrayParameter.register()
 
 
 cdef class AnnualHarmonicSeriesParameter(Parameter):
@@ -505,7 +513,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
     cpdef double[:] upper_bounds(self):
         return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
-parameter_registry.add(AnnualHarmonicSeriesParameter)
+AnnualHarmonicSeriesParameter.register()
 
 cdef enum AggFuncs:
     SUM = 0
@@ -629,7 +637,7 @@ cdef class AggregatedParameter(AggregatedParameterBase):
             raise ValueError("Unsupported aggregation function.")
         return value
 
-parameter_registry.add(AggregatedParameter)
+AggregatedParameter.register()
 
 cdef class AggregatedIndexParameter(AggregatedParameterBase):
     """A collection of IndexParameters
@@ -700,7 +708,7 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
             raise ValueError("Unsupported aggregation function.")
         return value
 
-parameter_registry.add(AggregatedIndexParameter)
+AggregatedIndexParameter.register()
 
 cdef class RecorderThresholdParameter(IndexParameter):
     """Returns one of two values depending on a Recorder value and a threshold
@@ -785,7 +793,7 @@ cdef class RecorderThresholdParameter(IndexParameter):
         predicate = data.pop("predicate", None)
         return cls(recorder, threshold, values, predicate, **data)
 
-parameter_registry.add(RecorderThresholdParameter)
+RecorderThresholdParameter.register()
 
 def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""
@@ -826,15 +834,18 @@ def load_parameter(model, data, parameter_name=None):
         except:
             pass
 
-        cls = None
-        name2 = parameter_type.lower().replace('parameter', '')
-        for parameter_class in parameter_registry:
-            name1 = parameter_class.__name__.lower().replace('parameter', '')
-            if name1 == name2:
-                cls = parameter_class
-
-        if cls is None:
-            raise TypeError('Unknown parameter type: "{}"'.format(parameter_type))
+        name = parameter_type.lower()
+        try:
+            cls = parameter_registry[name]
+        except KeyError:
+            if name.endswith("parameter"):
+                name = name.replace("parameter", "")
+            else:
+                name += "parameter"
+            try:
+                cls = parameter_registry[name]
+            except KeyError:
+                raise TypeError('Unknown parameter type: "{}"'.format(parameter_type))
 
         kwargs = dict([(k,v) for k,v in data.items()])
         del(kwargs["type"])
