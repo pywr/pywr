@@ -230,33 +230,37 @@ def test_csv_recorder(simple_linear_model, tmpdir):
             assert expected == actual
 
 
-def test_hdf5_recorder(simple_linear_model, tmpdir):
-    """
-    Test the TablesRecorder
+class TestTablesRecorder:
 
-    """
-    model = simple_linear_model
-    otpt = model.node['Output']
-    inpt = model.node['Input']
-    agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+    def test_nodes(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
 
-    inpt.max_flow = 10.0
-    otpt.cost = -2.0
+        """
+        model = simple_linear_model
+        otpt = model.node['Output']
+        inpt = model.node['Input']
+        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
 
-    h5file = tmpdir.join('output.h5')
-    import tables
-    with tables.open_file(str(h5file), 'w') as h5f:
-        rec = TablesRecorder(model, h5f.root)
+        inpt.max_flow = 10.0
+        otpt.cost = -2.0
 
-        model.run()
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = TablesRecorder(model, h5f.root)
 
-        for node_name in model.node.keys():
-            ca = h5f.get_node('/', node_name)
-            assert ca.shape == (365, 1)
-            if node_name == 'Sum':
-                np.testing.assert_allclose(ca, 20.0)
-            else:
-                np.testing.assert_allclose(ca, 10.0)
+            model.run()
+
+            for node_name in model.node.keys():
+                ca = h5f.get_node('/', node_name)
+                assert ca.shape == (365, 1)
+                if node_name == 'Sum':
+                    np.testing.assert_allclose(ca, 20.0)
+                else:
+                    np.testing.assert_allclose(ca, 10.0)
+
+
 
 
 def test_total_deficit_node_recorder(simple_linear_model):
