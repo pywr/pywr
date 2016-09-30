@@ -933,7 +933,7 @@ def load_dataframe(model, data):
         try:
             df = df.loc[index]
         except KeyError:
-            raise KeyError('Index "{}" not found in dataset "{}"'.format(column, url))
+            raise KeyError('Index "{}" not found in dataset "{}"'.format(index, url))
 
     try:
         freq = df.index.inferred_freq
