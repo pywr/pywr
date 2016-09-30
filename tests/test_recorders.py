@@ -5,7 +5,7 @@ Test the Recorder object API
 """
 from __future__ import print_function
 import pywr.core
-from pywr.core import Model, Input, Output, Scenario
+from pywr.core import Model, Input, Output, Scenario, AggregatedNode
 import numpy as np
 import pandas
 import pytest
@@ -237,7 +237,10 @@ def test_hdf5_recorder(simple_linear_model, tmpdir):
     """
     model = simple_linear_model
     otpt = model.node['Output']
-    model.node['Input'].max_flow = 10.0
+    inpt = model.node['Input']
+    agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+
+    inpt.max_flow = 10.0
     otpt.cost = -2.0
 
     h5file = tmpdir.join('output.h5')
@@ -250,7 +253,10 @@ def test_hdf5_recorder(simple_linear_model, tmpdir):
         for node_name in model.node.keys():
             ca = h5f.get_node('/', node_name)
             assert ca.shape == (365, 1)
-            assert np.all((ca[...] - 10.0) < 1e-12)
+            if node_name == 'Sum':
+                np.testing.assert_allclose(ca, 20.0)
+            else:
+                np.testing.assert_allclose(ca, 10.0)
 
 
 def test_total_deficit_node_recorder(simple_linear_model):

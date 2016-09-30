@@ -125,14 +125,14 @@ class TablesRecorder(Recorder):
         """
         Save data to the tables
         """
-        from pywr._core import Node, Storage
+        from pywr._core import AbstractNode, AbstractStorage
         idx = self.model.timestepper.current.index
 
         for node, ca in self._arrays.items():
-            if isinstance(node, Node):
-                ca[idx, :] = node.flow
-            elif isinstance(node, Storage):
+            if isinstance(node, AbstractStorage):
                 ca[idx, :] = node.volume
+            elif isinstance(node, AbstractNode):
+                ca[idx, :] = node.flow
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
 recorder_registry.add(TablesRecorder)
