@@ -113,6 +113,12 @@ class TablesRecorder(Recorder):
 
         h5opened = False
         if isinstance(h5file, basestring):
+            # HACK Python 2 workaround
+            # Note sure how else to deal with str / unicode requirements in pytables
+            # See this issue: https://github.com/PyTables/PyTables/issues/522
+            import sys
+            if sys.version_info[0] == 2 and 'complib' in filter_kwds:
+                filter_kwds['complib'] = filter_kwds['complib'].encode()
             filters = tables.Filters(**filter_kwds)
             h5fh = tables.open_file(h5file, mode=mode, filters=filters)
             h5opened = True
