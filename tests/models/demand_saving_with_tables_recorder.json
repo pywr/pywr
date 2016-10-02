@@ -1,0 +1,155 @@
+{
+    "metadata": {
+        "title": "Demand Saving",
+        "description": "Demand saving using an IndexedArrayParameter",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2016-01-01",
+        "end": "2016-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "type": "catchment",
+            "name": "Inflow",
+            "flow": 0.0
+        },
+        {
+            "type": "reservoir",
+            "name": "Reservoir",
+            "max_volume": 1000,
+            "initial_volume": 1000
+        },
+        {
+            "type": "output",
+            "name": "Spill",
+            "cost": 10
+        },
+        {
+            "comment": "The only demand in the model",
+            "type": "output",
+            "name": "Demand",
+            "max_flow": "demand_max_flow",
+            "cost": -500
+        }
+    ],
+    "edges": [
+        ["Inflow", "Reservoir"],
+        ["Reservoir", "Demand"],
+        ["Reservoir", "Spill"]
+    ],
+    "parameters": {
+        "demand_baseline": {
+            "type": "constant",
+            "value": 50
+        },
+        "demand_profile": {
+            "comment": "Monthly demand profile as a factor around the mean demand",
+            "type": "monthlyprofile",
+            "values": [
+                0.9,
+                0.9,
+                0.9,
+                0.9,
+                1.2,
+                1.2,
+                1.2,
+                1.2,
+                0.9,
+                0.9,
+                0.9,
+                0.9
+            ]
+        },
+        "level1": {
+            "type": "constant",
+            "value": 0.8
+        },
+        "level2": {
+            "type": "constant",
+            "value": 0.5
+        },
+        "demand_saving_level": {
+            "comment": "The demand saving level",
+            "type": "controlcurveindex",
+            "storage_node": "Reservoir",
+            "control_curves": [
+                "level1",
+                "level2"
+            ]
+        },
+        "demand_saving_factor": {
+            "comment": "Demand saving as a factor of the base demand",
+            "type": "indexedarray",
+            "index_parameter": "demand_saving_level",
+            "params": [
+                {
+                    "type": "constant",
+                    "value": 1.0
+                },
+                {
+                    "type": "monthlyprofile",
+                    "values": [
+                        0.95,
+                        0.95,
+                        0.95,
+                        0.95,
+                        0.90,
+                        0.90,
+                        0.90,
+                        0.90,
+                        0.95,
+                        0.95,
+                        0.95,
+                        0.95
+                    ]
+                },
+                {
+                    "type": "monthlyprofile",
+                    "values": [
+                        0.5,
+                        0.5,
+                        0.5,
+                        0.5,
+                        0.4,
+                        0.4,
+                        0.4,
+                        0.4,
+                        0.5,
+                        0.5,
+                        0.5,
+                        0.5
+                    ]
+                }
+            ]
+        },
+        "demand_max_flow": {
+            "type": "aggregated",
+            "agg_func": "product",
+            "parameters": [
+                "demand_baseline",
+                "demand_profile",
+                "demand_saving_factor"
+            ]
+        }
+    },
+    "recorders": {
+        "database": {
+            "type": "TablesRecorder",
+            "url": "output.h5",
+            "nodes": [
+                ["/outputs/demand", "Demand"],
+                ["/storage/reservoir", "Reservoir"]
+            ],
+            "parameters": [
+                ["/parameters/demand_saving_level", "demand_saving_level"]
+            ],
+            "mode": "w",
+            "filter_kwds": {
+                "complevel": 5,
+                "complib": "zlib"
+            }
+        }
+    }
+}

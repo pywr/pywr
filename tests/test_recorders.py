@@ -374,6 +374,55 @@ class TestTablesRecorder:
             assert (rec_storage[11, 0] < (0.5 * max_volume))
             assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
 
+    def test_demand_saving_with_indexed_array(self, solver, tmpdir):
+        """Test recording various items from demand saving example.
+
+        This time the TablesRecorder is defined in JSON.
+        """
+        import os, json, tables
+        filename = "demand_saving_with_tables_recorder.json"
+        # This is a bit horrible, but need to edit the JSON dynamically
+        # so that the output.h5 is written in the temporary directory
+        path = os.path.join(os.path.dirname(__file__), 'models')
+        with open(os.path.join(path, filename), 'r') as f:
+            data = f.read()
+        data = json.loads(data)
+
+        # Make an absolute, but temporary, path for the recorder
+        url = data['recorders']['database']['url']
+        data['recorders']['database']['url'] = str(tmpdir.join(url))
+
+        model = Model.load(data, path=path, solver=solver)
+
+        model.timestepper.end = "2016-01-31"
+        model.check()
+
+        model.run()
+        max_volume = model.nodes["Reservoir"].max_volume
+
+        h5file = tmpdir.join('output.h5')
+        with tables.open_file(str(h5file), 'r') as h5f:
+            print(h5f)
+            rec_demand = h5f.get_node('/outputs/demand', 'Demand').read()
+            rec_storage = h5f.get_node('/storage/reservoir', 'Reservoir').read()
+
+            # model starts with no demand saving
+            demand_baseline = 50.0
+            demand_factor = 0.9  # jan-apr
+            demand_saving = 1.0
+            assert_allclose(rec_demand[0, 0], demand_baseline * demand_factor * demand_saving)
+
+            # first control curve breached
+            demand_saving = 0.95
+            assert (rec_storage[4, 0] < (0.8 * max_volume))
+            assert_allclose(rec_demand[5, 0], demand_baseline * demand_factor * demand_saving)
+
+            # second control curve breached
+            demand_saving = 0.5
+            assert (rec_storage[11, 0] < (0.5 * max_volume))
+            assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
+
+
 def test_total_deficit_node_recorder(simple_linear_model):
     """
     Test TotalDeficitNodeRecorder

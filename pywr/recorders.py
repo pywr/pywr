@@ -87,8 +87,9 @@ class TablesRecorder(Recorder):
         ----------
         model : pywr.core.Model
             The model to record nodes from.
-        h5file : tables.File
-            The tables file handle to attach the CArray objects to.
+        h5file : tables.File or filename
+            The tables file handle or filename to attach the CArray objects to. If a
+            filename is given the object will open and close the file handles.
         nodes : iterable or None
             Nodes to save in the tables database. Can be an iterable of Node objects or
             node names. It can also be a iterable of tuples with a node specific where
@@ -100,10 +101,28 @@ class TablesRecorder(Recorder):
             objects or names thereof.
         where : string
             Default path to create the CArrays inside the database.
+        filter_kwds : dict
+            Filter keywords to pass to tables.open_file when opening a file.
+        mode : string
+            Model argument to pass to tables.open_file. Defaults to 'w'
         """
+        filter_kwds = kwargs.pop('filter_kwds', {})
+        mode = kwargs.pop('mode', 'w')
         super(TablesRecorder, self).__init__(model, **kwargs)
+        import tables
 
-        self.h5file = h5file
+        h5opened = False
+        if isinstance(h5file, basestring):
+            filters = tables.Filters(**filter_kwds)
+            h5fh = tables.open_file(h5file, mode=mode, filters=filters)
+            h5opened = True
+        elif isinstance(h5file, tables.File):
+            h5fh = h5file
+        else:
+            raise ValueError("Argument h5file must be either a filename string or instance of tables.File")
+
+        self.h5file = h5fh
+        self._h5opened = h5opened
         self.nodes = nodes
         self.parameters = parameters
         self.where = where
@@ -111,11 +130,24 @@ class TablesRecorder(Recorder):
         self._arrays = None
 
     def __del__(self):
+        if self._h5opened and self.h5file.isopen:
+            self.h5file.close()
         if self._arrays is not None:
             for arr in self._arrays.values():
                 arr.close()
-        del(self._arrays)
+            del self._arrays
 
+    def finish(self):
+        if self._h5opened:
+            self.h5file.close()
+
+    @classmethod
+    def load(cls, model, data):
+        import os
+        url = data.pop("url")
+        if not os.path.isabs(url) and model.path is not None:
+            url = os.path.join(model.path, url)
+        return cls(model, url, **data)
 
     def setup(self):
         """
