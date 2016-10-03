@@ -5,7 +5,7 @@ Test the Recorder object API
 """
 from __future__ import print_function
 import pywr.core
-from pywr.core import Model, Input, Output, Scenario
+from pywr.core import Model, Input, Output, Scenario, AggregatedNode
 import numpy as np
 import pandas
 import pytest
@@ -24,9 +24,9 @@ def test_numpy_recorder(simple_linear_model):
     Test the NumpyArrayNodeRecorder
     """
     model = simple_linear_model
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
 
-    model.node['Input'].max_flow = 10.0
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec = NumpyArrayNodeRecorder(model, otpt)
 
@@ -54,7 +54,7 @@ def test_numpy_storage_recorder(simple_storage_model):
     """
     model = simple_storage_model
 
-    res = model.node['Storage']
+    res = model.nodes['Storage']
 
     rec = NumpyArrayStorageRecorder(model, res)
 
@@ -79,13 +79,13 @@ def test_numpy_parameter_recorder(simple_linear_model):
     # using leap year simplifies tests
     model.timestepper.start = pandas.to_datetime("2016-01-01")
     model.timestepper.end = pandas.to_datetime("2016-12-31")
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
 
     p = DailyProfileParameter(np.arange(366, dtype=np.float64), )
     p.name = 'daily profile'
-    model.node['Input'].max_flow = p
+    model.nodes['Input'].max_flow = p
     otpt.cost = -2.0
-    rec = NumpyArrayParameterRecorder(model, model.node['Input'].max_flow)
+    rec = NumpyArrayParameterRecorder(model, model.nodes['Input'].max_flow)
 
     # test retrieval of recorder
     assert model.recorders['numpyarrayparameterrecorder.daily profile'] == rec
@@ -108,7 +108,7 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
 
     model = simple_storage_model
 
-    res = model.node['Storage']
+    res = model.nodes['Storage']
 
     p = ControlCurveIndexParameter(res, [5.0/20.0, 2.5/20.0])
 
@@ -181,9 +181,9 @@ def test_concatenated_dataframes(simple_storage_model):
     scA = Scenario(model, 'A', size=2)
     scB = Scenario(model, 'B', size=3)
 
-    res = model.node['Storage']
+    res = model.nodes['Storage']
     rec1 = NumpyArrayStorageRecorder(model, res)
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
     rec2 = NumpyArrayNodeRecorder(model, otpt)
     # The following can't return a DataFrame; is included to check
     # it doesn't cause any issues
@@ -202,8 +202,8 @@ def test_csv_recorder(simple_linear_model, tmpdir):
 
     """
     model = simple_linear_model
-    otpt = model.node['Output']
-    model.node['Input'].max_flow = 10.0
+    otpt = model.nodes['Output']
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
 
     csvfile = tmpdir.join('output.csv')
@@ -230,27 +230,197 @@ def test_csv_recorder(simple_linear_model, tmpdir):
             assert expected == actual
 
 
-def test_hdf5_recorder(simple_linear_model, tmpdir):
-    """
-    Test the TablesRecorder
+class TestTablesRecorder:
 
-    """
-    model = simple_linear_model
-    otpt = model.node['Output']
-    model.node['Input'].max_flow = 10.0
-    otpt.cost = -2.0
+    def test_nodes(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
 
-    h5file = tmpdir.join('output.h5')
-    import tables
-    with tables.open_file(str(h5file), 'w') as h5f:
-        rec = TablesRecorder(model, h5f.root)
+        """
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+
+        inpt.max_flow = 10.0
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = TablesRecorder(model, h5f)
+
+            model.run()
+
+            for node_name in model.nodes.keys():
+                ca = h5f.get_node('/', node_name)
+                assert ca.shape == (365, 1)
+                if node_name == 'Sum':
+                    np.testing.assert_allclose(ca, 20.0)
+                else:
+                    np.testing.assert_allclose(ca, 10.0)
+
+    def test_parameters(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
+
+        """
+        from pywr.parameters import ConstantParameter
+
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+
+        p = ConstantParameter(10.0, name='max_flow')
+        inpt.max_flow = p
+
+        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+
+        inpt.max_flow = 10.0
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = TablesRecorder(model, h5f, parameters=[p, ])
+
+            model.run()
+
+            for node_name in model.nodes.keys():
+                ca = h5f.get_node('/', node_name)
+                assert ca.shape == (365, 1)
+                if node_name == 'Sum':
+                    np.testing.assert_allclose(ca, 20.0)
+                else:
+                    np.testing.assert_allclose(ca, 10.0)
+
+    def test_nodes_with_str(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
+
+        """
+        from pywr.parameters import ConstantParameter
+
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+        p = ConstantParameter(10.0, name='max_flow')
+        inpt.max_flow = p
+
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            where = '/agroup'
+            rec = TablesRecorder(model, h5f, nodes=['Output', 'Input', 'Sum'],
+                                 parameters=[p, ], where=where)
+
+            model.run()
+
+            for node_name in ['Output', 'Input', 'Sum', 'max_flow']:
+                ca = h5f.get_node(where, node_name)
+                assert ca.shape == (365, 1)
+                if node_name == 'Sum':
+                    np.testing.assert_allclose(ca, 20.0)
+                else:
+                    np.testing.assert_allclose(ca, 10.0)
+
+    def test_demand_saving_with_indexed_array(self, solver, tmpdir):
+        """Test recording various items from demand saving example
+
+        """
+        model = load_model("demand_saving2.json", solver=solver)
+
+        model.timestepper.end = "2016-01-31"
+
+        model.check()
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+
+            nodes = [
+                ('/outputs/demand', 'Demand'),
+                ('/storage/reservoir', 'Reservoir'),
+            ]
+
+            parameters = [
+                ('/parameters/demand_saving_level', 'demand_saving_level'),
+            ]
+
+            rec = TablesRecorder(model, h5f, nodes=nodes, parameters=parameters)
+
+            model.run()
+
+            max_volume = model.nodes["Reservoir"].max_volume
+            rec_demand = h5f.get_node('/outputs/demand', 'Demand').read()
+            rec_storage = h5f.get_node('/storage/reservoir', 'Reservoir').read()
+
+            # model starts with no demand saving
+            demand_baseline = 50.0
+            demand_factor = 0.9  # jan-apr
+            demand_saving = 1.0
+            assert_allclose(rec_demand[0, 0], demand_baseline * demand_factor * demand_saving)
+
+            # first control curve breached
+            demand_saving = 0.95
+            assert (rec_storage[4, 0] < (0.8 * max_volume))
+            assert_allclose(rec_demand[5, 0], demand_baseline * demand_factor * demand_saving)
+
+            # second control curve breached
+            demand_saving = 0.5
+            assert (rec_storage[11, 0] < (0.5 * max_volume))
+            assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
+
+    def test_demand_saving_with_indexed_array(self, solver, tmpdir):
+        """Test recording various items from demand saving example.
+
+        This time the TablesRecorder is defined in JSON.
+        """
+        import os, json, tables
+        filename = "demand_saving_with_tables_recorder.json"
+        # This is a bit horrible, but need to edit the JSON dynamically
+        # so that the output.h5 is written in the temporary directory
+        path = os.path.join(os.path.dirname(__file__), 'models')
+        with open(os.path.join(path, filename), 'r') as f:
+            data = f.read()
+        data = json.loads(data)
+
+        # Make an absolute, but temporary, path for the recorder
+        url = data['recorders']['database']['url']
+        data['recorders']['database']['url'] = str(tmpdir.join(url))
+
+        model = Model.load(data, path=path, solver=solver)
+
+        model.timestepper.end = "2016-01-31"
+        model.check()
 
         model.run()
+        max_volume = model.nodes["Reservoir"].max_volume
 
-        for node_name in model.node.keys():
-            ca = h5f.get_node('/', node_name)
-            assert ca.shape == (365, 1)
-            assert np.all((ca[...] - 10.0) < 1e-12)
+        h5file = tmpdir.join('output.h5')
+        with tables.open_file(str(h5file), 'r') as h5f:
+            print(h5f)
+            rec_demand = h5f.get_node('/outputs/demand', 'Demand').read()
+            rec_storage = h5f.get_node('/storage/reservoir', 'Reservoir').read()
+
+            # model starts with no demand saving
+            demand_baseline = 50.0
+            demand_factor = 0.9  # jan-apr
+            demand_saving = 1.0
+            assert_allclose(rec_demand[0, 0], demand_baseline * demand_factor * demand_saving)
+
+            # first control curve breached
+            demand_saving = 0.95
+            assert (rec_storage[4, 0] < (0.8 * max_volume))
+            assert_allclose(rec_demand[5, 0], demand_baseline * demand_factor * demand_saving)
+
+            # second control curve breached
+            demand_saving = 0.5
+            assert (rec_storage[11, 0] < (0.5 * max_volume))
+            assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
 
 
 def test_total_deficit_node_recorder(simple_linear_model):
@@ -258,9 +428,9 @@ def test_total_deficit_node_recorder(simple_linear_model):
     Test TotalDeficitNodeRecorder
     """
     model = simple_linear_model
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
     otpt.max_flow = 30.0
-    model.node['Input'].max_flow = 10.0
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec = TotalDeficitNodeRecorder(model, otpt)
 
@@ -276,9 +446,9 @@ def test_total_flow_node_recorder(simple_linear_model):
     Test TotalDeficitNodeRecorder
     """
     model = simple_linear_model
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
     otpt.max_flow = 30.0
-    model.node['Input'].max_flow = 10.0
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec = TotalFlowNodeRecorder(model, otpt)
 
@@ -291,9 +461,9 @@ def test_total_flow_node_recorder(simple_linear_model):
 
 def test_aggregated_recorder(simple_linear_model):
     model = simple_linear_model
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
     otpt.max_flow = 30.0
-    model.node['Input'].max_flow = 10.0
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec1 = TotalFlowNodeRecorder(model, otpt)
     rec2 = TotalDeficitNodeRecorder(model, otpt)

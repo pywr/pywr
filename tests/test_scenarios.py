@@ -49,10 +49,10 @@ def test_scenario(simple_linear_model, ):
     model = simple_linear_model  # Convenience renaming
 
     scenario = pywr.core.Scenario(model, 'Inflow', size=2)
-    model.node["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario, [5.0, 10.0])
+    model.nodes["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario, [5.0, 10.0])
 
-    model.node["Output"].max_flow = 5.0
-    model.node["Output"].cost = -2.0
+    model.nodes["Output"].max_flow = 5.0
+    model.nodes["Output"].cost = -2.0
 
     expected_node_results = {
         "Input": [5.0, 5.0],
@@ -68,15 +68,15 @@ def test_two_scenarios(simple_linear_model, ):
     model = simple_linear_model  # Convenience renaming
 
     scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
-    model.node["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
+    model.nodes["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
     scenario_outflow = pywr.core.Scenario(model, 'Outflow', size=2)
-    model.node["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
-    model.node["Output"].cost = -2.0
+    model.nodes["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
+    model.nodes["Output"].cost = -2.0
     
     # add numpy recorders to input and output nodes
-    NumpyArrayNodeRecorder(model, model.node["Input"], "input")
-    NumpyArrayNodeRecorder(model, model.node["Output"], "output")
+    NumpyArrayNodeRecorder(model, model.nodes["Input"], "input")
+    NumpyArrayNodeRecorder(model, model.nodes["Output"], "output")
 
     expected_node_results = {
         "Input": [3.0, 5.0, 3.0, 8.0],
@@ -102,10 +102,10 @@ def test_scenario_two_parameter(simple_linear_model, ):
     model = simple_linear_model  # Convenience renaming
 
     scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
-    model.node["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
+    model.nodes["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
-    model.node["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [8.0, 3.0])
-    model.node["Output"].cost = -2.0
+    model.nodes["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [8.0, 3.0])
+    model.nodes["Output"].cost = -2.0
 
     expected_node_results = {
         "Input": [5.0, 3.0],

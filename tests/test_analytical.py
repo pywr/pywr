@@ -23,9 +23,9 @@ def test_linear_model(simple_linear_model, in_flow, out_flow, benefit):
     Test the simple_linear_model with different basic input and output values
     """
 
-    simple_linear_model.node["Input"].max_flow = in_flow
-    simple_linear_model.node["Output"].min_flow = out_flow
-    simple_linear_model.node["Output"].cost = -benefit
+    simple_linear_model.nodes["Input"].max_flow = in_flow
+    simple_linear_model.nodes["Output"].min_flow = out_flow
+    simple_linear_model.nodes["Output"].cost = -benefit
 
     expected_sent = in_flow if benefit > 1.0 else out_flow
 
@@ -230,13 +230,13 @@ def test_simple_linear_inline_model(simple_linear_inline_model, in_flow_1, out_f
     Test the test_simple_linear_inline_model with different flow constraints
     """
     model = simple_linear_inline_model
-    model.node["Input 0"].max_flow = 10.0
-    model.node["Input 1"].max_flow = in_flow_1
-    model.node["Link"].max_flow = link_flow
-    model.node["Output 0"].max_flow = out_flow_0
-    model.node["Input 1"].cost = 1.0
-    model.node["Output 0"].cost = -10.0
-    model.node["Output 1"].cost = -5.0
+    model.nodes["Input 0"].max_flow = 10.0
+    model.nodes["Input 1"].max_flow = in_flow_1
+    model.nodes["Link"].max_flow = link_flow
+    model.nodes["Output 0"].max_flow = out_flow_0
+    model.nodes["Input 1"].cost = 1.0
+    model.nodes["Output 0"].cost = -10.0
+    model.nodes["Output 1"].cost = -5.0
 
     expected_sent = min(link_flow, 10+in_flow_1)
 
@@ -270,8 +270,8 @@ def bidirectional_model(request, solver):
         lnk.connect(otpt)
 
     # Create bidirectional link (i.e. a cycle)
-    model.node['Link 0'].connect(model.node['Link 1'])
-    model.node['Link 1'].connect(model.node['Link 0'])
+    model.nodes['Link 0'].connect(model.nodes['Link 1'])
+    model.nodes['Link 1'].connect(model.nodes['Link 0'])
 
     return model
 
@@ -281,14 +281,14 @@ def test_bidirectional_model(bidirectional_model):
     Test the simple_linear_model with different basic input and output values
     """
     model = bidirectional_model
-    model.node["Input 0"].max_flow = 10.0
-    model.node["Input 1"].max_flow = 10.0
-    model.node["Output 0"].max_flow = 10.0
-    model.node["Output 1"].max_flow = 15.0
-    model.node["Output 0"].cost = -5.0
-    model.node["Output 1"].cost = -10.0
-    model.node["Link 0"].cost = 1.0
-    model.node["Link 1"].cost = 1.0
+    model.nodes["Input 0"].max_flow = 10.0
+    model.nodes["Input 1"].max_flow = 10.0
+    model.nodes["Output 0"].max_flow = 10.0
+    model.nodes["Output 1"].max_flow = 15.0
+    model.nodes["Output 0"].cost = -5.0
+    model.nodes["Output 1"].cost = -10.0
+    model.nodes["Link 0"].cost = 1.0
+    model.nodes["Link 1"].cost = 1.0
 
     expected_node_results = {
         "Input 0": 10.0,

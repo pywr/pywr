@@ -20,16 +20,16 @@ def test_names(solver):
 
     node1 = Input(model, name='A')
     node2 = Output(model, name='B')
-    assert(model.node['A'] is node1)
-    assert(model.node['B'] is node2)
+    assert(model.nodes['A'] is node1)
+    assert(model.nodes['B'] is node2)
 
     nodes = sorted(model.nodes(), key=lambda node: node.name)
     assert(nodes == [node1, node2])
 
     # rename node
     node1.name = 'C'
-    assert(model.node['C'] is node1)
-    assert('A' not in model.node)
+    assert(model.nodes['C'] is node1)
+    assert('A' not in model.nodes)
 
     # attempt name collision (via rename)
     with pytest.raises(ValueError):
@@ -38,7 +38,7 @@ def test_names(solver):
     # attempt name collision (via new)
     with pytest.raises(ValueError):
         node3 = Input(model, name='C')
-    assert(len(model.node) == 2)  # node3 not added to graph
+    assert(len(model.nodes) == 2)  # node3 not added to graph
 
     # attempt to create a node without a name
     with pytest.raises(TypeError):
