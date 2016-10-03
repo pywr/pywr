@@ -51,6 +51,7 @@ requirements:
     - scipy
     - future
     - packaging
+    - jupyter
     {% if OLDGLIBC %}
     - oldglibc
     {% endif %}
@@ -58,6 +59,7 @@ requirements:
 test:
   requires:
     - pytest
+    - nbconvert
 
 about:
   home: https://github.com/pywr/pywr
