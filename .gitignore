@@ -45,3 +45,11 @@ docs/_build/
 target/
 # Mac
 .DS_Store
+
+# jupyter
+.ipynb_checkpoints/
+
+# cython produces .c files, but these should not be commited
+*.c
+# cython also produces annotated .c files as .html
+*.html
