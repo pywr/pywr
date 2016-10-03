@@ -30,7 +30,7 @@ def test_run_simple1(solver):
     model.step()
 
     # check results
-    demand1 = model.node['demand1']
+    demand1 = model.nodes['demand1']
     assert_allclose(demand1.flow, 10.0, atol=1e-7)
     # initially the timestepper returns the first time-step, so timestepper.current
     # does not change after the first 'step'.
@@ -46,8 +46,8 @@ def test_run_reservoir1(solver):
     Without an additional supply the reservoir should empty and cause a failure.
     '''
     model = load_model('reservoir1.json', solver=solver)
-    demand1 = model.node['demand1']
-    supply1 = model.node['supply1']
+    demand1 = model.nodes['demand1']
+    supply1 = model.nodes['supply1']
     for demand, stored in [(10.0, 25.0), (10.0, 15.0), (10.0, 5.0), (5.0, 0.0), (0.0, 0.0)]:
         result = model.step()
         assert_allclose(demand1.flow, demand, atol=1e-7)
@@ -62,9 +62,9 @@ def test_run_reservoir2(solver):
     '''
     model = load_model('reservoir2.json', solver=solver)
 
-    demand1 = model.node['demand1']
-    supply1 = model.node['supply1']
-    catchment = model.node['catchment1']
+    demand1 = model.nodes['demand1']
+    supply1 = model.nodes['supply1']
+    catchment = model.nodes['catchment1']
     assert(catchment.min_flow == 5)
     for demand, stored in [(15.0, 25.0), (15.0, 15.0), (15.0, 5.0), (10.0, 0.0), (5.0, 0.0)]:
         result = model.step()
@@ -87,7 +87,7 @@ def test_run_river1(solver):
     model = load_model('river1.json', solver=solver)
 
     result = model.step()
-    demand1 = model.node['demand1']
+    demand1 = model.nodes['demand1']
     assert_allclose(demand1.flow, 5.0, atol=1e-7)
 
 
@@ -97,9 +97,9 @@ def test_run_river2(solver):
 
     model.step()
 
-    demand1 = model.node['demand1']
+    demand1 = model.nodes['demand1']
     assert_allclose(demand1.flow, 7.25, atol=1e-7)
-    demand2 = model.node['demand2']
+    demand2 = model.nodes['demand2']
     assert_allclose(demand2.flow, 2.0, atol=1e-7)
 
 
@@ -111,8 +111,8 @@ def test_run_timeseries1(solver):
     assert(model.timestepper.start == datetime.datetime(2015, 1, 1))
 
     # check results
-    demand1 = model.node['demand1']
-    catchment1 = model.node['catchment1']
+    demand1 = model.nodes['demand1']
+    catchment1 = model.nodes['catchment1']
     for expected in (23.92, 22.14, 22.57, 24.97, 27.59):
         result = model.step()
         assert_allclose(catchment1.flow, expected, atol=1e-7)
@@ -121,9 +121,9 @@ def test_run_timeseries1(solver):
 def test_run_cost1(solver):
     model = load_model('cost1.json', solver=solver)
 
-    supply1 = model.node['supply1']
-    supply2 = model.node['supply2']
-    demand1 = model.node['demand1']
+    supply1 = model.nodes['supply1']
+    supply2 = model.nodes['supply2']
+    demand1 = model.nodes['demand1']
 
     assert_allclose(supply1.get_cost(None, None), 1)
     assert_allclose(supply2.get_cost(None, None), 2)  # more expensive
@@ -157,7 +157,7 @@ def test_run_license1(solver):
     model.timestamp = datetime.datetime(2015, 1, 1)
 
     # add licenses to supply node
-    supply1 = model.node['supply1']
+    supply1 = model.nodes['supply1']
     daily_lic = pywr.licenses.DailyLicense(5)
     annual_lic = pywr.licenses.AnnualLicense(7)
     collection = pywr.licenses.LicenseCollection([daily_lic, annual_lic])
@@ -167,7 +167,7 @@ def test_run_license1(solver):
 
     # daily license is limit
     result = model.step()
-    d1 = model.node['demand1']
+    d1 = model.nodes['demand1']
     assert_allclose(d1.flow, 5.0, atol=1e-7)
 
     # resource state is getting worse
@@ -175,12 +175,12 @@ def test_run_license1(solver):
 
     # annual license is limit
     result = model.step()
-    d1 = model.node['demand1']
+    d1 = model.nodes['demand1']
     assert_allclose(d1.flow, 2.0, atol=1e-7)
 
     # annual license is exhausted
     result = model.step()
-    d1 = model.node['demand1']
+    d1 = model.nodes['demand1']
     assert_allclose(d1.flow, 0.0, atol=1e-7)
     assert_allclose(annual_lic.resource_state(model.timestep), 0.0, atol=1e-7)
 
@@ -192,13 +192,13 @@ def test_run_license2(solver):
 
     model.timestamp = datetime.datetime(2015, 1, 1)
 
-    supply1 = model.node['supply1']
+    supply1 = model.nodes['supply1']
 
     assert(len(supply1.licenses) == 2)
 
     # daily license limit
     result = model.step()
-    d1 = model.node['demand1']
+    d1 = model.nodes['demand1']
     assert_allclose(d1.flow, 5.0, atol=1e-7)
 
     # annual license limit
@@ -211,13 +211,13 @@ def test_run_license_group(solver):
     '''Test license groups'''
     model = load_model('groups1.xml', solver=solver)
 
-    supply1 = model.node['supply1']
-    supply2 = model.node['supply2']
+    supply1 = model.nodes['supply1']
+    supply2 = model.nodes['supply2']
 
     assert(len(model.group) == 2)
 
     result = model.step()
-    d1 = model.node['demand1']
+    d1 = model.nodes['demand1']
     assert_allclose(d1.flow, 6.0, atol=1e-7)
 
 
@@ -225,8 +225,8 @@ def test_run_bottleneck(solver):
     '''Test max flow constraint on intermediate nodes is upheld'''
     model = load_model('bottleneck.json', solver=solver)
     result = model.step()
-    d1 = model.node['demand1']
-    d2 = model.node['demand2']
+    d1 = model.nodes['demand1']
+    d2 = model.nodes['demand2']
     assert_allclose(d1.flow+d2.flow, 15.0, atol=1e-7)
 
 def test_run_discharge_upstream(solver):
@@ -237,8 +237,8 @@ def test_run_discharge_upstream(solver):
     '''
     model = load_model('river_discharge1.json', solver=solver)
     model.step()
-    demand = model.node['demand1']
-    term = model.node['term1']
+    demand = model.nodes['demand1']
+    term = model.nodes['term1']
     assert_allclose(demand.flow, 8.0, atol=1e-7)
     assert_allclose(term.flow, 0.0, atol=1e-7)
 
@@ -250,8 +250,8 @@ def test_run_discharge_downstream(solver):
     '''
     model = load_model('river_discharge2.json', solver=solver)
     model.step()
-    demand = model.node['demand1']
-    term = model.node['term1']
+    demand = model.nodes['demand1']
+    term = model.nodes['term1']
     assert_allclose(demand.flow, 5.0, atol=1e-7)
     assert_allclose(term.flow, 3.0, atol=1e-7)
 
@@ -261,10 +261,10 @@ def test_run_blender1(solver):
     '''Test blender constraint/component'''
     model = load_model('blender1.xml', solver=solver)
 
-    blender = model.node['blender1']
-    supply1 = model.node['supply1']
-    supply2 = model.node['supply2']
-    supply3 = model.node['supply3']
+    blender = model.nodes['blender1']
+    supply1 = model.nodes['supply1']
+    supply2 = model.nodes['supply2']
+    supply3 = model.nodes['supply3']
 
     # check blender ratio
     assert_allclose(blender.properties['ratio'].value(model.timestamp), 0.75, atol=1e-7)
@@ -284,9 +284,9 @@ def test_run_blender2(solver):
     '''Test blender constraint/component'''
     model = load_model('blender2.xml', solver=solver)
 
-    blender = model.node['blender1']
-    supply1 = model.node['supply1']
-    supply2 = model.node['supply2']
+    blender = model.nodes['blender1']
+    supply1 = model.nodes['supply1']
+    supply2 = model.nodes['supply2']
 
     # test model results
     result = model.step()
@@ -556,7 +556,7 @@ def test_reservoir_circle(solver):
 def test_reset(solver):
     """Test model reset"""
     model = load_model('license1.xml', solver=solver)
-    supply1 = model.node['supply1']
+    supply1 = model.nodes['supply1']
     license_collection = supply1.licenses
     license = [lic for lic in license_collection._licenses if isinstance(lic, pywr.licenses.AnnualLicense)][0]
     assert_allclose(license.available(None), 7.0, atol=1e-7)
@@ -593,7 +593,7 @@ def test_run_until_failure(solver):
 
     # run until failure
     model.timestamp = pandas.to_datetime('2015-12-01')
-    demand1 = model.node['demand1']
+    demand1 = model.nodes['demand1']
     def demand_func(node, timestamp):
         return timestamp.datetime.day
     demand1.min_flow = pywr.parameters.ParameterFunction(demand1, demand_func)

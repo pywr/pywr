@@ -36,7 +36,7 @@ class CSVRecorder(Recorder):
         """
 
         if self.nodes is None:
-            self.node_names = sorted(self.model.node.keys())
+            self.node_names = sorted(self.model.nodes.keys())
         else:
             self.node_names = sorted(n.name for n in self.nodes)
 
@@ -57,7 +57,7 @@ class CSVRecorder(Recorder):
 
         values = [self.model.timestepper.current.datetime.isoformat()]
         for node_name in self.node_names:
-            node = self.model.node[node_name]
+            node = self.model.nodes[node_name]
             if isinstance(node, Node):
                 values.append(node.flow[self.scenario_index])
             elif isinstance(node, Storage):
@@ -167,7 +167,7 @@ class TablesRecorder(Recorder):
 
         # Default to all nodes if None given.
         if self.nodes is None:
-            nodes = [(self.where, n) for n in self.model.node.values()]
+            nodes = [(self.where, n) for n in self.model.nodes.values()]
         else:
             nodes = []
             for n in self.nodes:
@@ -233,4 +233,3 @@ class TablesRecorder(Recorder):
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
 recorder_registry.add(TablesRecorder)
-

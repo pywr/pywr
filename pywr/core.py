@@ -346,8 +346,6 @@ class Model(object):
     def nodes(self):
         """Returns a model node iterator"""
         return NodeIterator(self)
-    # support for old API
-    node = nodes
 
     def edges(self):
         """Returns a list of Edges in the model

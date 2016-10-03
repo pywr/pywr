@@ -24,9 +24,9 @@ def test_numpy_recorder(simple_linear_model):
     Test the NumpyArrayNodeRecorder
     """
     model = simple_linear_model
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
 
-    model.node['Input'].max_flow = 10.0
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec = NumpyArrayNodeRecorder(model, otpt)
 
@@ -54,7 +54,7 @@ def test_numpy_storage_recorder(simple_storage_model):
     """
     model = simple_storage_model
 
-    res = model.node['Storage']
+    res = model.nodes['Storage']
 
     rec = NumpyArrayStorageRecorder(model, res)
 
@@ -79,13 +79,13 @@ def test_numpy_parameter_recorder(simple_linear_model):
     # using leap year simplifies tests
     model.timestepper.start = pandas.to_datetime("2016-01-01")
     model.timestepper.end = pandas.to_datetime("2016-12-31")
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
 
     p = DailyProfileParameter(np.arange(366, dtype=np.float64), )
     p.name = 'daily profile'
-    model.node['Input'].max_flow = p
+    model.nodes['Input'].max_flow = p
     otpt.cost = -2.0
-    rec = NumpyArrayParameterRecorder(model, model.node['Input'].max_flow)
+    rec = NumpyArrayParameterRecorder(model, model.nodes['Input'].max_flow)
 
     # test retrieval of recorder
     assert model.recorders['numpyarrayparameterrecorder.daily profile'] == rec
@@ -108,7 +108,7 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
 
     model = simple_storage_model
 
-    res = model.node['Storage']
+    res = model.nodes['Storage']
 
     p = ControlCurveIndexParameter(res, [5.0/20.0, 2.5/20.0])
 
@@ -181,9 +181,9 @@ def test_concatenated_dataframes(simple_storage_model):
     scA = Scenario(model, 'A', size=2)
     scB = Scenario(model, 'B', size=3)
 
-    res = model.node['Storage']
+    res = model.nodes['Storage']
     rec1 = NumpyArrayStorageRecorder(model, res)
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
     rec2 = NumpyArrayNodeRecorder(model, otpt)
     # The following can't return a DataFrame; is included to check
     # it doesn't cause any issues
@@ -202,8 +202,8 @@ def test_csv_recorder(simple_linear_model, tmpdir):
 
     """
     model = simple_linear_model
-    otpt = model.node['Output']
-    model.node['Input'].max_flow = 10.0
+    otpt = model.nodes['Output']
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
 
     csvfile = tmpdir.join('output.csv')
@@ -238,8 +238,8 @@ class TestTablesRecorder:
 
         """
         model = simple_linear_model
-        otpt = model.node['Output']
-        inpt = model.node['Input']
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
         agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
 
         inpt.max_flow = 10.0
@@ -252,7 +252,7 @@ class TestTablesRecorder:
 
             model.run()
 
-            for node_name in model.node.keys():
+            for node_name in model.nodes.keys():
                 ca = h5f.get_node('/', node_name)
                 assert ca.shape == (365, 1)
                 if node_name == 'Sum':
@@ -268,8 +268,8 @@ class TestTablesRecorder:
         from pywr.parameters import ConstantParameter
 
         model = simple_linear_model
-        otpt = model.node['Output']
-        inpt = model.node['Input']
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
 
         p = ConstantParameter(10.0, name='max_flow')
         inpt.max_flow = p
@@ -286,7 +286,7 @@ class TestTablesRecorder:
 
             model.run()
 
-            for node_name in model.node.keys():
+            for node_name in model.nodes.keys():
                 ca = h5f.get_node('/', node_name)
                 assert ca.shape == (365, 1)
                 if node_name == 'Sum':
@@ -302,8 +302,8 @@ class TestTablesRecorder:
         from pywr.parameters import ConstantParameter
 
         model = simple_linear_model
-        otpt = model.node['Output']
-        inpt = model.node['Input']
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
         agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
         p = ConstantParameter(10.0, name='max_flow')
         inpt.max_flow = p
@@ -428,9 +428,9 @@ def test_total_deficit_node_recorder(simple_linear_model):
     Test TotalDeficitNodeRecorder
     """
     model = simple_linear_model
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
     otpt.max_flow = 30.0
-    model.node['Input'].max_flow = 10.0
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec = TotalDeficitNodeRecorder(model, otpt)
 
@@ -446,9 +446,9 @@ def test_total_flow_node_recorder(simple_linear_model):
     Test TotalDeficitNodeRecorder
     """
     model = simple_linear_model
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
     otpt.max_flow = 30.0
-    model.node['Input'].max_flow = 10.0
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec = TotalFlowNodeRecorder(model, otpt)
 
@@ -461,9 +461,9 @@ def test_total_flow_node_recorder(simple_linear_model):
 
 def test_aggregated_recorder(simple_linear_model):
     model = simple_linear_model
-    otpt = model.node['Output']
+    otpt = model.nodes['Output']
     otpt.max_flow = 30.0
-    model.node['Input'].max_flow = 10.0
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec1 = TotalFlowNodeRecorder(model, otpt)
     rec2 = TotalDeficitNodeRecorder(model, otpt)
