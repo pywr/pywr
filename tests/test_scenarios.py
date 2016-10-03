@@ -10,6 +10,7 @@ from pywr.recorders import NumpyArrayStorageRecorder, NumpyArrayNodeRecorder
 from helpers import assert_model, load_model
 # To get simple_linear_model fixture
 from fixtures import simple_linear_model
+import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
 
@@ -146,10 +147,25 @@ def test_scenario_storage(solver):
 
 def test_scenarios_from_json(solver):
 
-    model = load_model('simple_with_scenario.json')
+    model = load_model('simple_with_scenario.json', solver=solver)
 
     assert len(model.scenarios) == 2
 
     model.setup()
     assert len(model.scenarios.combinations) == 20
     model.run()
+
+
+def test_timeseries_with_scenarios(solver):
+
+    model = load_model('timeseries2.json', solver=solver)
+
+    model.setup()
+
+    assert len(model.scenarios) == 1
+
+    model.step()
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
+    catchment1 = model.node['catchment1']
+    assert_allclose(catchment1.flow, step1)
+

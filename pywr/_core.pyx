@@ -34,6 +34,8 @@ cdef class ScenarioCombinations:
 cdef class Scenario:
     def __init__(self, model, str name, int size=1):
         self._name = name
+        if size < 1:
+            raise ValueError("Size must be greater than or equal to 1.")
         self._size = size
         model.scenarios.add_scenario(self)
 
@@ -53,6 +55,14 @@ cdef class ScenarioCollection:
     property scenarios:
         def __get__(self):
             return self._scenarios
+
+    def __getitem__(self, name):
+        cdef Scenario sc
+        for sc in self._scenarios:
+            if sc._name == name:
+                return sc
+        raise KeyError("Scenario with name '{}' not found.".format(name))
+
 
     def setup(self, ):
         """ Create the list of ScenarioIndex objects based on the current Scenarios. """

@@ -113,7 +113,7 @@ class DataFrameParameter(Parameter):
     def load(cls, model, data):
         scenario = data.pop('scenario', None)
         if scenario is not None:
-            raise NotImplementedError('Loading Scenarios not implemented in JSON.')
+            scenario = model.scenarios[scenario]
         df = load_dataframe(model, data)
         return cls(df, scenario=scenario)
 
