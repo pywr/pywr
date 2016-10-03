@@ -148,7 +148,7 @@ def test_scenario_storage(solver):
 def test_scenarios_from_json(solver):
 
     model = load_model('simple_with_scenario.json', solver=solver)
-
+s
     assert len(model.scenarios) == 2
 
     model.setup()
@@ -165,7 +165,7 @@ def test_timeseries_with_scenarios(solver):
     assert len(model.scenarios) == 1
 
     model.step()
-    catchment1 = model.node['catchment1']
+    catchment1 = model.nodes['catchment1']
 
     step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
     assert_allclose(catchment1.flow, step1)
@@ -184,7 +184,7 @@ def test_timeseries_with_scenarios_hdf(solver):
 
     assert len(model.scenarios) == 1
 
-    catchment1 = model.node['catchment1']
+    catchment1 = model.nodes['catchment1']
 
     model.step()
     step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
