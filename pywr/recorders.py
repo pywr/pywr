@@ -111,8 +111,15 @@ class TablesRecorder(Recorder):
         """
         self.filter_kwds = kwargs.pop('filter_kwds', {})
         self.mode = kwargs.pop('mode', 'w')
+
+        title = kwargs.pop('title', None)
+        if title is None:
+            try:
+                title = model.metadata['title']
+            except KeyError:
+                title = ''
+        self.title = title
         super(TablesRecorder, self).__init__(model, **kwargs)
-        import tables
 
         self.h5file = h5file
         self.h5store = None
@@ -139,7 +146,7 @@ class TablesRecorder(Recorder):
         import tables
         shape = len(self.model.timestepper), len(self.model.scenarios.combinations)
 
-        self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode)
+        self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title)
 
         # Create a CArray for each node
         self._arrays = {}
@@ -194,7 +201,7 @@ class TablesRecorder(Recorder):
         self.h5store = None
 
     def reset(self):
-        mode = "a" # always need to append, as file already created in setup
+        mode = "r+"  # always need to append, as file already created in setup
         self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
         self._arrays = {}
         for where, node in self._nodes:

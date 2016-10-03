@@ -3,7 +3,7 @@ import sys
 from past.builtins import basestring
 
 class H5Store(object):
-    def __init__(self, filename, filter_kwds, mode):
+    def __init__(self, filename, filter_kwds, mode, title=''):
         filter_kwds = filter_kwds
         mode = mode
         self._opened = False
@@ -16,7 +16,7 @@ class H5Store(object):
             if sys.version_info[0] == 2 and 'complib' in filter_kwds:
                 filter_kwds['complib'] = filter_kwds['complib'].encode()
             filters = tables.Filters(**filter_kwds)
-            self.file = tables.open_file(filename, mode=mode, filters=filters)
+            self.file = tables.open_file(filename, mode=mode, filters=filters, title=title)
             self._opened = True
         elif isinstance(filename, tables.File):
             # filename is a pytables file
