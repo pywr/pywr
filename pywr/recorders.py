@@ -1,5 +1,7 @@
 import sys
 from pywr._recorders import *
+from past.builtins import basestring
+from .h5tools import H5Store
 
 
 class CSVRecorder(Recorder):
@@ -40,6 +42,7 @@ class CSVRecorder(Recorder):
         else:
             self.node_names = sorted(n.name for n in self.nodes)
 
+    def reset(self):
         import csv
         if sys.version_info.major >= 3:
             self._fh = open(self.csvfile, 'w', newline='')
@@ -106,46 +109,26 @@ class TablesRecorder(Recorder):
         mode : string
             Model argument to pass to tables.open_file. Defaults to 'w'
         """
-        filter_kwds = kwargs.pop('filter_kwds', {})
-        mode = kwargs.pop('mode', 'w')
+        self.filter_kwds = kwargs.pop('filter_kwds', {})
+        self.mode = kwargs.pop('mode', 'w')
+
+        title = kwargs.pop('title', None)
+        if title is None:
+            try:
+                title = model.metadata['title']
+            except KeyError:
+                title = ''
+        self.title = title
         super(TablesRecorder, self).__init__(model, **kwargs)
-        import tables
 
-        h5opened = False
-        if isinstance(h5file, basestring):
-            # HACK Python 2 workaround
-            # Note sure how else to deal with str / unicode requirements in pytables
-            # See this issue: https://github.com/PyTables/PyTables/issues/522
-            import sys
-            if sys.version_info[0] == 2 and 'complib' in filter_kwds:
-                filter_kwds['complib'] = filter_kwds['complib'].encode()
-            filters = tables.Filters(**filter_kwds)
-            h5fh = tables.open_file(h5file, mode=mode, filters=filters)
-            h5opened = True
-        elif isinstance(h5file, tables.File):
-            h5fh = h5file
-        else:
-            raise ValueError("Argument h5file must be either a filename string or instance of tables.File")
-
-        self.h5file = h5fh
-        self._h5opened = h5opened
+        self.h5file = h5file
+        self.h5store = None
+        self._arrays = {}
         self.nodes = nodes
         self.parameters = parameters
         self.where = where
 
         self._arrays = None
-
-    def __del__(self):
-        if self._h5opened and self.h5file.isopen:
-            self.h5file.close()
-        if self._arrays is not None:
-            for arr in self._arrays.values():
-                arr.close()
-            del self._arrays
-
-    def finish(self):
-        if self._h5opened:
-            self.h5file.close()
 
     @classmethod
     def load(cls, model, data):
@@ -162,6 +145,9 @@ class TablesRecorder(Recorder):
         from pywr.parameters import IndexParameter
         import tables
         shape = len(self.model.timestepper), len(self.model.scenarios.combinations)
+
+        self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title)
+
         # Create a CArray for each node
         self._arrays = {}
 
@@ -203,12 +189,23 @@ class TablesRecorder(Recorder):
                     raise ValueError('Can only record named Parameter objects.')
                 nodes.append((where, param))
 
-        for where, node in nodes:
+        self._nodes = nodes
+
+        for where, node in self._nodes:
             if isinstance(node, IndexParameter):
                 atom = tables.Int32Atom()
             else:
                 atom = tables.Float64Atom()
-            self._arrays[node] = self.h5file.create_carray(where, node.name, atom, shape, createparents=True)
+            self.h5store.file.create_carray(where, node.name, atom, shape, createparents=True)
+
+        self.h5store = None
+
+    def reset(self):
+        mode = "r+"  # always need to append, as file already created in setup
+        self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
+        self._arrays = {}
+        for where, node in self._nodes:
+            self._arrays[node] = self.h5store.file.get_node(where, node.name)
 
     def save(self):
         """
@@ -232,4 +229,9 @@ class TablesRecorder(Recorder):
                     ca[idx, si.global_id] = node.value(ts, si)
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
+
+    def finish(self):
+        self.h5store = None
+        self._arrays = {}
+
 recorder_registry.add(TablesRecorder)

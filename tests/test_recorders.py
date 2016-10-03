@@ -397,12 +397,16 @@ class TestTablesRecorder:
         model.timestepper.end = "2016-01-31"
         model.check()
 
+        # run model
+        model.run()
+
+        # run model again (to test reset behaviour)
         model.run()
         max_volume = model.nodes["Reservoir"].max_volume
 
         h5file = tmpdir.join('output.h5')
         with tables.open_file(str(h5file), 'r') as h5f:
-            print(h5f)
+            assert model.metadata['title'] == h5f.title
             rec_demand = h5f.get_node('/outputs/demand', 'Demand').read()
             rec_storage = h5f.get_node('/storage/reservoir', 'Reservoir').read()
 
