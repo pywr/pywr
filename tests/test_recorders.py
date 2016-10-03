@@ -397,6 +397,10 @@ class TestTablesRecorder:
         model.timestepper.end = "2016-01-31"
         model.check()
 
+        # run model
+        model.run()
+
+        # run model again (to test reset behaviour)
         model.run()
         max_volume = model.nodes["Reservoir"].max_volume
 
