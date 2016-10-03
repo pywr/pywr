@@ -148,7 +148,6 @@ def test_scenario_storage(solver):
 def test_scenarios_from_json(solver):
 
     model = load_model('simple_with_scenario.json', solver=solver)
-s
     assert len(model.scenarios) == 2
 
     model.setup()
