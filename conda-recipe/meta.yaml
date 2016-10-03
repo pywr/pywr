@@ -52,6 +52,7 @@ requirements:
     - future
     - packaging
     - jupyter
+    - matplotlib
     {% if OLDGLIBC %}
     - oldglibc
     {% endif %}
