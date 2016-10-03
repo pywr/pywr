@@ -2,7 +2,7 @@ from .parameters._parameters cimport Parameter
 from _recorders cimport Recorder
 
 cdef class Scenario:
-    cdef str _name
+    cdef basestring _name
     cdef int _size
 
 cdef class ScenarioCollection:

@@ -32,7 +32,7 @@ cdef class ScenarioCombinations:
 
 
 cdef class Scenario:
-    def __init__(self, model, str name, int size=1):
+    def __init__(self, model, name, int size=1):
         self._name = name
         if size < 1:
             raise ValueError("Size must be greater than or equal to 1.")
