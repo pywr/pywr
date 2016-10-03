@@ -7,7 +7,7 @@ A series of tests of the Scenario objects and associated infrastructure
 import pywr.core
 from pywr.core import Model, Input, Output, Link, Storage
 from pywr.recorders import NumpyArrayStorageRecorder, NumpyArrayNodeRecorder
-from helpers import assert_model
+from helpers import assert_model, load_model
 # To get simple_linear_model fixture
 from fixtures import simple_linear_model
 from numpy.testing import assert_equal, assert_allclose
@@ -142,3 +142,14 @@ def test_scenario_storage(solver):
     assert_allclose(i.flow, [5, 10])
     assert_allclose(s_rec.data[0], [505, 510])
     assert_allclose(s_rec.data[1], [510, 520])
+
+
+def test_scenarios_from_json(solver):
+
+    model = load_model('simple_with_scenario.json')
+
+    assert len(model.scenarios) == 2
+
+    model.setup()
+    assert len(model.scenarios.combinations) == 20
+    model.run()

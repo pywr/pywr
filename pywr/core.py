@@ -468,6 +468,17 @@ class Model(object):
             )
         model.metadata = data["metadata"]
 
+        # load scenarios
+        try:
+            scenarios_data = data["scenarios"]
+        except KeyError:
+            # Leave to default of no scenarios
+            pass
+        else:
+            for scen_name, scen_data in scenarios_data.items():
+                size = scen_data["size"]
+                Scenario(model, scen_name, size=size)
+
         # collect nodes to load
         nodes_to_load = {}
         for node_data in data["nodes"]:
