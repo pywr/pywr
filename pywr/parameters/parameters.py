@@ -204,6 +204,10 @@ class TablesArrayParameter(Parameter):
 
         self._node = self._h5fh.get_node(self.where, self.node)
 
+        if self.scenario is not None:
+            if self._node.shape[1] != self.scenario.size:
+                raise RuntimeError("The second length of the dimension of the tables Node should the same as the size of the specified Scenario.")
+
     def __del__(self):
         if self._h5opened:
             self._h5fh.close()
