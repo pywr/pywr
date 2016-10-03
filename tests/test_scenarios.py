@@ -165,7 +165,35 @@ def test_timeseries_with_scenarios(solver):
     assert len(model.scenarios) == 1
 
     model.step()
-    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
     catchment1 = model.node['catchment1']
+
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
     assert_allclose(catchment1.flow, step1)
+
+    model.step()
+    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80])
+    # Low tolerance because test values were truncated to 2 decimal places.
+    assert_allclose(catchment1.flow, step2)
+
+
+def test_timeseries_with_scenarios_hdf(solver):
+
+    model = load_model('timeseries2_hdf.json', solver=solver)
+
+    model.setup()
+
+    assert len(model.scenarios) == 1
+
+    catchment1 = model.node['catchment1']
+
+    model.step()
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
+    # Low tolerance because test values were truncated to 2 decimal places.
+    assert_allclose(catchment1.flow, step1, atol=1e-1)
+
+    model.step()
+    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80])
+    # Low tolerance because test values were truncated to 2 decimal places.
+    assert_allclose(catchment1.flow, step2, atol=1e-1)
+
 
