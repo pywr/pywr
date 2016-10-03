@@ -185,13 +185,12 @@ class TablesArrayParameter(Parameter):
         if self.scenario is not None:
             self._scenario_index = model.scenarios.get_scenario_index(self.scenario)
 
-    def reset(self):
+        # Check if new file needs to be opened.
         import tables
-
         h5file = self.h5file
-
         h5opened = False
         if isinstance(h5file, basestring):
+            # Open the PyTables file if necessary.
             h5fh = tables.open_file(h5file, mode="r")
             h5opened = True
         elif isinstance(h5file, tables.File):
