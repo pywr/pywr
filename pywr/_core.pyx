@@ -833,7 +833,7 @@ cdef class Storage(AbstractStorage):
                 self._current_pc[i] = np.nan
 
     cpdef finish(self):
-        """Called at the beginning of a run"""
+        """Called at the end of a run"""
         AbstractStorage.finish(self)
 
         # Parameters finish first
