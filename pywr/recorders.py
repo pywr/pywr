@@ -2,7 +2,6 @@ import sys
 from pywr._recorders import *
 from past.builtins import basestring
 from .h5tools import H5Store
-import os
 
 class CSVRecorder(Recorder):
     """
@@ -202,7 +201,7 @@ class TablesRecorder(Recorder):
                 atom = tables.Int32Atom()
             else:
                 atom = tables.Float64Atom()
-            group_name, node_name = os.path.split(where)
+            group_name, node_name = where.rsplit("/", 1)
             if "group_name" == "/":
                 group_name = self.h5store.file.root
             self.h5store.file.create_carray(group_name, node_name, atom, shape, createparents=True)
