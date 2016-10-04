@@ -677,6 +677,7 @@ cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
         cdef int nt = self.model.timestepper.current.index
         for i in range(self._values.shape[0]):
             self._values[i] /= nt
+recorder_registry.add(DeficitFrequencyNodeRecorder)
 
 cdef class BaseConstantStorageRecorder(StorageRecorder):
     """
