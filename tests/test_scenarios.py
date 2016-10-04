@@ -74,7 +74,7 @@ def test_two_scenarios(simple_linear_model, ):
     scenario_outflow = pywr.core.Scenario(model, 'Outflow', size=2)
     model.nodes["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
     model.nodes["Output"].cost = -2.0
-    
+
     # add numpy recorders to input and output nodes
     NumpyArrayNodeRecorder(model, model.nodes["Input"], "input")
     NumpyArrayNodeRecorder(model, model.nodes["Output"], "output")
@@ -86,9 +86,9 @@ def test_two_scenarios(simple_linear_model, ):
     }
 
     assert_model(model, expected_node_results)
-    
+
     model.run()
-    
+
     # combine recorder outputs to a single dataframe
     df = model.to_dataframe()
     assert(df.shape == (365, 2 * 2 * 2))
@@ -174,6 +174,8 @@ def test_timeseries_with_scenarios(solver):
     # Low tolerance because test values were truncated to 2 decimal places.
     assert_allclose(catchment1.flow, step2)
 
+    model.finish()
+
 
 def test_timeseries_with_scenarios_hdf(solver):
 
@@ -195,4 +197,4 @@ def test_timeseries_with_scenarios_hdf(solver):
     # Low tolerance because test values were truncated to 2 decimal places.
     assert_allclose(catchment1.flow, step2, atol=1e-1)
 
-
+    model.finish()

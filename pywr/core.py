@@ -740,6 +740,8 @@ class Model(object):
             recorder.save()
 
     def finish(self):
+        for node in self.graph.nodes():
+            node.finish()
         for recorder in self.recorders:
             recorder.finish()
 

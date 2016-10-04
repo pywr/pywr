@@ -49,6 +49,7 @@ cdef class AbstractNode:
     cpdef commit(self, int scenario_index, double value)
     cpdef commit_all(self, double[:] value)
     cpdef after(self, Timestep ts)
+    cpdef finish(self)
     cpdef check(self,)
 
 cdef class Node(AbstractNode):

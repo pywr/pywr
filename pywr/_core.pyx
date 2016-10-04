@@ -298,6 +298,9 @@ cdef class AbstractNode:
     cpdef after(self, Timestep ts):
         self._prev_flow[:] = self._flow[:]
 
+    cpdef finish(self):
+        pass
+
     cpdef check(self,):
         pass
 
@@ -490,6 +493,15 @@ cdef class Node(AbstractNode):
             self._max_flow_param.after(ts)
         if self._min_flow_param is not None:
             self._min_flow_param.after(ts)
+
+    cpdef finish(self):
+        AbstractNode.finish(self)
+        if self._cost_param is not None:
+            self._cost_param.finish()
+        if self._max_flow_param is not None:
+            self._max_flow_param.finish()
+        if self._min_flow_param is not None:
+            self._min_flow_param.finish()
 
 cdef class BaseLink(Node):
     pass
@@ -819,6 +831,18 @@ cdef class Storage(AbstractStorage):
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
+
+    cpdef finish(self):
+        """Called at the beginning of a run"""
+        AbstractStorage.finish(self)
+
+        # Parameters finish first
+        if self._cost_param is not None:
+            self._cost_param.finish()
+        if self._max_volume_param is not None:
+            self._max_volume_param.finish()
+        if self._min_volume_param is not None:
+            self._min_volume_param.finish()
 
 
 cdef class AggregatedStorage(AbstractStorage):

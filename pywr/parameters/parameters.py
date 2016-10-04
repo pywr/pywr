@@ -12,6 +12,7 @@ from ._parameters import (
 from past.builtins import basestring
 import numpy as np
 import pandas
+from pywr.h5tools import H5Store
 
 class Parameter(BaseParameter):
     def value(self, ts, scenario_index):
@@ -168,6 +169,7 @@ class TablesArrayParameter(Parameter):
         super(TablesArrayParameter, self).__init__(**kwargs)
 
         self.h5file = h5file
+        self.h5store = None
         self.node = node
         self.where = where
         self.scenario = scenario
@@ -175,8 +177,6 @@ class TablesArrayParameter(Parameter):
         # Private attributes, initialised during reset()
         self._node = None
         self._scenario_index = None
-        self._h5fh = None
-        self._h5opened = None
 
     def setup(self, model):
         self._scenario_index = None
@@ -185,31 +185,12 @@ class TablesArrayParameter(Parameter):
         if self.scenario is not None:
             self._scenario_index = model.scenarios.get_scenario_index(self.scenario)
 
-        # Check if new file needs to be opened.
-        import tables
-        h5file = self.h5file
-        h5opened = False
-        if isinstance(h5file, basestring):
-            # Open the PyTables file if necessary.
-            h5fh = tables.open_file(h5file, mode="r")
-            h5opened = True
-        elif isinstance(h5file, tables.File):
-            h5fh = h5file
-        else:
-            raise ValueError("Argument h5file must be either a filename string or instance of tables.File")
-
-        self._h5fh = h5fh
-        self._h5opened = h5opened
-
-        self._node = self._h5fh.get_node(self.where, self.node)
-
+    def reset(self):
+        self.h5store = H5Store(self.h5file, None, "r")
+        self._node = self.h5store.file.get_node(self.where, self.node)
         if self.scenario is not None:
             if self._node.shape[1] != self.scenario.size:
                 raise RuntimeError("The second length of the dimension of the tables Node should the same as the size of the specified Scenario.")
-
-    def __del__(self):
-        if self._h5opened:
-            self._h5fh.close()
 
     def value(self, ts, scenario_index):
         i = ts.index
@@ -220,6 +201,8 @@ class TablesArrayParameter(Parameter):
         else:
             return self._node[i, j]
 
+    def finish(self):
+        self.h5store = None
 
     @classmethod
     def load(cls, model, data):
