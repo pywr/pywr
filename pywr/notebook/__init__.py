@@ -43,7 +43,7 @@ def nx_to_json(model):
     for n, name in enumerate(nodes):
         node = {"name": name}
         classes = []
-        node_obj = model.node[name]
+        node_obj = model.nodes[name]
         cls = node_obj.__class__
         classes.append(cls)
         while True:

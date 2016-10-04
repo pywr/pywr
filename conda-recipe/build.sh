@@ -18,4 +18,4 @@ if [ "$FEATURE_OLDGLIBC" == "1" ]; then
   export CFLAGS="-I. -include conda-recipe/glibc_version_fix.h"
 fi
 
-$PYTHON setup.py build_ext --with-glpk --with-lpsolve install
+$PYTHON setup.py build_ext --with-glpk --with-lpsolve install --single-version-externally-managed --record=record.txt
