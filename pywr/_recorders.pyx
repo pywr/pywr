@@ -499,7 +499,8 @@ cdef class MeanParameterRecorder(ParameterRecorder):
         else:
             n = self.timesteps
 
-        self._data[<int>(timestep.index), :] = np.mean(self._memory[0:n, :], axis=0)
+        mean_value = np.mean(self._memory[0:n, :], axis=0)
+        self._data[<int>(timestep.index), :] = mean_value
 
         self.position += 1
         if self.position >= self.timesteps:
@@ -561,18 +562,20 @@ cdef class MeanFlowRecorder(NodeRecorder):
         self._memory = np.zeros([len(self._model.scenarios.combinations), self.timesteps])
 
     cpdef int save(self) except -1:
-        cdef double mean_flow
         cdef Timestep timestep
+        cdef int i, n
+        cdef double[:] mean_flow
         # save today's flow
-        self._memory[:, self.position] = self._node.flow
+        for i in range(0, self._memory.shape[0]):
+            self._memory[i, self.position] = self._node._flow[i]
         # calculate the mean flow
         timestep = self._model.timestepper.current
         if timestep.index < self.timesteps:
             n = timestep.index + 1
         else:
             n = self.timesteps
-        mean_flow = np.mean(self._memory[:, 0:n], axis=1)
         # save the mean flow
+        mean_flow = np.mean(self._memory[:, 0:n], axis=1)
         self._data[<int>(timestep.index), :] = mean_flow
         # prepare for the next timestep
         self.position += 1

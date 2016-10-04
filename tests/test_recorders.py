@@ -147,6 +147,8 @@ def test_parameter_mean_recorder(simple_linear_model):
     values = np.arange(0, 366, dtype=np.float64)
     node.max_flow = DailyProfileParameter(values)
 
+    scenario = Scenario(model, "dummy", size=3)
+
     timesteps = 3
     rec = MeanParameterRecorder(model, node.max_flow, timesteps)
 
