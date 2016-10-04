@@ -85,6 +85,11 @@ cdef class Parameter:
         for child in self.children:
             child.after(ts)
 
+    cpdef finish(self):
+        cdef Parameter child
+        for child in self.children:
+            child.finish()
+
     cpdef update(self, double[:] values):
         raise NotImplementedError()
 

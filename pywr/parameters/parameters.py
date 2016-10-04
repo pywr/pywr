@@ -12,6 +12,7 @@ from ._parameters import (
 from past.builtins import basestring
 import numpy as np
 import pandas
+from pywr.h5tools import H5Store
 
 class Parameter(BaseParameter):
     def value(self, ts, scenario_index):
@@ -113,7 +114,7 @@ class DataFrameParameter(Parameter):
     def load(cls, model, data):
         scenario = data.pop('scenario', None)
         if scenario is not None:
-            raise NotImplementedError('Loading Scenarios not implemented in JSON.')
+            scenario = model.scenarios[scenario]
         df = load_dataframe(model, data)
         return cls(df, scenario=scenario)
 
@@ -142,6 +143,81 @@ class DataFrameParameter(Parameter):
     def value(self, ts, scenario_index):
         return self._param.value(ts, scenario_index)
 DataFrameParameter.register()
+
+
+class TablesArrayParameter(Parameter):
+    def __init__(self, h5file, node, where='/', scenario=None, **kwargs):
+        """
+        This Parameter reads array data from a PyTables HDF database.
+
+        The parameter reads data using the PyTables array interface and therefore
+        does not require loading the entire dataset in to memory. This is useful
+        for large model runs.
+
+        Parameters
+        ----------
+        h5file : tables.File or filename
+            The tables file handle or filename to attach the CArray objects to. If a
+            filename is given the object will open and close the file handles.
+        node : string
+            Name of the node in the tables database to read data from
+        where : string
+            Path to read the node from.
+        scenario : Scenario
+            Scenario to use as the second index in the array.
+        """
+        super(TablesArrayParameter, self).__init__(**kwargs)
+
+        self.h5file = h5file
+        self.h5store = None
+        self.node = node
+        self.where = where
+        self.scenario = scenario
+
+        # Private attributes, initialised during reset()
+        self._node = None
+        self._scenario_index = None
+
+    def setup(self, model):
+        self._scenario_index = None
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        if self.scenario is not None:
+            self._scenario_index = model.scenarios.get_scenario_index(self.scenario)
+
+    def reset(self):
+        self.h5store = H5Store(self.h5file, None, "r")
+        self._node = self.h5store.file.get_node(self.where, self.node)
+        if self.scenario is not None:
+            if self._node.shape[1] != self.scenario.size:
+                raise RuntimeError("The second length of the dimension of the tables Node should the same as the size of the specified Scenario.")
+
+    def value(self, ts, scenario_index):
+        i = ts.index
+        j = scenario_index.indices[self._scenario_index]
+        # Support 1D and 2D indexing when scenario is or is not given.
+        if j is None:
+            return self._node[i]
+        else:
+            return self._node[i, j]
+
+    def finish(self):
+        self.h5store = None
+
+    @classmethod
+    def load(cls, model, data):
+        scenario = data.pop('scenario', None)
+        if scenario is not None:
+            scenario = model.scenarios[scenario]
+
+        url = data.pop('url')
+        if not os.path.isabs(url) and model.path is not None:
+            url = os.path.join(model.path, url)
+        node = data.pop('node')
+        where = data.pop('where', '/')
+
+        return cls(url, node, where=where, scenario=scenario)
+TablesArrayParameter.register()
 
 
 class InterpolatedLevelParameter(Parameter):

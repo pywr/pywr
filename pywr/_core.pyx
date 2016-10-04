@@ -32,8 +32,10 @@ cdef class ScenarioCombinations:
 
 
 cdef class Scenario:
-    def __init__(self, model, str name, int size=1):
+    def __init__(self, model, name, int size=1):
         self._name = name
+        if size < 1:
+            raise ValueError("Size must be greater than or equal to 1.")
         self._size = size
         model.scenarios.add_scenario(self)
 
@@ -53,6 +55,14 @@ cdef class ScenarioCollection:
     property scenarios:
         def __get__(self):
             return self._scenarios
+
+    def __getitem__(self, name):
+        cdef Scenario sc
+        for sc in self._scenarios:
+            if sc._name == name:
+                return sc
+        raise KeyError("Scenario with name '{}' not found.".format(name))
+
 
     def setup(self, ):
         """ Create the list of ScenarioIndex objects based on the current Scenarios. """
@@ -288,6 +298,9 @@ cdef class AbstractNode:
     cpdef after(self, Timestep ts):
         self._prev_flow[:] = self._flow[:]
 
+    cpdef finish(self):
+        pass
+
     cpdef check(self,):
         pass
 
@@ -480,6 +493,15 @@ cdef class Node(AbstractNode):
             self._max_flow_param.after(ts)
         if self._min_flow_param is not None:
             self._min_flow_param.after(ts)
+
+    cpdef finish(self):
+        AbstractNode.finish(self)
+        if self._cost_param is not None:
+            self._cost_param.finish()
+        if self._max_flow_param is not None:
+            self._max_flow_param.finish()
+        if self._min_flow_param is not None:
+            self._min_flow_param.finish()
 
 cdef class BaseLink(Node):
     pass
@@ -809,6 +831,18 @@ cdef class Storage(AbstractStorage):
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
+
+    cpdef finish(self):
+        """Called at the end of a run"""
+        AbstractStorage.finish(self)
+
+        # Parameters finish first
+        if self._cost_param is not None:
+            self._cost_param.finish()
+        if self._max_volume_param is not None:
+            self._max_volume_param.finish()
+        if self._min_volume_param is not None:
+            self._min_volume_param.finish()
 
 
 cdef class AggregatedStorage(AbstractStorage):

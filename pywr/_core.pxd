@@ -2,7 +2,7 @@ from .parameters._parameters cimport Parameter
 from _recorders cimport Recorder
 
 cdef class Scenario:
-    cdef str _name
+    cdef basestring _name
     cdef int _size
 
 cdef class ScenarioCollection:
@@ -49,6 +49,7 @@ cdef class AbstractNode:
     cpdef commit(self, int scenario_index, double value)
     cpdef commit_all(self, double[:] value)
     cpdef after(self, Timestep ts)
+    cpdef finish(self)
     cpdef check(self,)
 
 cdef class Node(AbstractNode):

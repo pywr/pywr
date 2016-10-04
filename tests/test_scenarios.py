@@ -7,9 +7,10 @@ A series of tests of the Scenario objects and associated infrastructure
 import pywr.core
 from pywr.core import Model, Input, Output, Link, Storage
 from pywr.recorders import NumpyArrayStorageRecorder, NumpyArrayNodeRecorder
-from helpers import assert_model
+from helpers import assert_model, load_model
 # To get simple_linear_model fixture
 from fixtures import simple_linear_model
+import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
 
@@ -73,7 +74,7 @@ def test_two_scenarios(simple_linear_model, ):
     scenario_outflow = pywr.core.Scenario(model, 'Outflow', size=2)
     model.nodes["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
     model.nodes["Output"].cost = -2.0
-    
+
     # add numpy recorders to input and output nodes
     NumpyArrayNodeRecorder(model, model.nodes["Input"], "input")
     NumpyArrayNodeRecorder(model, model.nodes["Output"], "output")
@@ -85,9 +86,9 @@ def test_two_scenarios(simple_linear_model, ):
     }
 
     assert_model(model, expected_node_results)
-    
+
     model.run()
-    
+
     # combine recorder outputs to a single dataframe
     df = model.to_dataframe()
     assert(df.shape == (365, 2 * 2 * 2))
@@ -142,3 +143,58 @@ def test_scenario_storage(solver):
     assert_allclose(i.flow, [5, 10])
     assert_allclose(s_rec.data[0], [505, 510])
     assert_allclose(s_rec.data[1], [510, 520])
+
+
+def test_scenarios_from_json(solver):
+
+    model = load_model('simple_with_scenario.json', solver=solver)
+    assert len(model.scenarios) == 2
+
+    model.setup()
+    assert len(model.scenarios.combinations) == 20
+    model.run()
+
+
+def test_timeseries_with_scenarios(solver):
+
+    model = load_model('timeseries2.json', solver=solver)
+
+    model.setup()
+
+    assert len(model.scenarios) == 1
+
+    model.step()
+    catchment1 = model.nodes['catchment1']
+
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
+    assert_allclose(catchment1.flow, step1)
+
+    model.step()
+    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80])
+    # Low tolerance because test values were truncated to 2 decimal places.
+    assert_allclose(catchment1.flow, step2)
+
+    model.finish()
+
+
+def test_timeseries_with_scenarios_hdf(solver):
+
+    model = load_model('timeseries2_hdf.json', solver=solver)
+
+    model.setup()
+
+    assert len(model.scenarios) == 1
+
+    catchment1 = model.nodes['catchment1']
+
+    model.step()
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
+    # Low tolerance because test values were truncated to 2 decimal places.
+    assert_allclose(catchment1.flow, step1, atol=1e-1)
+
+    model.step()
+    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80])
+    # Low tolerance because test values were truncated to 2 decimal places.
+    assert_allclose(catchment1.flow, step2, atol=1e-1)
+
+    model.finish()
