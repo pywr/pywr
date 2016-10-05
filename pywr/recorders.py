@@ -3,7 +3,6 @@ from pywr._recorders import *
 from past.builtins import basestring
 from .h5tools import H5Store
 
-
 class CSVRecorder(Recorder):
     """
     A Recorder that saves Node values to a CSV file.
@@ -153,7 +152,7 @@ class TablesRecorder(Recorder):
 
         # Default to all nodes if None given.
         if self.nodes is None:
-            nodes = [(self.where, n) for n in self.model.nodes.values()]
+            nodes = [((self.where + "/" + n.name).replace("//", "/"), n) for n in self.model.nodes.values()]
         else:
             nodes = []
             for n in self.nodes:
@@ -162,13 +161,14 @@ class TablesRecorder(Recorder):
                     where, node = n
                 except (TypeError, ValueError):
                     node = n
-                    where = self.where
+                    where = self.where + "/" + node
 
                 # Accept a str, and lookup node by name instead.
                 if isinstance(node, basestring):
                     node = self.model.nodes[node]
                 # Otherwise assume it is a node object anyway
 
+                where = where.replace("//", "/")
                 nodes.append((where, node))
 
         if self.parameters is not None:
@@ -178,7 +178,7 @@ class TablesRecorder(Recorder):
                     where, param = p
                 except (TypeError, ValueError):
                     param = p
-                    where = self.where
+                    where = None
 
                 if isinstance(param, basestring):
                     param = self.model.parameters[param]
@@ -187,6 +187,11 @@ class TablesRecorder(Recorder):
 
                 if param.name is None:
                     raise ValueError('Can only record named Parameter objects.')
+
+                if where is None:
+                    where = self.where + "/" + param.name
+
+                where = where.replace("//", "/")
                 nodes.append((where, param))
 
         self._nodes = nodes
@@ -196,7 +201,10 @@ class TablesRecorder(Recorder):
                 atom = tables.Int32Atom()
             else:
                 atom = tables.Float64Atom()
-            self.h5store.file.create_carray(where, node.name, atom, shape, createparents=True)
+            group_name, node_name = where.rsplit("/", 1)
+            if "group_name" == "/":
+                group_name = self.h5store.file.root
+            self.h5store.file.create_carray(group_name, node_name, atom, shape, createparents=True)
 
         self.h5store = None
 
@@ -205,7 +213,7 @@ class TablesRecorder(Recorder):
         self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
         self._arrays = {}
         for where, node in self._nodes:
-            self._arrays[node] = self.h5store.file.get_node(where, node.name)
+            self._arrays[node] = self.h5store.file.get_node(where)
 
     def save(self):
         """

@@ -315,14 +315,15 @@ class TestTablesRecorder:
         h5file = tmpdir.join('output.h5')
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
-            where = '/agroup'
-            rec = TablesRecorder(model, h5f, nodes=['Output', 'Input', 'Sum'],
+            nodes = ['Output', 'Input', 'Sum']
+            where = "/agroup"
+            rec = TablesRecorder(model, h5f, nodes=nodes,
                                  parameters=[p, ], where=where)
 
             model.run()
 
             for node_name in ['Output', 'Input', 'Sum', 'max_flow']:
-                ca = h5f.get_node(where, node_name)
+                ca = h5f.get_node("/agroup/" + node_name)
                 assert ca.shape == (365, 1)
                 if node_name == 'Sum':
                     np.testing.assert_allclose(ca, 20.0)
@@ -409,8 +410,8 @@ class TestTablesRecorder:
         h5file = tmpdir.join('output.h5')
         with tables.open_file(str(h5file), 'r') as h5f:
             assert model.metadata['title'] == h5f.title
-            rec_demand = h5f.get_node('/outputs/demand', 'Demand').read()
-            rec_storage = h5f.get_node('/storage/reservoir', 'Reservoir').read()
+            rec_demand = h5f.get_node('/outputs/demand').read()
+            rec_storage = h5f.get_node('/storage/reservoir').read()
 
             # model starts with no demand saving
             demand_baseline = 50.0
