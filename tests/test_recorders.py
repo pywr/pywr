@@ -515,6 +515,8 @@ def test_mean_flow_recorder(solver):
     rec_flow = NumpyArrayNodeRecorder(model, inpt)
     rec_mean = MeanFlowRecorder(model, node=inpt, timesteps=3)
 
+    scenario = Scenario(model, "dummy", size=2)
+
     inpt.max_flow = inpt.min_flow = FunctionParameter(inpt, lambda model, t, si: 2 + t.index)
     model.run()
 
@@ -525,7 +527,7 @@ def test_mean_flow_recorder(solver):
         (3.0 + 4.0 + 5.0) / 3,  # zeroth day forgotten
     ]
 
-    for value, expected_value in zip(rec_mean.data, expected):
+    for value, expected_value in zip(rec_mean.data[:, 0], expected):
         assert_allclose(value, expected_value)
 
 def test_mean_flow_recorder_days(solver):
