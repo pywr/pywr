@@ -45,7 +45,7 @@ install:
     - cmd: conda config --add channels conda-forge
     - cmd: conda config --add channels snorfalorpagus
     - cmd: conda info
-    - cmd: conda install -n root --quiet --yes conda-build anaconda-client jinja2 setuptools
+    - cmd: conda install -n root --quiet --yes conda-build=2.0.2 anaconda-client jinja2 setuptools
 
 # Skip .NET project specific build phase.
 build: off
