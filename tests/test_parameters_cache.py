@@ -1,5 +1,5 @@
 from pywr.core import Model, Input, Output, Link, Scenario
-from pywr.parameters import (CachedParameter,
+from pywr.parameters import (CachedParameter, ConstantScenarioParameter,
     load_parameter, ConstantParameter, FunctionParameter)
 from pywr.parameters._parameters import Parameter as BaseParameter
 import pytest
@@ -49,6 +49,23 @@ def test_cache_both(simple_model):
     assert_allclose(inpt.flow, 15.0)
 
     assert(func.count == 10)
+
+
+def test_cache_scenarios(simple_model):
+    """
+    Test caching across scenarios.
+    """
+    model = simple_model
+    scen = Scenario(model, 'Scenario A', size=2)
+
+    param = ConstantScenarioParameter(scen, [10, 20])
+
+    inpt = model.nodes["input"]
+    inpt.max_flow = CachedParameter(param)
+
+    model.run()
+    assert_allclose(inpt.flow, [10.0, 20.0])
+
 
 def test_load_cache_both(simple_model):
     """
