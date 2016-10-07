@@ -193,7 +193,7 @@ cdef class CachedParameter(IndexParameter):
         self.scenario_index = None
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        if not timestep is self.timestep or not scenario_index is scenario_index:
+        if timestep is not self.timestep or scenario_index is not self.scenario_index:
             # refresh the cache
             self.cached_value = self.parameter.value(timestep, scenario_index)
             self.timestep = timestep
@@ -201,7 +201,7 @@ cdef class CachedParameter(IndexParameter):
         return self.cached_value
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        if not timestep is self.timestep or not scenario_index is scenario_index:
+        if timestep is not self.timestep or scenario_index is not self.scenario_index:
             # refresh the cache
             self.cached_index = self.parameter.index(timestep, scenario_index)
             self.timestep = timestep
