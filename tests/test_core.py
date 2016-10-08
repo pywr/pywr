@@ -399,3 +399,11 @@ def test_json_min_version(solver):
     filename = os.path.join(TEST_FOLDER, "models", "version1.json")
     with pytest.warns(RuntimeWarning):
         model = Model.load(filename)
+
+def test_initial_timestep(solver):
+    """Current timestep before model has started is undefined"""
+    filename = os.path.join(TEST_FOLDER, "models", "extra1.json")
+    model = Model.load(filename, solver=solver)
+    assert(model.timestepper.current is None)
+    model.run()
+    assert(isinstance(model.timestepper.current, Timestep))

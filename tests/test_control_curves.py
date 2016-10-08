@@ -28,14 +28,17 @@ class TestPiecewiseControlCurveParameter:
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         s.initial_volume = 90.0
         m.reset()
+        ts = next(m.timestepper)
         assert_allclose(s.get_cost(m.timestepper.current, si), 1.0)
 
         s.initial_volume = 70.0
         m.reset()
+        ts = next(m.timestepper)
         assert_allclose(s.get_cost(m.timestepper.current, si), 0.7)
 
         s.initial_volume = 40.0
         m.reset()
+        ts = next(m.timestepper)
         assert_allclose(s.get_cost(m.timestepper.current, si), 0.4)
 
     def test_with_values(self, model):
@@ -232,6 +235,7 @@ def test_control_curve_interpolated_json(solver):
     model = load_model("reservoir_with_cc.json", solver=solver)
     reservoir1 = model.nodes["reservoir1"]
     model.setup()
+    ts = next(model.timestepper)
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
     path = os.path.join(os.path.dirname(__file__), "models", "control_curve.csv")
     control_curve = pd.read_csv(path)["Control Curve"].values
@@ -257,6 +261,7 @@ class TestMonthlyProfileControlCurveParameter:
 
         s.initial_volume = 90.0
         model.reset()  # Set initial volume on storage
+        ts = next(model.timestepper)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         for mth in range(1, 13):
             ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
@@ -264,6 +269,7 @@ class TestMonthlyProfileControlCurveParameter:
 
         s.initial_volume = 70.0
         model.reset()  # Set initial volume on storage
+        ts = next(model.timestepper)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         for mth in range(1, 13):
             ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
@@ -271,6 +277,7 @@ class TestMonthlyProfileControlCurveParameter:
 
         s.initial_volume = 30.0
         model.reset()  # Set initial volume on storage
+        ts = next(model.timestepper)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         for mth in range(1, 13):
             ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
