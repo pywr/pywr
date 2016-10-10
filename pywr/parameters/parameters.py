@@ -190,7 +190,7 @@ class TablesArrayParameter(Parameter):
         self._node = self.h5store.file.get_node(self.where, self.node)
         if self.scenario is not None:
             if self._node.shape[1] != self.scenario.size:
-                raise RuntimeError("The second length of the dimension of the tables Node should the same as the size of the specified Scenario.")
+                raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
 
     def value(self, ts, scenario_index):
         i = ts.index
