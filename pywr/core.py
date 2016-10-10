@@ -113,13 +113,11 @@ class Timestepper(object):
     delta = property(**delta())
 
     @property
-    def current(self, ):
-        """ Return the current Timestep.
+    def current(self):
+        """The current timestep
 
-        If iteration has not begun this will return the starting Timestep.
+        If iteration has not begun this will return None.
         """
-        if self._current is None:
-            return self._next
         return self._current
 
     @property

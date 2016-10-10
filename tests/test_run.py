@@ -26,7 +26,7 @@ def test_run_simple1(solver):
     model = load_model('simple1.json', solver=None)
 
     # run the model
-    t0 = model.timestepper.current
+    t0 = model.timestepper.start.to_datetime()
     model.step()
 
     # check results
@@ -34,10 +34,10 @@ def test_run_simple1(solver):
     assert_allclose(demand1.flow, 10.0, atol=1e-7)
     # initially the timestepper returns the first time-step, so timestepper.current
     # does not change after the first 'step'.
-    assert(model.timestepper.current.datetime - t0.datetime == datetime.timedelta(0))
+    assert(model.timestepper.current.datetime - t0 == datetime.timedelta(0))
     # check the timestamp incremented
     model.step()
-    assert(model.timestepper.current.datetime - t0.datetime == datetime.timedelta(1))
+    assert(model.timestepper.current.datetime - t0 == datetime.timedelta(1))
 
 
 def test_run_reservoir1(solver):

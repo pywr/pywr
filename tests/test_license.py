@@ -36,8 +36,6 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     m.nodes["Output"].cost = -10.0
     m.setup()
 
-    # timestepper.current is the next time step (because model has not begun)
-    assert_allclose(lic.value(m.timestepper.current, si), annual_total/365)
     m.step()
 
     # Licence is a hard constraint of 1.0
@@ -103,8 +101,6 @@ def test_simple_model_with_exponential_license(simple_linear_model):
     m.nodes["Output"].cost = -10.0
     m.setup()
 
-    # timestepper.current is the next time step (because model has not begun)
-    assert_allclose(lic.value(m.timestepper.current, si), annual_total/365)
     m.step()
 
     # Licence is a hard constraint of 1.0
@@ -145,8 +141,6 @@ def test_simple_model_with_hyperbola_license(simple_linear_model):
     m.nodes["Output"].cost = -10.0
     m.setup()
 
-    # timestepper.current is the next time step (because model has not begun)
-    assert_allclose(lic.value(m.timestepper.current, si), annual_total/365)
     m.step()
 
     # Licence is a hard constraint of 1.0
