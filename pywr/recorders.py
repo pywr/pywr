@@ -231,7 +231,6 @@ class TablesRecorder(Recorder):
         if self.time is not None:
             self._time_table = self.h5store.file.get_node(self.time)
 
-
     def save(self):
         """
         Save data to the tables
@@ -240,14 +239,16 @@ class TablesRecorder(Recorder):
         from pywr.parameters import BaseParameter, IndexParameter
         ts = self.model.timestepper.current
         idx = ts.index
+        dt = ts.datetime
 
         if self._time_table is not None:
             entry = self._time_table.row
-            entry['year'] = ts.datetime.year
-            entry['month'] = ts.datetime.month
-            entry['day'] = ts.datetime.month
+            entry['year'] = dt.year
+            entry['month'] = dt.month
+            entry['day'] = dt.day
             entry['index'] = idx
             entry.append()
+            self._time_table.flush()
 
         for node, ca in self._arrays.items():
             if isinstance(node, AbstractStorage):
