@@ -145,7 +145,7 @@ class DataFrameParameter(Parameter):
 DataFrameParameter.register()
 
 
-class TablesArrayParameter(Parameter):
+class TablesArrayParameter(IndexParameter):
     def __init__(self, h5file, node, where='/', scenario=None, **kwargs):
         """
         This Parameter reads array data from a PyTables HDF database.
@@ -197,12 +197,16 @@ class TablesArrayParameter(Parameter):
 
     def value(self, ts, scenario_index):
         i = ts.index
-        j = scenario_index.indices[self._scenario_index]
+
         # Support 1D and 2D indexing when scenario is or is not given.
-        if j is None:
+        if self._scenario_index is None:
             return self._node[i]
         else:
+            j = scenario_index.indices[self._scenario_index]
             return self._node[i, j]
+
+    def index(self, ts, scenario_index):
+        return self.value(ts, scenario_index)
 
     def finish(self):
         self.h5store = None
