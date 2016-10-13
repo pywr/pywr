@@ -145,7 +145,7 @@ class DataFrameParameter(Parameter):
 DataFrameParameter.register()
 
 
-class TablesArrayParameter(Parameter):
+class TablesArrayParameter(IndexParameter):
     def __init__(self, h5file, node, where='/', scenario=None, **kwargs):
         """
         This Parameter reads array data from a PyTables HDF database.
@@ -179,6 +179,7 @@ class TablesArrayParameter(Parameter):
         self._scenario_index = None
 
     def setup(self, model):
+        self.model = model
         self._scenario_index = None
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
@@ -191,15 +192,21 @@ class TablesArrayParameter(Parameter):
         if self.scenario is not None:
             if self._node.shape[1] != self.scenario.size:
                 raise RuntimeError("The second length of the dimension of the tables Node should the same as the size of the specified Scenario.")
+        if self._node.shape[0] < len(self.model.timestepper):
+            raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
 
     def value(self, ts, scenario_index):
         i = ts.index
-        j = scenario_index.indices[self._scenario_index]
+
         # Support 1D and 2D indexing when scenario is or is not given.
-        if j is None:
+        if self._scenario_index is None:
             return self._node[i]
         else:
+            j = scenario_index.indices[self._scenario_index]
             return self._node[i, j]
+
+    def index(self, ts, scenario_index):
+        return self.value(ts, scenario_index)
 
     def finish(self):
         self.h5store = None

@@ -471,3 +471,35 @@ def test_demand_saving_with_indexed_array(solver):
     demand_saving = 0.5
     assert(rec_storage.data[11, 0] < (0.5 * max_volume) )
     assert_allclose(rec_demand.data[12, 0], demand_baseline * demand_factor * demand_saving)
+
+
+def test_demand_saving_with_indexed_array_from_hdf(solver):
+    """Test demand saving based on a predefined demand saving level in a HDF file."""
+    model = load_model("demand_saving_hdf.json", solver=solver)
+
+    model.timestepper.end = pd.Timestamp("2016-01-31")
+
+    rec_demand = NumpyArrayNodeRecorder(model, model.nodes["Demand"])
+    rec_storage = NumpyArrayStorageRecorder(model, model.nodes["Reservoir"])
+
+    model.check()
+    model.run()
+
+    max_volume = model.nodes["Reservoir"].max_volume
+
+    # model starts with no demand saving
+    demand_baseline = 50.0
+    demand_saving = 1.0
+    assert_allclose(rec_demand.data[0, 0], demand_baseline * demand_saving)
+
+    # first control curve breached
+    demand_saving = 0.8
+    assert_allclose(rec_demand.data[11, 0], demand_baseline * demand_saving)
+
+    # second control curve breached
+    demand_saving = 0.5
+    assert_allclose(rec_demand.data[12, 0], demand_baseline * demand_saving)
+
+    # second control c2urve breached
+    demand_saving = 0.25
+    assert_allclose(rec_demand.data[13, 0], demand_baseline * demand_saving)

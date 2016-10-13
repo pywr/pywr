@@ -680,21 +680,23 @@ class Model(object):
 
         Returns the number of last Timestep that was run.
         """
-        if self.dirty:
-            self.setup()
-            self.timestepper.reset()
-        elif reset:
-            self.reset()
-        for timestep in self.timestepper:
-            self.timestep = timestep
-            ret = self._step()
-            if until_failure is True and self.failure:
-                return timestep
-            elif until_date and timestep.datetime > until_date:
-                return timestep
-            elif timestep.datetime > self.timestepper.end:
-                return timestep
-        self.finish()
+        try:
+            if self.dirty:
+                self.setup()
+                self.timestepper.reset()
+            elif reset:
+                self.reset()
+            for timestep in self.timestepper:
+                self.timestep = timestep
+                ret = self._step()
+                if until_failure is True and self.failure:
+                    return timestep
+                elif until_date and timestep.datetime > until_date:
+                    return timestep
+                elif timestep.datetime > self.timestepper.end:
+                    return timestep
+        finally:
+            self.finish()
         try:
             # Can only return timestep object if the iterator went
             # through at least one iteration
