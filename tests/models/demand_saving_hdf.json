@@ -1,0 +1,86 @@
+{
+    "metadata": {
+        "title": "Demand Saving",
+        "description": "Demand saving using an IndexedArrayParameter",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2016-01-01",
+        "end": "2016-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "type": "catchment",
+            "name": "Inflow",
+            "flow": 0.0
+        },
+        {
+            "type": "reservoir",
+            "name": "Reservoir",
+            "max_volume": 1000,
+            "initial_volume": 1000
+        },
+        {
+            "type": "output",
+            "name": "Spill",
+            "cost": 10
+        },
+        {
+            "comment": "The only demand in the model",
+            "type": "output",
+            "name": "Demand",
+            "max_flow": "demand_max_flow",
+            "cost": -500
+        }
+    ],
+    "edges": [
+        ["Inflow", "Reservoir"],
+        ["Reservoir", "Demand"],
+        ["Reservoir", "Spill"]
+    ],
+    "parameters": {
+        "demand_baseline": {
+            "type": "constant",
+            "value": 50
+        },
+        "demand_saving_level": {
+            "comment": "The demand saving level",
+            "type": "tablesarray",
+            "url": "demand_saving_level.h5",
+            "where": "/dsl",
+            "node": "block0_values"
+        },
+        "demand_saving_factor": {
+            "comment": "Demand saving as a factor of the base demand",
+            "type": "indexedarray",
+            "index_parameter": "demand_saving_level",
+            "params": [
+                {
+                    "type": "constant",
+                    "value": 1.0
+                },
+                {
+                    "type": "constant",
+                    "value": 0.8
+                },
+                {
+                    "type": "constant",
+                    "value": 0.5
+                },
+                {
+                    "type": "constant",
+                    "value": 0.25
+                }
+            ]
+        },
+        "demand_max_flow": {
+            "type": "aggregated",
+            "agg_func": "product",
+            "parameters": [
+                "demand_baseline",
+                "demand_saving_factor"
+            ]
+        }
+    }
+}
