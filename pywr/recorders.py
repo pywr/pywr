@@ -82,7 +82,7 @@ class TablesRecorder(Recorder):
     Each CArray stores the data for all scenarios on the specific node. This
     is useful for analysis of Node statistics across multiple scenarios.
     """
-    def __init__(self, model, h5file, nodes=None, parameters=None, where='/', **kwargs):
+    def __init__(self, model, h5file, nodes=None, parameters=None, where='/', time='/time', **kwargs):
         """
 
         Parameters
@@ -103,6 +103,8 @@ class TablesRecorder(Recorder):
             objects or names thereof.
         where : string
             Default path to create the CArrays inside the database.
+        time : string
+            Default full node path to save a time tables.Table. If None no table is created.
         filter_kwds : dict
             Filter keywords to pass to tables.open_file when opening a file.
         mode : string
@@ -126,8 +128,10 @@ class TablesRecorder(Recorder):
         self.nodes = nodes
         self.parameters = parameters
         self.where = where
+        self.time = time
 
         self._arrays = None
+        self._time_table = None
 
     @classmethod
     def load(cls, model, data):
@@ -206,6 +210,14 @@ class TablesRecorder(Recorder):
                 group_name = self.h5store.file.root
             self.h5store.file.create_carray(group_name, node_name, atom, shape, createparents=True)
 
+        # Create time table
+        if self.time is not None:
+            group_name, node_name = self.time.rsplit('/', 1)
+            if "group_name" == "/":
+                group_name = self.h5store.file.root
+            description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
+            self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
+
         self.h5store = None
 
     def reset(self):
@@ -215,6 +227,10 @@ class TablesRecorder(Recorder):
         for where, node in self._nodes:
             self._arrays[node] = self.h5store.file.get_node(where)
 
+        self._time_table = None
+        if self.time is not None:
+            self._time_table = self.h5store.file.get_node(self.time)
+
     def save(self):
         """
         Save data to the tables
@@ -223,6 +239,16 @@ class TablesRecorder(Recorder):
         from pywr.parameters import BaseParameter, IndexParameter
         ts = self.model.timestepper.current
         idx = ts.index
+        dt = ts.datetime
+
+        if self._time_table is not None:
+            entry = self._time_table.row
+            entry['year'] = dt.year
+            entry['month'] = dt.month
+            entry['day'] = dt.day
+            entry['index'] = idx
+            entry.append()
+            self._time_table.flush()
 
         for node, ca in self._arrays.items():
             if isinstance(node, AbstractStorage):

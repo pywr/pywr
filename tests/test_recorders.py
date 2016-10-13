@@ -262,6 +262,17 @@ class TestTablesRecorder:
                 else:
                     np.testing.assert_allclose(ca, 10.0)
 
+            from datetime import date, timedelta
+            d = date(2015, 1, 1)
+            time = h5f.get_node('/time')
+            for i in range(len(model.timestepper)):
+                row = time[i]
+                assert row['year'] == d.year
+                assert row['month'] == d.month
+                assert row['day'] == d.day
+
+                d += timedelta(1)
+
     def test_parameters(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder
