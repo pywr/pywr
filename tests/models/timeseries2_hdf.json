@@ -17,8 +17,8 @@
     "nodes": [
         {
             "name": "catchment1",
-            "type": "Input",
-            "max_flow": {
+            "type": "catchment",
+            "flow": {
                 "type": "tablesarray",
                 "scenario": "scenario A",
                 "url" : "timeseries2.h5",
