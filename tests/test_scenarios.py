@@ -12,6 +12,7 @@ from helpers import assert_model, load_model
 from fixtures import simple_linear_model
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
+import pytest
 
 
 def test_scenario_collection(solver):
@@ -178,7 +179,7 @@ def test_timeseries_with_scenarios(solver):
 
 
 def test_timeseries_with_scenarios_hdf(solver):
-
+    # this test uses TablesArrayParameter
     model = load_model('timeseries2_hdf.json', solver=solver)
 
     model.setup()
@@ -198,3 +199,19 @@ def test_timeseries_with_scenarios_hdf(solver):
     assert_allclose(catchment1.flow, step2, atol=1e-1)
 
     model.finish()
+
+def test_tables_array_index_error(solver):
+    # check an exception is raised (before the model starts) if the length
+    # of the data passed to a TablesArrayParameter is not long enough
+    model = load_model('timeseries2_hdf.json', solver=solver)
+    model.timestepper.start = "1920-01-01"
+    model.timestepper.end = "1980-01-01"
+    with pytest.raises(IndexError):
+        model.run()
+    assert(model.timestepper.current is None)
+
+    # check the HDF5 file was closed, despite an exception being raised
+    catchment1 = model.nodes['catchment1']
+    print(type(catchment1))
+    param = catchment1.max_flow
+    assert(param.h5store is None)

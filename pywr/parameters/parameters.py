@@ -179,6 +179,7 @@ class TablesArrayParameter(Parameter):
         self._scenario_index = None
 
     def setup(self, model):
+        self.model = model
         self._scenario_index = None
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
@@ -191,6 +192,8 @@ class TablesArrayParameter(Parameter):
         if self.scenario is not None:
             if self._node.shape[1] != self.scenario.size:
                 raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
+        if self._node.shape[0] < len(self.model.timestepper):
+            raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
 
     def value(self, ts, scenario_index):
         i = ts.index
