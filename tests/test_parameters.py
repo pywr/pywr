@@ -528,6 +528,13 @@ def test_simple_json_parameter_reference(solver):
 
     assert(len(model.parameters) == 3) # only 3 parameters are named
 
+
+def test_simple_json_parameter_deletion(solver):
+    # note that parameters in the "parameters" section cannot be literals
+    model = load_model("parameter_reference.json")
+    del model.parameters["supply_max_flow"]
+
+
 def test_with_a_better_name():
 
     data = {

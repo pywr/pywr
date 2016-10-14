@@ -218,7 +218,7 @@ class NamedIterator(object):
     def __delitem__(self, key):
         """Remove a node from the graph by it's name"""
         obj = self[key]
-        self._objects.remove(rec)
+        self._objects.remove(obj)
 
     def __setitem__(self, key, obj):
         # TODO: check for name collisions / duplication
