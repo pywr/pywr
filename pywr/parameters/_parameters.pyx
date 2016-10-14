@@ -866,7 +866,7 @@ def load_parameter(model, data, parameter_name=None):
     return parameter
 
 
-def load_parameter_values(model, data, values_key='values'):
+def load_parameter_values(model, data, values_key='values', url_key='url'):
     """ Function to load values from a data dictionary.
 
     This function tries to load values in to a `np.ndarray` if 'values_key' is
@@ -878,14 +878,21 @@ def load_parameter_values(model, data, values_key='values'):
     data - dict
     values_key - str
         Key in data to load values directly to a `np.ndarray`
-
+    url_key - str
+        Key in data to load values directly from an external file reference (using pandas)
     """
     if values_key in data:
         # values are given as an array
         values = np.array(data.pop(values_key), np.float64)
-    else:
+    elif url_key in data:
         df = load_dataframe(model, data)
         values = np.squeeze(df.values.astype(np.float64))
+    else:
+        # Try to get some useful information about the parameter for the error message
+        name = data.get('name', None)
+        ptype = data.get('type', None)
+        raise ValueError("Parameter ('{name}' of type '{ptype}' is missing a valid key to load its values. "
+                         "Please provide either a '{}' or '{}' entry.".format(values_key, url_key, name=name, ptype=ptype))
     return values
 
 

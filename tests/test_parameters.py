@@ -619,3 +619,21 @@ def test_parameter_registry_overwrite(model):
     # parameter is instance of new class, not old class
     assert(isinstance(parameter, NewParameter))
     assert(parameter.DATA == 43)
+
+
+def test_invalid_parameter_values():
+    """
+    Test that `load_parameter_values` returns a ValueError rather than KeyError.
+
+    This is useful to catch and give useful messages when no valid reference to
+    a data location is given.
+
+    Regression test for Issue #247 (https://github.com/pywr/pywr/issues/247)
+    """
+
+    from pywr.parameters._parameters import load_parameter_values
+
+    m = Model()
+    data = {'name': 'my_parameter', 'type': 'AParameterThatShouldHaveValues'}
+    with pytest.raises(ValueError):
+        load_parameter_values(model, data)
