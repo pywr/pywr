@@ -169,14 +169,10 @@ cdef class ConstantParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        # accept a dataframe
-        if 'url' in data:
-            value = load_dataframe(model, data)
+        if "value" in data:
+            value = data.pop("value")
         else:
-            # accept both "value" and "values"
-            value = data.pop("values", None)
-            if value is None:
-                value = data.pop("value")
+            value = load_parameter_values(model, data)
         parameter = cls(value, **data)
         return parameter
 
@@ -866,7 +862,8 @@ def load_parameter(model, data, parameter_name=None):
     return parameter
 
 
-def load_parameter_values(model, data, values_key='values', url_key='url'):
+def load_parameter_values(model, data, values_key='values', url_key='url',
+                          table_key='table'):
     """ Function to load values from a data dictionary.
 
     This function tries to load values in to a `np.ndarray` if 'values_key' is
@@ -880,23 +877,78 @@ def load_parameter_values(model, data, values_key='values', url_key='url'):
         Key in data to load values directly to a `np.ndarray`
     url_key - str
         Key in data to load values directly from an external file reference (using pandas)
+    table_key - str
+        Key in data to load values directly from an external file reference (using pandas)
     """
     if values_key in data:
         # values are given as an array
         values = np.array(data.pop(values_key), np.float64)
-    elif url_key in data:
+    elif url_key in data or table_key in data:
         df = load_dataframe(model, data)
-        values = np.squeeze(df.values.astype(np.float64))
+        try:
+            # If it's a DataFrame we coerce to a numpy array
+            values = df.values
+        except AttributeError:
+            values = df
+        values = np.squeeze(values.astype(np.float64))
     else:
         # Try to get some useful information about the parameter for the error message
         name = data.get('name', None)
         ptype = data.get('type', None)
         raise ValueError("Parameter ('{name}' of type '{ptype}' is missing a valid key to load its values. "
-                         "Please provide either a '{}' or '{}' entry.".format(values_key, url_key, name=name, ptype=ptype))
+                         "Please provide either a '{}', '{}' or '{}' entry.".format(values_key, url_key, table_key, name=name, ptype=ptype))
     return values
 
 
 def load_dataframe(model, data):
+
+
+    column = data.pop("column", None)
+    if isinstance(column, list):
+        # Cast multiindex to a tuple to ensure .loc works correctly
+        column = tuple(column)
+
+    index = data.pop("index", None)
+    if isinstance(index, list):
+        # Cast multiindex to a tuple to ensure .loc works correctly
+        index = tuple(index)
+
+
+    table_ref = data.pop('table', None)
+    if table_ref is not None:
+        name = table_ref
+        df = model.tables[table_ref]
+    else:
+        name = data.get('url')
+        df = read_dataframe(model, data)
+
+    # if column is not specified, use the whole dataframe
+    if column is not None:
+        try:
+            df = df[column]
+        except KeyError:
+            raise KeyError('Column "{}" not found in dataset "{}"'.format(column, name))
+
+    if index is not None:
+        try:
+            df = df.loc[index]
+        except KeyError:
+            raise KeyError('Index "{}" not found in dataset "{}"'.format(index, name))
+
+    try:
+        freq = df.index.inferred_freq
+    except AttributeError:
+        pass
+    else:
+        # Convert to regular frequency
+        freq = df.index.inferred_freq
+        if freq is None:
+            raise IndexError("Failed to identify frequency of dataset \"{}\"".format(name))
+        df = df.asfreq(freq)
+    return df
+
+
+def read_dataframe(model, data):
 
     # values reference data in an external file
     url = data.pop('url')
@@ -915,16 +967,6 @@ def load_dataframe(model, data):
         else:
             raise NotImplementedError('Unknown file extension: "{}"'.format(url))
 
-    column = data.pop("column", None)
-    if isinstance(column, list):
-        # Cast multiindex to a tuple to ensure .loc works correctly
-        column = tuple(column)
-
-    index = data.pop("index", None)
-    if isinstance(index, list):
-        # Cast multiindex to a tuple to ensure .loc works correctly
-        index = tuple(index)
-
     if filetype == "csv":
         if hasattr(data, "index_col"):
             data["parse_dates"] = True
@@ -934,7 +976,8 @@ def load_dataframe(model, data):
     elif filetype == "excel":
         df = pandas.read_excel(url, **data)
     elif filetype == "hdf":
-        df = pandas.read_hdf(url, columns=[column], **data)
+        key = data.pop("key", None)
+        df = pandas.read_hdf(url, key=key, **data)
 
     if df.index.dtype.name == "object" and data.get("parse_dates", False):
         # catch dates that haven't been parsed yet
@@ -945,27 +988,4 @@ def load_dataframe(model, data):
     data.pop("dayfirst", None)
     data.pop("index_col", None)
 
-    # if column is not specified, use the whole dataframe
-    if column is not None:
-        try:
-            df = df[column]
-        except KeyError:
-            raise KeyError('Column "{}" not found in dataset "{}"'.format(column, url))
-
-    if index is not None:
-        try:
-            df = df.loc[index]
-        except KeyError:
-            raise KeyError('Index "{}" not found in dataset "{}"'.format(index, url))
-
-    try:
-        freq = df.index.inferred_freq
-    except AttributeError:
-        pass
-    else:
-        # Convert to regular frequency
-        freq = df.index.inferred_freq
-        if freq is None:
-            raise IndexError("Failed to identify frequency of dataset \"{}\"".format(url))
-        df = df.asfreq(freq)
     return df

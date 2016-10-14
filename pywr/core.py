@@ -304,6 +304,7 @@ class Model(object):
 
         self.parameters = NamedIterator()
         self.recorders = NamedIterator()
+        self.tables = {}
         self.scenarios = ScenarioCollection()
 
         if kwargs:
@@ -471,6 +472,16 @@ class Model(object):
             for scen_name, scen_data in scenarios_data.items():
                 size = scen_data["size"]
                 Scenario(model, scen_name, size=size)
+
+        # load table references
+        try:
+            tables_data = data["tables"]
+        except KeyError:
+            # Default to no table entries
+            pass
+        else:
+            for table_name, table_data in tables_data.items():
+                model.tables[table_name] = load_dataframe(model, table_data)
 
         # collect nodes to load
         nodes_to_load = {}
