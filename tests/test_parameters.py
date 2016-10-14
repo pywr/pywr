@@ -528,28 +528,6 @@ def test_simple_json_parameter_reference(solver):
 
     assert(len(model.parameters) == 3) # only 3 parameters are named
 
-def test_with_a_better_name():
-
-    data = {
-        'type': 'scaledprofile',
-        'scale': 50.0,
-        'profile': {
-            'type': 'aggregated',
-            'agg_func': 'product',
-            'parameters': [
-                {
-                    'type': 'monthlyprofile',
-                    'values': [1.0]*12
-                },
-                {
-                    'type': 'controlcurvemonthlyprofile',
-                    'control_curve': [0.8, 0.6],
-                    'values': [[1.05]*12,
-                               [1.1]*12]
-                }
-            ]
-        }
-    }
 
 def test_threshold_parameter(model):
     class DummyRecorder(Recorder):
