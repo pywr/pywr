@@ -1,8 +1,8 @@
 {
     "metadata": {
         "title": "Simple 1",
-        "description": "A very simple example.",
-        "minimum_version": "0.1"
+        "description": "A very simple example using an external data file shared between two parameters.",
+        "minimum_version": "0.2dev"
     },
     "timestepper": {
         "start": "2015-01-01",
