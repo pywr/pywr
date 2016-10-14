@@ -23,7 +23,7 @@ def test_names(solver):
     assert(model.nodes['A'] is node1)
     assert(model.nodes['B'] is node2)
 
-    nodes = sorted(model.nodes(), key=lambda node: node.name)
+    nodes = sorted(model.nodes, key=lambda node: node.name)
     assert(nodes == [node1, node2])
 
     # rename node
@@ -76,7 +76,7 @@ def test_unexpected_kwarg_node(solver):
         storage = Storage(model, 'test_storage', invalid=True)
     # none of the nodes should have been added to the model as they all
     # raised exceptions during __init__
-    assert(not model.nodes())
+    assert(not model.nodes)
 
 
 def test_unexpected_kwarg_model(solver):

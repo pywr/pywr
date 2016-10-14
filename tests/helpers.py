@@ -23,7 +23,7 @@ def assert_model(model, expected_node_results):
     __tracebackhide__ = True
     model.step()
 
-    for node in model.nodes():
+    for node in model.nodes:
         if node.name in expected_node_results:
             if isinstance(node, pywr.core.BaseNode):
                 assert_allclose(expected_node_results[node.name], node.flow, atol=1e-7)
