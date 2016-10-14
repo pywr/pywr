@@ -602,14 +602,14 @@ def test_parameter_registry_overwrite(model):
     class NewParameter(BaseParameter):
         DATA = 42
     NewParameter.register()
-    
+
     # re-define a parameter
     class NewParameter(IndexParameter):
         DATA = 43
         def __init__(self, *args, **kwargs):
             IndexParameter.__init__(self)
     NewParameter.register()
-    
+
     data = {
         "type": "new",
         "values": 0
