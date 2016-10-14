@@ -158,7 +158,7 @@ class NodeIterator(object):
         for node in self.model.graph.nodes():
             if hide_children is False or node.parent is None:  # don't return child nodes (e.g. StorageInput)
                 yield node
-        raise StopIteration()
+        return
 
     def __getitem__(self, key):
         """Get a node from the graph by it's name"""
@@ -204,11 +204,6 @@ class NodeIterator(object):
             return node
         raise StopIteration()
 
-    def __call__(self):
-        # support for old API
-        return self
-
-
 class NamedIterator(object):
     def __init__(self):
         self._objects = []
@@ -223,7 +218,7 @@ class NamedIterator(object):
     def __delitem__(self, key):
         """Remove a node from the graph by it's name"""
         obj = self[key]
-        self._objects.remove(rec)
+        self._objects.remove(obj)
 
     def __setitem__(self, key, obj):
         # TODO: check for name collisions / duplication
@@ -1067,11 +1062,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         if min_volume is None:
             min_volume = 0.0
         max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        if 'volume' in kwargs:
-            # support older API where volume kwarg was the initial volume
-            initial_volume = kwargs.pop('volume')
-        else:
-            initial_volume = kwargs.pop('initial_volume', 0.0)
+        initial_volume = kwargs.pop('initial_volume', 0.0)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
 
         position = kwargs.pop("position", {})

@@ -64,7 +64,7 @@ def linear_model_with_storage(request, solver):
     lnk.connect(otpt)
 
     strg = pywr.core.Storage(model, name="Storage", max_volume=max_volume, min_volume=min_volume,
-                             volume=current_volume, cost=-strg_benefit)
+                             initial_volume=current_volume, cost=-strg_benefit)
 
     strg.connect(otpt)
     lnk.connect(strg)
