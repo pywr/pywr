@@ -339,7 +339,7 @@ def test_new_storage(solver):
 
     supply1 = pywr.core.Input(model, 'supply1')
 
-    splitter = pywr.core.Storage(model, 'splitter', num_outputs=1, num_inputs=2, max_volume=10, volume=5)
+    splitter = pywr.core.Storage(model, 'splitter', num_outputs=1, num_inputs=2, max_volume=10, initial_volume=5)
 
     demand1 = pywr.core.Output(model, 'demand1')
     demand2 = pywr.core.Output(model, 'demand2')
@@ -448,7 +448,7 @@ def test_storage_spill_compensation(solver):
     model = pywr.core.Model(solver=solver)
 
     catchment = pywr.core.Input(model, name="Input", min_flow=10.0, max_flow=10.0, cost=1)
-    reservoir = pywr.core.Storage(model, name="Storage", max_volume=100, volume=100.0)
+    reservoir = pywr.core.Storage(model, name="Storage", max_volume=100, initial_volume=100.0)
     spill = pywr.core.Link(model, name="Spill", cost=1.0)
     compensation = pywr.core.Link(model, name="Compensation", max_flow=3.0, cost=-999)
     terminator = pywr.core.Output(model, name="Terminator", cost=-1.0)

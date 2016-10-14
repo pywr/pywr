@@ -204,11 +204,6 @@ class NodeIterator(object):
             return node
         raise StopIteration()
 
-    def __call__(self):
-        # support for old API
-        return self
-
-
 class NamedIterator(object):
     def __init__(self):
         self._objects = []
@@ -1067,11 +1062,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         if min_volume is None:
             min_volume = 0.0
         max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        if 'volume' in kwargs:
-            # support older API where volume kwarg was the initial volume
-            initial_volume = kwargs.pop('volume')
-        else:
-            initial_volume = kwargs.pop('initial_volume', 0.0)
+        initial_volume = kwargs.pop('initial_volume', 0.0)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
 
         position = kwargs.pop("position", {})
