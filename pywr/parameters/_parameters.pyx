@@ -5,6 +5,7 @@ import pandas
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
+from pywr.h5tools import H5Store
 
 cdef enum Predicates:
     LT = 0
@@ -259,6 +260,88 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
         return self.values[ts._index, scenario_index._indices[self._scenario_index]]
+
+
+cdef class TablesArrayParameter(IndexParameter):
+    def __init__(self, h5file, node, where='/', scenario=None, **kwargs):
+        """
+        This Parameter reads array data from a PyTables HDF database.
+
+        The parameter reads data using the PyTables array interface and therefore
+        does not require loading the entire dataset in to memory. This is useful
+        for large model runs.
+
+        Parameters
+        ----------
+        h5file : tables.File or filename
+            The tables file handle or filename to attach the CArray objects to. If a
+            filename is given the object will open and close the file handles.
+        node : string
+            Name of the node in the tables database to read data from
+        where : string
+            Path to read the node from.
+        scenario : Scenario
+            Scenario to use as the second index in the array.
+        """
+        super(TablesArrayParameter, self).__init__(**kwargs)
+
+        self.h5file = h5file
+        self.h5store = None
+        self.node = node
+        self.where = where
+        self.scenario = scenario
+
+        # Private attributes, initialised during reset()
+        self._values = None
+        self._scenario_index = -1
+
+    cpdef setup(self, model):
+        self.model = model
+        self._scenario_index = -1
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        if self.scenario is not None:
+            self._scenario_index = model.scenarios.get_scenario_index(self.scenario)
+
+    cpdef reset(self):
+        self.h5store = H5Store(self.h5file, None, "r")
+        self._values = self.h5store.file.get_node(self.where, self.node).read().astype(np.float64)
+        if self.scenario is not None:
+            if self._values.shape[1] != self.scenario.size:
+                raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
+        if self._values.shape[0] < len(self.model.timestepper):
+            raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts._index
+        cdef int j
+        # Support 1D and 2D indexing when scenario is or is not given.
+        if self._scenario_index == -1:
+            return self._values[i, 0]
+        else:
+            j = scenario_index._indices[self._scenario_index]
+            return self._values[i, j]
+
+    cpdef int index(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return int(self.value(ts, scenario_index))
+
+    cpdef finish(self):
+        self.h5store = None
+
+    @classmethod
+    def load(cls, model, data):
+        scenario = data.pop('scenario', None)
+        if scenario is not None:
+            scenario = model.scenarios[scenario]
+
+        url = data.pop('url')
+        if not os.path.isabs(url) and model.path is not None:
+            url = os.path.join(model.path, url)
+        node = data.pop('node')
+        where = data.pop('where', '/')
+
+        return cls(url, node, where=where, scenario=scenario)
+TablesArrayParameter.register()
 
 
 cdef class ConstantScenarioParameter(Parameter):
