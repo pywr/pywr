@@ -248,7 +248,7 @@ class TablesRecorder(Recorder):
             entry['day'] = dt.day
             entry['index'] = idx
             entry.append()
-            self._time_table.flush()
+            #self._time_table.flush()
 
         for node, ca in self._arrays.items():
             if isinstance(node, AbstractStorage):
@@ -256,15 +256,21 @@ class TablesRecorder(Recorder):
             elif isinstance(node, AbstractNode):
                 ca[idx, :] = node.flow
             elif isinstance(node, IndexParameter):
+                a = np.empty(len(self.model.scenarios.combinations), dtype=np.int)
                 for si in self.model.scenarios.combinations:
-                    ca[idx, si.global_id] = node.index(ts, si)
+                     a[si.global_id] = node.index(ts, si)
+                ca[idx, :] = a
             elif isinstance(node, BaseParameter):
+                a = np.empty(len(self.model.scenarios.combinations), dtype=np.float64)
                 for si in self.model.scenarios.combinations:
-                    ca[idx, si.global_id] = node.value(ts, si)
+                    a[si.global_id] = node.value(ts, si)
+                ca[idx, :] = a
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
 
     def finish(self):
+        if self._time_table is not None:
+            self._time_table.flush()
         self.h5store = None
         self._arrays = {}
 
