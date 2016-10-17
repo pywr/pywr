@@ -1,6 +1,7 @@
 py.test %SRC_DIR%\tests --solver=glpk
 py.test %SRC_DIR%\tests --solver=lpsolve
 
+if errorlevel 1 exit 1
 
 if %PY3K% == 1 (
     set PY_VER=3
