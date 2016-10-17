@@ -315,7 +315,7 @@ cdef class TablesArrayParameter(IndexParameter):
             shape = self._values_dbl.shape
         else:
             self._values_dbl = None
-            self._values_int = node.read()
+            self._values_int = node.read().astype(np.int32)
             shape = self._values_int.shape
 
         if self.scenario is not None:
