@@ -500,6 +500,6 @@ def test_demand_saving_with_indexed_array_from_hdf(solver):
     demand_saving = 0.5
     assert_allclose(rec_demand.data[12, 0], demand_baseline * demand_saving)
 
-    # second control c2urve breached
+    # second control curve breached
     demand_saving = 0.25
     assert_allclose(rec_demand.data[13, 0], demand_baseline * demand_saving)
