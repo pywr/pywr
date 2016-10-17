@@ -292,7 +292,8 @@ cdef class TablesArrayParameter(IndexParameter):
         self.scenario = scenario
 
         # Private attributes, initialised during reset()
-        self._values = None
+        self._values_dbl = None
+        self._values_int = None
         self._scenario_index = -1
 
     cpdef setup(self, model):
@@ -305,25 +306,47 @@ cdef class TablesArrayParameter(IndexParameter):
 
     cpdef reset(self):
         self.h5store = H5Store(self.h5file, None, "r")
-        self._values = self.h5store.file.get_node(self.where, self.node).read().astype(np.float64)
+        node = self.h5store.file.get_node(self.where, self.node)
+
+        # detect data type and read into memoryview
+        if node.dtype == np.float32 or node.dtype == np.float64:
+            self._values_dbl = node.read()
+            self._values_int = None
+            shape = self._values_dbl.shape
+        else:
+            self._values_dbl = None
+            self._values_int = node.read()
+            shape = self._values_int.shape
+
         if self.scenario is not None:
-            if self._values.shape[1] != self.scenario.size:
+            if shape[1] != self.scenario.size:
                 raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
-        if self._values.shape[0] < len(self.model.timestepper):
+        if shape[0] < len(self.model.timestepper):
             raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts._index
         cdef int j
+        if self._values_dbl is None:
+            return float(self.index(ts, scenario_index))
         # Support 1D and 2D indexing when scenario is or is not given.
         if self._scenario_index == -1:
-            return self._values[i, 0]
+            return self._values_dbl[i, 0]
         else:
             j = scenario_index._indices[self._scenario_index]
-            return self._values[i, j]
+            return self._values_dbl[i, j]
 
     cpdef int index(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return int(self.value(ts, scenario_index))
+        cdef int i = ts._index
+        cdef int j
+        if self._values_int is None:
+            return int(self.value(ts, scenario_index))
+        # Support 1D and 2D indexing when scenario is or is not given.
+        if self._scenario_index == -1:
+            return self._values_int[i, 0]
+        else:
+            j = scenario_index._indices[self._scenario_index]
+            return self._values_int[i, j]
 
     cpdef finish(self):
         self.h5store = None

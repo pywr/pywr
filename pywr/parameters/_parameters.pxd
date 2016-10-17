@@ -60,7 +60,8 @@ cdef class IndexParameter(Parameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
 cdef class TablesArrayParameter(IndexParameter):
-    cdef double[:, :] _values
+    cdef double[:, :] _values_dbl
+    cdef long[:, :] _values_int
     cdef public Scenario scenario
     cdef public object h5file
     cdef public object h5store
