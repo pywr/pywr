@@ -61,7 +61,7 @@ cdef class IndexParameter(Parameter):
 
 cdef class TablesArrayParameter(IndexParameter):
     cdef double[:, :] _values_dbl
-    cdef long[:, :] _values_int
+    cdef int[:, :] _values_int
     cdef public Scenario scenario
     cdef public object h5file
     cdef public object h5store
