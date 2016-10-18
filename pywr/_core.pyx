@@ -912,6 +912,7 @@ cdef class AggregatedStorage(AbstractStorage):
 
 cdef class VirtualStorage(Storage):
     def __cinit__(self, ):
+        self._allow_isolated = True
         self.virtual = True
 
     property nodes:
