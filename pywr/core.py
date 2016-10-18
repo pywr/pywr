@@ -318,12 +318,12 @@ class Model(object):
 
         Raises an Exception if the model is invalid.
         """
-        nodes = self.graph.nodes()
-        for node in nodes:
+        for node in self.nodes:
             node.check()
         self.check_graph()
 
     def check_graph(self):
+        """Check the connectivity of the graph is valid"""
         all_nodes = set(self.graph.nodes())
         routes = self.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
         # identify nodes that aren't in at least one route
@@ -1229,6 +1229,11 @@ class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
             self.factors = [1.0 for i in range(len(nodes))]
         else:
             self.factors = factors
+
+    def check(self):
+        super(VirtualStorage, self).check()
+        if self.cost not in (0.0, None):
+            raise NotImplementedError("VirtualStorage does not currently support a non-zero cost.")
 
     @classmethod
     def load(cls, data, model):

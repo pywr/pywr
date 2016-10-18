@@ -407,3 +407,15 @@ def test_initial_timestep(solver):
     assert(model.timestepper.current is None)
     model.run()
     assert(isinstance(model.timestepper.current, Timestep))
+
+def test_virtual_storage_cost(solver):
+    """VirtualStorage doesn't (currently) implement its cost attribute"""
+    model = Model(solver=solver)
+    A = Input(model, "A")
+    B = Output(model, "B")
+    A.connect(B)
+    node = VirtualStorage(model, "storage", [A, B])
+    node.check()
+    node.cost = 5.0
+    with pytest.raises(NotImplementedError):
+        model.check()
