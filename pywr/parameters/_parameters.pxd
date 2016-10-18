@@ -51,11 +51,25 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
     cdef Scenario _scenario
     cdef int _scenario_index
 
+
+
 cdef class DailyProfileParameter(Parameter):
     cdef double[:] _values
 
 cdef class IndexParameter(Parameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
+
+cdef class TablesArrayParameter(IndexParameter):
+    cdef double[:, :] _values_dbl
+    cdef int[:, :] _values_int
+    cdef public Scenario scenario
+    cdef public object h5file
+    cdef public object h5store
+    cdef public object node
+    cdef public object where
+    cdef public object model
+
+    cdef int _scenario_index
 
 cdef class IndexedArrayParameter(Parameter):
     cdef public Parameter index_parameter
