@@ -309,14 +309,16 @@ cdef class TablesArrayParameter(IndexParameter):
         node = self.h5store.file.get_node(self.where, self.node)
 
         # detect data type and read into memoryview
-        if node.dtype == np.float32 or node.dtype == np.float64:
+        if node.dtype in (np.float32, np.float64):
             self._values_dbl = node.read()
             self._values_int = None
             shape = self._values_dbl.shape
-        else:
+        elif node.dtype in (np.int8, np.int16, np.int32):
             self._values_dbl = None
             self._values_int = node.read()
             shape = self._values_int.shape
+        else:
+            raise TypeError("Unexpected dtype in array: {}".format(node.dtype))
 
         if self.scenario is not None:
             if shape[1] != self.scenario.size:
