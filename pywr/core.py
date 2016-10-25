@@ -313,7 +313,7 @@ class Model(object):
         self.parameters = NamedIterator()
         self.recorders = NamedIterator()
         self.tables = {}
-        self.scenarios = ScenarioCollection()
+        self.scenarios = ScenarioCollection(self)
 
         if kwargs:
             key = list(kwargs.keys())[0]

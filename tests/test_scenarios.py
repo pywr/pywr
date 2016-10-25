@@ -4,11 +4,10 @@ A series of tests of the Scenario objects and associated infrastructure
 
 
 """
-import pywr.core
-from pywr.core import Model, Input, Output, Link, Storage
+from pywr.core import Model, Input, Output, Link, Storage, Scenario
+from pywr.parameters import ConstantScenarioParameter
 from pywr.recorders import NumpyArrayStorageRecorder, NumpyArrayNodeRecorder
 from helpers import assert_model, load_model
-# To get simple_linear_model fixture
 from fixtures import simple_linear_model
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
@@ -18,17 +17,17 @@ import pytest
 def test_scenario_collection(solver):
     """ Basic test of Scenario and ScenarioCollection API """
 
-    model = pywr.core.Model(solver=solver)
+    model = Model(solver=solver)
 
     # There is 1 combination when there are no Scenarios
     model.scenarios.setup()
     assert(len(model.scenarios.combinations) == 1)
     assert(len(model.scenarios) == 0)
-    scA = pywr.core.Scenario(model, 'Scenario A', size=3)
+    scA = Scenario(model, 'Scenario A', size=3)
     model.scenarios.setup()
     assert(len(model.scenarios.combinations) == 3)
     assert(len(model.scenarios) == 1)
-    scA = pywr.core.Scenario(model, 'Scenario B', size=2)
+    scA = Scenario(model, 'Scenario B', size=2)
     model.scenarios.setup()
     assert(len(model.scenarios.combinations) == 6)
     assert(len(model.scenarios) == 2)
@@ -50,8 +49,8 @@ def test_scenario(simple_linear_model, ):
     """Basic test of Scenario functionality"""
     model = simple_linear_model  # Convenience renaming
 
-    scenario = pywr.core.Scenario(model, 'Inflow', size=2)
-    model.nodes["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario, [5.0, 10.0])
+    scenario = Scenario(model, 'Inflow', size=2)
+    model.nodes["Input"].max_flow = ConstantScenarioParameter(scenario, [5.0, 10.0])
 
     model.nodes["Output"].max_flow = 5.0
     model.nodes["Output"].cost = -2.0
@@ -69,11 +68,11 @@ def test_two_scenarios(simple_linear_model, ):
     """Basic test of Scenario functionality"""
     model = simple_linear_model  # Convenience renaming
 
-    scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
-    model.nodes["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
+    scenario_input = Scenario(model, 'Inflow', size=2)
+    model.nodes["Input"].max_flow = ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
-    scenario_outflow = pywr.core.Scenario(model, 'Outflow', size=2)
-    model.nodes["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
+    scenario_outflow = Scenario(model, 'Outflow', size=2)
+    model.nodes["Output"].max_flow = ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
     model.nodes["Output"].cost = -2.0
 
     # add numpy recorders to input and output nodes
@@ -103,10 +102,10 @@ def test_scenario_two_parameter(simple_linear_model, ):
     """Basic test of Scenario functionality"""
     model = simple_linear_model  # Convenience renaming
 
-    scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
-    model.nodes["Input"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
+    scenario_input = Scenario(model, 'Inflow', size=2)
+    model.nodes["Input"].max_flow = ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
-    model.nodes["Output"].max_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [8.0, 3.0])
+    model.nodes["Output"].max_flow = ConstantScenarioParameter(scenario_input, [8.0, 3.0])
     model.nodes["Output"].cost = -2.0
 
     expected_node_results = {
@@ -131,8 +130,8 @@ def test_scenario_storage(solver):
     s = Storage(model, 'storage', num_inputs=1, num_outputs=1, max_volume=1000, initial_volume=500)
     o = Output(model, 'output', max_flow=999)
 
-    scenario_input = pywr.core.Scenario(model, 'Inflow', size=2)
-    i.min_flow = pywr.parameters.ConstantScenarioParameter(scenario_input, [5.0, 10.0])
+    scenario_input = Scenario(model, 'Inflow', size=2)
+    i.min_flow = ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
     i.connect(s)
     s.connect(o)
@@ -215,3 +214,11 @@ def test_tables_array_index_error(solver):
     print(type(catchment1))
     param = catchment1.max_flow
     assert(param.h5store is None)
+
+def test_dirty_scenario(simple_linear_model):
+    """Adding a scenario to a model makes it dirty"""
+    model = simple_linear_model
+    model.setup()
+    assert(not model.dirty)
+    scenario = Scenario(model, "test", size=42)
+    assert(model.dirty)

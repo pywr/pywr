@@ -48,7 +48,8 @@ cdef class Scenario:
             return self._name
 
 cdef class ScenarioCollection:
-    def __init__(self, ):
+    def __init__(self, model):
+        self.model = model
         self._scenarios = []
         self.combinations = None
 
@@ -84,6 +85,7 @@ cdef class ScenarioCollection:
     cpdef add_scenario(self, Scenario sc):
         if sc in self._scenarios:
             raise ValueError("The same scenario can not be added twice.")
+        self.model.dirty = True
         self._scenarios.append(sc)
 
     property combination_names:
