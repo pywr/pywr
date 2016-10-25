@@ -408,6 +408,10 @@ def test_initial_timestep(solver):
     model.run()
     assert(isinstance(model.timestepper.current, Timestep))
 
+def test_timestepper_repr(model):
+    timestepper = model.timestepper
+    print(timestepper)
+
 def test_virtual_storage_cost(solver):
     """VirtualStorage doesn't (currently) implement its cost attribute"""
     model = Model(solver=solver)

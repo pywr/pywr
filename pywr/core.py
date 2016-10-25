@@ -129,6 +129,14 @@ class Timestepper(object):
         freq = '{}D'.format(self.delta.days)
         return pandas.date_range(self.start, self.end, freq=freq)
 
+    def __repr__(self):
+        start = self.start.strftime("%Y-%m-%d")
+        end = self.end.strftime("%Y-%m-%d")
+        delta = self.delta.days
+        return "<Timestepper start=\"{}\" end=\"{}\" delta=\"{}\">".format(
+            start, end, delta
+        )
+
 
 class Scenario(_core.Scenario):
     pass
