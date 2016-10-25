@@ -10,7 +10,7 @@ from pywr._core import Timestep, ScenarioIndex
 
 from pywr.core import *
 from pywr.domains.river import *
-from pywr.parameters import Parameter, ConstantParameter
+from pywr.parameters import Parameter, ConstantParameter, DataFrameParameter
 
 TEST_FOLDER = os.path.dirname(__file__)
 
