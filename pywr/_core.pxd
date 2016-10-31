@@ -6,6 +6,7 @@ cdef class Scenario:
     cdef int _size
 
 cdef class ScenarioCollection:
+    cdef public object model
     cdef list _scenarios
     cdef public list combinations
     cpdef int get_scenario_index(self, Scenario sc) except? -1
