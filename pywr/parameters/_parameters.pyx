@@ -1095,5 +1095,7 @@ def read_dataframe(model, data):
     data.pop("parse_dates", None)
     data.pop("dayfirst", None)
     data.pop("index_col", None)
+    data.pop("sheetname", None)
+    data.pop("parse_cols", None)
 
     return df
