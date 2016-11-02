@@ -29,7 +29,7 @@ def simple_gauge_model(request, solver):
     inpt = river.Catchment(model, name="Catchment", flow=in_flow)
     lnk = river.RiverGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-1.0)
     inpt.connect(lnk)
-    otpt = river.DemandCentre(model, name="Demand", max_flow=out_flow, cost=-benefit)
+    otpt = pywr.core.Output(model, name="Demand", max_flow=out_flow, cost=-benefit)
     lnk.connect(otpt)
 
     default = inpt.domain
@@ -64,9 +64,9 @@ def simple_river_split_gauge_model(solver):
     lnk = river.RiverSplitWithGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-100,
                                     slot_names=("river", "abstraction"), factors=[3, 1])
     inpt.connect(lnk)
-    estuary = river.Terminator(model, name="Estuary")
+    estuary = pywr.core.Output(model, name="Estuary")
     lnk.connect(estuary, from_slot="river")
-    otpt = river.DemandCentre(model, name="Demand", max_flow=out_flow, cost=-10)
+    otpt = pywr.core.Output(model, name="Demand", max_flow=out_flow, cost=-10)
     lnk.connect(otpt, from_slot="abstraction")
 
     net_flow_after_mrf = in_flow - min_flow_req
@@ -152,7 +152,7 @@ def test_control_curve(solver):
     catchment = river.Catchment(model, name="Catchment", flow=in_flow)
     lnk = river.River(model, name="River")
     catchment.connect(lnk)
-    demand = river.DemandCentre(model, name="Demand", cost=-10.0, max_flow=10)
+    demand = pywr.core.Output(model, name="Demand", cost=-10.0, max_flow=10)
     lnk.connect(demand)
     from pywr.parameters import ConstantParameter
     control_curve = ConstantParameter(0.8)

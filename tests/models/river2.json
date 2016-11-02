@@ -32,21 +32,21 @@
         },
         {
             "name": "abs1",
-            "type": "riverabstraction",
+            "type": "link",
             "max_flow": 15
         },
         {
             "name": "abs2",
-            "type": "riverabstraction",
+            "type": "link",
             "max_flow": 15
         },
         {
             "name": "term1",
-            "type": "terminator"
+            "type": "output"
         },
         {
             "name": "term2",
-            "type": "terminator"
+            "type": "output"
         },
         {
             "name": "demand1",

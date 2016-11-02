@@ -190,23 +190,6 @@ class Discharge(Catchment):
     """
     pass
 
-
-class DemandDischarge(River):
-    """River discharge for demands that aren't entirely consumptive
-    """
-    pass
-
-
-class Terminator(RiverDomainMixin, Output):
-    """A sink in the river network
-
-    This node is required to close the network and is used by some of the
-    routing algorithms. Every river must end in a Terminator.
-    """
-    def __init__(self, *args, **kwargs):
-        super(Terminator, self).__init__(*args, **kwargs)
-
-
 class RiverGauge(RiverDomainMixin, PiecewiseLink):
     """A river gauging station, with a minimum residual flow (MRF)
     """
@@ -252,15 +235,3 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         del(data["type"])
         node = cls(model, mrf=mrf, mrf_cost=mrf_cost, cost=cost, **data)
         return node
-
-
-class RiverAbstraction(RiverDomainMixin, Output):
-    """An abstraction from the river network"""
-    def __init__(self, *args, **kwargs):
-        super(RiverAbstraction, self).__init__(*args, **kwargs)
-
-
-class DemandCentre(RiverDomainMixin, Output):
-    """A demand centre"""
-    def __init__(self, *args, **kwargs):
-        super(DemandCentre, self).__init__(*args, **kwargs)
