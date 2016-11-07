@@ -109,9 +109,12 @@ class TablesRecorder(Recorder):
             Filter keywords to pass to tables.open_file when opening a file.
         mode : string
             Model argument to pass to tables.open_file. Defaults to 'w'
+        metadata : dict
+            Dict of user defined attributes to save on the root node (`root._v_attrs`)
         """
         self.filter_kwds = kwargs.pop('filter_kwds', {})
         self.mode = kwargs.pop('mode', 'w')
+        self.metadata = kwargs.pop('metadata', {})
 
         title = kwargs.pop('title', None)
         if title is None:
@@ -149,7 +152,7 @@ class TablesRecorder(Recorder):
         import tables
         shape = len(self.model.timestepper), len(self.model.scenarios.combinations)
 
-        self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title)
+        self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title, metadata=self.metadata)
 
         # Create a CArray for each node
         self._arrays = {}

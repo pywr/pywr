@@ -421,6 +421,10 @@ class TestTablesRecorder:
         h5file = tmpdir.join('output.h5')
         with tables.open_file(str(h5file), 'r') as h5f:
             assert model.metadata['title'] == h5f.title
+            # Check metadata on root node
+            assert h5f.root._v_attrs.author == 'pytest'
+            assert h5f.root._v_attrs.run_number == 0
+
             rec_demand = h5f.get_node('/outputs/demand').read()
             rec_storage = h5f.get_node('/storage/reservoir').read()
 
