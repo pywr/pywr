@@ -3,7 +3,7 @@ import sys
 from past.builtins import basestring
 
 class H5Store(object):
-    def __init__(self, filename, filter_kwds=None, mode="r", title=''):
+    def __init__(self, filename, filter_kwds=None, mode="r", title='', metadata=None):
         filter_kwds = filter_kwds
         mode = mode
         self._opened = False
@@ -29,6 +29,11 @@ class H5Store(object):
             self._opened = False
         else:
             raise TypeError("{} must be initalised with a filename to open or an open tables.File".format(self.__class__.__name__))
+
+        # now update metadata if given
+        if metadata is not None and self.file.mode != 'r':
+            for k, v in metadata.items():
+                setattr(self.file.root._v_attrs, k, v)
 
     def __del__(self):
         if self._opened and self.file.isopen:

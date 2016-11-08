@@ -149,6 +149,10 @@
             "filter_kwds": {
                 "complevel": 5,
                 "complib": "zlib"
+            },
+            "metadata": {
+                "author": "pytest",
+                "run_number": 0
             }
         }
     }
