@@ -5,7 +5,8 @@ from ._parameters import (
     ConstantScenarioParameter, AnnualHarmonicSeriesParameter,
     ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
-    DailyProfileParameter, ArrayIndexedScenarioParameter,
+    DailyProfileParameter, MonthlyProfileParameter,
+    ArrayIndexedScenarioParameter,
     IndexParameter, CachedParameter, RecorderThresholdParameter,
     AggregatedParameter, AggregatedIndexParameter,
     load_parameter, load_parameter_values, load_dataframe)
@@ -28,30 +29,6 @@ class FunctionParameter(Parameter):
     def value(self, ts, scenario_index):
         return self._func(self._parent, ts, scenario_index)
 FunctionParameter.register()
-
-
-class MonthlyProfileParameter(Parameter):
-    def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
-        super(MonthlyProfileParameter, self).__init__(**kwargs)
-        self.size = 12
-        if len(values) != self.size:
-            raise ValueError("12 values must be given for a monthly profile.")
-        self._values = np.array(values)
-        self._lower_bounds = np.ones(self.size)*lower_bounds
-        self._upper_bounds = np.ones(self.size)*upper_bounds
-
-    def value(self, ts, scenario_index):
-        return self._values[ts.datetime.month-1]
-
-    def update(self, values):
-        self._values[...] = values
-
-    def lower_bounds(self):
-        return self._lower_bounds
-
-    def upper_bounds(self):
-        return self._upper_bounds
-MonthlyProfileParameter.register()
 
 
 class ScaledProfileParameter(Parameter):

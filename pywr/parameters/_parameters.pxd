@@ -56,6 +56,11 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
 cdef class DailyProfileParameter(Parameter):
     cdef double[:] _values
 
+cdef class MonthlyProfileParameter(Parameter):
+    cdef double[:] _values
+    cdef double[:] _lower_bounds
+    cdef double[:] _upper_bounds
+
 cdef class IndexParameter(Parameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
