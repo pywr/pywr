@@ -1092,8 +1092,7 @@ def read_dataframe(model, data):
         raise TypeError("Invalid DataFrame index type \"{}\" in \"{}\".".format(df.index.dtype.name, url))
 
     # clean up
-    data.pop("parse_dates", None)
-    data.pop("dayfirst", None)
-    data.pop("index_col", None)
+    # Assume all keywords are consumed by pandas.read_* functions
+    data.clear()
 
     return df
