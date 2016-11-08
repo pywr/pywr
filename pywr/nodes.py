@@ -214,22 +214,6 @@ class Input(Node, BaseInput):
         self.color = '#F26C4F' # light red
 
 
-class InputFromOtherDomain(Input):
-    """A input in to the network that is connected to an output from another domain
-
-    Parameters
-    ----------
-    conversion_factor : float (optional)
-        A factor that is multiplied by the upstream output to calculate the input flow rate.
-        This is typically used for losses and/or unit conversion.
-    """
-    def __init__(self, *args, **kwargs):
-        Input.__init__(self, *args, **kwargs)
-
-        import warnings
-        warnings.warn("InputFromOtherDomain class is deprecated as the functionality is provided by Input.")
-
-
 class Output(Node, BaseOutput):
     """A general output at any point from the network
 
