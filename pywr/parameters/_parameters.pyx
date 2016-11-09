@@ -775,7 +775,7 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
     """A collection of IndexParameters
 
     This class behaves like a set. Parameters can be added or removed from it.
-    It's index is the index of it's child parameters aggregated using a
+    Its index is the index of it's child parameters aggregated using a
     aggregating function (e.g. sum).
 
     Parameters
@@ -783,8 +783,8 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
     parameters : iterable of `IndexParameter`
         The parameters to aggregate
     agg_func : callable or str
-        The aggregation function. Must be one of {"sum", "min", "max"}, or a
-        callable function which accepts a list of values.
+        The aggregation function. Must be one of {"sum", "min", "max", "any",
+        "all"}, or a callable function which accepts a list of values.
     """
     def __init__(self, parameters, agg_func=None, **kwargs):
         super(AggregatedIndexParameter, self).__init__(**kwargs)
