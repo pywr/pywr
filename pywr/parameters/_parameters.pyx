@@ -465,6 +465,29 @@ cdef class DailyProfileParameter(Parameter):
         return self._values[i]
 DailyProfileParameter.register()
 
+cdef class MonthlyProfileParameter(Parameter):
+    def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+        super(MonthlyProfileParameter, self).__init__(**kwargs)
+        self.size = 12
+        if len(values) != self.size:
+            raise ValueError("12 values must be given for a monthly profile.")
+        self._values = np.array(values)
+        self._lower_bounds = np.ones(self.size)*lower_bounds
+        self._upper_bounds = np.ones(self.size)*upper_bounds
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._values[ts.month-1]
+
+    cpdef update(self, double[:] values):
+        self._values[...] = values
+
+    cpdef double[:] lower_bounds(self):
+        return self._lower_bounds
+
+    cpdef double[:] upper_bounds(self):
+        return self._upper_bounds
+MonthlyProfileParameter.register()
+
 cdef class IndexParameter(Parameter):
     """Base parameter providing an `index` method
 
