@@ -596,12 +596,14 @@ class Model(object):
 
     def flatten_parameter_tree(self, rebuild=False):
         if self.parameter_tree is None or rebuild is True:
+            self.parameter_tree_flat = []
             self.build_parameter_tree()
-        G = self.parameter_tree
-        for node in nx.dfs_postorder_nodes(G, "root"):
-            if node == "root":
-                break
-            yield node
+            G = self.parameter_tree
+            for node in nx.dfs_postorder_nodes(G, "root"):
+                if node == "root":
+                    break
+                self.parameter_tree_flat.append(node)
+        return self.parameter_tree_flat
 
 class NodeIterator(object):
     """Iterator for Nodes in a Model which also supports indexing
