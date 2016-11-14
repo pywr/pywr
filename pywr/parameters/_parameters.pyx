@@ -64,14 +64,10 @@ cdef class Parameter:
         del(parameter_registry[cls.__name__.lower()])
 
     cpdef setup(self, model):
-        cdef Parameter child
-        for child in self.children:
-            child.setup(model)
+        pass
 
     cpdef reset(self):
-        cdef Parameter child
-        for child in self.children:
-            child.reset()
+        pass
 
     cpdef before(self, Timestep ts):
         cdef Parameter child
