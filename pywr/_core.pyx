@@ -455,24 +455,10 @@ cdef class Node(AbstractNode):
             self._cost = self._cost_param.value(ts, scenario_index)
 
     cpdef setup(self, model):
-        """Called before the first run of the model"""
-        AbstractNode.setup(self, model)
-        # Setup any Parameters and Recorders
-        if self._cost_param is not None:
-            self._cost_param.setup(model)
-        if self._min_flow_param is not None:
-            self._min_flow_param.setup(model)
-        if self._max_flow_param is not None:
-            self._max_flow_param.setup(model)
+        super(Node, self).setup(model)
 
     cpdef reset(self):
-        # Reset any Parameters and Recorders
-        if self._cost_param is not None:
-            self._cost_param.reset()
-        if self._min_flow_param is not None:
-            self._min_flow_param.reset()
-        if self._max_flow_param is not None:
-            self._max_flow_param.reset()
+        super(Node, self).reset()
 
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""

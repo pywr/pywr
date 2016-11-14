@@ -17,6 +17,7 @@ from pywr.recorders import load_recorder
 
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
     StorageOutput, Timestep, ScenarioIndex)
+from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
 from pywr._core import ScenarioCollection, Scenario
 from pywr.parameters._parameters import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
@@ -90,6 +91,8 @@ class Model(object):
         if kwargs:
             key = list(kwargs.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
+
+        self.parameter_tree = None
 
         self.reset()
 
@@ -497,6 +500,9 @@ class Model(object):
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
             node.setup(self)
+        parameters = self.flatten_parameter_tree(rebuild=True)
+        for parameter in parameters:
+            parameter.setup(self)
         for recorder in self.recorders:
             recorder.setup()
         self.solver.setup(self)
@@ -510,6 +516,9 @@ class Model(object):
             if length_changed:
                 node.setup(self)
             node.reset()
+        parameters = self.flatten_parameter_tree(rebuild=False)
+        for parameter in parameters:
+            parameter.reset()
         for recorder in self.recorders:
             if length_changed:
                 recorder.setup()
@@ -539,6 +548,51 @@ class Model(object):
         df = pandas.concat(dfs, axis=1)
         df.columns.set_names('Recorder', level=0, inplace=True)
         return df
+
+    def build_parameter_tree(self):
+        G = nx.DiGraph()
+        G.add_node("root")
+        all_parameters = set()
+        for node in self.graph.nodes():
+            if isinstance(node, AggregatedStorage):
+                attrs = []
+            elif isinstance(node, AggregatedNode):
+                attrs = ["max_flow", "min_flow"]
+            elif isinstance(node, VirtualStorage):
+                attrs = ["max_volume"]
+            elif isinstance(node, Storage):
+                attrs = ["max_volume", "cost"]
+            else:
+                attrs = ["max_flow", "min_flow", "cost"]
+            for attr in attrs:
+                parameter = getattr(node, attr)
+                if isinstance(parameter, BaseParameter):
+                    all_parameters.add(parameter)
+
+        # TODO: recorders can also have parameters as children
+
+        to_process = list(all_parameters)
+        while to_process:
+            parameter = to_process.pop()
+            if not parameter.parents:
+                G.add_edge("root", parameter)
+            if parameter.children:
+                for child in parameter.children:
+                    if not child in G:
+                        to_process.append(child)
+                    G.add_edge(parameter, child)
+
+        self.parameter_tree = G
+        return G
+
+    def flatten_parameter_tree(self, rebuild=False):
+        if self.parameter_tree is None or rebuild is True:
+            self.build_parameter_tree()
+        G = self.parameter_tree
+        for node in nx.dfs_postorder_nodes(G, "root"):
+            if node == "root":
+                break
+            yield node
 
 class NodeIterator(object):
     """Iterator for Nodes in a Model which also supports indexing
