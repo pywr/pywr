@@ -527,16 +527,25 @@ class Model(object):
     def before(self):
         for node in self.graph.nodes():
             node.before(self.timestep)
+        parameters = self.flatten_parameter_tree(rebuild=False)
+        for parameter in parameters:
+            parameter.before(self.timestep)
 
     def after(self):
         for node in self.graph.nodes():
             node.after(self.timestep)
+        parameters = self.flatten_parameter_tree(rebuild=False)
+        for parameter in parameters:
+            parameter.after(self.timestep)
         for recorder in self.recorders:
             recorder.save()
 
     def finish(self):
         for node in self.graph.nodes():
             node.finish()
+        parameters = self.flatten_parameter_tree(rebuild=False)
+        for parameter in parameters:
+            parameter.finish()
         for recorder in self.recorders:
             recorder.finish()
 

@@ -464,34 +464,12 @@ cdef class Node(AbstractNode):
         """Called at the beginning of the timestep"""
         AbstractNode.before(self, ts)
 
-        # Complete any parameter calculations
-        if self._cost_param is not None:
-            self._cost_param.before(ts)
-        if self._max_flow_param is not None:
-            self._max_flow_param.before(ts)
-        if self._min_flow_param is not None:
-            self._min_flow_param.before(ts)
-
     cpdef after(self, Timestep ts):
         """Called at the end of the timestep"""
         AbstractNode.after(self, ts)
 
-        # Complete any parameter calculations
-        if self._cost_param is not None:
-            self._cost_param.after(ts)
-        if self._max_flow_param is not None:
-            self._max_flow_param.after(ts)
-        if self._min_flow_param is not None:
-            self._min_flow_param.after(ts)
-
     cpdef finish(self):
         AbstractNode.finish(self)
-        if self._cost_param is not None:
-            self._cost_param.finish()
-        if self._max_flow_param is not None:
-            self._max_flow_param.finish()
-        if self._min_flow_param is not None:
-            self._min_flow_param.finish()
 
 cdef class BaseLink(Node):
     pass

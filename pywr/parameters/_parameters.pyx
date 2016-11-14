@@ -70,22 +70,16 @@ cdef class Parameter:
         pass
 
     cpdef before(self, Timestep ts):
-        cdef Parameter child
-        for child in self.children:
-            child.before(ts)
+        pass
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return 0
 
     cpdef after(self, Timestep ts):
-        cdef Parameter child
-        for child in self.children:
-            child.after(ts)
+        pass
 
     cpdef finish(self):
-        cdef Parameter child
-        for child in self.children:
-            child.finish()
+        pass
 
     cpdef update(self, double[:] values):
         raise NotImplementedError()
