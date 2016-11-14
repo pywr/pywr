@@ -30,10 +30,10 @@ cdef class StorageRecorder(Recorder):
     cdef Storage _node
 
 cdef class ParameterRecorder(Recorder):
-    cdef Parameter _param
+    cdef readonly Parameter _param
 
 cdef class IndexParameterRecorder(Recorder):
-    cdef IndexParameter _param
+    cdef readonly IndexParameter _param
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
     cdef double[:, :] _data

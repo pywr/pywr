@@ -21,6 +21,7 @@ from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorag
 from pywr._core import ScenarioCollection, Scenario
 from pywr.parameters._parameters import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
+from pywr._recorders import ParameterRecorder, IndexParameterRecorder
 
 class ModelDocumentWarning(Warning): # TODO
     pass
@@ -575,6 +576,16 @@ class Model(object):
                 attrs = ["max_flow", "min_flow", "cost"]
             for attr in attrs:
                 parameter = getattr(node, attr)
+                if isinstance(parameter, BaseParameter):
+                    all_parameters.add(parameter)
+            for recorder in node.recorders:
+                if isinstance(recorder, (ParameterRecorder, IndexParameterRecorder)):
+                    parameter = recorder._param
+                    if isinstance(parameter, BaseParameter):
+                        all_parameters.add(parameter)
+        for recorder in self.recorders:
+            if isinstance(recorder, (ParameterRecorder, IndexParameterRecorder)):
+                parameter = recorder._param
                 if isinstance(parameter, BaseParameter):
                     all_parameters.add(parameter)
 
