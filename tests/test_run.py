@@ -23,7 +23,7 @@ import pywr.parameters
 def test_run_simple1(solver):
     '''Test the most basic model possible'''
     # parse the JSON into a model
-    model = load_model('simple1.json', solver=None)
+    model = load_model('simple1.json', solver=solver)
 
     # run the model
     t0 = model.timestepper.start.to_datetime()
