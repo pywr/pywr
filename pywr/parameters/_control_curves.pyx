@@ -238,4 +238,16 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         storage_node = model._get_node_from_ref(model, data["storage_node"])
         control_curves = [load_parameter(model, data) for data in data["control_curves"]]
         return cls(storage_node, control_curves)
+
+    cpdef dump(self):
+        cdef Parameter control_curve
+        data = {
+            "type": self.__class__.__name__.replace("Parameter", ""),
+            "control_curves": [],
+        }
+        for control_curve in self.control_curves:
+            cc_data = control_curve.dump()
+            data["control_curves"].append(cc_data)
+        return data
+
 ControlCurveIndexParameter.register()

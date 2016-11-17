@@ -146,6 +146,13 @@ cdef class Parameter:
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
         return cls(values, name=name, comment=None)
 
+    cpdef dump(self):
+        data = {
+            "type": self.__class__.__name__.replace("Parameter", ""),
+            "values": np.asarray(self._values).tolist(),
+        }
+        return data
+
 Parameter.register()
 
 cdef class ConstantParameter(Parameter):
@@ -176,6 +183,13 @@ cdef class ConstantParameter(Parameter):
             value = load_parameter_values(model, data)
         parameter = cls(value, **data)
         return parameter
+
+    cpdef dump(self):
+        if self.name is not None:
+            data = {"type": "constant", "value": self._value}
+        else:
+            data = self._value
+        return data
 
 ConstantParameter.register()
 
@@ -486,6 +500,14 @@ cdef class MonthlyProfileParameter(Parameter):
 
     cpdef double[:] upper_bounds(self):
         return self._upper_bounds
+
+    cpdef dump(self):
+        data = {
+            "type": self.__class__.__name__.replace("Parameter", ""),
+            "values": np.asarray(self._values).tolist(),
+        }
+        return data
+
 MonthlyProfileParameter.register()
 
 cdef class IndexParameter(Parameter):
@@ -553,6 +575,19 @@ cdef class IndexedArrayParameter(Parameter):
         index_parameter = load_parameter(model, data.pop("index_parameter"))
         params = [load_parameter(model, parameter_data) for parameter_data in data.pop("params")]
         return cls(index_parameter, params, **data)
+
+    cpdef dump(self):
+        data = {
+            "type": self.__class__.__name__.replace("Parameter", ""),
+            "parameters": []
+        }
+        index_data = self.index_parameter.dump()
+        data["index_parameter"] = index_data
+        for parameter in self.params:
+            parameter_data = parameter.dump()
+            data["parameters"].append(parameter_data)
+            
+
 IndexedArrayParameter.register()
 
 
@@ -704,6 +739,19 @@ cdef class AggregatedParameterBase(IndexParameter):
     cpdef reset(self):
         for parameter in self.parameters:
             parameter.reset()
+
+    cpdef dump(self):
+        if self._agg_func == AggFuncs.CUSTOM:
+            raise TypeError("FunctionParameter cannot be serialised.")
+        data = {
+            "type": self.__class__.__name__.replace("Parameter", ""),
+            "agg_func": dict([(v,k) for k,v in _agg_func_lookup.items()])[self._agg_func],
+            "parameters": [],
+        }
+        for parameter in self.parameters:
+            parameter_data = parameter.dump()
+            data["parameters"].append(parameter_data)
+        return data
 
 cdef class AggregatedParameter(AggregatedParameterBase):
     """A collection of IndexParameters
