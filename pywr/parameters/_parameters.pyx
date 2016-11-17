@@ -667,6 +667,11 @@ _agg_func_lookup = {
     "all": AggFuncs.ALL,
 }
 
+def wrap_const(value):
+    if isinstance(value, (int, float)):
+        value = ConstantParameter(value)
+    return value
+
 cdef class AggregatedParameterBase(IndexParameter):
     """Base class for aggregated parameters
 
@@ -677,7 +682,8 @@ cdef class AggregatedParameterBase(IndexParameter):
         parameters_data = data.pop("parameters")
         parameters = set()
         for pdata in parameters_data:
-            parameters.add(load_parameter(model, pdata))
+            parameter = load_parameter(model, pdata)
+            parameters.add(wrap_const(parameter))
 
         agg_func = data.pop("agg_func", None)
         return cls(parameters=parameters, agg_func=agg_func, **data)
