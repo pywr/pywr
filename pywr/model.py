@@ -345,6 +345,28 @@ class Model(object):
             del(model._nodes_to_load[node_name])
         return node
 
+    def dump(self):
+        data = {
+            "metadata": self.metadata,
+            "timestepper": self.timestepper.dump(),
+            "nodes": [],
+            "edges": [],
+        }
+        data["metadata"]["minimum_version"] = pywr.__version__
+        for node in self.graph.nodes():
+            if node.parent is not None:
+                continue
+            node_data = node.dump()
+            data["nodes"].append(node_data)
+        for edge in self.graph.edges():
+            edge_src, edge_dst = edge
+            if edge_src.parent is not None:
+                edge_src = edge_src.parent
+            if edge_dst.parent is not None:
+                edge_dst = edge_dst.parent
+            data["edges"].append([edge_src.name, edge_dst.name])
+        return data
+
     def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):
         """Find all routes between two nodes or types of node
 

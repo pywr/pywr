@@ -26,6 +26,7 @@ cdef class Parameter:
     cdef public basestring name
     cdef public basestring comment
     cdef list _recorders
+    cpdef object dump(self)
 
 cdef class ConstantParameter(Parameter):
     cdef double _value

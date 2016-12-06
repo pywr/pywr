@@ -110,3 +110,11 @@ class Timestepper(object):
         return "<Timestepper start=\"{}\" end=\"{}\" delta=\"{}\">".format(
             start, end, delta
         )
+
+    def dump(self):
+        data = {
+            "start": self.start.strftime("%Y-%m-%d"),
+            "end": self.end.strftime("%Y-%m-%d"),
+            "timestep": self.delta.days,
+        }
+        return data

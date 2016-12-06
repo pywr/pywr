@@ -195,6 +195,28 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
 
         return node
 
+    def dump(self):
+        data = {
+            "name": self.name,
+            "type": self.__class__.__name__,
+        }
+        if self.min_flow is not None:
+            if not isinstance(self.min_flow, float):
+                data["min_flow"] = self.min_flow.dump()
+            else:
+                data["min_flow"] = self.min_flow
+        if self.max_flow is not None:
+            if not isinstance(self.max_flow, float):
+                data["max_flow"] = self.max_flow.dump()
+            else:
+                data["max_flow"] = self.max_flow
+        if self.cost:
+            if not isinstance(self.cost, float):
+                data["cost"] = self.cost.dump()
+            else:
+                data["cost"] = self.cost
+        return data
+
 
 class Input(Node, BaseInput):
     """A general input at any point in the network
@@ -398,6 +420,21 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         node.cost = cost
 
         return node
+
+    def dump(self):
+        data = {
+            "name": self.name,
+            "type": self.__class__.__name__,
+        }
+        if self.min_volume is not None:
+            data["min_volume"] = self.min_volume
+        if self.max_volume is not None:
+            data["max_volume"] = self.max_volume
+        if self.initial_volume is not None:
+            data["initial_volume"] = self.initial_volume
+        if self.cost:
+            data["cost"] = self.cost
+        return data
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)

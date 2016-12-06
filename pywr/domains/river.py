@@ -55,6 +55,19 @@ class Catchment(RiverDomainMixin, Input):
         node.flow = flow
         return node
 
+    def dump(self):
+        data = super(Catchment, self).dump()
+        data["flow"] = data["max_flow"]
+        try:
+            del(data["min_flow"])
+        except KeyError:
+            pass
+        try:
+            del(data["max_flow"])
+        except KeyError:
+            pass
+        return data
+
 
 class Reservoir(RiverDomainMixin, Storage):
     """A reservoir node with control curve.
