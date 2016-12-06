@@ -122,7 +122,7 @@ def test_run_timeseries1(solver, json_file):
 
 # Contains an out of range date for pandas.to_datetime
 @pytest.mark.parametrize("json_file", ['timeseries1_weekly.json', 'timeseries1_weekly_hdf.json'])
-def test_run_timeseries1(solver, json_file):
+def test_run_timeseries1_weekly(solver, json_file):
     model = load_model(json_file, solver=solver)
 
     # check first day initalised
