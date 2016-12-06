@@ -1067,15 +1067,18 @@ def load_dataframe(model, data):
             raise KeyError('Index "{}" not found in dataset "{}"'.format(index, name))
 
     try:
-        freq = df.index.inferred_freq
+        if isinstance(df.index, pandas.DatetimeIndex):
+            # Only infer freq if one isn't already found.
+            # E.g. HDF stores the saved freq, but CSV tends to have None, but infer to Weekly for example
+            if df.index.freq is None:
+                freq = pandas.infer_freq(df.index)
+                if freq is None:
+                    raise IndexError("Failed to identify frequency of dataset \"{}\"".format(name))
+                df = df.asfreq(freq)
     except AttributeError:
+        # Probably wasn't a pandas dataframe at this point.
         pass
-    else:
-        # Convert to regular frequency
-        freq = df.index.inferred_freq
-        if freq is None:
-            raise IndexError("Failed to identify frequency of dataset \"{}\"".format(name))
-        df = df.asfreq(freq)
+
     return df
 
 
