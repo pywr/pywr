@@ -134,7 +134,7 @@ class TestScenarioMonthlyProfileParameter:
         scenario = Scenario(model, 'A', 10)
         values = np.random.rand(10, 12)
 
-        p = ScenarioMonthlyProfileParameter(scenario, values )
+        p = ScenarioMonthlyProfileParameter(scenario, values)
 
         p.setup(model)
         # Iterate in time

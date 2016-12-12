@@ -2,7 +2,7 @@
     "metadata": {
         "title": "Scenario monthly profile",
         "description": "A simple example to test ScenarioMonthlyProfileParameter",
-        "minimum_version": "0.1"
+        "minimum_version": "0.2dev"
     },
     "timestepper": {
         "start": "2015-01-01",

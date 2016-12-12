@@ -476,6 +476,16 @@ cdef class DailyProfileParameter(Parameter):
 DailyProfileParameter.register()
 
 cdef class MonthlyProfileParameter(Parameter):
+    """ Parameter which provides a monthly profile
+
+    A monthly profile is a static profile that returns a different
+    value based on the current time-step.
+
+    See also
+    --------
+    ScenarioMonthlyProfileParameter
+    ArrayIndexedScenarioMonthlyFactorsParameter
+    """
     def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
         super(MonthlyProfileParameter, self).__init__(**kwargs)
         self.size = 12
@@ -500,6 +510,16 @@ MonthlyProfileParameter.register()
 
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
+    """ Parameter which provides a monthly profile per scenario
+
+    Behaviour is the same as `MonthlyProfileParameter` except a different
+    profile is returned for each ensemble in a given scenario.
+
+    See also
+    --------
+    MonthlyProfileParameter
+    ArrayIndexedScenarioMonthlyFactorsParameter
+    """
     def __init__(self, Scenario scenario, values, **kwargs):
         super(ScenarioMonthlyProfileParameter, self).__init__(**kwargs)
 
