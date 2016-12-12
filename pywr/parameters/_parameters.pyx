@@ -136,6 +136,9 @@ cdef class Parameter:
 
     @classmethod
     def load(cls, model, data):
+        # If a scenario is given don't pass this to the load values methods
+        scenario = data.pop('scenario', None)
+
         values = load_parameter_values(model, data)
         data.pop("values", None)
         data.pop("url", None)
@@ -144,8 +147,14 @@ cdef class Parameter:
         if data:
             key = list(data.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
-        return cls(values, name=name, comment=None)
 
+        if scenario is not None:
+            scenario = model.scenarios[scenario]
+            # Only pass scenario object if one provided; most Parameter subclasses
+            # do not accept a scenario argument.
+            return cls(scenario, values, name=name, comment=None)
+        else:
+            return cls(values, name=name, comment=None)
 Parameter.register()
 
 cdef class ConstantParameter(Parameter):
@@ -438,8 +447,9 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         # the Scenario objects in the model run. We have cached the
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
-        cdef int imth = ts.datetime.month-1
-        return self._values[ts._index]*self._factors[scenario_index._indices[self._scenario_index], imth]
+        cdef int imth = ts.month-1
+        cdef int i = scenario_index._indices[self._scenario_index]
+        return self._values[ts._index]*self._factors[i, imth]
 ArrayIndexedScenarioMonthlyFactorsParameter.register()
 
 
@@ -487,6 +497,34 @@ cdef class MonthlyProfileParameter(Parameter):
     cpdef double[:] upper_bounds(self):
         return self._upper_bounds
 MonthlyProfileParameter.register()
+
+
+cdef class ScenarioMonthlyProfileParameter(Parameter):
+    def __init__(self, Scenario scenario, values, **kwargs):
+        super(ScenarioMonthlyProfileParameter, self).__init__(**kwargs)
+
+        if values.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+
+        if scenario._size != values.shape[0]:
+            raise ValueError("First dimension of factors must be the same size as scenario.")
+        if values.shape[1] != 12:
+            raise ValueError("Second dimension of factors must be 12.")
+        self._scenario = scenario
+        self._values = np.array(values)
+
+    cpdef setup(self, model):
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
+
+    cpdef update(self, double[:] values):
+        self._values[...] = values
+ScenarioMonthlyProfileParameter.register()
+
 
 cdef class IndexParameter(Parameter):
     """Base parameter providing an `index` method

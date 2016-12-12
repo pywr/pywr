@@ -61,6 +61,12 @@ cdef class MonthlyProfileParameter(Parameter):
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
 
+
+cdef class ScenarioMonthlyProfileParameter(Parameter):
+    cdef double[:, :] _values
+    cdef Scenario _scenario
+    cdef int _scenario_index
+
 cdef class IndexParameter(Parameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
