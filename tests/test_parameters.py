@@ -6,7 +6,7 @@ from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, I
 from pywr.parameters import (BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
-    IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter,
+    IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 from pywr.recorders import Recorder
 
@@ -127,6 +127,43 @@ def test_parameter_monthly_profile(model):
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         np.testing.assert_allclose(p.value(ts, si), values[imth])
 
+
+class TestScenarioMonthlyProfileParameter:
+
+    def test_init(self, model):
+        scenario = Scenario(model, 'A', 10)
+        values = np.random.rand(10, 12)
+
+        p = ScenarioMonthlyProfileParameter(scenario, values)
+
+        p.setup(model)
+        # Iterate in time
+        for ts in model.timestepper:
+            imth = ts.datetime.month - 1
+            for i in range(scenario.size):
+                si = ScenarioIndex(i, np.array([i], dtype=np.int32))
+                np.testing.assert_allclose(p.value(ts, si), values[i, imth])
+
+    def test_json(self, solver):
+        model = load_model('scenario_monthly_profile.json', solver=solver)
+
+        # check first day initalised
+        assert (model.timestepper.start == datetime.datetime(2015, 1, 1))
+
+        # check results
+        supply1 = model.nodes['supply1']
+
+        # Multiplication factors
+        factors = np.array([
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+            [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22],
+        ])
+
+        for expected in (23.92, 22.14, 22.57, 24.97, 27.59):
+            model.step()
+            imth = model.timestepper.current.month - 1
+            assert_allclose(supply1.flow, expected*factors[:, imth], atol=1e-7)
 
 def test_parameter_daily_profile(model):
     """

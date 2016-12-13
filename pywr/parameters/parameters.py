@@ -6,7 +6,7 @@ from ._parameters import (
     ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter,
-    ArrayIndexedScenarioParameter,
+    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
     IndexParameter, CachedParameter, RecorderThresholdParameter,
     AggregatedParameter, AggregatedIndexParameter,
     load_parameter, load_parameter_values, load_dataframe)
