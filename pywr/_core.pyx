@@ -164,6 +164,9 @@ cdef class Timestep:
         def __get__(self, ):
             return self._days
 
+    def __repr__(self):
+        return "<Timestep date=\"{}\">".format(self._datetime.strftime("%Y-%m-%d"))
+
 cdef class Domain:
     """ Domain class which all Node objects must have. """
     def __init__(self, name):
