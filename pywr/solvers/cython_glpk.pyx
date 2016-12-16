@@ -86,7 +86,13 @@ cdef class CythonGLPKSolver:
         for _node in self.all_nodes:
             _node.__data = AbstractNodeData()
             _node.__data.id = n
-            if hasattr(_node, "get_cost"):
+            try:
+                _node.get_cost(None, None)
+            except NotImplementedError:
+                pass
+            except Exception:
+                self.nodes_with_cost.append(_node)
+            else:
                 self.nodes_with_cost.append(_node)
             if isinstance(_node, BaseLink):
                 _node.__data.is_link = True
@@ -482,7 +488,8 @@ cdef class CythonGLPKSolver:
 
         # commit the total flows
         for n in range(0, self.num_nodes):
-            self.all_nodes[n].commit(scenario_index._global_id, node_flows[n])
+            _node = self.all_nodes[n]
+            _node.commit(scenario_index._global_id, node_flows[n])
 
         self.stats['result_update'] += time.clock() - t0
 
