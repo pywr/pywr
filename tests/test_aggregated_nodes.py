@@ -87,8 +87,8 @@ def test_aggregated_storage_attributes(three_storage_model):
     with pytest.raises(AttributeError):
         agg_stg.get_min_volume()
 
-    with pytest.raises(AttributeError):
-        agg_stg.get_cost()
+    with pytest.raises(NotImplementedError):
+        agg_stg.get_cost(None, None)
 
 
 def test_aggregated_storage_control_curve(three_storage_model):
@@ -192,5 +192,5 @@ def test_aggregated_node_attributes(three_storage_model):
     with pytest.raises(AttributeError):
         agg_otpt.get_min_volume()
 
-    with pytest.raises(AttributeError):
-        agg_otpt.get_cost()
+    with pytest.raises(NotImplementedError):
+        agg_otpt.get_cost(None, None)
