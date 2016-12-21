@@ -312,7 +312,7 @@ cdef class AbstractNode:
         pass
 
     cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        raise NotImplementedError()
+        return 0.0
 
 cdef class Node(AbstractNode):
     """ Node class from which all others inherit
