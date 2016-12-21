@@ -105,6 +105,16 @@ cdef class CachedParameter(IndexParameter):
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
+cdef class CachedIndexParameter(IndexParameter):
+    cdef public IndexParameter parameter
+    cdef Timestep timestep
+    cdef ScenarioIndex scenario_index
+    cdef double cached_value
+    cdef int cached_index
+    cpdef reset(self)
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
+
 cdef class AggregatedParameterBase(IndexParameter):
     cdef public set parameters
     cdef object agg_func
