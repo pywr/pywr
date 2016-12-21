@@ -287,10 +287,7 @@ class TestAggregatedParameter:
             "type": "aggregated",
             "agg_func": "product",
             "parameters": [
-                {
-                    "type": "constant",
-                    "value": 0.8
-                },
+                0.8,
                 {
                     "type": "monthlyprofile",
                     "values": list(range(12))
