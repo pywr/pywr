@@ -32,7 +32,6 @@ cdef class CythonGLPKSolver:
     cdef list virtual_storages
     cdef list routes_cost
     cdef list all_nodes
-    cdef list nodes_with_cost
     cdef int num_nodes
     cdef int num_routes
     cdef int num_storages
@@ -80,20 +79,11 @@ cdef class CythonGLPKSolver:
         self.all_nodes = list(sorted(model.graph.nodes(), key=lambda n:n.name))
         if not self.all_nodes:
             raise ModelStructureError("Model is empty")
-        self.nodes_with_cost = []
 
         n = 0
         for _node in self.all_nodes:
             _node.__data = AbstractNodeData()
             _node.__data.id = n
-            try:
-                _node.get_cost(None, None)
-            except NotImplementedError:
-                pass
-            except Exception:
-                self.nodes_with_cost.append(_node)
-            else:
-                self.nodes_with_cost.append(_node)
             if isinstance(_node, BaseLink):
                 _node.__data.is_link = True
             n += 1
@@ -400,7 +390,7 @@ cdef class CythonGLPKSolver:
 
         # update the cost of each node in the model
         cdef double[:] node_costs = self.node_costs_arr
-        for _node in self.nodes_with_cost:
+        for _node in self.all_nodes:
             data = _node.__data
             node_costs[data.id] = _node.get_cost(timestep, scenario_index)
 
