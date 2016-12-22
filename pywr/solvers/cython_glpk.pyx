@@ -418,7 +418,7 @@ cdef class CythonGLPKSolver:
             for indptr in range(self.routes_cost_indptr[col], self.routes_cost_indptr[col+1]):
                 node_id = self.routes_cost[indptr]
                 cost += node_costs[node_id]
-            glp_set_obj_coef(self.prob, self.idx_col_routes+col, cost)
+            set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
         self.stats['bounds_update_route_costs'] += time.clock() - t0
         t0 = time.clock()
@@ -427,7 +427,7 @@ cdef class CythonGLPKSolver:
         for col, node in enumerate(non_storages):
             min_flow = inf_to_dbl_max(node.get_min_flow(timestep, scenario_index))
             max_flow = inf_to_dbl_max(node.get_max_flow(timestep, scenario_index))
-            glp_set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
+            set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.clock() - t0
         t0 = time.clock()
@@ -438,9 +438,9 @@ cdef class CythonGLPKSolver:
             avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
-            lb = -avail_volume/timestep.days
-            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
-            glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
+            lb = -avail_volume/timestep._days
+            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep._days
+            set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
@@ -448,15 +448,15 @@ cdef class CythonGLPKSolver:
             avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
-            lb = -avail_volume/timestep.days
-            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
-            glp_set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
+            lb = -avail_volume/timestep._days
+            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep._days
+            set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update_storage'] += time.clock() - t0
 
         # attempt to solve the linear programme
         t0 = time.clock()
-        glp_simplex(self.prob, &self.smcp)
+        simplex(self.prob, self.smcp)
 
         status = glp_get_status(self.prob)
         if status != GLP_OPT:
@@ -494,3 +494,15 @@ cdef class CythonGLPKSolver:
         self.stats['result_update'] += time.clock() - t0
 
         return route_flows, change_in_storage
+
+
+cdef int simplex(glp_prob *P, glp_smcp parm):
+    return glp_simplex(P, &parm)
+
+
+cdef set_obj_coef(glp_prob *P, int j, double coef):
+    glp_set_obj_coef(P, j, coef)
+
+
+cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
+    glp_set_row_bnds(P, i, type, lb, ub)
