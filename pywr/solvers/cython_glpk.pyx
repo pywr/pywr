@@ -1,5 +1,7 @@
 from libc.stdlib cimport malloc, free
 from cython.view cimport array as cvarray
+import numpy as np
+cimport numpy as np
 
 cimport cython
 
@@ -30,7 +32,10 @@ cdef class CythonGLPKSolver:
     cdef list non_storages
     cdef list storages
     cdef list virtual_storages
-    cdef list routes_cost
+
+    cdef int[:] routes_cost
+    cdef int[:] routes_cost_indptr
+
     cdef list all_nodes
     cdef int num_nodes
     cdef int num_routes
@@ -310,6 +315,7 @@ cdef class CythonGLPKSolver:
 
         # update route properties
         routes_cost = []
+        routes_cost_indptr = [0, ]
         for col, route in enumerate(routes):
             route_cost = []
             route_cost.append(route[0].__data.id)
@@ -317,13 +323,19 @@ cdef class CythonGLPKSolver:
                 if isinstance(some_node, BaseLink):
                     route_cost.append(some_node.__data.id)
             route_cost.append(route[-1].__data.id)
-            routes_cost.append(route_cost)
+            routes_cost.extend(route_cost)
+            routes_cost_indptr.append(len(routes_cost))
+
+        assert(len(routes_cost_indptr) == len(routes) + 1)
+
+        self.routes_cost_indptr = np.array(routes_cost_indptr, dtype=np.int)
+        self.routes_cost = np.array(routes_cost, dtype=np.int)
 
         self.routes = routes
         self.non_storages = non_storages
         self.storages = storages
         self.virtual_storages = virtual_storages
-        self.routes_cost = routes_cost
+
 
         # reset stats
         self.stats = {
@@ -353,6 +365,8 @@ cdef class CythonGLPKSolver:
         self.stats['total'] += time.clock() - t0
 
     @cython.boundscheck(False)
+    @cython.initializedcheck(False)
+    @cython.cdivision(True)
     cdef object _solve_scenario(self, model, ScenarioIndex scenario_index):
         cdef Node node
         cdef Storage storage
@@ -373,13 +387,14 @@ cdef class CythonGLPKSolver:
         cdef int status
         cdef cross_domain_col
         cdef list route
-        cdef int node_id
+        cdef int node_id, indptr, nroutes
         cdef double flow
         cdef int n, m
         cdef Py_ssize_t length
 
         timestep = model.timestep
-        routes = self.routes
+        cdef list routes = self.routes
+        nroutes = len(routes)
         non_storages = self.non_storages
         storages = self.storages
         virtual_storages = self.virtual_storages
@@ -398,9 +413,10 @@ cdef class CythonGLPKSolver:
         t0 = time.clock()
 
         # calculate the total cost of each route
-        for col, route in enumerate(routes):
+        for col in range(nroutes):
             cost = 0.0
-            for node_id in self.routes_cost[col]:
+            for indptr in range(self.routes_cost_indptr[col], self.routes_cost_indptr[col+1]):
+                node_id = self.routes_cost[indptr]
                 cost += node_costs[node_id]
             glp_set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
