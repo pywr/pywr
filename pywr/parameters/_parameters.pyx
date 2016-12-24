@@ -346,7 +346,7 @@ cdef class TablesArrayParameter(IndexParameter):
             self._scenario_index = model.scenarios.get_scenario_index(self.scenario)
 
     cpdef reset(self):
-        self.h5store = H5Store(self.h5file, None, "r")
+        self.h5store = H5Store(self.h5file, mode="r")
         node = self.h5store.file.get_node(self.where, self.node)
 
         # detect data type and read into memoryview
