@@ -325,8 +325,8 @@ cdef class CythonGLPKSolver:
 
         assert(len(routes_cost_indptr) == len(routes) + 1)
 
-        self.routes_cost_indptr = np.array(routes_cost_indptr, dtype=np.int)
-        self.routes_cost = np.array(routes_cost, dtype=np.int)
+        self.routes_cost_indptr = np.array(routes_cost_indptr, dtype=np.int32)
+        self.routes_cost = np.array(routes_cost, dtype=np.int32)
 
         self.routes = routes
         self.non_storages = non_storages
