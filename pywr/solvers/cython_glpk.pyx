@@ -393,7 +393,7 @@ cdef class CythonGLPKSolver:
         cdef double[:] node_costs = self.node_costs_arr
         for _node in self.all_nodes:
             data = _node.__data
-            node_costs[data.id] = _node.get_cost(timestep, scenario_index)
+            node_costs[data.id] = _node._get_cost(timestep, scenario_index)
 
         # calculate the total cost of each route
         for col in range(nroutes):
@@ -408,8 +408,8 @@ cdef class CythonGLPKSolver:
 
         # update non-storage properties
         for col, node in enumerate(non_storages):
-            min_flow = inf_to_dbl_max(node.get_min_flow(timestep, scenario_index))
-            max_flow = inf_to_dbl_max(node.get_max_flow(timestep, scenario_index))
+            min_flow = inf_to_dbl_max(node._get_min_flow(timestep, scenario_index))
+            max_flow = inf_to_dbl_max(node._get_max_flow(timestep, scenario_index))
             set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.clock() - t0

@@ -44,6 +44,7 @@ cdef class AbstractNode:
     cdef public basestring comment
 
     cdef Parameter _cost_param
+    cdef double _get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1
 
     cpdef setup(self, model)
@@ -64,7 +65,9 @@ cdef class Node(AbstractNode):
     cdef Parameter _max_flow_param
 
     cdef Parameter _conversion_factor_param
+    cdef double _get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cpdef double get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1
+    cdef double _get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cpdef double get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cpdef double get_conversion_factor(self) except? -1
     cdef set_parameters(self, Timestep ts, ScenarioIndex scenario_index)
