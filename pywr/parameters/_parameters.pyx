@@ -319,12 +319,12 @@ cdef class TablesArrayParameter(IndexParameter):
 
         # detect data type and read into memoryview
         if node.dtype in (np.float32, np.float64):
-            self._values_dbl = node.read()
+            self._values_dbl = node.read().astype(np.float64)
             self._values_int = None
             shape = self._values_dbl.shape
         elif node.dtype in (np.int8, np.int16, np.int32):
             self._values_dbl = None
-            self._values_int = node.read()
+            self._values_int = node.read().astype(np.int32)
             shape = self._values_int.shape
         else:
             raise TypeError("Unexpected dtype in array: {}".format(node.dtype))

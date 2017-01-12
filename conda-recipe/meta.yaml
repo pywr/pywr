@@ -61,6 +61,8 @@ test:
   requires:
     - pytest
     - nbconvert
+  source_files:
+    - tests/*
 
 about:
   home: https://github.com/pywr/pywr
