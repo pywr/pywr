@@ -1,6 +1,6 @@
 cdef class Recorder
 
-from _core cimport Timestep, AbstractNode, Storage, ScenarioIndex
+from _core cimport Timestep, AbstractNode, Node, Storage, ScenarioIndex
 from .parameters._parameters cimport Parameter, IndexParameter
 
 cdef class Recorder:

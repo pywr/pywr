@@ -311,6 +311,12 @@ cdef class AbstractNode:
     cpdef check(self,):
         pass
 
+    cdef double _get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return 0.0
+
+    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._get_cost(ts, scenario_index)
+
 cdef class Node(AbstractNode):
     """ Node class from which all others inherit
     """
@@ -352,7 +358,7 @@ cdef class Node(AbstractNode):
                 self._cost_param = None
                 self._cost = value
 
-    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cdef double _get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Get the cost per unit flow at a given timestep
         """
         if self._cost_param is None:
@@ -377,12 +383,15 @@ cdef class Node(AbstractNode):
                 self._min_flow_param = None
                 self._min_flow = value
 
-    cpdef double get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cdef double _get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Get the minimum flow at a given timestep
         """
         if self._min_flow_param is None:
             return self._min_flow
         return self._min_flow_param.value(ts, scenario_index)
+
+    cpdef double get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._get_min_flow(ts, scenario_index)
 
     property max_flow:
         """The maximum flow constraint on the node
@@ -404,12 +413,15 @@ cdef class Node(AbstractNode):
                 self._max_flow_param = None
                 self._max_flow = value
 
-    cpdef double get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cdef double _get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Get the maximum flow at a given timestep
         """
         if self._max_flow_param is None:
             return self._max_flow
         return self._max_flow_param.value(ts, scenario_index)
+
+    cpdef double get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._get_max_flow(ts, scenario_index)
 
     property conversion_factor:
         """The conversion between inflow and outflow for the node
@@ -602,18 +614,18 @@ cdef class StorageInput(BaseInput):
         BaseInput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, -volume)
 
-    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cdef double _get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # Return negative of parent cost
-        return -self.parent.get_cost(ts, scenario_index)
+        return -self._parent._get_cost(ts, scenario_index)
 
 cdef class StorageOutput(BaseOutput):
     cpdef commit(self, int scenario_index, double volume):
         BaseOutput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, volume)
 
-    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cdef double _get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # Return parent cost
-        return self.parent.get_cost(ts, scenario_index)
+        return self._parent._get_cost(ts, scenario_index)
 
 
 cdef class AbstractStorage(AbstractNode):
@@ -676,11 +688,13 @@ cdef class Storage(AbstractStorage):
                 self._cost_param = None
                 self._cost = value
 
-    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cdef double _get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Get the cost per unit flow at a given timestep
         """
+
         if self._cost_param is None:
             return self._cost
+        print('Storage._get_cost', self._cost_param.value(ts, scenario_index))
         return self._cost_param.value(ts, scenario_index)
 
     property initial_volume:

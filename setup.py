@@ -46,6 +46,11 @@ if '--with-glpk' in sys.argv:
 if '--with-lpsolve' in sys.argv:
     optional.add('lpsolve')
     sys.argv.remove('--with-lpsolve')
+if '--annotate' in sys.argv:
+    annotate = True
+    sys.argv.remove('--annotate')
+else:
+    annotate = False
 if not optional:
     # default is to attempt to build everything
     optional.add('glpk')
@@ -100,5 +105,5 @@ setup_kwargs['package_data'] = {
 }
 
 # build the core extension(s)
-setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional, compiler_directives=compiler_directives)
+setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional, compiler_directives=compiler_directives, annotate=annotate)
 setup(**setup_kwargs)

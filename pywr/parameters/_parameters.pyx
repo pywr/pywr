@@ -191,7 +191,39 @@ ConstantParameter.register()
 
 cdef class CachedParameter(IndexParameter):
     """Wrapper for Parameters which caches the result"""
-    def __init__(self, parameter, *args, **kwargs):
+    def __init__(self, Parameter parameter, *args, **kwargs):
+        super(IndexParameter, self).__init__(*args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.timestep = None
+        self.scenario_index = None
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        if timestep is not self.timestep or scenario_index is not self.scenario_index:
+            # refresh the cache
+            self.cached_value = self.parameter.value(timestep, scenario_index)
+            self.timestep = timestep
+            self.scenario_index = scenario_index
+        return self.cached_value
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        if timestep is not self.timestep or scenario_index is not self.scenario_index:
+            # refresh the cache
+            self.cached_index = self.parameter.index(timestep, scenario_index)
+            self.timestep = timestep
+            self.scenario_index = scenario_index
+        return self.cached_index
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(parameter, **data)
+CachedParameter.register()
+
+
+cdef class CachedIndexParameter(IndexParameter):
+    """Wrapper for Parameters which caches the result"""
+    def __init__(self, IndexParameter parameter, *args, **kwargs):
         super(IndexParameter, self).__init__(*args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
@@ -219,7 +251,7 @@ cdef class CachedParameter(IndexParameter):
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(parameter, **data)
 
-CachedParameter.register()
+CachedIndexParameter.register()
 
 
 cdef class ArrayIndexedParameter(Parameter):
@@ -314,7 +346,7 @@ cdef class TablesArrayParameter(IndexParameter):
             self._scenario_index = model.scenarios.get_scenario_index(self.scenario)
 
     cpdef reset(self):
-        self.h5store = H5Store(self.h5file, None, "r")
+        self.h5store = H5Store(self.h5file, mode="r")
         node = self.h5store.file.get_node(self.where, self.node)
 
         # detect data type and read into memoryview
@@ -1021,7 +1053,10 @@ def load_parameter(model, data, parameter_name=None):
             parameter_name = data["name"]
             del(data["name"])
         param = load_parameter(model, data)
-        parameter = CachedParameter(param)
+        if isinstance(param, IndexParameter):
+            parameter = CachedIndexParameter(param)
+        else:
+            parameter = CachedParameter(param)
     else:
         # parameter is dynamic
         parameter_type = data['type']

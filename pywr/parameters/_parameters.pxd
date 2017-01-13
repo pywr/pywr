@@ -83,7 +83,7 @@ cdef class TablesArrayParameter(IndexParameter):
     cdef int _scenario_index
 
 cdef class IndexedArrayParameter(Parameter):
-    cdef public Parameter index_parameter
+    cdef public IndexParameter index_parameter
     cdef public list params
 
 cdef class AnnualHarmonicSeriesParameter(Parameter):
@@ -97,6 +97,16 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
 cdef class CachedParameter(IndexParameter):
     cdef public Parameter parameter
+    cdef Timestep timestep
+    cdef ScenarioIndex scenario_index
+    cdef double cached_value
+    cdef int cached_index
+    cpdef reset(self)
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
+
+cdef class CachedIndexParameter(IndexParameter):
+    cdef public IndexParameter parameter
     cdef Timestep timestep
     cdef ScenarioIndex scenario_index
     cdef double cached_value

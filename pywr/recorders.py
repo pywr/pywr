@@ -113,6 +113,7 @@ class TablesRecorder(Recorder):
             Dict of user defined attributes to save on the root node (`root._v_attrs`)
         """
         self.filter_kwds = kwargs.pop('filter_kwds', {})
+        self.extra_kwds = kwargs.pop('extra_kwds', {})
         self.mode = kwargs.pop('mode', 'w')
         self.metadata = kwargs.pop('metadata', {})
 
@@ -152,7 +153,7 @@ class TablesRecorder(Recorder):
         import tables
         shape = len(self.model.timestepper), len(self.model.scenarios.combinations)
 
-        self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title, metadata=self.metadata)
+        self.h5store = H5Store(self.h5file, self.extra_kwds, self.filter_kwds, self.mode, title=self.title, metadata=self.metadata)
 
         # Create a CArray for each node
         self._arrays = {}
@@ -225,7 +226,7 @@ class TablesRecorder(Recorder):
 
     def reset(self):
         mode = "r+"  # always need to append, as file already created in setup
-        self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
+        self.h5store = H5Store(self.h5file, self.extra_kwds, self.filter_kwds, mode)
         self._arrays = {}
         for where, node in self._nodes:
             self._arrays[node] = self.h5store.file.get_node(where)
