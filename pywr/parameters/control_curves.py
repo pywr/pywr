@@ -3,7 +3,7 @@ This module contains a set of pywr._core.Parameter subclasses for defining contr
 """
 
 from ._control_curves import BaseControlCurveParameter, ControlCurveInterpolatedParameter, ControlCurveIndexParameter
-from .parameters import parameter_registry, load_parameter_values, load_parameter, BaseParameter
+from .parameters import parameter_registry, load_parameter_values, load_parameter, Parameter
 import numpy as np
 
 
@@ -168,7 +168,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
             raise ValueError("Second dimension values must be size {}.".format(self._profile_size))
         self.values = values
 
-        if isinstance(profile,  BaseParameter):
+        if isinstance(profile,  Parameter):
             self.profile = profile
         elif profile is not None:
             profile = np.array(profile)
@@ -225,7 +225,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
 
         # Now scale the control curve value by the scale and profile
         scale = self.scale
-        if isinstance(self.profile, BaseParameter):
+        if isinstance(self.profile, Parameter):
             scale *= self.profile.value(ts, scenario_index)
         else:
             scale *= self.profile[iprofile]

@@ -3,7 +3,7 @@ Test for individual Parameter classes
 """
 from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output
-from pywr.parameters import (BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter,
+from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
@@ -345,14 +345,14 @@ def test_aggregated_index_parameter_anyall(model):
 
 def test_parameter_child_variables():
 
-    p1 = BaseParameter()
+    p1 = Parameter()
     # Default parameter
     assert p1 not in p1.variables
     assert len(p1.variables) == 0
     assert len(p1.parents) == 0
     assert len(p1.children) == 0
 
-    c1 = BaseParameter()
+    c1 = Parameter()
     c1.parents.add(p1)
     assert len(p1.children) == 1
     assert c1 in p1.children
@@ -368,7 +368,7 @@ def test_parameter_child_variables():
     assert len(p1.variables) == 1
 
     # Test third level
-    c2 = BaseParameter()
+    c2 = Parameter()
     c2.parents.add(c1)
     c2.is_variable = True
     assert p1 not in p1.variables
@@ -648,7 +648,7 @@ def test_constant_from_multiindex_df(solver):
 
 def test_parameter_registry_overwrite(model):
     # define a parameter
-    class NewParameter(BaseParameter):
+    class NewParameter(Parameter):
         DATA = 42
     NewParameter.register()
 
