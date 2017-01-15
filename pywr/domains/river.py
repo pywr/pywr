@@ -1,6 +1,6 @@
 
 from pywr.nodes import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink
-from pywr.parameters import pop_kwarg_parameter, ConstantParameter, BaseParameter, load_parameter
+from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
@@ -78,11 +78,11 @@ class Reservoir(RiverDomainMixin, Storage):
             if control_curve is None:
                 # Make a default control curve at 100% capacity
                 control_curve = ConstantParameter(1.0)
-            elif not isinstance(control_curve, BaseParameter):
+            elif not isinstance(control_curve, Parameter):
                 # Assume parameter is some kind of constant and coerce to ConstantParameter
                 control_curve = ConstantParameter(control_curve)
 
-            if not isinstance(cost, BaseParameter):
+            if not isinstance(cost, Parameter):
                 # In the case where an above_curve_cost is given and cost is not a Parameter
                 # a default cost Parameter is created.
                 kwargs['cost'] = ControlCurveParameter(self, control_curve, [above_curve_cost, cost])

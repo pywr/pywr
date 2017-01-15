@@ -79,7 +79,7 @@ cdef class Parameter:
             child.before(ts)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return 0
+        raise NotImplementedError("Parameter must be subclassed")
 
     cpdef after(self, Timestep ts):
         cdef Parameter child

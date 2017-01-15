@@ -239,7 +239,7 @@ class TablesRecorder(Recorder):
         Save data to the tables
         """
         from pywr._core import AbstractNode, AbstractStorage
-        from pywr.parameters import BaseParameter, IndexParameter
+        from pywr.parameters import Parameter, IndexParameter
         ts = self.model.timestepper.current
         idx = ts.index
         dt = ts.datetime
@@ -263,7 +263,7 @@ class TablesRecorder(Recorder):
                 for si in self.model.scenarios.combinations:
                      a[si.global_id] = node.index(ts, si)
                 ca[idx, :] = a
-            elif isinstance(node, BaseParameter):
+            elif isinstance(node, Parameter):
                 a = np.empty(len(self.model.scenarios.combinations), dtype=np.float64)
                 for si in self.model.scenarios.combinations:
                     a[si.global_id] = node.value(ts, si)

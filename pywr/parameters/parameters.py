@@ -1,7 +1,7 @@
 import os
 import datetime
 from ._parameters import (
-    Parameter as BaseParameter, parameter_registry, ConstantParameter,
+    Parameter, parameter_registry, ConstantParameter,
     ConstantScenarioParameter, AnnualHarmonicSeriesParameter,
     ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
@@ -13,11 +13,6 @@ from ._parameters import (
 from past.builtins import basestring
 import numpy as np
 import pandas
-
-
-class Parameter(BaseParameter):
-    def value(self, ts, scenario_index):
-        raise NotImplementedError()
 
 
 class FunctionParameter(Parameter):
