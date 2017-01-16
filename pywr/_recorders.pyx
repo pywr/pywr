@@ -695,6 +695,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
 
     cpdef double[:] values(self):
         return self._values
+recorder_registry.add(BaseConstantStorageRecorder)
 
 cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 
@@ -706,6 +707,7 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
         for i in range(self._values.shape[0]):
             self._values[i] = np.min([self._node._volume[i], self._values[i]])
         return 0
+recorder_registry.add(MinimumVolumeStorageRecorder)
 
 
 def load_recorder(model, data):
