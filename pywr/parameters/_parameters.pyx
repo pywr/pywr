@@ -746,6 +746,18 @@ cdef class AggregatedParameterBase(IndexParameter):
         agg_func = data.pop("agg_func", None)
         return cls(parameters=parameters, agg_func=agg_func, **data)
 
+    property agg_func:
+        def __set__(self, agg_func):
+            self._agg_user_func = None
+            if isinstance(agg_func, basestring):
+                agg_func = _agg_func_lookup[agg_func.lower()]
+            elif callable(agg_func):
+                self._agg_user_func = agg_func
+                agg_func = AggFuncs.CUSTOM
+            else:
+                raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
+            self._agg_func = agg_func
+
     cpdef add(self, Parameter parameter):
         self.parameters.add(parameter)
         parameter.parents.add(self)
@@ -786,14 +798,7 @@ cdef class AggregatedParameter(AggregatedParameterBase):
     """
     def __init__(self, parameters, agg_func=None, **kwargs):
         super(AggregatedParameter, self).__init__(**kwargs)
-        if isinstance(agg_func, basestring):
-            agg_func = _agg_func_lookup[agg_func.lower()]
-        elif callable(agg_func):
-            self.agg_func = agg_func
-            agg_func = AggFuncs.CUSTOM
-        else:
-            raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
-        self._agg_func = agg_func
+        self.agg_func = agg_func
         self.parameters = set(parameters)
         for parameter in self.parameters:
             self.children.add(parameter)
@@ -828,7 +833,7 @@ cdef class AggregatedParameter(AggregatedParameterBase):
                 value += parameter.value(timestep, scenario_index)
             value /= len(self.parameters)
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+            value = self._agg_user_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
         return value
@@ -852,14 +857,7 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
     """
     def __init__(self, parameters, agg_func=None, **kwargs):
         super(AggregatedIndexParameter, self).__init__(**kwargs)
-        if isinstance(agg_func, basestring):
-            agg_func = _agg_func_lookup[agg_func.lower()]
-        elif callable(agg_func):
-            self.agg_func = agg_func
-            agg_func = AggFuncs.CUSTOM
-        else:
-            raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
-        self._agg_func = agg_func
+        self.agg_func = agg_func
         self.parameters = set(parameters)
         for parameter in self.parameters:
             self.children.add(parameter)
@@ -899,7 +897,7 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
                     value = 0
                     break
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+            value = self._agg_user_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
         return value
