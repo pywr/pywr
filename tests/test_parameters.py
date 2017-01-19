@@ -12,12 +12,15 @@ from pywr.recorders import Recorder
 
 from helpers import load_model
 
+import os
 import datetime
 import numpy as np
 import pandas as pd
 import pytest
 import itertools
 from numpy.testing import assert_allclose
+
+TEST_DIR = os.path.dirname(__file__)
 
 @pytest.fixture
 def model(solver):
@@ -110,6 +113,40 @@ def test_parameter_array_indexed_scenario_monthly_factors(model):
             f = factors[b, imth]
             si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
             np.testing.assert_allclose(p.value(ts, si), v*f)
+
+def test_parameter_array_indexed_scenario_monthly_factors_json(model):
+    model.path = os.path.join(TEST_DIR, "models")
+    scA = Scenario(model, 'Scenario A', size=2)
+    scB = Scenario(model, 'Scenario B', size=3)
+    
+    p1 = ArrayIndexedScenarioMonthlyFactorsParameter.load(model, {
+        "scenario": "Scenario A",
+        "values": list(range(32)),
+        "factors": [list(range(1, 13)),list(range(13, 25))],
+    })
+
+    p2 = ArrayIndexedScenarioMonthlyFactorsParameter.load(model, {
+        "scenario": "Scenario B",
+        "values": {
+            "url": "timeseries1.csv",
+            "index_col": "Timestamp",
+            "column": "Data",
+        },
+        "factors": {
+            "url": "monthly_profiles.csv",
+            "index_col": "scenario",
+        },
+    })
+
+    node1 = Input(model, "node1", max_flow=p1)
+    node2 = Input(model, "node2", max_flow=p2)
+    nodeN = Output(model, "nodeN", max_flow=None, cost=-1)
+    node1.connect(nodeN)
+    node2.connect(nodeN)
+
+    model.timestepper.start = "2015-01-01"
+    model.timestepper.end = "2015-01-31"
+    model.run()
 
 
 def test_parameter_monthly_profile(model):

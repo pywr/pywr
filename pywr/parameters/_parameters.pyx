@@ -428,7 +428,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         if factors.ndim != 2:
             raise ValueError("Factors must be two dimensional.")
 
-        if scenario._size != factors.shape[0]:
+        if factors.shape[0] != scenario._size:
             raise ValueError("First dimension of factors must be the same size as scenario.")
         if factors.shape[1] != 12:
             raise ValueError("Second dimension of factors must be 12.")
@@ -450,6 +450,31 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         cdef int imth = ts.month-1
         cdef int i = scenario_index._indices[self._scenario_index]
         return self._values[ts._index]*self._factors[i, imth]
+
+    @classmethod
+    def load(cls, model, data):
+        scenario = data.pop("scenario", None)
+        if scenario is not None:
+            scenario = model.scenarios[scenario]
+
+        if isinstance(data["values"], list):
+            values = np.asarray(data["values"], np.float64)
+        elif isinstance(data["values"], dict):
+            values = load_parameter_values(model, data["values"])
+        else:
+            raise TypeError("Unexpected type for \"values\" in {}".format(cls.__name__))
+
+        if isinstance(data["factors"], list):
+            factors = np.asarray(data["factors"], np.float64)
+        elif isinstance(data["factors"], dict):
+            factors = load_parameter_values(model, data["factors"])
+        else:
+            raise TypeError("Unexpected type for \"factors\" in {}".format(cls.__name__))
+
+        parameter = ArrayIndexedScenarioMonthlyFactorsParameter(scenario, values, factors)
+
+        return parameter
+
 ArrayIndexedScenarioMonthlyFactorsParameter.register()
 
 
