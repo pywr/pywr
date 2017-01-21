@@ -9,4 +9,9 @@ cdef class Polynomial1DParameter(Parameter):
     cdef public bint use_proportional_volume
     cdef Parameter _parameter
 
+cdef class Polynomial2DStorageParameter(Parameter):
+    cdef public double[:, :] coefficients
+    cdef AbstractStorage _storage_node
+    cdef public bint use_proportional_volume
+    cdef Parameter _parameter
 

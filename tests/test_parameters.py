@@ -7,7 +7,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
-    Polynomial1DParameter,
+    Polynomial1DParameter, Polynomial2DStorageParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 
 from pywr.recorders import Recorder
@@ -690,7 +690,7 @@ def test_invalid_parameter_values():
         load_parameter_values(model, data)
 
 
-class TestPolynomialParameters:
+class Test1DPolynomialParameter:
     """ Tests for `Polynomial1DParameter` """
     def test_init(self, simple_storage_model):
         """ Test initialisation raises error with too many keywords """
@@ -745,3 +745,37 @@ class TestPolynomialParameters:
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         for ts in model.timestepper:
             np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*1.5)
+
+
+class Test2DStoragePolynomialParameter:
+
+    def test_1st(self, simple_storage_model):
+        """ Test 1st order """
+        model = simple_storage_model
+        stg = model.nodes['Storage']
+        coefs = [[0.5, np.pi], [2.5, 0.3]]
+
+        p1 = Polynomial2DStorageParameter(coefs, stg, ConstantParameter(2.0))
+        model.setup()
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*2 + 2.5*10 + 0.3*10*2)
+
+
+    def test_load(self, simple_storage_model):
+        model = simple_storage_model
+        data = {
+            "type": "polynomial2dstorage",
+            "coefficients": [[0.5, np.pi], [2.5, 0.3]],
+            "parameter": {
+                "type": "constant",
+                "value": 2.0
+            },
+            "storage_node": "Storage"
+        }
+
+        p1 = load_parameter(model, data)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        model.setup()
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*2 + 2.5*10 + 0.3*10*2)
