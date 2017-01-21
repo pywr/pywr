@@ -249,7 +249,8 @@ class Model(object):
             # Leave to default of no scenarios
             pass
         else:
-            for scen_name, scen_data in scenarios_data.items():
+            for scen_data in scenarios_data:
+                scen_name = scen_data["name"]
                 size = scen_data["size"]
                 Scenario(model, scen_name, size=size)
 
