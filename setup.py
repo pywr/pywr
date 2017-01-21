@@ -75,6 +75,9 @@ extensions = [
     Extension('pywr.parameters._control_curves', ['pywr/parameters/_control_curves.pyx'],
               include_dirs=[np.get_include()],
               define_macros=define_macros),
+    Extension('pywr.parameters._polynomial', ['pywr/parameters/_polynomial.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
 ]
 
 extensions_optional = []

@@ -7,9 +7,11 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
+    Polynomial1DParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
-from pywr.recorders import Recorder
 
+from pywr.recorders import Recorder
+from fixtures import simple_linear_model, simple_storage_model
 from helpers import load_model
 
 import datetime
@@ -686,3 +688,60 @@ def test_invalid_parameter_values():
     data = {'name': 'my_parameter', 'type': 'AParameterThatShouldHaveValues'}
     with pytest.raises(ValueError):
         load_parameter_values(model, data)
+
+
+class TestPolynomialParameters:
+    """ Tests for `Polynomial1DParameter` """
+    def test_init(self, simple_storage_model):
+        """ Test initialisation raises error with too many keywords """
+        stg = simple_storage_model.nodes['Storage']
+
+        with pytest.raises(ValueError):
+            # Passing both "parameter" and "storage_node" is invalid
+            Polynomial1DParameter([0.5, np.pi], parameter=ConstantParameter(2.0), storage_node=stg)
+
+    def test_1st_order_with_parameter(self, model):
+        """ Test 1st order with a `Parameter` """
+        p1 = Polynomial1DParameter([0.5, np.pi], parameter=ConstantParameter(2.0))
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*2.0)
+
+    def test_2nd_order_with_parameter(self, model):
+        """ Test 2nd order with a `Parameter` """
+        p1 = ConstantParameter(2.0)
+        p1 = Polynomial1DParameter([0.5, np.pi, 3.0], parameter=p1)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*2.0 + 3.0*2.0**2)
+
+    def test_1st_order_with_storage(self, simple_storage_model):
+        """ Test with a `Storage` node """
+        model = simple_storage_model
+        stg = model.nodes['Storage']
+
+        p1 = Polynomial1DParameter([0.5, np.pi], storage_node=stg)
+        p2 = Polynomial1DParameter([0.5, np.pi], storage_node=stg, use_proportional_volume=True)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        model.setup()
+
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*10)
+        np.testing.assert_allclose(p2.value(ts, si), 0.5 + np.pi * 0.5)
+
+    def test_load(self, model):
+
+        data = {
+            "type": "polynomial1d",
+            "coefficients": [0.5, 2.5],
+            "parameter": {
+                "type": "constant",
+                "value": 1.5
+            }
+        }
+
+        p1 = load_parameter(model, data)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        for ts in model.timestepper:
+            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*1.5)
