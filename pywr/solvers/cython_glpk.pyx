@@ -77,6 +77,8 @@ cdef class CythonGLPKSolver:
         cdef int n, num
 
         self.all_nodes = list(model.graph.nodes())
+        if not self.all_nodes:
+            raise ModelStructureError("Model is empty")
         self.nodes_with_cost = []
 
         n = 0

@@ -10,7 +10,8 @@ import pandas
 from numpy.testing import assert_allclose
 
 import pywr.core
-from pywr.core import Model, Storage, Input, Output, Link
+from pywr.model import Model, ModelStructureError
+from pywr.nodes import Storage, Input, Output, Link
 import pywr.solvers
 import pywr.parameters.licenses
 import pywr.domains.river
@@ -583,6 +584,13 @@ def test_reset(solver):
     assert_allclose(license.available(None), 2.0, atol=1e-7)
     model.reset()
     assert_allclose(license.available(None), 7.0, atol=1e-7)
+
+
+def test_run_empty(solver):
+    # empty model should raise an exception if run
+    model = Model(solver=solver)
+    with pytest.raises(ModelStructureError):
+        model.run()
 
 
 def test_run(solver):

@@ -154,6 +154,9 @@ cdef class CythonLPSolveSolver:
         cdef MYBOOL ret
         cdef REAL *ptr_var
 
+        if not model.graph.nodes():
+            raise ModelStructureError("Model is empty")
+
         routes = model.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
         # Find cross-domain routes
         cross_domain_routes = model.find_all_routes(BaseOutput, BaseInput, max_length=2, domain_match='different')
