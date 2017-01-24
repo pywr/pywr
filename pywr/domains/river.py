@@ -170,17 +170,20 @@ class RiverSplitWithGauge(RiverSplit):
         The identifiers to refer to the slots when connect from this Node. Length must be one more than
          the number of extra slots required.
     """
-    def __init__(self, *args, **kwargs):
-        """Initialise a new RiverSplit instance
-
-        """
-        cost = load_parameter(self.model, kwargs.pop('cost', 0.0))
-        mrf_cost = load_parameter(self.model, kwargs.pop('mrf_cost', 0.0))
+    def __init__(self, model, name, mrf=0.0, cost=0.0, mrf_cost=0.0, **kwargs):
         kwargs['cost'] = [mrf_cost, cost]
-        mrf = load_parameter(self.model, kwargs.pop('mrf', 0.0))
         kwargs['max_flow'] = [mrf, None]
-        super(RiverSplitWithGauge, self).__init__(*args, **kwargs)
+        super(RiverSplitWithGauge, self).__init__(model, name, **kwargs)
 
+    @classmethod
+    def load(cls, data, model):
+        cost = load_parameter(model, data.pop('cost', 0.0))
+        mrf_cost = load_parameter(model, data.pop('mrf_cost', 0.0))
+        mrf = load_parameter(model, data.pop('mrf', 0.0))
+        name = data.pop("name")
+        data.pop("type", None)
+        parameter = cls(model, name, mrf=mrf, cost=cost, mrf_cost=mrf_cost, **data)
+        return parameter
 
 class Discharge(Catchment):
     """An inline discharge to the river network
