@@ -171,9 +171,6 @@ class RiverSplitWithGauge(RiverSplit):
          the number of extra slots required.
     """
     def __init__(self, model, name, mrf=0.0, cost=0.0, mrf_cost=0.0, **kwargs):
-        """Initialise a new RiverSplit instance
-
-        """
         kwargs['cost'] = [mrf_cost, cost]
         kwargs['max_flow'] = [mrf, None]
         super(RiverSplitWithGauge, self).__init__(model, name, **kwargs)
