@@ -80,3 +80,6 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
 
 cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
     pass
+    
+cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
+    cdef public double threshold
