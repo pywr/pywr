@@ -371,7 +371,7 @@ class Model(object):
         destination with the same domain has the source.
         """
 
-        nodes = self.graph.nodes()
+        nodes = sorted(self.graph.nodes(), key=lambda n:n.name)
 
         if inspect.isclass(type1):
             # find all nodes of type1
@@ -429,6 +429,8 @@ class Model(object):
                     if is_valid:
                         all_routes.append(route)
 
+        # Now sort the routes to ensure determinism
+        all_routes = sorted(all_routes, key=lambda r: tuple(n.name for n in r))
         return all_routes
 
     def step(self):

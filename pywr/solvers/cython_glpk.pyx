@@ -57,7 +57,7 @@ cdef class CythonGLPKSolver:
         # free the problem
         glp_delete_prob(self.prob)
 
-    cpdef object setup(self, model):
+    def setup(self, model):
         cdef Node supply
         cdef Node demand
         cdef Node node
@@ -76,7 +76,7 @@ cdef class CythonGLPKSolver:
         cdef cross_domain_row
         cdef int n, num
 
-        self.all_nodes = list(model.graph.nodes())
+        self.all_nodes = list(sorted(model.graph.nodes(), key=lambda n:n.name))
         if not self.all_nodes:
             raise ModelStructureError("Model is empty")
         self.nodes_with_cost = []
