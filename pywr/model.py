@@ -131,7 +131,13 @@ class Model(object):
     @classmethod
     def loads(cls, data, model=None, path=None, solver=None):
         """Read JSON data from a string and parse it as a model document"""
-        data = json.loads(data)
+        try:
+            data = json.loads(data)
+        except ValueError as e:
+            message = e.args[0]
+            if path:
+                e.args = ("{} [{}]".format(e.args[0], os.path.basename(path)),)
+            raise(e)
         cls._load_includes(data, path)
         return cls.load(data, model, path, solver)
 
@@ -154,7 +160,13 @@ class Model(object):
                 if path is not None:
                     filename = os.path.join(os.path.dirname(path), filename)
                 with open(filename, "r") as f:
-                    include_data = json.loads(f.read())
+                    try:
+                        include_data = json.loads(f.read())
+                    except ValueError as e:
+                        message = e.args[0]
+                        if path:
+                            e.args = ("{} [{}]".format(e.args[0], os.path.basename(filename)),)
+                        raise(e)
                 for key, value in include_data.items():
                     if isinstance(value, list):
                         try:

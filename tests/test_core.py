@@ -431,3 +431,17 @@ def test_virtual_storage_cost(solver):
     node.cost = 5.0
     with pytest.raises(NotImplementedError):
         model.check()
+
+def test_json_invalid(solver):
+    """JSON exceptions should report file name"""
+    filename = os.path.join(TEST_FOLDER, "models", "invalid"+".json")
+    with pytest.raises(ValueError) as excinfo:
+        model = Model.load(filename, solver=solver)
+    assert("invalid.json" in str(excinfo.value))
+
+def test_json_invalid_include(solver):
+    """JSON exceptions should report file name, even for includes"""
+    filename = os.path.join(TEST_FOLDER, "models", "invalid_include"+".json")
+    with pytest.raises(ValueError) as excinfo:
+        model = Model.load(filename, solver=solver)
+    assert("invalid.json" in str(excinfo.value))
