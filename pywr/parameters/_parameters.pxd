@@ -122,6 +122,23 @@ cdef class AggregatedParameter(AggregatedParameterBase):
 cdef class AggregatedIndexParameter(AggregatedParameterBase):
     pass
 
+cdef class NegativeParameter(Parameter):
+    cdef public Parameter parameter
+
+cdef class MaxParameter(Parameter):
+    cdef public Parameter parameter
+    cdef public double threshold
+
+cdef class NegativeMaxParameter(MaxParameter):
+    pass
+
+cdef class MinParameter(Parameter):
+    cdef public Parameter parameter
+    cdef public double threshold
+
+cdef class NegativeMinParameter(MinParameter):
+    pass
+
 cdef class RecorderThresholdParameter(IndexParameter):
     cdef Recorder recorder
     cdef double threshold

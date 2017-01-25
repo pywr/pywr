@@ -779,3 +779,71 @@ class Test2DStoragePolynomialParameter:
         model.setup()
         ts = model.timestepper.current
         np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*2 + 2.5*10 + 0.3*10*2)
+
+
+def test_max_parameter(simple_linear_model):
+    """ Test `MaxParameter` """
+    m = simple_linear_model
+
+    data = {
+        "type": "max",
+        "threshold": 3,
+        "parameter": {
+            "type": "dailyprofile",
+            "values": list(range(-10, 356))
+        }
+    }
+
+    m.nodes["Input"].max_flow = load_parameter(model, data)
+    m.nodes["Output"].max_flow = 9999
+    m.nodes["Output"].cost = -100
+    m.setup()
+    # Don't go through the whole series because leap years make it harder
+    for v in range(-10, 20):
+        m.step()
+        assert_allclose(m.nodes["Input"].flow, max(v, 3))
+
+
+def test_min_parameter(simple_linear_model):
+    """ Test `MinParameter` """
+    m = simple_linear_model
+
+    data = {
+        "type": "min",
+        "threshold": 3,
+        "parameter": {
+            "type": "dailyprofile",
+            "values": list(range(0, 366))
+        }
+    }
+
+    m.nodes["Input"].max_flow = load_parameter(model, data)
+    m.nodes["Output"].max_flow = 9999
+    m.nodes["Output"].cost = -100
+    m.setup()
+    # Don't go through the whole series because leap years make it harder
+    for v in range(0, 20):
+        m.step()
+        assert_allclose(m.nodes["Input"].flow, min(v, 3))
+
+
+def test_negative_parameter(simple_linear_model):
+    """ Test `NegativeParameter` """
+    m = simple_linear_model
+
+    data = {
+        "type": "negative",
+        "parameter": {
+            "type": "dailyprofile",
+            "values": list(range(-366, 0))
+        }
+    }
+
+    m.nodes["Input"].max_flow = load_parameter(model, data)
+    m.nodes["Output"].max_flow = 9999
+    m.nodes["Output"].cost = -100
+    m.setup()
+    # Don't go through the whole series because leap years make it harder
+    for v in range(-366, -346):
+        m.step()
+        assert_allclose(m.nodes["Input"].flow, -v)
