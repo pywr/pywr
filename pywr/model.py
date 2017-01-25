@@ -133,7 +133,7 @@ class Model(object):
         """Read JSON data from a string and parse it as a model document"""
         try:
             data = json.loads(data)
-        except json.decoder.JSONDecodeError as e:
+        except ValueError as e:
             message = e.args[0]
             if path:
                 e.args = ("{} [{}]".format(e.args[0], os.path.basename(path)),)
@@ -162,7 +162,7 @@ class Model(object):
                 with open(filename, "r") as f:
                     try:
                         include_data = json.loads(f.read())
-                    except json.decoder.JSONDecodeError as e:
+                    except ValueError as e:
                         message = e.args[0]
                         if path:
                             e.args = ("{} [{}]".format(e.args[0], os.path.basename(path)),)
