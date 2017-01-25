@@ -165,7 +165,7 @@ class Model(object):
                     except ValueError as e:
                         message = e.args[0]
                         if path:
-                            e.args = ("{} [{}]".format(e.args[0], os.path.basename(path)),)
+                            e.args = ("{} [{}]".format(e.args[0], os.path.basename(filename)),)
                         raise(e)
                 for key, value in include_data.items():
                     if isinstance(value, list):
