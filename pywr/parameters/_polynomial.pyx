@@ -42,6 +42,11 @@ cdef class Polynomial1DParameter(Parameter):
         # Check we haven't been given an ambiguous number of objects
         if arg_check.count(True) > 1:
             raise ValueError('Only one of "node", "storage_node" or "parameter" keywords should be given.')
+
+        # Finally register parent relationship if parameter is given
+        if self._parameter is not None:
+            self.children.add(self._parameter)
+
         super(Polynomial1DParameter, self).__init__(*args, **kwargs)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
@@ -108,6 +113,8 @@ cdef class Polynomial2DStorageParameter(Parameter):
         self.coefficients = np.array(coefficients, dtype=np.float64)
         self._storage_node = storage_node
         self._parameter = parameter
+        # Register parameter relationships
+        self.children.add(parameter)
         self.use_proportional_volume = kwargs.pop('use_proportional_volume', False)
         super(Polynomial2DStorageParameter, self).__init__(*args, **kwargs)
 
