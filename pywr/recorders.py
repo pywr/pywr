@@ -82,7 +82,7 @@ class TablesRecorder(Recorder):
     Each CArray stores the data for all scenarios on the specific node. This
     is useful for analysis of Node statistics across multiple scenarios.
     """
-    def __init__(self, model, h5file, nodes=None, parameters=None, where='/', time='/time', **kwargs):
+    def __init__(self, model, h5file, nodes=None, parameters=None, where='/', time='/time', scenarios='/scenarios', **kwargs):
         """
 
         Parameters
@@ -105,6 +105,8 @@ class TablesRecorder(Recorder):
             Default path to create the CArrays inside the database.
         time : string
             Default full node path to save a time tables.Table. If None no table is created.
+        scenarios : string
+            Default full node path to save a scenarios tables.Table. If None no table is created.
         filter_kwds : dict
             Filter keywords to pass to tables.open_file when opening a file.
         mode : string
@@ -132,6 +134,7 @@ class TablesRecorder(Recorder):
         self.parameters = parameters
         self.where = where
         self.time = time
+        self.scenarios = scenarios
 
         self._arrays = None
         self._time_table = None
@@ -150,7 +153,11 @@ class TablesRecorder(Recorder):
         """
         from pywr.parameters import IndexParameter
         import tables
-        shape = len(self.model.timestepper), len(self.model.scenarios.combinations)
+
+        # The first dimension is the number of timesteps.
+        # The following dimensions are sized per scenario
+        scenario_shape = list(self.model.scenarios.shape)
+        shape = [len(self.model.timestepper)] + scenario_shape
 
         self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title, metadata=self.metadata)
 
@@ -221,6 +228,24 @@ class TablesRecorder(Recorder):
             description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
             self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
 
+        # Create scenario tables
+        if self.scenarios is not None:
+            group_name, node_name = self.scenarios.rsplit('/', 1)
+            if "group_name" == "/":
+                group_name = self.h5store.file.root
+            description = {
+                # TODO make string length configurable
+                'name': tables.StringCol(1024),
+                'size': tables.Int64Col()
+            }
+            tbl = self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
+            # Now add the scenarios
+            entry = tbl.row
+            for scenario in self.model.scenarios.scenarios:
+                entry['name'] = scenario.name
+                entry['size'] = scenario.size
+                entry.append()
+
         self.h5store = None
 
     def reset(self):
@@ -240,6 +265,7 @@ class TablesRecorder(Recorder):
         """
         from pywr._core import AbstractNode, AbstractStorage
         from pywr.parameters import Parameter, IndexParameter
+        scenario_shape = list(self.model.scenarios.shape)
         ts = self.model.timestepper.current
         idx = ts.index
         dt = ts.datetime
@@ -251,23 +277,22 @@ class TablesRecorder(Recorder):
             entry['day'] = dt.day
             entry['index'] = idx
             entry.append()
-            #self._time_table.flush()
 
         for node, ca in self._arrays.items():
             if isinstance(node, AbstractStorage):
-                ca[idx, :] = node.volume
+                ca[idx, :] = np.reshape(node.volume, scenario_shape)
             elif isinstance(node, AbstractNode):
-                ca[idx, :] = node.flow
+                ca[idx, :] = np.reshape(node.flow, scenario_shape)
             elif isinstance(node, IndexParameter):
                 a = np.empty(len(self.model.scenarios.combinations), dtype=np.int)
                 for si in self.model.scenarios.combinations:
                      a[si.global_id] = node.index(ts, si)
-                ca[idx, :] = a
+                ca[idx, :] = np.reshape(a, scenario_shape)
             elif isinstance(node, Parameter):
                 a = np.empty(len(self.model.scenarios.combinations), dtype=np.float64)
                 for si in self.model.scenarios.combinations:
                     a[si.global_id] = node.value(ts, si)
-                ca[idx, :] = a
+                ca[idx, :] = np.reshape(a, scenario_shape)
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
 

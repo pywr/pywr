@@ -146,6 +146,15 @@ def test_scenario_storage(solver):
 
 
 def test_scenarios_from_json(solver):
+    """
+    Test a simple model with two scenarios.
+
+    The model varies in the inflow by "scenario A" and the demand
+    by "scenario B". The test ensures the correct size of model is
+    created, and uses a `NumpyArrayNodeRecorder` to check the output
+    in multiple dimensions is correct. The latter is done using
+    the `MultiIndex` on the `DataFrame` from the recorder.
+    """
 
     model = load_model('simple_with_scenario.json', solver=solver)
     assert len(model.scenarios) == 2
@@ -153,6 +162,19 @@ def test_scenarios_from_json(solver):
     model.setup()
     assert len(model.scenarios.combinations) == 20
     model.run()
+
+    # Test the recorder data is correct
+    df = model.recorders['demand1'].to_dataframe()
+
+    assert df.shape[1] == 20
+    assert df.columns.names[0] == 'scenario A'
+    assert df.columns.names[1] == 'scenario B'
+    # Data for first demand (B) ensemble
+    d1 = df.xs(0, level='scenario B', axis=1).iloc[0, :].values
+    assert_allclose(d1, [10]*10)
+    # Data for second demand (B) ensemble
+    d2 = df.xs(1, level='scenario B', axis=1).iloc[0, :]
+    assert_allclose(d2, [10, 11, 12, 13, 14]+[15]*5)
 
 
 def test_timeseries_with_scenarios(solver):
