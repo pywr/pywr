@@ -441,7 +441,7 @@ def test_json_invalid(solver):
 
 def test_json_invalid_include(solver):
     """JSON exceptions should report file name, even for includes"""
-    filename = os.path.join(TEST_FOLDER, "models", "invalid"+".json")
+    filename = os.path.join(TEST_FOLDER, "models", "invalid_include"+".json")
     with pytest.raises(ValueError) as excinfo:
         model = Model.load(filename, solver=solver)
     assert("invalid.json" in str(excinfo.value))
