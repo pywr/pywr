@@ -931,6 +931,102 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
 
 AggregatedIndexParameter.register()
 
+
+cdef class NegativeParameter(Parameter):
+    """ Parameter that takes negative of another `Parameter`
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to to compare with the float.
+    """
+    def __init__(self, parameter, threshold=0.0, *args, **kwargs):
+        super(NegativeParameter, self).__init__(*args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return -self.parameter.value(timestep, scenario_index)
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(parameter, **data)
+NegativeParameter.register()
+
+
+cdef class MaxParameter(Parameter):
+    """ Parameter that takes maximum of another `Parameter` and constant value (threshold)
+
+    This class is a more efficient version of `AggregatedParameter` where
+    a single `Parameter` is compared to constant value.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to to compare with the float.
+    threshold : float (default=0.0)
+        The threshold value to compare with the given parameter.
+    """
+    def __init__(self, parameter, threshold=0.0, *args, **kwargs):
+        super(MaxParameter, self).__init__(*args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.threshold = threshold
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return max(self.parameter.value(timestep, scenario_index), self.threshold)
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(parameter, **data)
+MaxParameter.register()
+
+
+cdef class NegativeMaxParameter(MaxParameter):
+    """ Parameter that takes maximum of the negative of a `Parameter` and constant value (threshold) """
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return max(-self.parameter.value(timestep, scenario_index), self.threshold)
+NegativeMaxParameter.register()
+
+
+cdef class MinParameter(Parameter):
+    """ Parameter that takes minimum of another `Parameter` and constant value (threshold)
+
+    This class is a more efficient version of `AggregatedParameter` where
+    a single `Parameter` is compared to constant value.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to to compare with the float.
+    threshold : float (default=0.0)
+        The threshold value to compare with the given parameter.
+    """
+    def __init__(self, parameter, threshold=0.0, *args, **kwargs):
+        super(MinParameter, self).__init__(*args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.threshold = threshold
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return min(self.parameter.value(timestep, scenario_index), self.threshold)
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(parameter, **data)
+MinParameter.register()
+
+
+cdef class NegativeMinParameter(MinParameter):
+    """ Parameter that takes minimum of the negative of a `Parameter` and constant value (threshold) """
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return min(-self.parameter.value(timestep, scenario_index), self.threshold)
+NegativeMinParameter.register()
+
+
 cdef class RecorderThresholdParameter(IndexParameter):
     """Returns one of two values depending on a Recorder value and a threshold
 

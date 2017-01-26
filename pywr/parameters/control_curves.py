@@ -70,6 +70,8 @@ class ControlCurveParameter(BaseControlCurveParameter):
                 raise ValueError('Length of parameters should be one more than the number of '
                                  'control curves ({}).'.format(nvalues))
             self.parameters = list(parameters)
+            for p in self.parameters:
+                p.parents.add(self)
         else:
             # No values or parameters given, default to sequence of integers
             self.values = np.arange(nvalues)

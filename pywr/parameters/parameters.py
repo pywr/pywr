@@ -10,6 +10,7 @@ from ._parameters import (
     IndexParameter, CachedParameter, RecorderThresholdParameter,
     AggregatedParameter, AggregatedIndexParameter,
     load_parameter, load_parameter_values, load_dataframe)
+from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from past.builtins import basestring
 import numpy as np
 import pandas
