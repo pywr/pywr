@@ -702,24 +702,26 @@ class Test1DPolynomialParameter:
 
     def test_1st_order_with_parameter(self, model):
         """ Test 1st order with a `Parameter` """
-        p1 = Polynomial1DParameter([0.5, np.pi], parameter=ConstantParameter(2.0))
+        x = 2.0
+        p1 = Polynomial1DParameter([0.5, np.pi], parameter=ConstantParameter(x))
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*2.0)
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x)
 
     def test_2nd_order_with_parameter(self, model):
         """ Test 2nd order with a `Parameter` """
-        p1 = ConstantParameter(2.0)
-        p1 = Polynomial1DParameter([0.5, np.pi, 3.0], parameter=p1)
+        x = 2.0
+        px = ConstantParameter(x)
+        p1 = Polynomial1DParameter([0.5, np.pi, 3.0], parameter=px)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*2.0 + 3.0*2.0**2)
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 3.0*x**2)
 
     def test_1st_order_with_storage(self, simple_storage_model):
         """ Test with a `Storage` node """
         model = simple_storage_model
         stg = model.nodes['Storage']
-
+        x = stg.initial_volume
         p1 = Polynomial1DParameter([0.5, np.pi], storage_node=stg)
         p2 = Polynomial1DParameter([0.5, np.pi], storage_node=stg, use_proportional_volume=True)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
@@ -727,24 +729,24 @@ class Test1DPolynomialParameter:
         model.setup()
 
         ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*10)
-        np.testing.assert_allclose(p2.value(ts, si), 0.5 + np.pi * 0.5)
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x)
+        np.testing.assert_allclose(p2.value(ts, si), 0.5 + np.pi * x/stg.max_volume)
 
     def test_load(self, model):
-
+        x = 1.5
         data = {
             "type": "polynomial1d",
             "coefficients": [0.5, 2.5],
             "parameter": {
                 "type": "constant",
-                "value": 1.5
+                "value": x
             }
         }
 
         p1 = load_parameter(model, data)
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         for ts in model.timestepper:
-            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*1.5)
+            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*x)
 
 
 class Test2DStoragePolynomialParameter:
@@ -753,23 +755,31 @@ class Test2DStoragePolynomialParameter:
         """ Test 1st order """
         model = simple_storage_model
         stg = model.nodes['Storage']
+
+        x = 2.0
+        y = stg.initial_volume
         coefs = [[0.5, np.pi], [2.5, 0.3]]
 
-        p1 = Polynomial2DStorageParameter(coefs, stg, ConstantParameter(2.0))
+        p1 = Polynomial2DStorageParameter(coefs, stg, ConstantParameter(x))
         model.setup()
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*2 + 2.5*10 + 0.3*10*2)
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
 
 
     def test_load(self, simple_storage_model):
         model = simple_storage_model
+        stg = model.nodes['Storage']
+
+        x = 2.0
+        y = stg.initial_volume/stg.max_volume
         data = {
             "type": "polynomial2dstorage",
             "coefficients": [[0.5, np.pi], [2.5, 0.3]],
+            "use_proportional_volume": True,
             "parameter": {
                 "type": "constant",
-                "value": 2.0
+                "value": x
             },
             "storage_node": "Storage"
         }
@@ -778,7 +788,7 @@ class Test2DStoragePolynomialParameter:
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         model.setup()
         ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*2 + 2.5*10 + 0.3*10*2)
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
 
 
 def test_max_parameter(simple_linear_model):
