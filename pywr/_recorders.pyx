@@ -4,7 +4,7 @@ from pywr._core cimport Timestep
 import pandas as pd
 from past.builtins import basestring
 
-recorder_registry = set()
+recorder_registry = {}
 
 cdef enum AggFuncs:
     SUM = 0
@@ -110,6 +110,14 @@ cdef class Recorder:
             data["node"] = model._get_node_from_ref(model, node_name)
         return cls(model, **data)
 
+    @classmethod
+    def register(cls):
+        recorder_registry[cls.__name__.lower()] = cls
+
+    @classmethod
+    def unregister(cls):
+        del(recorder_registry[cls.__name__.lower()])
+
 cdef class AggregatedRecorder(Recorder):
     """
     This Recorder is used to aggregate across multiple other Recorder objects.
@@ -207,7 +215,7 @@ cdef class AggregatedRecorder(Recorder):
         rec = cls(model, recorders, **data)
         print(rec.name)
 
-recorder_registry.add(AggregatedRecorder)
+AggregatedRecorder.register()
 
 
 cdef class NodeRecorder(Recorder):
@@ -225,7 +233,7 @@ cdef class NodeRecorder(Recorder):
     def __repr__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 
-recorder_registry.add(NodeRecorder)
+NodeRecorder.register()
 
 
 cdef class StorageRecorder(Recorder):
@@ -243,7 +251,7 @@ cdef class StorageRecorder(Recorder):
     def __repr__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 
-recorder_registry.add(StorageRecorder)
+StorageRecorder.register()
 
 
 cdef class ParameterRecorder(Recorder):
@@ -280,7 +288,7 @@ cdef class ParameterRecorder(Recorder):
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 
-recorder_registry.add(ParameterRecorder)
+ParameterRecorder.register()
 
 
 cdef class IndexParameterRecorder(Recorder):
@@ -307,7 +315,7 @@ cdef class IndexParameterRecorder(Recorder):
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 
-recorder_registry.add(IndexParameterRecorder)
+IndexParameterRecorder.register()
 
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
@@ -342,7 +350,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 
-recorder_registry.add(NumpyArrayNodeRecorder)
+NumpyArrayNodeRecorder.register()
 
 
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
@@ -377,7 +385,7 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 
-recorder_registry.add(NumpyArrayStorageRecorder)
+NumpyArrayStorageRecorder.register()
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
     cpdef setup(self):
@@ -400,7 +408,7 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
-recorder_registry.add(NumpyArrayLevelRecorder)
+NumpyArrayLevelRecorder.register()
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     cpdef setup(self):
@@ -433,7 +441,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         sc_index = self.model.scenarios.multiindex
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
-recorder_registry.add(NumpyArrayParameterRecorder)
+NumpyArrayParameterRecorder.register()
 
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
     cpdef setup(self):
@@ -466,7 +474,7 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         sc_index = self.model.scenarios.multiindex
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
-recorder_registry.add(NumpyArrayIndexParameterRecorder)
+NumpyArrayIndexParameterRecorder.register()
 
 cdef class MeanParameterRecorder(ParameterRecorder):
     """Records the mean value of a Parameter for the last N timesteps"""
@@ -522,7 +530,7 @@ cdef class MeanParameterRecorder(ParameterRecorder):
         timesteps = int(data.pop("timesteps"))
         return cls(model, parameter, timesteps, **data)
 
-recorder_registry.add(MeanParameterRecorder)
+MeanParameterRecorder.register()
 
 cdef class MeanFlowRecorder(NodeRecorder):
     """Records the mean flow of a Node for the previous N timesteps
@@ -600,7 +608,7 @@ cdef class MeanFlowRecorder(NodeRecorder):
             days = None
         return cls(model, node, timesteps=timesteps, days=days, name=name)
 
-recorder_registry.add(MeanFlowRecorder)
+MeanFlowRecorder.register()
 
 cdef class BaseConstantNodeRecorder(NodeRecorder):
     """
@@ -634,7 +642,7 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
             self._values[scenario_index._global_id] += max_flow - node._flow[scenario_index._global_id]
 
         return 0
-recorder_registry.add(TotalDeficitNodeRecorder)
+TotalDeficitNodeRecorder.register()
 
 
 cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
@@ -655,7 +663,7 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
             i = scenario_index._global_id
             self._values[i] += self._node._flow[i]*self.factor*days
         return 0
-recorder_registry.add(TotalFlowNodeRecorder)
+TotalFlowNodeRecorder.register()
 
 
 cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
@@ -677,7 +685,7 @@ cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
         cdef int nt = self.model.timestepper.current.index
         for i in range(self._values.shape[0]):
             self._values[i] /= nt
-recorder_registry.add(DeficitFrequencyNodeRecorder)
+DeficitFrequencyNodeRecorder.register()
 
 cdef class BaseConstantStorageRecorder(StorageRecorder):
     """
@@ -695,7 +703,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
 
     cpdef double[:] values(self):
         return self._values
-recorder_registry.add(BaseConstantStorageRecorder)
+BaseConstantStorageRecorder.register()
 
 cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 
@@ -707,7 +715,7 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
         for i in range(self._values.shape[0]):
             self._values[i] = np.min([self._node._volume[i], self._values[i]])
         return 0
-recorder_registry.add(MinimumVolumeStorageRecorder)
+MinimumVolumeStorageRecorder.register()
 
 cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
 
@@ -724,7 +732,7 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
             if self._node._volume[i] <= self.threshold:
                 self._values[i] = 1.0 
         return 0
-recorder_registry.add(MinimumThresholdVolumeStorageRecorder)
+MinimumThresholdVolumeStorageRecorder.register()
 
 def load_recorder(model, data):
     recorder = None
@@ -756,16 +764,18 @@ def load_recorder(model, data):
     if recorder is None:
         recorder_type = data['type']
 
-        # lookup the recorder class in the registry
-        cls = None
-        name2 = recorder_type.lower().replace('recorder', '')
-        for recorder_class in recorder_registry:
-            name1 = recorder_class.__name__.lower().replace('recorder', '')
-            if name1 == name2:
-                cls = recorder_class
-
-        if cls is None:
-            raise NotImplementedError('Unrecognised recorder type "{}"'.format(recorder_type))
+        name = recorder_type.lower()
+        try:
+            cls = recorder_registry[name]
+        except KeyError:
+            if name.endswith("recorder"):
+                name = name.replace("recorder", "")
+            else:
+                name += "recorder"
+            try:
+                cls = recorder_registry[name]
+            except KeyError:
+                raise NotImplementedError('Unrecognised recorder type "{}"'.format(recorder_type))
 
         del(data["type"])
         recorder = cls.load(model, data)
