@@ -71,7 +71,7 @@ class CSVRecorder(Recorder):
 
     def finish(self):
         self._fh.close()
-recorder_registry.add(CSVRecorder)
+CSVRecorder.register()
 
 
 class TablesRecorder(Recorder):
@@ -302,4 +302,4 @@ class TablesRecorder(Recorder):
         self.h5store = None
         self._arrays = {}
 
-recorder_registry.add(TablesRecorder)
+TablesRecorder.register()
