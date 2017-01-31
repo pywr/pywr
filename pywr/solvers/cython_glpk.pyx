@@ -58,9 +58,10 @@ cdef class CythonGLPKSolver:
         glp_delete_prob(self.prob)
 
     def setup(self, model):
-        cdef Node supply
-        cdef Node demand
-        cdef Node node
+        cdef Node input
+        cdef Node output
+        cdef AbstractNode some_node
+        cdef AbstractNode _node
         cdef AggregatedNode agg_node
         cdef double min_flow
         cdef double max_flow
@@ -138,17 +139,17 @@ cdef class CythonGLPKSolver:
         # create a lookup for the cross-domain routes.
         cross_domain_cols = {}
         for cross_domain_route in cross_domain_routes:
-            # These routes are only 2 nodes. From demand to supply
-            demand, supply = cross_domain_route
-            # TODO make this time varying.
-            conv_factor = supply.get_conversion_factor()
-            supply_cols = [(n, conv_factor) for n, route in enumerate(routes) if route[0] is supply]
-            # create easy lookup for the route columns this demand might
+            # These routes are only 2 nodes. From output to input
+            output, input = cross_domain_route
+            # note that the conversion factor is not time varying
+            conv_factor = input.get_conversion_factor()
+            input_cols = [(n, conv_factor) for n, route in enumerate(routes) if route[0] is input]
+            # create easy lookup for the route columns this output might
             # provide cross-domain connection to
-            if demand in cross_domain_cols:
-                cross_domain_cols[demand].extend(supply_cols)
+            if output in cross_domain_cols:
+                cross_domain_cols[output].extend(input_cols)
             else:
-                cross_domain_cols[demand] = supply_cols
+                cross_domain_cols[output] = input_cols
 
         # explicitly set bounds on route and demand columns
         for col, route in enumerate(routes):
@@ -296,9 +297,9 @@ cdef class CythonGLPKSolver:
             min_flow = inf_to_dbl_max(min_flow)
             max_flow = inf_to_dbl_max(max_flow)
             matrix = set()
-            for node in nodes:
+            for some_node in nodes:
                 for n, route in enumerate(routes):
-                    if node in route:
+                    if some_node in route:
                         matrix.add(n)
             length = len(matrix)
             ind = <int*>malloc(1+length * sizeof(int))
@@ -316,9 +317,9 @@ cdef class CythonGLPKSolver:
         for col, route in enumerate(routes):
             route_cost = []
             route_cost.append(route[0].__data.id)
-            for node in route[1:-1]:
-                if isinstance(node, BaseLink):
-                    route_cost.append(node.__data.id)
+            for some_node in route[1:-1]:
+                if isinstance(some_node, BaseLink):
+                    route_cost.append(some_node.__data.id)
             route_cost.append(route[-1].__data.id)
             routes_cost.append(route_cost)
 
