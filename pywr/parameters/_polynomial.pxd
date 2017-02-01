@@ -14,4 +14,9 @@ cdef class Polynomial2DStorageParameter(Parameter):
     cdef AbstractStorage _storage_node
     cdef public bint use_proportional_volume
     cdef Parameter _parameter
+    # Scaling parameters
+    cdef double storage_offset
+    cdef double storage_scale
+    cdef double parameter_offset
+    cdef double parameter_scale
 

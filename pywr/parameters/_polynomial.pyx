@@ -77,18 +77,16 @@ cdef class Polynomial1DParameter(Parameter):
     def load(cls, model, data):
         node = None
         if 'node' in data:
-            node = model._get_node_from_ref(model, data["node"])
+            node = model._get_node_from_ref(model, data.pop("node"))
         storage_node = None
         if 'storage_node' in data:
-            storage_node = model._get_node_from_ref(model, data["storage_node"])
+            storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
         parameter = None
         if 'parameter' in data:
-            parameter = load_parameter(model, data["parameter"])
+            parameter = load_parameter(model, data.pop("parameter"))
 
         coefficients = data.pop("coefficients")
-        use_proportional_volume = data.pop("use_proportional_volume", False)
-        parameter = cls(coefficients, node=node, storage_node=storage_node, parameter=parameter,
-                        use_proportional_volume=use_proportional_volume)
+        parameter = cls(coefficients, node=node, storage_node=storage_node, parameter=parameter, **data)
         return parameter
 Polynomial1DParameter.register()
 
@@ -116,6 +114,10 @@ cdef class Polynomial2DStorageParameter(Parameter):
         self._storage_node = storage_node
         self._parameter = parameter
         self.use_proportional_volume = kwargs.pop('use_proportional_volume', False)
+        self.storage_offset = kwargs.pop('storage_offset', 0.0)
+        self.storage_scale = kwargs.pop('storage_scale', 1.0)
+        self.parameter_offset = kwargs.pop('parameter_offset', 0.0)
+        self.parameter_scale = kwargs.pop('parameter_scale', 1.0)
         super(Polynomial2DStorageParameter, self).__init__(*args, **kwargs)
 
         # Register parameter relationships
@@ -133,6 +135,9 @@ cdef class Polynomial2DStorageParameter(Parameter):
         # Parameter value is 2nd dimension
         y = self._parameter.value(ts, scenario_index)
 
+        # Apply scaling and offset
+        x = self.storage_scale*x + self.storage_offset
+        y = self.parameter_scale*y + self.parameter_offset
         z = 0.0
         for i in range(self.coefficients.shape[0]):
             for j in range(self.coefficients.shape[1]):
@@ -141,10 +146,9 @@ cdef class Polynomial2DStorageParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        storage_node = model._get_node_from_ref(model, data["storage_node"])
-        parameter = load_parameter(model, data["parameter"])
+        storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
+        parameter = load_parameter(model, data.pop("parameter"))
         coefficients = data.pop("coefficients")
-        use_proportional_volume = data.pop("use_proportional_volume", False)
-        parameter = cls(coefficients, storage_node, parameter, use_proportional_volume=use_proportional_volume)
+        parameter = cls(coefficients, storage_node, parameter, **data)
         return parameter
 Polynomial2DStorageParameter.register()
