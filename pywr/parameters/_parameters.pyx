@@ -6,6 +6,8 @@ from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
 from pywr.h5tools import H5Store
+import warnings
+
 
 cdef enum Predicates:
     LT = 0
@@ -320,6 +322,8 @@ cdef class TablesArrayParameter(IndexParameter):
         # detect data type and read into memoryview
         if node.dtype in (np.float32, np.float64):
             self._values_dbl = node.read().astype(np.float64)
+            if np.min(self._values_dbl) < 0.0:
+                warnings.warn('Negative values in input file "{}" from node: {}'.format(self.h5file, self.node))
             self._values_int = None
             shape = self._values_dbl.shape
         elif node.dtype in (np.int8, np.int16, np.int32):
@@ -330,8 +334,10 @@ cdef class TablesArrayParameter(IndexParameter):
             raise TypeError("Unexpected dtype in array: {}".format(node.dtype))
 
         if self.scenario is not None:
-            if shape[1] != self.scenario.size:
+            if shape[1] < self.scenario.size:
                 raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
+            elif shape[1] > self.scenario.size:
+                warnings.warn("The length of the second dimension of the tables Node is greater than the size of the specified Scenario. Not all data is being used!")
         if shape[0] < len(self.model.timestepper):
             raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
 
