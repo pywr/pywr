@@ -48,7 +48,7 @@ class Catchment(RiverDomainMixin, Input):
 
     @classmethod
     def load(cls, data, model):
-        flow = data.pop('flow', None)
+        flow = data.pop('flow', 0.0)
         if flow is not None:
             flow = load_parameter(model, flow)
         node = super(Catchment, cls).load(data, model)
