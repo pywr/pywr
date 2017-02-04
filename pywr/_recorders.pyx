@@ -11,15 +11,17 @@ cdef enum AggFuncs:
     MIN = 1
     MAX = 2
     MEAN = 3
-    PRODUCT = 4
-    CUSTOM = 5
-    ANY = 6
-    ALL = 7
+    MEDIAN = 4
+    PRODUCT = 5
+    CUSTOM = 6
+    ANY = 7
+    ALL = 8
 _agg_func_lookup = {
     "sum": AggFuncs.SUM,
     "min": AggFuncs.MIN,
     "max": AggFuncs.MAX,
     "mean": AggFuncs.MEAN,
+    "median": AggFuncs.MEDIAN,
     "product": AggFuncs.PRODUCT,
     "custom": AggFuncs.CUSTOM,
     "any": AggFuncs.ANY,
@@ -33,16 +35,20 @@ cdef class Recorder:
             name = self.__class__.__name__.lower()
         self.name = name
         self.comment = comment
+        self.agg_func = agg_func
         model.recorders.append(self)
 
-        if isinstance(agg_func, basestring):
-            agg_func = _agg_func_lookup[agg_func.lower()]
-        elif callable(agg_func):
-            self.agg_func = agg_func
-            agg_func = AggFuncs.CUSTOM
-        else:
-            raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
-        self._agg_func = agg_func
+    property agg_func:
+        def __set__(self, agg_func):
+            self._agg_user_func = None
+            if isinstance(agg_func, basestring):
+                agg_func = _agg_func_lookup[agg_func.lower()]
+            elif callable(agg_func):
+                self._agg_user_func = agg_func
+                agg_func = AggFuncs.CUSTOM
+            else:
+                raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
+            self._agg_func = agg_func
 
     property name:
         def __get__(self):
@@ -94,8 +100,10 @@ cdef class Recorder:
             return np.min(values)
         elif self._agg_func == AggFuncs.MEAN:
             return np.mean(values)
+        elif self._agg_func == AggFuncs.MEDIAN:
+            return np.median(values)
         else:
-            return self.agg_func(np.array(values))
+            return self._agg_user_func(np.array(values))
 
     cpdef double[:] values(self):
         raise NotImplementedError()

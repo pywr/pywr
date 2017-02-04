@@ -9,7 +9,7 @@ cdef class Recorder:
     cdef object _name
     cdef object _model
     cdef public basestring comment
-    cdef object agg_func
+    cdef object _agg_user_func
     cdef int _agg_func
     cpdef setup(self)
     cpdef reset(self)
