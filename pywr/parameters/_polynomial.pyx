@@ -26,6 +26,12 @@ cdef class Polynomial1DParameter(Parameter):
     use_proportional_volume : bool
         An optional boolean only used with a `Storage` node to switch between using absolute
          or proportional volume when evaluating the polynomial.
+    scale : float
+        An optional scaling factor to apply to the polynomial input before calculation. This is
+         applied before any offset.
+    offset : float
+        An optional offset to apply to the polynomial input before calculation. This is applied after
+         and scaling.
     """
     def __init__(self, coefficients, *args, **kwargs):
         self.coefficients = np.array(coefficients, dtype=np.float64)
@@ -33,6 +39,8 @@ cdef class Polynomial1DParameter(Parameter):
         self._storage_node = kwargs.pop('storage_node', None)
         self._parameter = kwargs.pop('parameter', None)
         self.use_proportional_volume = kwargs.pop('use_proportional_volume', False)
+        self.offset = kwargs.pop('offset', 0.0)
+        self.scale = kwargs.pop('scale', 1.0)
         # Check only one of the above is given
         arg_check = [
             self._other_node is not None,
@@ -68,6 +76,9 @@ cdef class Polynomial1DParameter(Parameter):
         else:
             x = self._node.flow[scenario_index._global_id]
 
+        # Apply scaling and offset
+        x = x*self.scale + self.offset
+        # No calculate polynomial
         y = 0.0
         for i in range(self.coefficients.shape[0]):
             y += self.coefficients[i]*x**i
@@ -108,6 +119,18 @@ cdef class Polynomial2DStorageParameter(Parameter):
     use_proportional_volume : bool
         An optional boolean only used with a `Storage` node to switch between using absolute
          or proportional volume when evaluating the polynomial.
+    storage_scale : float
+        An optional scaling factor to apply to the storage value before calculation. This is
+         applied before any offset.
+    storage_offset : float
+        An optional offset to apply to the storage value before calculation. This is applied after
+         and scaling
+    parameter_scale : float
+        An optional scaling factor to apply to the parameter value before calculation. This is
+         applied before any offset.
+    parameter_offset : float
+        An optional offset to apply to the parameter value before calculation. This is applied after
+         and scaling
     """
     def __init__(self, coefficients, storage_node, parameter, *args, **kwargs):
         self.coefficients = np.array(coefficients, dtype=np.float64)

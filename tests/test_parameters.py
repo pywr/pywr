@@ -785,6 +785,25 @@ class Test1DPolynomialParameter:
         for ts in model.timestepper:
             np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*x)
 
+    def test_load_with_scaling(self, model):
+        x = 1.5
+        data = {
+            "type": "polynomial1d",
+            "coefficients": [0.5, 2.5],
+            "parameter": {
+                "type": "constant",
+                "value": x
+            },
+            "scale": 1.25,
+            "offset": 0.75
+        }
+        xscaled = x*1.25 + 0.75
+
+        p1 = load_parameter(model, data)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        for ts in model.timestepper:
+            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*xscaled)
+
 
 class Test2DStoragePolynomialParameter:
 
@@ -802,7 +821,6 @@ class Test2DStoragePolynomialParameter:
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         ts = model.timestepper.current
         np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
-
 
     def test_load(self, simple_storage_model):
         model = simple_storage_model
@@ -825,6 +843,38 @@ class Test2DStoragePolynomialParameter:
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         model.setup()
         ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+
+    def test_load_wth_scaling(self, simple_storage_model):
+        model = simple_storage_model
+        stg = model.nodes['Storage']
+
+        x = 2.0
+        y = stg.initial_volume/stg.max_volume
+        data = {
+            "type": "polynomial2dstorage",
+            "coefficients": [[0.5, np.pi], [2.5, 0.3]],
+            "use_proportional_volume": True,
+            "parameter": {
+                "type": "constant",
+                "value": x
+            },
+            "storage_node": "Storage",
+            "storage_scale": 1.3,
+            "storage_offset": 0.75,
+            "parameter_scale": 1.25,
+            "parameter_offset": -0.5
+        }
+
+        p1 = load_parameter(model, data)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        model.setup()
+        ts = model.timestepper.current
+
+        # Scaled parameters
+        x = x*1.25 - 0.5
+        y = y*1.3 + 0.75
+
         np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
 
 
