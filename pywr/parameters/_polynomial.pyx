@@ -26,6 +26,12 @@ cdef class Polynomial1DParameter(Parameter):
     use_proportional_volume : bool
         An optional boolean only used with a `Storage` node to switch between using absolute
          or proportional volume when evaluating the polynomial.
+    scale : float
+        An optional scaling factor to apply to the polynomial input before calculation. This is
+         applied before any offset.
+    offset : float
+        An optional offset to apply to the polynomial input before calculation. This is applied after
+         and scaling.
     """
     def __init__(self, coefficients, *args, **kwargs):
         self.coefficients = np.array(coefficients, dtype=np.float64)
@@ -33,6 +39,8 @@ cdef class Polynomial1DParameter(Parameter):
         self._storage_node = kwargs.pop('storage_node', None)
         self._parameter = kwargs.pop('parameter', None)
         self.use_proportional_volume = kwargs.pop('use_proportional_volume', False)
+        self.offset = kwargs.pop('offset', 0.0)
+        self.scale = kwargs.pop('scale', 1.0)
         # Check only one of the above is given
         arg_check = [
             self._other_node is not None,
@@ -68,6 +76,9 @@ cdef class Polynomial1DParameter(Parameter):
         else:
             x = self._node.flow[scenario_index._global_id]
 
+        # Apply scaling and offset
+        x = x*self.scale + self.offset
+        # No calculate polynomial
         y = 0.0
         for i in range(self.coefficients.shape[0]):
             y += self.coefficients[i]*x**i
@@ -77,18 +88,16 @@ cdef class Polynomial1DParameter(Parameter):
     def load(cls, model, data):
         node = None
         if 'node' in data:
-            node = model._get_node_from_ref(model, data["node"])
+            node = model._get_node_from_ref(model, data.pop("node"))
         storage_node = None
         if 'storage_node' in data:
-            storage_node = model._get_node_from_ref(model, data["storage_node"])
+            storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
         parameter = None
         if 'parameter' in data:
-            parameter = load_parameter(model, data["parameter"])
+            parameter = load_parameter(model, data.pop("parameter"))
 
         coefficients = data.pop("coefficients")
-        use_proportional_volume = data.pop("use_proportional_volume", False)
-        parameter = cls(coefficients, node=node, storage_node=storage_node, parameter=parameter,
-                        use_proportional_volume=use_proportional_volume)
+        parameter = cls(coefficients, node=node, storage_node=storage_node, parameter=parameter, **data)
         return parameter
 Polynomial1DParameter.register()
 
@@ -110,12 +119,28 @@ cdef class Polynomial2DStorageParameter(Parameter):
     use_proportional_volume : bool
         An optional boolean only used with a `Storage` node to switch between using absolute
          or proportional volume when evaluating the polynomial.
+    storage_scale : float
+        An optional scaling factor to apply to the storage value before calculation. This is
+         applied before any offset.
+    storage_offset : float
+        An optional offset to apply to the storage value before calculation. This is applied after
+         and scaling
+    parameter_scale : float
+        An optional scaling factor to apply to the parameter value before calculation. This is
+         applied before any offset.
+    parameter_offset : float
+        An optional offset to apply to the parameter value before calculation. This is applied after
+         and scaling
     """
     def __init__(self, coefficients, storage_node, parameter, *args, **kwargs):
         self.coefficients = np.array(coefficients, dtype=np.float64)
         self._storage_node = storage_node
         self._parameter = parameter
         self.use_proportional_volume = kwargs.pop('use_proportional_volume', False)
+        self.storage_offset = kwargs.pop('storage_offset', 0.0)
+        self.storage_scale = kwargs.pop('storage_scale', 1.0)
+        self.parameter_offset = kwargs.pop('parameter_offset', 0.0)
+        self.parameter_scale = kwargs.pop('parameter_scale', 1.0)
         super(Polynomial2DStorageParameter, self).__init__(*args, **kwargs)
 
         # Register parameter relationships
@@ -133,6 +158,9 @@ cdef class Polynomial2DStorageParameter(Parameter):
         # Parameter value is 2nd dimension
         y = self._parameter.value(ts, scenario_index)
 
+        # Apply scaling and offset
+        x = self.storage_scale*x + self.storage_offset
+        y = self.parameter_scale*y + self.parameter_offset
         z = 0.0
         for i in range(self.coefficients.shape[0]):
             for j in range(self.coefficients.shape[1]):
@@ -141,10 +169,9 @@ cdef class Polynomial2DStorageParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        storage_node = model._get_node_from_ref(model, data["storage_node"])
-        parameter = load_parameter(model, data["parameter"])
+        storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
+        parameter = load_parameter(model, data.pop("parameter"))
         coefficients = data.pop("coefficients")
-        use_proportional_volume = data.pop("use_proportional_volume", False)
-        parameter = cls(coefficients, storage_node, parameter, use_proportional_volume=use_proportional_volume)
+        parameter = cls(coefficients, storage_node, parameter, **data)
         return parameter
 Polynomial2DStorageParameter.register()
