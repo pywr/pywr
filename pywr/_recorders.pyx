@@ -361,6 +361,79 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
 NumpyArrayNodeRecorder.register()
 
 
+
+cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
+    """
+    This recorder calculates a flow duration curve for each scenario.
+    The percentiles passed into the recorder must be in the range 0-100.
+    """
+    def __init__(self, model, AbstractNode node, percentiles, name=None, **kwargs):
+        super(FlowDurationCurveRecorder, self).__init__(model, node, name=None, **kwargs)
+        self._percentiles = np.asarray(percentiles, dtype=np.float64)
+
+    cpdef finish(self):
+        self._fdc_flows = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
+
+    property fdc_flows:
+        def __get__(self, ):
+            return np.array(self._fdc_flows)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self._percentiles
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self.fdc_flows), index=index, columns=sc_index)
+
+FlowDurationCurveRecorder.register()
+
+cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
+    """
+    This recorder calculates a flow duration curve for each scenario and then calculates
+    its deviation from an input flow duration curve. The input flow duration curve and
+    percentiles list must be of the same length and have the same order (high to low values
+    or low to high values)
+    """
+    def __init__(self, model, AbstractNode node, percentiles, fdc, name=None, **kwargs):
+        super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
+        self._fdc = np.asarray(fdc, dtype=np.float64)
+
+        if len(self._percentiles) != len(self._fdc):
+            raise ValueError("The lengths of the input FDC and the percentiles list do not match")
+
+        if np.argmin(self._fdc) !=  np.argmin(self._percentiles):
+            raise ValueError("The orders of input FDC and the percentiles list do not match")
+
+    cpdef finish(self):
+        self._fdc_flows = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
+        cdef base_fdc = np.tile(self._fdc, (len(self._model.scenarios.combinations), 1)).transpose()
+
+        self._fdc_deviations = np.divide(np.subtract(self._fdc_flows, base_fdc), base_fdc)
+
+    property fdc_deviations:
+        def __get__(self, ):
+            return np.array(self._fdc_deviations)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self._percentiles
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self._fdc_deviations), index=index, columns=sc_index)
+
+FlowDurationCurveDeviationRecorder.register()
+
+
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
     cpdef setup(self):
         cdef int ncomb = len(self._model.scenarios.combinations)

@@ -14,7 +14,8 @@ from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
     TotalFlowNodeRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
-    NumpyArrayIndexParameterRecorder, MeanParameterRecorder, load_recorder)
+    NumpyArrayIndexParameterRecorder, MeanParameterRecorder, load_recorder,
+    FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder)
 from pywr.parameters import DailyProfileParameter, FunctionParameter
 from helpers import load_model
 
@@ -26,7 +27,7 @@ def test_numpy_recorder(simple_linear_model):
     model = simple_linear_model
     otpt = model.nodes['Output']
 
-    model.nodes['Input'].max_flow = 10.0
+    model.nodes['Output'].max_flow = 10.0
     otpt.cost = -2.0
     rec = NumpyArrayNodeRecorder(model, otpt)
 
@@ -47,6 +48,57 @@ def test_numpy_recorder(simple_linear_model):
     assert df.shape == (365, 1)
     assert np.all((df.values - 10.0) < 1e-12)
 
+def test_fdc_recorder(simple_linear_model):
+    """
+    Test the FlowDurationCurveRecorder
+    """
+    model = load_model("timeseries2.json")
+    #scenario = Scenario(model, "dummy", size=10)
+    input = model.nodes['catchment1']
+
+    #model.nodes['Input'].max_flow = 10.0
+    percentiles = np.linspace(20., 100., 5)
+    rec = FlowDurationCurveRecorder(model, input, percentiles)
+
+    # test retrieval of recorder
+    assert model.recorders['flowdurationcurverecorder.catchment1'] == rec
+    # test changing name of recorder
+    rec.name = 'timeseries.Input'
+    assert model.recorders['timeseries.Input'] == rec
+    with pytest.raises(KeyError):
+        model.recorders['flowdurationcurverecorder.catchment1']
+
+    model.run()
+    assert_allclose(rec.fdc_flows[:, 0], [20.42,  21.78,  23.22,  26.47,  29.31])
+    assert rec.fdc_flows.shape == (len(percentiles), 10)
+    df = rec.to_dataframe()
+    assert df.shape == (len(percentiles), 10)
+
+def test_fdc_dev_recorder(simple_linear_model):
+    """
+    Test the FlowDurationCurveDeviationRecorder
+    """
+    model = load_model("timeseries2.json")
+    input = model.nodes['catchment1']
+
+
+    percentiles = np.linspace(20., 100., 5)
+    base_fdc = np.array([5, 15, 20, 25, 35])
+    rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, base_fdc)
+
+    # test retrieval of recorder
+    assert model.recorders['flowdurationcurvedeviationrecorder.catchment1'] == rec
+    # test changing name of recorder
+    rec.name = 'timeseries.Input'
+    assert model.recorders['timeseries.Input'] == rec
+    with pytest.raises(KeyError):
+        model.recorders['flowdurationcurvedeviationrecorder.catchment1']
+
+    model.run()
+    assert_allclose(rec.fdc_deviations[:, 0], [3.084,  0.452,  0.161,  0.0588, -0.16257143])
+    assert rec.fdc_deviations.shape == (len(percentiles), len(model.scenarios.combinations))
+    df = rec.to_dataframe()
+    assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
 def test_numpy_storage_recorder(simple_storage_model):
     """
