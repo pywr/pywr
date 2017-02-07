@@ -27,7 +27,7 @@ def test_numpy_recorder(simple_linear_model):
     model = simple_linear_model
     otpt = model.nodes['Output']
 
-    model.nodes['Output'].max_flow = 10.0
+    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec = NumpyArrayNodeRecorder(model, otpt)
 
