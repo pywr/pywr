@@ -196,8 +196,6 @@ class TablesRecorder(Recorder):
 
                 if isinstance(param, basestring):
                     param = self.model.parameters[param]
-                else:
-                    param = p
 
                 if param.name is None:
                     raise ValueError('Can only record named Parameter objects.')
