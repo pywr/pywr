@@ -633,7 +633,7 @@ def test_annual_count_index_parameter_recorder(simple_storage_model):
     # Demand is roughly 2 Ml/d per year
     #  First ensemble balances the demand
     #  Second ensemble should fail during 3rd year
-    demand = 2 / 365
+    demand = 2.0 / 365
     model.nodes['Input'].max_flow = ConstantScenarioParameter(scenario, [demand, 0])
     model.nodes['Output'].max_flow = demand
 
