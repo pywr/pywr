@@ -456,7 +456,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     fdc_agg_func: str, optional
         Optional different function for aggregating across scenarios.
     """
-    def __init__(self, model, AbstractNode node, percentiles, target_fdc, name=None, **kwargs):
+    def __init__(self, model, AbstractNode node, percentiles, target_fdc, scenario=None, name=None, **kwargs):
         super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
         self._target_fdc = np.asarray(target_fdc, dtype=np.float64)
 
@@ -466,9 +466,37 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         if np.argmin(self._target_fdc) !=  np.argmin(self._percentiles):
             raise ValueError("The orders of input FDC and the percentiles list do not match")
 
+    cpdef setup(self):
+        super(FlowDurationCurveDeviationRecorder, self).setup()
+        # Check target FDC is the correct size; this is done in setup rather than __init__
+        # because the scenarios might change after the Recorder is created.
+        if self.scenario is not None:
+            if self._target_fdc.shape[1] != self.scenario.size:
+                raise ValueError("The number of target FDCs does not match the number of scenarios")
+        else:
+            if self._target_fdc.shape[1] != len(self.model.scenarios.combinations):
+                raise ValueError("The number of target FDCs does not match the number of scenarios")
+
     cpdef finish(self):
-        self._fdc = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
-        self._fdc_deviations = np.divide(np.subtract(self._fdc, self._target_fdc), self._target_fdc)
+        super(FlowDurationCurveDeviationRecorder, self).finish()
+
+        cdef int i, j, sc_index
+        cdef ScenarioIndex scenario_index
+        cdef double[:] trgt_fdc
+
+        if self.scenario is not None:
+            # We have to do this the slow way by iterating through all scenario combinations
+            sc_index = self.model.scenarios.get_scenario_index(self.scenario)
+            self._fdc_deviations = np.empty((self._target_fdc.shape[0], len(self.model.scenarios.combinations)), dtype=np.float64)
+            for i, scenario_index in enumerate(self.model.scenarios.combinations):
+                # Get the scenario specific ensemble id for this combination
+                j = scenario_index._indices[sc_index]
+                # Cache the target FDC to use in this combination
+                trgt_fdc = self._target_fdc[:, j]
+                # Finally calculate deviation
+                self._fdc_deviations[:, i] = np.divide(np.subtract(self._fdc[:, i], trgt_fdc), trgt_fdc)
+        else:
+            self._fdc_deviations = np.divide(np.subtract(self._fdc, self._target_fdc), self._target_fdc)
 
     property fdc_deviations:
         def __get__(self, ):

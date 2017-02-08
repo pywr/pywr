@@ -82,13 +82,14 @@ def test_fdc_dev_recorder(simple_linear_model):
     """
     model = load_model("timeseries2.json")
     input = model.nodes['catchment1']
+    scenarioA = model.scenarios['scenario A']
 
     percentiles = np.linspace(20., 100., 5)
     input_fdc = np.array([5, 15, 20, 25, 35])
     # np.tile is used so that the input FDC has equal dimensions the FDCs produced in the model
     input_fdc_tiled = np.tile(input_fdc, (10, 1)).transpose()
     rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, input_fdc_tiled, fdc_agg_func="min",
-                                             agg_func="mean")
+                                             agg_func="mean", scenario=scenarioA)
 
     # test retrieval of recorder
     assert model.recorders['flowdurationcurvedeviationrecorder.catchment1'] == rec

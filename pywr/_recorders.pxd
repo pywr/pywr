@@ -1,6 +1,6 @@
 cdef class Recorder
 
-from _core cimport Timestep, AbstractNode, Storage, ScenarioIndex
+from _core cimport Timestep, AbstractNode, Storage, ScenarioIndex, Scenario
 from .parameters._parameters cimport Parameter, IndexParameter
 
 cdef class Recorder:
@@ -60,6 +60,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     cdef double[:, :] _target_fdc
     cdef double[:, :] _fdc_deviations
     cdef double[:, :] _base_fdc_tile
+    cdef public Scenario scenario
 
 cdef class MeanParameterRecorder(ParameterRecorder):
     cdef public int timesteps
