@@ -53,12 +53,10 @@ def test_fdc_recorder(simple_linear_model):
     Test the FlowDurationCurveRecorder
     """
     model = load_model("timeseries2.json")
-    #scenario = Scenario(model, "dummy", size=10)
     input = model.nodes['catchment1']
 
-    #model.nodes['Input'].max_flow = 10.0
     percentiles = np.linspace(20., 100., 5)
-    rec = FlowDurationCurveRecorder(model, input, percentiles)
+    rec = FlowDurationCurveRecorder(model, input, percentiles, fdc_agg_func="max", agg_func="min")
 
     # test retrieval of recorder
     assert model.recorders['flowdurationcurverecorder.catchment1'] == rec
@@ -69,10 +67,14 @@ def test_fdc_recorder(simple_linear_model):
         model.recorders['flowdurationcurverecorder.catchment1']
 
     model.run()
-    assert_allclose(rec.fdc_flows[:, 0], [20.42,  21.78,  23.22,  26.47,  29.31])
-    assert rec.fdc_flows.shape == (len(percentiles), 10)
+
+    assert_allclose(rec.fdc[:, 0], [20.42,  21.78,  23.22,  26.47,  29.31])
+    assert_allclose(np.max(rec.fdc, axis=0), rec.values())
+    assert_allclose(np.min(np.max(rec.fdc, axis=0)), rec.aggregated_value())
+
+    assert rec.fdc.shape == (len(percentiles), len(model.scenarios.combinations))
     df = rec.to_dataframe()
-    assert df.shape == (len(percentiles), 10)
+    assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
 def test_fdc_dev_recorder(simple_linear_model):
     """
@@ -84,7 +86,7 @@ def test_fdc_dev_recorder(simple_linear_model):
 
     percentiles = np.linspace(20., 100., 5)
     base_fdc = np.array([5, 15, 20, 25, 35])
-    rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, base_fdc)
+    rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, base_fdc, fdc_agg_func="min", agg_func="mean")
 
     # test retrieval of recorder
     assert model.recorders['flowdurationcurvedeviationrecorder.catchment1'] == rec
@@ -95,7 +97,11 @@ def test_fdc_dev_recorder(simple_linear_model):
         model.recorders['flowdurationcurvedeviationrecorder.catchment1']
 
     model.run()
+
     assert_allclose(rec.fdc_deviations[:, 0], [3.084,  0.452,  0.161,  0.0588, -0.16257143])
+    assert_allclose(np.min(rec.fdc_deviations, axis=0), rec.values())
+    assert_allclose(np.mean(np.min(rec.fdc_deviations, axis=0)), rec.aggregated_value())
+
     assert rec.fdc_deviations.shape == (len(percentiles), len(model.scenarios.combinations))
     df = rec.to_dataframe()
     assert df.shape == (len(percentiles), len(model.scenarios.combinations))

@@ -51,13 +51,15 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
     cdef int[:, :] _data
 
 cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
+    cdef object fdc_agg_func
+    cdef int _fdc_agg_func
     cdef double[:] _percentiles
-    cdef double[:, :] _fdc_flows
+    cdef double[:, :] _fdc
 
 cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
-    cdef double[:] _fdc
+    cdef double[:] _target_fdc
     cdef double[:, :] _fdc_deviations
-    cdef double[:, :] base_fdc
+    cdef double[:, :] _base_fdc_tile
 
 cdef class MeanParameterRecorder(ParameterRecorder):
     cdef public int timesteps
