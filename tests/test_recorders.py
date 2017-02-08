@@ -85,10 +85,11 @@ def test_fdc_dev_recorder(simple_linear_model):
     scenarioA = model.scenarios['scenario A']
 
     percentiles = np.linspace(20., 100., 5)
-    input_fdc = np.array([5, 15, 20, 25, 35])
+    input_fdc = np.array([[5, 15, 20, 25, 35],[20, 30, 40, 50, 60]])
     # np.tile is used so that the input FDC has equal dimensions the FDCs produced in the model
-    input_fdc_tiled = np.tile(input_fdc, (10, 1)).transpose()
-    rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, input_fdc_tiled, fdc_agg_func="min",
+
+    input_fdc_repeat = np.repeat(input_fdc, 5, axis=0).transpose()
+    rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, input_fdc_repeat, fdc_agg_func="min",
                                              agg_func="mean", scenario=scenarioA)
 
     # test retrieval of recorder

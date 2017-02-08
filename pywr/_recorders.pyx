@@ -453,17 +453,17 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     agg_func: str, optional
         Function used for aggregating the FDC deviations across percentiles.
         Numpy style functions that support an axis argument are supported.
-    fdc_agg_func: str, optional
+    fdc_agg_func: str, optionalgit push 
         Optional different function for aggregating across scenarios.
     """
     def __init__(self, model, AbstractNode node, percentiles, target_fdc, scenario=None, name=None, **kwargs):
         super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
         self._target_fdc = np.asarray(target_fdc, dtype=np.float64)
 
-        if len(self._percentiles) != len(self._target_fdc):
+        if len(self._percentiles) != self._target_fdc.shape[0]:
             raise ValueError("The lengths of the input FDC and the percentiles list do not match")
 
-        if np.argmin(self._target_fdc) !=  np.argmin(self._percentiles):
+        if np.any(np.argmin(self._target_fdc, axis=0) != np.argmin(self._percentiles)):
             raise ValueError("The orders of input FDC and the percentiles list do not match")
 
     cpdef setup(self):
