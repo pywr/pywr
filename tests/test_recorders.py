@@ -14,7 +14,8 @@ from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
     TotalFlowNodeRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
-    NumpyArrayIndexParameterRecorder, MeanParameterRecorder, load_recorder)
+    NumpyArrayIndexParameterRecorder, MeanParameterRecorder, AnnualCountIndexParameterRecorder,
+    load_recorder)
 from pywr.parameters import DailyProfileParameter, FunctionParameter
 from helpers import load_model
 
@@ -611,3 +612,34 @@ def test_mean_flow_recorder_json(solver):
     assert_allclose(rec_flow.data[:,0], [2.0, 3.0, 4.0, 5.0])
     assert_allclose(rec_mean.data[:,0], [2.0, 2.5, 3.0, 4.0])
     assert_allclose(rec_check.data[:,0], [50.0, 50.0, 60.0, 60.0])
+
+def test_annual_count_index_parameter_recorder(simple_storage_model):
+    """ Test AnnualCountIndexParameterRecord
+
+    The test sets uses a simple reservoir model with different inputs that
+    trigger a control curve failure after different numbers of years.
+    """
+    from pywr.parameters import ConstantScenarioParameter, ConstantParameter
+    from pywr.parameters.control_curves import ControlCurveIndexParameter
+    model = simple_storage_model
+    scenario = Scenario(model, 'A', size=2)
+    # Simulate 5 years
+    model.timestepper.start = '2015-01-01'
+    model.timestepper.end = '2019-12-31'
+    # Control curve parameter
+    param = ControlCurveIndexParameter(model.nodes['Storage'], ConstantParameter(0.25))
+
+    # Storage model has a capacity of 20, but starts at 10 Ml
+    # Demand is roughly 2 Ml/d per year
+    #  First ensemble balances the demand
+    #  Second ensemble should fail during 3rd year
+    demand = 2 / 365
+    model.nodes['Input'].max_flow = ConstantScenarioParameter(scenario, [demand, 0])
+    model.nodes['Output'].max_flow = demand
+
+    # Create the recorder with a threshold of 1
+    rec = AnnualCountIndexParameterRecorder(model, param, 1)
+
+    model.run()
+    # We expect no failures in the first ensemble, but 3 out of 5 in the second
+    assert_allclose(rec.values(), [0, 3])

@@ -742,6 +742,65 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
         return 0
 MinimumThresholdVolumeStorageRecorder.register()
 
+
+cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
+    """ Record the number of years where an IndexParameter is greater than or equal to a threshold """
+    def __init__(self, model, IndexParameter param, int threshold, *args, **kwargs):
+        super(AnnualCountIndexParameterRecorder, self).__init__(model, param, *args, **kwargs)
+        self.threshold = threshold
+
+    cpdef setup(self):
+        self._count = np.zeros(len(self.model.scenarios.combinations), np.int32)
+        self._current_max = np.zeros_like(self._count)
+
+    cpdef reset(self):
+        self._count[...] = 0
+        self._current_max[...] = 0
+        self._current_year = -1
+
+    cpdef int save(self) except -1:
+        cdef int i, ncomb, value
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+
+        ncomb = len(self.model.scenarios.combinations)
+
+        if ts.year != self._current_year:
+            # A new year
+            if self._current_year != -1:
+                # As long as at least one year has been run
+                # then update the count if threshold equal to or exceeded
+                for i in range(ncomb):
+                    if self._current_max[i] >= self.threshold:
+                        self._count[i] += 1
+
+            # Finally reset current maximum and update current year
+            self._current_max[...] = 0
+            self._current_year = ts.year
+
+        for scenario_index in self.model.scenarios.combinations:
+            # Get current parameter value
+            value = self._param.index(ts, scenario_index)
+
+            # Update annual max if a new maximum is found
+            if value > self._current_max[scenario_index._global_id]:
+                self._current_max[scenario_index._global_id] = value
+
+        return 0
+
+    cpdef finish(self):
+        cdef int i
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        # Complete the current year by updating the count if threshold equal to or exceeded
+        for i in range(ncomb):
+            if self._current_max[i] >= self.threshold:
+                self._count[i] += 1
+
+    cpdef double[:] values(self):
+        return np.asarray(self._count).astype(np.float64)
+AnnualCountIndexParameterRecorder.register()
+
+
 def load_recorder(model, data):
     recorder = None
 
