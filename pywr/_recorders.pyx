@@ -361,6 +361,179 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
 NumpyArrayNodeRecorder.register()
 
 
+
+cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
+    """
+    This recorder calculates a flow duration curve for each scenario.
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        The node to record
+    percentiles : array
+        The percentiles to use in the calculation of the flow duration curve.
+        Values must be in the range 0-100.
+    agg_func: str, optional
+        function used for aggregating the FDC across percentiles.
+        Numpy style functions that support an axis argument are supported.
+    fdc_agg_func: str, optional
+        optional different function for aggregating across scenarios.
+    """
+
+    def __init__(self, model, AbstractNode node, percentiles, **kwargs):
+
+        # Optional different method for aggregating across percentiles
+        agg_func = kwargs.pop('fdc_agg_func', kwargs.get('agg_func', 'mean'))
+        super(FlowDurationCurveRecorder, self).__init__(model, node, **kwargs)
+
+        if isinstance(agg_func, basestring):
+            agg_func = _agg_func_lookup[agg_func.lower()]
+        elif callable(agg_func):
+            self.agg_user_func = agg_func
+            agg_func = AggFuncs.CUSTOM
+        else:
+            raise ValueError("Unrecognised recorder aggregation function: \"{}\".".format(agg_func))
+        self._fdc_agg_func = agg_func
+
+        self._percentiles = np.asarray(percentiles, dtype=np.float64)
+
+
+    cpdef finish(self):
+        self._fdc = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
+
+    property fdc:
+        def __get__(self, ):
+            return np.array(self._fdc)
+
+    cpdef double[:] values(self):
+
+        if self._fdc_agg_func == AggFuncs.PRODUCT:
+            return np.product(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.SUM:
+            return np.sum(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MAX:
+            return np.max(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MIN:
+            return np.min(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MEAN:
+            return np.mean(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MEDIAN:
+            return np.median(self._fdc, axis=0)
+        else:
+            return self._agg_user_func(np.array(self._fdc), axis=0)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self._percentiles
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self.fdc), index=index, columns=sc_index)
+
+FlowDurationCurveRecorder.register()
+
+cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
+    """
+    This recorder calculates a Flow Duration Curve (FDC) for each scenario and then
+    calculates their deviation from an input FDC. The 2nd dimension of the input flow
+    duration curve and percentiles list must be of the same length and have the same
+    order (high to low values or low to high values)
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        The node to record
+    percentiles : array
+        The percentiles to use in the calculation of the flow duration curve.
+        Values must be in the range 0-100.
+    target_fdc : array
+        The FDC against which the scenario FDCs are compared
+    agg_func: str, optional
+        Function used for aggregating the FDC deviations across percentiles.
+        Numpy style functions that support an axis argument are supported.
+    fdc_agg_func: str, optionalgit push 
+        Optional different function for aggregating across scenarios.
+    """
+    def __init__(self, model, AbstractNode node, percentiles, target_fdc, scenario=None, name=None, **kwargs):
+        super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
+        self._target_fdc = np.asarray(target_fdc, dtype=np.float64)
+
+        if len(self._percentiles) != self._target_fdc.shape[0]:
+            raise ValueError("The lengths of the input FDC and the percentiles list do not match")
+
+        if np.any(np.argmin(self._target_fdc, axis=0) != np.argmin(self._percentiles)):
+            raise ValueError("The orders of input FDC and the percentiles list do not match")
+
+    cpdef setup(self):
+        super(FlowDurationCurveDeviationRecorder, self).setup()
+        # Check target FDC is the correct size; this is done in setup rather than __init__
+        # because the scenarios might change after the Recorder is created.
+        if self.scenario is not None:
+            if self._target_fdc.shape[1] != self.scenario.size:
+                raise ValueError("The number of target FDCs does not match the number of scenarios")
+        else:
+            if self._target_fdc.shape[1] != len(self.model.scenarios.combinations):
+                raise ValueError("The number of target FDCs does not match the number of scenarios")
+
+    cpdef finish(self):
+        super(FlowDurationCurveDeviationRecorder, self).finish()
+
+        cdef int i, j, sc_index
+        cdef ScenarioIndex scenario_index
+        cdef double[:] trgt_fdc
+
+        if self.scenario is not None:
+            # We have to do this the slow way by iterating through all scenario combinations
+            sc_index = self.model.scenarios.get_scenario_index(self.scenario)
+            self._fdc_deviations = np.empty((self._target_fdc.shape[0], len(self.model.scenarios.combinations)), dtype=np.float64)
+            for i, scenario_index in enumerate(self.model.scenarios.combinations):
+                # Get the scenario specific ensemble id for this combination
+                j = scenario_index._indices[sc_index]
+                # Cache the target FDC to use in this combination
+                trgt_fdc = self._target_fdc[:, j]
+                # Finally calculate deviation
+                self._fdc_deviations[:, i] = np.divide(np.subtract(self._fdc[:, i], trgt_fdc), trgt_fdc)
+        else:
+            self._fdc_deviations = np.divide(np.subtract(self._fdc, self._target_fdc), self._target_fdc)
+
+    property fdc_deviations:
+        def __get__(self, ):
+            return np.array(self._fdc_deviations)
+
+    cpdef double[:] values(self):
+
+        if self._fdc_agg_func == AggFuncs.PRODUCT:
+            return np.product(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.SUM:
+            return np.sum(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MAX:
+            return np.max(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MIN:
+            return np.min(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MEAN:
+            return np.mean(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MEDIAN:
+            return np.median(self._fdc_deviations, axis=0)
+        else:
+            return self._agg_user_func(np.array(self._fdc_deviations), axis=0)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self._percentiles
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self._fdc_deviations), index=index, columns=sc_index)
+
+FlowDurationCurveDeviationRecorder.register()
+
+
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
     cpdef setup(self):
         cdef int ncomb = len(self._model.scenarios.combinations)

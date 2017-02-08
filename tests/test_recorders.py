@@ -15,7 +15,8 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
     TotalFlowNodeRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
     NumpyArrayIndexParameterRecorder, MeanParameterRecorder, AnnualCountIndexParameterRecorder,
-    load_recorder)
+    FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
+
 from pywr.parameters import DailyProfileParameter, FunctionParameter
 from helpers import load_model
 
@@ -48,6 +49,67 @@ def test_numpy_recorder(simple_linear_model):
     assert df.shape == (365, 1)
     assert np.all((df.values - 10.0) < 1e-12)
 
+def test_fdc_recorder(simple_linear_model):
+    """
+    Test the FlowDurationCurveRecorder
+    """
+    model = load_model("timeseries2.json")
+    input = model.nodes['catchment1']
+
+    percentiles = np.linspace(20., 100., 5)
+    rec = FlowDurationCurveRecorder(model, input, percentiles, fdc_agg_func="max", agg_func="min")
+
+    # test retrieval of recorder
+    assert model.recorders['flowdurationcurverecorder.catchment1'] == rec
+    # test changing name of recorder
+    rec.name = 'timeseries.Input'
+    assert model.recorders['timeseries.Input'] == rec
+    with pytest.raises(KeyError):
+        model.recorders['flowdurationcurverecorder.catchment1']
+
+    model.run()
+
+    assert_allclose(rec.fdc[:, 0], [20.42,  21.78,  23.22,  26.47,  29.31])
+    assert_allclose(np.max(rec.fdc, axis=0), rec.values())
+    assert_allclose(np.min(np.max(rec.fdc, axis=0)), rec.aggregated_value())
+
+    assert rec.fdc.shape == (len(percentiles), len(model.scenarios.combinations))
+    df = rec.to_dataframe()
+    assert df.shape == (len(percentiles), len(model.scenarios.combinations))
+
+def test_fdc_dev_recorder(simple_linear_model):
+    """
+    Test the FlowDurationCurveDeviationRecorder
+    """
+    model = load_model("timeseries2.json")
+    input = model.nodes['catchment1']
+    scenarioA = model.scenarios['scenario A']
+
+    percentiles = np.linspace(20., 100., 5)
+    input_fdc = np.array([[5, 15, 20, 25, 35],[20, 30, 40, 50, 60]])
+    # np.tile is used so that the input FDC has equal dimensions the FDCs produced in the model
+
+    input_fdc_repeat = np.repeat(input_fdc, 5, axis=0).transpose()
+    rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, input_fdc_repeat, fdc_agg_func="min",
+                                             agg_func="mean", scenario=scenarioA)
+
+    # test retrieval of recorder
+    assert model.recorders['flowdurationcurvedeviationrecorder.catchment1'] == rec
+    # test changing name of recorder
+    rec.name = 'timeseries.Input'
+    assert model.recorders['timeseries.Input'] == rec
+    with pytest.raises(KeyError):
+        model.recorders['flowdurationcurvedeviationrecorder.catchment1']
+
+    model.run()
+
+    assert_allclose(rec.fdc_deviations[:, 0], [3.084,  0.452,  0.161,  0.0588, -0.16257143])
+    assert_allclose(np.min(rec.fdc_deviations, axis=0), rec.values())
+    assert_allclose(np.mean(np.min(rec.fdc_deviations, axis=0)), rec.aggregated_value())
+
+    assert rec.fdc_deviations.shape == (len(percentiles), len(model.scenarios.combinations))
+    df = rec.to_dataframe()
+    assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
 def test_numpy_storage_recorder(simple_storage_model):
     """
