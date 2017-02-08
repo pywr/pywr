@@ -57,7 +57,7 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
     cdef double[:, :] _fdc
 
 cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
-    cdef double[:] _target_fdc
+    cdef double[:, :] _target_fdc
     cdef double[:, :] _fdc_deviations
     cdef double[:, :] _base_fdc_tile
 

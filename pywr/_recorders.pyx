@@ -372,15 +372,16 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
     percentiles : array
         The percentiles to use in the calculation of the flow duration curve.
         Values must be in the range 0-100.
-    :keyword agg_func: function used for aggregating the FDC for each scenario.
+    agg_func: str, optional
+        function used for aggregating the FDC across percentiles.
         Numpy style functions that support an axis argument are supported.
-    :keyword fdc_agg_func: optional different function for aggregating
-        across scenarios.
+    fdc_agg_func: str, optional
+        optional different function for aggregating across scenarios.
     """
 
     def __init__(self, model, AbstractNode node, percentiles, **kwargs):
 
-        # Optional different method for aggregating across self.recorders scenarios
+        # Optional different method for aggregating across percentiles
         agg_func = kwargs.pop('fdc_agg_func', kwargs.get('agg_func', 'mean'))
         super(FlowDurationCurveRecorder, self).__init__(model, node, **kwargs)
 
@@ -437,9 +438,9 @@ FlowDurationCurveRecorder.register()
 cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     """
     This recorder calculates a Flow Duration Curve (FDC) for each scenario and then
-    calculates their deviation from an input FDC. The input flow duration curve and
-    percentiles list must be of the same length and have the same order (high to low
-    values or low to high values)
+    calculates their deviation from an input FDC. The 2nd dimension of the input flow
+    duration curve and percentiles list must be of the same length and have the same
+    order (high to low values or low to high values)
     ----------
     model : `pywr.core.Model`
     node : `pywr.core.Node`
@@ -449,11 +450,11 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         Values must be in the range 0-100.
     target_fdc : array
         The FDC against which the scenario FDCs are compared
-    :keyword agg_func: function used for aggregating the FDC deviations for each
-        scenario.
+    agg_func: str, optional
+        Function used for aggregating the FDC deviations across percentiles.
         Numpy style functions that support an axis argument are supported.
-    :keyword fdc_agg_func: optional different function for aggregating
-        across scenarios.
+    fdc_agg_func: str, optional
+        Optional different function for aggregating across scenarios.
     """
     def __init__(self, model, AbstractNode node, percentiles, target_fdc, name=None, **kwargs):
         super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
@@ -467,11 +468,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
 
     cpdef finish(self):
         self._fdc = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
-        # np.tile is used so that the dimensions of the target_fdc match those of the scenario FDCs
-        # The use of a axis=0 arg and the original target_fdc array caused an error
-        cdef target_fdc_tile = np.tile(self._target_fdc, (len(self._model.scenarios.combinations), 1)).transpose()
-
-        self._fdc_deviations = np.divide(np.subtract(self._fdc, target_fdc_tile), target_fdc_tile)
+        self._fdc_deviations = np.divide(np.subtract(self._fdc, self._target_fdc), self._target_fdc)
 
     property fdc_deviations:
         def __get__(self, ):
