@@ -48,7 +48,7 @@ def test_numpy_recorder(simple_linear_model):
     assert df.shape == (365, 1)
     assert np.all((df.values - 10.0) < 1e-12)
 
-def test_fdc_recorder(simple_linear_model):
+def test_fdc_recorder():
     """
     Test the FlowDurationCurveRecorder
     """
@@ -76,7 +76,7 @@ def test_fdc_recorder(simple_linear_model):
     df = rec.to_dataframe()
     assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
-def test_fdc_dev_recorder(simple_linear_model):
+def test_fdc_dev_recorder():
     """
     Test the FlowDurationCurveDeviationRecorder
     """
