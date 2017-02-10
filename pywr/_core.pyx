@@ -148,7 +148,9 @@ cdef class Timestep:
         self._days = days
         tt = self.datetime.timetuple()
         self.dayofyear = tt.tm_yday
+        self.day = tt.tm_mday
         self.month = tt.tm_mon
+        self.year = tt.tm_year
 
     property datetime:
         """Timestep representation as a `datetime.datetime` object"""
