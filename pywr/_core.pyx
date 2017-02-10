@@ -57,7 +57,7 @@ cdef class ScenarioCollection:
         else:
             # product of all scenarios, taking into account Scenario.slice
             iter = itertools.product(*[range(scenario._size)[scenario.slice] if scenario.slice else range(scenario._size) for scenario in self._scenarios])
-            combinations = list([ScenarioIndex(i, np.array(x, dtype=np.int)) for i, x in enumerate(iter)])
+            combinations = list([ScenarioIndex(i, np.array(x, dtype=np.int32)) for i, x in enumerate(iter)])
         return combinations
 
     def setup(self):
