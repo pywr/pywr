@@ -4,6 +4,7 @@ from _recorders cimport Recorder
 cdef class Scenario:
     cdef basestring _name
     cdef int _size
+    cdef public slice slice
 
 cdef class ScenarioCollection:
     cdef public object model

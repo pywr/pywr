@@ -12,31 +12,13 @@ def product(sizes):
     for comb in itertools.product(*[range(s) for s in sizes]):
         yield np.array(comb, dtype=np.int32)
 
-
-cdef class ScenarioCombinations:
-    def __init__(self, ScenarioCollection collection):
-        self._collection = collection
-
-    def __iter__(self, ):
-        cdef Scenario sc
-        cdef int i
-        cdef int[:] indices
-        for i, indices in enumerate(product([sc._size for sc in self._collection._scenarios])):
-            yield ScenarioIndex(i, indices)
-
-    def __len__(self, ):
-        cdef Scenario sc
-        if len(self._collection._scenarios) > 0:
-            return np.prod([sc._size for sc in self._collection._scenarios])
-        return 1
-
-
 cdef class Scenario:
-    def __init__(self, model, name, int size=1):
+    def __init__(self, model, name, int size=1, slice slice=None):
         self._name = name
         if size < 1:
             raise ValueError("Size must be greater than or equal to 1.")
         self._size = size
+        self.slice = slice
         model.scenarios.add_scenario(self)
 
     property size:
@@ -64,19 +46,22 @@ cdef class ScenarioCollection:
                 return sc
         raise KeyError("Scenario with name '{}' not found.".format(name))
 
-
-    def setup(self, ):
-        """ Create the list of ScenarioIndex objects based on the current Scenarios. """
-        cdef Scenario sc
+    def get_combinations(self):
+        """Returns a list of ScenarioIndices for every combination of Scenarios
+        """
+        cdef Scenario scenario
         cdef int i
-        cdef int[:] indices
         if len(self._scenarios) == 0:
-            combinations = [ScenarioIndex(0, np.array([0], dtype=np.int32)), ]
+            # model has no scenarios defined, implicitly has 1 scenario of size 1
+            combinations = [ScenarioIndex(0, np.array([0], dtype=np.int32))]
         else:
-            combinations = []
-            for i, indices in enumerate(product([sc._size for sc in self._scenarios])):
-                combinations.append(ScenarioIndex(i, indices))
-        self.combinations = combinations
+            # product of all scenarios, taking into account Scenario.slice
+            iter = itertools.product(*[range(scenario._size)[scenario.slice] if scenario.slice else range(scenario._size) for scenario in self._scenarios])
+            combinations = list([ScenarioIndex(i, np.array(x, dtype=np.int)) for i, x in enumerate(iter)])
+        return combinations
+
+    def setup(self):
+        self.combinations = self.get_combinations()
 
     cpdef int get_scenario_index(self, Scenario sc) except? -1:
         """Return the index of Scenario in this controller."""
@@ -139,6 +124,9 @@ cdef class ScenarioIndex:
     property indices:
         def __get__(self):
             return np.array(self._indices)
+
+    def __repr__(self):
+        return "<ScenarioIndex gid={:d} indices={}>".format(self._global_id, tuple(np.asarray(self._indices)))
 
 
 cdef class Timestep:

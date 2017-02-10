@@ -244,3 +244,38 @@ def test_dirty_scenario(simple_linear_model):
     assert(not model.dirty)
     scenario = Scenario(model, "test", size=42)
     assert(model.dirty)
+
+def test_scenario_slices(simple_linear_model):
+    """Test slicing of scenarios"""
+    model = simple_linear_model
+
+    # create two scenarios
+    s1 = Scenario(model=model, name="A", size=20)
+    s2 = Scenario(model=model, name="B", size=3)
+
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 20 * 3)
+
+    s1.slice = slice(0, None, 2)
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 10 * 3)
+
+    s2.slice = slice(1, 3, 1)
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 10 * 2)
+
+    assert(combinations[0].global_id == 0)
+    assert(tuple(combinations[0].indices) == (0, 1))
+
+    assert(combinations[-1].global_id == 19)
+    assert(tuple(combinations[-1].indices) == (18, 2))
+
+    model.run()
+
+    node = model.nodes["Input"]
+    assert((len(combinations),) == node.flow.shape)
+
+    s1.slice = None
+    s2.slice = None
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 20 * 3)
