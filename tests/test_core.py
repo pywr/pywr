@@ -416,9 +416,9 @@ def test_timestep_repr(solver):
     filename = os.path.join(TEST_FOLDER, "models", "simple1.json")
     model = Model.load(filename, solver=solver)
     model.timestepper.end = "2015-01-05"
-    timestep = model.run()
-    assert(isinstance(timestep, Timestep))
-    assert("2015-01-05" in str(timestep))
+    res = model.run()
+    assert(isinstance(res.timestep, Timestep))
+    assert("2015-01-05" in str(res.timestep))
 
 def test_virtual_storage_cost(solver):
     """VirtualStorage doesn't (currently) implement its cost attribute"""

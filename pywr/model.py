@@ -7,6 +7,7 @@ import copy
 from packaging.version import parse as parse_version
 import warnings
 import inspect
+import time
 
 import pywr
 from pywr.timestepper import Timestepper
@@ -481,12 +482,15 @@ class Model(object):
 
         Returns the number of last Timestep that was run.
         """
+        t0 = time.time()
+        timestep = None
         try:
             if self.dirty:
                 self.setup()
                 self.timestepper.reset()
             elif reset:
                 self.reset()
+            t1 = time.time()
             for timestep in self.timestepper:
                 self.timestep = timestep
                 ret = self._step()
@@ -496,14 +500,27 @@ class Model(object):
                     return timestep
                 elif timestep.datetime > self.timestepper.end:
                     return timestep
+            t2 = time.time()
         finally:
             self.finish()
-        try:
-            # Can only return timestep object if the iterator went
-            # through at least one iteration
-            return timestep
-        except UnboundLocalError:
+        t3 = time.time()
+
+        if timestep is None:
             return None
+
+        # return ModelResult instance
+        time_taken = t2 - t1
+        time_taken_with_overhead = t3 - t0
+        num_scenarios = len(self.scenarios.combinations)
+        speed = (timestep.index * num_scenarios) / time_taken
+        result = ModelResult(
+            num_scenarios=num_scenarios,
+            timestep=timestep,
+            time_taken=time_taken,
+            time_taken_with_overhead=time_taken_with_overhead,
+            speed=speed
+        )
+        return result
 
     def setup(self, ):
         """Setup the model for the first time or if it has changed since
@@ -662,3 +679,12 @@ class NamedIterator(object):
     def append(self, obj):
         # TODO: check for name collisions / duplication
         self._objects.append(obj)
+
+class ModelResult(object):
+    def __init__(self, num_scenarios, timestep, time_taken, time_taken_with_overhead, speed):
+        self.timestep = timestep
+        self.timesteps = timestep.index + 1
+        self.time_taken = time_taken
+        self.time_taken_with_overhead = time_taken_with_overhead
+        self.speed = speed
+        self.num_scenarios = num_scenarios
