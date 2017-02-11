@@ -453,7 +453,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     agg_func: str, optional
         Function used for aggregating the FDC deviations across percentiles.
         Numpy style functions that support an axis argument are supported.
-    fdc_agg_func: str, optionalgit push 
+    fdc_agg_func: str, optional
         Optional different function for aggregating across scenarios.
     """
     def __init__(self, model, AbstractNode node, percentiles, target_fdc, scenario=None, name=None, **kwargs):
