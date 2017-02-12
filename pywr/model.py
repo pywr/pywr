@@ -7,6 +7,7 @@ import copy
 from packaging.version import parse as parse_version
 import warnings
 import inspect
+import time
 
 import pywr
 from pywr.timestepper import Timestepper
@@ -481,12 +482,15 @@ class Model(object):
 
         Returns the number of last Timestep that was run.
         """
+        t0 = time.time()
+        timestep = None
         try:
             if self.dirty:
                 self.setup()
                 self.timestepper.reset()
             elif reset:
                 self.reset()
+            t1 = time.time()
             for timestep in self.timestepper:
                 self.timestep = timestep
                 ret = self._step()
@@ -496,14 +500,32 @@ class Model(object):
                     return timestep
                 elif timestep.datetime > self.timestepper.end:
                     return timestep
+            t2 = time.time()
         finally:
             self.finish()
-        try:
-            # Can only return timestep object if the iterator went
-            # through at least one iteration
-            return timestep
-        except UnboundLocalError:
+        t3 = time.time()
+
+        if timestep is None:
             return None
+
+        # return ModelResult instance
+        time_taken = t2 - t1
+        time_taken_with_overhead = t3 - t0
+        num_scenarios = len(self.scenarios.combinations)
+        try:
+            speed = (timestep.index * num_scenarios) / time_taken
+        except ZeroDivisionError:
+            speed = float('nan')
+        result = ModelResult(
+            num_scenarios=num_scenarios,
+            timestep=timestep,
+            time_taken=time_taken,
+            time_taken_with_overhead=time_taken_with_overhead,
+            speed=speed,
+            solver_name=self.solver.name,
+            solver_stats=self.solver.stats,
+        )
+        return result
 
     def setup(self, ):
         """Setup the model for the first time or if it has changed since
@@ -662,3 +684,37 @@ class NamedIterator(object):
     def append(self, obj):
         # TODO: check for name collisions / duplication
         self._objects.append(obj)
+
+class ModelResult(object):
+    def __init__(self, num_scenarios, timestep, time_taken, time_taken_with_overhead, speed,
+                 solver_name, solver_stats):
+        self.timestep = timestep
+        self.timesteps = timestep.index + 1
+        self.time_taken = time_taken
+        self.time_taken_with_overhead = time_taken_with_overhead
+        self.speed = speed
+        self.num_scenarios = num_scenarios
+        self.solver_name = solver_name
+        self.solver_stats = solver_stats
+
+    def to_dict(self):
+        return {attr: value for attr, value in self.__dict__.items()}
+
+    def to_dataframe(self):
+        d = self.to_dict()
+        # Update timestep to use the underlying pandas Timestamp
+        d['timestep'] = d['timestep'].datetime
+        # Must flatten the solver stats dict before passing to pandas
+        solver_stats = d.pop('solver_stats')
+        for k, v in solver_stats.items():
+            d['solver_stats.{}'.format(k)] = v
+        df = pandas.DataFrame(pandas.Series(d), columns=["Value"])
+        return df
+
+    def __repr__(self):
+        return "Model executed {:d} scenarios in {:.1f} seconds, running at {:.1f} timesteps per second.".format(self.num_scenarios, self.time_taken_with_overhead, self.speed)
+
+    def _repr_html_(self):
+        return self.to_dataframe()._repr_html_()
+
+

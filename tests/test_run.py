@@ -10,7 +10,7 @@ import pandas
 from numpy.testing import assert_allclose
 
 import pywr.core
-from pywr.model import Model, ModelStructureError
+from pywr.model import Model, ModelStructureError, ModelResult
 from pywr.nodes import Storage, Input, Output, Link
 import pywr.solvers
 import pywr.parameters.licenses
@@ -40,6 +40,16 @@ def test_run_simple1(solver):
     model.step()
     assert(model.timestepper.current.datetime - t0 == datetime.timedelta(1))
 
+def test_model_results(solver):
+    '''Test model results object'''
+    model = load_model('simple1.json', solver=solver)
+    res = model.run()
+    assert(isinstance(res, ModelResult))
+    assert(res.timesteps == 365)
+    assert(res.time_taken > 0)
+    assert(res.speed > 0)
+    print(res)
+    print(res._repr_html_())
 
 def test_run_reservoir1(solver):
     '''Test a reservoir with no refill
@@ -597,21 +607,21 @@ def test_run(solver):
     model = load_model('simple1.json', solver=solver)
 
     # run model from start to finish
-    timestep = model.run()
-    assert(timestep.index == 364)
+    result = model.run()
+    assert(result.timestep.index == 364)
 
     # try to run finished model
     timestep = model.run(reset=False)
     assert(timestep is None)
 
     # reset model and run again
-    timestep = model.run()
-    assert(timestep.index == 364)
+    result = model.run()
+    assert(result.timestep.index == 364)
 
     # run remaining timesteps
     model.reset(start=pandas.to_datetime('2015-12-01'))
-    timestep = model.run()
-    assert(timestep.index == 364)
+    result = model.run()
+    assert(result.timestep.index == 364)
 
 
 @pytest.mark.xfail
