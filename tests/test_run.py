@@ -39,13 +39,17 @@ def test_run_simple1(solver):
     # check the timestamp incremented
     model.step()
     assert(model.timestepper.current.datetime - t0 == datetime.timedelta(1))
-    
-    model.reset()
+
+def test_model_results(solver):
+    '''Test model results object'''
+    model = load_model('simple1.json', solver=solver)
     res = model.run()
     assert(isinstance(res, ModelResult))
     assert(res.timesteps == 365)
     assert(res.time_taken > 0)
     assert(res.speed > 0)
+    print(res)
+    print(res._repr_html_())
 
 def test_run_reservoir1(solver):
     '''Test a reservoir with no refill

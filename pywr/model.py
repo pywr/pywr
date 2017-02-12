@@ -708,7 +708,8 @@ class ModelResult(object):
         solver_stats = d.pop('solver_stats')
         for k, v in solver_stats.items():
             d['solver_stats.{}'.format(k)] = v
-        return pandas.Series(d)
+        df = pandas.DataFrame(pandas.Series(d), columns=["Value"])
+        return df
 
     def __repr__(self):
         return "Model executed {:d} scenarios in {:.1f} seconds, running at {:.1f} timesteps per second.".format(self.num_scenarios, self.time_taken_with_overhead, self.speed)
