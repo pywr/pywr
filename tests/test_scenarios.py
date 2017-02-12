@@ -71,9 +71,15 @@ def test_two_scenarios(simple_linear_model, ):
     scenario_input = Scenario(model, 'Inflow', size=2)
     model.nodes["Input"].max_flow = ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
-    scenario_outflow = Scenario(model, 'Outflow', size=2)
+    scenario_outflow = Scenario(model, 'Outflow', size=2, ensemble_names=['High', 'Low'])
     model.nodes["Output"].max_flow = ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
     model.nodes["Output"].cost = -2.0
+
+    # Check ensemble names are provided in the multi-index
+    index = model.scenarios.multiindex
+    assert index.levels[0].name == 'Inflow'
+    assert index.levels[1].name == 'Outflow'
+    assert np.all(index.levels[1] == ['High', 'Low'])
 
     # add numpy recorders to input and output nodes
     NumpyArrayNodeRecorder(model, model.nodes["Input"], "input")
@@ -92,10 +98,10 @@ def test_two_scenarios(simple_linear_model, ):
     # combine recorder outputs to a single dataframe
     df = model.to_dataframe()
     assert(df.shape == (365, 2 * 2 * 2))
-    assert_allclose(df["input", 0, 0].iloc[0], 3.0)
-    assert_allclose(df["input", 0, 1].iloc[0], 5.0)
-    assert_allclose(df["input", 1, 0].iloc[0], 3.0)
-    assert_allclose(df["input", 1, 1].iloc[0], 8.0)
+    assert_allclose(df["input", 0, 'High'].iloc[0], 3.0)
+    assert_allclose(df["input", 0, 'Low'].iloc[0], 5.0)
+    assert_allclose(df["input", 1, 'High'].iloc[0], 3.0)
+    assert_allclose(df["input", 1, 'Low'].iloc[0], 8.0)
 
 
 def test_scenario_two_parameter(simple_linear_model, ):
@@ -279,3 +285,22 @@ def test_scenario_slices(simple_linear_model):
     s2.slice = None
     combinations = model.scenarios.get_combinations()
     assert(len(combinations) == 20 * 3)
+
+def test_scenario_user_combinations(simple_linear_model):
+    model = simple_linear_model
+
+    # create two scenarios
+    s1 = Scenario(model=model, name="A", size=20)
+    s2 = Scenario(model=model, name="B", size=3)
+
+    model.scenarios.user_combinations = [[0, 1], [1, 1]]
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 2)
+
+    with pytest.raises(ValueError):
+        # Test wrong number of dimensions
+        model.scenarios.user_combinations = [0, 1, 1, 1]
+        # Test out of range index
+        model.scenarios.user_combinations = [[19, 3], [2, 2]]
+        model.scenarios.user_combinations = [[-1, 2], [2, 2]]
+
