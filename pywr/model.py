@@ -264,7 +264,17 @@ class Model(object):
             for scen_data in scenarios_data:
                 scen_name = scen_data["name"]
                 size = scen_data["size"]
-                Scenario(model, scen_name, size=size)
+                s_slice = scen_data.pop("slice", None)
+                if s_slice:
+                    s_slice = slice(*s_slice)
+                Scenario(model, scen_name, size=size, slice=s_slice)
+
+        try:
+            scenario_combinations = data["scenario_combinations"]
+        except KeyError:
+            pass
+        else:
+            model.scenarios.user_combinations = scenario_combinations
 
         # load table references
         try:

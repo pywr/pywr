@@ -306,3 +306,19 @@ def test_scenario_user_combinations(simple_linear_model):
         model.scenarios.user_combinations = [[19, 3], [2, 2]]
     with pytest.raises(ValueError):
         model.scenarios.user_combinations = [[-1, 2], [2, 2]]
+
+def test_scenario_slices_json(solver):
+    model = load_model('scenario_with_slices.json', solver=solver)
+    scenarios = model.scenarios
+    assert(len(scenarios) == 2)
+    assert(scenarios["scenario A"].slice == slice(0, None, 2))
+    assert(scenarios["scenario B"].slice == slice(0, 1, 1))
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 5)
+
+def test_scenario_slices_json(solver):
+    model = load_model('scenario_with_user_combinations.json', solver=solver)
+    scenarios = model.scenarios
+    assert(len(scenarios) == 2)
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 3)
