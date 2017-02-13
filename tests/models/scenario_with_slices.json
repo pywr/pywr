@@ -1,0 +1,33 @@
+{
+    "metadata": {
+        "title": "Scenario with slices",
+        "description": "Example of scenario with slices",
+        "minimum_version": "0.2dev"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "scenarios": [
+        {
+            "name": "scenario A",
+            "size": 10,
+            "slice": [0, null, 2]
+        },
+        {
+            "name": "scenario B",
+            "size": 2,
+            "slice": [0, 1, 1]
+        }
+    ],
+    "nodes": [
+
+    ],
+    "edges": [
+
+    ],
+    "recorders": {
+
+    }
+}

@@ -4,11 +4,14 @@ from _recorders cimport Recorder
 cdef class Scenario:
     cdef basestring _name
     cdef int _size
+    cdef public slice slice
+    cdef object _ensemble_names
 
 cdef class ScenarioCollection:
     cdef public object model
     cdef list _scenarios
-    cdef public list combinations
+    cdef readonly list combinations
+    cdef int[:, :] _user_combinations
     cpdef int get_scenario_index(self, Scenario sc) except? -1
     cpdef add_scenario(self, Scenario sc)
     cpdef int ravel_indices(self, int[:] scenario_indices) except? -1
