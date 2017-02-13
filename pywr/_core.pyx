@@ -10,7 +10,7 @@ cdef class Scenario:
     """ Represents a scenario in the model.
 
     Typically a scenario will be used to run many similar models simultaneously. A small
-     number of `Parameter` objects in the model will be return different values depending
+     number of `Parameter` objects in the model will return different values depending
      on the scenario, but many will not. Multiple scenarios can be defined such that
      some `Parameter` values vary with one scenario, but not another. Scenarios are defined
      with a size that represents the number of ensembles in within that scenario.
@@ -33,7 +33,7 @@ cdef class Scenario:
     See Also
     --------
     `ScenarioCollection`
-     """
+    """
     def __init__(self, model, name, int size=1, slice slice=None, ensemble_names=None):
         self._name = name
         if size < 1:
@@ -107,14 +107,15 @@ cdef class ScenarioCollection:
         if len(self._scenarios) == 0:
             # model has no scenarios defined, implicitly has 1 scenario of size 1
             combinations = [ScenarioIndex(0, np.array([0], dtype=np.int32))]
+        elif self._user_combinations is not None:
+            # use combinations given by user
+            combinations = list([ScenarioIndex(i, self._user_combinations[i, :]) for i in range(self._user_combinations.shape[0])])
         else:
-            if self._user_combinations is not None:
-                # use combinations given by user
-                combinations = list([ScenarioIndex(i, self._user_combinations[i, :]) for i in range(self._user_combinations.shape[0])])
-            else:
-                # product of all scenarios, taking into account Scenario.slice
-                iter = itertools.product(*[range(scenario._size)[scenario.slice] if scenario.slice else range(scenario._size) for scenario in self._scenarios])
-                combinations = list([ScenarioIndex(i, np.array(x, dtype=np.int32)) for i, x in enumerate(iter)])
+            # product of all scenarios, taking into account Scenario.slice
+            iter = itertools.product(*[range(scenario._size)[scenario.slice] if scenario.slice else range(scenario._size) for scenario in self._scenarios])
+            combinations = list([ScenarioIndex(i, np.array(x, dtype=np.int32)) for i, x in enumerate(iter)])
+        if not combinations:
+            raise ValueError("No scenarios were selected to be run")
         return combinations
 
     def setup(self):
@@ -132,7 +133,7 @@ cdef class ScenarioCollection:
             if values.ndim != 2:
                 raise ValueError('A 2-dimensional array of scenario indices must be provided.')
             if values.shape[1] != len(self._scenarios):
-                raise ValueError('User defined combinations must ')
+                raise ValueError('User defined combinations must have shape (N, S) where S in number of Scenarios')
             # Check maximum values
             for sc, v in zip(self._scenarios, values.max(axis=0)):
                 if v >= sc._size:

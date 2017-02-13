@@ -297,10 +297,12 @@ def test_scenario_user_combinations(simple_linear_model):
     combinations = model.scenarios.get_combinations()
     assert(len(combinations) == 2)
 
+    # Test wrong number of dimensions
     with pytest.raises(ValueError):
-        # Test wrong number of dimensions
         model.scenarios.user_combinations = [0, 1, 1, 1]
-        # Test out of range index
-        model.scenarios.user_combinations = [[19, 3], [2, 2]]
-        model.scenarios.user_combinations = [[-1, 2], [2, 2]]
 
+    # Test out of range index
+    with pytest.raises(ValueError):
+        model.scenarios.user_combinations = [[19, 3], [2, 2]]
+    with pytest.raises(ValueError):
+        model.scenarios.user_combinations = [[-1, 2], [2, 2]]
