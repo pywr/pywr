@@ -46,8 +46,6 @@ def test_model_results(solver):
     res = model.run()
     assert(isinstance(res, ModelResult))
     assert(res.timesteps == 365)
-    assert(res.time_taken > 0)
-    assert(res.speed > 0)
     print(res)
     print(res._repr_html_())
 
