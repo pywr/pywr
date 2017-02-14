@@ -453,13 +453,13 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     agg_func: str, optional
         Function used for aggregating the FDC deviations across percentiles.
         Numpy style functions that support an axis argument are supported.
-    fdc_agg_func: str, optionalgit push 
+    fdc_agg_func: str, optional
         Optional different function for aggregating across scenarios.
     """
     def __init__(self, model, AbstractNode node, percentiles, target_fdc, scenario=None, name=None, **kwargs):
         super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
         self._target_fdc = np.asarray(target_fdc, dtype=np.float64)
-
+        self.scenario = scenario
         if len(self._percentiles) != self._target_fdc.shape[0]:
             raise ValueError("The lengths of the input FDC and the percentiles list do not match")
 
@@ -480,7 +480,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     cpdef finish(self):
         super(FlowDurationCurveDeviationRecorder, self).finish()
 
-        cdef int i, j, sc_index
+        cdef int i, j, k, sc_index
         cdef ScenarioIndex scenario_index
         cdef double[:] trgt_fdc
 
@@ -494,7 +494,8 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
                 # Cache the target FDC to use in this combination
                 trgt_fdc = self._target_fdc[:, j]
                 # Finally calculate deviation
-                self._fdc_deviations[:, i] = np.divide(np.subtract(self._fdc[:, i], trgt_fdc), trgt_fdc)
+                for k in range(trgt_fdc.shape[0]):
+                    self._fdc_deviations[k, i] = (self._fdc[k, i] - trgt_fdc[k])  / trgt_fdc[k]
         else:
             self._fdc_deviations = np.divide(np.subtract(self._fdc, self._target_fdc), self._target_fdc)
 
