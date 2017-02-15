@@ -6,7 +6,7 @@ env:
     matrix:
         - CONDA_NPY=111  CONDA_PY=27
         - CONDA_NPY=111  CONDA_PY=34
-        - CONDA_NPY=111  CONDA_PY=36
+        - CONDA_NPY=112  CONDA_PY=36
 
 install:
     - |
