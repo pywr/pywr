@@ -42,10 +42,13 @@ def test_run_simple1(solver):
 
 def test_model_results(solver):
     '''Test model results object'''
+    import pywr
     model = load_model('simple1.json', solver=solver)
     res = model.run()
     assert(isinstance(res, ModelResult))
     assert(res.timesteps == 365)
+    assert(res.version == pywr.__version__)
+    assert (res.git_hash == pywr.__git_hash__)
     print(res)
     print(res._repr_html_())
 
