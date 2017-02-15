@@ -348,11 +348,6 @@ class Model(object):
             node_to = model.nodes[node_to_name]
             node_from.connect(node_to, from_slot=slot_from, to_slot=slot_to)
 
-        # load recorders
-        if 'recorders' in data:
-            for recorder_data in data['recorders']:
-                load_recorder(model, recorder_data)
-
         return model
 
     @classmethod
@@ -726,5 +721,3 @@ class ModelResult(object):
 
     def _repr_html_(self):
         return self.to_dataframe()._repr_html_()
-
-
