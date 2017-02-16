@@ -91,4 +91,4 @@ The model can be loaded using the ``Model.load`` method:
     # run, forest, run!
     model.run()
 
-See further information in the `JSON model format section <json.rst>`_.
+See further information in on JSON see the :ref:`json-model-format` section.
