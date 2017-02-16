@@ -16,7 +16,9 @@ Support for the following data formats is available via the `Pandas <http://pand
 
 **Warning:** When reading Excel documents formulae are supported but not re-evaluated and links are not updated; the value read is the value present when the document was last saved.
 
-When working with large amounts of timeseries data the HDF5 is recommended as it has superior read speeds. Data in an HDF5 file should be in the "fixed" format; this is achieved by passing the ``format="fixed"`` argument to ``DataFrame.to_hdf``.
+When working with large amounts of timeseries data the `HDF5 format <https://www.hdfgroup.org/why-hdf/>`_ is recommended as it has superior read speeds. Data in an HDF5 file should be in the "fixed" format; this is achieved by passing the ``format="fixed"`` argument to ``DataFrame.to_hdf``. Where data access speed is critical, users are advised to look at the ``TablesArrayParameter`` parameter instead which supports very fast access via `pytables` directly (rather than indirectly via `pandas`).
+
+External data is read using the appropriate ``pandas.read_xxx`` function determined by the file extension (e.g. ``pandas.read_excel`` for xls/xlsx). Keywords that are not recognised by Pywr are passed on to these functions. For example, when reading timeseries data from a CSV you can parse the date strings into pandas timestamps by passing ``parse_dates=True`` (see example below).
 
 Examples
 ========
@@ -36,7 +38,7 @@ An example dataset is given below with three columns: a timestamp (used as the i
    "1910-01-02", 1.8, 22.140
    "1910-01-03", 5.2, 22.570
 
-The parameter below references the `timeseries1.csv` file in it's ``"url"``. The index column is defined by ``"index_col"`` and the data column is defined by the ``"column"`` keyword (in this case, ``"Flow"``).
+The parameter below references the `timeseries1.csv` file in it's ``"url"``. The index column is defined by ``"index_col"`` and the data column is defined by the ``"column"`` keyword (in this case, ``"Flow"``). The ``"parse_dates"`` keyword is required in order to parse the dates from strings in the CSV file into pandas date objects.
 
 .. code-block:: javascript
 
@@ -48,7 +50,7 @@ The parameter below references the `timeseries1.csv` file in it's ``"url"``. The
         "column": "Flow"
     }
 
-If the index column of the dataframe is a timestamp the parameter will support automatic resampling, if required. For example, if the external data is on a daily timestep the model can still be run on a weekly timestep. In this case the data mean flow for the week is used.
+If the index column of the dataframe is a timestamp the parameter will support automatic resampling, if required. For example, if the external data is on a daily timestep the model can still be run on a weekly timestep. In this case the data mean flow for the week is used. Only subsampling is currently supported (e.g. you can go from daily to monthly, but not monthly to daily).
 
 Constants
 ~~~~~~~~~
@@ -138,7 +140,7 @@ In the example above, *max_flow* evaluates to 10 and *cost* evaluates to -100.
 Tables
 ======
 
-Each time an external data source is referenced using the ``"url"`` keyword the data is parsed. If a dataset is going to be used multiple times in a model it can be defined in the ``"tables"`` section of the JSON document. In this way the data will only be loaded once. Parameters can then reference the data using the ``"table"`` keyword instead of the ``"url"`` keyword. Although the index column applied to the data must be defined in the ``"tables"`` section, the index used for each lookup can be different.
+Each time an external data source is referenced using the ``"url"`` keyword the data is reloaded from disk. If a dataset is going to be used multiple times in a model it can be defined in the ``"tables"`` section of the JSON document. In this way the data will only be loaded once. Parameters can then reference the data using the ``"table"`` keyword instead of the ``"url"`` keyword. Although the index column applied to the data must be defined in the ``"tables"`` section, the index used for each lookup can be different.
 
 An example is given below using the `demands.csv` dataset shown previously. Two constant parameters are defined referencing data in the table.
 
