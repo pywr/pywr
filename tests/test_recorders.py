@@ -309,10 +309,13 @@ class TestTablesRecorder:
         inpt.max_flow = 10.0
         otpt.cost = -2.0
         # Make a path with a new directory
-        h5file = tmpdir.join('outputs', 'output.h5')
+        folder = tmpdir.join('outputs')
+        h5file = folder.join('output.h5')
+        assert(not folder.exists())
         rec = TablesRecorder(model, str(h5file), create_directories=True)
         model.run()
-        assert os.path.exists(str(h5file))
+        assert(folder.exists())
+        assert(h5file.exists())
 
     def test_nodes(self, simple_linear_model, tmpdir):
         """
