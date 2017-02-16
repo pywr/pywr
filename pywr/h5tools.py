@@ -1,9 +1,11 @@
 import tables
 import sys
 from past.builtins import basestring
+import os
+
 
 class H5Store(object):
-    def __init__(self, filename, filter_kwds=None, mode="r", title='', metadata=None):
+    def __init__(self, filename, filter_kwds=None, mode="r", title='', metadata=None, create_directories=False):
         filter_kwds = filter_kwds
         mode = mode
         self._opened = False
@@ -19,6 +21,16 @@ class H5Store(object):
                 filters = tables.Filters(**filter_kwds)
             else:
                 filters = None
+
+            # Create directories for the filename if required
+            if create_directories:
+                try:
+                    os.makedirs(os.path.dirname(filename))
+                except OSError as exception:
+                    import errno
+                    if exception.errno != errno.EEXIST:
+                        raise
+
             self.file = tables.open_file(filename, mode=mode, filters=filters, title=title)
             self._opened = True
         elif isinstance(filename, tables.File):
