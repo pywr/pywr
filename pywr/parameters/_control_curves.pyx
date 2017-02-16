@@ -82,36 +82,39 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     ----------
     storage_node : `Storage`
         The storage node to compare the control curve(s) to.
-    control_curves : list of `Parameter`
+    control_curves : list of `Parameter` or floats
         A list of parameters representing the control curve(s). These are
         often MonthlyProfileParameters or DailyProfileParameters, but may be
-        any Parameter that returns values between 0.0 and 1.0.
+        any Parameter that returns values between 0.0 and 1.0. If floats are
+        passed they are converted to `ConstantParameter`.
     values : list of float
         A list of values to return corresponding to the control curves. The
-        length of the list could be 1 + len(control_curves).
+        length of the list should be 2 + len(control_curves).
 
-    For a single control curve if the storage volume is above the curve the
-    first value is returned, otherwise the second value is returned. In the
-    case that there are multiple curves, if the storage volume falls between
-    two curves the return value is linearly interpolated between the values
-    for the two curves.
+    Return values are linearly interpolated between control curves, with the
+    first and last value being 100% and 0% respectively.
 
     Example
     -------
     In the example below the cost of a storage node is related to it's volume.
-    If the volume is above 50% the cost is 0. If the volume is between 50% and
-    30% a weighted average is taken to return a cost between 0.0 and -2.0. For
-    example, at 35% the cost is -1.5. Below 30% the cost is -10.0.
+    At 100% full the cost is 0. Between 100% and 50% the cost is linearly
+    interpolated between 0 and 5. Between 50% and 30% the cost is interpolated
+    between 5 and 10. Between 30% and 0% the cost is interpolated between 10
+    and 20.
+    
+    Volume:  100%            50%      30%       0%
+             |...............|........|..........|
+      Cost:  0.0             5.0      10.0    20.0
 
-    >>> storage_node = Storage(model, "reservoir")
+    >>> storage_node = Storage(model, "reservoir", max_volume=100, initial_volume=100)
     >>> ccs = [ConstantParameter(0.5), ConstantParameter(0.3)]
-    >>> values = [0.0, -2.0, -10.0]
+    >>> values = [0.0, 5.0, 10.0, 20.0]
     >>> cost = ControlCurveInterpolatedParameter(storage_node, ccs, values)
     >>> storage_node.cost = cost
     """
     def __init__(self, storage_node, control_curves, values):
         super(ControlCurveInterpolatedParameter, self).__init__(storage_node, control_curves)
-        # Expected number of values is number of control curves plus one.
+        # Expected number of values is number of control curves plus two.
         nvalues = len(self.control_curves) + 2
         if len(values) != nvalues:
             raise ValueError('Length of values should be two more than the number of '
