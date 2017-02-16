@@ -18,4 +18,5 @@ Contents:
    json.rst
    Python API reference <api/modules.rst>
    cookbook/demand_saving.rst
+   cookbook/dataframes.rst
    license.rst
