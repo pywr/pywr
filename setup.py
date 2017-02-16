@@ -16,6 +16,7 @@ import numpy as np
 import sys
 import os
 from packaging.version import Version
+import subprocess
 
 # get version string from __init__.py
 with open(os.path.join(os.path.dirname(__file__), "pywr", "__init__.py")) as f:
@@ -101,6 +102,16 @@ if 'lpsolve' in optional:
 setup_kwargs['package_data'] = {
     'pywr.notebook': ['*.js', '*.css']
 }
+
+# store the current git hash in the module
+try:
+    git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip().decode("utf-8")
+except FileNotFoundError:
+    pass
+else:
+    with open("pywr/GIT_VERSION.txt", "w") as f:
+        f.write(git_hash + "\n")
+    setup_kwargs["package_data"]["pywr"] = ["GIT_VERSION.txt"]
 
 # build the core extension(s)
 setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional, compiler_directives=compiler_directives)

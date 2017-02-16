@@ -529,6 +529,8 @@ class Model(object):
             speed=speed,
             solver_name=self.solver.name,
             solver_stats=self.solver.stats,
+            version=pywr.__version__,
+            git_hash=pywr.__git_hash__,
         )
         return result
 
@@ -692,7 +694,7 @@ class NamedIterator(object):
 
 class ModelResult(object):
     def __init__(self, num_scenarios, timestep, time_taken, time_taken_with_overhead, speed,
-                 solver_name, solver_stats):
+                 solver_name, solver_stats, version, git_hash):
         self.timestep = timestep
         self.timesteps = timestep.index + 1
         self.time_taken = time_taken
@@ -701,6 +703,8 @@ class ModelResult(object):
         self.num_scenarios = num_scenarios
         self.solver_name = solver_name
         self.solver_stats = solver_stats
+        self.version = version
+        self.git_hash = git_hash
 
     def to_dict(self):
         return {attr: value for attr, value in self.__dict__.items()}
