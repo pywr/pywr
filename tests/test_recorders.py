@@ -19,6 +19,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter
 from helpers import load_model
+import os
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -296,6 +297,25 @@ def test_csv_recorder(simple_linear_model, tmpdir):
 
 
 class TestTablesRecorder:
+
+    def test_create_directory(self, simple_linear_model, tmpdir):
+        """ Test TablesRecorder to create a new directory """
+
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+
+        inpt.max_flow = 10.0
+        otpt.cost = -2.0
+        # Make a path with a new directory
+        folder = tmpdir.join('outputs')
+        h5file = folder.join('output.h5')
+        assert(not folder.exists())
+        rec = TablesRecorder(model, str(h5file), create_directories=True)
+        model.run()
+        assert(folder.exists())
+        assert(h5file.exists())
 
     def test_nodes(self, simple_linear_model, tmpdir):
         """
