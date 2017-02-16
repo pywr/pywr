@@ -38,7 +38,7 @@ An example dataset is given below with three columns: a timestamp (used as the i
    "1910-01-02", 1.8, 22.140
    "1910-01-03", 5.2, 22.570
 
-The parameter below references the `timeseries1.csv` file in it's ``"url"``. The index column is defined by ``"index_col"`` and the data column is defined by the ``"column"`` keyword (in this case, ``"Flow"``). The ``"parse_dates"`` keyword is required in order to parse the dates from strings in the CSV file into pandas date objects.
+The parameter below references the `timeseries1.csv` file in its ``"url"``. The index column is defined by ``"index_col"`` and the data column is defined by the ``"column"`` keyword (in this case, ``"Flow"``). The ``"parse_dates"`` keyword is required in order to parse the dates from strings in the CSV file into pandas date objects.
 
 .. code-block:: javascript
 
