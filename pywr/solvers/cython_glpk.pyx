@@ -340,6 +340,8 @@ cdef class CythonGLPKSolver:
             'number_of_rows': glp_get_num_rows(self.prob),
             'number_of_cols': glp_get_num_cols(self.prob),
             'number_of_nonzero': glp_get_num_nz(self.prob),
+            'number_of_routes': len(routes),
+            'number_of_nodes': len(self.all_nodes)
         }
 
         self.stats['bounds_update_routes'] = 0.0

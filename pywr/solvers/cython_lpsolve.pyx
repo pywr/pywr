@@ -415,6 +415,8 @@ cdef class CythonLPSolveSolver:
             'number_of_rows': get_Nrows(self.prob),
             'number_of_cols': get_Ncolumns(self.prob),
             'number_of_nonzero': get_nonzeros(self.prob),
+            'number_of_routes': len(routes),
+            'number_of_nodes': len(model.nodes)
         }
 
         ret = set_add_rowmode(self.prob, FALSE)
