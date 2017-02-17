@@ -36,6 +36,8 @@ Provided that you have the required `dependencies <https://pywr.github.io/pywr-d
 
     python setup.py install --with-glpk --with-lpsolve
 
+For most users it will be easier to install the `binary packages made available for the Anaconda Python distribution <https://anaconda.org/pywr/pywr>`__. See install docs for more information. Note that these packages may lag behind the development version.
+
 License
 =======
 
