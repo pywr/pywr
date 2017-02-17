@@ -1,5 +1,5 @@
 from .parameters._parameters cimport Parameter
-from _recorders cimport Recorder
+
 
 cdef class Scenario:
     cdef basestring _name

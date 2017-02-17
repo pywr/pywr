@@ -70,7 +70,7 @@ extensions = [
     Extension('pywr.parameters._parameters', ['pywr/parameters/_parameters.pyx'],
               include_dirs=[np.get_include()],
               define_macros=define_macros),
-    Extension('pywr._recorders', ['pywr/_recorders.pyx'],
+    Extension('pywr.recorders._recorders', ['pywr/recorders/_recorders.pyx'],
               include_dirs=[np.get_include()],
               define_macros=define_macros),
     Extension('pywr.parameters._control_curves', ['pywr/parameters/_control_curves.pyx'],

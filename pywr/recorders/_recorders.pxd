@@ -1,7 +1,7 @@
 cdef class Recorder
 
-from _core cimport Timestep, AbstractNode, Storage, ScenarioIndex, Scenario
-from .parameters._parameters cimport Parameter, IndexParameter
+from pywr._core cimport Timestep, AbstractNode, Storage, ScenarioIndex, Scenario
+from pywr.parameters._parameters cimport Parameter, IndexParameter
 
 cdef class Recorder:
     cdef bint _is_objective
