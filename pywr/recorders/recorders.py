@@ -1,7 +1,8 @@
 import sys
-from pywr._recorders import *
+from ._recorders import *
+from .calibration import *
 from past.builtins import basestring
-from .h5tools import H5Store
+from pywr.h5tools import H5Store
 
 class CSVRecorder(Recorder):
     """

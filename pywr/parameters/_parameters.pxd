@@ -1,4 +1,4 @@
-from pywr._recorders cimport Recorder
+from pywr.recorders._recorders cimport Recorder
 
 # Forward declations
 cdef class Parameter

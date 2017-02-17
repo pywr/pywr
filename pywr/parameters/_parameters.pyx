@@ -1107,7 +1107,7 @@ cdef class RecorderThresholdParameter(IndexParameter):
 
     @classmethod
     def load(cls, model, data):
-        from pywr._recorders import load_recorder  # delayed to prevent circular reference
+        from pywr.recorders._recorders import load_recorder  # delayed to prevent circular reference
         recorder = load_recorder(model, data.pop("recorder"))
         threshold = data.pop("threshold")
         values = data.pop("values")

@@ -292,7 +292,7 @@ cdef class ParameterRecorder(Recorder):
         else:
             del(data["node"])
             node = model._get_node_from_ref(model, node_name)
-        from .parameters import load_parameter
+        from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 
@@ -319,7 +319,7 @@ cdef class IndexParameterRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        from .parameters import load_parameter
+        from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 
@@ -707,7 +707,7 @@ cdef class MeanParameterRecorder(ParameterRecorder):
 
     @classmethod
     def load(cls, model, data):
-        from .parameters import load_parameter
+        from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
         timesteps = int(data.pop("timesteps"))
         return cls(model, parameter, timesteps, **data)
