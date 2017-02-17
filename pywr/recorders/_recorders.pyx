@@ -658,11 +658,16 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 NumpyArrayIndexParameterRecorder.register()
 
-cdef class MeanParameterRecorder(ParameterRecorder):
+cdef class RollingWindowParameterRecorder(ParameterRecorder):
     """Records the mean value of a Parameter for the last N timesteps"""
-    def __init__(self, model, Parameter param, int timesteps, *args, **kwargs):
-        super(MeanParameterRecorder, self).__init__(model, param, *args, **kwargs)
-        self.timesteps = timesteps
+    def __init__(self, model, Parameter param, int window, agg_func, *args, **kwargs):
+        super(RollingWindowParameterRecorder, self).__init__(model, param, *args, **kwargs)
+        self.window = window
+        self.agg_func = agg_func
+
+        valid_funcs = (AggFuncs.MEAN, AggFuncs.SUM, AggFuncs.MAX, AggFuncs.MIN)
+        if self._agg_func not in valid_funcs:
+            raise ValueError("Aggregation function for {} must be MIN/MAX/SUM/MEAN.".format(self.__class__.__name__))
 
     cpdef setup(self):
         cdef int ncomb = len(self._model.scenarios.combinations)
@@ -677,23 +682,32 @@ cdef class MeanParameterRecorder(ParameterRecorder):
 
     cpdef int save(self) except -1:
         cdef int i, n
-        cdef double[:] mean_value
+        cdef double[:] value
         cdef ScenarioIndex scenario_index
         cdef Timestep timestep = self._model.timestepper.current
 
         for i, scenario_index in enumerate(self._model.scenarios.combinations):
             self._memory[self.position, i] = self._param.value(timestep, scenario_index)
 
-        if timestep.index < self.timesteps:
+        if timestep.index < self.window:
             n = timestep.index + 1
         else:
-            n = self.timesteps
+            n = self.window
 
-        mean_value = np.mean(self._memory[0:n, :], axis=0)
-        self._data[<int>(timestep.index), :] = mean_value
+        if self._agg_func == AggFuncs.MEAN:
+            value = np.mean(self._memory[0:n, :], axis=0)
+        elif self._agg_func == AggFuncs.SUM:
+            value = np.sum(self._memory[0:n, :], axis=0)
+        elif self._agg_func == AggFuncs.MIN:
+            value = np.min(self._memory[0:n, :], axis=0)
+        elif self._agg_func == AggFuncs.MAX:
+            value = np.max(self._memory[0:n, :], axis=0)
+        else:
+            raise NotImplementedError("Aggregation function for {} must be MIN/MAX/SUM/MEAN.".format(self.__class__.__name__))
+        self._data[<int>(timestep.index), :] = value
 
         self.position += 1
-        if self.position >= self.timesteps:
+        if self.position >= self.window:
             self.position = 0
 
     property data:
@@ -709,10 +723,11 @@ cdef class MeanParameterRecorder(ParameterRecorder):
     def load(cls, model, data):
         from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
-        timesteps = int(data.pop("timesteps"))
-        return cls(model, parameter, timesteps, **data)
+        window = int(data.pop("window"))
+        agg_func = data.pop("agg_func")
+        return cls(model, parameter, window, agg_func, **data)
 
-MeanParameterRecorder.register()
+RollingWindowParameterRecorder.register()
 
 cdef class MeanFlowRecorder(NodeRecorder):
     """Records the mean flow of a Node for the previous N timesteps
@@ -904,7 +919,7 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
     def __init__(self, model, node, threshold, *args, **kwargs):
         self.threshold = threshold
         super(MinimumThresholdVolumeStorageRecorder, self).__init__(model, node, *args, **kwargs)
-    
+
     cpdef reset(self):
         self._values[...] = 0.0
 
@@ -912,7 +927,7 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
         cdef int i
         for i in range(self._values.shape[0]):
             if self._node._volume[i] <= self.threshold:
-                self._values[i] = 1.0 
+                self._values[i] = 1.0
         return 0
 MinimumThresholdVolumeStorageRecorder.register()
 

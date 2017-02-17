@@ -62,8 +62,8 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     cdef double[:, :] _base_fdc_tile
     cdef public Scenario scenario
 
-cdef class MeanParameterRecorder(ParameterRecorder):
-    cdef public int timesteps
+cdef class RollingWindowParameterRecorder(ParameterRecorder):
+    cdef public int window
     cdef int position
     cdef double[:, :] _memory
     cdef double[:, :] _data
@@ -92,7 +92,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
 
 cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
     pass
-    
+
 cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
     cdef public double threshold
 
