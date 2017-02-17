@@ -90,3 +90,8 @@ cdef extern from "glpk.h":
     
     double glp_get_row_prim(glp_prob *P, int i)
     double glp_get_col_prim(glp_prob *P, int j)
+
+    int glp_get_num_rows(glp_prob *P)
+    int glp_get_num_cols(glp_prob *P)
+    int glp_get_num_nz(glp_prob *P)
+
