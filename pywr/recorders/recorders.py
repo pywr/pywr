@@ -1,5 +1,6 @@
 import sys
 from ._recorders import *
+from .calibration import *
 from past.builtins import basestring
 from pywr.h5tools import H5Store
 
