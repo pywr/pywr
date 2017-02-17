@@ -13,7 +13,7 @@ Pywr is a generalised network resource allocation model written in Python. It ai
 Overview
 ========
 
-Pywr is a tool for solving network resource allocation problems at discrete timesteps using a linear programming approach. It's principal application is in resource allocation in water supply network, although other uses are conceivable. A network is represented as a directional graph using `NetworkX <https://networkx.github.io/>`__. Nodes in the network can be given constraints (e.g. minimum/maximum flows) and costs, and can be connected as required. Parameters in the model can vary time according to boundary conditions (e.g. an inflow timeseries) or based on states in the model (e.g. the current volume of a reservoir).
+Pywr is a tool for solving network resource allocation problems at discrete timesteps using a linear programming approach. It's principal application is in resource allocation in water supply networks, although other uses are conceivable. A network is represented as a directional graph using `NetworkX <https://networkx.github.io/>`__. Nodes in the network can be given constraints (e.g. minimum/maximum flows) and costs, and can be connected as required. Parameters in the model can vary time according to boundary conditions (e.g. an inflow timeseries) or based on states in the model (e.g. the current volume of a reservoir).
 
 Models can be developed using the Python API, either in a script or interactively using `IPython <https://ipython.org/>`__/`Jupyter <https://jupyter.org/>`__. Alternatively, models can be defined in a rich `JSON-based document format <https://pywr.github.io/pywr-docs/json.html>`__.
 
