@@ -14,7 +14,7 @@ from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
     TotalFlowNodeRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
-    NumpyArrayIndexParameterRecorder, MeanParameterRecorder, AnnualCountIndexParameterRecorder,
+    NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter
@@ -214,11 +214,17 @@ def test_parameter_mean_recorder(simple_linear_model):
     scenario = Scenario(model, "dummy", size=3)
 
     timesteps = 3
-    rec = MeanParameterRecorder(model, node.max_flow, timesteps)
+    rec_mean = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "mean", name="rec_mean")
+    rec_sum = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "sum", name="rec_sum")
+    rec_min = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "min", name="rec_min")
+    rec_max = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "max", name="rec_max")
 
     model.run()
 
-    assert_allclose(rec.data[[0, 1, 2, 3, 364], 0], [0, 0.5, 1, 2, 363])
+    assert_allclose(rec_mean.data[[0, 1, 2, 3, 364], 0], [0, 0.5, 1, 2, 363])
+    assert_allclose(rec_max.data[[0, 1, 2, 3, 364], 0], [0, 1, 2, 3, 364])
+    assert_allclose(rec_min.data[[0, 1, 2, 3, 364], 0], [0, 0, 0, 1, 362])
+    assert_allclose(rec_sum.data[[0, 1, 2, 3, 364], 0], [0, 1, 3, 6, 1089])
 
 def test_parameter_mean_recorder_json(simple_linear_model):
     model = simple_linear_model
@@ -229,9 +235,10 @@ def test_parameter_mean_recorder_json(simple_linear_model):
     node.max_flow = parameter
 
     data = {
-        "type": "meanparameter",
+        "type": "rollingwindowparameter",
         "parameter": "input_max_flow",
-        "timesteps": 3,
+        "window": 3,
+        "agg_func": "mean",
     }
 
     rec = load_recorder(model, data)
