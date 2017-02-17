@@ -3,7 +3,7 @@ import os
 
 __all__ = ['core', 'xmlutils']
 
-__version__ = "0.2dev0"
+__version__ = "0.2"
 
 
 def get_git_hash():
