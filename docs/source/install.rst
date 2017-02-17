@@ -22,6 +22,10 @@ Pywr has several external dependencies, listed below.
 
    * `Pandas <http://pandas.pydata.org/>`_
 
+   * `packaging <https://pypi.python.org/pypi/packaging>`_
+
+   * `future <https://pypi.python.org/pypi/future>`_
+
  * Linear programming solvers (at least one required)
 
    * `GLPK <https://www.gnu.org/software/glpk/>`_ (recommended)
@@ -35,6 +39,12 @@ Pywr has several external dependencies, listed below.
    * `xlrd <https://pypi.python.org/pypi/xlrd>`_
 
    * `pytest <http://pytest.org/latest/>`_ (for testing only)
+
+   * `SciPy <http://www.scipy.org/>`_
+
+   * `Jupyter <https://jupyter.org/>`_
+
+   * `Matplotlib <http://matplotlib.org/>`_
 
 Installing (in general)
 -----------------------
@@ -58,18 +68,25 @@ A binary distribution of Pywr is provided for 3.4 (64-bit) on Windows, Linux and
 
 You will need to install and configure Anaconda before proceeding. The `conda 30-minute test drive <http://conda.pydata.org/docs/test-drive.html>`_ is a good place to start.
 
-The following commands add the "channel" the binary is hosted on, then install Pywr including all dependencies.
+The following commands add the "channel" the binary is hosted on, then install Pywr including all dependencies. The conda-forge channel is also recommended to satisfy some of the dependencies.
 
 .. code-block:: shell
 
-  conda config --add channels snorfalorpagus
+  conda config --add channels conda-forge
+  conda config --add channels pywr
   conda install pywr
 
-At the time of writing the version of ``pytest`` available via `conda` is too old and should be installed via `pip`:
+Installing from source with Anaconda
+------------------------------------
+
+It's possible to install the dependencies as Anaconda packages, but still build from source. This is only required if you want to keep up with development versions, rather than using the binaries done for releases. In this case you need to specify the include and library paths in your environment as the libraries will be installed in a non-standard location. This can be done by passing the relevant flags to setup.py. As an example, the following batch script should work on Windows (with a similar approach taken on Linux/macOS)
 
 .. code-block:: shell
 
-  pip install pytest==2.8.5
+  set LIBRARY=%CONDA_PREFIX%\Library
+  set LIBRARY_INC=%LIBRARY%\include
+  set LIBRARY_LIB=%LIBRARY%\lib
+  python setup.py build_ext -I"%LIBRARY_INC%" -L"%LIBRARY_LIB%" --inplace --with-glpk --with-lpsolve install
 
 Installing on Windows
 ---------------------
