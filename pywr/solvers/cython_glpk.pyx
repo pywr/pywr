@@ -336,7 +336,10 @@ cdef class CythonGLPKSolver:
             'result_update': 0.0,
             'bounds_update_routes': 0.0,
             'bounds_update_nonstorage': 0.0,
-            'bounds_update_storage': 0.0
+            'bounds_update_storage': 0.0,
+            'number_of_rows': glp_get_num_rows(self.prob),
+            'number_of_cols': glp_get_num_cols(self.prob),
+            'number_of_nonzero': glp_get_num_nz(self.prob),
         }
 
         self.stats['bounds_update_routes'] = 0.0
@@ -363,6 +366,7 @@ cdef class CythonGLPKSolver:
         cdef double cost
         cdef double max_volume
         cdef double avail_volume
+        cdef double t0
         cdef int col
         cdef int* ind
         cdef double* val
