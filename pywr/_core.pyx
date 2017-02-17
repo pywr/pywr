@@ -3,6 +3,7 @@ import itertools
 import numpy as np
 cimport numpy as np
 import pandas as pd
+import warnings
 
 cdef double inf = float('inf')
 
@@ -630,6 +631,8 @@ cdef class AggregatedNode(AbstractNode):
                 return np.asarray(self._factors, np.float64)
         def __set__(self, values):
             values = np.array(values, np.float64)
+            if np.any(values < 1e-6):
+                warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
             self._factors = values
             self.model.dirty = True
 
