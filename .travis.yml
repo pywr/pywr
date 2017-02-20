@@ -38,8 +38,11 @@ script:
       set -e
       conda build conda-recipe
       if [ "$BUILD_DOC" -eq "1" ]; then
-        pip install doctr
         echo "Building documentation!"
+        pip install doctr
+        cd docs
+        make html
+        cd ..
         doctr deploy --no-require-master --deploy-repo pywr/pywr-docs
       fi
 
