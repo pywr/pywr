@@ -31,13 +31,14 @@ install:
       conda update --yes conda
 
       conda config --set show_channel_urls true
-      conda install --yes --quiet conda-build doctr
+      conda install --yes --quiet conda-build
 
 script:
     - |
       set -e
       conda build conda-recipe
       if [ "$BUILD_DOC" -eq "1" ]; then
+        conda install --yes --quiet doctr
         echo "Building documentation!"
         doctr deploy --deploy-repo pywr/pywr-docs
       fi
