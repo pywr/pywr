@@ -7,10 +7,13 @@ cache:
         - ${HOME}/miniconda3
 
 env:
+    global:
+        - secure: "bF1Ljix0pDNBBjgewrOxxNHJDEvlWDT5v5KckSq/Wl0v9QMAG5Fiilj0hPHVQrWoGz7F3xPU5KeprjQcfTo2UB7qPGDOVsovafbUTZ+0o6kc2mVLApYsRvlhUPX8tsRCrq6Zo874buMzbDPyAo3nnl3lkkWQ2Dh+gA7b7er9xS0="
+    BUILD_DOC=0
     matrix:
         - CONDA_PY=27
         - CONDA_PY=34
-        - CONDA_PY=36
+        - CONDA_PY=36 BUILD_DOC=1
 
 install:
     - |
@@ -29,10 +32,16 @@ install:
       conda update --yes conda
 
       conda config --set show_channel_urls true
-      conda install --yes --quiet conda-build
+      conda install --yes --quiet conda-build doctr
 
 script:
-    - conda build conda-recipe
+    - |
+      set -e
+      conda build conda-recipe
+      if [ "$BUILD_DOC" -eq "1" ]; then
+        echo "Building documentation!"
+        doctr deploy --deploy-repo pywr/pywr-docs
+      fi
 
 before_cache:
     - rm -rf ${HOME}/miniconda3/conda-bld/*
