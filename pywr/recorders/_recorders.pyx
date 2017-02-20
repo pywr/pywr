@@ -463,9 +463,6 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         if len(self._percentiles) != self._target_fdc.shape[0]:
             raise ValueError("The lengths of the input FDC and the percentiles list do not match")
 
-        if np.any(np.argmin(self._target_fdc, axis=0) != np.argmin(self._percentiles)):
-            raise ValueError("The orders of input FDC and the percentiles list do not match")
-
     cpdef setup(self):
         super(FlowDurationCurveDeviationRecorder, self).setup()
         # Check target FDC is the correct size; this is done in setup rather than __init__
@@ -495,7 +492,10 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
                 trgt_fdc = self._target_fdc[:, j]
                 # Finally calculate deviation
                 for k in range(trgt_fdc.shape[0]):
-                    self._fdc_deviations[k, i] = (self._fdc[k, i] - trgt_fdc[k])  / trgt_fdc[k]
+                    try:
+                        self._fdc_deviations[k, i] = (self._fdc[k, i] - trgt_fdc[k])  / trgt_fdc[k]
+                    except ZeroDivisionError:
+                        self._fdc_deviations[k, i] = np.nan
         else:
             self._fdc_deviations = np.divide(np.subtract(self._fdc, self._target_fdc), self._target_fdc)
 
@@ -506,17 +506,17 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     cpdef double[:] values(self):
 
         if self._fdc_agg_func == AggFuncs.PRODUCT:
-            return np.product(self._fdc_deviations, axis=0)
+            return np.nanprod(self._fdc_deviations, axis=0)
         elif self._fdc_agg_func == AggFuncs.SUM:
-            return np.sum(self._fdc_deviations, axis=0)
+            return np.nansum(self._fdc_deviations, axis=0)
         elif self._fdc_agg_func == AggFuncs.MAX:
-            return np.max(self._fdc_deviations, axis=0)
+            return np.nanmax(self._fdc_deviations, axis=0)
         elif self._fdc_agg_func == AggFuncs.MIN:
-            return np.min(self._fdc_deviations, axis=0)
+            return np.nanmin(self._fdc_deviations, axis=0)
         elif self._fdc_agg_func == AggFuncs.MEAN:
-            return np.mean(self._fdc_deviations, axis=0)
+            return np.nanmean(self._fdc_deviations, axis=0)
         elif self._fdc_agg_func == AggFuncs.MEDIAN:
-            return np.median(self._fdc_deviations, axis=0)
+            return np.nanmedian(self._fdc_deviations, axis=0)
         else:
             return self._agg_user_func(np.array(self._fdc_deviations), axis=0)
 
