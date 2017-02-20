@@ -944,7 +944,7 @@ cdef class NegativeParameter(Parameter):
     parameter : `Parameter`
         The parameter to to compare with the float.
     """
-    def __init__(self, parameter, threshold=0.0, *args, **kwargs):
+    def __init__(self, parameter, *args, **kwargs):
         super(NegativeParameter, self).__init__(*args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
