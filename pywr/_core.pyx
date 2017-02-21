@@ -181,9 +181,9 @@ cdef class ScenarioCollection:
             if len(self._scenarios) == 0:
                 return pd.MultiIndex.from_product([range(1),], names=[''])
             else:
-                ranges = [sc.ensemble_names for sc in self._scenarios]
+                indices = [scenario.indices for scenario in self.model.scenarios.get_combinations()]
                 names = [sc._name for sc in self._scenarios]
-                return pd.MultiIndex.from_product(ranges, names=names)
+                return pd.MultiIndex.from_tuples(indices, names=names)
 
     cpdef int ravel_indices(self, int[:] scenario_indices) except? -1:
         if scenario_indices is None:
