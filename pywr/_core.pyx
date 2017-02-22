@@ -181,7 +181,8 @@ cdef class ScenarioCollection:
             if len(self._scenarios) == 0:
                 return pd.MultiIndex.from_product([range(1),], names=[''])
             else:
-                indices = [scenario.indices for scenario in self.model.scenarios.get_combinations()]
+                ensemble_names = [scenario.ensemble_names for scenario in self._scenarios]
+                indices = [[ensemble_names[n][i] for n, i in enumerate(scenario_index.indices)] for scenario_index in self.model.scenarios.get_combinations()]
                 names = [sc._name for sc in self._scenarios]
                 return pd.MultiIndex.from_tuples(indices, names=names)
 
