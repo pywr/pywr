@@ -173,7 +173,7 @@ cdef class ScenarioCollection:
         def __get__(self):
             if len(self._scenarios) == 0:
                 return (1, )
-            return tuple(sc.size for sc in self._scenarios)
+            return tuple(len(range(sc.size)[sc.slice]) if sc.slice is not None else sc.size for sc in self._scenarios)
 
     property multiindex:
         def __get__(self):
