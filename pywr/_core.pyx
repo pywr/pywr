@@ -173,7 +173,7 @@ cdef class ScenarioCollection:
         def __get__(self):
             if len(self._scenarios) == 0:
                 return (1, )
-            return tuple(sc.size for sc in self._scenarios)
+            return tuple(len(range(sc.size)[sc.slice]) if sc.slice is not None else sc.size for sc in self._scenarios)
 
     property multiindex:
         def __get__(self):
@@ -181,9 +181,10 @@ cdef class ScenarioCollection:
             if len(self._scenarios) == 0:
                 return pd.MultiIndex.from_product([range(1),], names=[''])
             else:
-                ranges = [sc.ensemble_names for sc in self._scenarios]
+                ensemble_names = [scenario.ensemble_names for scenario in self._scenarios]
+                indices = [[ensemble_names[n][i] for n, i in enumerate(scenario_index.indices)] for scenario_index in self.model.scenarios.get_combinations()]
                 names = [sc._name for sc in self._scenarios]
-                return pd.MultiIndex.from_product(ranges, names=names)
+                return pd.MultiIndex.from_tuples(indices, names=names)
 
     cpdef int ravel_indices(self, int[:] scenario_indices) except? -1:
         if scenario_indices is None:
