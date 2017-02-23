@@ -1,4 +1,4 @@
-from pywr._recorders cimport Recorder
+from pywr.recorders._recorders cimport Recorder
 
 # Forward declations
 cdef class Parameter
@@ -61,6 +61,12 @@ cdef class MonthlyProfileParameter(Parameter):
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
 
+
+cdef class ScenarioMonthlyProfileParameter(Parameter):
+    cdef double[:, :] _values
+    cdef Scenario _scenario
+    cdef int _scenario_index
+
 cdef class IndexParameter(Parameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
@@ -101,7 +107,7 @@ cdef class CachedParameter(IndexParameter):
 
 cdef class AggregatedParameterBase(IndexParameter):
     cdef public set parameters
-    cdef object agg_func
+    cdef object _agg_user_func
     cdef int _agg_func
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
@@ -114,6 +120,23 @@ cdef class AggregatedParameter(AggregatedParameterBase):
     pass
 
 cdef class AggregatedIndexParameter(AggregatedParameterBase):
+    pass
+
+cdef class NegativeParameter(Parameter):
+    cdef public Parameter parameter
+
+cdef class MaxParameter(Parameter):
+    cdef public Parameter parameter
+    cdef public double threshold
+
+cdef class NegativeMaxParameter(MaxParameter):
+    pass
+
+cdef class MinParameter(Parameter):
+    cdef public Parameter parameter
+    cdef public double threshold
+
+cdef class NegativeMinParameter(MinParameter):
     pass
 
 cdef class RecorderThresholdParameter(IndexParameter):

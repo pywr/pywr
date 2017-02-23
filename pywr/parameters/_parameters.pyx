@@ -6,6 +6,8 @@ from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
 from pywr.h5tools import H5Store
+import warnings
+
 
 cdef enum Predicates:
     LT = 0
@@ -73,7 +75,7 @@ cdef class Parameter:
         pass
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return 0
+        raise NotImplementedError("Parameter must be subclassed")
 
     cpdef after(self, Timestep ts):
         pass
@@ -126,6 +128,9 @@ cdef class Parameter:
 
     @classmethod
     def load(cls, model, data):
+        # If a scenario is given don't pass this to the load values methods
+        scenario = data.pop('scenario', None)
+
         values = load_parameter_values(model, data)
         data.pop("values", None)
         data.pop("url", None)
@@ -134,8 +139,14 @@ cdef class Parameter:
         if data:
             key = list(data.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
-        return cls(values, name=name, comment=None)
 
+        if scenario is not None:
+            scenario = model.scenarios[scenario]
+            # Only pass scenario object if one provided; most Parameter subclasses
+            # do not accept a scenario argument.
+            return cls(scenario, values, name=name, comment=None)
+        else:
+            return cls(values, name=name, comment=None)
 Parameter.register()
 
 cdef class ConstantParameter(Parameter):
@@ -300,19 +311,23 @@ cdef class TablesArrayParameter(IndexParameter):
 
         # detect data type and read into memoryview
         if node.dtype in (np.float32, np.float64):
-            self._values_dbl = node.read()
+            self._values_dbl = node.read().astype(np.float64)
+            if np.min(self._values_dbl) < 0.0:
+                warnings.warn('Negative values in input file "{}" from node: {}'.format(self.h5file, self.node))
             self._values_int = None
             shape = self._values_dbl.shape
         elif node.dtype in (np.int8, np.int16, np.int32):
             self._values_dbl = None
-            self._values_int = node.read()
+            self._values_int = node.read().astype(np.int32)
             shape = self._values_int.shape
         else:
             raise TypeError("Unexpected dtype in array: {}".format(node.dtype))
 
         if self.scenario is not None:
-            if shape[1] != self.scenario.size:
+            if shape[1] < self.scenario.size:
                 raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
+            elif shape[1] > self.scenario.size:
+                warnings.warn("The length of the second dimension of the tables Node is greater than the size of the specified Scenario. Not all data is being used!")
         if shape[0] < len(self.model.timestepper):
             raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
 
@@ -409,7 +424,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         if factors.ndim != 2:
             raise ValueError("Factors must be two dimensional.")
 
-        if scenario._size != factors.shape[0]:
+        if factors.shape[0] != scenario._size:
             raise ValueError("First dimension of factors must be the same size as scenario.")
         if factors.shape[1] != 12:
             raise ValueError("Second dimension of factors must be 12.")
@@ -428,8 +443,34 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         # the Scenario objects in the model run. We have cached the
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
-        cdef int imth = ts.datetime.month-1
-        return self._values[ts._index]*self._factors[scenario_index._indices[self._scenario_index], imth]
+        cdef int imth = ts.month-1
+        cdef int i = scenario_index._indices[self._scenario_index]
+        return self._values[ts._index]*self._factors[i, imth]
+
+    @classmethod
+    def load(cls, model, data):
+        scenario = data.pop("scenario", None)
+        if scenario is not None:
+            scenario = model.scenarios[scenario]
+
+        if isinstance(data["values"], list):
+            values = np.asarray(data["values"], np.float64)
+        elif isinstance(data["values"], dict):
+            values = load_parameter_values(model, data["values"])
+        else:
+            raise TypeError("Unexpected type for \"values\" in {}".format(cls.__name__))
+
+        if isinstance(data["factors"], list):
+            factors = np.asarray(data["factors"], np.float64)
+        elif isinstance(data["factors"], dict):
+            factors = load_parameter_values(model, data["factors"])
+        else:
+            raise TypeError("Unexpected type for \"factors\" in {}".format(cls.__name__))
+
+        parameter = ArrayIndexedScenarioMonthlyFactorsParameter(scenario, values, factors)
+
+        return parameter
+
 ArrayIndexedScenarioMonthlyFactorsParameter.register()
 
 
@@ -456,6 +497,16 @@ cdef class DailyProfileParameter(Parameter):
 DailyProfileParameter.register()
 
 cdef class MonthlyProfileParameter(Parameter):
+    """ Parameter which provides a monthly profile
+
+    A monthly profile is a static profile that returns a different
+    value based on the current time-step.
+
+    See also
+    --------
+    ScenarioMonthlyProfileParameter
+    ArrayIndexedScenarioMonthlyFactorsParameter
+    """
     def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
         super(MonthlyProfileParameter, self).__init__(**kwargs)
         self.size = 12
@@ -477,6 +528,44 @@ cdef class MonthlyProfileParameter(Parameter):
     cpdef double[:] upper_bounds(self):
         return self._upper_bounds
 MonthlyProfileParameter.register()
+
+
+cdef class ScenarioMonthlyProfileParameter(Parameter):
+    """ Parameter which provides a monthly profile per scenario
+
+    Behaviour is the same as `MonthlyProfileParameter` except a different
+    profile is returned for each ensemble in a given scenario.
+
+    See also
+    --------
+    MonthlyProfileParameter
+    ArrayIndexedScenarioMonthlyFactorsParameter
+    """
+    def __init__(self, Scenario scenario, values, **kwargs):
+        super(ScenarioMonthlyProfileParameter, self).__init__(**kwargs)
+
+        if values.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+
+        if scenario._size != values.shape[0]:
+            raise ValueError("First dimension of factors must be the same size as scenario.")
+        if values.shape[1] != 12:
+            raise ValueError("Second dimension of factors must be 12.")
+        self._scenario = scenario
+        self._values = np.array(values)
+
+    cpdef setup(self, model):
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
+
+    cpdef update(self, double[:] values):
+        self._values[...] = values
+ScenarioMonthlyProfileParameter.register()
+
 
 cdef class IndexParameter(Parameter):
     """Base parameter providing an `index` method
@@ -657,6 +746,11 @@ _agg_func_lookup = {
     "all": AggFuncs.ALL,
 }
 
+def wrap_const(value):
+    if isinstance(value, (int, float)):
+        value = ConstantParameter(value)
+    return value
+
 cdef class AggregatedParameterBase(IndexParameter):
     """Base class for aggregated parameters
 
@@ -667,10 +761,23 @@ cdef class AggregatedParameterBase(IndexParameter):
         parameters_data = data.pop("parameters")
         parameters = set()
         for pdata in parameters_data:
-            parameters.add(load_parameter(model, pdata))
+            parameter = load_parameter(model, pdata)
+            parameters.add(wrap_const(parameter))
 
         agg_func = data.pop("agg_func", None)
         return cls(parameters=parameters, agg_func=agg_func, **data)
+
+    property agg_func:
+        def __set__(self, agg_func):
+            self._agg_user_func = None
+            if isinstance(agg_func, basestring):
+                agg_func = _agg_func_lookup[agg_func.lower()]
+            elif callable(agg_func):
+                self._agg_user_func = agg_func
+                agg_func = AggFuncs.CUSTOM
+            else:
+                raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
+            self._agg_func = agg_func
 
     cpdef add(self, Parameter parameter):
         self.parameters.add(parameter)
@@ -712,14 +819,7 @@ cdef class AggregatedParameter(AggregatedParameterBase):
     """
     def __init__(self, parameters, agg_func=None, **kwargs):
         super(AggregatedParameter, self).__init__(**kwargs)
-        if isinstance(agg_func, basestring):
-            agg_func = _agg_func_lookup[agg_func.lower()]
-        elif callable(agg_func):
-            self.agg_func = agg_func
-            agg_func = AggFuncs.CUSTOM
-        else:
-            raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
-        self._agg_func = agg_func
+        self.agg_func = agg_func
         self.parameters = set(parameters)
         for parameter in self.parameters:
             self.children.add(parameter)
@@ -754,7 +854,7 @@ cdef class AggregatedParameter(AggregatedParameterBase):
                 value += parameter.value(timestep, scenario_index)
             value /= len(self.parameters)
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+            value = self._agg_user_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
         return value
@@ -778,14 +878,7 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
     """
     def __init__(self, parameters, agg_func=None, **kwargs):
         super(AggregatedIndexParameter, self).__init__(**kwargs)
-        if isinstance(agg_func, basestring):
-            agg_func = _agg_func_lookup[agg_func.lower()]
-        elif callable(agg_func):
-            self.agg_func = agg_func
-            agg_func = AggFuncs.CUSTOM
-        else:
-            raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
-        self._agg_func = agg_func
+        self.agg_func = agg_func
         self.parameters = set(parameters)
         for parameter in self.parameters:
             self.children.add(parameter)
@@ -825,12 +918,108 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
                     value = 0
                     break
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self.agg_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+            value = self._agg_user_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
         return value
 
 AggregatedIndexParameter.register()
+
+
+cdef class NegativeParameter(Parameter):
+    """ Parameter that takes negative of another `Parameter`
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to to compare with the float.
+    """
+    def __init__(self, parameter, *args, **kwargs):
+        super(NegativeParameter, self).__init__(*args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return -self.parameter.value(timestep, scenario_index)
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(parameter, **data)
+NegativeParameter.register()
+
+
+cdef class MaxParameter(Parameter):
+    """ Parameter that takes maximum of another `Parameter` and constant value (threshold)
+
+    This class is a more efficient version of `AggregatedParameter` where
+    a single `Parameter` is compared to constant value.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to to compare with the float.
+    threshold : float (default=0.0)
+        The threshold value to compare with the given parameter.
+    """
+    def __init__(self, parameter, threshold=0.0, *args, **kwargs):
+        super(MaxParameter, self).__init__(*args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.threshold = threshold
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return max(self.parameter.value(timestep, scenario_index), self.threshold)
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(parameter, **data)
+MaxParameter.register()
+
+
+cdef class NegativeMaxParameter(MaxParameter):
+    """ Parameter that takes maximum of the negative of a `Parameter` and constant value (threshold) """
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return max(-self.parameter.value(timestep, scenario_index), self.threshold)
+NegativeMaxParameter.register()
+
+
+cdef class MinParameter(Parameter):
+    """ Parameter that takes minimum of another `Parameter` and constant value (threshold)
+
+    This class is a more efficient version of `AggregatedParameter` where
+    a single `Parameter` is compared to constant value.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to to compare with the float.
+    threshold : float (default=0.0)
+        The threshold value to compare with the given parameter.
+    """
+    def __init__(self, parameter, threshold=0.0, *args, **kwargs):
+        super(MinParameter, self).__init__(*args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.threshold = threshold
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return min(self.parameter.value(timestep, scenario_index), self.threshold)
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(parameter, **data)
+MinParameter.register()
+
+
+cdef class NegativeMinParameter(MinParameter):
+    """ Parameter that takes minimum of the negative of a `Parameter` and constant value (threshold) """
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return min(-self.parameter.value(timestep, scenario_index), self.threshold)
+NegativeMinParameter.register()
+
 
 cdef class RecorderThresholdParameter(IndexParameter):
     """Returns one of two values depending on a Recorder value and a threshold
@@ -908,7 +1097,7 @@ cdef class RecorderThresholdParameter(IndexParameter):
 
     @classmethod
     def load(cls, model, data):
-        from pywr._recorders import load_recorder  # delayed to prevent circular reference
+        from pywr.recorders._recorders import load_recorder  # delayed to prevent circular reference
         recorder = load_recorder(model, data.pop("recorder"))
         threshold = data.pop("threshold")
         values = data.pop("values")
@@ -1057,15 +1246,18 @@ def load_dataframe(model, data):
             raise KeyError('Index "{}" not found in dataset "{}"'.format(index, name))
 
     try:
-        freq = df.index.inferred_freq
+        if isinstance(df.index, pandas.DatetimeIndex):
+            # Only infer freq if one isn't already found.
+            # E.g. HDF stores the saved freq, but CSV tends to have None, but infer to Weekly for example
+            if df.index.freq is None:
+                freq = pandas.infer_freq(df.index)
+                if freq is None:
+                    raise IndexError("Failed to identify frequency of dataset \"{}\"".format(name))
+                df = df.asfreq(freq)
     except AttributeError:
+        # Probably wasn't a pandas dataframe at this point.
         pass
-    else:
-        # Convert to regular frequency
-        freq = df.index.inferred_freq
-        if freq is None:
-            raise IndexError("Failed to identify frequency of dataset \"{}\"".format(name))
-        df = df.asfreq(freq)
+
     return df
 
 

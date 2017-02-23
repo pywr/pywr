@@ -3,40 +3,46 @@ import itertools
 import numpy as np
 cimport numpy as np
 import pandas as pd
+import warnings
 
 cdef double inf = float('inf')
 
-def product(sizes):
-    """ Wrapper for itertools.product to return a np.array """
-    cdef int s
-    for comb in itertools.product(*[range(s) for s in sizes]):
-        yield np.array(comb, dtype=np.int32)
-
-
-cdef class ScenarioCombinations:
-    def __init__(self, ScenarioCollection collection):
-        self._collection = collection
-
-    def __iter__(self, ):
-        cdef Scenario sc
-        cdef int i
-        cdef int[:] indices
-        for i, indices in enumerate(product([sc._size for sc in self._collection._scenarios])):
-            yield ScenarioIndex(i, indices)
-
-    def __len__(self, ):
-        cdef Scenario sc
-        if len(self._collection._scenarios) > 0:
-            return np.prod([sc._size for sc in self._collection._scenarios])
-        return 1
-
-
 cdef class Scenario:
-    def __init__(self, model, name, int size=1):
+    """ Represents a scenario in the model.
+
+    Typically a scenario will be used to run many similar models simultaneously. A small
+     number of `Parameter` objects in the model will return different values depending
+     on the scenario, but many will not. Multiple scenarios can be defined such that
+     some `Parameter` values vary with one scenario, but not another. Scenarios are defined
+     with a size that represents the number of ensembles in within that scenario.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+        The model instance to attach the scenario to.
+    name : str
+        The name of the scenario.
+    size : int, optional
+        The number of ensembles in the scenario. The default value is 1.
+    slice : slice, optional
+        If given this defines the subset of the ensembles that are actually run
+         in the model. This is useful if a large number of ensembles is defined, but
+         certain analysis (e.g. optimisation) can only be done on a small subset.
+    ensemble_names : iterable of str, optional
+        User defined names describing each ensemble.
+
+    See Also
+    --------
+    `ScenarioCollection`
+    """
+    def __init__(self, model, name, int size=1, slice slice=None, ensemble_names=None):
         self._name = name
         if size < 1:
             raise ValueError("Size must be greater than or equal to 1.")
         self._size = size
+        self.slice = slice
+        self.ensemble_names = ensemble_names
+        # Do this last so only set on the model if no error is raised.
         model.scenarios.add_scenario(self)
 
     property size:
@@ -47,11 +53,41 @@ cdef class Scenario:
         def __get__(self):
             return self._name
 
+    property ensemble_names:
+        def __get__(self):
+            if self._ensemble_names is None:
+                return list(range(self._size))
+            return self._ensemble_names
+        def __set__(self, names):
+            if names is None:
+                self._ensemble_names = None
+                return
+            if len(names) != self._size:
+                raise ValueError("The length of ensemble_names ({}) must be equal to the size of the scenario ({})".format(len(names), self.size))
+            self._ensemble_names = names
+
 cdef class ScenarioCollection:
+    """ Represents a collection of `Scenario` objects.
+
+    This class is used by a `Model` instance to hold the defined scenarios and control
+     which combinations of ensembles are used during model execution. By default the
+     product of all scenario ensembles (i.e. all possible combinations of ensembles) is
+     executed. However user defined slices can be set on individual `Scenario` instances
+     to restriction the number of ensembles executed from that scenario. Alternatively
+     the user may provide an array of the specific ensemble combinations (indices) that
+     should be run. The latter approach takes precedent over the former per `Scenario`
+     slices.
+
+    See Also
+    --------
+    `Scenario`
+
+    """
     def __init__(self, model):
         self.model = model
         self._scenarios = []
         self.combinations = None
+        self.user_combinations = None
 
     property scenarios:
         def __get__(self):
@@ -64,19 +100,49 @@ cdef class ScenarioCollection:
                 return sc
         raise KeyError("Scenario with name '{}' not found.".format(name))
 
-
-    def setup(self, ):
-        """ Create the list of ScenarioIndex objects based on the current Scenarios. """
-        cdef Scenario sc
+    def get_combinations(self):
+        """Returns a list of ScenarioIndices for every combination of Scenarios
+        """
+        cdef Scenario scenario
         cdef int i
-        cdef int[:] indices
         if len(self._scenarios) == 0:
-            combinations = [ScenarioIndex(0, np.array([0], dtype=np.int32)), ]
+            # model has no scenarios defined, implicitly has 1 scenario of size 1
+            combinations = [ScenarioIndex(0, np.array([0], dtype=np.int32))]
+        elif self._user_combinations is not None:
+            # use combinations given by user
+            combinations = list([ScenarioIndex(i, self._user_combinations[i, :]) for i in range(self._user_combinations.shape[0])])
         else:
-            combinations = []
-            for i, indices in enumerate(product([sc._size for sc in self._scenarios])):
-                combinations.append(ScenarioIndex(i, indices))
-        self.combinations = combinations
+            # product of all scenarios, taking into account Scenario.slice
+            iter = itertools.product(*[range(scenario._size)[scenario.slice] if scenario.slice else range(scenario._size) for scenario in self._scenarios])
+            combinations = list([ScenarioIndex(i, np.array(x, dtype=np.int32)) for i, x in enumerate(iter)])
+        if not combinations:
+            raise ValueError("No scenarios were selected to be run")
+        return combinations
+
+    def setup(self):
+        self.combinations = self.get_combinations()
+
+    property user_combinations:
+        def __get__(self, ):
+            return self._user_combinations
+        def __set__(self, values):
+            if values is None:
+                self._user_combinations = None
+                return
+            cdef Scenario sc
+            values = np.asarray(values, dtype=np.int32)
+            if values.ndim != 2:
+                raise ValueError('A 2-dimensional array of scenario indices must be provided.')
+            if values.shape[1] != len(self._scenarios):
+                raise ValueError('User defined combinations must have shape (N, S) where S in number of Scenarios')
+            # Check maximum values
+            for sc, v in zip(self._scenarios, values.max(axis=0)):
+                if v >= sc._size:
+                    raise ValueError('Given ensemble index for scenario "{}" out of range.'.format(sc.name))
+            if np.any(values.min(axis=0) < 0):
+                raise ValueError('Ensemble index less than zero is invalid.')
+
+            self._user_combinations = values
 
     cpdef int get_scenario_index(self, Scenario sc) except? -1:
         """Return the index of Scenario in this controller."""
@@ -107,7 +173,7 @@ cdef class ScenarioCollection:
         def __get__(self):
             if len(self._scenarios) == 0:
                 return (1, )
-            return tuple(sc.size for sc in self._scenarios)
+            return tuple(len(range(sc.size)[sc.slice]) if sc.slice is not None else sc.size for sc in self._scenarios)
 
     property multiindex:
         def __get__(self):
@@ -115,9 +181,10 @@ cdef class ScenarioCollection:
             if len(self._scenarios) == 0:
                 return pd.MultiIndex.from_product([range(1),], names=[''])
             else:
-                ranges = [range(sc._size) for sc in self._scenarios]
+                ensemble_names = [scenario.ensemble_names for scenario in self._scenarios]
+                indices = [[ensemble_names[n][i] for n, i in enumerate(scenario_index.indices)] for scenario_index in self.model.scenarios.get_combinations()]
                 names = [sc._name for sc in self._scenarios]
-                return pd.MultiIndex.from_product(ranges, names=names)
+                return pd.MultiIndex.from_tuples(indices, names=names)
 
     cpdef int ravel_indices(self, int[:] scenario_indices) except? -1:
         if scenario_indices is None:
@@ -140,6 +207,9 @@ cdef class ScenarioIndex:
         def __get__(self):
             return np.array(self._indices)
 
+    def __repr__(self):
+        return "<ScenarioIndex gid={:d} indices={}>".format(self._global_id, tuple(np.asarray(self._indices)))
+
 
 cdef class Timestep:
     def __init__(self, datetime, int index, double days):
@@ -148,7 +218,9 @@ cdef class Timestep:
         self._days = days
         tt = self.datetime.timetuple()
         self.dayofyear = tt.tm_yday
+        self.day = tt.tm_mday
         self.month = tt.tm_mon
+        self.year = tt.tm_year
 
     property datetime:
         """Timestep representation as a `datetime.datetime` object"""
@@ -163,6 +235,9 @@ cdef class Timestep:
     property days:
         def __get__(self, ):
             return self._days
+
+    def __repr__(self):
+        return "<Timestep date=\"{}\">".format(self._datetime.strftime("%Y-%m-%d"))
 
 cdef class Domain:
     """ Domain class which all Node objects must have. """
@@ -521,6 +596,8 @@ cdef class AggregatedNode(AbstractNode):
                 return np.asarray(self._factors, np.float64)
         def __set__(self, values):
             values = np.array(values, np.float64)
+            if np.any(values < 1e-6):
+                warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
             self._factors = values
             self.model.dirty = True
 

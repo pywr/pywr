@@ -1,7 +1,7 @@
 cdef class Recorder
 
-from _core cimport Timestep, AbstractNode, Storage, ScenarioIndex
-from .parameters._parameters cimport Parameter, IndexParameter
+from pywr._core cimport Timestep, AbstractNode, Storage, ScenarioIndex, Scenario
+from pywr.parameters._parameters cimport Parameter, IndexParameter
 
 cdef class Recorder:
     cdef bint _is_objective
@@ -9,7 +9,7 @@ cdef class Recorder:
     cdef object _name
     cdef object _model
     cdef public basestring comment
-    cdef object agg_func
+    cdef object _agg_user_func
     cdef int _agg_func
     cpdef setup(self)
     cpdef reset(self)
@@ -50,8 +50,20 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
     cdef int[:, :] _data
 
-cdef class MeanParameterRecorder(ParameterRecorder):
-    cdef public int timesteps
+cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
+    cdef object fdc_agg_func
+    cdef int _fdc_agg_func
+    cdef double[:] _percentiles
+    cdef double[:, :] _fdc
+
+cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
+    cdef double[:, :] _target_fdc
+    cdef double[:, :] _fdc_deviations
+    cdef double[:, :] _base_fdc_tile
+    cdef public Scenario scenario
+
+cdef class RollingWindowParameterRecorder(ParameterRecorder):
+    cdef public int window
     cdef int position
     cdef double[:, :] _memory
     cdef double[:, :] _data
@@ -80,3 +92,12 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
 
 cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
     pass
+
+cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
+    cdef public double threshold
+
+cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
+    cdef public int threshold
+    cdef int[:] _count
+    cdef int _current_year
+    cdef int[:] _current_max

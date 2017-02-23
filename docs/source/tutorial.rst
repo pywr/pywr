@@ -77,3 +77,18 @@ We can check the result for the first timestep by accessing the recorder's data 
     print(recorder.data[scenario][timestep])  # prints 6.0
 
 The result of this example model is trivial: the supply exceeds the demand, so the maximum flow at the demand is the limiting factor.
+
+The model defined about could equally have been defined in a JSON document:
+
+.. literalinclude:: tutorial.json
+
+The model can be loaded using the ``Model.load`` method:
+
+.. code-block:: python
+
+    # load the model
+    model = Model.load("tutorial.json")
+    # run, forest, run!
+    model.run()
+
+See further information in on JSON see the :ref:`json-model-format` section.

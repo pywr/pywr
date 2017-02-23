@@ -4,6 +4,8 @@ from libc.stdlib cimport malloc, free
 from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
 from pywr.core import ModelStructureError
+import time
+
 
 cdef extern from "lpsolve/lp_lib.h":
     cdef struct _lprec:
@@ -53,7 +55,7 @@ cdef extern from "lpsolve/lp_lib.h":
     int get_Norig_rows(lprec *lp)
     int get_Nrows(lprec *lp)
     int get_Lrows(lprec *lp)
-
+    int get_nonzeros(lprec *lp)
     int get_Norig_columns(lprec *lp)
     int get_Ncolumns(lprec *lp)
     int solve(lprec *lp);
@@ -120,6 +122,7 @@ cdef class CythonLPSolveSolver:
     cdef list storages
     cdef list virtual_storages
     cdef list aggregated
+    cdef public object stats
 
     def __cinit__(self):
         # create a new problem
@@ -153,6 +156,9 @@ cdef class CythonLPSolveSolver:
         cdef cross_domain_col
         cdef MYBOOL ret
         cdef REAL *ptr_var
+
+        if not model.graph.nodes():
+            raise ModelStructureError("Model is empty")
 
         routes = model.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
         # Find cross-domain routes
@@ -398,6 +404,21 @@ cdef class CythonLPSolveSolver:
             free(ind)
             free(val)
 
+        # reset stats
+        self.stats = {
+            'total': 0.0,
+            'lp_solve': 0.0,
+            'result_update': 0.0,
+            'bounds_update_routes': 0.0,
+            'bounds_update_nonstorage': 0.0,
+            'bounds_update_storage': 0.0,
+            'number_of_rows': get_Nrows(self.prob),
+            'number_of_cols': get_Ncolumns(self.prob),
+            'number_of_nonzero': get_nonzeros(self.prob),
+            'number_of_routes': len(routes),
+            'number_of_nodes': len(model.nodes)
+        }
+
         ret = set_add_rowmode(self.prob, FALSE)
         self.routes = routes
         self.supplys = supplys
@@ -422,6 +443,7 @@ cdef class CythonLPSolveSolver:
         cdef double max_flow
         cdef double cost
         cdef double avail_volume
+        cdef double t0
         cdef int col
         cdef int* ind
         cdef double* val
@@ -441,6 +463,8 @@ cdef class CythonLPSolveSolver:
         storages = self.storages
         virtual_storages = self.virtual_storages
 
+        t0 = time.clock()
+
         # update route properties
         for col, route in enumerate(routes):
             cost = route[0].get_cost(timestep, scenario_index)
@@ -448,6 +472,10 @@ cdef class CythonLPSolveSolver:
                 if isinstance(node, BaseLink):
                     cost += node.get_cost(timestep, scenario_index)
             set_obj(self.prob, self.idx_col_routes+col, cost)
+
+        self.stats['bounds_update_routes'] += time.clock() - t0
+        t0 = time.clock()
+
 
         # update supply properties
         for col, supply in enumerate(supplys):
@@ -463,6 +491,9 @@ cdef class CythonLPSolveSolver:
             cost = demand.get_cost(timestep, scenario_index)
             set_bounds(self.prob, self.idx_col_demands+col, min_flow, max_flow)
             set_obj(self.prob, self.idx_col_demands+col, cost)
+
+        self.stats['bounds_update_nonstorage'] += time.clock() - t0
+        t0 = time.clock()
 
         # update storage node constraint
         for col, storage in enumerate(storages):
@@ -484,6 +515,10 @@ cdef class CythonLPSolveSolver:
             ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
             set_row_bnds(self.prob, self.idx_row_virtual_storages+col, lb, ub)
 
+        self.stats['bounds_update_storage'] += time.clock() - t0
+        t0 = time.clock()
+        # attempt to solve the linear programme
+
         #print_lp(self.prob)
         #set_presolve(self.prob, PRESOLVE_ROWS | PRESOLVE_COLS, get_presolveloops(self.prob))
         # attempt to solve the linear programme
@@ -491,6 +526,9 @@ cdef class CythonLPSolveSolver:
 
         if status != OPTIMAL:
             raise RuntimeError(get_statustext(self.prob, status))
+
+        self.stats['lp_solve'] += time.clock() - t0
+        t0 = time.clock()
 
         get_ptr_variables(self.prob, &ptr_var)
 
@@ -506,5 +544,7 @@ cdef class CythonLPSolveSolver:
             for node in route[1:-1]:
                 if isinstance(node, BaseLink):
                     node.commit(scenario_index._global_id, flow)
+
+        self.stats['result_update'] += time.clock() - t0
 
         return route_flow, change_in_storage

@@ -19,6 +19,9 @@ class Solver(object):
         raise NotImplementedError('Solver should be subclassed to provide setup()')
     def solve(self, model, timestep):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
+    @property
+    def stats(self):
+        return {}
 
 
 # Attempt to import solvers. These will only be successful if they are built correctly.
@@ -71,4 +74,8 @@ else:
 
         def solve(self, model):
             return self._cy_solver.solve(model)
+
+        @property
+        def stats(self):
+            return self._cy_solver.stats
     solver_registry.append(CythonLPSolveSolver)

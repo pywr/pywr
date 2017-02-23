@@ -2,7 +2,7 @@
 Pywr
 ====
 
-Pywr is a conjunctive use water resource model written in Python. It aims to be fast, free, and extendable.
+Pywr is a generalised network resource allocation model written in Python. It aims to be fast, free, and extendable.
 
 .. image:: https://travis-ci.org/pywr/pywr.svg?branch=master
    :target: https://travis-ci.org/pywr/pywr
@@ -13,42 +13,35 @@ Pywr is a conjunctive use water resource model written in Python. It aims to be 
 Overview
 ========
 
-A water supply network is represented as a directional graph using `NetworkX <https://networkx.github.io/>`__. Timeseries representing variations such as river flow and demand are handled by `pandas <http://pandas.pydata.org/>`__. The supply-demand balance is solved for each timestep using linear programming provided by `GLPK <https://www.gnu.org/software/glpk/>`__; however, the solver is decoupled from the network allowing the potential for alternate solvers. A graphical user interface is being developed using `Qt <http://qt-project.org/>`__ and `PySide <http://qt-project.org/wiki/PySide>`__.
+Pywr is a tool for solving network resource allocation problems at discrete timesteps using a linear programming approach. It's principal application is in resource allocation in water supply networks, although other uses are conceivable. A network is represented as a directional graph using `NetworkX <https://networkx.github.io/>`__. Nodes in the network can be given constraints (e.g. minimum/maximum flows) and costs, and can be connected as required. Parameters in the model can vary time according to boundary conditions (e.g. an inflow timeseries) or based on states in the model (e.g. the current volume of a reservoir).
 
-Development and testing
-=======================
+Models can be developed using the Python API, either in a script or interactively using `IPython <https://ipython.org/>`__/`Jupyter <https://jupyter.org/>`__. Alternatively, models can be defined in a rich `JSON-based document format <https://pywr.github.io/pywr-docs/json.html>`__.
 
-To install pywr (and it's dependencies) in a virtual environment:
+.. image:: https://raw.githubusercontent.com/pywr/pywr/master/docs/source/_static/pywr_d3.png
+   :width: 250px
+   :height: 190px
 
-.. code-block:: console
+New users are encouraged to read the `Pywr Tutorial <https://pywr.github.io/pywr-docs/tutorial.html>`__.
 
-    $ virtualenv venv
-    $ source venv/bin/activate
-    (env)$ pip install -r requirements.txt
-    (env)$ pip install -e .
+Installation
+============
 
-To run the unit tests:
+Pywr should work on Python 2.7 (or later) and 3.4 (or later) on Windows, Linux or OS X.
 
-.. code-block:: console
+See the documentation for `detailed installation instructions <https://pywr.github.io/pywr-docs/install.html>`__.
 
-    (env)$ py.test tests
-
-To run coverage analysis on the tests (requires `coverage` module), first build with tracing:
+Provided that you have the required `dependencies <https://pywr.github.io/pywr-docs/install.html#dependencies>`__ already installed, it's as simple as:
 
 .. code-block:: console
 
-    $ python setup.py --enable-trace --with-glpk --with-lpsolve develop
+    python setup.py install --with-glpk --with-lpsolve
 
-.. code-block:: console
-
-    $ coverage run --source pywr -m py.test tests
-    $ coverage report
-    $ coverage html
+For most users it will be easier to install the `binary packages made available for the Anaconda Python distribution <https://anaconda.org/pywr/pywr>`__. See install docs for more information. Note that these packages may lag behind the development version.
 
 License
 =======
 
-Copyright (C) 2015-16 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+Copyright (C) 2014-17 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
 
 
 This program is free software; you can redistribute it and/or modify

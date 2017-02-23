@@ -7,6 +7,7 @@ import copy
 from packaging.version import parse as parse_version
 import warnings
 import inspect
+import time
 
 import pywr
 from pywr.timestepper import Timestepper
@@ -135,7 +136,13 @@ class Model(object):
     @classmethod
     def loads(cls, data, model=None, path=None, solver=None):
         """Read JSON data from a string and parse it as a model document"""
-        data = json.loads(data)
+        try:
+            data = json.loads(data)
+        except ValueError as e:
+            message = e.args[0]
+            if path:
+                e.args = ("{} [{}]".format(e.args[0], os.path.basename(path)),)
+            raise(e)
         cls._load_includes(data, path)
         return cls.load(data, model, path, solver)
 
@@ -158,7 +165,13 @@ class Model(object):
                 if path is not None:
                     filename = os.path.join(os.path.dirname(path), filename)
                 with open(filename, "r") as f:
-                    include_data = json.loads(f.read())
+                    try:
+                        include_data = json.loads(f.read())
+                    except ValueError as e:
+                        message = e.args[0]
+                        if path:
+                            e.args = ("{} [{}]".format(e.args[0], os.path.basename(filename)),)
+                        raise(e)
                 for key, value in include_data.items():
                     if isinstance(value, list):
                         try:
@@ -253,9 +266,20 @@ class Model(object):
             # Leave to default of no scenarios
             pass
         else:
-            for scen_name, scen_data in scenarios_data.items():
+            for scen_data in scenarios_data:
+                scen_name = scen_data["name"]
                 size = scen_data["size"]
-                Scenario(model, scen_name, size=size)
+                s_slice = scen_data.pop("slice", None)
+                if s_slice:
+                    s_slice = slice(*s_slice)
+                Scenario(model, scen_name, size=size, slice=s_slice)
+
+        try:
+            scenario_combinations = data["scenario_combinations"]
+        except KeyError:
+            pass
+        else:
+            model.scenarios.user_combinations = scenario_combinations
 
         # load table references
         try:
@@ -328,11 +352,6 @@ class Model(object):
             node_to = model.nodes[node_to_name]
             node_from.connect(node_to, from_slot=slot_from, to_slot=slot_to)
 
-        # load recorders
-        if 'recorders' in data:
-            for recorder_data in data['recorders']:
-                load_recorder(model, recorder_data)
-
         return model
 
     @classmethod
@@ -375,7 +394,7 @@ class Model(object):
         destination with the same domain has the source.
         """
 
-        nodes = self.graph.nodes()
+        nodes = sorted(self.graph.nodes(), key=lambda n:n.name)
 
         if inspect.isclass(type1):
             # find all nodes of type1
@@ -433,6 +452,8 @@ class Model(object):
                     if is_valid:
                         all_routes.append(route)
 
+        # Now sort the routes to ensure determinism
+        all_routes = sorted(all_routes, key=lambda r: tuple(n.name for n in r))
         return all_routes
 
     def step(self):
@@ -470,12 +491,15 @@ class Model(object):
 
         Returns the number of last Timestep that was run.
         """
+        t0 = time.time()
+        timestep = None
         try:
             if self.dirty:
                 self.setup()
                 self.timestepper.reset()
             elif reset:
                 self.reset()
+            t1 = time.time()
             for timestep in self.timestepper:
                 self.timestep = timestep
                 ret = self._step()
@@ -485,14 +509,34 @@ class Model(object):
                     return timestep
                 elif timestep.datetime > self.timestepper.end:
                     return timestep
+            t2 = time.time()
         finally:
             self.finish()
-        try:
-            # Can only return timestep object if the iterator went
-            # through at least one iteration
-            return timestep
-        except UnboundLocalError:
+        t3 = time.time()
+
+        if timestep is None:
             return None
+
+        # return ModelResult instance
+        time_taken = t2 - t1
+        time_taken_with_overhead = t3 - t0
+        num_scenarios = len(self.scenarios.combinations)
+        try:
+            speed = (timestep.index * num_scenarios) / time_taken
+        except ZeroDivisionError:
+            speed = float('nan')
+        result = ModelResult(
+            num_scenarios=num_scenarios,
+            timestep=timestep,
+            time_taken=time_taken,
+            time_taken_with_overhead=time_taken_with_overhead,
+            speed=speed,
+            solver_name=self.solver.name,
+            solver_stats=self.solver.stats,
+            version=pywr.__version__,
+            git_hash=pywr.__git_hash__,
+        )
+        return result
 
     def setup(self, ):
         """Setup the model for the first time or if it has changed since
@@ -723,3 +767,37 @@ class NamedIterator(object):
     def append(self, obj):
         # TODO: check for name collisions / duplication
         self._objects.append(obj)
+
+class ModelResult(object):
+    def __init__(self, num_scenarios, timestep, time_taken, time_taken_with_overhead, speed,
+                 solver_name, solver_stats, version, git_hash):
+        self.timestep = timestep
+        self.timesteps = timestep.index + 1
+        self.time_taken = time_taken
+        self.time_taken_with_overhead = time_taken_with_overhead
+        self.speed = speed
+        self.num_scenarios = num_scenarios
+        self.solver_name = solver_name
+        self.solver_stats = solver_stats
+        self.version = version
+        self.git_hash = git_hash
+
+    def to_dict(self):
+        return {attr: value for attr, value in self.__dict__.items()}
+
+    def to_dataframe(self):
+        d = self.to_dict()
+        # Update timestep to use the underlying pandas Timestamp
+        d['timestep'] = d['timestep'].datetime
+        # Must flatten the solver stats dict before passing to pandas
+        solver_stats = d.pop('solver_stats')
+        for k, v in solver_stats.items():
+            d['solver_stats.{}'.format(k)] = v
+        df = pandas.DataFrame(pandas.Series(d), columns=["Value"])
+        return df
+
+    def __repr__(self):
+        return "Model executed {:d} scenarios in {:.1f} seconds, running at {:.1f} timesteps per second.".format(self.num_scenarios, self.time_taken_with_overhead, self.speed)
+
+    def _repr_html_(self):
+        return self.to_dataframe()._repr_html_()

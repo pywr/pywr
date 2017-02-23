@@ -3,21 +3,26 @@ Test for individual Parameter classes
 """
 from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output
-from pywr.parameters import (BaseParameter, ArrayIndexedParameter, ConstantScenarioParameter,
+from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
-    IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter,
+    IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
+    Polynomial1DParameter, Polynomial2DStorageParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
-from pywr.recorders import Recorder
 
+from pywr.recorders import Recorder
+from fixtures import simple_linear_model, simple_storage_model
 from helpers import load_model
 
+import os
 import datetime
 import numpy as np
 import pandas as pd
 import pytest
 import itertools
 from numpy.testing import assert_allclose
+
+TEST_DIR = os.path.dirname(__file__)
 
 @pytest.fixture
 def model(solver):
@@ -111,6 +116,40 @@ def test_parameter_array_indexed_scenario_monthly_factors(model):
             si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
             np.testing.assert_allclose(p.value(ts, si), v*f)
 
+def test_parameter_array_indexed_scenario_monthly_factors_json(model):
+    model.path = os.path.join(TEST_DIR, "models")
+    scA = Scenario(model, 'Scenario A', size=2)
+    scB = Scenario(model, 'Scenario B', size=3)
+    
+    p1 = ArrayIndexedScenarioMonthlyFactorsParameter.load(model, {
+        "scenario": "Scenario A",
+        "values": list(range(32)),
+        "factors": [list(range(1, 13)),list(range(13, 25))],
+    })
+
+    p2 = ArrayIndexedScenarioMonthlyFactorsParameter.load(model, {
+        "scenario": "Scenario B",
+        "values": {
+            "url": "timeseries1.csv",
+            "index_col": "Timestamp",
+            "column": "Data",
+        },
+        "factors": {
+            "url": "monthly_profiles.csv",
+            "index_col": "scenario",
+        },
+    })
+
+    node1 = Input(model, "node1", max_flow=p1)
+    node2 = Input(model, "node2", max_flow=p2)
+    nodeN = Output(model, "nodeN", max_flow=None, cost=-1)
+    node1.connect(nodeN)
+    node2.connect(nodeN)
+
+    model.timestepper.start = "2015-01-01"
+    model.timestepper.end = "2015-01-31"
+    model.run()
+
 
 def test_parameter_monthly_profile(model):
     """
@@ -127,6 +166,43 @@ def test_parameter_monthly_profile(model):
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         np.testing.assert_allclose(p.value(ts, si), values[imth])
 
+
+class TestScenarioMonthlyProfileParameter:
+
+    def test_init(self, model):
+        scenario = Scenario(model, 'A', 10)
+        values = np.random.rand(10, 12)
+
+        p = ScenarioMonthlyProfileParameter(scenario, values)
+
+        p.setup(model)
+        # Iterate in time
+        for ts in model.timestepper:
+            imth = ts.datetime.month - 1
+            for i in range(scenario.size):
+                si = ScenarioIndex(i, np.array([i], dtype=np.int32))
+                np.testing.assert_allclose(p.value(ts, si), values[i, imth])
+
+    def test_json(self, solver):
+        model = load_model('scenario_monthly_profile.json', solver=solver)
+
+        # check first day initalised
+        assert (model.timestepper.start == datetime.datetime(2015, 1, 1))
+
+        # check results
+        supply1 = model.nodes['supply1']
+
+        # Multiplication factors
+        factors = np.array([
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+            [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22],
+        ])
+
+        for expected in (23.92, 22.14, 22.57, 24.97, 27.59):
+            model.step()
+            imth = model.timestepper.current.month - 1
+            assert_allclose(supply1.flow, expected*factors[:, imth], atol=1e-7)
 
 def test_parameter_daily_profile(model):
     """
@@ -250,10 +326,7 @@ class TestAggregatedParameter:
             "type": "aggregated",
             "agg_func": "product",
             "parameters": [
-                {
-                    "type": "constant",
-                    "value": 0.8
-                },
+                0.8,
                 {
                     "type": "monthlyprofile",
                     "values": list(range(12))
@@ -311,14 +384,14 @@ def test_aggregated_index_parameter_anyall(model):
 
 def test_parameter_child_variables():
 
-    p1 = BaseParameter()
+    p1 = Parameter()
     # Default parameter
     assert p1 not in p1.variables
     assert len(p1.variables) == 0
     assert len(p1.parents) == 0
     assert len(p1.children) == 0
 
-    c1 = BaseParameter()
+    c1 = Parameter()
     c1.parents.add(p1)
     assert len(p1.children) == 1
     assert c1 in p1.children
@@ -334,7 +407,7 @@ def test_parameter_child_variables():
     assert len(p1.variables) == 1
 
     # Test third level
-    c2 = BaseParameter()
+    c2 = Parameter()
     c2.parents.add(c1)
     c2.is_variable = True
     assert p1 not in p1.variables
@@ -614,7 +687,7 @@ def test_constant_from_multiindex_df(solver):
 
 def test_parameter_registry_overwrite(model):
     # define a parameter
-    class NewParameter(BaseParameter):
+    class NewParameter(Parameter):
         DATA = 42
     NewParameter.register()
 
@@ -652,3 +725,222 @@ def test_invalid_parameter_values():
     data = {'name': 'my_parameter', 'type': 'AParameterThatShouldHaveValues'}
     with pytest.raises(ValueError):
         load_parameter_values(model, data)
+
+
+class Test1DPolynomialParameter:
+    """ Tests for `Polynomial1DParameter` """
+    def test_init(self, simple_storage_model):
+        """ Test initialisation raises error with too many keywords """
+        stg = simple_storage_model.nodes['Storage']
+
+        with pytest.raises(ValueError):
+            # Passing both "parameter" and "storage_node" is invalid
+            Polynomial1DParameter([0.5, np.pi], parameter=ConstantParameter(2.0), storage_node=stg)
+
+    def test_1st_order_with_parameter(self, model):
+        """ Test 1st order with a `Parameter` """
+        x = 2.0
+        p1 = Polynomial1DParameter([0.5, np.pi], parameter=ConstantParameter(x))
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x)
+
+    def test_2nd_order_with_parameter(self, model):
+        """ Test 2nd order with a `Parameter` """
+        x = 2.0
+        px = ConstantParameter(x)
+        p1 = Polynomial1DParameter([0.5, np.pi, 3.0], parameter=px)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 3.0*x**2)
+
+    def test_1st_order_with_storage(self, simple_storage_model):
+        """ Test with a `Storage` node """
+        model = simple_storage_model
+        stg = model.nodes['Storage']
+        x = stg.initial_volume
+        p1 = Polynomial1DParameter([0.5, np.pi], storage_node=stg)
+        p2 = Polynomial1DParameter([0.5, np.pi], storage_node=stg, use_proportional_volume=True)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        model.setup()
+
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x)
+        np.testing.assert_allclose(p2.value(ts, si), 0.5 + np.pi * x/stg.max_volume)
+
+    def test_load(self, model):
+        x = 1.5
+        data = {
+            "type": "polynomial1d",
+            "coefficients": [0.5, 2.5],
+            "parameter": {
+                "type": "constant",
+                "value": x
+            }
+        }
+
+        p1 = load_parameter(model, data)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        for ts in model.timestepper:
+            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*x)
+
+    def test_load_with_scaling(self, model):
+        x = 1.5
+        data = {
+            "type": "polynomial1d",
+            "coefficients": [0.5, 2.5],
+            "parameter": {
+                "type": "constant",
+                "value": x
+            },
+            "scale": 1.25,
+            "offset": 0.75
+        }
+        xscaled = x*1.25 + 0.75
+
+        p1 = load_parameter(model, data)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        for ts in model.timestepper:
+            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*xscaled)
+
+
+class Test2DStoragePolynomialParameter:
+
+    def test_1st(self, simple_storage_model):
+        """ Test 1st order """
+        model = simple_storage_model
+        stg = model.nodes['Storage']
+
+        x = 2.0
+        y = stg.initial_volume
+        coefs = [[0.5, np.pi], [2.5, 0.3]]
+
+        p1 = Polynomial2DStorageParameter(coefs, stg, ConstantParameter(x))
+        model.setup()
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+
+    def test_load(self, simple_storage_model):
+        model = simple_storage_model
+        stg = model.nodes['Storage']
+
+        x = 2.0
+        y = stg.initial_volume/stg.max_volume
+        data = {
+            "type": "polynomial2dstorage",
+            "coefficients": [[0.5, np.pi], [2.5, 0.3]],
+            "use_proportional_volume": True,
+            "parameter": {
+                "type": "constant",
+                "value": x
+            },
+            "storage_node": "Storage"
+        }
+
+        p1 = load_parameter(model, data)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        model.setup()
+        ts = model.timestepper.current
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+
+    def test_load_wth_scaling(self, simple_storage_model):
+        model = simple_storage_model
+        stg = model.nodes['Storage']
+
+        x = 2.0
+        y = stg.initial_volume/stg.max_volume
+        data = {
+            "type": "polynomial2dstorage",
+            "coefficients": [[0.5, np.pi], [2.5, 0.3]],
+            "use_proportional_volume": True,
+            "parameter": {
+                "type": "constant",
+                "value": x
+            },
+            "storage_node": "Storage",
+            "storage_scale": 1.3,
+            "storage_offset": 0.75,
+            "parameter_scale": 1.25,
+            "parameter_offset": -0.5
+        }
+
+        p1 = load_parameter(model, data)
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        model.setup()
+        ts = model.timestepper.current
+
+        # Scaled parameters
+        x = x*1.25 - 0.5
+        y = y*1.3 + 0.75
+
+        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+
+
+def test_max_parameter(simple_linear_model):
+    """ Test `MaxParameter` """
+    m = simple_linear_model
+
+    data = {
+        "type": "max",
+        "threshold": 3,
+        "parameter": {
+            "type": "dailyprofile",
+            "values": list(range(-10, 356))
+        }
+    }
+
+    m.nodes["Input"].max_flow = load_parameter(model, data)
+    m.nodes["Output"].max_flow = 9999
+    m.nodes["Output"].cost = -100
+    m.setup()
+    # Don't go through the whole series because leap years make it harder
+    for v in range(-10, 20):
+        m.step()
+        assert_allclose(m.nodes["Input"].flow, max(v, 3))
+
+
+def test_min_parameter(simple_linear_model):
+    """ Test `MinParameter` """
+    m = simple_linear_model
+
+    data = {
+        "type": "min",
+        "threshold": 3,
+        "parameter": {
+            "type": "dailyprofile",
+            "values": list(range(0, 366))
+        }
+    }
+
+    m.nodes["Input"].max_flow = load_parameter(model, data)
+    m.nodes["Output"].max_flow = 9999
+    m.nodes["Output"].cost = -100
+    m.setup()
+    # Don't go through the whole series because leap years make it harder
+    for v in range(0, 20):
+        m.step()
+        assert_allclose(m.nodes["Input"].flow, min(v, 3))
+
+
+def test_negative_parameter(simple_linear_model):
+    """ Test `NegativeParameter` """
+    m = simple_linear_model
+
+    data = {
+        "type": "negative",
+        "parameter": {
+            "type": "dailyprofile",
+            "values": list(range(-366, 0))
+        }
+    }
+
+    m.nodes["Input"].max_flow = load_parameter(model, data)
+    m.nodes["Output"].max_flow = 9999
+    m.nodes["Output"].cost = -100
+    m.setup()
+    # Don't go through the whole series because leap years make it harder
+    for v in range(-366, -346):
+        m.step()
+        assert_allclose(m.nodes["Input"].flow, -v)

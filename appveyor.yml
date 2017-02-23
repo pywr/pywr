@@ -3,29 +3,26 @@
 
 environment:
 
-  CONDA_INSTALL_LOCN: "C:\\conda"
-
   # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
   # /E:ON and /V:ON options are not enabled in the batch script intepreter
   # See: http://stackoverflow.com/a/13751649/163740
   CMD_IN_ENV: "cmd /E:ON /V:ON /C obvci_appveyor_python_build_env.cmd"
 
-  # We set a default Python version for the miniconda that is to be installed. This can be
-  # overridden in the matrix definition where appropriate.
-  CONDA_PY: "27"
-
   matrix:
     - TARGET_ARCH: x64
       CONDA_PY: 27
       CONDA_NPY: 111
+      CONDA_INSTALL_LOCN: C:\\Miniconda-x64
 
     - TARGET_ARCH: x64
       CONDA_PY: 34
       CONDA_NPY: 111
+      CONDA_INSTALL_LOCN: C:\\Miniconda35-x64
 
     - TARGET_ARCH: x64
-      CONDA_PY: 35
-      CONDA_NPY: 111
+      CONDA_PY: 36
+      CONDA_NPY: 112
+      CONDA_INSTALL_LOCN: C:\\Miniconda35-x64
 
 # We always use a 64-bit machine, but can build x86 distributions
 # with the TARGET_ARCH variable.
@@ -35,17 +32,22 @@ platform:
 install:
     # Cywing's git breaks conda-build. (See https://github.com/conda-forge/conda-smithy-feedstock/pull/2.)
     - cmd: rmdir C:\cygwin /s /q
-    - appveyor DownloadFile "https://raw.githubusercontent.com/conda-forge/conda-smithy/master/bootstrap-obvious-ci-and-miniconda.py"
-    - cmd: python bootstrap-obvious-ci-and-miniconda.py %CONDA_INSTALL_LOCN% %TARGET_ARCH% %CONDA_PY:~0,1% --without-obvci
-    - cmd: set PATH=%CONDA_INSTALL_LOCN%;%CONDA_INSTALL_LOCN%\scripts;%PATH%
+
+    # Add path and activate `conda`
+    - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
     - cmd: set PYTHONUNBUFFERED=1
 
+    # Add our channels
     - cmd: conda config --set show_channel_urls true
-    - cmd: conda install -c pelson/channel/development --yes --quiet obvious-ci
     - cmd: conda config --add channels conda-forge
     - cmd: conda config --add channels snorfalorpagus
-    - cmd: conda info
-    - cmd: conda install -n root --quiet --yes conda-build=2.0.2 anaconda-client jinja2 setuptools
+
+    # Update conda
+    - cmd: conda update --yes --quiet conda
+
+    # Configure the VM.
+    - cmd: conda install -n root --quiet --yes obvious-ci
+    - cmd: conda install -n root --quiet --yes conda-build anaconda-client jinja2 setuptools
 
 # Skip .NET project specific build phase.
 build: off

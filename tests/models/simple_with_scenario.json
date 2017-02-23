@@ -9,19 +9,25 @@
         "end": "2015-12-31",
         "timestep": 1
     },
-    "scenarios": {
-        "scenario A": {
+    "scenarios": [
+        {
+            "name": "scenario A",
             "size": 10
         },
-        "scenario B": {
+        {
+            "name": "scenario B",
             "size": 2
         }
-    },
+    ],
     "nodes": [
         {
             "name": "supply1",
             "type": "Input",
-            "max_flow": 15
+            "max_flow": {
+                "type": "constantscenario",
+                "scenario": "scenario A",
+                "values": [10, 11, 12, 13, 14, 15, 16, 17, 18 , 19]
+            }
         },
         {
             "name": "link1",
@@ -30,12 +36,23 @@
         {
             "name": "demand1",
             "type": "Output",
-            "max_flow": 10,
+            "max_flow": {
+                "type": "constantscenario",
+                "scenario": "scenario B",
+                "values": [10, 15]
+            },
             "cost": -10
         }
     ],
     "edges": [
         ["supply1", "link1"],
         ["link1", "demand1"]
-    ]
+    ],
+    "recorders": {
+        "demand1": {
+            "comment": "Actual flow to demand1",
+            "type": "NumpyArrayNode",
+            "node": "demand1"
+        }
+    }
 }

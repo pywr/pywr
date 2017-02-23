@@ -1,0 +1,58 @@
+{
+    "metadata": {
+        "title": "Scenario monthly profile",
+        "description": "A simple example to test ScenarioMonthlyProfileParameter",
+        "minimum_version": "0.2dev"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-01-31",
+        "timestep": 1
+    },
+    "scenarios": [
+        {
+            "name": "scenario A",
+            "size": 3
+        }
+    ],
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": {
+                "type": "aggregated",
+                "agg_func": "product",
+                "parameters": [
+                    {
+                        "type": "dataframe",
+                        "url" : "timeseries1.csv",
+                        "parse_dates": true,
+                        "dayfirst": true,
+                        "index_col": 0
+                    },
+                    {
+                        "type": "scenariomonthlyprofile",
+                        "url": "monthly_profiles.csv",
+                        "scenario": "scenario A",
+                        "index_col": 0
+                    }
+
+                ]
+            }
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10000,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ]
+}

@@ -14,7 +14,7 @@ def load_model(filename=None, data=None, solver=None):
     else:
         path = None
 
-    model = Model.loads(data, path=path)
+    model = Model.loads(data, path=path, solver=solver)
     model.check()
     return model
 

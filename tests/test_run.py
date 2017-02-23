@@ -10,7 +10,8 @@ import pandas
 from numpy.testing import assert_allclose
 
 import pywr.core
-from pywr.core import Model, Storage, Input, Output, Link
+from pywr.model import Model, ModelStructureError, ModelResult
+from pywr.nodes import Storage, Input, Output, Link
 import pywr.solvers
 import pywr.parameters.licenses
 import pywr.domains.river
@@ -23,7 +24,7 @@ import pywr.parameters
 def test_run_simple1(solver):
     '''Test the most basic model possible'''
     # parse the JSON into a model
-    model = load_model('simple1.json', solver=None)
+    model = load_model('simple1.json', solver=solver)
 
     # run the model
     t0 = model.timestepper.start.to_datetime()
@@ -39,6 +40,21 @@ def test_run_simple1(solver):
     model.step()
     assert(model.timestepper.current.datetime - t0 == datetime.timedelta(1))
 
+def test_model_results(solver):
+    '''Test model results object'''
+    import pywr
+
+    model = load_model('simple1.json', solver=solver)
+    res = model.run()
+    assert (isinstance(res, ModelResult))
+    assert (res.timesteps == 365)
+    assert (res.version == pywr.__version__)
+    assert (res.git_hash == pywr.__git_hash__)
+    assert res.solver_stats['number_of_cols']
+    assert res.solver_stats['number_of_rows']
+    assert res.solver_name == solver
+    print(res)
+    print(res._repr_html_())
 
 def test_run_reservoir1(solver):
     '''Test a reservoir with no refill
@@ -104,8 +120,9 @@ def test_run_river2(solver):
 
 
 # Contains an out of range date for pandas.to_datetime
-def test_run_timeseries1(solver):
-    model = load_model('timeseries1.json', solver=solver)
+@pytest.mark.parametrize("json_file", ['timeseries1.json', 'timeseries1_xlsx.json'])
+def test_run_timeseries1(solver, json_file):
+    model = load_model(json_file, solver=solver)
 
     # check first day initalised
     assert(model.timestepper.start == datetime.datetime(2015, 1, 1))
@@ -119,8 +136,10 @@ def test_run_timeseries1(solver):
         assert_allclose(demand1.flow, min(expected, 23.0), atol=1e-7)
 
 
-def test_run_timeseries1_xlsx(solver):
-    model = load_model('timeseries1_xlsx.json', solver=solver)
+# Contains an out of range date for pandas.to_datetime
+@pytest.mark.parametrize("json_file", ['timeseries1_weekly.json', 'timeseries1_weekly_hdf.json'])
+def test_run_timeseries1_weekly(solver, json_file):
+    model = load_model(json_file, solver=solver)
 
     # check first day initalised
     assert(model.timestepper.start == datetime.datetime(2015, 1, 1))
@@ -128,7 +147,7 @@ def test_run_timeseries1_xlsx(solver):
     # check results
     demand1 = model.nodes['demand1']
     catchment1 = model.nodes['catchment1']
-    for expected in (23.92, 22.14, 22.57, 24.97, 27.59):
+    for expected in (23.92, 25.67, 28.24, 25.28, 21.84):
         result = model.step()
         assert_allclose(catchment1.flow, expected, atol=1e-7)
         assert_allclose(demand1.flow, min(expected, 23.0), atol=1e-7)
@@ -582,25 +601,32 @@ def test_reset(solver):
     assert_allclose(license.available(None), 7.0, atol=1e-7)
 
 
+def test_run_empty(solver):
+    # empty model should raise an exception if run
+    model = Model(solver=solver)
+    with pytest.raises(ModelStructureError):
+        model.run()
+
+
 def test_run(solver):
     model = load_model('simple1.json', solver=solver)
 
     # run model from start to finish
-    timestep = model.run()
-    assert(timestep.index == 364)
+    result = model.run()
+    assert(result.timestep.index == 364)
 
     # try to run finished model
     timestep = model.run(reset=False)
     assert(timestep is None)
 
     # reset model and run again
-    timestep = model.run()
-    assert(timestep.index == 364)
+    result = model.run()
+    assert(result.timestep.index == 364)
 
     # run remaining timesteps
     model.reset(start=pandas.to_datetime('2015-12-01'))
-    timestep = model.run()
-    assert(timestep.index == 364)
+    result = model.run()
+    assert(result.timestep.index == 364)
 
 
 @pytest.mark.xfail

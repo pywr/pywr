@@ -6,7 +6,7 @@ env:
     matrix:
         - CONDA_NPY=111  CONDA_PY=27
         - CONDA_NPY=111  CONDA_PY=34
-        - CONDA_NPY=111  CONDA_PY=35
+        - CONDA_NPY=112  CONDA_PY=36
 
 install:
     - |
@@ -21,8 +21,7 @@ install:
       conda config --add channels conda-forge
 
       conda config --set show_channel_urls true
-      conda install --yes --quiet conda-forge-build-setup
-      source run_conda_forge_build_setup
+      conda install --yes --quiet conda-build
 
 script:
     - conda build conda-recipe

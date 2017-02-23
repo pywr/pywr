@@ -44,8 +44,8 @@ def create_model(harmonic=True):
     catchment1 = Input(model, 'catchment1', min_flow=flow_parameter, max_flow=flow_parameter)
     catchment2 = Input(model, 'catchment2', min_flow=flow_parameter, max_flow=flow_parameter)
 
-    reservoir1 = Storage(model, 'reservoir1', min_volume=3000, max_volume=20000, volume=16000)
-    reservoir2 = Storage(model, 'reservoir2', min_volume=3000, max_volume=20000, volume=16000)
+    reservoir1 = Storage(model, 'reservoir1', min_volume=3000, max_volume=20000, initial_volume=16000)
+    reservoir2 = Storage(model, 'reservoir2', min_volume=3000, max_volume=20000, initial_volume=16000)
 
     if harmonic:
         control_curve = AnnualHarmonicSeriesParameter(0.5, [0.5], [0.0], mean_upper_bounds=1.0, amplitude_upper_bounds=1.0)

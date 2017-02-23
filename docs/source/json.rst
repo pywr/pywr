@@ -1,3 +1,5 @@
+.. _json-model-format:
+
 JSON model format
 -----------------
 

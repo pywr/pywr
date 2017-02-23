@@ -71,9 +71,15 @@ def test_two_scenarios(simple_linear_model, ):
     scenario_input = Scenario(model, 'Inflow', size=2)
     model.nodes["Input"].max_flow = ConstantScenarioParameter(scenario_input, [5.0, 10.0])
 
-    scenario_outflow = Scenario(model, 'Outflow', size=2)
+    scenario_outflow = Scenario(model, 'Outflow', size=2, ensemble_names=['High', 'Low'])
     model.nodes["Output"].max_flow = ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
     model.nodes["Output"].cost = -2.0
+
+    # Check ensemble names are provided in the multi-index
+    index = model.scenarios.multiindex
+    assert index.levels[0].name == 'Inflow'
+    assert index.levels[1].name == 'Outflow'
+    assert np.all(index.levels[1] == ['High', 'Low'])
 
     # add numpy recorders to input and output nodes
     NumpyArrayNodeRecorder(model, model.nodes["Input"], "input")
@@ -92,10 +98,10 @@ def test_two_scenarios(simple_linear_model, ):
     # combine recorder outputs to a single dataframe
     df = model.to_dataframe()
     assert(df.shape == (365, 2 * 2 * 2))
-    assert_allclose(df["input", 0, 0].iloc[0], 3.0)
-    assert_allclose(df["input", 0, 1].iloc[0], 5.0)
-    assert_allclose(df["input", 1, 0].iloc[0], 3.0)
-    assert_allclose(df["input", 1, 1].iloc[0], 8.0)
+    assert_allclose(df["input", 0, 'High'].iloc[0], 3.0)
+    assert_allclose(df["input", 0, 'Low'].iloc[0], 5.0)
+    assert_allclose(df["input", 1, 'High'].iloc[0], 3.0)
+    assert_allclose(df["input", 1, 'Low'].iloc[0], 8.0)
 
 
 def test_scenario_two_parameter(simple_linear_model, ):
@@ -146,6 +152,15 @@ def test_scenario_storage(solver):
 
 
 def test_scenarios_from_json(solver):
+    """
+    Test a simple model with two scenarios.
+
+    The model varies in the inflow by "scenario A" and the demand
+    by "scenario B". The test ensures the correct size of model is
+    created, and uses a `NumpyArrayNodeRecorder` to check the output
+    in multiple dimensions is correct. The latter is done using
+    the `MultiIndex` on the `DataFrame` from the recorder.
+    """
 
     model = load_model('simple_with_scenario.json', solver=solver)
     assert len(model.scenarios) == 2
@@ -153,6 +168,19 @@ def test_scenarios_from_json(solver):
     model.setup()
     assert len(model.scenarios.combinations) == 20
     model.run()
+
+    # Test the recorder data is correct
+    df = model.recorders['demand1'].to_dataframe()
+
+    assert df.shape[1] == 20
+    assert df.columns.names[0] == 'scenario A'
+    assert df.columns.names[1] == 'scenario B'
+    # Data for first demand (B) ensemble
+    d1 = df.xs(0, level='scenario B', axis=1).iloc[0, :].values
+    assert_allclose(d1, [10]*10)
+    # Data for second demand (B) ensemble
+    d2 = df.xs(1, level='scenario B', axis=1).iloc[0, :]
+    assert_allclose(d2, [10, 11, 12, 13, 14]+[15]*5)
 
 
 def test_timeseries_with_scenarios(solver):
@@ -222,3 +250,85 @@ def test_dirty_scenario(simple_linear_model):
     assert(not model.dirty)
     scenario = Scenario(model, "test", size=42)
     assert(model.dirty)
+
+def test_scenario_slices(simple_linear_model):
+    """Test slicing of scenarios"""
+    model = simple_linear_model
+
+    # create two scenarios
+    s1 = Scenario(model=model, name="A", size=20)
+    s2 = Scenario(model=model, name="B", size=3)
+
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 20 * 3)
+
+    s1.slice = slice(0, None, 2)
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 10 * 3)
+
+    # check multiindex respects scenario slices
+    index = model.scenarios.multiindex
+    assert(len(index.levels) == 2)
+    assert(len(index.levels[0]) == 10)
+    assert(len(index.levels[1]) == 3)
+    assert(len(index.labels) == 2)
+    assert(len(index.labels[0]) == 10 * 3)
+    assert(len(index.labels[1]) == 10 * 3)
+    assert(index.names == ["A", "B"])
+
+    s2.slice = slice(1, 3, 1)
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 10 * 2)
+
+    assert(combinations[0].global_id == 0)
+    assert(tuple(combinations[0].indices) == (0, 1))
+
+    assert(combinations[-1].global_id == 19)
+    assert(tuple(combinations[-1].indices) == (18, 2))
+
+    model.run()
+
+    node = model.nodes["Input"]
+    assert((len(combinations),) == node.flow.shape)
+
+    s1.slice = None
+    s2.slice = None
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 20 * 3)
+
+def test_scenario_user_combinations(simple_linear_model):
+    model = simple_linear_model
+
+    # create two scenarios
+    s1 = Scenario(model=model, name="A", size=20)
+    s2 = Scenario(model=model, name="B", size=3)
+
+    model.scenarios.user_combinations = [[0, 1], [1, 1]]
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 2)
+
+    # Test wrong number of dimensions
+    with pytest.raises(ValueError):
+        model.scenarios.user_combinations = [0, 1, 1, 1]
+
+    # Test out of range index
+    with pytest.raises(ValueError):
+        model.scenarios.user_combinations = [[19, 3], [2, 2]]
+    with pytest.raises(ValueError):
+        model.scenarios.user_combinations = [[-1, 2], [2, 2]]
+
+def test_scenario_slices_json(solver):
+    model = load_model('scenario_with_slices.json', solver=solver)
+    scenarios = model.scenarios
+    assert(len(scenarios) == 2)
+    assert(scenarios["scenario A"].slice == slice(0, None, 2))
+    assert(scenarios["scenario B"].slice == slice(0, 1, 1))
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 5)
+
+def test_scenario_slices_json(solver):
+    model = load_model('scenario_with_user_combinations.json', solver=solver)
+    scenarios = model.scenarios
+    assert(len(scenarios) == 2)
+    combinations = model.scenarios.get_combinations()
+    assert(len(combinations) == 3)

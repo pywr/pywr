@@ -4,22 +4,24 @@ from pywr._core cimport Timestep
 import pandas as pd
 from past.builtins import basestring
 
-recorder_registry = set()
+recorder_registry = {}
 
 cdef enum AggFuncs:
     SUM = 0
     MIN = 1
     MAX = 2
     MEAN = 3
-    PRODUCT = 4
-    CUSTOM = 5
-    ANY = 6
-    ALL = 7
+    MEDIAN = 4
+    PRODUCT = 5
+    CUSTOM = 6
+    ANY = 7
+    ALL = 8
 _agg_func_lookup = {
     "sum": AggFuncs.SUM,
     "min": AggFuncs.MIN,
     "max": AggFuncs.MAX,
     "mean": AggFuncs.MEAN,
+    "median": AggFuncs.MEDIAN,
     "product": AggFuncs.PRODUCT,
     "custom": AggFuncs.CUSTOM,
     "any": AggFuncs.ANY,
@@ -33,16 +35,20 @@ cdef class Recorder:
             name = self.__class__.__name__.lower()
         self.name = name
         self.comment = comment
+        self.agg_func = agg_func
         model.recorders.append(self)
 
-        if isinstance(agg_func, basestring):
-            agg_func = _agg_func_lookup[agg_func.lower()]
-        elif callable(agg_func):
-            self.agg_func = agg_func
-            agg_func = AggFuncs.CUSTOM
-        else:
-            raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
-        self._agg_func = agg_func
+    property agg_func:
+        def __set__(self, agg_func):
+            self._agg_user_func = None
+            if isinstance(agg_func, basestring):
+                agg_func = _agg_func_lookup[agg_func.lower()]
+            elif callable(agg_func):
+                self._agg_user_func = agg_func
+                agg_func = AggFuncs.CUSTOM
+            else:
+                raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
+            self._agg_func = agg_func
 
     property name:
         def __get__(self):
@@ -94,8 +100,10 @@ cdef class Recorder:
             return np.min(values)
         elif self._agg_func == AggFuncs.MEAN:
             return np.mean(values)
+        elif self._agg_func == AggFuncs.MEDIAN:
+            return np.median(values)
         else:
-            return self.agg_func(np.array(values))
+            return self._agg_user_func(np.array(values))
 
     cpdef double[:] values(self):
         raise NotImplementedError()
@@ -109,6 +117,14 @@ cdef class Recorder:
         else:
             data["node"] = model._get_node_from_ref(model, node_name)
         return cls(model, **data)
+
+    @classmethod
+    def register(cls):
+        recorder_registry[cls.__name__.lower()] = cls
+
+    @classmethod
+    def unregister(cls):
+        del(recorder_registry[cls.__name__.lower()])
 
 cdef class AggregatedRecorder(Recorder):
     """
@@ -207,7 +223,7 @@ cdef class AggregatedRecorder(Recorder):
         rec = cls(model, recorders, **data)
         print(rec.name)
 
-recorder_registry.add(AggregatedRecorder)
+AggregatedRecorder.register()
 
 
 cdef class NodeRecorder(Recorder):
@@ -225,7 +241,7 @@ cdef class NodeRecorder(Recorder):
     def __repr__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 
-recorder_registry.add(NodeRecorder)
+NodeRecorder.register()
 
 
 cdef class StorageRecorder(Recorder):
@@ -243,7 +259,7 @@ cdef class StorageRecorder(Recorder):
     def __repr__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 
-recorder_registry.add(StorageRecorder)
+StorageRecorder.register()
 
 
 cdef class ParameterRecorder(Recorder):
@@ -276,11 +292,11 @@ cdef class ParameterRecorder(Recorder):
         else:
             del(data["node"])
             node = model._get_node_from_ref(model, node_name)
-        from .parameters import load_parameter
+        from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 
-recorder_registry.add(ParameterRecorder)
+ParameterRecorder.register()
 
 
 cdef class IndexParameterRecorder(Recorder):
@@ -303,11 +319,11 @@ cdef class IndexParameterRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        from .parameters import load_parameter
+        from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 
-recorder_registry.add(IndexParameterRecorder)
+IndexParameterRecorder.register()
 
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
@@ -342,7 +358,181 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 
-recorder_registry.add(NumpyArrayNodeRecorder)
+NumpyArrayNodeRecorder.register()
+
+
+
+cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
+    """
+    This recorder calculates a flow duration curve for each scenario.
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        The node to record
+    percentiles : array
+        The percentiles to use in the calculation of the flow duration curve.
+        Values must be in the range 0-100.
+    agg_func: str, optional
+        function used for aggregating the FDC across percentiles.
+        Numpy style functions that support an axis argument are supported.
+    fdc_agg_func: str, optional
+        optional different function for aggregating across scenarios.
+    """
+
+    def __init__(self, model, AbstractNode node, percentiles, **kwargs):
+
+        # Optional different method for aggregating across percentiles
+        agg_func = kwargs.pop('fdc_agg_func', kwargs.get('agg_func', 'mean'))
+        super(FlowDurationCurveRecorder, self).__init__(model, node, **kwargs)
+
+        if isinstance(agg_func, basestring):
+            agg_func = _agg_func_lookup[agg_func.lower()]
+        elif callable(agg_func):
+            self.agg_user_func = agg_func
+            agg_func = AggFuncs.CUSTOM
+        else:
+            raise ValueError("Unrecognised recorder aggregation function: \"{}\".".format(agg_func))
+        self._fdc_agg_func = agg_func
+
+        self._percentiles = np.asarray(percentiles, dtype=np.float64)
+
+
+    cpdef finish(self):
+        self._fdc = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
+
+    property fdc:
+        def __get__(self, ):
+            return np.array(self._fdc)
+
+    cpdef double[:] values(self):
+
+        if self._fdc_agg_func == AggFuncs.PRODUCT:
+            return np.product(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.SUM:
+            return np.sum(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MAX:
+            return np.max(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MIN:
+            return np.min(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MEAN:
+            return np.mean(self._fdc, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MEDIAN:
+            return np.median(self._fdc, axis=0)
+        else:
+            return self._agg_user_func(np.array(self._fdc), axis=0)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self._percentiles
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self.fdc), index=index, columns=sc_index)
+
+FlowDurationCurveRecorder.register()
+
+cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
+    """
+    This recorder calculates a Flow Duration Curve (FDC) for each scenario and then
+    calculates their deviation from an input FDC. The 2nd dimension of the input flow
+    duration curve and percentiles list must be of the same length and have the same
+    order (high to low values or low to high values)
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        The node to record
+    percentiles : array
+        The percentiles to use in the calculation of the flow duration curve.
+        Values must be in the range 0-100.
+    target_fdc : array
+        The FDC against which the scenario FDCs are compared
+    agg_func: str, optional
+        Function used for aggregating the FDC deviations across percentiles.
+        Numpy style functions that support an axis argument are supported.
+    fdc_agg_func: str, optional
+        Optional different function for aggregating across scenarios.
+    """
+    def __init__(self, model, AbstractNode node, percentiles, target_fdc, scenario=None, name=None, **kwargs):
+        super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
+        self._target_fdc = np.asarray(target_fdc, dtype=np.float64)
+        self.scenario = scenario
+        if len(self._percentiles) != self._target_fdc.shape[0]:
+            raise ValueError("The lengths of the input FDC and the percentiles list do not match")
+
+    cpdef setup(self):
+        super(FlowDurationCurveDeviationRecorder, self).setup()
+        # Check target FDC is the correct size; this is done in setup rather than __init__
+        # because the scenarios might change after the Recorder is created.
+        if self.scenario is not None:
+            if self._target_fdc.shape[1] != self.scenario.size:
+                raise ValueError("The number of target FDCs does not match the number of scenarios")
+        else:
+            if self._target_fdc.shape[1] != len(self.model.scenarios.combinations):
+                raise ValueError("The number of target FDCs does not match the number of scenarios")
+
+    cpdef finish(self):
+        super(FlowDurationCurveDeviationRecorder, self).finish()
+
+        cdef int i, j, k, sc_index
+        cdef ScenarioIndex scenario_index
+        cdef double[:] trgt_fdc
+
+        if self.scenario is not None:
+            # We have to do this the slow way by iterating through all scenario combinations
+            sc_index = self.model.scenarios.get_scenario_index(self.scenario)
+            self._fdc_deviations = np.empty((self._target_fdc.shape[0], len(self.model.scenarios.combinations)), dtype=np.float64)
+            for i, scenario_index in enumerate(self.model.scenarios.combinations):
+                # Get the scenario specific ensemble id for this combination
+                j = scenario_index._indices[sc_index]
+                # Cache the target FDC to use in this combination
+                trgt_fdc = self._target_fdc[:, j]
+                # Finally calculate deviation
+                for k in range(trgt_fdc.shape[0]):
+                    try:
+                        self._fdc_deviations[k, i] = (self._fdc[k, i] - trgt_fdc[k])  / trgt_fdc[k]
+                    except ZeroDivisionError:
+                        self._fdc_deviations[k, i] = np.nan
+        else:
+            self._fdc_deviations = np.divide(np.subtract(self._fdc, self._target_fdc), self._target_fdc)
+
+    property fdc_deviations:
+        def __get__(self, ):
+            return np.array(self._fdc_deviations)
+
+    cpdef double[:] values(self):
+
+        if self._fdc_agg_func == AggFuncs.PRODUCT:
+            return np.nanprod(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.SUM:
+            return np.nansum(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MAX:
+            return np.nanmax(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MIN:
+            return np.nanmin(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MEAN:
+            return np.nanmean(self._fdc_deviations, axis=0)
+        elif self._fdc_agg_func == AggFuncs.MEDIAN:
+            return np.nanmedian(self._fdc_deviations, axis=0)
+        else:
+            return self._agg_user_func(np.array(self._fdc_deviations), axis=0)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self._percentiles
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=np.array(self._fdc_deviations), index=index, columns=sc_index)
+
+FlowDurationCurveDeviationRecorder.register()
 
 
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
@@ -377,7 +567,7 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 
-recorder_registry.add(NumpyArrayStorageRecorder)
+NumpyArrayStorageRecorder.register()
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
     cpdef setup(self):
@@ -400,7 +590,7 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
-recorder_registry.add(NumpyArrayLevelRecorder)
+NumpyArrayLevelRecorder.register()
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     cpdef setup(self):
@@ -433,7 +623,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         sc_index = self.model.scenarios.multiindex
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
-recorder_registry.add(NumpyArrayParameterRecorder)
+NumpyArrayParameterRecorder.register()
 
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
     cpdef setup(self):
@@ -466,13 +656,18 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         sc_index = self.model.scenarios.multiindex
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
-recorder_registry.add(NumpyArrayIndexParameterRecorder)
+NumpyArrayIndexParameterRecorder.register()
 
-cdef class MeanParameterRecorder(ParameterRecorder):
+cdef class RollingWindowParameterRecorder(ParameterRecorder):
     """Records the mean value of a Parameter for the last N timesteps"""
-    def __init__(self, model, Parameter param, int timesteps, *args, **kwargs):
-        super(MeanParameterRecorder, self).__init__(model, param, *args, **kwargs)
-        self.timesteps = timesteps
+    def __init__(self, model, Parameter param, int window, agg_func, *args, **kwargs):
+        super(RollingWindowParameterRecorder, self).__init__(model, param, *args, **kwargs)
+        self.window = window
+        self.agg_func = agg_func
+
+        valid_funcs = (AggFuncs.MEAN, AggFuncs.SUM, AggFuncs.MAX, AggFuncs.MIN)
+        if self._agg_func not in valid_funcs:
+            raise ValueError("Aggregation function for {} must be MIN/MAX/SUM/MEAN.".format(self.__class__.__name__))
 
     cpdef setup(self):
         cdef int ncomb = len(self._model.scenarios.combinations)
@@ -487,23 +682,32 @@ cdef class MeanParameterRecorder(ParameterRecorder):
 
     cpdef int save(self) except -1:
         cdef int i, n
-        cdef double[:] mean_value
+        cdef double[:] value
         cdef ScenarioIndex scenario_index
         cdef Timestep timestep = self._model.timestepper.current
 
         for i, scenario_index in enumerate(self._model.scenarios.combinations):
             self._memory[self.position, i] = self._param.value(timestep, scenario_index)
 
-        if timestep.index < self.timesteps:
+        if timestep.index < self.window:
             n = timestep.index + 1
         else:
-            n = self.timesteps
+            n = self.window
 
-        mean_value = np.mean(self._memory[0:n, :], axis=0)
-        self._data[<int>(timestep.index), :] = mean_value
+        if self._agg_func == AggFuncs.MEAN:
+            value = np.mean(self._memory[0:n, :], axis=0)
+        elif self._agg_func == AggFuncs.SUM:
+            value = np.sum(self._memory[0:n, :], axis=0)
+        elif self._agg_func == AggFuncs.MIN:
+            value = np.min(self._memory[0:n, :], axis=0)
+        elif self._agg_func == AggFuncs.MAX:
+            value = np.max(self._memory[0:n, :], axis=0)
+        else:
+            raise NotImplementedError("Aggregation function for {} must be MIN/MAX/SUM/MEAN.".format(self.__class__.__name__))
+        self._data[<int>(timestep.index), :] = value
 
         self.position += 1
-        if self.position >= self.timesteps:
+        if self.position >= self.window:
             self.position = 0
 
     property data:
@@ -517,12 +721,13 @@ cdef class MeanParameterRecorder(ParameterRecorder):
 
     @classmethod
     def load(cls, model, data):
-        from .parameters import load_parameter
+        from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
-        timesteps = int(data.pop("timesteps"))
-        return cls(model, parameter, timesteps, **data)
+        window = int(data.pop("window"))
+        agg_func = data.pop("agg_func")
+        return cls(model, parameter, window, agg_func, **data)
 
-recorder_registry.add(MeanParameterRecorder)
+RollingWindowParameterRecorder.register()
 
 cdef class MeanFlowRecorder(NodeRecorder):
     """Records the mean flow of a Node for the previous N timesteps
@@ -600,7 +805,7 @@ cdef class MeanFlowRecorder(NodeRecorder):
             days = None
         return cls(model, node, timesteps=timesteps, days=days, name=name)
 
-recorder_registry.add(MeanFlowRecorder)
+MeanFlowRecorder.register()
 
 cdef class BaseConstantNodeRecorder(NodeRecorder):
     """
@@ -634,7 +839,7 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
             self._values[scenario_index._global_id] += max_flow - node._flow[scenario_index._global_id]
 
         return 0
-recorder_registry.add(TotalDeficitNodeRecorder)
+TotalDeficitNodeRecorder.register()
 
 
 cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
@@ -655,7 +860,7 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
             i = scenario_index._global_id
             self._values[i] += self._node._flow[i]*self.factor*days
         return 0
-recorder_registry.add(TotalFlowNodeRecorder)
+TotalFlowNodeRecorder.register()
 
 
 cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
@@ -677,7 +882,7 @@ cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
         cdef int nt = self.model.timestepper.current.index
         for i in range(self._values.shape[0]):
             self._values[i] /= nt
-recorder_registry.add(DeficitFrequencyNodeRecorder)
+DeficitFrequencyNodeRecorder.register()
 
 cdef class BaseConstantStorageRecorder(StorageRecorder):
     """
@@ -695,6 +900,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
 
     cpdef double[:] values(self):
         return self._values
+BaseConstantStorageRecorder.register()
 
 cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 
@@ -706,6 +912,82 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
         for i in range(self._values.shape[0]):
             self._values[i] = np.min([self._node._volume[i], self._values[i]])
         return 0
+MinimumVolumeStorageRecorder.register()
+
+cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
+
+    def __init__(self, model, node, threshold, *args, **kwargs):
+        self.threshold = threshold
+        super(MinimumThresholdVolumeStorageRecorder, self).__init__(model, node, *args, **kwargs)
+
+    cpdef reset(self):
+        self._values[...] = 0.0
+
+    cpdef int save(self) except -1:
+        cdef int i
+        for i in range(self._values.shape[0]):
+            if self._node._volume[i] <= self.threshold:
+                self._values[i] = 1.0
+        return 0
+MinimumThresholdVolumeStorageRecorder.register()
+
+
+cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
+    """ Record the number of years where an IndexParameter is greater than or equal to a threshold """
+    def __init__(self, model, IndexParameter param, int threshold, *args, **kwargs):
+        super(AnnualCountIndexParameterRecorder, self).__init__(model, param, *args, **kwargs)
+        self.threshold = threshold
+
+    cpdef setup(self):
+        self._count = np.zeros(len(self.model.scenarios.combinations), np.int32)
+        self._current_max = np.zeros_like(self._count)
+
+    cpdef reset(self):
+        self._count[...] = 0
+        self._current_max[...] = 0
+        self._current_year = -1
+
+    cpdef int save(self) except -1:
+        cdef int i, ncomb, value
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+
+        ncomb = len(self.model.scenarios.combinations)
+
+        if ts.year != self._current_year:
+            # A new year
+            if self._current_year != -1:
+                # As long as at least one year has been run
+                # then update the count if threshold equal to or exceeded
+                for i in range(ncomb):
+                    if self._current_max[i] >= self.threshold:
+                        self._count[i] += 1
+
+            # Finally reset current maximum and update current year
+            self._current_max[...] = 0
+            self._current_year = ts.year
+
+        for scenario_index in self.model.scenarios.combinations:
+            # Get current parameter value
+            value = self._param.index(ts, scenario_index)
+
+            # Update annual max if a new maximum is found
+            if value > self._current_max[scenario_index._global_id]:
+                self._current_max[scenario_index._global_id] = value
+
+        return 0
+
+    cpdef finish(self):
+        cdef int i
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        # Complete the current year by updating the count if threshold equal to or exceeded
+        for i in range(ncomb):
+            if self._current_max[i] >= self.threshold:
+                self._count[i] += 1
+
+    cpdef double[:] values(self):
+        return np.asarray(self._count).astype(np.float64)
+AnnualCountIndexParameterRecorder.register()
 
 
 def load_recorder(model, data):
@@ -738,16 +1020,18 @@ def load_recorder(model, data):
     if recorder is None:
         recorder_type = data['type']
 
-        # lookup the recorder class in the registry
-        cls = None
-        name2 = recorder_type.lower().replace('recorder', '')
-        for recorder_class in recorder_registry:
-            name1 = recorder_class.__name__.lower().replace('recorder', '')
-            if name1 == name2:
-                cls = recorder_class
-
-        if cls is None:
-            raise NotImplementedError('Unrecognised recorder type "{}"'.format(recorder_type))
+        name = recorder_type.lower()
+        try:
+            cls = recorder_registry[name]
+        except KeyError:
+            if name.endswith("recorder"):
+                name = name.replace("recorder", "")
+            else:
+                name += "recorder"
+            try:
+                cls = recorder_registry[name]
+            except KeyError:
+                raise NotImplementedError('Unrecognised recorder type "{}"'.format(recorder_type))
 
         del(data["type"])
         recorder = cls.load(model, data)

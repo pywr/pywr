@@ -1,23 +1,19 @@
 import os
 import datetime
 from ._parameters import (
-    Parameter as BaseParameter, parameter_registry, ConstantParameter,
+    Parameter, parameter_registry, ConstantParameter,
     ConstantScenarioParameter, AnnualHarmonicSeriesParameter,
     ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter,
-    ArrayIndexedScenarioParameter,
+    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
     IndexParameter, CachedParameter, RecorderThresholdParameter,
     AggregatedParameter, AggregatedIndexParameter,
     load_parameter, load_parameter_values, load_dataframe)
+from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from past.builtins import basestring
 import numpy as np
 import pandas
-
-
-class Parameter(BaseParameter):
-    def value(self, ts, scenario_index):
-        raise NotImplementedError()
 
 
 class FunctionParameter(Parameter):
@@ -52,11 +48,19 @@ ScaledProfileParameter.register()
 
 
 def align_and_resample_dataframe(df, datetime_index):
+    from pandas.tseries.offsets import DateOffset, Week, Day
     # Must resample and align the DataFrame to the model.
     start = datetime_index[0]
     end = datetime_index[-1]
 
     df_index = df.index
+    df_freq = df.index.freq
+    if df_freq is None:
+        raise ValueError('DataFrame index has no frequency.')
+
+    # Special case of a weekly frequency that can be treated as 7D
+    if isinstance(df_freq, Week):
+        df_freq = Day(n=7)
 
     if df_index[0] > start:
         raise ValueError('DataFrame data begins after the index start date.')
@@ -64,7 +68,7 @@ def align_and_resample_dataframe(df, datetime_index):
         raise ValueError('DataFrame data ends before the index end date.')
 
     # Downsampling (i.e. from high freq to lower model freq)
-    if datetime_index.freq >= df_index.freq:
+    if datetime_index.freq >= df_freq:
         # Slice to required dates
         df = df[start:end]
         if df.index[0] != start:
