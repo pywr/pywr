@@ -174,12 +174,14 @@ def test_scenarios_from_json(solver):
 
     assert df.shape[1] == 20
     assert df.columns.names[0] == 'scenario A'
+    assert_equal(df.columns.levels[0], np.arange(10))
     assert df.columns.names[1] == 'scenario B'
+    assert_equal(df.columns.levels[1], np.array(['First', 'Second']))
     # Data for first demand (B) ensemble
-    d1 = df.xs(0, level='scenario B', axis=1).iloc[0, :].values
+    d1 = df.xs('First', level='scenario B', axis=1).iloc[0, :].values
     assert_allclose(d1, [10]*10)
     # Data for second demand (B) ensemble
-    d2 = df.xs(1, level='scenario B', axis=1).iloc[0, :]
+    d2 = df.xs('Second', level='scenario B', axis=1).iloc[0, :]
     assert_allclose(d2, [10, 11, 12, 13, 14]+[15]*5)
 
 

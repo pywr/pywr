@@ -265,10 +265,11 @@ class Model(object):
             for scen_data in scenarios_data:
                 scen_name = scen_data["name"]
                 size = scen_data["size"]
+                ensemble_names = scen_data.pop("ensemble_names", None)
                 s_slice = scen_data.pop("slice", None)
                 if s_slice:
                     s_slice = slice(*s_slice)
-                Scenario(model, scen_name, size=size, slice=s_slice)
+                Scenario(model, scen_name, size=size, slice=s_slice, ensemble_names=ensemble_names)
 
         try:
             scenario_combinations = data["scenario_combinations"]

@@ -16,7 +16,8 @@
         },
         {
             "name": "scenario B",
-            "size": 2
+            "size": 2,
+            "ensemble_names": ["First", "Second"]
         }
     ],
     "nodes": [
