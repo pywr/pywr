@@ -147,7 +147,7 @@ def test_numpy_parameter_recorder(simple_linear_model):
     model.timestepper.end = pandas.to_datetime("2016-12-31")
     otpt = model.nodes['Output']
 
-    p = DailyProfileParameter(np.arange(366, dtype=np.float64), )
+    p = DailyProfileParameter(model, np.arange(366, dtype=np.float64), )
     p.name = 'daily profile'
     model.nodes['Input'].max_flow = p
     otpt.cost = -2.0
@@ -176,7 +176,7 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
 
     res = model.nodes['Storage']
 
-    p = ControlCurveIndexParameter(res, [5.0/20.0, 2.5/20.0])
+    p = ControlCurveIndexParameter(model, res, [5.0/20.0, 2.5/20.0])
 
     res_rec = NumpyArrayStorageRecorder(model, res)
     lvl_rec = NumpyArrayIndexParameterRecorder(model, p)
@@ -211,7 +211,7 @@ def test_parameter_mean_recorder(simple_linear_model):
 
     node = model.nodes["Input"]
     values = np.arange(0, 366, dtype=np.float64)
-    node.max_flow = DailyProfileParameter(values)
+    node.max_flow = DailyProfileParameter(model, values)
 
     scenario = Scenario(model, "dummy", size=3)
 
@@ -232,8 +232,8 @@ def test_parameter_mean_recorder_json(simple_linear_model):
     model = simple_linear_model
     node = model.nodes["Input"]
     values = np.arange(0, 366, dtype=np.float64)
-    parameter = DailyProfileParameter(values, name="input_max_flow")
-    model.parameters.append(parameter) # HACK
+    parameter = DailyProfileParameter(model, values, name="input_max_flow")
+
     node.max_flow = parameter
 
     data = {
@@ -384,8 +384,8 @@ class TestTablesRecorder:
         otpt = model.nodes['Output']
         inpt = model.nodes['Input']
 
-        inpt.max_flow = ConstantScenarioParameter(scA, [10, 20, 30, 40])
-        otpt.max_flow = ConstantScenarioParameter(scB, [20, 40])
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
         h5file = tmpdir.join('output.h5')
@@ -411,7 +411,7 @@ class TestTablesRecorder:
         otpt = model.nodes['Output']
         inpt = model.nodes['Input']
 
-        p = ConstantParameter(10.0, name='max_flow')
+        p = ConstantParameter(model, 10.0, name='max_flow')
         inpt.max_flow = p
 
         agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
@@ -445,7 +445,7 @@ class TestTablesRecorder:
         otpt = model.nodes['Output']
         inpt = model.nodes['Input']
         agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
-        p = ConstantParameter(10.0, name='max_flow')
+        p = ConstantParameter(model, 10.0, name='max_flow')
         inpt.max_flow = p
 
         otpt.cost = -2.0
@@ -659,7 +659,7 @@ def test_mean_flow_recorder(solver):
 
     scenario = Scenario(model, "dummy", size=2)
 
-    inpt.max_flow = inpt.min_flow = FunctionParameter(inpt, lambda model, t, si: 2 + t.index)
+    inpt.max_flow = inpt.min_flow = FunctionParameter(model, inpt, lambda model, t, si: 2 + t.index)
     model.run()
 
     expected = [
@@ -690,7 +690,7 @@ def test_mean_flow_recorder_json(solver):
 
     # TODO: it's not possible to define a FunctionParameter in JSON yet
     supply1 = model.nodes["supply1"]
-    supply1.max_flow = supply1.min_flow = FunctionParameter(supply1, lambda model, t, si: 2 + t.index)
+    supply1.max_flow = supply1.min_flow = FunctionParameter(model, supply1, lambda model, t, si: 2 + t.index)
 
     assert(len(model.recorders) == 3)
 
@@ -718,14 +718,14 @@ def test_annual_count_index_parameter_recorder(simple_storage_model):
     model.timestepper.start = '2015-01-01'
     model.timestepper.end = '2019-12-31'
     # Control curve parameter
-    param = ControlCurveIndexParameter(model.nodes['Storage'], ConstantParameter(0.25))
+    param = ControlCurveIndexParameter(model, model.nodes['Storage'], ConstantParameter(model, 0.25))
 
     # Storage model has a capacity of 20, but starts at 10 Ml
     # Demand is roughly 2 Ml/d per year
     #  First ensemble balances the demand
     #  Second ensemble should fail during 3rd year
     demand = 2.0 / 365
-    model.nodes['Input'].max_flow = ConstantScenarioParameter(scenario, [demand, 0])
+    model.nodes['Input'].max_flow = ConstantScenarioParameter(model, scenario, [demand, 0])
     model.nodes['Output'].max_flow = demand
 
     # Create the recorder with a threshold of 1

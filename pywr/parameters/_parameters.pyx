@@ -19,43 +19,7 @@ _predicate_lookup = {"LT": Predicates.LT, "GT": Predicates.GT, "EQ": Predicates.
 
 parameter_registry = {}
 
-class PairedSet(set):
-    def __init__(self, obj, *args, **kwargs):
-        set.__init__(self)
-        self.obj = obj
-
-    def add(self, item):
-        if not isinstance(item, Parameter):
-            return
-        set.add(self, item)
-        if(self is self.obj.parents):
-            set.add(item.children, self.obj)
-        else:
-            set.add(item.parents, self.obj)
-
-    def remove(self, item):
-        set.remove(self, item)
-        if(self is self.obj.parents):
-            set.remove(item.children, self.obj)
-        else:
-            set.remove(item.parents, self.obj)
-
-    def clear(self):
-        if(self is self.obj.parents):
-            for parent in list(self):
-                set.remove(parent.children, self.obj)
-        else:
-            for child in list(self):
-                set.remove(child.parents, self.obj)
-        set.clear(self)
-
-cdef class Parameter:
-    def __init__(self, name=None, comment=None):
-        self.name = name
-        self.comment = comment
-        self.parents = PairedSet(self)
-        self.children = PairedSet(self)
-        self._recorders = []
+cdef class Parameter(Component):
 
     @classmethod
     def register(cls):
@@ -65,23 +29,8 @@ cdef class Parameter:
     def unregister(cls):
         del(parameter_registry[cls.__name__.lower()])
 
-    cpdef setup(self, model):
-        pass
-
-    cpdef reset(self):
-        pass
-
-    cpdef before(self, Timestep ts):
-        pass
-
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         raise NotImplementedError("Parameter must be subclassed")
-
-    cpdef after(self, Timestep ts):
-        pass
-
-    cpdef finish(self):
-        pass
 
     cpdef update(self, double[:] values):
         raise NotImplementedError()
@@ -144,14 +93,14 @@ cdef class Parameter:
             scenario = model.scenarios[scenario]
             # Only pass scenario object if one provided; most Parameter subclasses
             # do not accept a scenario argument.
-            return cls(scenario, values, name=name, comment=None)
+            return cls(model, scenario, values, name=name, comment=None)
         else:
-            return cls(values, name=name, comment=None)
+            return cls(model, values, name=name, comment=None)
 Parameter.register()
 
 cdef class ConstantParameter(Parameter):
-    def __init__(self, value, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
-        super(ConstantParameter, self).__init__(**kwargs)
+    def __init__(self, model, value, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+        super(ConstantParameter, self).__init__(model, **kwargs)
         self._value = value
         self.size = 1
         self._lower_bounds = np.ones(self.size) * lower_bounds
@@ -175,7 +124,7 @@ cdef class ConstantParameter(Parameter):
             value = data.pop("value")
         else:
             value = load_parameter_values(model, data)
-        parameter = cls(value, **data)
+        parameter = cls(model, value, **data)
         return parameter
 
 ConstantParameter.register()
@@ -183,8 +132,8 @@ ConstantParameter.register()
 
 cdef class CachedParameter(IndexParameter):
     """Wrapper for Parameters which caches the result"""
-    def __init__(self, parameter, *args, **kwargs):
-        super(IndexParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, parameter, *args, **kwargs):
+        super(IndexParameter, self).__init__(model, *args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
         self.timestep = None
@@ -209,8 +158,7 @@ cdef class CachedParameter(IndexParameter):
     @classmethod
     def load(cls, model, data):
         parameter = load_parameter(model, data.pop("parameter"))
-        return cls(parameter, **data)
-
+        return cls(model, parameter, **data)
 CachedParameter.register()
 
 
@@ -219,8 +167,8 @@ cdef class ArrayIndexedParameter(Parameter):
 
     The values in this parameter are constant across all scenarios.
     """
-    def __init__(self, values, *args, **kwargs):
-        super(ArrayIndexedParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, values, *args, **kwargs):
+        super(ArrayIndexedParameter, self).__init__(model, *args, **kwargs)
         self.values = np.asarray(values, dtype=np.float64)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
@@ -235,11 +183,11 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
 
     The values in this parameter are vary in time based on index and vary within a single Scenario.
     """
-    def __init__(self, Scenario scenario, values, *args, **kwargs):
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
         """
         values should be an iterable that is the same length as scenario.size
         """
-        super(ArrayIndexedScenarioParameter, self).__init__(*args, **kwargs)
+        super(ArrayIndexedScenarioParameter, self).__init__(model, *args, **kwargs)
         cdef int i
         values = np.asarray(values, dtype=np.float64)
         if values.ndim != 2:
@@ -249,10 +197,10 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         self.values = values
         self._scenario = scenario
 
-    cpdef setup(self, model):
+    cpdef setup(self):
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
-        self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
+        self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is a bit confusing.
@@ -264,7 +212,7 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
 
 
 cdef class TablesArrayParameter(IndexParameter):
-    def __init__(self, h5file, node, where='/', scenario=None, **kwargs):
+    def __init__(self, model, h5file, node, where='/', scenario=None, **kwargs):
         """
         This Parameter reads array data from a PyTables HDF database.
 
@@ -284,7 +232,7 @@ cdef class TablesArrayParameter(IndexParameter):
         scenario : Scenario
             Scenario to use as the second index in the array.
         """
-        super(TablesArrayParameter, self).__init__(**kwargs)
+        super(TablesArrayParameter, self).__init__(model, **kwargs)
 
         self.h5file = h5file
         self.h5store = None
@@ -297,13 +245,12 @@ cdef class TablesArrayParameter(IndexParameter):
         self._values_int = None
         self._scenario_index = -1
 
-    cpdef setup(self, model):
-        self.model = model
+    cpdef setup(self):
         self._scenario_index = -1
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         if self.scenario is not None:
-            self._scenario_index = model.scenarios.get_scenario_index(self.scenario)
+            self._scenario_index = self._model.scenarios.get_scenario_index(self.scenario)
 
     cpdef reset(self):
         self.h5store = H5Store(self.h5file, None, "r")
@@ -328,7 +275,7 @@ cdef class TablesArrayParameter(IndexParameter):
                 raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
             elif shape[1] > self.scenario.size:
                 warnings.warn("The length of the second dimension of the tables Node is greater than the size of the specified Scenario. Not all data is being used!")
-        if shape[0] < len(self.model.timestepper):
+        if shape[0] < len(self._model.timestepper):
             raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
@@ -370,7 +317,7 @@ cdef class TablesArrayParameter(IndexParameter):
         node = data.pop('node')
         where = data.pop('where', '/')
 
-        return cls(url, node, where=where, scenario=scenario)
+        return cls(model, url, node, where=where, scenario=scenario)
 TablesArrayParameter.register()
 
 
@@ -379,11 +326,11 @@ cdef class ConstantScenarioParameter(Parameter):
 
     The values in this parameter are constant in time, but vary within a single Scenario.
     """
-    def __init__(self, Scenario scenario, values, *args, **kwargs):
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
         """
         values should be an iterable that is the same length as scenario.size
         """
-        super(ConstantScenarioParameter, self).__init__(*args, **kwargs)
+        super(ConstantScenarioParameter, self).__init__(model, *args, **kwargs)
         cdef int i
         if scenario._size != len(values):
             raise ValueError("The number of values must equal the size of the scenario.")
@@ -392,10 +339,10 @@ cdef class ConstantScenarioParameter(Parameter):
             self._values[i] = values[i]
         self._scenario = scenario
 
-    cpdef setup(self, model):
+    cpdef setup(self):
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
-        self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
+        self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is a bit confusing.
@@ -411,13 +358,13 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
     """Time varying parameter using an array and Timestep._index with
     multiplicative factors per Scenario
     """
-    def __init__(self, Scenario scenario, values, factors, *args, **kwargs):
+    def __init__(self, model, Scenario scenario, values, factors, *args, **kwargs):
         """
         values is the baseline timeseries data that is perturbed by a factor. The
         factor is taken from factors which is shape (scenario.size, 12). Therefore
         factors vary with the individual scenarios in scenario and month.
         """
-        super(ArrayIndexedScenarioMonthlyFactorsParameter, self).__init__(*args, **kwargs)
+        super(ArrayIndexedScenarioMonthlyFactorsParameter, self).__init__(model, *args, **kwargs)
 
         values = np.asarray(values, dtype=np.float64)
         factors = np.asarray(factors, dtype=np.float64)
@@ -432,10 +379,10 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         self._values = values
         self._factors = factors
 
-    cpdef setup(self, model):
+    cpdef setup(self):
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
-        self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
+        self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is a bit confusing.
@@ -467,9 +414,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         else:
             raise TypeError("Unexpected type for \"factors\" in {}".format(cls.__name__))
 
-        parameter = ArrayIndexedScenarioMonthlyFactorsParameter(scenario, values, factors)
-
-        return parameter
+        return cls(model, scenario, values, factors)
 
 ArrayIndexedScenarioMonthlyFactorsParameter.register()
 
@@ -479,8 +424,8 @@ cdef inline bint is_leap_year(int year):
     return ((year & 3) == 0 and ((year % 25) != 0 or (year & 15) == 0))
 
 cdef class DailyProfileParameter(Parameter):
-    def __init__(self, values, *args, **kwargs):
-        super(DailyProfileParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, values, *args, **kwargs):
+        super(DailyProfileParameter, self).__init__(model, *args, **kwargs)
         v = np.squeeze(np.array(values))
         if v.ndim != 1:
             raise ValueError("values must be 1-dimensional.")
@@ -507,8 +452,8 @@ cdef class MonthlyProfileParameter(Parameter):
     ScenarioMonthlyProfileParameter
     ArrayIndexedScenarioMonthlyFactorsParameter
     """
-    def __init__(self, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
-        super(MonthlyProfileParameter, self).__init__(**kwargs)
+    def __init__(self, model, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+        super(MonthlyProfileParameter, self).__init__(model, **kwargs)
         self.size = 12
         if len(values) != self.size:
             raise ValueError("12 values must be given for a monthly profile.")
@@ -541,8 +486,8 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
     MonthlyProfileParameter
     ArrayIndexedScenarioMonthlyFactorsParameter
     """
-    def __init__(self, Scenario scenario, values, **kwargs):
-        super(ScenarioMonthlyProfileParameter, self).__init__(**kwargs)
+    def __init__(self, model, Scenario scenario, values, **kwargs):
+        super(ScenarioMonthlyProfileParameter, self).__init__(model, **kwargs)
 
         if values.ndim != 2:
             raise ValueError("Factors must be two dimensional.")
@@ -554,10 +499,10 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
         self._scenario = scenario
         self._values = np.array(values)
 
-    cpdef setup(self, model):
+    cpdef setup(self):
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
-        self._scenario_index = model.scenarios.get_scenario_index(self._scenario)
+        self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
@@ -603,8 +548,8 @@ cdef class IndexedArrayParameter(Parameter):
     -----
     Float arguments `params` are converted to `ConstantParameter`
     """
-    def __init__(self, index_parameter=None, params=None, **kwargs):
-        super(IndexedArrayParameter, self).__init__(**kwargs)
+    def __init__(self, model, index_parameter=None, params=None, **kwargs):
+        super(IndexedArrayParameter, self).__init__(model, **kwargs)
         assert(isinstance(index_parameter, IndexParameter))
         self.index_parameter = index_parameter
         self.children.add(index_parameter)
@@ -631,7 +576,7 @@ cdef class IndexedArrayParameter(Parameter):
     def load(cls, model, data):
         index_parameter = load_parameter(model, data.pop("index_parameter"))
         params = [load_parameter(model, parameter_data) for parameter_data in data.pop("params")]
-        return cls(index_parameter, params, **data)
+        return cls(model, index_parameter, params, **data)
 IndexedArrayParameter.register()
 
 
@@ -657,7 +602,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         length as amplitudes.
 
     """
-    def __init__(self, mean, amplitudes, phases, *args, **kwargs):
+    def __init__(self, model, mean, amplitudes, phases, *args, **kwargs):
         if len(amplitudes) != len(phases):
             raise ValueError("The number  of amplitudes and phases must be the same.")
         n = len(amplitudes)
@@ -672,7 +617,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         self._amplitude_upper_bounds = np.ones(n)*kwargs.pop('amplitude_upper_bounds', np.inf)
         self._phase_lower_bounds = np.ones(n)*kwargs.pop('phase_lower_bounds', 0.0)
         self._phase_upper_bounds = np.ones(n)*kwargs.pop('phase_upper_bounds', np.pi*2)
-        super(AnnualHarmonicSeriesParameter, self).__init__(*args, **kwargs)
+        super(AnnualHarmonicSeriesParameter, self).__init__(model, *args, **kwargs)
         self._value_cache = 0.0
         self._ts_index_cache = -1
 
@@ -682,7 +627,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         amplitudes = data.pop('amplitudes')
         phases = data.pop('phases')
 
-        return cls(mean, amplitudes, phases, **data)
+        return cls(model, mean, amplitudes, phases, **data)
 
     property amplitudes:
         def __get__(self):
@@ -746,9 +691,9 @@ _agg_func_lookup = {
     "all": AggFuncs.ALL,
 }
 
-def wrap_const(value):
+def wrap_const(model, value):
     if isinstance(value, (int, float)):
-        value = ConstantParameter(value)
+        value = ConstantParameter(model, value)
     return value
 
 cdef class AggregatedParameterBase(IndexParameter):
@@ -762,10 +707,10 @@ cdef class AggregatedParameterBase(IndexParameter):
         parameters = set()
         for pdata in parameters_data:
             parameter = load_parameter(model, pdata)
-            parameters.add(wrap_const(parameter))
+            parameters.add(wrap_const(model, parameter))
 
         agg_func = data.pop("agg_func", None)
-        return cls(parameters=parameters, agg_func=agg_func, **data)
+        return cls(model, parameters=parameters, agg_func=agg_func, **data)
 
     property agg_func:
         def __set__(self, agg_func):
@@ -790,18 +735,6 @@ cdef class AggregatedParameterBase(IndexParameter):
     def __len__(self):
         return len(self.parameters)
 
-    cpdef setup(self, model):
-        for parameter in self.parameters:
-            parameter.setup(model)
-
-    cpdef after(self, Timestep timestep):
-        for parameter in self.parameters:
-            parameter.after(timestep)
-
-    cpdef reset(self):
-        for parameter in self.parameters:
-            parameter.reset()
-
 cdef class AggregatedParameter(AggregatedParameterBase):
     """A collection of IndexParameters
 
@@ -817,8 +750,8 @@ cdef class AggregatedParameter(AggregatedParameterBase):
         The aggregation function. Must be one of {"sum", "min", "max", "mean",
         "product"}, or a callable function which accepts a list of values.
     """
-    def __init__(self, parameters, agg_func=None, **kwargs):
-        super(AggregatedParameter, self).__init__(**kwargs)
+    def __init__(self, model, parameters, agg_func=None, **kwargs):
+        super(AggregatedParameter, self).__init__(model, **kwargs)
         self.agg_func = agg_func
         self.parameters = set(parameters)
         for parameter in self.parameters:
@@ -876,8 +809,8 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
         The aggregation function. Must be one of {"sum", "min", "max", "any",
         "all"}, or a callable function which accepts a list of values.
     """
-    def __init__(self, parameters, agg_func=None, **kwargs):
-        super(AggregatedIndexParameter, self).__init__(**kwargs)
+    def __init__(self, model, parameters, agg_func=None, **kwargs):
+        super(AggregatedIndexParameter, self).__init__(model, **kwargs)
         self.agg_func = agg_func
         self.parameters = set(parameters)
         for parameter in self.parameters:
@@ -934,8 +867,8 @@ cdef class NegativeParameter(Parameter):
     parameter : `Parameter`
         The parameter to to compare with the float.
     """
-    def __init__(self, parameter, *args, **kwargs):
-        super(NegativeParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, parameter, *args, **kwargs):
+        super(NegativeParameter, self).__init__(model, *args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
 
@@ -945,7 +878,7 @@ cdef class NegativeParameter(Parameter):
     @classmethod
     def load(cls, model, data):
         parameter = load_parameter(model, data.pop("parameter"))
-        return cls(parameter, **data)
+        return cls(model, parameter, **data)
 NegativeParameter.register()
 
 
@@ -962,8 +895,8 @@ cdef class MaxParameter(Parameter):
     threshold : float (default=0.0)
         The threshold value to compare with the given parameter.
     """
-    def __init__(self, parameter, threshold=0.0, *args, **kwargs):
-        super(MaxParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, parameter, threshold=0.0, *args, **kwargs):
+        super(MaxParameter, self).__init__(model, *args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
         self.threshold = threshold
@@ -974,7 +907,7 @@ cdef class MaxParameter(Parameter):
     @classmethod
     def load(cls, model, data):
         parameter = load_parameter(model, data.pop("parameter"))
-        return cls(parameter, **data)
+        return cls(model, parameter, **data)
 MaxParameter.register()
 
 
@@ -998,8 +931,8 @@ cdef class MinParameter(Parameter):
     threshold : float (default=0.0)
         The threshold value to compare with the given parameter.
     """
-    def __init__(self, parameter, threshold=0.0, *args, **kwargs):
-        super(MinParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, parameter, threshold=0.0, *args, **kwargs):
+        super(MinParameter, self).__init__(model, *args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
         self.threshold = threshold
@@ -1010,7 +943,7 @@ cdef class MinParameter(Parameter):
     @classmethod
     def load(cls, model, data):
         parameter = load_parameter(model, data.pop("parameter"))
-        return cls(parameter, **data)
+        return cls(model, parameter, **data)
 MinParameter.register()
 
 
@@ -1048,8 +981,8 @@ cdef class RecorderThresholdParameter(IndexParameter):
     the previous day. In this case the predicate evaluates to True.
     """
 
-    def __init__(self, Recorder recorder, threshold, values=None, predicate=None):
-        super(RecorderThresholdParameter, self).__init__()
+    def __init__(self, model, Recorder recorder, threshold, values=None, predicate=None, **kwargs):
+        super(RecorderThresholdParameter, self).__init__(model, **kwargs)
         self.recorder = recorder
         self.threshold = threshold
         if values is None:
@@ -1102,7 +1035,7 @@ cdef class RecorderThresholdParameter(IndexParameter):
         threshold = data.pop("threshold")
         values = data.pop("values")
         predicate = data.pop("predicate", None)
-        return cls(recorder, threshold, values, predicate, **data)
+        return cls(model, recorder, threshold, values, predicate, **data)
 
 RecorderThresholdParameter.register()
 
@@ -1136,7 +1069,7 @@ def load_parameter(model, data, parameter_name=None):
             parameter_name = data["name"]
             del(data["name"])
         param = load_parameter(model, data)
-        parameter = CachedParameter(param)
+        parameter = CachedParameter(model, param)
     else:
         # parameter is dynamic
         parameter_type = data['type']

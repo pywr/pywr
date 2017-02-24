@@ -53,9 +53,9 @@ class ControlCurveParameter(BaseControlCurveParameter):
     `BaseControlCurveParameter`
 
     """
-    def __init__(self, storage_node, control_curves, values=None, parameters=None,
-                 variable_indices=None, upper_bounds=None, lower_bounds=None):
-        super(ControlCurveParameter, self).__init__(storage_node, control_curves)
+    def __init__(self, model, storage_node, control_curves, values=None, parameters=None,
+                 variable_indices=None, upper_bounds=None, lower_bounds=None, **kwargs):
+        super(ControlCurveParameter, self).__init__(model, storage_node, control_curves, **kwargs)
         # Expected number of values is number of control curves plus one.
         self.size = nvalues = len(self.control_curves) + 1
         self.values = None
@@ -118,7 +118,7 @@ class ControlCurveParameter(BaseControlCurveParameter):
             for pdata in parameters_data:
                 parameters.append(load_parameter(model, pdata))
 
-        return cls(storage_node, control_curves, values=values, parameters=parameters)
+        return cls(model, storage_node, control_curves, values=values, parameters=parameters)
 
     def value(self, ts, scenario_index):
         i = scenario_index.global_id
@@ -155,8 +155,8 @@ ControlCurveParameter.register()
 class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
     _profile_size = None
 
-    def __init__(self, storage_node, control_curves, values, profile=None, scale=1.0):
-        super(AbstractProfileControlCurveParameter, self).__init__(storage_node, control_curves)
+    def __init__(self, model, storage_node, control_curves, values, profile=None, scale=1.0, **kwargs):
+        super(AbstractProfileControlCurveParameter, self).__init__(model, storage_node, control_curves, **kwargs)
 
         nvalues = len(self.control_curves) + 1
 
@@ -205,7 +205,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
         else:
             scale = 1.0
 
-        return cls(storage_node, control_curves, values=values, profile=profile, scale=scale)
+        return cls(model, storage_node, control_curves, values=values, profile=profile, scale=scale)
 
     def _profile_index(self, ts, scenario_index):
         raise NotImplementedError()

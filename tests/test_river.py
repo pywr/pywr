@@ -155,7 +155,7 @@ def test_control_curve(solver):
     demand = pywr.core.Output(model, name="Demand", cost=-10.0, max_flow=10)
     lnk.connect(demand)
     from pywr.parameters import ConstantParameter
-    control_curve = ConstantParameter(0.8)
+    control_curve = ConstantParameter(model, 0.8)
     reservoir = river.Reservoir(model, name="Reservoir", max_volume=10, cost=-20, above_curve_cost=0.0,
                                 control_curve=control_curve, initial_volume=10)
     reservoir.inputs[0].max_flow = 2.0
@@ -181,7 +181,7 @@ def test_control_curve(solver):
     from pywr.parameters.control_curves import ControlCurveParameter
     # We know what we're doing with the control_curve Parameter so unset its parent before overriding
     # the cost parameter.
-    reservoir.cost = ControlCurveParameter(reservoir, control_curve, [-20.0, -20.0])
+    reservoir.cost = ControlCurveParameter(model, reservoir, control_curve, [-20.0, -20.0])
     model.step()
     assert(reservoir.volume == 10)
     assert(demand.flow == 6)

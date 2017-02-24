@@ -52,7 +52,7 @@ class CSVRecorder(Recorder):
         # Write header data
         self._writer.writerow(['Datetime']+self.node_names)
 
-    def save(self):
+    def after(self):
         """
         Write the node values to the CSV file
         """
@@ -263,7 +263,7 @@ class TablesRecorder(Recorder):
         if self.time is not None:
             self._time_table = self.h5store.file.get_node(self.time)
 
-    def save(self):
+    def after(self):
         """
         Save data to the tables
         """

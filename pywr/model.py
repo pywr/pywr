@@ -22,7 +22,7 @@ from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorag
 from pywr._core import ScenarioCollection, Scenario
 from pywr.parameters._parameters import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
-from pywr._recorders import ParameterRecorder, IndexParameterRecorder
+from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
 
 class ModelDocumentWarning(Warning): # TODO
     pass
@@ -84,9 +84,10 @@ class Model(object):
             # use default solver
             solver = solver_registry[0]
         self.solver = solver()
+        self.component_graph = nx.DiGraph()
+        self.component_graph.add_node("root")
+        self.component_tree_flat = None
 
-        self.parameters = NamedIterator()
-        self.recorders = NamedIterator()
         self.tables = {}
         self.scenarios = ScenarioCollection(self)
 
@@ -97,6 +98,14 @@ class Model(object):
         self.parameter_tree = None
 
         self.reset()
+
+    @property
+    def recorders(self):
+        return NamedIterator(n for n in self.component_graph.nodes() if isinstance(n, Recorder))
+
+    @property
+    def parameters(self):
+        return NamedIterator(n for n in self.component_graph.nodes() if isinstance(n, BaseParameter))
 
     def check(self):
         """Check the validity of the model
@@ -545,11 +554,11 @@ class Model(object):
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
             node.setup(self)
-        parameters = self.flatten_parameter_tree(rebuild=True)
-        for parameter in parameters:
-            parameter.setup(self)
-        for recorder in self.recorders:
-            recorder.setup()
+
+        components = self.flatten_component_tree(rebuild=True)
+        for component in components:
+            component.setup()
+
         self.solver.setup(self)
         self.reset()
         self.dirty = False
@@ -561,38 +570,33 @@ class Model(object):
             if length_changed:
                 node.setup(self)
             node.reset()
-        parameters = self.flatten_parameter_tree(rebuild=False)
-        for parameter in parameters:
-            parameter.reset()
-        for recorder in self.recorders:
+
+        components = self.flatten_component_tree(rebuild=False)
+        for component in components:
             if length_changed:
-                recorder.setup()
-            recorder.reset()
+                component.setup()
+            component.reset()
 
     def before(self):
         for node in self.graph.nodes():
             node.before(self.timestep)
-        parameters = self.flatten_parameter_tree(rebuild=False)
-        for parameter in parameters:
-            parameter.before(self.timestep)
+        components = self.flatten_component_tree(rebuild=False)
+        for component in components:
+            component.before()
 
     def after(self):
         for node in self.graph.nodes():
             node.after(self.timestep)
-        parameters = self.flatten_parameter_tree(rebuild=False)
-        for parameter in parameters:
-            parameter.after(self.timestep)
-        for recorder in self.recorders:
-            recorder.save()
+        components = self.flatten_component_tree(rebuild=False)
+        for component in components:
+            component.after()
 
     def finish(self):
         for node in self.graph.nodes():
             node.finish()
-        parameters = self.flatten_parameter_tree(rebuild=False)
-        for parameter in parameters:
-            parameter.finish()
-        for recorder in self.recorders:
-            recorder.finish()
+        components = self.flatten_component_tree(rebuild=False)
+        for component in components:
+            component.finish()
 
     def to_dataframe(self):
         """ Return a DataFrame from any Recorders with a `to_dataframe` attribute
@@ -649,16 +653,15 @@ class Model(object):
         self.parameter_tree = G
         return G
 
-    def flatten_parameter_tree(self, rebuild=False):
-        if self.parameter_tree is None or rebuild is True:
-            self.parameter_tree_flat = []
-            self.build_parameter_tree()
-            G = self.parameter_tree
+    def flatten_component_tree(self, rebuild=False):
+        if self.component_tree_flat is None or rebuild is True:
+            self.component_tree_flat = []
+            G = self.component_graph
             for node in nx.dfs_postorder_nodes(G, "root"):
                 if node == "root":
                     break
-                self.parameter_tree_flat.append(node)
-        return self.parameter_tree_flat
+                self.component_tree_flat.append(node)
+        return self.component_tree_flat
 
 class NodeIterator(object):
     """Iterator for Nodes in a Model which also supports indexing
@@ -726,8 +729,11 @@ class NodeIterator(object):
         raise StopIteration()
 
 class NamedIterator(object):
-    def __init__(self):
-        self._objects = []
+    def __init__(self, objects=None):
+        if objects:
+            self._objects = list(objects)
+        else:
+            self._objects = []
 
     def __getitem__(self, key):
         """Get a node from the graph by it's name"""

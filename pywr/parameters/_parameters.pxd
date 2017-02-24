@@ -1,31 +1,23 @@
 from pywr.recorders._recorders cimport Recorder
+from pywr._component cimport Component
 
 # Forward declations
-cdef class Parameter
-cdef class ArrayIndexedParameter
-cdef class ConstantScenarioParameter
-cdef class ArrayIndexedScenarioMonthlyFactorsParameter
+#cdef class Parameter
+#cdef class ArrayIndexedParameter
+#cdef class ConstantScenarioParameter
+#cdef class ArrayIndexedScenarioMonthlyFactorsParameter
 
 from .._core cimport Timestep, Scenario, ScenarioIndex, AbstractNode
 
-cdef class Parameter:
+cdef class Parameter(Component):
     cdef int _size
     cdef bint _is_variable
     cdef AbstractNode _node
-    cdef readonly object parents
-    cdef readonly object children
-    cpdef setup(self, model)
-    cpdef reset(self)
-    cpdef before(self, Timestep ts)
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1
-    cpdef after(self, Timestep ts)
-    cpdef finish(self)
     cpdef update(self, double[:] values)
     cpdef double[:] lower_bounds(self)
     cpdef double[:] upper_bounds(self)
-    cdef public basestring name
-    cdef public basestring comment
-    cdef list _recorders
+
 
 cdef class ConstantParameter(Parameter):
     cdef double _value
@@ -101,7 +93,6 @@ cdef class CachedParameter(IndexParameter):
     cdef ScenarioIndex scenario_index
     cdef double cached_value
     cdef int cached_index
-    cpdef reset(self)
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
@@ -113,8 +104,6 @@ cdef class AggregatedParameterBase(IndexParameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
     cpdef add(self, Parameter parameter)
     cpdef remove(self, Parameter parameter)
-    cpdef after(self, Timestep timestep)
-    cpdef reset(self)
 
 cdef class AggregatedParameter(AggregatedParameterBase):
     pass

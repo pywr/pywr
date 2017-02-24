@@ -807,11 +807,11 @@ cdef class Storage(AbstractStorage):
         AbstractStorage.setup(self, model)
         # Setup any Parameters and Recorders
         if self._cost_param is not None:
-            self._cost_param.setup(model)
+            self._cost_param.setup()
         if self._min_volume_param is not None:
-            self._min_volume_param.setup(model)
+            self._min_volume_param.setup()
         if self._max_volume_param is not None:
-            self._max_volume_param.setup(model)
+            self._max_volume_param.setup()
 
     cpdef reset(self):
         """Called at the beginning of a run"""
@@ -848,11 +848,11 @@ cdef class Storage(AbstractStorage):
 
         # Complete any parameter calculations
         if self._cost_param is not None:
-            self._cost_param.before(ts)
+            self._cost_param.before()
         if self._max_volume_param is not None:
-            self._max_volume_param.before(ts)
+            self._max_volume_param.before()
         if self._min_volume_param is not None:
-            self._min_volume_param.before(ts)
+            self._min_volume_param.before()
 
     cpdef after(self, Timestep ts):
         AbstractStorage.after(self, ts)
@@ -861,11 +861,11 @@ cdef class Storage(AbstractStorage):
         cdef ScenarioIndex si
 
         if self._cost_param is not None:
-            self._cost_param.after(ts)
+            self._cost_param.after()
         if self._max_volume_param is not None:
-            self._max_volume_param.after(ts)
+            self._max_volume_param.after()
         if self._min_volume_param is not None:
-            self._min_volume_param.after(ts)
+            self._min_volume_param.after()
 
         for i, si in enumerate(self.model.scenarios.combinations):
             self._volume[i] += self._flow[i]*ts._days

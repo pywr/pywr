@@ -1,20 +1,15 @@
-cdef class Recorder
+# Forward declarations
 
+from pywr._component cimport Component
 from pywr._core cimport Timestep, AbstractNode, Storage, ScenarioIndex, Scenario
 from pywr.parameters._parameters cimport Parameter, IndexParameter
 
-cdef class Recorder:
+
+cdef class Recorder(Component):
     cdef bint _is_objective
     cdef public double epsilon
-    cdef object _name
-    cdef object _model
-    cdef public basestring comment
     cdef object _agg_user_func
     cdef int _agg_func
-    cpdef setup(self)
-    cpdef reset(self)
-    cpdef int save(self) except -1
-    cpdef finish(self)
     cpdef double aggregated_value(self) except? -1
     cpdef double[:] values(self)
 

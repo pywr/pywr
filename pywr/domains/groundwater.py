@@ -88,11 +88,11 @@ class KeatingAquifer(Storage):
 
         self.max_volume = max(volumes)
         self.min_volume = min(volumes)
-        self.level = InterpolatedLevelParameter(self, volumes, levels)
+        self.level = InterpolatedLevelParameter(model, self, volumes, levels)
 
         # initialise streamflow parameters
         for n, node in enumerate(self.inputs[0:num_streams]):
-            parameter = KeatingStreamFlowParameter(self, stream_flow_levels[n],
+            parameter = KeatingStreamFlowParameter(model, self, stream_flow_levels[n],
                                                    transmissivity,
                                                    coefficient)
             node.max_flow = parameter

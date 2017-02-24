@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose
 import pytest
 import datetime
 import os
-
+from fixtures import simple_linear_model
 from helpers import load_model
 
 @pytest.fixture
@@ -47,7 +47,7 @@ class TestPiecewiseControlCurveParameter:
         s = Storage(m, 'Storage', max_volume=100.0)
 
         # Return 10.0 when above 0.0 when below
-        s.cost = ControlCurveParameter(s, [0.8, 0.6], [1.0, 0.7, 0.4])
+        s.cost = ControlCurveParameter(m, s, [0.8, 0.6], [1.0, 0.7, 0.4])
         self._assert_results(m, s)
 
     def test_with_parameters(self, model):
@@ -57,12 +57,12 @@ class TestPiecewiseControlCurveParameter:
         s = Storage(m, 'Storage', max_volume=100.0)
 
         # Two different control curves
-        cc = [ConstantParameter(0.8), ConstantParameter(0.6)]
+        cc = [ConstantParameter(model, 0.8), ConstantParameter(model, 0.6)]
         # Three different parameters to return
         params = [
-            ConstantParameter(1.0), ConstantParameter(0.7), ConstantParameter(0.4)
+            ConstantParameter(model, 1.0), ConstantParameter(model, 0.7), ConstantParameter(model, 0.4)
         ]
-        s.cost = ControlCurveParameter(s, cc, parameters=params)
+        s.cost = ControlCurveParameter(model, s, cc, parameters=params)
 
         self._assert_results(m, s)
 
@@ -159,8 +159,8 @@ class TestPiecewiseControlCurveParameter:
         s = Storage(m, 'Storage', max_volume=100.0)
 
         l = Link(m, 'Link')
-        cc = ConstantParameter(0.8)
-        l.cost = ControlCurveParameter(s, cc, [10.0, 0.0])
+        cc = ConstantParameter(model, 0.8)
+        l.cost = ControlCurveParameter(model, s, cc, [10.0, 0.0])
 
         s.setup(m)  # Init memory view on storage (bypasses usual `Model.setup`)
         print(s.volume)
@@ -206,9 +206,9 @@ def test_control_curve_interpolated(model):
 
     s = Storage(m, 'Storage', max_volume=100.0)
 
-    cc = ConstantParameter(0.8)
+    cc = ConstantParameter(model, 0.8)
     values = [20.0, 5.0, 0.0]
-    s.cost = ControlCurveInterpolatedParameter(s, cc, values)
+    s.cost = ControlCurveInterpolatedParameter(model, s, cc, values)
     s.setup(m)
 
     for v in (0.0, 10.0, 50.0, 80.0, 90.0, 100.0):
@@ -283,11 +283,11 @@ class TestMonthlyProfileControlCurveParameter:
             ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
             np.testing.assert_allclose(p.value(ts, si), 0.3*scale)
 
-    def test_no_scale_no_profile(self, model):
+    def test_no_scale_no_profile(self, simple_linear_model):
         """ No scale or profile specified """
-
+        model = simple_linear_model
         s = Storage(model, 'Storage', max_volume=100.0)
-        l = Link(model, 'Link')
+        l = Link(model, 'Link2')
 
         data = {
             'type': 'monthlyprofilecontrolcurve',
@@ -297,15 +297,14 @@ class TestMonthlyProfileControlCurveParameter:
         }
 
         l.max_flow = p = load_parameter(model, data)
-        p.setup(model)
-        model.scenarios.setup()
+        model.setup()
         self._assert_results(model, s, p)
 
-    def test_scale_no_profile(self, model):
+    def test_scale_no_profile(self, simple_linear_model):
         """ Test `MonthlyProfileControlCurveParameter` """
-
+        model = simple_linear_model
         s = Storage(model, 'Storage', max_volume=100.0)
-        l = Link(model, 'Link')
+        l = Link(model, 'Link2')
 
         data = {
             'type': 'monthlyprofilecontrolcurve',
@@ -316,15 +315,14 @@ class TestMonthlyProfileControlCurveParameter:
         }
 
         l.max_flow = p = load_parameter(model, data)
-        p.setup(model)
-        model.scenarios.setup()
+        model.setup()
         self._assert_results(model, s, p, scale=1.5)
 
-    def test_no_scale_profile_param(self, model):
+    def test_no_scale_profile_param(self, simple_linear_model):
         """ No scale, but profile `Parameter` specified """
-
+        model = simple_linear_model
         s = Storage(model, 'Storage', max_volume=100.0)
-        l = Link(model, 'Link')
+        l = Link(model, 'Link2')
 
         data = {
             'type': 'monthlyprofilecontrolcurve',
@@ -338,15 +336,14 @@ class TestMonthlyProfileControlCurveParameter:
         }
 
         l.max_flow = p = load_parameter(model, data)
-        p.setup(model)
-        model.scenarios.setup()
+        model.setup()
         self._assert_results(model, s, p, scale=1.5)
 
-    def test_no_scale_profile(self, model):
+    def test_no_scale_profile(self, simple_linear_model):
         """ No scale, but profile array specified """
-
+        model = simple_linear_model
         s = Storage(model, 'Storage', max_volume=100.0)
-        l = Link(model, 'Link')
+        l = Link(model, 'Link2')
 
         data = {
             'type': 'monthlyprofilecontrolcurve',
@@ -357,8 +354,7 @@ class TestMonthlyProfileControlCurveParameter:
         }
 
         l.max_flow = p = load_parameter(model, data)
-        p.setup(model)
-        model.scenarios.setup()
+        model.setup()
         self._assert_results(model, s, p, scale=1.5)
 
     def test_json_load(self, solver):
@@ -393,11 +389,11 @@ class TestMonthlyProfileControlCurveParameter:
 
 
 
-def test_daily_profile_control_curve(model):
+def test_daily_profile_control_curve(simple_linear_model):
     """ Test `DailyProfileControlCurveParameter` """
-
+    model = simple_linear_model
     s = Storage(model, 'Storage', max_volume=100.0)
-    l = Link(model, 'Link')
+    l = Link(model, 'Link2')
 
     data = {
         'type': 'dailyprofilecontrolcurve',
@@ -407,11 +403,7 @@ def test_daily_profile_control_curve(model):
     }
 
     l.max_flow = p = load_parameter(model, data)
-    p.setup(model)
-
-    # Test correct aggregation is performed
-    model.scenarios.setup()
-    s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
+    model.setup()
 
     s.initial_volume = 90.0
     model.reset()  # Set initial volume on storage

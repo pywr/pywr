@@ -301,9 +301,9 @@ def test_shorthand_property(solver):
         setattr(node, attr, 123)
         if attr == 'conversion_factor':
             with pytest.raises(ValueError):
-                setattr(node, attr, Parameter())
+                setattr(node, attr, Parameter(model))
         else:
-            setattr(node, attr, Parameter())
+            setattr(node, attr, Parameter(model))
 
         with pytest.raises(TypeError):
             setattr(node, attr, '123')
@@ -319,9 +319,9 @@ def test_shorthand_property_storage(solver):
         setattr(node, attr, 123)
         if attr == 'conversion_factor':
             with pytest.raises(ValueError):
-                setattr(node, attr, Parameter())
+                setattr(node, attr, Parameter(model))
         else:
-            setattr(node, attr, Parameter())
+            setattr(node, attr, Parameter(model))
 
         with pytest.raises(TypeError):
             setattr(node, attr, '123')

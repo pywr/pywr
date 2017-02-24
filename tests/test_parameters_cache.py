@@ -40,10 +40,10 @@ def test_cache_both(simple_model):
     """
     model = simple_model
     func = create_function(15.0)
-    param = FunctionParameter(None, func)
+    param = FunctionParameter(model, None, func)
 
     inpt = model.nodes["input"]
-    inpt.max_flow = CachedParameter(param)
+    inpt.max_flow = CachedParameter(model, param)
 
     model.run()
     assert_allclose(inpt.flow, 15.0)
@@ -58,10 +58,10 @@ def test_cache_scenarios(simple_model):
     model = simple_model
     scen = Scenario(model, 'Scenario A', size=2)
 
-    param = ConstantScenarioParameter(scen, [10, 20])
+    param = ConstantScenarioParameter(model, scen, [10, 20])
 
     inpt = model.nodes["input"]
-    inpt.max_flow = CachedParameter(param)
+    inpt.max_flow = CachedParameter(model, param)
 
     model.run()
     assert_allclose(inpt.flow, [10.0, 20.0])
@@ -94,7 +94,7 @@ def test_cache_both_shared(simple_model):
     """
     model = simple_model
     func = create_function(15.0)
-    param = FunctionParameter(None, func)
+    param = FunctionParameter(model, None, func)
 
     inpt = model.nodes["input"]
     otpt = model.nodes["output"]
@@ -108,8 +108,8 @@ def test_cache_both_shared(simple_model):
     assert(func.count == 20)
 
     func2 = create_function(25.0)
-    param = FunctionParameter(None, func2)
-    cached = CachedParameter(param)
+    param = FunctionParameter(model, None, func2)
+    cached = CachedParameter(model, param)
 
     inpt.max_flow = cached
     otpt.max_flow = cached
