@@ -19,4 +19,5 @@ Contents:
    Python API reference <api/modules.rst>
    cookbook/demand_saving.rst
    cookbook/dataframes.rst
+   cookbook/aggregated_parameter.rst
    license.rst
