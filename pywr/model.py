@@ -607,52 +607,6 @@ class Model(object):
         df.columns.set_names('Recorder', level=0, inplace=True)
         return df
 
-    def build_parameter_tree(self):
-        G = nx.DiGraph()
-        G.add_node("root")
-        all_parameters = set()
-        for node in self.graph.nodes():
-            if isinstance(node, AggregatedStorage):
-                attrs = []
-            elif isinstance(node, AggregatedNode):
-                attrs = ["max_flow", "min_flow"]
-            elif isinstance(node, VirtualStorage):
-                attrs = ["max_volume"]
-            elif isinstance(node, Storage):
-                attrs = ["max_volume", "cost"]
-            else:
-                attrs = ["max_flow", "min_flow", "cost"]
-            for attr in attrs:
-                parameter = getattr(node, attr)
-                if isinstance(parameter, BaseParameter):
-                    all_parameters.add(parameter)
-            for recorder in node.recorders:
-                if isinstance(recorder, (ParameterRecorder, IndexParameterRecorder)):
-                    parameter = recorder._param
-                    if isinstance(parameter, BaseParameter):
-                        all_parameters.add(parameter)
-        for recorder in self.recorders:
-            if isinstance(recorder, (ParameterRecorder, IndexParameterRecorder)):
-                parameter = recorder._param
-                if isinstance(parameter, BaseParameter):
-                    all_parameters.add(parameter)
-
-        # TODO: recorders can also have parameters as children
-
-        to_process = list(all_parameters)
-        while to_process:
-            parameter = to_process.pop()
-            if not parameter.parents:
-                G.add_edge("root", parameter)
-            if parameter.children:
-                for child in parameter.children:
-                    if not child in G:
-                        to_process.append(child)
-                    G.add_edge(parameter, child)
-
-        self.parameter_tree = G
-        return G
-
     def flatten_component_tree(self, rebuild=False):
         if self.component_tree_flat is None or rebuild is True:
             self.component_tree_flat = []

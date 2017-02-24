@@ -1,12 +1,5 @@
 from pywr.recorders._recorders cimport Recorder
 from pywr._component cimport Component
-
-# Forward declations
-#cdef class Parameter
-#cdef class ArrayIndexedParameter
-#cdef class ConstantScenarioParameter
-#cdef class ArrayIndexedScenarioMonthlyFactorsParameter
-
 from .._core cimport Timestep, Scenario, ScenarioIndex, AbstractNode
 
 cdef class Parameter(Component):

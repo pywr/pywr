@@ -1,5 +1,3 @@
-# Forward declarations
-
 from pywr._component cimport Component
 from pywr._core cimport Timestep, AbstractNode, Storage, ScenarioIndex, Scenario
 from pywr.parameters._parameters cimport Parameter, IndexParameter
