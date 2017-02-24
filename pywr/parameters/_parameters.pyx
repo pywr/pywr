@@ -745,6 +745,7 @@ cdef enum AggFuncs:
     CUSTOM = 5
     ANY = 6
     ALL = 7
+    MEDIAN = 8
 _agg_func_lookup = {
     "sum": AggFuncs.SUM,
     "min": AggFuncs.MIN,
@@ -754,6 +755,7 @@ _agg_func_lookup = {
     "custom": AggFuncs.CUSTOM,
     "any": AggFuncs.ANY,
     "all": AggFuncs.ALL,
+    "median": AggFuncs.MEDIAN,
 }
 
 def wrap_const(value):
@@ -863,6 +865,8 @@ cdef class AggregatedParameter(AggregatedParameterBase):
             for parameter in self.parameters:
                 value += parameter.value(timestep, scenario_index)
             value /= len(self.parameters)
+        elif self._agg_func == AggFuncs.MEDIAN:
+            value = np.median([parameter.value(timestep, scenario_index) for parameter in self.parameters])
         elif self._agg_func == AggFuncs.CUSTOM:
             value = self._agg_user_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
         else:
