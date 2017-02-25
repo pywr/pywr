@@ -12,7 +12,7 @@ class GraphInterface:
     def add(self, item):
         if not isinstance(item, Component):
             return
-        if self is self.obj.parents:
+        if self is self.obj.children:
             self.graph.add_edge(item, self.obj)
         else:
             self.graph.add_edge(self.obj, item)
@@ -20,21 +20,21 @@ class GraphInterface:
     def remove(self, item):
         if not isinstance(item, Component):
             return
-        if self is self.obj.parents:
+        if self is self.obj.children:
             self.graph.remove_edge(item, self.obj)
         else:
             self.graph.remove_edge(self.obj, item)
 
     def clear(self):
         for n in self._members:
-            if self is self.obj.parents:
+            if self is self.obj.children:
                 self.graph.remove_edge(n, self.obj)
             else:
                 self.graph.remove_edge(self.obj, n)
 
     @property
     def _members(self):
-        if self is self.obj.parents:
+        if self is self.obj.children:
             return [n for n in self.graph.predecessors(self.obj) if n != "root"]
         else:
             return self.graph.successors(self.obj)
@@ -50,7 +50,24 @@ class GraphInterface:
 
 
 cdef class Component:
-    """ Components of a Model """
+    """ Components of a Model
+
+    This is the base class for all the elements of a `pywr.Model`,
+     except the the nodes, that require updates via the `setup`, `reset`,
+     `before`, `after` and `finish` methods. This class handles
+     registering the instances on the `Model.component_graph` and
+     managing the parent/children interface.
+
+    The parent/children interface, through the `Model.component_graph`
+     is used to create a dependency tree such that the methods are
+     called in the correct order. E.g. that a `before` method in
+     one component that is a parent of another is called first.
+
+    See also
+    --------
+    `Model`
+
+    """
     def __init__(self, model, name=None, comment=None):
         self._model = model
         self._name = name

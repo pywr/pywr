@@ -100,12 +100,16 @@ class Model(object):
         self.reset()
 
     @property
+    def components(self):
+        return NamedIterator(n for n in self.component_graph.nodes() if n != "root")
+
+    @property
     def recorders(self):
-        return NamedIterator(n for n in self.component_graph.nodes() if isinstance(n, Recorder))
+        return NamedIterator(n for n in self.components if isinstance(n, Recorder))
 
     @property
     def parameters(self):
-        return NamedIterator(n for n in self.component_graph.nodes() if isinstance(n, BaseParameter))
+        return NamedIterator(n for n in self.components if isinstance(n, BaseParameter))
 
     def check(self):
         """Check the validity of the model
@@ -466,7 +470,38 @@ class Model(object):
         return all_routes
 
     def step(self):
-        """Step the model forward by one day"""
+        """ Step the model forward by one day
+
+        This method progresses the model by one time-step. The anatomy
+        of a time-step is as follows:
+          1. Call `Model.setup` if the `Model.dirty` is True.
+          2. Progress the `Model.timestepper` by one step.
+          3. Call `Model.before` to ensure all nodes and components are ready for solve.
+          4. Call `Model.solve` to solve the linear programme
+          5. Call `Model.after` to ensure all nodes and components
+            complete any work in the timestep.
+
+        It is important to note that the current timestep object is the
+        same during phases (3), (4) and (5) above. However the internal state of
+        nodes changes during phase (4) and (5). During stages (3) and (5) the
+        nodes are updated before the components. Therefore during the component
+        update in phase (5) the internal state of nodes is already updated (e.g.
+        current storage volumes). This has consequences for any component
+        algorithms in phase (5) that rely on the state being as it was before
+        this update. In general component `after` methods should not recompute
+        any component state or rely on the internal node state.
+
+        A dependency tree is used during the `before` and `after` updates of
+        components. This ensures that components that rely on the state of
+        another component are updated first.
+
+
+        See also
+        --------
+        `Component`
+
+
+        """
         if self.dirty:
             self.setup()
         self.timestep = next(self.timestepper)
@@ -578,6 +613,15 @@ class Model(object):
             component.reset()
 
     def before(self):
+        """ Perform initialisation work before solve on each timestep.
+
+        This method calls the `before()` method on all nodes and components
+        in the model. Nodes are updated first, components second.
+
+        See also
+        --------
+        `Model.step`
+        """
         for node in self.graph.nodes():
             node.before(self.timestep)
         components = self.flatten_component_tree(rebuild=False)
@@ -611,9 +655,19 @@ class Model(object):
         if self.component_tree_flat is None or rebuild is True:
             self.component_tree_flat = []
             G = self.component_graph
+
+            # Test some properties of the dependency tree
+            # Do not permit cycles in the dependencies
+            ncycles = len(list(nx.simple_cycles(G)))
+            if ncycles != 0:
+                raise ModelStructureError("Cyclical ({}) dependencies found in the model's components.".format(ncycles))
+            # Do not permit self-loops
+            for n in G.nodes_with_selfloops():
+                raise ModelStructureError('Component "{}" contains a self-loop.'.format(n))
+
             for node in nx.dfs_postorder_nodes(G, "root"):
                 if node == "root":
-                    break
+                    continue
                 self.component_tree_flat.append(node)
         return self.component_tree_flat
 
