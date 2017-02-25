@@ -286,48 +286,30 @@ class TestAnnualHarmonicSeriesParameter:
 
 
 class TestAggregatedParameter:
-    """ Tests for AggregatedParameter"""
+    """Tests for AggregatedParameter"""
+    funcs = {"min": np.min, "max": np.max, "mean": np.mean, "median": np.median, "sum": np.sum}
 
-    def test_min(self, simple_linear_model):
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "median", "sum"])
+    def test_agg(self, simple_linear_model, agg_func):
         model = simple_linear_model
-        # Add two scenarios
-        scA = Scenario(model, 'Scenario A', size=2)
-        scB = Scenario(model, 'Scenario B', size=5)
+        scenarioA = Scenario(model, "Scenario A", size=2)
+        scenarioB = Scenario(model, "Scenario B", size=5)
 
         values = np.arange(366, dtype=np.float64)
         p1 = DailyProfileParameter(model, values)
-        p2 = ConstantScenarioParameter(model, scB, np.arange(scB.size, dtype=np.float64))
+        p2 = ConstantScenarioParameter(model, scenarioB, np.arange(scenarioB.size, dtype=np.float64))
 
-        p = AggregatedParameter(model, [p1, ], agg_func='min')
-        p.add(p2)
-
-        model.setup()
-        for ts in model.timestepper:
-            iday = ts.datetime.dayofyear - 1
-            for i in range(scB.size):
-                si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
-                np.testing.assert_allclose(p.value(ts, si), min(values[iday], i))
-
-    def test_max(self, simple_linear_model):
-        model = simple_linear_model
-        # Add two scenarios
-        scA = Scenario(model, 'Scenario A', size=2)
-        scB = Scenario(model, 'Scenario B', size=5)
-
-        values = np.arange(366, dtype=np.float64)
-        p1 = DailyProfileParameter(model, values)
-        p2 = ConstantScenarioParameter(model, scB, np.arange(scB.size, dtype=np.float64))
-
-        p = AggregatedParameter(model, [p1, p2], agg_func='max')
+        p = AggregatedParameter(model, [p1, p2], agg_func=agg_func)
         model.setup()
 
+        func = TestAggregatedParameter.funcs[agg_func]
+
         for ts in model.timestepper:
-            month = ts.datetime.month
-            day = ts.datetime.day
-            iday = int((datetime.datetime(2016, month, day) - datetime.datetime(2016, 1, 1)).days)
-            for i in range(scB.size):
+            for i in range(scenarioB.size):
                 si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
-                np.testing.assert_allclose(p.value(ts, si), max(values[iday], i))
+                x = p1.value(ts, si)
+                y = p2.value(ts, si)
+                np.testing.assert_allclose(p.value(ts, si), func(np.array([x, y])))
 
     def test_load(self, model):
         """ Test load from JSON dict"""
