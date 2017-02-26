@@ -29,8 +29,28 @@ cdef class Parameter(Component):
     def unregister(cls):
         del(parameter_registry[cls.__name__.lower()])
 
+    cpdef setup(self):
+        cdef int num_comb
+        if self._model.scenarios.combinations:
+            num_comb = len(self._model.scenarios.combinations)
+        else:
+            num_comb = 1
+        self.__values = np.empty([num_comb], np.float64)
+
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         raise NotImplementedError("Parameter must be subclassed")
+
+    cpdef calc_values(self, Timestep timestep):
+        # default implementation calls Parameter.value in loop
+        cdef ScenarioIndex scenario_index
+        for scenario_index in self._model.scenarios.combinations:
+            self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
+
+    cpdef double get_value(self, ScenarioIndex scenario_index):
+        return self.__values[<int>(scenario_index.global_id)]
+
+    cpdef double[:] get_all_values(self):
+        return self.__values
 
     cpdef update(self, double[:] values):
         raise NotImplementedError()
@@ -198,6 +218,7 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         self._scenario = scenario
 
     cpdef setup(self):
+        super(ArrayIndexedScenarioParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
@@ -246,6 +267,7 @@ cdef class TablesArrayParameter(IndexParameter):
         self._scenario_index = -1
 
     cpdef setup(self):
+        super(TablesArrayParameter, self).setup()
         self._scenario_index = -1
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
@@ -340,6 +362,7 @@ cdef class ConstantScenarioParameter(Parameter):
         self._scenario = scenario
 
     cpdef setup(self):
+        super(ConstantScenarioParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
@@ -380,6 +403,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         self._factors = factors
 
     cpdef setup(self):
+        super(ArrayIndexedScenarioMonthlyFactorsParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
@@ -500,6 +524,7 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
         self._values = np.array(values)
 
     cpdef setup(self):
+        super(ScenarioMonthlyProfileParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
@@ -558,7 +583,7 @@ cdef class IndexedArrayParameter(Parameter):
         for p in params:
             if not isinstance(p, Parameter):
                 from pywr.parameters import ConstantParameter
-                p = ConstantParameter(p)
+                p = ConstantParameter(model, p)
             self.params.append(p)
 
         for param in params:

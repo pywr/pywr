@@ -429,7 +429,7 @@ cdef class Node(AbstractNode):
         """
         if self._cost_param is None:
             return self._cost
-        return self._cost_param.value(ts, scenario_index)
+        return self._cost_param.get_value(scenario_index)
 
     property min_flow:
         """The minimum flow constraint on the node
@@ -454,7 +454,7 @@ cdef class Node(AbstractNode):
         """
         if self._min_flow_param is None:
             return self._min_flow
-        return self._min_flow_param.value(ts, scenario_index)
+        return self._min_flow_param.get_value(scenario_index)
 
     property max_flow:
         """The maximum flow constraint on the node
@@ -481,7 +481,7 @@ cdef class Node(AbstractNode):
         """
         if self._max_flow_param is None:
             return self._max_flow
-        return self._max_flow_param.value(ts, scenario_index)
+        return self._max_flow_param.get_value(scenario_index)
 
     property conversion_factor:
         """The conversion between inflow and outflow for the node

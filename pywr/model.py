@@ -628,6 +628,9 @@ class Model(object):
         components = self.flatten_component_tree(rebuild=False)
         for component in components:
             component.before()
+        for component in components:
+            if isinstance(component, BaseParameter):
+                component.calc_values(self.timestep)
 
     def after(self):
         for node in self.graph.nodes():

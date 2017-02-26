@@ -72,6 +72,7 @@ class StorageLicense(License):
         self._amount = amount
 
     def setup(self):
+        super(StorageLicense, self).setup()
         # Create a state array for the remaining licence volume.
         self._remaining = np.ones(len(self.model.scenarios.combinations))*self._amount
 

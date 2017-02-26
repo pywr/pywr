@@ -151,6 +151,7 @@ class TestPiecewiseControlCurveParameter:
         m.reset()
         assert_allclose(s.get_cost(m.timestepper.current, si), 1)
 
+    @pytest.mark.xfail(reason="OCPTT")
     def test_with_nonstorage(self, model):
         """ Test usage on non-`Storage` node. """
         # Now test if the parameter is used on a non storage node
@@ -172,6 +173,7 @@ class TestPiecewiseControlCurveParameter:
         print(s.volume)
         assert_allclose(l.get_cost(m.timestepper.current, si), 10.0)
 
+    @pytest.mark.xfail(reason="OCPTT")
     def test_with_nonstorage_load(self, model):
         """ Test load from dict with 'storage_node' key. """
         m = model

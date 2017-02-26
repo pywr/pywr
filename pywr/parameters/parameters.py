@@ -100,6 +100,7 @@ class DataFrameParameter(Parameter):
         return cls(model, df, scenario=scenario, **data)
 
     def setup(self):
+        super(self.__class__, self).setup()
 
         df = align_and_resample_dataframe(self.df, self.model.timestepper.datetime_index)
 

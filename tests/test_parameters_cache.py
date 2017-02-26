@@ -33,6 +33,7 @@ def create_function(data, model=None):
     func.count = 0
     return func
 
+@pytest.mark.xfail()
 def test_cache_both(simple_model):
     """
     Example of caching when it isn't needed - the function is only called
@@ -87,6 +88,7 @@ def test_load_cache_both(simple_model):
     model.run()
     assert_allclose(inpt.flow, 15)
 
+@pytest.mark.xfail()
 def test_cache_both_shared(simple_model):
     """
     When a cached parameter is shared between nodes it should only be

@@ -7,7 +7,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
-    Polynomial1DParameter, Polynomial2DStorageParameter,
+    Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 
 from pywr.recorders import Recorder
@@ -935,3 +935,23 @@ def test_negative_parameter(simple_linear_model):
     for v in range(-366, -346):
         m.step()
         assert_allclose(m.nodes["Input"].flow, -v)
+
+def test_ocptt(simple_linear_model):
+    model = simple_linear_model
+    inpt = model.nodes["Input"]
+    s1 = Scenario(model, "scenario 1", size=3)
+    s2 = Scenario(model, "scenario 1", size=2)
+    x = np.arange(len(model.timestepper)).reshape([len(model.timestepper), 1]) + 5
+    y = np.arange(s1.size).reshape([1, s1.size])
+    z = x * y ** 2
+    p = ArrayIndexedScenarioParameter(model, s1, z)
+    inpt.max_flow = p
+    model.setup()
+    model.reset()
+    model.step()
+    timestep = model.timestepper.current
+    p.calc_values(timestep)
+    values1 = [p.get_value(scenario_index) for  scenario_index in model.scenarios.combinations]
+    values2 = list(p.get_all_values())
+    assert_allclose(values1, [0, 0, 5, 5, 20, 20])
+    assert_allclose(values2, [0, 0, 5, 5, 20, 20])
