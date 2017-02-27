@@ -673,6 +673,9 @@ class Model(object):
                 if node == "root":
                     continue
                 self.component_tree_flat.append(node)
+        # order components so that they can be iterated over easily in an
+        # sequence which respects dependencies
+        self.component_tree_flat = self.component_tree_flat[::-1]
         return self.component_tree_flat
 
 class NodeIterator(object):

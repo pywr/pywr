@@ -21,12 +21,12 @@ class DummyComponent(Component):
 
     def before(self):
         self.func_counts['before'] += 1
-        # Check that all parents have been called first.
-        for p in self.parents:
-            assert p.func_counts['before'] == self.func_counts['before']
-        # Check that all children have yet to called.
+        # Check that all children have been called first.
         for c in self.children:
-            assert c.func_counts['before'] + 1 == self.func_counts['before']
+            assert c.func_counts['before'] == self.func_counts['before']
+        # Check that all parents have yet to called.
+        for p in self.parents:
+            assert p.func_counts['before'] + 1 == self.func_counts['before']
 
 
     def after(self):
