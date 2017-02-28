@@ -9,7 +9,7 @@ from pywr.core import Model, Input, Output, Scenario, AggregatedNode
 import numpy as np
 import pandas
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
@@ -821,8 +821,13 @@ class TestEventRecorder:
 
         m.run()
 
+        # Ensure there is at least one event
+        assert evt_rec.events
+
+        # Build a timeseries of when the events say an event is active
+        triggered = np.zeros_like(arry.data, dtype=np.int)
         for evt in evt_rec.events:
-            # Test that the volumes in the Storage node during the events
-            # are less than the threshold
-            volumes = arry.data[evt.start.index:evt.end.index, evt.scenario_index.global_id]
-            assert np.all(volumes <= 4.0)
+            triggered[evt.start.index:evt.end.index, evt.scenario_index.global_id] = 1
+
+        # Test that the volumes in the Storage node during the event periods match
+        assert_equal(triggered, arry.data <= 4)
