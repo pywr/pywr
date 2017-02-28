@@ -902,7 +902,7 @@ cdef class NegativeParameter(Parameter):
         self.children.add(parameter)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return -self.parameter.value(timestep, scenario_index)
+        return -self.parameter.get_value(scenario_index)
 
     @classmethod
     def load(cls, model, data):
@@ -931,7 +931,7 @@ cdef class MaxParameter(Parameter):
         self.threshold = threshold
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return max(self.parameter.value(timestep, scenario_index), self.threshold)
+        return max(self.parameter.get_value(scenario_index), self.threshold)
 
     @classmethod
     def load(cls, model, data):
@@ -943,7 +943,7 @@ MaxParameter.register()
 cdef class NegativeMaxParameter(MaxParameter):
     """ Parameter that takes maximum of the negative of a `Parameter` and constant value (threshold) """
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return max(-self.parameter.value(timestep, scenario_index), self.threshold)
+        return max(-self.parameter.get_value(scenario_index), self.threshold)
 NegativeMaxParameter.register()
 
 
@@ -967,7 +967,7 @@ cdef class MinParameter(Parameter):
         self.threshold = threshold
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return min(self.parameter.value(timestep, scenario_index), self.threshold)
+        return min(self.parameter.get_value(scenario_index), self.threshold)
 
     @classmethod
     def load(cls, model, data):
@@ -979,7 +979,7 @@ MinParameter.register()
 cdef class NegativeMinParameter(MinParameter):
     """ Parameter that takes minimum of the negative of a `Parameter` and constant value (threshold) """
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return min(-self.parameter.value(timestep, scenario_index), self.threshold)
+        return min(-self.parameter.get_value(scenario_index), self.threshold)
 NegativeMinParameter.register()
 
 

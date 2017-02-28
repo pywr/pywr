@@ -861,73 +861,43 @@ class Test2DStoragePolynomialParameter:
 
         np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
 
-
-def test_max_parameter(simple_linear_model):
-    """ Test `MaxParameter` """
-    m = simple_linear_model
-
-    data = {
-        "type": "max",
-        "threshold": 3,
-        "parameter": {
-            "type": "dailyprofile",
-            "values": list(range(-10, 356))
+class TestMinMaxNegativeParameter:
+    @pytest.mark.parametrize("ptype,profile", [
+        ("max", list(range(-10, 356))),
+        ("min", list(range(0, 366))),
+        ("negative", list(range(-366, 0))),
+        ("negativemax", list(range(-366, 0))),
+    ])
+    def test_parameter(cls, simple_linear_model, ptype,profile):
+        model = simple_linear_model
+        model.timestepper.start = "2017-01-01"
+        model.timestepper.end = "2017-01-15"
+        
+        data = {
+            "type": ptype,
+            "parameter": {
+                "name": "raw",
+                "type": "dailyprofile",
+                "values": profile,
+            }
         }
-    }
-
-    m.nodes["Input"].max_flow = load_parameter(m, data)
-    m.nodes["Output"].max_flow = 9999
-    m.nodes["Output"].cost = -100
-    m.setup()
-    # Don't go through the whole series because leap years make it harder
-    for v in range(-10, 20):
-        m.step()
-        assert_allclose(m.nodes["Input"].flow, max(v, 3))
-
-
-def test_min_parameter(simple_linear_model):
-    """ Test `MinParameter` """
-    m = simple_linear_model
-
-    data = {
-        "type": "min",
-        "threshold": 3,
-        "parameter": {
-            "type": "dailyprofile",
-            "values": list(range(0, 366))
-        }
-    }
-
-    m.nodes["Input"].max_flow = load_parameter(m, data)
-    m.nodes["Output"].max_flow = 9999
-    m.nodes["Output"].cost = -100
-    m.setup()
-    # Don't go through the whole series because leap years make it harder
-    for v in range(0, 20):
-        m.step()
-        assert_allclose(m.nodes["Input"].flow, min(v, 3))
-
-
-def test_negative_parameter(simple_linear_model):
-    """ Test `NegativeParameter` """
-    m = simple_linear_model
-
-    data = {
-        "type": "negative",
-        "parameter": {
-            "type": "dailyprofile",
-            "values": list(range(-366, 0))
-        }
-    }
-
-    m.nodes["Input"].max_flow = load_parameter(m, data)
-    m.nodes["Output"].max_flow = 9999
-    m.nodes["Output"].cost = -100
-    m.setup()
-    # Don't go through the whole series because leap years make it harder
-    for v in range(-366, -346):
-        m.step()
-        assert_allclose(m.nodes["Input"].flow, -v)
+        
+        if ptype in ("max", "min"):
+            data["threshold"] = 3
+        
+        func = {"min": min, "max": max, "negative": lambda t,x: -x, "negativemax": lambda t,x: max(t, -x)}[ptype]
+        
+        model.nodes["Input"].max_flow = parameter = load_parameter(model, data)
+        model.nodes["Output"].max_flow = 9999
+        model.nodes["Output"].cost = -100
+        
+        daily_profile = model.parameters["raw"]
+        
+        @assert_rec(model, parameter)
+        def expected(timestep, scenario_index):
+            value = daily_profile.get_value(scenario_index)
+            return func(3, value)
+        model.run()
 
 def test_ocptt(simple_linear_model):
     model = simple_linear_model
