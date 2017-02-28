@@ -133,10 +133,3 @@ cdef class MinParameter(Parameter):
 cdef class NegativeMinParameter(MinParameter):
     pass
 
-cdef class RecorderThresholdParameter(IndexParameter):
-    cdef Recorder recorder
-    cdef double threshold
-    cdef double[:] values
-    cdef int predicate
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
-    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1

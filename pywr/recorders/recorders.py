@@ -2,6 +2,7 @@ import sys
 import numpy as np
 from functools import wraps
 from ._recorders import *
+from .events import EventRecorder, Event
 from .calibration import *
 from past.builtins import basestring
 from pywr.h5tools import H5Store

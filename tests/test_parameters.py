@@ -5,7 +5,7 @@ from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output
 from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
-    DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
+    DataFrameParameter, AggregatedParameter, ConstantParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
@@ -651,7 +651,7 @@ def test_threshold_parameter(simple_linear_model):
     
     for predicate, (value_lt, value_eq, value_gt) in expected:
         for rec in (rec1, rec2, rec3):
-            param = RecorderThresholdParameter(model, rec, threshold, values, predicate)
+            param = RecorderThresholdParameter(model, rec, threshold, values=values, predicate=predicate)
             e_val = values[getattr(rec.val, "__{}__".format(predicate.lower()))(threshold)]
             e = np.ones([len(model.timestepper), len(model.scenarios.get_combinations())]) * e_val
             e[0, :] = values[1] # first timestep is always "on"
@@ -659,6 +659,7 @@ def test_threshold_parameter(simple_linear_model):
             r.name = "assert {} {} {}".format(rec.val, predicate, threshold)
     
     model.run()
+
 
 def test_constant_from_df(solver):
     """

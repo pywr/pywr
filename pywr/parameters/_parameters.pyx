@@ -9,14 +9,6 @@ from pywr.h5tools import H5Store
 import warnings
 
 
-cdef enum Predicates:
-    LT = 0
-    GT = 1
-    EQ = 2
-    LE = 3
-    GE = 4
-_predicate_lookup = {"LT": Predicates.LT, "GT": Predicates.GT, "EQ": Predicates.EQ, "LE": Predicates.LE, "GE": Predicates.GE}
-
 parameter_registry = {}
 
 cdef class Parameter(Component):
@@ -1054,93 +1046,6 @@ cdef class NegativeMinParameter(MinParameter):
         return min(-self.parameter.get_value(scenario_index), self.threshold)
 NegativeMinParameter.register()
 
-
-cdef class RecorderThresholdParameter(IndexParameter):
-    """Returns one of two values depending on a Recorder value and a threshold
-
-    Parameters
-    ----------
-    recorder : `pywr.recorder.Recorder`
-    threshold : double
-        Threshold to compare the value of the recorder to
-    values : iterable of doubles
-        If the predicate evaluates False the zeroth value is returned,
-        otherwise the first value is returned.
-    predicate : string
-        One of {"LT", "GT", "EQ", "LE", "GE"}.
-
-    Methods
-    -------
-    value(timestep, scenario_index)
-        Returns a value from the `values` attribute, using the index.
-    index(timestep, scenario_index)
-        Returns 1 if the predicate evaluates True, else 0.
-
-    Notes
-    -----
-    On the first day of the model run the recorder will not have a value for
-    the previous day. In this case the predicate evaluates to True.
-    """
-
-    def __init__(self, model, Recorder recorder, threshold, values=None, predicate=None, **kwargs):
-        super(RecorderThresholdParameter, self).__init__(model, **kwargs)
-        self.recorder = recorder
-        self.children.add(recorder)
-        self.threshold = threshold
-        if values is None:
-            self.values = None
-        else:
-            self.values = np.array(values, np.float64)
-        if predicate is None:
-            predicate = Predicates.LT
-        elif isinstance(predicate, basestring):
-            predicate = _predicate_lookup[predicate.upper()]
-        self.predicate = predicate
-
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        """Returns a value from the values attribute, using the index"""
-        cdef int ind = self.get_index(scenario_index)
-        cdef double v
-        if self.values is not None:
-            v = self.values[ind]
-        else:
-            raise ValueError("values method called, but values not set")
-        return v
-
-    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        """Returns 1 if the predicate evalutes True, else 0"""
-        cdef int index = timestep.index
-        cdef double x
-        cdef int ind
-        if index == 0:
-            # on the first day the recorder doesn't have a value so we have no
-            # threshold to compare to
-            ind = 1
-        else:
-            # TODO: not all recorders have a data property! need an API for this...
-            x = self.recorder.data[index-1, scenario_index.global_id]
-            if self.predicate == Predicates.LT:
-                ind = x < self.threshold
-            elif self.predicate == Predicates.GT:
-                ind = x > self.threshold
-            elif self.predicate == Predicates.LE:
-                ind = x <= self.threshold
-            elif self.predicate == Predicates.GE:
-                ind = x >= self.threshold
-            else:
-                ind = x == self.threshold
-        return ind
-
-    @classmethod
-    def load(cls, model, data):
-        from pywr.recorders._recorders import load_recorder  # delayed to prevent circular reference
-        recorder = load_recorder(model, data.pop("recorder"))
-        threshold = data.pop("threshold")
-        values = data.pop("values")
-        predicate = data.pop("predicate", None)
-        return cls(model, recorder, threshold, values, predicate, **data)
-
-RecorderThresholdParameter.register()
 
 def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""

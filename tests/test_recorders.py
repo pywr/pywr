@@ -17,6 +17,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
     RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
+    EventRecorder, Event,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter
@@ -784,3 +785,44 @@ class TestCalibrationRecorders:
         assert(values.shape[0] == len(model.scenarios.combinations))
         assert(values.ndim == 1)
         assert_allclose(metric, values)
+
+
+@pytest.fixture
+def cyclical_storage_model(simple_storage_model):
+    """ Extends simple_storage_model to have a cyclical boundary condition """
+    from pywr.parameters import AnnualHarmonicSeriesParameter, ConstantScenarioParameter
+    m = simple_storage_model
+    s = Scenario(m, name='Scenario A', size=2)
+
+    m.timestepper.end = '2017-12-31'
+    m.timestepper.delta = 5
+
+    inpt = m.nodes['Input']
+    inpt.max_flow = AnnualHarmonicSeriesParameter(m, 5, [0.1, 0.0, 0.25], [0.0, 0.0, 0.0])
+
+    otpt = m.nodes['Output']
+    otpt.max_flow = ConstantScenarioParameter(m, s, [5, 6])
+
+    return m
+
+
+class TestEventRecorder:
+    """ Tests for EventRecorder """
+    def test_event_capture(self, cyclical_storage_model):
+        from pywr.parameters import StorageThresholdParameter
+        m = cyclical_storage_model
+
+        strg = m.nodes['Storage']
+        arry = NumpyArrayStorageRecorder(m, strg)
+
+        # Create the trigger using a threhsold parameter
+        trigger = StorageThresholdParameter(m, strg, 4.0, predicate='<=')
+        evt_rec = EventRecorder(m, trigger)
+
+        m.run()
+
+        for evt in evt_rec.events:
+            # Test that the volumes in the Storage node during the events
+            # are less than the threshold
+            volumes = arry.data[evt.start.index:evt.end.index, evt.scenario_index.global_id]
+            assert np.all(volumes <= 4.0)
