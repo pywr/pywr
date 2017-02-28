@@ -791,32 +791,32 @@ cdef class AggregatedParameter(AggregatedParameterBase):
         if self._agg_func == AggFuncs.PRODUCT:
             value = 1.0
             for parameter in self.parameters:
-                value *= parameter.value(timestep, scenario_index)
+                value *= parameter.get_value(scenario_index)
         elif self._agg_func == AggFuncs.SUM:
             value = 0
             for parameter in self.parameters:
-                value += parameter.value(timestep, scenario_index)
+                value += parameter.get_value(scenario_index)
         elif self._agg_func == AggFuncs.MAX:
             value = float("-inf")
             for parameter in self.parameters:
-                value2 = parameter.value(timestep, scenario_index)
+                value2 = parameter.get_value(scenario_index)
                 if value2 > value:
                     value = value2
         elif self._agg_func == AggFuncs.MIN:
             value = float("inf")
             for parameter in self.parameters:
-                value2 = parameter.value(timestep, scenario_index)
+                value2 = parameter.get_value(scenario_index)
                 if value2 < value:
                     value = value2
         elif self._agg_func == AggFuncs.MEAN:
             value = 0
             for parameter in self.parameters:
-                value += parameter.value(timestep, scenario_index)
+                value += parameter.get_value(scenario_index)
             value /= len(self.parameters)
         elif self._agg_func == AggFuncs.MEDIAN:
-            value = np.median([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+            value = np.median([parameter.get_value(scenario_index) for parameter in self.parameters])
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self._agg_user_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+            value = self._agg_user_func([parameter.get_value(scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
         return value

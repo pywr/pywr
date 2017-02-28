@@ -9,6 +9,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
+from pywr.recorders import AssertionRecorder, assert_rec
 
 from pywr.recorders import Recorder
 from fixtures import simple_linear_model, simple_storage_model
@@ -292,6 +293,8 @@ class TestAggregatedParameter:
     @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "median", "sum"])
     def test_agg(self, simple_linear_model, agg_func):
         model = simple_linear_model
+        model.timestepper.delta = 15
+
         scenarioA = Scenario(model, "Scenario A", size=2)
         scenarioB = Scenario(model, "Scenario B", size=5)
 
@@ -300,19 +303,20 @@ class TestAggregatedParameter:
         p2 = ConstantScenarioParameter(model, scenarioB, np.arange(scenarioB.size, dtype=np.float64))
 
         p = AggregatedParameter(model, [p1, p2], agg_func=agg_func)
-        model.setup()
 
         func = TestAggregatedParameter.funcs[agg_func]
 
-        for ts in model.timestepper:
-            for i in range(scenarioB.size):
-                si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
-                x = p1.value(ts, si)
-                y = p2.value(ts, si)
-                np.testing.assert_allclose(p.value(ts, si), func(np.array([x, y])))
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            x = p1.get_value(scenario_index)
+            y = p2.get_value(scenario_index)
+            return func(np.array([x,y]))
 
-    def test_load(self, model):
+        model.run()
+
+    def test_load(self, simple_linear_model):
         """ Test load from JSON dict"""
+        model = simple_linear_model
         data = {
             "type": "aggregated",
             "agg_func": "product",
@@ -329,11 +333,11 @@ class TestAggregatedParameter:
         # Correct instance is loaded
         assert isinstance(p, AggregatedParameter)
 
-        # Test correct aggregation is performed
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        for mth in range(1, 13):
-            ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-            np.testing.assert_allclose(p.value(ts, si), (mth-1)*0.8)
+        @assert_rec(model, p)
+        def expected(timestep, scenario_index):
+            return (timestep.month - 1) * 0.8
+
+        model.run()
 
 class DummyIndexParameter(IndexParameter):
     """A simple IndexParameter which returns a constant value"""
@@ -426,9 +430,10 @@ def test_parameter_child_variables(model):
 
 def test_scaled_profile_nested_load(model):
     """ Test `ScaledProfileParameter` loading with `AggregatedParameter` """
+    model.timestepper.delta = 15
 
-    s = Storage(model, 'Storage', max_volume=100.0)
-    l = Link(model, 'Link')
+    s = Storage(model, 'Storage', max_volume=100.0, num_outputs=0)
+    d = Output(model, 'Link')
     data = {
         'type': 'scaledprofile',
         'scale': 50.0,
@@ -450,34 +455,22 @@ def test_scaled_profile_nested_load(model):
         }
     }
 
-    l.max_flow = p = load_parameter(model, data)
+    s.connect(d)
 
-    p.setup()
+    d.max_flow = p = load_parameter(model, data)
 
-    # Test correct aggregation is performed
-    model.scenarios.setup()
-    s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        if s.initial_volume == 90:
+            return 50.0*0.5*1.0
+        elif s.initial_volume == 70:
+            return 50.0 * 0.5 * 0.7 * (timestep.month - 1)
+        else:
+            return 50.0 * 0.5 * 0.3
 
-    s.initial_volume = 90.0
-    model.reset()  # Set initial volume on storage
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    for mth in range(1, 13):
-        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-        np.testing.assert_allclose(p.value(ts, si), 50.0*0.5*1.0)
-
-    s.initial_volume = 70.0
-    model.reset()  # Set initial volume on storage
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    for mth in range(1, 13):
-        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-        np.testing.assert_allclose(p.value(ts, si), 50.0 * 0.5 * 0.7*(mth - 1))
-
-    s.initial_volume = 30.0
-    model.reset()  # Set initial volume on storage
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    for mth in range(1, 13):
-        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-        np.testing.assert_allclose(p.value(ts, si), 50.0 * 0.5 * 0.3)
+    for initial_volume in (90, 70, 30):
+        s.initial_volume = initial_volume
+        model.run()
 
 
 def test_parameter_df_upsampling(model):

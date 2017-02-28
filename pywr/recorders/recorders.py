@@ -1,8 +1,68 @@
 import sys
+import numpy as np
+from functools import wraps
 from ._recorders import *
 from .calibration import *
 from past.builtins import basestring
 from pywr.h5tools import H5Store
+
+def assert_rec(model, parameter):
+    """Decorator for creating AssertionRecorder objects
+
+    Example
+    -------
+    @assert_rec(model, parameter)
+    def expected_func(timestep, scenario_index):
+        return timestep.dayofyear * 2.0
+    """
+    def assert_rec_(f):
+        rec = AssertionRecorder(model, parameter, expected_func=f)
+        return f
+    return assert_rec_
+
+class AssertionRecorder(Recorder):
+    """A recorder that asserts the value of a parameter for testing purposes"""
+    def __init__(self, model, parameter, expected_data=None, expected_func=None):
+        """
+        Parameters
+        ----------
+        model : pywr.model.Model
+        parameter : pywr.parameters.Parameter
+        expected_data : np.ndarray[timestep, scenario] (optional)
+        expected_func : function
+
+        See also
+        --------
+        pywr.recorders.assert_rec
+        """
+        super(AssertionRecorder, self).__init__(model)
+        self.parameter = parameter
+        self.expected_data = expected_data
+        self.expected_func = expected_func
+
+    def setup(self):
+        super(AssertionRecorder, self).setup()
+        self.count = 0
+
+    def after(self):
+        timestep = self.model.timestep
+        self.count += 1
+        for scenario_index in self.model.scenarios.combinations:
+            if self.expected_func:
+                expected_value = self.expected_func(timestep, scenario_index)
+            elif self.expected_data:
+                expected_value = self.expected_data[timestep.index, scenario_index.global_id]
+            value = self.parameter.get_value(scenario_index)
+            np.testing.assert_allclose(value, expected_value)
+
+    def finish(self):
+        super(AssertionRecorder, self).finish()
+        if sys.exc_info():
+            # exception was raised before we had a chance! (e.g. ModelStructureError)
+            pass
+        elif self.count == 0:
+            # this still requires model.run() to have been called...
+            raise RuntimeError("AssertionRecorder was never called!")
 
 class CSVRecorder(Recorder):
     """
