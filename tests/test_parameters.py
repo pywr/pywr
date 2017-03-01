@@ -952,6 +952,7 @@ class TestMinMaxNegativeParameter:
                 "values": profile,
             }
         }
+
         
         if ptype in ("max", "min"):
             data["threshold"] = 3
@@ -989,3 +990,93 @@ def test_ocptt(simple_linear_model):
     values2 = list(p.get_all_values())
     assert_allclose(values1, [0, 0, 5, 5, 20, 20])
     assert_allclose(values2, [0, 0, 5, 5, 20, 20])
+
+
+class TestThresholdParameters:
+
+    def test_storage_threshold_parameter(self, simple_storage_model):
+        """ Test StorageThresholdParameter """
+        m = simple_storage_model
+
+        data = {
+            "type": "storagethreshold",
+            "storage_node": "Storage",
+            "threshold": 10.0,
+            "predicate": ">"
+        }
+
+        p1 = load_parameter(m, data)
+
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        m.nodes['Storage'].initial_volume = 15.0
+        m.setup()
+        # Storage > 10
+        assert p1.index(m.timestepper.current, si) == 1
+
+        m.nodes['Storage'].initial_volume = 5.0
+        m.setup()
+        # Storage < 10
+        assert p1.index(m.timestepper.current, si) == 0
+
+    def test_node_threshold_parameter(self, simple_linear_model):
+        """ Test NodeThresholdParameter """
+        m = simple_linear_model
+        m.nodes['Input'].max_flow = 10.0
+        m.nodes['Output'].cost = -10.0
+
+        data = {
+            "type": "nodethreshold",
+            "node": "Output",
+            "threshold": 5.0,
+            "predicate": "<"
+        }
+
+        p1 = load_parameter(m, data)
+
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        m.nodes['Output'].max_flow = 10.0
+        m.setup()
+        m.step()
+        # Flow > 5
+        assert p1.index(m.timestepper.current, si) == 0
+
+        m.nodes['Output'].max_flow = 4.0
+        m.setup()
+        m.step()
+        # flow < 5
+        assert p1.index(m.timestepper.current, si) == 1
+
+    def test_parameter_threshold_parameter(self, simple_linear_model):
+        """ Test ParameterThresholdParameter """
+        m = simple_linear_model
+        m.nodes['Input'].max_flow = 10.0
+        m.nodes['Output'].cost = -10.0
+
+        data = {
+            "type": "parameterthreshold",
+            "parameter": {
+                "type": "constant",
+                "value": 3.0
+            },
+            "threshold": 5.0,
+            "predicate": "<"
+        }
+
+        p1 = load_parameter(m, data)
+
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+
+        m.setup()
+        m.step()
+        # value < 5
+        assert p1.index(m.timestepper.current, si) == 1
+
+        p1.param.update(np.array([8.0,]))
+        m.setup()
+        m.step()
+        # flow < 5
+        assert p1.index(m.timestepper.current, si) == 0
+

@@ -829,5 +829,9 @@ class TestEventRecorder:
         for evt in evt_rec.events:
             triggered[evt.start.index:evt.end.index, evt.scenario_index.global_id] = 1
 
+            # Check the duration
+            td = evt.start.datetime - evt.end.datetime
+            assert evt.duration == td.days
+
         # Test that the volumes in the Storage node during the event periods match
         assert_equal(triggered, arry.data <= 4)

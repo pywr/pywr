@@ -1,3 +1,4 @@
+from ._parameters import load_parameter
 cimport numpy as np
 import numpy as np
 
@@ -99,6 +100,14 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         return self.storage._volume[scenario_index._global_id]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("storage_node"))
+        threshold = data.pop("threshold")
+        values = data.pop("values", None)
+        predicate = data.pop("predicate", None)
+        return cls(node, threshold, values=values, predicate=predicate, **data)
 StorageThresholdParameter.register()
 
 
@@ -115,8 +124,43 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
         self.node = node
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return self.node._flow[scenario_index._global_id]
+        return self.node._prev_flow[scenario_index._global_id]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        threshold = data.pop("threshold")
+        values = data.pop("values", None)
+        predicate = data.pop("predicate", None)
+        return cls(node, threshold, values=values, predicate=predicate, **data)
 NodeThresholdParameter.register()
+
+
+cdef class ParameterThresholdParameter(AbstractThresholdParameter):
+    """ Returns one of two values depending on the value of a Parameter
+
+    Parameters
+    ----------
+    recorder : `pywr.core.AbstractNode`
+
+    """
+    def __init__(self, Parameter param, *args, **kwargs):
+        super(ParameterThresholdParameter, self).__init__(*args, **kwargs)
+        self.param = param
+        self.children.add(param)
+
+    cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        # TODO update this once "tree" branch is merged.
+        return self.param.value(timestep, scenario_index)
+
+    @classmethod
+    def load(cls, model, data):
+        param = load_parameter(model, data.pop('parameter'))
+        threshold = data.pop("threshold")
+        values = data.pop("values", None)
+        predicate = data.pop("predicate", None)
+        return cls(param, threshold, values=values, predicate=predicate, **data)
+ParameterThresholdParameter.register()
 
 
 cdef class RecorderThresholdParameter(AbstractThresholdParameter):
@@ -154,8 +198,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
         from pywr.recorders._recorders import load_recorder  # delayed to prevent circular reference
         recorder = load_recorder(model, data.pop("recorder"))
         threshold = data.pop("threshold")
-        values = data.pop("values")
+        values = data.pop("values", None)
         predicate = data.pop("predicate", None)
         return cls(model, recorder, threshold, values=values, predicate=predicate, **data)
-
 RecorderThresholdParameter.register()

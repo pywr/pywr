@@ -9,6 +9,13 @@ class Event(object):
         self.end = None
 
 
+    @property
+    def duration(self):
+        td = self.start.datetime - self.end.datetime
+        return td.days
+
+
+
 class EventRecorder(Recorder):
     """ Track discerete events based on a threshold parameter.
 
@@ -32,6 +39,7 @@ class EventRecorder(Recorder):
      """
     def __init__(self, model, threshold, *args, **kwargs):
         super(EventRecorder, self).__init__(model, *args, **kwargs)
+        # TODO set parent relationship with self.threshold when "tree" branch is merged
         self.threshold = threshold
 
         self.events = None
@@ -47,7 +55,7 @@ class EventRecorder(Recorder):
 
     def save(self):
         # Current timestep
-        # TODO replace this when dependency branch is merged.
+        # TODO replace this when dependency "tree" branch is merged.
         ts = self.model.timestepper.current
         for si in self.model.scenarios.combinations:
             # Determine if an event is active this time-step/scenario combination
