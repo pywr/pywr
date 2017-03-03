@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
-
+import datetime
 import pytest
 from fixtures import *
 from helpers import *
@@ -227,12 +227,11 @@ def test_timeseries_excel(simple_linear_model, filename):
 
     # need to assign parameter for it's setup method to be called
     model.nodes["Input"].max_flow = ts
-    model.setup()
 
-    # test accessing a specific value
-    timestep = build_timestep(model, '2015-01-15')
+    model.run(until_date=datetime.datetime(2015, 1, 14))
+
     scenario_index = ScenarioIndex(0, np.array([], dtype=np.int32))
-    assert(ts.value(timestep, scenario_index) == 28.24)
+    assert(ts.get_value(scenario_index) == 28.24)
 
 def test_dirty_model(solver):
     """Test that the LP is updated when the model structure is redefined"""

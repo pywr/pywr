@@ -89,7 +89,7 @@ class DataFrameParameter(Parameter):
             metadata = {}
         self.metadata = metadata
         self.scenario = scenario
-        self._param = None
+        self._df = None
 
     @classmethod
     def load(cls, model, data):
@@ -100,34 +100,36 @@ class DataFrameParameter(Parameter):
         return cls(model, df, scenario=scenario, **data)
 
     def setup(self):
-        super(self.__class__, self).setup()
-
-        df = align_and_resample_dataframe(self.df, self.model.timestepper.datetime_index)
-
-        if df.ndim == 1:
-            # Single timeseries for the entire run
-            param = ArrayIndexedParameter(self.model, df.values.astype(dtype=np.float64))
-        elif df.shape[1] == 1:
-            # DataFrame with one column for the entire run
-            param = ArrayIndexedParameter(self.model, df.values[:, 0].astype(dtype=np.float64))
-        else:
+        super(DataFrameParameter, self).setup()
+        # Align the input DataFrame to the model timestep length.
+        self._df = df = align_and_resample_dataframe(self.df, self.model.timestepper.datetime_index)
+        # It should now have the correct number of timesteps for the model.
+        if len(df) != len(self.model.timestepper):
+            raise ValueError("Aligning DataFrame failed with a different length compared with model timesteps.")
+        # Check that if a 2D DataFrame is given that we also have a scenario assigned with it.
+        if df.ndim == 2 and df.shape[1] > 1:
             if self.scenario is None:
                 raise ValueError("Scenario must be given for a DataFrame input with multiple columns.")
             if self.scenario.size != df.shape[1]:
                 raise ValueError("Scenario size ({}) is different to the number of columns ({}) "
                                  "in the DataFrame input.".format(self.scenario.size, df.shape[1]))
-            # We assume the columns are in the correct order for the scenario.
-            param = ArrayIndexedScenarioParameter(self.model, self.scenario, df.values.astype(dtype=np.float64))
-
-        param.parents.add(self)
-        self._param = param
 
     def value(self, ts, scenario_index):
-        return self._param.value(ts, scenario_index)
+        print(ts)
+        i = ts.index
+        df = self._df
+
+        if df.ndim == 1:
+            # Single timeseries for the entire run
+            value = df.iloc[i]
+        elif df.shape[1] == 1:
+            value = df.iloc[i, :]
+        else:
+            # We assume the columns are in the correct order for the scenario.
+            j = scenario_index.global_id
+            value = df.iloc[i, j]
+        return value
 DataFrameParameter.register()
-
-
-
 
 
 class InterpolatedLevelParameter(Parameter):
