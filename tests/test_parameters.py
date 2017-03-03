@@ -721,22 +721,30 @@ class Test1DPolynomialParameter:
             # Passing both "parameter" and "storage_node" is invalid
             Polynomial1DParameter(simple_storage_model, [0.5, np.pi], parameter=param, storage_node=stg)
 
-    def test_1st_order_with_parameter(self, model):
+    def test_1st_order_with_parameter(self, simple_linear_model):
         """ Test 1st order with a `Parameter` """
+        model = simple_linear_model
+
         x = 2.0
         p1 = Polynomial1DParameter(model, [0.5, np.pi], parameter=ConstantParameter(model, x))
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x)
 
-    def test_2nd_order_with_parameter(self, model):
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi * x
+        model.run()
+
+    def test_2nd_order_with_parameter(self, simple_linear_model):
         """ Test 2nd order with a `Parameter` """
+        model = simple_linear_model
+
         x = 2.0
         px = ConstantParameter(model, x)
         p1 = Polynomial1DParameter(model, [0.5, np.pi, 3.0], parameter=px)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 3.0*x**2)
+
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x + 3.0*x**2
+        model.run()
 
     def test_1st_order_with_storage(self, simple_storage_model):
         """ Test with a `Storage` node """
@@ -745,15 +753,25 @@ class Test1DPolynomialParameter:
         x = stg.initial_volume
         p1 = Polynomial1DParameter(model, [0.5, np.pi], storage_node=stg)
         p2 = Polynomial1DParameter(model, [0.5, np.pi], storage_node=stg, use_proportional_volume=True)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        # Test with absolute storage
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x
+
+        # Test with proportional storage
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+
+            return 0.5 + np.pi * x/stg.max_volume
 
         model.setup()
+        model.step()
 
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x)
-        np.testing.assert_allclose(p2.value(ts, si), 0.5 + np.pi * x/stg.max_volume)
 
-    def test_load(self, model):
+    def test_load(self, simple_linear_model):
+        model = simple_linear_model
+
         x = 1.5
         data = {
             "type": "polynomial1d",
@@ -765,11 +783,14 @@ class Test1DPolynomialParameter:
         }
 
         p1 = load_parameter(model, data)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        for ts in model.timestepper:
-            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*x)
 
-    def test_load_with_scaling(self, model):
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + 2.5*x
+        model.run()
+
+    def test_load_with_scaling(self, simple_linear_model):
+        model = simple_linear_model
         x = 1.5
         data = {
             "type": "polynomial1d",
@@ -782,11 +803,12 @@ class Test1DPolynomialParameter:
             "offset": 0.75
         }
         xscaled = x*1.25 + 0.75
-
         p1 = load_parameter(model, data)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        for ts in model.timestepper:
-            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*xscaled)
+
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + 2.5*xscaled
+        model.run()
 
 
 class Test2DStoragePolynomialParameter:
@@ -801,10 +823,12 @@ class Test2DStoragePolynomialParameter:
         coefs = [[0.5, np.pi], [2.5, 0.3]]
 
         p1 = Polynomial2DStorageParameter(model, coefs, stg, ConstantParameter(model, x))
+
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x + 2.5*y+ 0.3*x*y
         model.setup()
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+        model.step()
 
     def test_load(self, simple_storage_model):
         model = simple_storage_model
@@ -824,10 +848,12 @@ class Test2DStoragePolynomialParameter:
         }
 
         p1 = load_parameter(model, data)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x + 2.5*y+ 0.3*x*y
         model.setup()
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+        model.step()
 
     def test_load_wth_scaling(self, simple_storage_model):
         model = simple_storage_model
@@ -851,15 +877,16 @@ class Test2DStoragePolynomialParameter:
         }
 
         p1 = load_parameter(model, data)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        model.setup()
-        ts = model.timestepper.current
 
         # Scaled parameters
         x = x*1.25 - 0.5
         y = y*1.3 + 0.75
 
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x + 2.5*y+ 0.3*x*y
+        model.setup()
+        model.step()
 
 class TestMinMaxNegativeParameter:
     @pytest.mark.parametrize("ptype,profile", [

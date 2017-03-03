@@ -58,23 +58,22 @@ cdef class Polynomial1DParameter(Parameter):
             self.children.add(self._parameter)
 
 
-
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i
         cdef double x, y
 
         # Get the 'x' value to put in the polynomial
         if self._parameter is not None:
-            x = self._parameter.value(ts, scenario_index)
+            x = self._parameter.__values[scenario_index._global_id]
         elif self._storage_node is not None:
             if self.use_proportional_volume:
-                x = self._storage_node.current_pc[scenario_index._global_id]
+                x = self._storage_node._current_pc[scenario_index._global_id]
             else:
-                x = self._storage_node.volume[scenario_index._global_id]
+                x = self._storage_node._volume[scenario_index._global_id]
         elif self._other_node is not None:
-            x = self._other_node.flow[scenario_index._global_id]
+            x = self._other_node._flow[scenario_index._global_id]
         else:
-            x = self._node.flow[scenario_index._global_id]
+            x = self._node._flow[scenario_index._global_id]
 
         # Apply scaling and offset
         x = x*self.scale + self.offset
@@ -152,11 +151,11 @@ cdef class Polynomial2DStorageParameter(Parameter):
 
         # Storage volume is 1st dimension
         if self.use_proportional_volume:
-            x = self._storage_node.current_pc[scenario_index._global_id]
+            x = self._storage_node._current_pc[scenario_index._global_id]
         else:
-            x = self._storage_node.volume[scenario_index._global_id]
+            x = self._storage_node._volume[scenario_index._global_id]
         # Parameter value is 2nd dimension
-        y = self._parameter.value(ts, scenario_index)
+        y = self._parameter.__values[scenario_index._global_id]
 
         # Apply scaling and offset
         x = self.storage_scale*x + self.storage_offset
