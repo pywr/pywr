@@ -640,6 +640,28 @@ cdef class IndexParameter(Parameter):
         """Returns the current index"""
         # return index as an integer
         return 0
+
+    cpdef setup(self):
+        super(IndexParameter, self).setup()
+        cdef int num_comb
+        if self._model.scenarios.combinations:
+            num_comb = len(self._model.scenarios.combinations)
+        else:
+            num_comb = 1
+        self.__indices = np.empty([num_comb], np.int32)
+
+    cpdef calc_values(self, Timestep timestep):
+        cdef ScenarioIndex scenario_index
+        for scenario_index in self._model.scenarios.combinations:
+            self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
+            self.__indices[<int>(scenario_index.global_id)] = self.index(timestep, scenario_index)
+
+    cpdef int get_index(self, ScenarioIndex scenario_index):
+        return self.__indices[<int>(scenario_index.global_id)]
+
+    cpdef int[:] get_all_indices(self):
+        return self.__indices
+
 IndexParameter.register()
 
 cdef class IndexedArrayParameter(Parameter):
@@ -938,35 +960,35 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
         if self._agg_func == AggFuncs.SUM:
             value = 0
             for parameter in self.parameters:
-                value += parameter.index(timestep, scenario_index)
+                value += parameter.get_index(scenario_index)
         elif self._agg_func == AggFuncs.MAX:
             value = INT_MIN
             for parameter in self.parameters:
-                value2 = parameter.index(timestep, scenario_index)
+                value2 = parameter.get_index(scenario_index)
                 if value2 > value:
                     value = value2
         elif self._agg_func == AggFuncs.MIN:
             value = INT_MAX
             for parameter in self.parameters:
-                value2 = parameter.index(timestep, scenario_index)
+                value2 = parameter.get_index(scenario_index)
                 if value2 < value:
                     value = value2
         elif self._agg_func == AggFuncs.ANY:
             value = 0
             for parameter in self.parameters:
-                value2 = parameter.index(timestep, scenario_index)
+                value2 = parameter.get_index(scenario_index)
                 if value2:
                     value = 1
                     break
         elif self._agg_func == AggFuncs.ALL:
             value = 1
             for parameter in self.parameters:
-                value2 = parameter.index(timestep, scenario_index)
+                value2 = parameter.get_index(scenario_index)
                 if not value2:
                     value = 0
                     break
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self._agg_user_func([parameter.value(timestep, scenario_index) for parameter in self.parameters])
+            value = self._agg_user_func([parameter.get_index(scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
         return value
@@ -1177,14 +1199,6 @@ def load_parameter(model, data, parameter_name=None):
     elif isinstance(data, (float, int)) or data is None:
         # parameter is a constant
         parameter = data
-    elif "cached" in data.keys() and data["cached"]:
-        # cached parameter wrapper
-        del(data["cached"])
-        if "name" in data:
-            parameter_name = data["name"]
-            del(data["name"])
-        param = load_parameter(model, data)
-        parameter = CachedParameter(model, param)
     else:
         # parameter is dynamic
         parameter_type = data['type']

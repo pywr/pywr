@@ -341,41 +341,71 @@ class TestAggregatedParameter:
 
 class DummyIndexParameter(IndexParameter):
     """A simple IndexParameter which returns a constant value"""
-    def __init__(self, model, index, *args, **kwargs):
-        super(DummyIndexParameter, self).__init__(model, *args, **kwargs)
+    def __init__(self, model, index, **kwargs):
+        super(DummyIndexParameter, self).__init__(model, **kwargs)
         self._index = index
     def index(self, timestep, scenario_index):
         return self._index
+    def __repr__(self):
+        return "<DummyIndexParameter \"{}\">".format(self.name)
 
-def test_aggregated_index_parameter(model):
-    """Basic tests of AggregatedIndexParameter"""
+class TestAggregatedIndexParameter:
+    """Tests for AggregatedIndexParameter"""
+    funcs = {"min": np.min, "max": np.max, "sum": np.sum}
 
-    parameters = []
-    parameters.append(DummyIndexParameter(model, 2))
-    parameters.append(DummyIndexParameter(model, 3))
+    @pytest.mark.parametrize("agg_func", ["min", "max", "sum"])
+    def test_agg(self, simple_linear_model, agg_func):
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        model.timestepper.start = "2017-01-01"
+        model.timestepper.end = "2017-01-03"
 
-    timestep = scenario_index = None  # lazy
+        scenarioA = Scenario(model, "Scenario A", size=2)
+        scenarioB = Scenario(model, "Scenario B", size=5)
 
-    agg_index = AggregatedIndexParameter(model, parameters, "sum")
-    assert(agg_index.index(timestep, scenario_index) == 5)
+        p1 = DummyIndexParameter(model, 2)
+        p2 = DummyIndexParameter(model, 3)
 
-    agg_index = AggregatedIndexParameter(model, parameters, "max")
-    assert(agg_index.index(timestep, scenario_index) == 3)
+        p = AggregatedIndexParameter(model, [p1, p2], agg_func=agg_func)
 
-    agg_index = AggregatedIndexParameter(model, parameters, "min")
-    assert(agg_index.index(timestep, scenario_index) == 2)
+        func = TestAggregatedParameter.funcs[agg_func]
 
-def test_aggregated_index_parameter_anyall(model):
-    """Test `any` and `all` predicates"""
-    timestep = scenario_index = None  # lazy
-    data = [(0, 0), (1, 0), (0, 1), (1, 1), (1, 1, 1)]
-    expected = [(False, False), (True, False), (True, False), (True, True), (True, True)]
-    for item, (expected_any, expected_all) in zip(data, expected):
-        parameters = [DummyIndexParameter(model, i) for i in item]
-        agg_index_any = AggregatedIndexParameter(model, parameters, "any")
-        agg_index_all = AggregatedIndexParameter(model, parameters, "all")
-        assert(agg_index_any.index(timestep, scenario_index) == int(expected_any))
-        assert(agg_index_all.index(timestep, scenario_index) == int(expected_all))
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            x = p1.get_index(scenario_index)
+            y = p2.get_index(scenario_index)
+            return func(np.array([x,y], np.int32))
+
+        model.run()
+
+    def test_agg_anyall(self, simple_linear_model):
+        """Test the "any" and "all" aggregation functions"""
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        model.timestepper.start = "2017-01-01"
+        model.timestepper.end = "2017-01-03"
+
+        scenarioA = Scenario(model, "Scenario A", size=2)
+        scenarioB = Scenario(model, "Scenario B", size=5)
+        num_comb = len(model.scenarios.get_combinations())
+
+        parameters = {
+            0: DummyIndexParameter(model, 0, name="p0"),
+            1: DummyIndexParameter(model, 1, name="p1"),
+            2: DummyIndexParameter(model, 2, name="p2"),
+        }
+
+        data = [(0, 0), (1, 0), (0, 1), (1, 1), (1, 1, 1), (0, 2)]
+        data_parameters = [[parameters[i] for i in d] for d in data]
+        expected = [(np.any(d), np.all(d)) for d in data]
+
+        for n, params in enumerate(data_parameters):
+            for m, agg_func in enumerate(["any", "all"]):
+                p = AggregatedIndexParameter(model, params, agg_func=agg_func)
+                e = np.ones([len(model.timestepper), num_comb]) * expected[n][m]
+                r = AssertionRecorder(model, p, expected_data=e)
+
+        model.run()
 
 def test_parameter_child_variables(model):
 

@@ -50,7 +50,7 @@ class AssertionRecorder(Recorder):
         for scenario_index in self.model.scenarios.combinations:
             if self.expected_func:
                 expected_value = self.expected_func(timestep, scenario_index)
-            elif self.expected_data:
+            elif self.expected_data is not None:
                 expected_value = self.expected_data[timestep.index, scenario_index.global_id]
             value = self.parameter.get_value(scenario_index)
             np.testing.assert_allclose(value, expected_value)
