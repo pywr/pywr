@@ -222,8 +222,8 @@ def test_timeseries_excel(simple_linear_model, filename):
     ts = DataFrameParameter.load(model, data)
 
     # model (intentionally not aligned)
-    model.timestepper.start = ts.df.index[0] + 5
-    model.timestepper.end = ts.df.index[-1] - 12
+    model.timestepper.start = ts.dataframe.index[0] + 5
+    model.timestepper.end = ts.dataframe.index[-1] - 12
 
     # need to assign parameter for it's setup method to be called
     model.nodes["Input"].max_flow = ts

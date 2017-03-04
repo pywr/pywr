@@ -182,6 +182,92 @@ cdef class CachedParameter(IndexParameter):
 CachedParameter.register()
 
 
+def align_and_resample_dataframe(df, datetime_index):
+    from pandas.tseries.offsets import DateOffset, Week, Day
+    # Must resample and align the DataFrame to the model.
+    start = datetime_index[0]
+    end = datetime_index[-1]
+
+    df_index = df.index
+    df_freq = df.index.freq
+    if df_freq is None:
+        raise ValueError('DataFrame index has no frequency.')
+
+    # Special case of a weekly frequency that can be treated as 7D
+    if isinstance(df_freq, Week):
+        df_freq = Day(n=7)
+
+    if df_index[0] > start:
+        raise ValueError('DataFrame data begins after the index start date.')
+    if df_index[-1] < end:
+        raise ValueError('DataFrame data ends before the index end date.')
+
+    # Downsampling (i.e. from high freq to lower model freq)
+    if datetime_index.freq >= df_freq:
+        # Slice to required dates
+        df = df[start:end]
+        if df.index[0] != start:
+            raise ValueError('Start date of DataFrame can not be aligned with the desired index start date.')
+        # Take mean at the model's frequency
+        df = df.resample(datetime_index.freq).mean()
+    else:
+        raise NotImplementedError('Upsampling DataFrame not implemented.')
+
+    return df
+
+
+cdef class DataFrameParameter(Parameter):
+    """Timeseries parameter with automatic alignment and resampling
+    
+    Parameters
+    ----------
+    model : pywr.model.Model
+    dataframe : pandas.DataFrame or pandas.Series
+    scenario: pywr._core.Scenario (optional)
+    """
+    def __init__(self, model, dataframe, scenario=None, **kwargs):
+        super(DataFrameParameter, self).__init__(model, *kwargs)
+        self.dataframe = dataframe
+        self.scenario = scenario
+
+    cpdef setup(self):
+        super(DataFrameParameter, self).setup()
+        # align and resample the dataframe
+        dataframe_resampled = align_and_resample_dataframe(self.dataframe, self.model.timestepper.datetime_index)
+        if dataframe_resampled.ndim == 1:
+            dataframe_resampled = pandas.DataFrame(dataframe_resampled)
+        # dataframe should now have the correct number of timesteps for the model
+        if len(dataframe_resampled) != len(self.model.timestepper):
+            raise ValueError("Aligning DataFrame failed with a different length compared with model timesteps.")
+        # check that if a 2D DataFrame is given that we also have a scenario assigned with it
+        if dataframe_resampled.ndim == 2 and dataframe_resampled.shape[1] > 1:
+            if self.scenario is None:
+                raise ValueError("Scenario must be given for a DataFrame input with multiple columns.")
+            if self.scenario.size != dataframe_resampled.shape[1]:
+                raise ValueError("Scenario size ({}) is different to the number of columns ({}) "
+                                 "in the DataFrame input.".format(self.scenario.size, dataframe_resampled.shape[1]))
+        self._values = dataframe_resampled.values.astype(np.float64)
+        if self.scenario is not None:
+            self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef double value
+        if self.scenario is not None:
+            value = self._values[<int>(timestep.index), <int>(scenario_index._indices[self._scenario_index])]
+        else:
+            value = self._values[<int>(timestep.index), 0]
+        return value
+
+    @classmethod
+    def load(cls, model, data):
+        scenario = data.pop('scenario', None)
+        if scenario is not None:
+            scenario = model.scenarios[scenario]
+        df = load_dataframe(model, data)
+        return cls(model, df, scenario=scenario, **data)
+
+DataFrameParameter.register()
+
 cdef class ArrayIndexedParameter(Parameter):
     """Time varying parameter using an array and Timestep._index
 

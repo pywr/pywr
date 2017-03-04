@@ -755,106 +755,29 @@ def timeseries2_observed():
     df += np.random.normal(size=df.shape)
     return df
 
+class TestCalibrationRecorders:
+    data = [
+        (RootMeanSquaredErrorNodeRecorder, lambda sim, obs: np.sqrt(np.mean((sim-obs)**2, axis=0))),
+        (MeanAbsoluteErrorNodeRecorder, lambda sim, obs: np.mean(np.abs(sim-obs), axis=0)),
+        (MeanSquareErrorNodeRecorder, lambda sim, obs: np.mean((sim-obs)**2, axis=0)),
+        (PercentBiasNodeRecorder, lambda sim, obs: np.sum(obs-sim, axis=0)*100/np.sum(obs, axis=0)),
+        (RMSEStandardDeviationRatioNodeRecorder, lambda sim, obs: np.sqrt(np.mean((obs-sim)**2, axis=0))/np.std(obs, axis=0)),
+        (NashSutcliffeEfficiencyNodeRecorder, lambda sim, obs: 1.0 - np.sum((obs-sim)**2, axis=0)/np.sum((obs-obs.mean())**2, axis=0)),
+    ]
+    ids = ["rmse", "mae", "mse", "pbias", "rmse", "ns"]
 
-def test_rmse_recorder(timeseries2_model, timeseries2_observed):
-    """ Test RMSE Node recorder """
+    @pytest.mark.parametrize("cls,func", data, ids=ids)
+    def test_calibration_recorder(self, timeseries2_model, timeseries2_observed, cls, func):
+        model = timeseries2_model
+        observed = timeseries2_observed
+        node = model.nodes["river1"]
+        recorder = cls(model, node, observed)
 
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = RootMeanSquaredErrorNodeRecorder(m, m.nodes['river1'], obs)
+        model.run()
 
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    rmse = np.sqrt(np.mean((mod-obs)**2, axis=0))
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(rmse, values)
-
-
-def test_mae_recorder(timeseries2_model, timeseries2_observed):
-    """ Test MAE Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = MeanAbsoluteErrorNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    mae = np.mean(np.abs(mod-obs), axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(mae, values)
-
-
-def test_mse_recorder(timeseries2_model, timeseries2_observed):
-    """ Test MSE Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = MeanSquareErrorNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    mse = np.mean((mod-obs)**2, axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(mse, values)
-
-
-def test_pbias_recorder(timeseries2_model, timeseries2_observed):
-    """ Test percent bias Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = PercentBiasNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    pbias = np.sum(obs-mod, axis=0)*100/np.sum(obs, axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(pbias, values)
-
-
-def test_rsr_recorder(timeseries2_model, timeseries2_observed):
-    """ Test percent RMSE Std ratio Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = RMSEStandardDeviationRatioNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    rsr = np.sqrt(np.mean((obs-mod)**2, axis=0))/np.std(obs, axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(rsr, values)
-
-
-def test_nse_recorder(timeseries2_model, timeseries2_observed):
-    """ Test percent NSE Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = NashSutcliffeEfficiencyNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-
-    obs_mean = np.mean(obs, axis=0)
-    nse = 1.0 - np.sum((obs-mod)**2, axis=0)/np.sum((obs-obs_mean)**2, axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(nse, values)
+        simulated = model.nodes["catchment1"].max_flow.dataframe
+        metric = func(simulated, observed)
+        values = recorder.values()
+        assert(values.shape[0] == len(model.scenarios.combinations))
+        assert(values.ndim == 1)
+        assert_allclose(metric, values)

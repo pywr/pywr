@@ -21,6 +21,12 @@ cdef class ConstantParameter(Parameter):
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
 
+cdef class DataFrameParameter(Parameter):
+    cdef double[:,:] _values
+    cdef public Scenario scenario
+    cdef int _scenario_index
+    cdef public object dataframe
+
 cdef class ArrayIndexedParameter(Parameter):
     cdef double[:] values
 

@@ -9,6 +9,7 @@ from ._parameters import (
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
     IndexParameter, CachedParameter, RecorderThresholdParameter,
     AggregatedParameter, AggregatedIndexParameter,
+    align_and_resample_dataframe, DataFrameParameter,
     load_parameter, load_parameter_values, load_dataframe)
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from past.builtins import basestring
@@ -45,91 +46,6 @@ class ScaledProfileParameter(Parameter):
         p = self.profile.value(ts, si)
         return self.scale * p
 ScaledProfileParameter.register()
-
-
-def align_and_resample_dataframe(df, datetime_index):
-    from pandas.tseries.offsets import DateOffset, Week, Day
-    # Must resample and align the DataFrame to the model.
-    start = datetime_index[0]
-    end = datetime_index[-1]
-
-    df_index = df.index
-    df_freq = df.index.freq
-    if df_freq is None:
-        raise ValueError('DataFrame index has no frequency.')
-
-    # Special case of a weekly frequency that can be treated as 7D
-    if isinstance(df_freq, Week):
-        df_freq = Day(n=7)
-
-    if df_index[0] > start:
-        raise ValueError('DataFrame data begins after the index start date.')
-    if df_index[-1] < end:
-        raise ValueError('DataFrame data ends before the index end date.')
-
-    # Downsampling (i.e. from high freq to lower model freq)
-    if datetime_index.freq >= df_freq:
-        # Slice to required dates
-        df = df[start:end]
-        if df.index[0] != start:
-            raise ValueError('Start date of DataFrame can not be aligned with the desired index start date.')
-        # Take mean at the model's frequency
-        df = df.resample(datetime_index.freq).mean()
-    else:
-        raise NotImplementedError('Upsampling DataFrame not implemented.')
-
-    return df
-
-
-class DataFrameParameter(Parameter):
-    def __init__(self, model, df, scenario=None, metadata=None, **kwargs):
-        super(DataFrameParameter, self).__init__(model, **kwargs)
-        self.df = df
-        if metadata is None:
-            metadata = {}
-        self.metadata = metadata
-        self.scenario = scenario
-        self._df = None
-
-    @classmethod
-    def load(cls, model, data):
-        scenario = data.pop('scenario', None)
-        if scenario is not None:
-            scenario = model.scenarios[scenario]
-        df = load_dataframe(model, data)
-        return cls(model, df, scenario=scenario, **data)
-
-    def setup(self):
-        super(DataFrameParameter, self).setup()
-        # Align the input DataFrame to the model timestep length.
-        self._df = df = align_and_resample_dataframe(self.df, self.model.timestepper.datetime_index)
-        # It should now have the correct number of timesteps for the model.
-        if len(df) != len(self.model.timestepper):
-            raise ValueError("Aligning DataFrame failed with a different length compared with model timesteps.")
-        # Check that if a 2D DataFrame is given that we also have a scenario assigned with it.
-        if df.ndim == 2 and df.shape[1] > 1:
-            if self.scenario is None:
-                raise ValueError("Scenario must be given for a DataFrame input with multiple columns.")
-            if self.scenario.size != df.shape[1]:
-                raise ValueError("Scenario size ({}) is different to the number of columns ({}) "
-                                 "in the DataFrame input.".format(self.scenario.size, df.shape[1]))
-
-    def value(self, ts, scenario_index):
-        print(ts)
-        i = ts.index
-        df = self._df
-
-        if df.ndim == 1:
-            # Single timeseries for the entire run
-            value = df.iloc[i]
-        elif df.shape[1] == 1:
-            value = df.iloc[i, :]
-        else:
-            # We assume the columns are in the correct order for the scenario.
-            j = scenario_index.global_id
-            value = df.iloc[i, j]
-        return value
-DataFrameParameter.register()
 
 
 class InterpolatedLevelParameter(Parameter):
