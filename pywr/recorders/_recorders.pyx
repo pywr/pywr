@@ -586,8 +586,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self._model.timestepper.current
-        for i, scenario_index in enumerate(self._model.scenarios.combinations):
-            self._data[ts._index, i] = self._param.value(ts, scenario_index)
+        self._data[ts._index, :] = self._param.get_all_values()
         return 0
 
     property data:
@@ -619,8 +618,7 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self._model.timestepper.current
-        for i, scenario_index in enumerate(self._model.scenarios.combinations):
-            self._data[ts._index, i] = self._param.index(ts, scenario_index)
+        self._data[ts._index, :] = self._param.get_all_indices()
         return 0
 
     property data:
@@ -668,7 +666,7 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
         cdef Timestep timestep = self._model.timestepper.current
 
         for i, scenario_index in enumerate(self._model.scenarios.combinations):
-            self._memory[self.position, i] = self._param.value(timestep, scenario_index)
+            self._memory[self.position, i] = self._param.get_value(scenario_index)
 
         if timestep.index < self.window:
             n = timestep.index + 1
@@ -950,7 +948,7 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
 
         for scenario_index in self.model.scenarios.combinations:
             # Get current parameter value
-            value = self._param.index(ts, scenario_index)
+            value = self._param.get_index(scenario_index)
 
             # Update annual max if a new maximum is found
             if value > self._current_max[scenario_index._global_id]:

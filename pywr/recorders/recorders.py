@@ -348,14 +348,10 @@ class TablesRecorder(Recorder):
             elif isinstance(node, AbstractNode):
                 ca[idx, :] = np.reshape(node.flow, scenario_shape)
             elif isinstance(node, IndexParameter):
-                a = np.empty(len(self.model.scenarios.combinations), dtype=np.int)
-                for si in self.model.scenarios.combinations:
-                     a[si.global_id] = node.index(ts, si)
+                a = node.get_all_indices()
                 ca[idx, :] = np.reshape(a, scenario_shape)
             elif isinstance(node, Parameter):
-                a = np.empty(len(self.model.scenarios.combinations), dtype=np.float64)
-                for si in self.model.scenarios.combinations:
-                    a[si.global_id] = node.value(ts, si)
+                a = node.get_all_values()
                 ca[idx, :] = np.reshape(a, scenario_shape)
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))

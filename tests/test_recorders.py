@@ -169,6 +169,9 @@ def test_numpy_parameter_recorder(simple_linear_model):
 def test_numpy_index_parameter_recorder(simple_storage_model):
     """
     Test the NumpyArrayIndexParameterRecorder
+    
+    Note the parameter is recorder at the start of the timestep, while the
+    storage is recorded at the end of the timestep.
     """
     from pywr.parameters.control_curves import ControlCurveIndexParameter
 
@@ -186,12 +189,12 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
     assert(res_rec.data.shape == (5, 1))
     assert_allclose(res_rec.data, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
     assert (lvl_rec.data.shape == (5, 1))
-    assert_allclose(lvl_rec.data, np.array([[0, 1, 2, 2, 2]]).T, atol=1e-7)
+    assert_allclose(lvl_rec.data, np.array([[0, 0, 1, 2, 2]]).T, atol=1e-7)
 
 
     df = lvl_rec.to_dataframe()
     assert df.shape == (5, 1)
-    assert_allclose(df.values, np.array([[0, 1, 2, 2, 2]]).T, atol=1e-7)
+    assert_allclose(df.values, np.array([[0, 0, 1, 2, 2]]).T, atol=1e-7)
 
 
 def test_parameter_recorder_json(solver):

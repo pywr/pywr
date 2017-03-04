@@ -1089,6 +1089,7 @@ cdef class RecorderThresholdParameter(IndexParameter):
     def __init__(self, model, Recorder recorder, threshold, values=None, predicate=None, **kwargs):
         super(RecorderThresholdParameter, self).__init__(model, **kwargs)
         self.recorder = recorder
+        self.children.add(recorder)
         self.threshold = threshold
         if values is None:
             self.values = None
@@ -1102,7 +1103,7 @@ cdef class RecorderThresholdParameter(IndexParameter):
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns a value from the values attribute, using the index"""
-        cdef int ind = self.index(timestep, scenario_index)
+        cdef int ind = self.index(timestep, scenario_index) # don't use get_index!
         cdef double v
         if self.values is not None:
             v = self.values[ind]
@@ -1120,6 +1121,7 @@ cdef class RecorderThresholdParameter(IndexParameter):
             # threshold to compare to
             ind = 1
         else:
+            # TODO: not all recorders have a data property! need an API for this...
             x = self.recorder.data[index-1, scenario_index.global_id]
             if self.predicate == Predicates.LT:
                 ind = x < self.threshold

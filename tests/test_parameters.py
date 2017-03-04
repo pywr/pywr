@@ -616,19 +616,30 @@ def test_simple_json_parameter_reference(solver):
     assert(len(model.parameters) == 4)  # 4 parameters defined
 
 
-def test_threshold_parameter(model):
+def test_threshold_parameter(simple_linear_model):
+    model = simple_linear_model
+    model.timestepper.delta = 150
+    
+    scenario = Scenario(model, "Scenario", size=2)
+
     class DummyRecorder(Recorder):
-        def __init__(self, *args, **kwargs):
-            super(DummyRecorder, self).__init__(*args, **kwargs)
-            self.data = np.array([[0.0]], dtype=np.float64)
-
-    rec = DummyRecorder(model)
-
-    timestep = Timestep(datetime.datetime(2016, 1, 2), 1, 1)
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        def __init__(self, model, value, *args, **kwargs):
+            super(DummyRecorder, self).__init__(model, *args, **kwargs)
+            self.val = value
+        def setup(self):
+            super(DummyRecorder, self).setup()
+            num_comb = len(model.scenarios.combinations)
+            self.data = np.empty([len(model.timestepper), num_comb], dtype=np.float64)
+        def after(self):
+            timestep = model.timestepper.current
+            self.data[timestep.index, :] = self.val
 
     threshold = 10.0
     values = [50.0, 60.0]
+    
+    rec1 = DummyRecorder(model, threshold-5) # below
+    rec2 = DummyRecorder(model, threshold) # equal
+    rec3 = DummyRecorder(model, threshold+5) # above
 
     expected = [
         ("LT", (1, 0, 0)),
@@ -637,19 +648,17 @@ def test_threshold_parameter(model):
         ("LE", (1, 1, 0)),
         ("GE", (0, 1, 1)),
     ]
-
+    
     for predicate, (value_lt, value_eq, value_gt) in expected:
-        param = RecorderThresholdParameter(model, rec, threshold, values, predicate)
-        rec.data[...] = threshold - 5  # data is below threshold
-        assert_allclose(param.value(timestep, si), values[value_lt])
-        assert(param.index(timestep, si) == value_lt)
-        rec.data[...] = threshold  # data is at threshold
-        assert_allclose(param.value(timestep, si), values[value_eq])
-        assert(param.index(timestep, si) == value_eq)
-        rec.data[...] = threshold + 5  # data is above threshold
-        assert_allclose(param.value(timestep, si), values[value_gt])
-        assert(param.index(timestep, si) == value_gt)
-
+        for rec in (rec1, rec2, rec3):
+            param = RecorderThresholdParameter(model, rec, threshold, values, predicate)
+            e_val = values[getattr(rec.val, "__{}__".format(predicate.lower()))(threshold)]
+            e = np.ones([len(model.timestepper), len(model.scenarios.get_combinations())]) * e_val
+            e[0, :] = values[1] # first timestep is always "on"
+            r = AssertionRecorder(model, param, expected_data=e)
+            r.name = "assert {} {} {}".format(rec.val, predicate, threshold)
+    
+    model.run()
 
 def test_constant_from_df(solver):
     """
