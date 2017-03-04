@@ -57,7 +57,12 @@ An example use is an index parameter which is "on" when any reservoir in a group
 Custom aggregation functions
 ============================
 
-TODO
+Custom aggregation functions can be used via the Python API only. The function is called with the values of the individual parameters and should return the aggregated value. For example, the following aggregation function returns the 25th percentile of the values:
+
+.. code-block:: python
+
+    func = lambda *x: np.percentile(x, 25)
+    parameter = AggregatedParameter(parameters, agg_func=func)
 
 MaxParameter, MinParameter and NegativeParameter, NegativeMaxParameter
 ======================================================================
