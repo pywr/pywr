@@ -59,8 +59,8 @@ Custom aggregation functions
 
 TODO
 
-MaxParameter, MinParameter and NegativeParameter
-================================================
+MaxParameter, MinParameter and NegativeParameter, NegativeMaxParameter
+======================================================================
 
 The Max/Min/Negative parameters are optimised aggregation functions for some common operations, which aggregate a single parameter and a constant.
 
@@ -104,5 +104,15 @@ An example use of these functions is to handle the net inflow timeseries for a r
             "parameter": "original"
             "threshold": 0.0
         }
+        "threshold": 0.0
+    }
+
+The pattern above was common enough to warrant the creation of the ``NegativeMaxParameter``.
+
+.. code-block:: javascript
+
+    "evaporation": {
+        "type": "negativemax",
+        "parameter": "original",
         "threshold": 0.0
     }
