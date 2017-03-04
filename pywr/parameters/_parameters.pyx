@@ -701,9 +701,9 @@ cdef class IndexedArrayParameter(Parameter):
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the Parameter at the current index"""
         cdef int index
-        index = self.index_parameter.index(timestep, scenario_index)
+        index = self.index_parameter.get_index(scenario_index)
         cdef Parameter parameter = self.params[index]
-        return parameter.value(timestep, scenario_index)
+        return parameter.get_value(scenario_index)
 
     @classmethod
     def load(cls, model, data):
