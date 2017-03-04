@@ -147,7 +147,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         # First level 100%
         cc_prev = 1.0
         for j, cc_param in enumerate(self._control_curves):
-            cc = cc_param.value(ts, scenario_index)
+            cc = cc_param.get_value(scenario_index)
             # If level above control curve then return this level's value
             if current_pc >= cc:
                 try:
@@ -230,7 +230,7 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         current_percentage = self.storage_node._current_pc[scenario_index._global_id]
         index = len(self.control_curves)
         for j, control_curve in enumerate(self.control_curves):
-            target_percentage = control_curve.value(timestep, scenario_index)
+            target_percentage = control_curve.get_value(scenario_index)
             if current_percentage >= target_percentage:
                 index = j
                 break

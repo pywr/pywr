@@ -150,38 +150,6 @@ cdef class ConstantParameter(Parameter):
 ConstantParameter.register()
 
 
-cdef class CachedParameter(IndexParameter):
-    """Wrapper for Parameters which caches the result"""
-    def __init__(self, model, parameter, *args, **kwargs):
-        super(IndexParameter, self).__init__(model, *args, **kwargs)
-        self.parameter = parameter
-        self.children.add(parameter)
-        self.timestep = None
-        self.scenario_index = None
-
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        if timestep is not self.timestep or scenario_index is not self.scenario_index:
-            # refresh the cache
-            self.cached_value = self.parameter.value(timestep, scenario_index)
-            self.timestep = timestep
-            self.scenario_index = scenario_index
-        return self.cached_value
-
-    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        if timestep is not self.timestep or scenario_index is not self.scenario_index:
-            # refresh the cache
-            self.cached_index = self.parameter.index(timestep, scenario_index)
-            self.timestep = timestep
-            self.scenario_index = scenario_index
-        return self.cached_index
-
-    @classmethod
-    def load(cls, model, data):
-        parameter = load_parameter(model, data.pop("parameter"))
-        return cls(model, parameter, **data)
-CachedParameter.register()
-
-
 def align_and_resample_dataframe(df, datetime_index):
     from pandas.tseries.offsets import DateOffset, Week, Day
     # Must resample and align the DataFrame to the model.
@@ -390,7 +358,7 @@ cdef class TablesArrayParameter(IndexParameter):
         cdef int i = ts._index
         cdef int j
         if self._values_dbl is None:
-            return float(self.index(ts, scenario_index))
+            return float(self.get_index(scenario_index))
         # Support 1D and 2D indexing when scenario is or is not given.
         if self._scenario_index == -1:
             return self._values_dbl[i, 0]
@@ -402,7 +370,7 @@ cdef class TablesArrayParameter(IndexParameter):
         cdef int i = ts._index
         cdef int j
         if self._values_int is None:
-            return int(self.value(ts, scenario_index))
+            return int(self.get_value(scenario_index))
         # Support 1D and 2D indexing when scenario is or is not given.
         if self._scenario_index == -1:
             return self._values_int[i, 0]

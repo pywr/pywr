@@ -1,7 +1,7 @@
-from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep
+from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep, Output
 from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter, MonthlyProfileControlCurveParameter
-from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder
+from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, assert_rec
 import numpy as np
 import pandas as pd
 from numpy.testing import assert_allclose
@@ -206,30 +206,33 @@ def test_control_curve_interpolated(model):
     m.scenarios.setup()
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
-    s = Storage(m, 'Storage', max_volume=100.0)
+    model.timestepper.delta = 200
+
+    s = Storage(m, 'Storage', max_volume=100.0, num_inputs=1, num_outputs=0)
+    o = Output(m, 'out', max_flow=0)
+    s.connect(o)
 
     cc = ConstantParameter(model, 0.8)
     values = [20.0, 5.0, 0.0]
-    s.cost = ControlCurveInterpolatedParameter(model, s, cc, values)
-    s.setup(m)
+    s.cost = p = ControlCurveInterpolatedParameter(model, s, cc, values)
 
-    for v in (0.0, 10.0, 50.0, 80.0, 90.0, 100.0):
-        s.initial_volume = v
-        s.reset()
-        assert_allclose(s.get_cost(m.timestepper.current, si), np.interp(v/100.0, [0.0, 0.8, 1.0], values[::-1]))
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        v = s.initial_volume
+        c = cc.value(timestep, scenario_index)
+        if c == 1.0 and v == 100.0:
+            expected = values[1]
+        elif c == 0.0 and v == 0.0:
+            expected = values[1]
+        else:
+            expected = np.interp(v/100.0, [0.0, c, 1.0], values[::-1])
+        return expected
 
-    # special case when control curve is 100%
-    cc.update(np.array([1.0,]))
-    s.initial_volume == 100.0
-    s.reset()
-    assert_allclose(s.get_cost(m.timestepper.current, si), values[1])
-
-    # special case when control curve is 0%
-    cc.update(np.array([0.0,]))
-    s.initial_volume == 0.0
-    s.reset()
-    assert_allclose(s.get_cost(m.timestepper.current, si), values[0])
-
+    for control_curve in (0.0, 0.8, 1.0):
+        cc.update(np.array([control_curve,]))
+        for initial_volume in (0.0, 10.0, 50.0, 80.0, 90.0, 100.0):
+            s.initial_volume = initial_volume
+            model.run()
 
 def test_control_curve_interpolated_json(solver):
     # this is a little hack-y, as the parameters don't provide access to their
