@@ -43,7 +43,7 @@ class ScaledProfileParameter(Parameter):
         return cls(model, scale, profile, **data)
 
     def value(self, ts, si):
-        p = self.profile.value(ts, si)
+        p = self.profile.get_value(si)
         return self.scale * p
 ScaledProfileParameter.register()
 
