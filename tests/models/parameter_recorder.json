@@ -36,11 +36,11 @@
         }
     },
     "recorders": {
-        "demand_max": {
+        "demand_max_recorder": {
             "type": "NumpyArrayParameterRecorder",
             "parameter": "demand_max"
         },
-        "supply_max": {
+        "supply_max_recorder": {
             "type": "NumpyArrayParameterRecorder",
             "node": "supply1",
             "parameter": "supply_max"

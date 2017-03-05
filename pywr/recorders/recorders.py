@@ -6,7 +6,7 @@ from .calibration import *
 from past.builtins import basestring
 from pywr.h5tools import H5Store
 
-def assert_rec(model, parameter):
+def assert_rec(model, parameter, name=None):
     """Decorator for creating AssertionRecorder objects
 
     Example
@@ -16,13 +16,13 @@ def assert_rec(model, parameter):
         return timestep.dayofyear * 2.0
     """
     def assert_rec_(f):
-        rec = AssertionRecorder(model, parameter, expected_func=f)
+        rec = AssertionRecorder(model, parameter, expected_func=f, name=name)
         return f
     return assert_rec_
 
 class AssertionRecorder(Recorder):
     """A recorder that asserts the value of a parameter for testing purposes"""
-    def __init__(self, model, parameter, expected_data=None, expected_func=None):
+    def __init__(self, model, parameter, expected_data=None, expected_func=None, **kwargs):
         """
         Parameters
         ----------
@@ -35,7 +35,7 @@ class AssertionRecorder(Recorder):
         --------
         pywr.recorders.assert_rec
         """
-        super(AssertionRecorder, self).__init__(model)
+        super(AssertionRecorder, self).__init__(model, **kwargs)
         self.parameter = parameter
         self.expected_data = expected_data
         self.expected_func = expected_func

@@ -70,7 +70,7 @@ cdef class Component:
     """
     def __init__(self, model, name=None, comment=None):
         self.model = model
-        self._name = name
+        self.name = name
         self.comment = comment
         model.component_graph.add_edge(ROOT_NODE, self)
         self.parents = GraphInterface(self)
@@ -79,8 +79,13 @@ cdef class Component:
     property name:
         def __get__(self):
             return self._name
-        def __set__(self, value):
-            self._name = value
+
+        def __set__(self, name):
+            # check for name collision
+            if name is  not None and name in self.model.components.keys():
+                raise ValueError('A component with the name "{}" already exists.'.format(name))
+            # apply new name
+            self._name = name
 
     cpdef setup(self):
         pass

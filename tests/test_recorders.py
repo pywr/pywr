@@ -199,8 +199,8 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
 
 def test_parameter_recorder_json(solver):
     model = load_model("parameter_recorder.json", solver=solver)
-    rec_demand = model.recorders["demand_max"]
-    rec_supply = model.recorders["supply_max"]
+    rec_demand = model.recorders["demand_max_recorder"]
+    rec_supply = model.recorders["supply_max_recorder"]
     model.run()
     assert_allclose(rec_demand.data, 10)
     assert_allclose(rec_supply.data, 15)

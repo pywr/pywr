@@ -46,16 +46,6 @@ cdef class Recorder(Component):
                 raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
             self._agg_func = agg_func
 
-    property name:
-        def __get__(self):
-            return self._name
-
-        def __set__(self, name):
-            # check for name collision
-            if name in self.model.recorders.keys():
-                raise ValueError('A recorder with the name "{}" already exists.'.format(name))
-            # apply new name
-            self._name = name
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)

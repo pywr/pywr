@@ -403,7 +403,7 @@ class TestAggregatedIndexParameter:
             for m, agg_func in enumerate(["any", "all"]):
                 p = AggregatedIndexParameter(model, params, agg_func=agg_func)
                 e = np.ones([len(model.timestepper), num_comb]) * expected[n][m]
-                r = AssertionRecorder(model, p, expected_data=e)
+                r = AssertionRecorder(model, p, expected_data=e, name="assertion {}-{}".format(n, agg_func))
 
         model.run()
 
@@ -637,9 +637,9 @@ def test_threshold_parameter(simple_linear_model):
     threshold = 10.0
     values = [50.0, 60.0]
     
-    rec1 = DummyRecorder(model, threshold-5) # below
-    rec2 = DummyRecorder(model, threshold) # equal
-    rec3 = DummyRecorder(model, threshold+5) # above
+    rec1 = DummyRecorder(model, threshold-5, name="rec1")  # below
+    rec2 = DummyRecorder(model, threshold, name="rec2")    # equal
+    rec3 = DummyRecorder(model, threshold+5, name="rec3")  # above
 
     expected = [
         ("LT", (1, 0, 0)),
@@ -803,7 +803,7 @@ class Test1DPolynomialParameter:
             return 0.5 + np.pi*x
 
         # Test with proportional storage
-        @assert_rec(model, p2)
+        @assert_rec(model, p2, name="proportionalassertion")
         def expected_func(timestep, scenario_index):
 
             return 0.5 + np.pi * x/stg.max_volume
