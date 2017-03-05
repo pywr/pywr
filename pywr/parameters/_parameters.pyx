@@ -30,6 +30,7 @@ cdef class Parameter(Component):
         del(parameter_registry[cls.__name__.lower()])
 
     cpdef setup(self):
+        super(Parameter, self).setup()
         cdef int num_comb
         if self._model.scenarios.combinations:
             num_comb = len(self._model.scenarios.combinations)
@@ -113,9 +114,9 @@ cdef class Parameter(Component):
             scenario = model.scenarios[scenario]
             # Only pass scenario object if one provided; most Parameter subclasses
             # do not accept a scenario argument.
-            return cls(model, scenario, values, name=name, comment=None)
+            return cls(model, scenario=scenario, values=values, name=name, comment=None)
         else:
-            return cls(model, values, name=name, comment=None)
+            return cls(model, values=values, name=name, comment=None)
 Parameter.register()
 
 cdef class ConstantParameter(Parameter):
@@ -621,8 +622,8 @@ cdef class IndexParameter(Parameter):
     cpdef calc_values(self, Timestep timestep):
         cdef ScenarioIndex scenario_index
         for scenario_index in self._model.scenarios.combinations:
-            self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
             self.__indices[<int>(scenario_index.global_id)] = self.index(timestep, scenario_index)
+            self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
 
     cpdef int get_index(self, ScenarioIndex scenario_index):
         return self.__indices[<int>(scenario_index.global_id)]
@@ -649,7 +650,7 @@ cdef class IndexedArrayParameter(Parameter):
     -----
     Float arguments `params` are converted to `ConstantParameter`
     """
-    def __init__(self, model, index_parameter=None, params=None, **kwargs):
+    def __init__(self, model, index_parameter, params, **kwargs):
         super(IndexedArrayParameter, self).__init__(model, **kwargs)
         assert(isinstance(index_parameter, IndexParameter))
         self.index_parameter = index_parameter
@@ -662,7 +663,7 @@ cdef class IndexedArrayParameter(Parameter):
                 p = ConstantParameter(model, p)
             self.params.append(p)
 
-        for param in params:
+        for param in self.params:
             self.children.add(param)
         self.children.add(index_parameter)
 
@@ -1103,7 +1104,7 @@ cdef class RecorderThresholdParameter(IndexParameter):
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns a value from the values attribute, using the index"""
-        cdef int ind = self.index(timestep, scenario_index) # don't use get_index!
+        cdef int ind = self.get_index(scenario_index)
         cdef double v
         if self.values is not None:
             v = self.values[ind]

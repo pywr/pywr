@@ -712,13 +712,17 @@ def test_parameter_registry_overwrite(model):
     # define a parameter
     class NewParameter(Parameter):
         DATA = 42
+        def __init__(self, model, values, *args, **kwargs):
+            super(NewParameter, self).__init__(model, *args, **kwargs)
+            self.values = values
     NewParameter.register()
 
     # re-define a parameter
     class NewParameter(IndexParameter):
         DATA = 43
-        def __init__(self, *args, **kwargs):
-            pass
+        def __init__(self, model, values, *args, **kwargs):
+            super(NewParameter, self).__init__(model, *args, **kwargs)
+            self.values = values
     NewParameter.register()
 
     data = {

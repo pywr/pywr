@@ -1,5 +1,5 @@
 
-
+ROOT_NODE = "root"
 
 class GraphInterface:
     def __init__(self, obj):
@@ -35,7 +35,7 @@ class GraphInterface:
     @property
     def _members(self):
         if self is self.obj.children:
-            return [n for n in self.graph.predecessors(self.obj) if n != "root"]
+            return [n for n in self.graph.predecessors(self.obj) if n != ROOT_NODE]
         else:
             return self.graph.successors(self.obj)
 
@@ -72,7 +72,7 @@ cdef class Component:
         self._model = model
         self._name = name
         self.comment = comment
-        model.component_graph.add_edge("root", self)
+        model.component_graph.add_edge(ROOT_NODE, self)
         self.parents = GraphInterface(self)
         self.children = GraphInterface(self)
 

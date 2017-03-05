@@ -170,7 +170,7 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
     """
     Test the NumpyArrayIndexParameterRecorder
     
-    Note the parameter is recorder at the start of the timestep, while the
+    Note the parameter is recorded at the start of the timestep, while the
     storage is recorded at the end of the timestep.
     """
     from pywr.parameters.control_curves import ControlCurveIndexParameter

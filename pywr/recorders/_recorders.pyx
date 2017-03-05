@@ -60,9 +60,6 @@ cdef class Recorder(Component):
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
-    cpdef after(self):
-        pass
-
     property is_objective:
         def __get__(self):
             return self._is_objective

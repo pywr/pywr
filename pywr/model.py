@@ -18,6 +18,7 @@ from pywr.recorders import load_recorder
 
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
     StorageOutput, Timestep, ScenarioIndex)
+from pywr._component import ROOT_NODE
 from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
 from pywr._core import ScenarioCollection, Scenario
 from pywr.parameters._parameters import load_dataframe
@@ -85,7 +86,7 @@ class Model(object):
             solver = solver_registry[0]
         self.solver = solver()
         self.component_graph = nx.DiGraph()
-        self.component_graph.add_node("root")
+        self.component_graph.add_node(ROOT_NODE)
         self.component_tree_flat = None
 
         self.tables = {}
@@ -95,13 +96,11 @@ class Model(object):
             key = list(kwargs.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
 
-        self.parameter_tree = None
-
         self.reset()
 
     @property
     def components(self):
-        return NamedIterator(n for n in self.component_graph.nodes() if n != "root")
+        return NamedIterator(n for n in self.component_graph.nodes() if n != ROOT_NODE)
 
     @property
     def recorders(self):
@@ -478,6 +477,10 @@ class Model(object):
           1. Call `Model.setup` if the `Model.dirty` is True.
           2. Progress the `Model.timestepper` by one step.
           3. Call `Model.before` to ensure all nodes and components are ready for solve.
+            a. Call `Node.before` on all nodes
+            b. Refresh the component dependency tree
+            c. Call `Component.before` on all components, respecting dependency order
+            d. Call `Parameter.calc_values` on all Parameters, respecting dependency order
           4. Call `Model.solve` to solve the linear programme
           5. Call `Model.after` to ensure all nodes and components
             complete any work in the timestep.
@@ -669,8 +672,8 @@ class Model(object):
             for n in G.nodes_with_selfloops():
                 raise ModelStructureError('Component "{}" contains a self-loop.'.format(n))
 
-            for node in nx.dfs_postorder_nodes(G, "root"):
-                if node == "root":
+            for node in nx.dfs_postorder_nodes(G, ROOT_NODE):
+                if node == ROOT_NODE:
                     continue
                 self.component_tree_flat.append(node)
         # order components so that they can be iterated over easily in an
