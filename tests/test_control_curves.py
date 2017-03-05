@@ -240,27 +240,24 @@ def test_control_curve_interpolated(model):
             s.initial_volume = initial_volume
             model.run()
 
+
 def test_control_curve_interpolated_json(solver):
     # this is a little hack-y, as the parameters don't provide access to their
     # data once they've been initalised
     model = load_model("reservoir_with_cc.json", solver=solver)
     reservoir1 = model.nodes["reservoir1"]
     model.setup()
-    ts = next(model.timestepper)
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
     path = os.path.join(os.path.dirname(__file__), "models", "control_curve.csv")
     control_curve = pd.read_csv(path)["Control Curve"].values
-    max_volume = reservoir1.max_volume
     values = [-8, -6, -4]
-    for n in range(0, 10):
+
+    @assert_rec(model, reservoir1.cost)
+    def expected_cost(timestep, si):
         # calculate expected cost manually and compare to parameter output
-        volume = reservoir1._volume[si.global_id]
         volume_factor = reservoir1._current_pc[si.global_id]
-        cc = control_curve[model.timestepper.current.index]
-        expected_cost = np.interp(volume_factor, [0.0, cc, 1.0], values[::-1])
-        cost = reservoir1.get_cost(model.timestepper.current, si)
-        assert_allclose(expected_cost, cost)
-        model.step()
+        cc = control_curve[timestep.index]
+        return np.interp(volume_factor, [0.0, cc, 1.0], values[::-1])
+    model.run()
 
 
 class TestMonthlyProfileControlCurveParameter:
