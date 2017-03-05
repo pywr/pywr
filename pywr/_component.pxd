@@ -2,7 +2,7 @@
 
 cdef class Component:
     cdef object _name
-    cdef object _model
+    cdef readonly object model
     cdef public basestring comment
     cdef readonly object parents
     cdef readonly object children

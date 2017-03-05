@@ -69,7 +69,7 @@ cdef class Component:
 
     """
     def __init__(self, model, name=None, comment=None):
-        self._model = model
+        self.model = model
         self._name = name
         self.comment = comment
         model.component_graph.add_edge(ROOT_NODE, self)
@@ -96,7 +96,3 @@ cdef class Component:
 
     cpdef finish(self):
         pass
-
-    property model:
-        def __get__(self, ):
-            return self._model

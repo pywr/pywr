@@ -32,8 +32,8 @@ cdef class Parameter(Component):
     cpdef setup(self):
         super(Parameter, self).setup()
         cdef int num_comb
-        if self._model.scenarios.combinations:
-            num_comb = len(self._model.scenarios.combinations)
+        if self.model.scenarios.combinations:
+            num_comb = len(self.model.scenarios.combinations)
         else:
             num_comb = 1
         self.__values = np.empty([num_comb], np.float64)
@@ -44,7 +44,7 @@ cdef class Parameter(Component):
     cpdef calc_values(self, Timestep timestep):
         # default implementation calls Parameter.value in loop
         cdef ScenarioIndex scenario_index
-        for scenario_index in self._model.scenarios.combinations:
+        for scenario_index in self.model.scenarios.combinations:
             self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
 
     cpdef double get_value(self, ScenarioIndex scenario_index):
@@ -276,7 +276,7 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         super(ArrayIndexedScenarioParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
-        self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is a bit confusing.
@@ -327,7 +327,7 @@ cdef class TablesArrayParameter(IndexParameter):
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         if self.scenario is not None:
-            self._scenario_index = self._model.scenarios.get_scenario_index(self.scenario)
+            self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
 
     cpdef reset(self):
         self.h5store = H5Store(self.h5file, None, "r")
@@ -352,7 +352,7 @@ cdef class TablesArrayParameter(IndexParameter):
                 raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
             elif shape[1] > self.scenario.size:
                 warnings.warn("The length of the second dimension of the tables Node is greater than the size of the specified Scenario. Not all data is being used!")
-        if shape[0] < len(self._model.timestepper):
+        if shape[0] < len(self.model.timestepper):
             raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
@@ -420,7 +420,7 @@ cdef class ConstantScenarioParameter(Parameter):
         super(ConstantScenarioParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
-        self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is a bit confusing.
@@ -461,7 +461,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         super(ArrayIndexedScenarioMonthlyFactorsParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
-        self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is a bit confusing.
@@ -582,7 +582,7 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
         super(ScenarioMonthlyProfileParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
-        self._scenario_index = self._model.scenarios.get_scenario_index(self._scenario)
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
@@ -613,15 +613,15 @@ cdef class IndexParameter(Parameter):
     cpdef setup(self):
         super(IndexParameter, self).setup()
         cdef int num_comb
-        if self._model.scenarios.combinations:
-            num_comb = len(self._model.scenarios.combinations)
+        if self.model.scenarios.combinations:
+            num_comb = len(self.model.scenarios.combinations)
         else:
             num_comb = 1
         self.__indices = np.empty([num_comb], np.int32)
 
     cpdef calc_values(self, Timestep timestep):
         cdef ScenarioIndex scenario_index
-        for scenario_index in self._model.scenarios.combinations:
+        for scenario_index in self.model.scenarios.combinations:
             self.__indices[<int>(scenario_index.global_id)] = self.index(timestep, scenario_index)
             self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
 

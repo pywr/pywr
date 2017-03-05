@@ -76,7 +76,6 @@ cdef class TablesArrayParameter(IndexParameter):
     cdef public object h5store
     cdef public object node
     cdef public object where
-    cdef public object model
 
     cdef int _scenario_index
 
