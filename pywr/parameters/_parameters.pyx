@@ -805,6 +805,13 @@ cdef class AggregatedParameterBase(IndexParameter):
 
     Do not instance this class directly. Use one of the subclasses.
     """
+    def __init__(self, model, parameters, agg_func=None, **kwargs):
+        super(AggregatedParameterBase, self).__init__(model, **kwargs)
+        self.agg_func = agg_func
+        self.parameters = set(parameters)
+        for parameter in self.parameters:
+            self.children.add(parameter)
+
     @classmethod
     def load(cls, model, data):
         parameters_data = data.pop("parameters")
@@ -854,12 +861,6 @@ cdef class AggregatedParameter(AggregatedParameterBase):
         The aggregation function. Must be one of {"sum", "min", "max", "mean",
         "product"}, or a callable function which accepts a list of values.
     """
-    def __init__(self, model, parameters, agg_func=None, **kwargs):
-        super(AggregatedParameter, self).__init__(model, **kwargs)
-        self.agg_func = agg_func
-        self.parameters = set(parameters)
-        for parameter in self.parameters:
-            self.children.add(parameter)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef Parameter parameter
@@ -915,12 +916,6 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
         The aggregation function. Must be one of {"sum", "min", "max", "any",
         "all"}, or a callable function which accepts a list of values.
     """
-    def __init__(self, model, parameters, agg_func=None, **kwargs):
-        super(AggregatedIndexParameter, self).__init__(model, **kwargs)
-        self.agg_func = agg_func
-        self.parameters = set(parameters)
-        for parameter in self.parameters:
-            self.children.add(parameter)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef IndexParameter parameter
