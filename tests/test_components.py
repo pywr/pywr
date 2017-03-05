@@ -79,6 +79,19 @@ def test_shared_parent_component(simple_linear_model):
         assert c.func_counts['after'] == nt
         assert c.func_counts['finish'] == 1
 
+    # Simulate a change and re-run.
+    m.setup()
+    m.run()
+
+    assert len(m.components) == 3
+
+    for c in m.components:
+        assert c.func_counts['setup'] == 2
+        assert c.func_counts['reset'] == 3
+        assert c.func_counts['before'] == 2*nt
+        assert c.func_counts['after'] == 2*nt
+        assert c.func_counts['finish'] == 2
+
 
 def test_circular_components_error(simple_linear_model):
     """ Test that circular components raise an error """
