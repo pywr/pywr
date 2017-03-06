@@ -28,11 +28,12 @@ _agg_func_lookup = {
 }
 
 cdef class Recorder(Component):
-    def __init__(self, model, name=None, agg_func="mean", comment=None):
+    def __init__(self, model, name=None, agg_func="mean", comment=None, ignore_nan=False):
         if name is None:
             name = self.__class__.__name__.lower()
         super(Recorder, self).__init__(model, name=name, comment=comment)
         self.agg_func = agg_func
+        self.ignore_nan = ignore_nan
 
     property agg_func:
         def __set__(self, agg_func):
@@ -59,6 +60,9 @@ cdef class Recorder(Component):
 
     cpdef double aggregated_value(self) except? -1:
         cdef double[:] values = self.values()
+
+        if self.ignore_nan:
+            values = np.array(values)[~np.isnan(values)]
 
         if self._agg_func == AggFuncs.PRODUCT:
             return np.product(values)

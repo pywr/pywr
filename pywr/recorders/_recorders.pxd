@@ -6,6 +6,7 @@ from pywr.parameters._parameters cimport Parameter, IndexParameter
 cdef class Recorder(Component):
     cdef bint _is_objective
     cdef public double epsilon
+    cdef public double ignore_nan
     cdef object _agg_user_func
     cdef int _agg_func
     cpdef double aggregated_value(self) except? -1
