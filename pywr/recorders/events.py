@@ -1,4 +1,6 @@
 from ._recorders import Recorder
+from pywr.parameters import Parameter, IndexParameter
+import numpy as np
 
 
 class Event(object):
@@ -39,8 +41,8 @@ class EventRecorder(Recorder):
      """
     def __init__(self, model, threshold, *args, **kwargs):
         super(EventRecorder, self).__init__(model, *args, **kwargs)
-        # TODO set parent relationship with self.threshold when "tree" branch is merged
         self.threshold = threshold
+        self.threshold.parents.add(self)
 
         self.events = None
         self._current_events = None
@@ -53,13 +55,22 @@ class EventRecorder(Recorder):
         # This list stores if an event is current active in each scenario.
         self._current_events = [None for si in self.model.scenarios.combinations]
 
-    def save(self):
+    def after(self):
         # Current timestep
-        # TODO replace this when dependency "tree" branch is merged.
         ts = self.model.timestepper.current
+
+        if isinstance(self.threshold, Recorder):
+            all_triggered = np.array(self.threshold.values(), dtype=np.int)
+        elif isinstance(self.threshold, IndexParameter):
+            all_triggered = self.threshold.get_all_indices()
+        elif isinstance(self.threshold, Parameter):
+            all_triggered = np.array(self.threshold.get_all_values(), dtype=np.int)
+        else:
+            raise TypeError("Threshold must be either a Recorder or Parameter instance.")
+
         for si in self.model.scenarios.combinations:
             # Determine if an event is active this time-step/scenario combination
-            triggered = self.threshold.index(ts, si)
+            triggered = all_triggered[si.global_id]
 
             # Get the current event
             current_event = self._current_events[si.global_id]

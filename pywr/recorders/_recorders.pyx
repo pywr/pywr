@@ -202,6 +202,9 @@ cdef class NodeRecorder(Recorder):
         self._node = node
         node._recorders.append(self)
 
+    cpdef double[:] values(self):
+        return self._node._flow
+
     property node:
         def __get__(self):
             return self._node
@@ -219,6 +222,9 @@ cdef class StorageRecorder(Recorder):
         super(StorageRecorder, self).__init__(model, name=name, **kwargs)
         self._node = node
         node._recorders.append(self)
+
+    cpdef double[:] values(self):
+        return self._node._volume
 
     property node:
         def __get__(self):

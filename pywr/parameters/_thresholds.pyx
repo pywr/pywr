@@ -107,7 +107,7 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
         threshold = data.pop("threshold")
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
-        return cls(node, threshold, values=values, predicate=predicate, **data)
+        return cls(model, node, threshold, values=values, predicate=predicate, **data)
 StorageThresholdParameter.register()
 
 
@@ -124,7 +124,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
         self.node = node
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return self.node._prev_flow[scenario_index._global_id]
+        return self.node._flow[scenario_index._global_id]
 
     @classmethod
     def load(cls, model, data):
@@ -132,7 +132,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
         threshold = data.pop("threshold")
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
-        return cls(node, threshold, values=values, predicate=predicate, **data)
+        return cls(model, node, threshold, values=values, predicate=predicate, **data)
 NodeThresholdParameter.register()
 
 
@@ -144,14 +144,13 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     recorder : `pywr.core.AbstractNode`
 
     """
-    def __init__(self, Parameter param, *args, **kwargs):
-        super(ParameterThresholdParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, Parameter param, *args, **kwargs):
+        super(ParameterThresholdParameter, self).__init__(model, *args, **kwargs)
         self.param = param
         self.children.add(param)
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        # TODO update this once "tree" branch is merged.
-        return self.param.value(timestep, scenario_index)
+        return self.param.get_value(scenario_index)
 
     @classmethod
     def load(cls, model, data):
@@ -159,7 +158,7 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
         threshold = data.pop("threshold")
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
-        return cls(param, threshold, values=values, predicate=predicate, **data)
+        return cls(model, param, threshold, values=values, predicate=predicate, **data)
 ParameterThresholdParameter.register()
 
 

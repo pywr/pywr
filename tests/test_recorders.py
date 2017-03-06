@@ -17,7 +17,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
     RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
-    EventRecorder, Event,
+    EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter
@@ -806,17 +806,37 @@ def cyclical_storage_model(simple_storage_model):
     return m
 
 
+@pytest.fixture
+def cyclical_linear_model(simple_linear_model):
+    """ Extends simple_storage_model to have a cyclical boundary condition """
+    from pywr.parameters import AnnualHarmonicSeriesParameter, ConstantScenarioParameter
+    m = simple_linear_model
+    s = Scenario(m, name='Scenario A', size=2)
+
+    m.timestepper.end = '2017-12-31'
+    m.timestepper.delta = 5
+
+    inpt = m.nodes['Input']
+    inpt.max_flow = AnnualHarmonicSeriesParameter(m, 5, [1.0, 0.0, 0.5], [0.0, 0.0, 0.0])
+
+    otpt = m.nodes['Output']
+    otpt.max_flow = ConstantScenarioParameter(m, s, [5, 6])
+    otpt.cost = -10.0
+
+    return m
+
+
 class TestEventRecorder:
     """ Tests for EventRecorder """
-    def test_event_capture(self, cyclical_storage_model):
-        from pywr.parameters import StorageThresholdParameter
+    def test_event_capture_with_storage(self, cyclical_storage_model):
+        """ Test Storage events using a StorageThresholdRecorder """
         m = cyclical_storage_model
 
         strg = m.nodes['Storage']
         arry = NumpyArrayStorageRecorder(m, strg)
 
         # Create the trigger using a threhsold parameter
-        trigger = StorageThresholdParameter(m, strg, 4.0, predicate='<=')
+        trigger = StorageThresholdRecorder(m, strg, 4.0, predicate='<=')
         evt_rec = EventRecorder(m, trigger)
 
         m.run()
@@ -835,3 +855,31 @@ class TestEventRecorder:
 
         # Test that the volumes in the Storage node during the event periods match
         assert_equal(triggered, arry.data <= 4)
+
+    def test_event_capture_with_node(self, cyclical_linear_model):
+        """ Test Node flow events using a NodeThresholdRecorder """
+        m = cyclical_linear_model
+
+        otpt = m.nodes['Output']
+        arry = NumpyArrayNodeRecorder(m, otpt)
+
+        # Create the trigger using a threhsold parameter
+        trigger = NodeThresholdRecorder(m, otpt, 4.0, predicate='>')
+        evt_rec = EventRecorder(m, trigger)
+
+        m.run()
+
+        # Ensure there is at least one event
+        assert evt_rec.events
+
+        # Build a timeseries of when the events say an event is active
+        triggered = np.zeros_like(arry.data, dtype=np.int)
+        for evt in evt_rec.events:
+            triggered[evt.start.index:evt.end.index, evt.scenario_index.global_id] = 1
+
+            # Check the duration
+            td = evt.start.datetime - evt.end.datetime
+            assert evt.duration == td.days
+
+        # Test that the volumes in the Storage node during the event periods match
+        assert_equal(triggered, arry.data > 4)
