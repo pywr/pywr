@@ -53,9 +53,9 @@ class ControlCurveParameter(BaseControlCurveParameter):
     `BaseControlCurveParameter`
 
     """
-    def __init__(self, storage_node, control_curves, values=None, parameters=None,
-                 variable_indices=None, upper_bounds=None, lower_bounds=None):
-        super(ControlCurveParameter, self).__init__(storage_node, control_curves)
+    def __init__(self, model, storage_node, control_curves, values=None, parameters=None,
+                 variable_indices=None, upper_bounds=None, lower_bounds=None, **kwargs):
+        super(ControlCurveParameter, self).__init__(model, storage_node, control_curves, **kwargs)
         # Expected number of values is number of control curves plus one.
         self.size = nvalues = len(self.control_curves) + 1
         self.values = None
@@ -118,7 +118,7 @@ class ControlCurveParameter(BaseControlCurveParameter):
             for pdata in parameters_data:
                 parameters.append(load_parameter(model, pdata))
 
-        return cls(storage_node, control_curves, values=values, parameters=parameters)
+        return cls(model, storage_node, control_curves, values=values, parameters=parameters)
 
     def value(self, ts, scenario_index):
         i = scenario_index.global_id
@@ -126,16 +126,16 @@ class ControlCurveParameter(BaseControlCurveParameter):
 
         # Assumes control_curves is sorted highest to lowest
         for j, cc_param in enumerate(self.control_curves):
-            cc = cc_param.value(ts, scenario_index)
+            cc = cc_param.get_value(scenario_index)
             # If level above control curve then return this level's value
             if node.current_pc[i] >= cc:
                 if self.parameters is not None:
-                    return self.parameters[j].value(ts, scenario_index)
+                    return self.parameters[j].get_value(scenario_index)
                 else:
                     return self.values[j]
 
         if self.parameters is not None:
-            return self.parameters[-1].value(ts, scenario_index)
+            return self.parameters[-1].get_value(scenario_index)
         else:
             return self.values[-1]
 
@@ -155,8 +155,8 @@ ControlCurveParameter.register()
 class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
     _profile_size = None
 
-    def __init__(self, storage_node, control_curves, values, profile=None, scale=1.0):
-        super(AbstractProfileControlCurveParameter, self).__init__(storage_node, control_curves)
+    def __init__(self, model, storage_node, control_curves, values, profile=None, scale=1.0, **kwargs):
+        super(AbstractProfileControlCurveParameter, self).__init__(model, storage_node, control_curves, **kwargs)
 
         nvalues = len(self.control_curves) + 1
 
@@ -172,6 +172,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
 
         if isinstance(profile,  Parameter):
             self.profile = profile
+            profile.parents.add(self)
         elif profile is not None:
             profile = np.array(profile)
             if profile.shape[0] != self._profile_size:
@@ -205,7 +206,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
         else:
             scale = 1.0
 
-        return cls(storage_node, control_curves, values=values, profile=profile, scale=scale)
+        return cls(model, storage_node, control_curves, values=values, profile=profile, scale=scale)
 
     def _profile_index(self, ts, scenario_index):
         raise NotImplementedError()
@@ -217,7 +218,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
 
         # Assumes control_curves is sorted highest to lowest
         for j, cc_param in enumerate(self.control_curves):
-            cc = cc_param.value(ts, scenario_index)
+            cc = cc_param.get_value(scenario_index)
             # If level above control curve then return this level's value
             if node.current_pc[i] >= cc:
                 val = self.values[j, iprofile]
@@ -228,7 +229,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
         # Now scale the control curve value by the scale and profile
         scale = self.scale
         if isinstance(self.profile, Parameter):
-            scale *= self.profile.value(ts, scenario_index)
+            scale *= self.profile.get_value(scenario_index)
         else:
             scale *= self.profile[iprofile]
         return val * scale

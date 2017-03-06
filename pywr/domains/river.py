@@ -64,7 +64,7 @@ class Reservoir(RiverDomainMixin, Storage):
     and the user defined cost when it is below. Typically the costs are negative
     to represent a benefit of filling the reservoir when it is below its curve.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model, *args, **kwargs):
         """
 
         Keywords:
@@ -77,21 +77,21 @@ class Reservoir(RiverDomainMixin, Storage):
         if above_curve_cost is not None:
             if control_curve is None:
                 # Make a default control curve at 100% capacity
-                control_curve = ConstantParameter(1.0)
+                control_curve = ConstantParameter(model, 1.0)
             elif not isinstance(control_curve, Parameter):
                 # Assume parameter is some kind of constant and coerce to ConstantParameter
-                control_curve = ConstantParameter(control_curve)
+                control_curve = ConstantParameter(model, control_curve)
 
             if not isinstance(cost, Parameter):
                 # In the case where an above_curve_cost is given and cost is not a Parameter
                 # a default cost Parameter is created.
-                kwargs['cost'] = ControlCurveParameter(self, control_curve, [above_curve_cost, cost])
+                kwargs['cost'] = ControlCurveParameter(model, self, control_curve, [above_curve_cost, cost])
             else:
                 raise ValueError('If an above_curve_cost is given cost must not be a Parameter.')
         else:
             # reinstate the given cost parameter to pass to the parent constructors
             kwargs['cost'] = cost
-        super(Reservoir, self).__init__(*args, **kwargs)
+        super(Reservoir, self).__init__(model, *args, **kwargs)
 
 
 class River(RiverDomainMixin, Link):

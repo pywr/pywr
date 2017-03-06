@@ -1,8 +1,68 @@
 import sys
+import numpy as np
+from functools import wraps
 from ._recorders import *
 from .calibration import *
 from past.builtins import basestring
 from pywr.h5tools import H5Store
+
+def assert_rec(model, parameter, name=None):
+    """Decorator for creating AssertionRecorder objects
+
+    Example
+    -------
+    @assert_rec(model, parameter)
+    def expected_func(timestep, scenario_index):
+        return timestep.dayofyear * 2.0
+    """
+    def assert_rec_(f):
+        rec = AssertionRecorder(model, parameter, expected_func=f, name=name)
+        return f
+    return assert_rec_
+
+class AssertionRecorder(Recorder):
+    """A recorder that asserts the value of a parameter for testing purposes"""
+    def __init__(self, model, parameter, expected_data=None, expected_func=None, **kwargs):
+        """
+        Parameters
+        ----------
+        model : pywr.model.Model
+        parameter : pywr.parameters.Parameter
+        expected_data : np.ndarray[timestep, scenario] (optional)
+        expected_func : function
+
+        See also
+        --------
+        pywr.recorders.assert_rec
+        """
+        super(AssertionRecorder, self).__init__(model, **kwargs)
+        self.parameter = parameter
+        self.expected_data = expected_data
+        self.expected_func = expected_func
+
+    def setup(self):
+        super(AssertionRecorder, self).setup()
+        self.count = 0
+
+    def after(self):
+        timestep = self.model.timestep
+        self.count += 1
+        for scenario_index in self.model.scenarios.combinations:
+            if self.expected_func:
+                expected_value = self.expected_func(timestep, scenario_index)
+            elif self.expected_data is not None:
+                expected_value = self.expected_data[timestep.index, scenario_index.global_id]
+            value = self.parameter.get_value(scenario_index)
+            np.testing.assert_allclose(value, expected_value)
+
+    def finish(self):
+        super(AssertionRecorder, self).finish()
+        if sys.exc_info():
+            # exception was raised before we had a chance! (e.g. ModelStructureError)
+            pass
+        elif self.count == 0:
+            # this still requires model.run() to have been called...
+            raise RuntimeError("AssertionRecorder was never called!")
 
 class CSVRecorder(Recorder):
     """
@@ -52,7 +112,7 @@ class CSVRecorder(Recorder):
         # Write header data
         self._writer.writerow(['Datetime']+self.node_names)
 
-    def save(self):
+    def after(self):
         """
         Write the node values to the CSV file
         """
@@ -263,7 +323,7 @@ class TablesRecorder(Recorder):
         if self.time is not None:
             self._time_table = self.h5store.file.get_node(self.time)
 
-    def save(self):
+    def after(self):
         """
         Save data to the tables
         """
@@ -288,14 +348,10 @@ class TablesRecorder(Recorder):
             elif isinstance(node, AbstractNode):
                 ca[idx, :] = np.reshape(node.flow, scenario_shape)
             elif isinstance(node, IndexParameter):
-                a = np.empty(len(self.model.scenarios.combinations), dtype=np.int)
-                for si in self.model.scenarios.combinations:
-                     a[si.global_id] = node.index(ts, si)
+                a = node.get_all_indices()
                 ca[idx, :] = np.reshape(a, scenario_shape)
             elif isinstance(node, Parameter):
-                a = np.empty(len(self.model.scenarios.combinations), dtype=np.float64)
-                for si in self.model.scenarios.combinations:
-                    a[si.global_id] = node.value(ts, si)
+                a = node.get_all_values()
                 ca[idx, :] = np.reshape(a, scenario_shape)
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))

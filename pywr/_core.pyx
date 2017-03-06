@@ -429,7 +429,7 @@ cdef class Node(AbstractNode):
         """
         if self._cost_param is None:
             return self._cost
-        return self._cost_param.value(ts, scenario_index)
+        return self._cost_param.get_value(scenario_index)
 
     property min_flow:
         """The minimum flow constraint on the node
@@ -454,7 +454,7 @@ cdef class Node(AbstractNode):
         """
         if self._min_flow_param is None:
             return self._min_flow
-        return self._min_flow_param.value(ts, scenario_index)
+        return self._min_flow_param.get_value(scenario_index)
 
     property max_flow:
         """The maximum flow constraint on the node
@@ -481,7 +481,7 @@ cdef class Node(AbstractNode):
         """
         if self._max_flow_param is None:
             return self._max_flow
-        return self._max_flow_param.value(ts, scenario_index)
+        return self._max_flow_param.get_value(scenario_index)
 
     property conversion_factor:
         """The conversion between inflow and outflow for the node
@@ -529,58 +529,6 @@ cdef class Node(AbstractNode):
         if self._cost_param is not None:
             self._cost = self._cost_param.value(ts, scenario_index)
 
-    cpdef setup(self, model):
-        """Called before the first run of the model"""
-        AbstractNode.setup(self, model)
-        # Setup any Parameters and Recorders
-        if self._cost_param is not None:
-            self._cost_param.setup(model)
-        if self._min_flow_param is not None:
-            self._min_flow_param.setup(model)
-        if self._max_flow_param is not None:
-            self._max_flow_param.setup(model)
-
-    cpdef reset(self):
-        # Reset any Parameters and Recorders
-        if self._cost_param is not None:
-            self._cost_param.reset()
-        if self._min_flow_param is not None:
-            self._min_flow_param.reset()
-        if self._max_flow_param is not None:
-            self._max_flow_param.reset()
-
-    cpdef before(self, Timestep ts):
-        """Called at the beginning of the timestep"""
-        AbstractNode.before(self, ts)
-
-        # Complete any parameter calculations
-        if self._cost_param is not None:
-            self._cost_param.before(ts)
-        if self._max_flow_param is not None:
-            self._max_flow_param.before(ts)
-        if self._min_flow_param is not None:
-            self._min_flow_param.before(ts)
-
-    cpdef after(self, Timestep ts):
-        """Called at the end of the timestep"""
-        AbstractNode.after(self, ts)
-
-        # Complete any parameter calculations
-        if self._cost_param is not None:
-            self._cost_param.after(ts)
-        if self._max_flow_param is not None:
-            self._max_flow_param.after(ts)
-        if self._min_flow_param is not None:
-            self._min_flow_param.after(ts)
-
-    cpdef finish(self):
-        AbstractNode.finish(self)
-        if self._cost_param is not None:
-            self._cost_param.finish()
-        if self._max_flow_param is not None:
-            self._max_flow_param.finish()
-        if self._min_flow_param is not None:
-            self._min_flow_param.finish()
 
 cdef class BaseLink(Node):
     pass
@@ -838,29 +786,9 @@ cdef class Storage(AbstractStorage):
                 variables.extend(self._max_volume_param.variables)
             return variables
 
-    cpdef setup(self, model):
-        """Called before the first run of the model"""
-        AbstractStorage.setup(self, model)
-        # Setup any Parameters and Recorders
-        if self._cost_param is not None:
-            self._cost_param.setup(model)
-        if self._min_volume_param is not None:
-            self._min_volume_param.setup(model)
-        if self._max_volume_param is not None:
-            self._max_volume_param.setup(model)
-
     cpdef reset(self):
         """Called at the beginning of a run"""
         AbstractStorage.reset(self)
-
-        # Parameters reset first
-        if self._cost_param is not None:
-            self._cost_param.reset()
-        if self._max_volume_param is not None:
-            self._max_volume_param.reset()
-        if self._min_volume_param is not None:
-            self._min_volume_param.reset()
-
         self._reset_storage_only()
 
     cpdef _reset_storage_only(self):
@@ -878,30 +806,11 @@ cdef class Storage(AbstractStorage):
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
 
-    cpdef before(self, Timestep ts):
-        """Called at the beginning of the timestep"""
-        AbstractStorage.before(self, ts)
-
-        # Complete any parameter calculations
-        if self._cost_param is not None:
-            self._cost_param.before(ts)
-        if self._max_volume_param is not None:
-            self._max_volume_param.before(ts)
-        if self._min_volume_param is not None:
-            self._min_volume_param.before(ts)
-
     cpdef after(self, Timestep ts):
         AbstractStorage.after(self, ts)
         cdef int i
         cdef double mxv = self._max_volume
         cdef ScenarioIndex si
-
-        if self._cost_param is not None:
-            self._cost_param.after(ts)
-        if self._max_volume_param is not None:
-            self._max_volume_param.after(ts)
-        if self._min_volume_param is not None:
-            self._min_volume_param.after(ts)
 
         for i, si in enumerate(self.model.scenarios.combinations):
             self._volume[i] += self._flow[i]*ts._days
@@ -912,19 +821,6 @@ cdef class Storage(AbstractStorage):
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
-
-    cpdef finish(self):
-        """Called at the end of a run"""
-        AbstractStorage.finish(self)
-
-        # Parameters finish first
-        if self._cost_param is not None:
-            self._cost_param.finish()
-        if self._max_volume_param is not None:
-            self._max_volume_param.finish()
-        if self._min_volume_param is not None:
-            self._min_volume_param.finish()
-
 
 cdef class AggregatedStorage(AbstractStorage):
     """ Base class for a special type of storage node that is the aggregated sum of `Storage` objects.

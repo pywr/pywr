@@ -8,7 +8,7 @@ cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
 
     """
-    def __init__(self, AbstractStorage storage_node, control_curves):
+    def __init__(self, model, AbstractStorage storage_node, control_curves, **kwargs):
         """
 
         Parameters
@@ -18,7 +18,7 @@ cdef class BaseControlCurveParameter(Parameter):
         control_curves : iterable of Parameter objects or single Parameter
             The Parameter objects to use as a control curve(s).
         """
-        super(BaseControlCurveParameter, self).__init__()
+        super(BaseControlCurveParameter, self).__init__(model, **kwargs)
         self.control_curves = control_curves
         if storage_node is None:
             raise ValueError("storage_node is required")
@@ -41,7 +41,7 @@ cdef class BaseControlCurveParameter(Parameter):
             for control_curve in control_curves:
                 # Accept numeric inputs and convert to `ConstantParameter`
                 if isinstance(control_curve, (float, int)):
-                    control_curve = ConstantParameter(control_curve)
+                    control_curve = ConstantParameter(self.model, control_curve)
 
                 control_curve.parents.add(self)
                 _new_control_curves.append(control_curve)
@@ -112,8 +112,8 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     >>> cost = ControlCurveInterpolatedParameter(storage_node, ccs, values)
     >>> storage_node.cost = cost
     """
-    def __init__(self, storage_node, control_curves, values):
-        super(ControlCurveInterpolatedParameter, self).__init__(storage_node, control_curves)
+    def __init__(self, model, storage_node, control_curves, values):
+        super(ControlCurveInterpolatedParameter, self).__init__(model, storage_node, control_curves)
         # Expected number of values is number of control curves plus two.
         nvalues = len(self.control_curves) + 2
         if len(values) != nvalues:
@@ -147,7 +147,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         # First level 100%
         cc_prev = 1.0
         for j, cc_param in enumerate(self._control_curves):
-            cc = cc_param.value(ts, scenario_index)
+            cc = cc_param.get_value(scenario_index)
             # If level above control curve then return this level's value
             if current_pc >= cc:
                 try:
@@ -174,7 +174,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         control_curves = super(ControlCurveInterpolatedParameter, cls)._load_control_curves(model, data)
         storage_node = super(ControlCurveInterpolatedParameter, cls)._load_storage_node(model, data)
         values = load_parameter_values(model, data)
-        parameter = cls(storage_node, control_curves, values)
+        parameter = cls(model, storage_node, control_curves, values)
         return parameter
 
 ControlCurveInterpolatedParameter.register()
@@ -187,8 +187,8 @@ cdef class ControlCurveIndexParameter(IndexParameter):
     storage_node : `Storage`
     control_curves : iterable of `Parameter` instances or floats
     """
-    def __init__(self, storage_node, control_curves, **kwargs):
-        super(ControlCurveIndexParameter, self).__init__(**kwargs)
+    def __init__(self, model, storage_node, control_curves, **kwargs):
+        super(ControlCurveIndexParameter, self).__init__(model, **kwargs)
         self.storage_node = storage_node
         self.control_curves = control_curves
 
@@ -209,7 +209,7 @@ cdef class ControlCurveIndexParameter(IndexParameter):
             for control_curve in control_curves:
                 # Accept numeric inputs and convert to `ConstantParameter`
                 if isinstance(control_curve, (float, int)):
-                    control_curve = ConstantParameter(control_curve)
+                    control_curve = ConstantParameter(self.model, control_curve)
 
                 control_curve.parents.add(self)
                 _new_control_curves.append(control_curve)
@@ -230,7 +230,7 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         current_percentage = self.storage_node._current_pc[scenario_index._global_id]
         index = len(self.control_curves)
         for j, control_curve in enumerate(self.control_curves):
-            target_percentage = control_curve.value(timestep, scenario_index)
+            target_percentage = control_curve.get_value(scenario_index)
             if current_percentage >= target_percentage:
                 index = j
                 break
@@ -240,5 +240,5 @@ cdef class ControlCurveIndexParameter(IndexParameter):
     def load(cls, model, data):
         storage_node = model._get_node_from_ref(model, data["storage_node"])
         control_curves = [load_parameter(model, data) for data in data["control_curves"]]
-        return cls(storage_node, control_curves)
+        return cls(model, storage_node, control_curves)
 ControlCurveIndexParameter.register()

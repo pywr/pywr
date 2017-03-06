@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
-
+import datetime
 import pytest
 from fixtures import *
 from helpers import *
@@ -222,17 +222,16 @@ def test_timeseries_excel(simple_linear_model, filename):
     ts = DataFrameParameter.load(model, data)
 
     # model (intentionally not aligned)
-    model.timestepper.start = ts.df.index[0] + 5
-    model.timestepper.end = ts.df.index[-1] - 12
+    model.timestepper.start = ts.dataframe.index[0] + 5
+    model.timestepper.end = ts.dataframe.index[-1] - 12
 
     # need to assign parameter for it's setup method to be called
     model.nodes["Input"].max_flow = ts
-    model.setup()
 
-    # test accessing a specific value
-    timestep = build_timestep(model, '2015-01-15')
+    model.run(until_date=datetime.datetime(2015, 1, 14))
+
     scenario_index = ScenarioIndex(0, np.array([], dtype=np.int32))
-    assert(ts.value(timestep, scenario_index) == 28.24)
+    assert(ts.get_value(scenario_index) == 28.24)
 
 def test_dirty_model(solver):
     """Test that the LP is updated when the model structure is redefined"""
@@ -301,9 +300,9 @@ def test_shorthand_property(solver):
         setattr(node, attr, 123)
         if attr == 'conversion_factor':
             with pytest.raises(ValueError):
-                setattr(node, attr, Parameter())
+                setattr(node, attr, Parameter(model))
         else:
-            setattr(node, attr, Parameter())
+            setattr(node, attr, Parameter(model))
 
         with pytest.raises(TypeError):
             setattr(node, attr, '123')
@@ -319,9 +318,9 @@ def test_shorthand_property_storage(solver):
         setattr(node, attr, 123)
         if attr == 'conversion_factor':
             with pytest.raises(ValueError):
-                setattr(node, attr, Parameter())
+                setattr(node, attr, Parameter(model))
         else:
-            setattr(node, attr, Parameter())
+            setattr(node, attr, Parameter(model))
 
         with pytest.raises(TypeError):
             setattr(node, attr, '123')

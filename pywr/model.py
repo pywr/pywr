@@ -18,9 +18,12 @@ from pywr.recorders import load_recorder
 
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
     StorageOutput, Timestep, ScenarioIndex)
+from pywr._component import ROOT_NODE
+from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
 from pywr._core import ScenarioCollection, Scenario
 from pywr.parameters._parameters import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
+from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
 
 class ModelDocumentWarning(Warning): # TODO
     pass
@@ -82,9 +85,10 @@ class Model(object):
             # use default solver
             solver = solver_registry[0]
         self.solver = solver()
+        self.component_graph = nx.DiGraph()
+        self.component_graph.add_node(ROOT_NODE)
+        self.component_tree_flat = None
 
-        self.parameters = NamedIterator()
-        self.recorders = NamedIterator()
         self.tables = {}
         self.scenarios = ScenarioCollection(self)
 
@@ -93,6 +97,18 @@ class Model(object):
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
 
         self.reset()
+
+    @property
+    def components(self):
+        return NamedIterator(n for n in self.component_graph.nodes() if n != ROOT_NODE)
+
+    @property
+    def recorders(self):
+        return NamedIterator(n for n in self.components if isinstance(n, Recorder))
+
+    @property
+    def parameters(self):
+        return NamedIterator(n for n in self.components if isinstance(n, BaseParameter))
 
     def check(self):
         """Check the validity of the model
@@ -454,7 +470,42 @@ class Model(object):
         return all_routes
 
     def step(self):
-        """Step the model forward by one day"""
+        """ Step the model forward by one day
+
+        This method progresses the model by one time-step. The anatomy
+        of a time-step is as follows:
+          1. Call `Model.setup` if the `Model.dirty` is True.
+          2. Progress the `Model.timestepper` by one step.
+          3. Call `Model.before` to ensure all nodes and components are ready for solve.
+            a. Call `Node.before` on all nodes
+            b. Refresh the component dependency tree
+            c. Call `Component.before` on all components, respecting dependency order
+            d. Call `Parameter.calc_values` on all Parameters, respecting dependency order
+          4. Call `Model.solve` to solve the linear programme
+          5. Call `Model.after` to ensure all nodes and components
+            complete any work in the timestep.
+
+        It is important to note that the current timestep object is the
+        same during phases (3), (4) and (5) above. However the internal state of
+        nodes changes during phase (4) and (5). During stages (3) and (5) the
+        nodes are updated before the components. Therefore during the component
+        update in phase (5) the internal state of nodes is already updated (e.g.
+        current storage volumes). This has consequences for any component
+        algorithms in phase (5) that rely on the state being as it was before
+        this update. In general component `after` methods should not recompute
+        any component state or rely on the internal node state.
+
+        A dependency tree is used during the `before` and `after` updates of
+        components. This ensures that components that rely on the state of
+        another component are updated first.
+
+
+        See also
+        --------
+        `Component`
+
+
+        """
         if self.dirty:
             self.setup()
         self.timestep = next(self.timestepper)
@@ -542,8 +593,11 @@ class Model(object):
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
             node.setup(self)
-        for recorder in self.recorders:
-            recorder.setup()
+
+        components = self.flatten_component_tree(rebuild=True)
+        for component in components:
+            component.setup()
+
         self.solver.setup(self)
         self.reset()
         self.dirty = False
@@ -555,26 +609,45 @@ class Model(object):
             if length_changed:
                 node.setup(self)
             node.reset()
-        for recorder in self.recorders:
+
+        components = self.flatten_component_tree(rebuild=False)
+        for component in components:
             if length_changed:
-                recorder.setup()
-            recorder.reset()
+                component.setup()
+            component.reset()
 
     def before(self):
+        """ Perform initialisation work before solve on each timestep.
+
+        This method calls the `before()` method on all nodes and components
+        in the model. Nodes are updated first, components second.
+
+        See also
+        --------
+        `Model.step`
+        """
         for node in self.graph.nodes():
             node.before(self.timestep)
+        components = self.flatten_component_tree(rebuild=False)
+        for component in components:
+            component.before()
+        for component in components:
+            if isinstance(component, BaseParameter):
+                component.calc_values(self.timestep)
 
     def after(self):
         for node in self.graph.nodes():
             node.after(self.timestep)
-        for recorder in self.recorders:
-            recorder.save()
+        components = self.flatten_component_tree(rebuild=False)
+        for component in components:
+            component.after()
 
     def finish(self):
         for node in self.graph.nodes():
             node.finish()
-        for recorder in self.recorders:
-            recorder.finish()
+        components = self.flatten_component_tree(rebuild=False)
+        for component in components:
+            component.finish()
 
     def to_dataframe(self):
         """ Return a DataFrame from any Recorders with a `to_dataframe` attribute
@@ -584,6 +657,29 @@ class Model(object):
         df = pandas.concat(dfs, axis=1)
         df.columns.set_names('Recorder', level=0, inplace=True)
         return df
+
+    def flatten_component_tree(self, rebuild=False):
+        if self.component_tree_flat is None or rebuild is True:
+            self.component_tree_flat = []
+            G = self.component_graph
+
+            # Test some properties of the dependency tree
+            # Do not permit cycles in the dependencies
+            ncycles = len(list(nx.simple_cycles(G)))
+            if ncycles != 0:
+                raise ModelStructureError("Cyclical ({}) dependencies found in the model's components.".format(ncycles))
+            # Do not permit self-loops
+            for n in G.nodes_with_selfloops():
+                raise ModelStructureError('Component "{}" contains a self-loop.'.format(n))
+
+            for node in nx.dfs_postorder_nodes(G, ROOT_NODE):
+                if node == ROOT_NODE:
+                    continue
+                self.component_tree_flat.append(node)
+            # order components so that they can be iterated over easily in an
+            # sequence which respects dependencies
+            self.component_tree_flat = self.component_tree_flat[::-1]
+        return self.component_tree_flat
 
 class NodeIterator(object):
     """Iterator for Nodes in a Model which also supports indexing
@@ -651,8 +747,11 @@ class NodeIterator(object):
         raise StopIteration()
 
 class NamedIterator(object):
-    def __init__(self):
-        self._objects = []
+    def __init__(self, objects=None):
+        if objects:
+            self._objects = list(objects)
+        else:
+            self._objects = []
 
     def __getitem__(self, key):
         """Get a node from the graph by it's name"""

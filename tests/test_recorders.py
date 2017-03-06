@@ -147,7 +147,7 @@ def test_numpy_parameter_recorder(simple_linear_model):
     model.timestepper.end = pandas.to_datetime("2016-12-31")
     otpt = model.nodes['Output']
 
-    p = DailyProfileParameter(np.arange(366, dtype=np.float64), )
+    p = DailyProfileParameter(model, np.arange(366, dtype=np.float64), )
     p.name = 'daily profile'
     model.nodes['Input'].max_flow = p
     otpt.cost = -2.0
@@ -169,6 +169,9 @@ def test_numpy_parameter_recorder(simple_linear_model):
 def test_numpy_index_parameter_recorder(simple_storage_model):
     """
     Test the NumpyArrayIndexParameterRecorder
+    
+    Note the parameter is recorded at the start of the timestep, while the
+    storage is recorded at the end of the timestep.
     """
     from pywr.parameters.control_curves import ControlCurveIndexParameter
 
@@ -176,7 +179,7 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
 
     res = model.nodes['Storage']
 
-    p = ControlCurveIndexParameter(res, [5.0/20.0, 2.5/20.0])
+    p = ControlCurveIndexParameter(model, res, [5.0/20.0, 2.5/20.0])
 
     res_rec = NumpyArrayStorageRecorder(model, res)
     lvl_rec = NumpyArrayIndexParameterRecorder(model, p)
@@ -186,18 +189,18 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
     assert(res_rec.data.shape == (5, 1))
     assert_allclose(res_rec.data, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
     assert (lvl_rec.data.shape == (5, 1))
-    assert_allclose(lvl_rec.data, np.array([[0, 1, 2, 2, 2]]).T, atol=1e-7)
+    assert_allclose(lvl_rec.data, np.array([[0, 0, 1, 2, 2]]).T, atol=1e-7)
 
 
     df = lvl_rec.to_dataframe()
     assert df.shape == (5, 1)
-    assert_allclose(df.values, np.array([[0, 1, 2, 2, 2]]).T, atol=1e-7)
+    assert_allclose(df.values, np.array([[0, 0, 1, 2, 2]]).T, atol=1e-7)
 
 
 def test_parameter_recorder_json(solver):
     model = load_model("parameter_recorder.json", solver=solver)
-    rec_demand = model.recorders["demand_max"]
-    rec_supply = model.recorders["supply_max"]
+    rec_demand = model.recorders["demand_max_recorder"]
+    rec_supply = model.recorders["supply_max_recorder"]
     model.run()
     assert_allclose(rec_demand.data, 10)
     assert_allclose(rec_supply.data, 15)
@@ -211,7 +214,7 @@ def test_parameter_mean_recorder(simple_linear_model):
 
     node = model.nodes["Input"]
     values = np.arange(0, 366, dtype=np.float64)
-    node.max_flow = DailyProfileParameter(values)
+    node.max_flow = DailyProfileParameter(model, values)
 
     scenario = Scenario(model, "dummy", size=3)
 
@@ -232,8 +235,8 @@ def test_parameter_mean_recorder_json(simple_linear_model):
     model = simple_linear_model
     node = model.nodes["Input"]
     values = np.arange(0, 366, dtype=np.float64)
-    parameter = DailyProfileParameter(values, name="input_max_flow")
-    model.parameters.append(parameter) # HACK
+    parameter = DailyProfileParameter(model, values, name="input_max_flow")
+
     node.max_flow = parameter
 
     data = {
@@ -384,8 +387,8 @@ class TestTablesRecorder:
         otpt = model.nodes['Output']
         inpt = model.nodes['Input']
 
-        inpt.max_flow = ConstantScenarioParameter(scA, [10, 20, 30, 40])
-        otpt.max_flow = ConstantScenarioParameter(scB, [20, 40])
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
         h5file = tmpdir.join('output.h5')
@@ -411,7 +414,7 @@ class TestTablesRecorder:
         otpt = model.nodes['Output']
         inpt = model.nodes['Input']
 
-        p = ConstantParameter(10.0, name='max_flow')
+        p = ConstantParameter(model, 10.0, name='max_flow')
         inpt.max_flow = p
 
         agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
@@ -445,7 +448,7 @@ class TestTablesRecorder:
         otpt = model.nodes['Output']
         inpt = model.nodes['Input']
         agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
-        p = ConstantParameter(10.0, name='max_flow')
+        p = ConstantParameter(model, 10.0, name='max_flow')
         inpt.max_flow = p
 
         otpt.cost = -2.0
@@ -659,7 +662,7 @@ def test_mean_flow_recorder(solver):
 
     scenario = Scenario(model, "dummy", size=2)
 
-    inpt.max_flow = inpt.min_flow = FunctionParameter(inpt, lambda model, t, si: 2 + t.index)
+    inpt.max_flow = inpt.min_flow = FunctionParameter(model, inpt, lambda model, t, si: 2 + t.index)
     model.run()
 
     expected = [
@@ -690,7 +693,7 @@ def test_mean_flow_recorder_json(solver):
 
     # TODO: it's not possible to define a FunctionParameter in JSON yet
     supply1 = model.nodes["supply1"]
-    supply1.max_flow = supply1.min_flow = FunctionParameter(supply1, lambda model, t, si: 2 + t.index)
+    supply1.max_flow = supply1.min_flow = FunctionParameter(model, supply1, lambda model, t, si: 2 + t.index)
 
     assert(len(model.recorders) == 3)
 
@@ -718,14 +721,14 @@ def test_annual_count_index_parameter_recorder(simple_storage_model):
     model.timestepper.start = '2015-01-01'
     model.timestepper.end = '2019-12-31'
     # Control curve parameter
-    param = ControlCurveIndexParameter(model.nodes['Storage'], ConstantParameter(0.25))
+    param = ControlCurveIndexParameter(model, model.nodes['Storage'], ConstantParameter(model, 0.25))
 
     # Storage model has a capacity of 20, but starts at 10 Ml
     # Demand is roughly 2 Ml/d per year
     #  First ensemble balances the demand
     #  Second ensemble should fail during 3rd year
     demand = 2.0 / 365
-    model.nodes['Input'].max_flow = ConstantScenarioParameter(scenario, [demand, 0])
+    model.nodes['Input'].max_flow = ConstantScenarioParameter(model, scenario, [demand, 0])
     model.nodes['Output'].max_flow = demand
 
     # Create the recorder with a threshold of 1
@@ -755,106 +758,29 @@ def timeseries2_observed():
     df += np.random.normal(size=df.shape)
     return df
 
+class TestCalibrationRecorders:
+    data = [
+        (RootMeanSquaredErrorNodeRecorder, lambda sim, obs: np.sqrt(np.mean((sim-obs)**2, axis=0))),
+        (MeanAbsoluteErrorNodeRecorder, lambda sim, obs: np.mean(np.abs(sim-obs), axis=0)),
+        (MeanSquareErrorNodeRecorder, lambda sim, obs: np.mean((sim-obs)**2, axis=0)),
+        (PercentBiasNodeRecorder, lambda sim, obs: np.sum(obs-sim, axis=0)*100/np.sum(obs, axis=0)),
+        (RMSEStandardDeviationRatioNodeRecorder, lambda sim, obs: np.sqrt(np.mean((obs-sim)**2, axis=0))/np.std(obs, axis=0)),
+        (NashSutcliffeEfficiencyNodeRecorder, lambda sim, obs: 1.0 - np.sum((obs-sim)**2, axis=0)/np.sum((obs-obs.mean())**2, axis=0)),
+    ]
+    ids = ["rmse", "mae", "mse", "pbias", "rmse", "ns"]
 
-def test_rmse_recorder(timeseries2_model, timeseries2_observed):
-    """ Test RMSE Node recorder """
+    @pytest.mark.parametrize("cls,func", data, ids=ids)
+    def test_calibration_recorder(self, timeseries2_model, timeseries2_observed, cls, func):
+        model = timeseries2_model
+        observed = timeseries2_observed
+        node = model.nodes["river1"]
+        recorder = cls(model, node, observed)
 
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = RootMeanSquaredErrorNodeRecorder(m, m.nodes['river1'], obs)
+        model.run()
 
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    rmse = np.sqrt(np.mean((mod-obs)**2, axis=0))
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(rmse, values)
-
-
-def test_mae_recorder(timeseries2_model, timeseries2_observed):
-    """ Test MAE Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = MeanAbsoluteErrorNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    mae = np.mean(np.abs(mod-obs), axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(mae, values)
-
-
-def test_mse_recorder(timeseries2_model, timeseries2_observed):
-    """ Test MSE Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = MeanSquareErrorNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    mse = np.mean((mod-obs)**2, axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(mse, values)
-
-
-def test_pbias_recorder(timeseries2_model, timeseries2_observed):
-    """ Test percent bias Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = PercentBiasNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    pbias = np.sum(obs-mod, axis=0)*100/np.sum(obs, axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(pbias, values)
-
-
-def test_rsr_recorder(timeseries2_model, timeseries2_observed):
-    """ Test percent RMSE Std ratio Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = RMSEStandardDeviationRatioNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-    rsr = np.sqrt(np.mean((obs-mod)**2, axis=0))/np.std(obs, axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(rsr, values)
-
-
-def test_nse_recorder(timeseries2_model, timeseries2_observed):
-    """ Test percent NSE Node recorder """
-
-    m = timeseries2_model
-    obs = timeseries2_observed
-    rec = NashSutcliffeEfficiencyNodeRecorder(m, m.nodes['river1'], obs)
-
-    m.run()
-
-    mod = m.nodes['catchment1'].max_flow.df
-
-    obs_mean = np.mean(obs, axis=0)
-    nse = 1.0 - np.sum((obs-mod)**2, axis=0)/np.sum((obs-obs_mean)**2, axis=0)
-    values = rec.values()
-    assert values.shape[0] == len(m.scenarios.combinations)
-    assert values.ndim == 1
-    assert_allclose(nse, values)
+        simulated = model.nodes["catchment1"].max_flow.dataframe
+        metric = func(simulated, observed)
+        values = recorder.values()
+        assert(values.shape[0] == len(model.scenarios.combinations))
+        assert(values.ndim == 1)
+        assert_allclose(metric, values)

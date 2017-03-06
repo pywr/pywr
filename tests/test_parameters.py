@@ -7,8 +7,9 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, CachedParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
-    Polynomial1DParameter, Polynomial2DStorageParameter,
+    Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
+from pywr.recorders import AssertionRecorder, assert_rec
 
 from pywr.recorders import Recorder
 from fixtures import simple_linear_model, simple_storage_model
@@ -29,14 +30,15 @@ def model(solver):
     return Model(solver=solver)
 
 
-def test_parameter_array_indexed(model):
+def test_parameter_array_indexed(simple_linear_model):
     """
     Test ArrayIndexedParameter
 
     """
+    model = simple_linear_model
     A = np.arange(len(model.timestepper), dtype=np.float64)
-    p = ArrayIndexedParameter(A)
-    p.setup(model)
+    p = ArrayIndexedParameter(model, A)
+    model.setup()
     # scenario indices (not used for this test)
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
     for v, ts in zip(A, model.timestepper):
@@ -48,8 +50,9 @@ def test_parameter_array_indexed(model):
         p.value(ts, si)
 
 
-def test_parameter_array_indexed_json_load(model, tmpdir):
+def test_parameter_array_indexed_json_load(simple_linear_model, tmpdir):
     """Test ArrayIndexedParameter can be loaded from json dict"""
+    model = simple_linear_model
     # Daily time-step
     index = pd.date_range('2015-01-01', periods=365, freq='D', name='date')
     df = pd.DataFrame(np.arange(365), index=index, columns=['data'])
@@ -65,23 +68,24 @@ def test_parameter_array_indexed_json_load(model, tmpdir):
     }
 
     p = load_parameter(model, data)
-    p.setup(model)
+    model.setup()
 
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
     for v, ts in enumerate(model.timestepper):
         np.testing.assert_allclose(p.value(ts, si), v)
 
-def test_parameter_constant_scenario(model):
+def test_parameter_constant_scenario(simple_linear_model):
     """
     Test ConstantScenarioParameter
 
     """
+    model = simple_linear_model
     # Add two scenarios
     scA = Scenario(model, 'Scenario A', size=2)
     scB = Scenario(model, 'Scenario B', size=5)
 
-    p = ConstantScenarioParameter(scB, np.arange(scB.size, dtype=np.float64))
-    p.setup(model)
+    p = ConstantScenarioParameter(model, scB, np.arange(scB.size, dtype=np.float64))
+    model.setup()
     ts = model.timestepper.current
     # Now ensure the appropriate value is returned for the Scenario B indices.
     for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
@@ -89,11 +93,12 @@ def test_parameter_constant_scenario(model):
         np.testing.assert_allclose(p.value(ts, si), float(b))
 
 
-def test_parameter_array_indexed_scenario_monthly_factors(model):
+def test_parameter_array_indexed_scenario_monthly_factors(simple_linear_model):
     """
     Test ArrayIndexedParameterScenarioMonthlyFactors
 
     """
+    model = simple_linear_model
     # Baseline timeseries data
     values = np.arange(len(model.timestepper), dtype=np.float64)
 
@@ -104,8 +109,8 @@ def test_parameter_array_indexed_scenario_monthly_factors(model):
     # Random factors for each Scenario B value per month
     factors = np.random.rand(scB.size, 12)
 
-    p = ArrayIndexedScenarioMonthlyFactorsParameter(scB, values, factors)
-    p.setup(model)
+    p = ArrayIndexedScenarioMonthlyFactorsParameter(model, scB, values, factors)
+    model.setup()
 
     # Iterate in time
     for v, ts in zip(values, model.timestepper):
@@ -151,14 +156,15 @@ def test_parameter_array_indexed_scenario_monthly_factors_json(model):
     model.run()
 
 
-def test_parameter_monthly_profile(model):
+def test_parameter_monthly_profile(simple_linear_model):
     """
     Test MonthlyProfileParameter
 
     """
+    model = simple_linear_model
     values = np.arange(12, dtype=np.float64)
-    p = MonthlyProfileParameter(values)
-    p.setup(model)
+    p = MonthlyProfileParameter(model, values)
+    model.setup()
 
     # Iterate in time
     for ts in model.timestepper:
@@ -169,13 +175,14 @@ def test_parameter_monthly_profile(model):
 
 class TestScenarioMonthlyProfileParameter:
 
-    def test_init(self, model):
+    def test_init(self, simple_linear_model):
+        model = simple_linear_model
         scenario = Scenario(model, 'A', 10)
         values = np.random.rand(10, 12)
 
-        p = ScenarioMonthlyProfileParameter(scenario, values)
+        p = ScenarioMonthlyProfileParameter(model, scenario, values)
 
-        p.setup(model)
+        model.setup()
         # Iterate in time
         for ts in model.timestepper:
             imth = ts.datetime.month - 1
@@ -204,14 +211,15 @@ class TestScenarioMonthlyProfileParameter:
             imth = model.timestepper.current.month - 1
             assert_allclose(supply1.flow, expected*factors[:, imth], atol=1e-7)
 
-def test_parameter_daily_profile(model):
+def test_parameter_daily_profile(simple_linear_model):
     """
     Test DailyProfileParameter
 
     """
+    model = simple_linear_model
     values = np.arange(366, dtype=np.float64)
-    p = DailyProfileParameter(values)
-    p.setup(model)
+    p = DailyProfileParameter(model, values)
+    model.setup()
 
     # Iterate in time
     for ts in model.timestepper:
@@ -227,7 +235,7 @@ def test_daily_profile_leap_day(model):
     inpt = Input(model, "input")
     otpt = Output(model, "otpt", max_flow=None, cost=-999)
     inpt.connect(otpt)
-    inpt.max_flow = DailyProfileParameter(np.arange(0, 366, dtype=np.float64))
+    inpt.max_flow = DailyProfileParameter(model, np.arange(0, 366, dtype=np.float64))
 
     # non-leap year
     model.timestepper.start = pd.to_datetime("2015-01-01")
@@ -245,7 +253,7 @@ class TestAnnualHarmonicSeriesParameter:
     """ Tests for `AnnualHarmonicSeriesParameter` """
     def test_single_harmonic(self, model):
 
-        p1 = AnnualHarmonicSeriesParameter(0.5, [0.25], [np.pi/4])
+        p1 = AnnualHarmonicSeriesParameter(model, 0.5, [0.25], [np.pi/4])
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
         for ts in model.timestepper:
@@ -253,7 +261,7 @@ class TestAnnualHarmonicSeriesParameter:
             np.testing.assert_allclose(p1.value(ts, si), 0.5 + 0.25*np.cos(doy*2*np.pi + np.pi/4))
 
     def test_double_harmonic(self, model):
-        p1 = AnnualHarmonicSeriesParameter(0.5, [0.25, 0.3], [np.pi/4, np.pi/3])
+        p1 = AnnualHarmonicSeriesParameter(model, 0.5, [0.25, 0.3], [np.pi/4, np.pi/3])
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
         for ts in model.timestepper:
@@ -280,35 +288,35 @@ class TestAnnualHarmonicSeriesParameter:
 
 class TestAggregatedParameter:
     """Tests for AggregatedParameter"""
-
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "median": np.median, "sum": np.sum}
 
     @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "median", "sum"])
-    def test_agg(self, model, agg_func):
+    def test_agg(self, simple_linear_model, agg_func):
+        model = simple_linear_model
+        model.timestepper.delta = 15
+
         scenarioA = Scenario(model, "Scenario A", size=2)
         scenarioB = Scenario(model, "Scenario B", size=5)
 
         values = np.arange(366, dtype=np.float64)
-        p1 = DailyProfileParameter(values)
-        p2 = ConstantScenarioParameter(scenarioB, np.arange(scenarioB.size, dtype=np.float64))
+        p1 = DailyProfileParameter(model, values)
+        p2 = ConstantScenarioParameter(model, scenarioB, np.arange(scenarioB.size, dtype=np.float64))
 
-        p = AggregatedParameter([p1, p2], agg_func=agg_func)
+        p = AggregatedParameter(model, [p1, p2], agg_func=agg_func)
 
         func = TestAggregatedParameter.funcs[agg_func]
 
-        p1.setup(model)
-        p2.setup(model)
-        p.setup(model)
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            x = p1.get_value(scenario_index)
+            y = p2.get_value(scenario_index)
+            return func(np.array([x,y]))
 
-        for ts in model.timestepper:
-            for i in range(scenarioB.size):
-                si = ScenarioIndex(i, np.array([0, i], dtype=np.int32))
-                x = p1.value(ts, si)
-                y = p2.value(ts, si)
-                np.testing.assert_allclose(p.value(ts, si), func(np.array([x, y])))
+        model.run()
 
-    def test_load(self, model):
+    def test_load(self, simple_linear_model):
         """ Test load from JSON dict"""
+        model = simple_linear_model
         data = {
             "type": "aggregated",
             "agg_func": "product",
@@ -325,60 +333,90 @@ class TestAggregatedParameter:
         # Correct instance is loaded
         assert isinstance(p, AggregatedParameter)
 
-        # Test correct aggregation is performed
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        for mth in range(1, 13):
-            ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-            np.testing.assert_allclose(p.value(ts, si), (mth-1)*0.8)
+        @assert_rec(model, p)
+        def expected(timestep, scenario_index):
+            return (timestep.month - 1) * 0.8
+
+        model.run()
 
 class DummyIndexParameter(IndexParameter):
     """A simple IndexParameter which returns a constant value"""
-    def __init__(self, index, *args, **kwargs):
-        super(DummyIndexParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, index, **kwargs):
+        super(DummyIndexParameter, self).__init__(model, **kwargs)
         self._index = index
     def index(self, timestep, scenario_index):
         return self._index
+    def __repr__(self):
+        return "<DummyIndexParameter \"{}\">".format(self.name)
 
-def test_aggregated_index_parameter(model):
-    """Basic tests of AggregatedIndexParameter"""
+class TestAggregatedIndexParameter:
+    """Tests for AggregatedIndexParameter"""
+    funcs = {"min": np.min, "max": np.max, "sum": np.sum}
 
-    parameters = []
-    parameters.append(DummyIndexParameter(2))
-    parameters.append(DummyIndexParameter(3))
+    @pytest.mark.parametrize("agg_func", ["min", "max", "sum"])
+    def test_agg(self, simple_linear_model, agg_func):
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        model.timestepper.start = "2017-01-01"
+        model.timestepper.end = "2017-01-03"
 
-    timestep = scenario_index = None  # lazy
+        scenarioA = Scenario(model, "Scenario A", size=2)
+        scenarioB = Scenario(model, "Scenario B", size=5)
 
-    agg_index = AggregatedIndexParameter(parameters, "sum")
-    assert(agg_index.index(timestep, scenario_index) == 5)
+        p1 = DummyIndexParameter(model, 2)
+        p2 = DummyIndexParameter(model, 3)
 
-    agg_index = AggregatedIndexParameter(parameters, "max")
-    assert(agg_index.index(timestep, scenario_index) == 3)
+        p = AggregatedIndexParameter(model, [p1, p2], agg_func=agg_func)
 
-    agg_index = AggregatedIndexParameter(parameters, "min")
-    assert(agg_index.index(timestep, scenario_index) == 2)
+        func = TestAggregatedParameter.funcs[agg_func]
 
-def test_aggregated_index_parameter_anyall(model):
-    """Test `any` and `all` predicates"""
-    timestep = scenario_index = None  # lazy
-    data = [(0, 0), (1, 0), (0, 1), (1, 1), (1, 1, 1)]
-    expected = [(False, False), (True, False), (True, False), (True, True), (True, True)]
-    for item, (expected_any, expected_all) in zip(data, expected):
-        parameters = [DummyIndexParameter(i) for i in item]
-        agg_index_any = AggregatedIndexParameter(parameters, "any")
-        agg_index_all = AggregatedIndexParameter(parameters, "all")
-        assert(agg_index_any.index(timestep, scenario_index) == int(expected_any))
-        assert(agg_index_all.index(timestep, scenario_index) == int(expected_all))
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            x = p1.get_index(scenario_index)
+            y = p2.get_index(scenario_index)
+            return func(np.array([x,y], np.int32))
 
-def test_parameter_child_variables():
+        model.run()
 
-    p1 = Parameter()
+    def test_agg_anyall(self, simple_linear_model):
+        """Test the "any" and "all" aggregation functions"""
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        model.timestepper.start = "2017-01-01"
+        model.timestepper.end = "2017-01-03"
+
+        scenarioA = Scenario(model, "Scenario A", size=2)
+        scenarioB = Scenario(model, "Scenario B", size=5)
+        num_comb = len(model.scenarios.get_combinations())
+
+        parameters = {
+            0: DummyIndexParameter(model, 0, name="p0"),
+            1: DummyIndexParameter(model, 1, name="p1"),
+            2: DummyIndexParameter(model, 2, name="p2"),
+        }
+
+        data = [(0, 0), (1, 0), (0, 1), (1, 1), (1, 1, 1), (0, 2)]
+        data_parameters = [[parameters[i] for i in d] for d in data]
+        expected = [(np.any(d), np.all(d)) for d in data]
+
+        for n, params in enumerate(data_parameters):
+            for m, agg_func in enumerate(["any", "all"]):
+                p = AggregatedIndexParameter(model, params, agg_func=agg_func)
+                e = np.ones([len(model.timestepper), num_comb]) * expected[n][m]
+                r = AssertionRecorder(model, p, expected_data=e, name="assertion {}-{}".format(n, agg_func))
+
+        model.run()
+
+def test_parameter_child_variables(model):
+
+    p1 = Parameter(model)
     # Default parameter
     assert p1 not in p1.variables
     assert len(p1.variables) == 0
     assert len(p1.parents) == 0
     assert len(p1.children) == 0
 
-    c1 = Parameter()
+    c1 = Parameter(model)
     c1.parents.add(p1)
     assert len(p1.children) == 1
     assert c1 in p1.children
@@ -394,7 +432,7 @@ def test_parameter_child_variables():
     assert len(p1.variables) == 1
 
     # Test third level
-    c2 = Parameter()
+    c2 = Parameter(model)
     c2.parents.add(c1)
     c2.is_variable = True
     assert p1 not in p1.variables
@@ -422,9 +460,10 @@ def test_parameter_child_variables():
 
 def test_scaled_profile_nested_load(model):
     """ Test `ScaledProfileParameter` loading with `AggregatedParameter` """
+    model.timestepper.delta = 15
 
-    s = Storage(model, 'Storage', max_volume=100.0)
-    l = Link(model, 'Link')
+    s = Storage(model, 'Storage', max_volume=100.0, num_outputs=0)
+    d = Output(model, 'Link')
     data = {
         'type': 'scaledprofile',
         'scale': 50.0,
@@ -446,34 +485,22 @@ def test_scaled_profile_nested_load(model):
         }
     }
 
-    l.max_flow = p = load_parameter(model, data)
+    s.connect(d)
 
-    p.setup(model)
+    d.max_flow = p = load_parameter(model, data)
 
-    # Test correct aggregation is performed
-    model.scenarios.setup()
-    s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        if s.initial_volume == 90:
+            return 50.0*0.5*1.0
+        elif s.initial_volume == 70:
+            return 50.0 * 0.5 * 0.7 * (timestep.month - 1)
+        else:
+            return 50.0 * 0.5 * 0.3
 
-    s.initial_volume = 90.0
-    model.reset()  # Set initial volume on storage
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    for mth in range(1, 13):
-        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-        np.testing.assert_allclose(p.value(ts, si), 50.0*0.5*1.0)
-
-    s.initial_volume = 70.0
-    model.reset()  # Set initial volume on storage
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    for mth in range(1, 13):
-        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-        np.testing.assert_allclose(p.value(ts, si), 50.0 * 0.5 * 0.7*(mth - 1))
-
-    s.initial_volume = 30.0
-    model.reset()  # Set initial volume on storage
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    for mth in range(1, 13):
-        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-        np.testing.assert_allclose(p.value(ts, si), 50.0 * 0.5 * 0.3)
+    for initial_volume in (90, 70, 30):
+        s.initial_volume = initial_volume
+        model.run()
 
 
 def test_parameter_df_upsampling(model):
@@ -491,8 +518,8 @@ def test_parameter_df_upsampling(model):
     index = pd.date_range('2015-01-01', periods=365, freq='D')
     series = pd.Series(np.arange(365), index=index)
 
-    p = DataFrameParameter(series)
-    p.setup(model)
+    p = DataFrameParameter(model, series)
+    p.setup()
 
     A = series.resample('7D').mean()
     for v, ts in zip(A, model.timestepper):
@@ -503,8 +530,8 @@ def test_parameter_df_upsampling(model):
     index = pd.date_range('2014-12-31', periods=366, freq='D')
     series = pd.Series(np.arange(366), index=index)
 
-    p = DataFrameParameter(series)
-    p.setup(model)
+    p = DataFrameParameter(model, series)
+    p.setup()
 
     # offset the resample appropriately for the test
     A = series[1:].resample('7D').mean()
@@ -516,18 +543,18 @@ def test_parameter_df_upsampling(model):
     index = pd.date_range('2015-02-01', periods=365, freq='D')
     series = pd.Series(np.arange(365), index=index)
 
-    p = DataFrameParameter(series)
+    p = DataFrameParameter(model, series)
     with pytest.raises(ValueError):
-        p.setup(model)
+        p.setup()
 
     model.reset()
     # Daily time-step that is not covering the require range
     index = pd.date_range('2014-11-01', periods=365, freq='D')
     series = pd.Series(np.arange(365), index=index)
 
-    p = DataFrameParameter(series)
+    p = DataFrameParameter(model, series)
     with pytest.raises(ValueError):
-        p.setup(model)
+        p.setup()
 
 
 def test_parameter_df_upsampling_multiple_columns(model):
@@ -546,16 +573,16 @@ def test_parameter_df_upsampling_multiple_columns(model):
     index = pd.date_range('2015-01-01', periods=365, freq='D')
     df = pd.DataFrame(np.random.rand(365, 20), index=index)
 
-    p = DataFrameParameter(df, scenario=scA)
-    p.setup(model)
+    p = DataFrameParameter(model, df, scenario=scA)
+    p.setup()
 
     A = df.resample('7D', axis=0).mean()
     for v, ts in zip(A.values, model.timestepper):
         np.testing.assert_allclose([p.value(ts, ScenarioIndex(i, np.array([i], dtype=np.int32))) for i in range(20)], v)
 
-    p = DataFrameParameter(df, scenario=scB)
+    p = DataFrameParameter(model, df, scenario=scB)
     with pytest.raises(ValueError):
-        p.setup(model)
+        p.setup()
 
 
 def test_parameter_df_json_load(model, tmpdir):
@@ -574,7 +601,7 @@ def test_parameter_df_json_load(model, tmpdir):
     }
 
     p = load_parameter(model, data)
-    p.setup(model)
+    p.setup()
 
 def test_simple_json_parameter_reference(solver):
     # note that parameters in the "parameters" section cannot be literals
@@ -586,22 +613,33 @@ def test_simple_json_parameter_reference(solver):
     assert(isinstance(cost, ConstantParameter))
     assert(cost.value(None, None) == -10.0)
 
-    assert(len(model.parameters) == 3) # only 3 parameters are named
+    assert(len(model.parameters) == 4)  # 4 parameters defined
 
 
-def test_threshold_parameter(model):
+def test_threshold_parameter(simple_linear_model):
+    model = simple_linear_model
+    model.timestepper.delta = 150
+    
+    scenario = Scenario(model, "Scenario", size=2)
+
     class DummyRecorder(Recorder):
-        def __init__(self, *args, **kwargs):
-            super(DummyRecorder, self).__init__(*args, **kwargs)
-            self.data = np.array([[0.0]], dtype=np.float64)
-
-    rec = DummyRecorder(model)
-
-    timestep = Timestep(datetime.datetime(2016, 1, 2), 1, 1)
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        def __init__(self, model, value, *args, **kwargs):
+            super(DummyRecorder, self).__init__(model, *args, **kwargs)
+            self.val = value
+        def setup(self):
+            super(DummyRecorder, self).setup()
+            num_comb = len(model.scenarios.combinations)
+            self.data = np.empty([len(model.timestepper), num_comb], dtype=np.float64)
+        def after(self):
+            timestep = model.timestepper.current
+            self.data[timestep.index, :] = self.val
 
     threshold = 10.0
     values = [50.0, 60.0]
+    
+    rec1 = DummyRecorder(model, threshold-5, name="rec1")  # below
+    rec2 = DummyRecorder(model, threshold, name="rec2")    # equal
+    rec3 = DummyRecorder(model, threshold+5, name="rec3")  # above
 
     expected = [
         ("LT", (1, 0, 0)),
@@ -610,19 +648,17 @@ def test_threshold_parameter(model):
         ("LE", (1, 1, 0)),
         ("GE", (0, 1, 1)),
     ]
-
+    
     for predicate, (value_lt, value_eq, value_gt) in expected:
-        param = RecorderThresholdParameter(rec, threshold, values, predicate)
-        rec.data[...] = threshold - 5  # data is below threshold
-        assert_allclose(param.value(timestep, si), values[value_lt])
-        assert(param.index(timestep, si) == value_lt)
-        rec.data[...] = threshold  # data is at threshold
-        assert_allclose(param.value(timestep, si), values[value_eq])
-        assert(param.index(timestep, si) == value_eq)
-        rec.data[...] = threshold + 5  # data is above threshold
-        assert_allclose(param.value(timestep, si), values[value_gt])
-        assert(param.index(timestep, si) == value_gt)
-
+        for rec in (rec1, rec2, rec3):
+            param = RecorderThresholdParameter(model, rec, threshold, values, predicate)
+            e_val = values[getattr(rec.val, "__{}__".format(predicate.lower()))(threshold)]
+            e = np.ones([len(model.timestepper), len(model.scenarios.get_combinations())]) * e_val
+            e[0, :] = values[1] # first timestep is always "on"
+            r = AssertionRecorder(model, param, expected_data=e)
+            r.name = "assert {} {} {}".format(rec.val, predicate, threshold)
+    
+    model.run()
 
 def test_constant_from_df(solver):
     """
@@ -676,13 +712,17 @@ def test_parameter_registry_overwrite(model):
     # define a parameter
     class NewParameter(Parameter):
         DATA = 42
+        def __init__(self, model, values, *args, **kwargs):
+            super(NewParameter, self).__init__(model, *args, **kwargs)
+            self.values = values
     NewParameter.register()
 
     # re-define a parameter
     class NewParameter(IndexParameter):
         DATA = 43
-        def __init__(self, *args, **kwargs):
-            IndexParameter.__init__(self)
+        def __init__(self, model, values, *args, **kwargs):
+            super(NewParameter, self).__init__(model, *args, **kwargs)
+            self.values = values
     NewParameter.register()
 
     data = {
@@ -719,44 +759,62 @@ class Test1DPolynomialParameter:
     def test_init(self, simple_storage_model):
         """ Test initialisation raises error with too many keywords """
         stg = simple_storage_model.nodes['Storage']
-
+        param = ConstantParameter(simple_storage_model, 2.0)
         with pytest.raises(ValueError):
             # Passing both "parameter" and "storage_node" is invalid
-            Polynomial1DParameter([0.5, np.pi], parameter=ConstantParameter(2.0), storage_node=stg)
+            Polynomial1DParameter(simple_storage_model, [0.5, np.pi], parameter=param, storage_node=stg)
 
-    def test_1st_order_with_parameter(self, model):
+    def test_1st_order_with_parameter(self, simple_linear_model):
         """ Test 1st order with a `Parameter` """
-        x = 2.0
-        p1 = Polynomial1DParameter([0.5, np.pi], parameter=ConstantParameter(x))
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x)
+        model = simple_linear_model
 
-    def test_2nd_order_with_parameter(self, model):
-        """ Test 2nd order with a `Parameter` """
         x = 2.0
-        px = ConstantParameter(x)
-        p1 = Polynomial1DParameter([0.5, np.pi, 3.0], parameter=px)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 3.0*x**2)
+        p1 = Polynomial1DParameter(model, [0.5, np.pi], parameter=ConstantParameter(model, x))
+
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi * x
+        model.run()
+
+    def test_2nd_order_with_parameter(self, simple_linear_model):
+        """ Test 2nd order with a `Parameter` """
+        model = simple_linear_model
+
+        x = 2.0
+        px = ConstantParameter(model, x)
+        p1 = Polynomial1DParameter(model, [0.5, np.pi, 3.0], parameter=px)
+
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x + 3.0*x**2
+        model.run()
 
     def test_1st_order_with_storage(self, simple_storage_model):
         """ Test with a `Storage` node """
         model = simple_storage_model
         stg = model.nodes['Storage']
         x = stg.initial_volume
-        p1 = Polynomial1DParameter([0.5, np.pi], storage_node=stg)
-        p2 = Polynomial1DParameter([0.5, np.pi], storage_node=stg, use_proportional_volume=True)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+        p1 = Polynomial1DParameter(model, [0.5, np.pi], storage_node=stg)
+        p2 = Polynomial1DParameter(model, [0.5, np.pi], storage_node=stg, use_proportional_volume=True)
+
+        # Test with absolute storage
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x
+
+        # Test with proportional storage
+        @assert_rec(model, p2, name="proportionalassertion")
+        def expected_func(timestep, scenario_index):
+
+            return 0.5 + np.pi * x/stg.max_volume
 
         model.setup()
+        model.step()
 
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x)
-        np.testing.assert_allclose(p2.value(ts, si), 0.5 + np.pi * x/stg.max_volume)
 
-    def test_load(self, model):
+    def test_load(self, simple_linear_model):
+        model = simple_linear_model
+
         x = 1.5
         data = {
             "type": "polynomial1d",
@@ -768,11 +826,14 @@ class Test1DPolynomialParameter:
         }
 
         p1 = load_parameter(model, data)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        for ts in model.timestepper:
-            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*x)
 
-    def test_load_with_scaling(self, model):
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + 2.5*x
+        model.run()
+
+    def test_load_with_scaling(self, simple_linear_model):
+        model = simple_linear_model
         x = 1.5
         data = {
             "type": "polynomial1d",
@@ -785,11 +846,12 @@ class Test1DPolynomialParameter:
             "offset": 0.75
         }
         xscaled = x*1.25 + 0.75
-
         p1 = load_parameter(model, data)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        for ts in model.timestepper:
-            np.testing.assert_allclose(p1.value(ts, si), 0.5 + 2.5*xscaled)
+
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + 2.5*xscaled
+        model.run()
 
 
 class Test2DStoragePolynomialParameter:
@@ -803,11 +865,13 @@ class Test2DStoragePolynomialParameter:
         y = stg.initial_volume
         coefs = [[0.5, np.pi], [2.5, 0.3]]
 
-        p1 = Polynomial2DStorageParameter(coefs, stg, ConstantParameter(x))
+        p1 = Polynomial2DStorageParameter(model, coefs, stg, ConstantParameter(model, x))
+
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x + 2.5*y+ 0.3*x*y
         model.setup()
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+        model.step()
 
     def test_load(self, simple_storage_model):
         model = simple_storage_model
@@ -827,10 +891,12 @@ class Test2DStoragePolynomialParameter:
         }
 
         p1 = load_parameter(model, data)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x + 2.5*y+ 0.3*x*y
         model.setup()
-        ts = model.timestepper.current
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+        model.step()
 
     def test_load_wth_scaling(self, simple_storage_model):
         model = simple_storage_model
@@ -854,80 +920,71 @@ class Test2DStoragePolynomialParameter:
         }
 
         p1 = load_parameter(model, data)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        model.setup()
-        ts = model.timestepper.current
 
         # Scaled parameters
         x = x*1.25 - 0.5
         y = y*1.3 + 0.75
 
-        np.testing.assert_allclose(p1.value(ts, si), 0.5 + np.pi*x + 2.5*y+ 0.3*x*y)
+        @assert_rec(model, p1)
+        def expected_func(timestep, scenario_index):
+            return 0.5 + np.pi*x + 2.5*y+ 0.3*x*y
+        model.setup()
+        model.step()
 
-
-def test_max_parameter(simple_linear_model):
-    """ Test `MaxParameter` """
-    m = simple_linear_model
-
-    data = {
-        "type": "max",
-        "threshold": 3,
-        "parameter": {
-            "type": "dailyprofile",
-            "values": list(range(-10, 356))
+class TestMinMaxNegativeParameter:
+    @pytest.mark.parametrize("ptype,profile", [
+        ("max", list(range(-10, 356))),
+        ("min", list(range(0, 366))),
+        ("negative", list(range(-366, 0))),
+        ("negativemax", list(range(-366, 0))),
+    ])
+    def test_parameter(cls, simple_linear_model, ptype,profile):
+        model = simple_linear_model
+        model.timestepper.start = "2017-01-01"
+        model.timestepper.end = "2017-01-15"
+        
+        data = {
+            "type": ptype,
+            "parameter": {
+                "name": "raw",
+                "type": "dailyprofile",
+                "values": profile,
+            }
         }
-    }
+        
+        if ptype in ("max", "min"):
+            data["threshold"] = 3
+        
+        func = {"min": min, "max": max, "negative": lambda t,x: -x, "negativemax": lambda t,x: max(t, -x)}[ptype]
+        
+        model.nodes["Input"].max_flow = parameter = load_parameter(model, data)
+        model.nodes["Output"].max_flow = 9999
+        model.nodes["Output"].cost = -100
+        
+        daily_profile = model.parameters["raw"]
+        
+        @assert_rec(model, parameter)
+        def expected(timestep, scenario_index):
+            value = daily_profile.get_value(scenario_index)
+            return func(3, value)
+        model.run()
 
-    m.nodes["Input"].max_flow = load_parameter(model, data)
-    m.nodes["Output"].max_flow = 9999
-    m.nodes["Output"].cost = -100
-    m.setup()
-    # Don't go through the whole series because leap years make it harder
-    for v in range(-10, 20):
-        m.step()
-        assert_allclose(m.nodes["Input"].flow, max(v, 3))
-
-
-def test_min_parameter(simple_linear_model):
-    """ Test `MinParameter` """
-    m = simple_linear_model
-
-    data = {
-        "type": "min",
-        "threshold": 3,
-        "parameter": {
-            "type": "dailyprofile",
-            "values": list(range(0, 366))
-        }
-    }
-
-    m.nodes["Input"].max_flow = load_parameter(model, data)
-    m.nodes["Output"].max_flow = 9999
-    m.nodes["Output"].cost = -100
-    m.setup()
-    # Don't go through the whole series because leap years make it harder
-    for v in range(0, 20):
-        m.step()
-        assert_allclose(m.nodes["Input"].flow, min(v, 3))
-
-
-def test_negative_parameter(simple_linear_model):
-    """ Test `NegativeParameter` """
-    m = simple_linear_model
-
-    data = {
-        "type": "negative",
-        "parameter": {
-            "type": "dailyprofile",
-            "values": list(range(-366, 0))
-        }
-    }
-
-    m.nodes["Input"].max_flow = load_parameter(model, data)
-    m.nodes["Output"].max_flow = 9999
-    m.nodes["Output"].cost = -100
-    m.setup()
-    # Don't go through the whole series because leap years make it harder
-    for v in range(-366, -346):
-        m.step()
-        assert_allclose(m.nodes["Input"].flow, -v)
+def test_ocptt(simple_linear_model):
+    model = simple_linear_model
+    inpt = model.nodes["Input"]
+    s1 = Scenario(model, "scenario 1", size=3)
+    s2 = Scenario(model, "scenario 1", size=2)
+    x = np.arange(len(model.timestepper)).reshape([len(model.timestepper), 1]) + 5
+    y = np.arange(s1.size).reshape([1, s1.size])
+    z = x * y ** 2
+    p = ArrayIndexedScenarioParameter(model, s1, z)
+    inpt.max_flow = p
+    model.setup()
+    model.reset()
+    model.step()
+    timestep = model.timestepper.current
+    p.calc_values(timestep)
+    values1 = [p.get_value(scenario_index) for  scenario_index in model.scenarios.combinations]
+    values2 = list(p.get_all_values())
+    assert_allclose(values1, [0, 0, 5, 5, 20, 20])
+    assert_allclose(values2, [0, 0, 5, 5, 20, 20])

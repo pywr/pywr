@@ -9,6 +9,7 @@ from ._parameters import (
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
     IndexParameter, CachedParameter, RecorderThresholdParameter,
     AggregatedParameter, AggregatedIndexParameter,
+    align_and_resample_dataframe, DataFrameParameter,
     load_parameter, load_parameter_values, load_dataframe)
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from past.builtins import basestring
@@ -17,8 +18,8 @@ import pandas
 
 
 class FunctionParameter(Parameter):
-    def __init__(self, parent, func, *args, **kwargs):
-        super(FunctionParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, parent, func, *args, **kwargs):
+        super(FunctionParameter, self).__init__(model, *args, **kwargs)
         self._parent = parent
         self._func = func
 
@@ -28,8 +29,8 @@ FunctionParameter.register()
 
 
 class ScaledProfileParameter(Parameter):
-    def __init__(self, scale, profile, *args, **kwargs):
-        super(ScaledProfileParameter, self).__init__(*args, **kwargs)
+    def __init__(self, model, scale, profile, *args, **kwargs):
+        super(ScaledProfileParameter, self).__init__(model, *args, **kwargs)
         self.scale = scale
 
         profile.parents.add(self)
@@ -39,102 +40,20 @@ class ScaledProfileParameter(Parameter):
     def load(cls, model, data):
         scale = float(data.pop("scale"))
         profile = load_parameter(model, data.pop("profile"))
-        return cls(scale, profile, **data)
+        return cls(model, scale, profile, **data)
 
     def value(self, ts, si):
-        p = self.profile.value(ts, si)
+        p = self.profile.get_value(si)
         return self.scale * p
 ScaledProfileParameter.register()
-
-
-def align_and_resample_dataframe(df, datetime_index):
-    from pandas.tseries.offsets import DateOffset, Week, Day
-    # Must resample and align the DataFrame to the model.
-    start = datetime_index[0]
-    end = datetime_index[-1]
-
-    df_index = df.index
-    df_freq = df.index.freq
-    if df_freq is None:
-        raise ValueError('DataFrame index has no frequency.')
-
-    # Special case of a weekly frequency that can be treated as 7D
-    if isinstance(df_freq, Week):
-        df_freq = Day(n=7)
-
-    if df_index[0] > start:
-        raise ValueError('DataFrame data begins after the index start date.')
-    if df_index[-1] < end:
-        raise ValueError('DataFrame data ends before the index end date.')
-
-    # Downsampling (i.e. from high freq to lower model freq)
-    if datetime_index.freq >= df_freq:
-        # Slice to required dates
-        df = df[start:end]
-        if df.index[0] != start:
-            raise ValueError('Start date of DataFrame can not be aligned with the desired index start date.')
-        # Take mean at the model's frequency
-        df = df.resample(datetime_index.freq).mean()
-    else:
-        raise NotImplementedError('Upsampling DataFrame not implemented.')
-
-    return df
-
-
-class DataFrameParameter(Parameter):
-    def __init__(self, df, scenario=None, metadata=None, **kwargs):
-        super(DataFrameParameter, self).__init__(**kwargs)
-        self.df = df
-        if metadata is None:
-            metadata = {}
-        self.metadata = metadata
-        self.scenario = scenario
-        self._param = None
-
-    @classmethod
-    def load(cls, model, data):
-        scenario = data.pop('scenario', None)
-        if scenario is not None:
-            scenario = model.scenarios[scenario]
-        df = load_dataframe(model, data)
-        return cls(df, scenario=scenario)
-
-    def setup(self, model):
-
-        df = align_and_resample_dataframe(self.df, model.timestepper.datetime_index)
-
-        if df.ndim == 1:
-            # Single timeseries for the entire run
-            param = ArrayIndexedParameter(df.values.astype(dtype=np.float64))
-        elif df.shape[1] == 1:
-            # DataFrame with one column for the entire run
-            param = ArrayIndexedParameter(df.values[:, 0].astype(dtype=np.float64))
-        else:
-            if self.scenario is None:
-                raise ValueError("Scenario must be given for a DataFrame input with multiple columns.")
-            if self.scenario.size != df.shape[1]:
-                raise ValueError("Scenario size ({}) is different to the number of columns ({}) "
-                                 "in the DataFrame input.".format(self.scenario.size, df.shape[1]))
-            # We assume the columns are in the correct order for the scenario.
-            param = ArrayIndexedScenarioParameter(self.scenario, df.values.astype(dtype=np.float64))
-
-        param.parents.add(self)
-        self._param = param
-
-    def value(self, ts, scenario_index):
-        return self._param.value(ts, scenario_index)
-DataFrameParameter.register()
-
-
-
 
 
 class InterpolatedLevelParameter(Parameter):
     """
     Level parameter calculated by interpolation from current volume
     """
-    def __init__(self, node, volumes, levels, kind='linear', **kwargs):
-        super(InterpolatedLevelParameter, self).__init__(**kwargs)
+    def __init__(self, model, node, volumes, levels, kind='linear', **kwargs):
+        super(InterpolatedLevelParameter, self).__init__(model, **kwargs)
         from scipy.interpolate import interp1d
         # Create level interpolator
         self.interp = interp1d(volumes, levels, bounds_error=True, kind=kind)

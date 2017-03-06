@@ -18,7 +18,8 @@ class License(BaseParameter):
         else:
             return BaseParameter.__new__(cls)
 
-    def __init__(self, node):
+    def __init__(self, model, node, **kwargs):
+        super(License, self).__init__(model, **kwargs)
         self._node = node
 
     def resource_state(self, timestep):
@@ -32,7 +33,7 @@ class TimestepLicense(License):
     is a fixed value. There is no resource state, as use today does not
     impact availability tomorrow.
     """
-    def __init__(self, node, amount):
+    def __init__(self, model, node, amount, **kwargs):
         """Initialise a new TimestepLicense
 
         Parameters
@@ -40,7 +41,7 @@ class TimestepLicense(License):
         amount : float
             The maximum volume available in each timestep
         """
-        super(TimestepLicense, self).__init__(node)
+        super(TimestepLicense, self).__init__(model, node, **kwargs)
         self._amount = amount
 
     def value(self, timestep, scenario_index):
@@ -56,7 +57,7 @@ class DailyLicense(TimestepLicense):
     pass
 
 class StorageLicense(License):
-    def __init__(self, node, amount):
+    def __init__(self, model, node, amount, **kwargs):
         """A license with a volume to be spent over multiple timesteps
 
         This class should not be instantiated directly. Instead, use one of the
@@ -67,17 +68,19 @@ class StorageLicense(License):
         amount : float
             The volume of water available in each period
         """
-        super(StorageLicense, self).__init__(node)
+        super(StorageLicense, self).__init__(model, node, **kwargs)
         self._amount = amount
 
-    def setup(self, model):
+    def setup(self):
+        super(StorageLicense, self).setup()
         # Create a state array for the remaining licence volume.
-        self._remaining = np.ones(len(model.scenarios.combinations))*self._amount
+        self._remaining = np.ones(len(self.model.scenarios.combinations))*self._amount
 
     def value(self, timestep, scenario_index):
         return self._remaining[scenario_index.global_id]
 
-    def after(self, timestep):
+    def after(self):
+        timestep = self.model.timestepper.current
         self._remaining -= self._node.flow*timestep.days
         self._remaining[self._remaining < 0] = 0.0
 
@@ -87,7 +90,7 @@ class StorageLicense(License):
 
 class AnnualLicense(StorageLicense):
     """An annual license"""
-    def __init__(self, node, amount):
+    def __init__(self, *args, **kwargs):
         """
         Parameters
         ----------
@@ -95,7 +98,7 @@ class AnnualLicense(StorageLicense):
             The total annual volume for this license
 
         """
-        super(AnnualLicense, self).__init__(node, amount)
+        super(AnnualLicense, self).__init__(*args, **kwargs)
         # Record year ready to reset licence when the year changes.
         self._prev_year = None
 
@@ -109,8 +112,9 @@ class AnnualLicense(StorageLicense):
         else:
             return self._remaining[i] / (days_in_year - day_of_year + 1)
 
-    def before(self, timestep):
+    def before(self):
         # Reset licence if year changes.
+        timestep = self.model.timestepper.current
         if self._prev_year != timestep.datetime.year:
             self.reset()
 
@@ -135,7 +139,7 @@ class AnnualExponentialLicense(AnnualLicense):
     Where :math:`x` is the ratio of actual daily averaged remaining license (as calculated by AnnualLicense) to the
     expected daily averaged remaining licence. I.e. if the license is on track the ratio is 1.0.
     """
-    def __init__(self, node, amount, max_value, k=1.0):
+    def __init__(self, model, node, amount, max_value, k=1.0, **kwargs):
         """
 
         Parameters
@@ -147,7 +151,7 @@ class AnnualExponentialLicense(AnnualLicense):
         k : float
             A scale factor for the exponent of the exponential function
         """
-        super(AnnualExponentialLicense, self).__init__(node, amount)
+        super(AnnualExponentialLicense, self).__init__(model, node, amount, **kwargs)
         self._max_value = max_value
         self._k = k
 
@@ -169,7 +173,7 @@ class AnnualHyperbolaLicense(AnnualLicense):
     Where :math:`x` is the ratio of actual daily averaged remaining license (as calculated by AnnualLicense) to the
     expected daily averaged remaining licence. I.e. if the license is on track the ratio is 1.0.
     """
-    def __init__(self, node, amount, value):
+    def __init__(self, model, node, amount, value, **kwargs):
         """
 
         Parameters
@@ -179,7 +183,7 @@ class AnnualHyperbolaLicense(AnnualLicense):
         value : float
             The value used to scale the hyperbola function
         """
-        super(AnnualHyperbolaLicense, self).__init__(node, amount)
+        super(AnnualHyperbolaLicense, self).__init__(model, node, amount, **kwargs)
         self._value = value
 
     def value(self, timestep, scenario_index):

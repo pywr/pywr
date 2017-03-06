@@ -19,7 +19,7 @@ class KeatingStreamFlowParameter(Parameter):
     Keating, T. (1982), A Lumped Parameter Model of a Chalk Aquifer-Stream System in Hampshire,
       United Kingdom. Ground Water, 20: 430–436. doi:10.1111/j.1745-6584.1982.tb02763.x
     """
-    def __init__(self, storage_node, levels, transmissivity, coefficient=1.0):
+    def __init__(self, model, storage_node, levels, transmissivity, coefficient=1.0, **kwargs):
         """
 
         :param storage_node:
@@ -27,7 +27,7 @@ class KeatingStreamFlowParameter(Parameter):
         :param transmissivity:
         :param coefficient:
         """
-        super(KeatingStreamFlowParameter, self).__init__()
+        super(KeatingStreamFlowParameter, self).__init__(model, **kwargs)
         self.storage_node = storage_node
 
         if len(levels) != len(transmissivity):

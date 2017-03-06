@@ -1,6 +1,5 @@
 import numpy as np
 cimport numpy as np
-from pywr._core cimport Timestep
 import pandas as pd
 from past.builtins import basestring
 
@@ -28,15 +27,12 @@ _agg_func_lookup = {
     "all": AggFuncs.ALL,
 }
 
-cdef class Recorder:
+cdef class Recorder(Component):
     def __init__(self, model, name=None, agg_func="mean", comment=None):
-        self._model = model
         if name is None:
             name = self.__class__.__name__.lower()
-        self.name = name
-        self.comment = comment
+        super(Recorder, self).__init__(model, name=name, comment=comment)
         self.agg_func = agg_func
-        model.recorders.append(self)
 
     property agg_func:
         def __set__(self, agg_func):
@@ -50,35 +46,9 @@ cdef class Recorder:
                 raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
             self._agg_func = agg_func
 
-    property name:
-        def __get__(self):
-            return self._name
-
-        def __set__(self, name):
-            # check for name collision
-            if name in self.model.recorders.keys():
-                raise ValueError('A recorder with the name "{}" already exists.'.format(name))
-            # apply new name
-            self._name = name
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
-
-    cpdef setup(self):
-        pass
-
-    cpdef reset(self):
-        pass
-
-    cpdef int save(self) except -1:
-        return 0
-
-    cpdef finish(self):
-        pass
-
-    property model:
-        def __get__(self, ):
-            return self._model
 
     property is_objective:
         def __get__(self):
@@ -218,10 +188,8 @@ cdef class AggregatedRecorder(Recorder):
     def load(cls, model, data):
         recorder_names = data["recorders"]
         recorders = [model.recorders[name] for name in recorder_names]
-        print(recorders)
         del(data["recorders"])
         rec = cls(model, recorders, **data)
-        print(rec.name)
 
 AggregatedRecorder.register()
 
@@ -268,7 +236,7 @@ cdef class ParameterRecorder(Recorder):
             name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
         super(ParameterRecorder, self).__init__(model, name=name, **kwargs)
         self._param = param
-        param._recorders.append(self)
+        param.parents.add(self)
 
     property parameter:
         def __get__(self):
@@ -305,7 +273,7 @@ cdef class IndexParameterRecorder(Recorder):
             name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
         super(IndexParameterRecorder, self).__init__(model, name=name, **kwargs)
         self._param = param
-        param._recorders.append(self)
+        param.parents.add(self)
 
     property parameter:
         def __get__(self):
@@ -328,16 +296,16 @@ IndexParameterRecorder.register()
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
     cpdef setup(self):
-        cdef int ncomb = len(self._model.scenarios.combinations)
-        cdef int nts = len(self._model.timestepper)
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb))
 
     cpdef reset(self):
         self._data[:, :] = 0.0
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef int i
-        cdef Timestep ts = self._model.timestepper.current
+        cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
             self._data[ts._index,i] = self._node._flow[i]
         return 0
@@ -537,16 +505,16 @@ FlowDurationCurveDeviationRecorder.register()
 
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
     cpdef setup(self):
-        cdef int ncomb = len(self._model.scenarios.combinations)
-        cdef int nts = len(self._model.timestepper)
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb))
 
     cpdef reset(self):
         self._data[:, :] = 0.0
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef int i
-        cdef Timestep ts = self._model.timestepper.current
+        cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
             self._data[ts._index,i] = self._node._volume[i]
         return 0
@@ -571,18 +539,18 @@ NumpyArrayStorageRecorder.register()
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
     cpdef setup(self):
-        cdef int ncomb = len(self._model.scenarios.combinations)
-        cdef int nts = len(self._model.timestepper)
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb))
 
     cpdef reset(self):
         self._data[:, :] = 0.0
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef int i
         cdef ScenarioIndex scenario_index
-        cdef Timestep ts = self._model.timestepper.current
-        for i, scenario_index in enumerate(self._model.scenarios.combinations):
+        cdef Timestep ts = self.model.timestepper.current
+        for i, scenario_index in enumerate(self.model.scenarios.combinations):
             self._data[ts._index,i] = self._node.get_level(ts, scenario_index)
         return 0
 
@@ -594,19 +562,18 @@ NumpyArrayLevelRecorder.register()
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     cpdef setup(self):
-        cdef int ncomb = len(self._model.scenarios.combinations)
-        cdef int nts = len(self._model.timestepper)
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb))
 
     cpdef reset(self):
         self._data[:, :] = 0.0
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef int i
         cdef ScenarioIndex scenario_index
-        cdef Timestep ts = self._model.timestepper.current
-        for i, scenario_index in enumerate(self._model.scenarios.combinations):
-            self._data[ts._index, i] = self._param.value(ts, scenario_index)
+        cdef Timestep ts = self.model.timestepper.current
+        self._data[ts._index, :] = self._param.get_all_values()
         return 0
 
     property data:
@@ -627,19 +594,18 @@ NumpyArrayParameterRecorder.register()
 
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
     cpdef setup(self):
-        cdef int ncomb = len(self._model.scenarios.combinations)
-        cdef int nts = len(self._model.timestepper)
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb), dtype=np.int32)
 
     cpdef reset(self):
         self._data[:, :] = 0
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef int i
         cdef ScenarioIndex scenario_index
-        cdef Timestep ts = self._model.timestepper.current
-        for i, scenario_index in enumerate(self._model.scenarios.combinations):
-            self._data[ts._index, i] = self._param.index(ts, scenario_index)
+        cdef Timestep ts = self.model.timestepper.current
+        self._data[ts._index, :] = self._param.get_all_indices()
         return 0
 
     property data:
@@ -670,8 +636,8 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
             raise ValueError("Aggregation function for {} must be MIN/MAX/SUM/MEAN.".format(self.__class__.__name__))
 
     cpdef setup(self):
-        cdef int ncomb = len(self._model.scenarios.combinations)
-        cdef int nts = len(self._model.timestepper)
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb,), np.float64)
         self._memory = np.empty((nts, ncomb,), np.float64)
         self.position = 0
@@ -680,14 +646,14 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
         self._data[...] = 0
         self.position = 0
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef int i, n
         cdef double[:] value
         cdef ScenarioIndex scenario_index
-        cdef Timestep timestep = self._model.timestepper.current
+        cdef Timestep timestep = self.model.timestepper.current
 
-        for i, scenario_index in enumerate(self._model.scenarios.combinations):
-            self._memory[self.position, i] = self._param.value(timestep, scenario_index)
+        for i, scenario_index in enumerate(self.model.scenarios.combinations):
+            self._memory[self.position, i] = self._param.get_value(scenario_index)
 
         if timestep.index < self.window:
             n = timestep.index + 1
@@ -743,7 +709,7 @@ cdef class MeanFlowRecorder(NodeRecorder):
     """
     def __init__(self, model, node, timesteps=None, days=None, name=None, **kwargs):
         super(MeanFlowRecorder, self).__init__(model, node, name=name, **kwargs)
-        self._model = model
+        self.model = model
         if not timesteps and not days:
             raise ValueError("Either `timesteps` or `days` must be specified.")
         if timesteps:
@@ -759,14 +725,14 @@ cdef class MeanFlowRecorder(NodeRecorder):
     cpdef setup(self):
         super(MeanFlowRecorder, self).setup()
         self.position = 0
-        self._data = np.empty([len(self._model.timestepper), len(self._model.scenarios.combinations)])
+        self._data = np.empty([len(self.model.timestepper), len(self.model.scenarios.combinations)])
         if self.days:
-            self.timesteps = self.days // self._model.timestepper.delta.days
+            self.timesteps = self.days // self.model.timestepper.delta.days
         if self.timesteps == 0:
             raise ValueError("Timesteps property of MeanFlowRecorder is less than 1.")
-        self._memory = np.zeros([len(self._model.scenarios.combinations), self.timesteps])
+        self._memory = np.zeros([len(self.model.scenarios.combinations), self.timesteps])
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef Timestep timestep
         cdef int i, n
         cdef double[:] mean_flow
@@ -774,7 +740,7 @@ cdef class MeanFlowRecorder(NodeRecorder):
         for i in range(0, self._memory.shape[0]):
             self._memory[i, self.position] = self._node._flow[i]
         # calculate the mean flow
-        timestep = self._model.timestepper.current
+        timestep = self.model.timestepper.current
         if timestep.index < self.timesteps:
             n = timestep.index + 1
         else:
@@ -818,7 +784,7 @@ cdef class BaseConstantNodeRecorder(NodeRecorder):
     cpdef reset(self):
         self._values[...] = 0.0
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         raise NotImplementedError()
 
     cpdef double[:] values(self):
@@ -829,7 +795,7 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
     """
     Recorder to total the difference between modelled flow and max_flow for a Node
     """
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -852,7 +818,7 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
         self.factor = kwargs.pop('factor', 1.0)
         super(TotalFlowNodeRecorder, self).__init__(*args, **kwargs)
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef ScenarioIndex scenario_index
         cdef int i
         cdef int days = self.model.timestepper.delta.days
@@ -867,7 +833,7 @@ cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
     """
     Recorder to total the difference between modelled flow and max_flow for a Node
     """
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -895,7 +861,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
     cpdef reset(self):
         self._values[...] = 0.0
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         raise NotImplementedError()
 
     cpdef double[:] values(self):
@@ -907,7 +873,7 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
     cpdef reset(self):
         self._values[...] = np.inf
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef int i
         for i in range(self._values.shape[0]):
             self._values[i] = np.min([self._node._volume[i], self._values[i]])
@@ -923,7 +889,7 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
     cpdef reset(self):
         self._values[...] = 0.0
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef int i
         for i in range(self._values.shape[0]):
             if self._node._volume[i] <= self.threshold:
@@ -947,7 +913,7 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
         self._current_max[...] = 0
         self._current_year = -1
 
-    cpdef int save(self) except -1:
+    cpdef after(self):
         cdef int i, ncomb, value
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -969,7 +935,7 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
 
         for scenario_index in self.model.scenarios.combinations:
             # Get current parameter value
-            value = self._param.index(ts, scenario_index)
+            value = self._param.get_index(scenario_index)
 
             # Update annual max if a new maximum is found
             if value > self._current_max[scenario_index._global_id]:

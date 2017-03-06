@@ -50,7 +50,7 @@ def test_scenario(simple_linear_model, ):
     model = simple_linear_model  # Convenience renaming
 
     scenario = Scenario(model, 'Inflow', size=2)
-    model.nodes["Input"].max_flow = ConstantScenarioParameter(scenario, [5.0, 10.0])
+    model.nodes["Input"].max_flow = ConstantScenarioParameter(model, scenario, [5.0, 10.0])
 
     model.nodes["Output"].max_flow = 5.0
     model.nodes["Output"].cost = -2.0
@@ -69,10 +69,10 @@ def test_two_scenarios(simple_linear_model, ):
     model = simple_linear_model  # Convenience renaming
 
     scenario_input = Scenario(model, 'Inflow', size=2)
-    model.nodes["Input"].max_flow = ConstantScenarioParameter(scenario_input, [5.0, 10.0])
+    model.nodes["Input"].max_flow = ConstantScenarioParameter(model, scenario_input, [5.0, 10.0])
 
     scenario_outflow = Scenario(model, 'Outflow', size=2, ensemble_names=['High', 'Low'])
-    model.nodes["Output"].max_flow = ConstantScenarioParameter(scenario_outflow, [3.0, 8.0])
+    model.nodes["Output"].max_flow = ConstantScenarioParameter(model, scenario_outflow, [3.0, 8.0])
     model.nodes["Output"].cost = -2.0
 
     # Check ensemble names are provided in the multi-index
@@ -109,9 +109,9 @@ def test_scenario_two_parameter(simple_linear_model, ):
     model = simple_linear_model  # Convenience renaming
 
     scenario_input = Scenario(model, 'Inflow', size=2)
-    model.nodes["Input"].max_flow = ConstantScenarioParameter(scenario_input, [5.0, 10.0])
+    model.nodes["Input"].max_flow = ConstantScenarioParameter(model, scenario_input, [5.0, 10.0])
 
-    model.nodes["Output"].max_flow = ConstantScenarioParameter(scenario_input, [8.0, 3.0])
+    model.nodes["Output"].max_flow = ConstantScenarioParameter(model, scenario_input, [8.0, 3.0])
     model.nodes["Output"].cost = -2.0
 
     expected_node_results = {
@@ -137,7 +137,7 @@ def test_scenario_storage(solver):
     o = Output(model, 'output', max_flow=999)
 
     scenario_input = Scenario(model, 'Inflow', size=2)
-    i.min_flow = ConstantScenarioParameter(scenario_input, [5.0, 10.0])
+    i.min_flow = ConstantScenarioParameter(model, scenario_input, [5.0, 10.0])
 
     i.connect(s)
     s.connect(o)

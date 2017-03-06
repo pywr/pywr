@@ -42,7 +42,7 @@ def test_aggregated_storage_scenarios(three_storage_model):
     agg_stg = m.nodes['Total Storage']
     stgs = [m.nodes['Storage {}'.format(num)] for num in range(3)]
     # Setup scenario
-    inpt1 = m.nodes['Input 1'].max_flow = ConstantScenarioParameter(sc, range(sc.size))
+    inpt1 = m.nodes['Input 1'].max_flow = ConstantScenarioParameter(m, sc, range(sc.size))
 
     m.setup()
     m.step()
@@ -106,7 +106,7 @@ def test_aggregated_storage_control_curve(three_storage_model):
     # limit the flow of the new node using a control curve on the aggregate storage
     curves = [0.5] # 50%
     values = [0, 5]
-    inpt.max_flow = ControlCurveParameter(model.nodes["Total Storage"], curves, values)
+    inpt.max_flow = ControlCurveParameter(model, model.nodes["Total Storage"], curves, values)
 
     # initial storage is > 50% so flow == 0
     model.step()
@@ -153,7 +153,7 @@ def test_aggregated_node_scenarios(three_storage_model):
     agg_otpt = m.nodes['Total Output']
     otpts = [m.nodes['Output {}'.format(num)] for num in range(3)]
     # Setup scenario
-    inpt1 = m.nodes['Input 1'].max_flow = ConstantScenarioParameter(sc, range(sc.size))
+    inpt1 = m.nodes['Input 1'].max_flow = ConstantScenarioParameter(m, sc, range(sc.size))
 
     m.setup()
     m.step()

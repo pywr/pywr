@@ -1,36 +1,31 @@
 from pywr.recorders._recorders cimport Recorder
-
-# Forward declations
-cdef class Parameter
-cdef class ArrayIndexedParameter
-cdef class ConstantScenarioParameter
-cdef class ArrayIndexedScenarioMonthlyFactorsParameter
-
+from pywr._component cimport Component
 from .._core cimport Timestep, Scenario, ScenarioIndex, AbstractNode
 
-cdef class Parameter:
+cdef class Parameter(Component):
     cdef int _size
     cdef bint _is_variable
     cdef AbstractNode _node
-    cdef readonly object parents
-    cdef readonly object children
-    cpdef setup(self, model)
-    cpdef reset(self)
-    cpdef before(self, Timestep ts)
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1
-    cpdef after(self, Timestep ts)
-    cpdef finish(self)
+    cdef double[:] __values
+    cpdef calc_values(self, Timestep ts)
+    cpdef double get_value(self, ScenarioIndex scenario_index)
+    cpdef double[:] get_all_values(self)
     cpdef update(self, double[:] values)
     cpdef double[:] lower_bounds(self)
     cpdef double[:] upper_bounds(self)
-    cdef public basestring name
-    cdef public basestring comment
-    cdef list _recorders
+
 
 cdef class ConstantParameter(Parameter):
     cdef double _value
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
+
+cdef class DataFrameParameter(Parameter):
+    cdef double[:,:] _values
+    cdef public Scenario scenario
+    cdef int _scenario_index
+    cdef public object dataframe
 
 cdef class ArrayIndexedParameter(Parameter):
     cdef double[:] values
@@ -69,6 +64,9 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
 
 cdef class IndexParameter(Parameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
+    cdef int[:] __indices
+    cpdef int get_index(self, ScenarioIndex scenario_index)
+    cpdef int[:] get_all_indices(self)
 
 cdef class TablesArrayParameter(IndexParameter):
     cdef double[:, :] _values_dbl
@@ -78,7 +76,6 @@ cdef class TablesArrayParameter(IndexParameter):
     cdef public object h5store
     cdef public object node
     cdef public object where
-    cdef public object model
 
     cdef int _scenario_index
 
@@ -101,7 +98,6 @@ cdef class CachedParameter(IndexParameter):
     cdef ScenarioIndex scenario_index
     cdef double cached_value
     cdef int cached_index
-    cpdef reset(self)
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
@@ -113,8 +109,6 @@ cdef class AggregatedParameterBase(IndexParameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
     cpdef add(self, Parameter parameter)
     cpdef remove(self, Parameter parameter)
-    cpdef after(self, Timestep timestep)
-    cpdef reset(self)
 
 cdef class AggregatedParameter(AggregatedParameterBase):
     pass

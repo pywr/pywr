@@ -1,19 +1,26 @@
-from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep
+from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep, Output
 from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter, MonthlyProfileControlCurveParameter
-from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder
+from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, assert_rec
 import numpy as np
 import pandas as pd
 from numpy.testing import assert_allclose
 import pytest
 import datetime
 import os
-
+from fixtures import simple_linear_model, simple_storage_model
 from helpers import load_model
 
 @pytest.fixture
-def model(solver):
-    return Model(solver=solver)
+def model(simple_storage_model):
+    """ Modified simple_storage_model to be steady-state. """
+    i = simple_storage_model.nodes['Input']
+    i.max_flow = 0
+    o = simple_storage_model.nodes['Output']
+    o.max_flow = 0
+    s = simple_storage_model.nodes['Storage']
+    s.max_volume = 100.0
+    return simple_storage_model
 
 
 class TestPiecewiseControlCurveParameter:
@@ -22,47 +29,44 @@ class TestPiecewiseControlCurveParameter:
     @staticmethod
     def _assert_results(m, s):
         """ Correct results for the following tests """
-        m.scenarios.setup()
-        s.setup(m)  # Init memory view on storage (bypasses usual `Model.setup`)
 
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        s.initial_volume = 90.0
-        m.reset()
-        ts = next(m.timestepper)
-        assert_allclose(s.get_cost(m.timestepper.current, si), 1.0)
+        @assert_rec(m, s.cost)
+        def expected_func(timestep, scenario_index):
+            v = s.initial_volume
+            if v >= 80.0:
+                expected = 1.0
+            elif v >= 60:
+                expected = 0.7
+            else:
+                expected = 0.4
+            return expected
 
-        s.initial_volume = 70.0
-        m.reset()
-        ts = next(m.timestepper)
-        assert_allclose(s.get_cost(m.timestepper.current, si), 0.7)
+        for initial_volume in (90, 70, 30):
+            s.initial_volume = initial_volume
+            m.run()
 
-        s.initial_volume = 40.0
-        m.reset()
-        ts = next(m.timestepper)
-        assert_allclose(s.get_cost(m.timestepper.current, si), 0.4)
 
     def test_with_values(self, model):
         """Test with `values` keyword argument"""
         m = model
-        s = Storage(m, 'Storage', max_volume=100.0)
+        s = m.nodes['Storage']
 
         # Return 10.0 when above 0.0 when below
-        s.cost = ControlCurveParameter(s, [0.8, 0.6], [1.0, 0.7, 0.4])
+        s.cost = ControlCurveParameter(m, s, [0.8, 0.6], [1.0, 0.7, 0.4])
         self._assert_results(m, s)
 
     def test_with_parameters(self, model):
         """ Test with `parameters` keyword argument. """
         m = model
-
-        s = Storage(m, 'Storage', max_volume=100.0)
+        s = m.nodes['Storage']
 
         # Two different control curves
-        cc = [ConstantParameter(0.8), ConstantParameter(0.6)]
+        cc = [ConstantParameter(model, 0.8), ConstantParameter(model, 0.6)]
         # Three different parameters to return
         params = [
-            ConstantParameter(1.0), ConstantParameter(0.7), ConstantParameter(0.4)
+            ConstantParameter(model, 1.0), ConstantParameter(model, 0.7), ConstantParameter(model, 0.4)
         ]
-        s.cost = ControlCurveParameter(s, cc, parameters=params)
+        s.cost = ControlCurveParameter(model, s, cc, parameters=params)
 
         self._assert_results(m, s)
 
@@ -70,7 +74,7 @@ class TestPiecewiseControlCurveParameter:
         """ Test load of float lists. """
 
         m = model
-        s = Storage(m, 'Storage', max_volume=100.0)
+        s = m.nodes['Storage']
 
         data = {
             "type": "controlcurve",
@@ -87,7 +91,7 @@ class TestPiecewiseControlCurveParameter:
         """ Test load of parameter lists for 'control_curves' and 'parameters' keys. """
 
         m = model
-        s = Storage(m, 'Storage', max_volume=100.0)
+        s = m.nodes['Storage']
 
         data = {
             "type": "controlcurve",
@@ -128,8 +132,7 @@ class TestPiecewiseControlCurveParameter:
         This is different to the above test by using singular 'control_curve' key in the dict
         """
         m = model
-        m.scenarios.setup()
-        s = Storage(m, 'Storage', max_volume=100.0)
+        s = m.nodes['Storage']
 
         data = {
             "type": "controlcurve",
@@ -140,43 +143,47 @@ class TestPiecewiseControlCurveParameter:
         s.cost = p = load_parameter(model, data)
         assert isinstance(p, ControlCurveParameter)
 
-        s.setup(m)  # Init memory view on storage (bypasses usual `Model.setup`)
+        @assert_rec(m, p)
+        def expected_func(timestep, scenario_index):
+            v = s.initial_volume
+            if v >= 80.0:
+                expected = 0
+            else:
+                expected = 1
+            return expected
 
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        s.initial_volume = 90.0
-        m.reset()
-        assert_allclose(s.get_cost(m.timestepper.current, si), 0)
-
-        s.initial_volume = 70.0
-        m.reset()
-        assert_allclose(s.get_cost(m.timestepper.current, si), 1)
+        for initial_volume in (90, 70):
+            s.initial_volume = initial_volume
+            m.run()
 
     def test_with_nonstorage(self, model):
         """ Test usage on non-`Storage` node. """
         # Now test if the parameter is used on a non storage node
         m = model
-        m.scenarios.setup()
-        s = Storage(m, 'Storage', max_volume=100.0)
+        s = m.nodes['Storage']
 
         l = Link(m, 'Link')
-        cc = ConstantParameter(0.8)
-        l.cost = ControlCurveParameter(s, cc, [10.0, 0.0])
+        cc = ConstantParameter(model, 0.8)
+        l.cost = ControlCurveParameter(model, s, cc, [10.0, 0.0])
 
-        s.setup(m)  # Init memory view on storage (bypasses usual `Model.setup`)
-        print(s.volume)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        assert_allclose(l.get_cost(m.timestepper.current, si), 0.0)
-        # When storage volume changes, the cost of the link changes.
-        s.initial_volume = 90.0
-        m.reset()
-        print(s.volume)
-        assert_allclose(l.get_cost(m.timestepper.current, si), 10.0)
+        @assert_rec(m, l.cost)
+        def expected_func(timestep, scenario_index):
+            v = s.initial_volume
+            if v >= 80.0:
+                expected = 10.0
+            else:
+                expected = 0.0
+            return expected
+
+        for initial_volume in (90, 70):
+            s.initial_volume = initial_volume
+            m.run()
+
 
     def test_with_nonstorage_load(self, model):
         """ Test load from dict with 'storage_node' key. """
         m = model
-        m.scenarios.setup()
-        s = Storage(m, 'Storage', max_volume=100.0)
+        s = m.nodes['Storage']
         l = Link(m, 'Link')
 
         data = {
@@ -189,44 +196,49 @@ class TestPiecewiseControlCurveParameter:
         l.cost = p = load_parameter(model, data)
         assert isinstance(p, ControlCurveParameter)
 
-        s.setup(m)  # Init memory view on storage (bypasses usual `Model.setup`)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        print(s.volume)
-        assert_allclose(l.get_cost(m.timestepper.current, si), 0.0)
-        # When storage volume changes, the cost of the link changes.
-        s.initial_volume = 90.0
-        m.reset()
-        assert_allclose(l.get_cost(m.timestepper.current, si), 10.0)
+        @assert_rec(m, l.cost)
+        def expected_func(timestep, scenario_index):
+            v = s.initial_volume
+            if v >= 80.0:
+                expected = 10.0
+            else:
+                expected = 0.0
+            return expected
+
+        for initial_volume in (90, 70):
+            s.initial_volume = initial_volume
+            m.run()
 
 
 def test_control_curve_interpolated(model):
     m = model
-    m.scenarios.setup()
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+    m.timestepper.delta = 200
 
-    s = Storage(m, 'Storage', max_volume=100.0)
+    s = m.nodes['Storage']
+    o = m.nodes['Output']
+    s.connect(o)
 
-    cc = ConstantParameter(0.8)
+    cc = ConstantParameter(model, 0.8)
     values = [20.0, 5.0, 0.0]
-    s.cost = ControlCurveInterpolatedParameter(s, cc, values)
-    s.setup(m)
+    s.cost = p = ControlCurveInterpolatedParameter(model, s, cc, values)
 
-    for v in (0.0, 10.0, 50.0, 80.0, 90.0, 100.0):
-        s.initial_volume = v
-        s.reset()
-        assert_allclose(s.get_cost(m.timestepper.current, si), np.interp(v/100.0, [0.0, 0.8, 1.0], values[::-1]))
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        v = s.initial_volume
+        c = cc.value(timestep, scenario_index)
+        if c == 1.0 and v == 100.0:
+            expected = values[1]
+        elif c == 0.0 and v == 0.0:
+            expected = values[1]
+        else:
+            expected = np.interp(v/100.0, [0.0, c, 1.0], values[::-1])
+        return expected
 
-    # special case when control curve is 100%
-    cc.update(np.array([1.0,]))
-    s.initial_volume == 100.0
-    s.reset()
-    assert_allclose(s.get_cost(m.timestepper.current, si), values[1])
-
-    # special case when control curve is 0%
-    cc.update(np.array([0.0,]))
-    s.initial_volume == 0.0
-    s.reset()
-    assert_allclose(s.get_cost(m.timestepper.current, si), values[0])
+    for control_curve in (0.0, 0.8, 1.0):
+        cc.update(np.array([control_curve,]))
+        for initial_volume in (0.0, 10.0, 50.0, 80.0, 90.0, 100.0):
+            s.initial_volume = initial_volume
+            model.run()
 
 
 def test_control_curve_interpolated_json(solver):
@@ -235,59 +247,47 @@ def test_control_curve_interpolated_json(solver):
     model = load_model("reservoir_with_cc.json", solver=solver)
     reservoir1 = model.nodes["reservoir1"]
     model.setup()
-    ts = next(model.timestepper)
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
     path = os.path.join(os.path.dirname(__file__), "models", "control_curve.csv")
     control_curve = pd.read_csv(path)["Control Curve"].values
-    max_volume = reservoir1.max_volume
     values = [-8, -6, -4]
-    for n in range(0, 10):
+
+    @assert_rec(model, reservoir1.cost)
+    def expected_cost(timestep, si):
         # calculate expected cost manually and compare to parameter output
-        volume = reservoir1._volume[si.global_id]
         volume_factor = reservoir1._current_pc[si.global_id]
-        cc = control_curve[model.timestepper.current.index]
-        expected_cost = np.interp(volume_factor, [0.0, cc, 1.0], values[::-1])
-        cost = reservoir1.get_cost(model.timestepper.current, si)
-        assert_allclose(expected_cost, cost)
-        model.step()
+        cc = control_curve[timestep.index]
+        return np.interp(volume_factor, [0.0, cc, 1.0], values[::-1])
+    model.run()
 
 
 class TestMonthlyProfileControlCurveParameter:
     """ Test `MonthlyProfileControlCurveParameter` """
     def _assert_results(self, model, s, p, scale=1.0):
         # Test correct aggregation is performed
+        s = model.nodes['Storage']
 
-        s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            v = s.initial_volume
+            mth = timestep.month
+            if v >= 80.0:
+                expected = 1.0
+            elif v >= 60:
+                expected = 0.7*(mth - 1)
+            else:
+                expected = 0.3
 
-        s.initial_volume = 90.0
-        model.reset()  # Set initial volume on storage
-        ts = next(model.timestepper)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        for mth in range(1, 13):
-            ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-            np.testing.assert_allclose(p.value(ts, si), 1.0*scale)
+            return expected*scale
 
-        s.initial_volume = 70.0
-        model.reset()  # Set initial volume on storage
-        ts = next(model.timestepper)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        for mth in range(1, 13):
-            ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-            np.testing.assert_allclose(p.value(ts, si), 0.7 * (mth - 1)*scale)
+        for initial_volume in (90, 70, 30):
+            s.initial_volume = initial_volume
+            model.run()
 
-        s.initial_volume = 30.0
-        model.reset()  # Set initial volume on storage
-        ts = next(model.timestepper)
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        for mth in range(1, 13):
-            ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-            np.testing.assert_allclose(p.value(ts, si), 0.3*scale)
-
-    def test_no_scale_no_profile(self, model):
+    def test_no_scale_no_profile(self, simple_linear_model):
         """ No scale or profile specified """
-
+        model = simple_linear_model
         s = Storage(model, 'Storage', max_volume=100.0)
-        l = Link(model, 'Link')
+        l = Link(model, 'Link2')
 
         data = {
             'type': 'monthlyprofilecontrolcurve',
@@ -297,15 +297,13 @@ class TestMonthlyProfileControlCurveParameter:
         }
 
         l.max_flow = p = load_parameter(model, data)
-        p.setup(model)
-        model.scenarios.setup()
         self._assert_results(model, s, p)
 
-    def test_scale_no_profile(self, model):
+    def test_scale_no_profile(self, simple_linear_model):
         """ Test `MonthlyProfileControlCurveParameter` """
-
+        model = simple_linear_model
         s = Storage(model, 'Storage', max_volume=100.0)
-        l = Link(model, 'Link')
+        l = Link(model, 'Link2')
 
         data = {
             'type': 'monthlyprofilecontrolcurve',
@@ -316,15 +314,14 @@ class TestMonthlyProfileControlCurveParameter:
         }
 
         l.max_flow = p = load_parameter(model, data)
-        p.setup(model)
-        model.scenarios.setup()
+        model.setup()
         self._assert_results(model, s, p, scale=1.5)
 
-    def test_no_scale_profile_param(self, model):
+    def test_no_scale_profile_param(self, simple_linear_model):
         """ No scale, but profile `Parameter` specified """
-
+        model = simple_linear_model
         s = Storage(model, 'Storage', max_volume=100.0)
-        l = Link(model, 'Link')
+        l = Link(model, 'Link2')
 
         data = {
             'type': 'monthlyprofilecontrolcurve',
@@ -338,15 +335,14 @@ class TestMonthlyProfileControlCurveParameter:
         }
 
         l.max_flow = p = load_parameter(model, data)
-        p.setup(model)
-        model.scenarios.setup()
+        model.setup()
         self._assert_results(model, s, p, scale=1.5)
 
-    def test_no_scale_profile(self, model):
+    def test_no_scale_profile(self, simple_linear_model):
         """ No scale, but profile array specified """
-
+        model = simple_linear_model
         s = Storage(model, 'Storage', max_volume=100.0)
-        l = Link(model, 'Link')
+        l = Link(model, 'Link2')
 
         data = {
             'type': 'monthlyprofilecontrolcurve',
@@ -357,8 +353,7 @@ class TestMonthlyProfileControlCurveParameter:
         }
 
         l.max_flow = p = load_parameter(model, data)
-        p.setup(model)
-        model.scenarios.setup()
+        model.setup()
         self._assert_results(model, s, p, scale=1.5)
 
     def test_json_load(self, solver):
@@ -393,11 +388,11 @@ class TestMonthlyProfileControlCurveParameter:
 
 
 
-def test_daily_profile_control_curve(model):
+def test_daily_profile_control_curve(simple_linear_model):
     """ Test `DailyProfileControlCurveParameter` """
-
+    model = simple_linear_model
     s = Storage(model, 'Storage', max_volume=100.0)
-    l = Link(model, 'Link')
+    l = Link(model, 'Link2')
 
     data = {
         'type': 'dailyprofilecontrolcurve',
@@ -407,33 +402,25 @@ def test_daily_profile_control_curve(model):
     }
 
     l.max_flow = p = load_parameter(model, data)
-    p.setup(model)
+    model.setup()
 
-    # Test correct aggregation is performed
-    model.scenarios.setup()
-    s.setup(model)  # Init memory view on storage (bypasses usual `Model.setup`)
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        v = s.initial_volume
+        doy = timestep.dayofyear
+        if v >= 80.0:
+            expected = 1.0
+        elif v >= 60:
+            expected = 0.7 * (doy - 1)
+        else:
+            expected = 0.3
 
-    s.initial_volume = 90.0
-    model.reset()  # Set initial volume on storage
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    for mth in range(1, 13):
-        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-        np.testing.assert_allclose(p.value(ts, si), 1.0)
+        return expected
 
-    s.initial_volume = 70.0
-    model.reset()  # Set initial volume on storage
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    for mth in range(1, 13):
-        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-        doy = ts.datetime.dayofyear
-        np.testing.assert_allclose(p.value(ts, si), 0.7*(doy - 1))
+    for initial_volume in (90, 70, 30):
+        s.initial_volume = initial_volume
+        model.run()
 
-    s.initial_volume = 30.0
-    model.reset()  # Set initial volume on storage
-    si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-    for mth in range(1, 13):
-        ts = Timestep(datetime.datetime(2016, mth, 1), 366, 1.0)
-        np.testing.assert_allclose(p.value(ts, si), 0.3)
 
 def test_demand_saving_with_indexed_array(solver):
     """Test demand saving based on reservoir control curves
