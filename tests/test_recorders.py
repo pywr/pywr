@@ -17,7 +17,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
     RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
-    EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder,
+    EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter
@@ -792,7 +792,7 @@ def cyclical_storage_model(simple_storage_model):
     """ Extends simple_storage_model to have a cyclical boundary condition """
     from pywr.parameters import AnnualHarmonicSeriesParameter, ConstantScenarioParameter
     m = simple_storage_model
-    s = Scenario(m, name='Scenario A', size=2)
+    s = Scenario(m, name='Scenario A', size=3)
 
     m.timestepper.end = '2017-12-31'
     m.timestepper.delta = 5
@@ -801,7 +801,7 @@ def cyclical_storage_model(simple_storage_model):
     inpt.max_flow = AnnualHarmonicSeriesParameter(m, 5, [0.1, 0.0, 0.25], [0.0, 0.0, 0.0])
 
     otpt = m.nodes['Output']
-    otpt.max_flow = ConstantScenarioParameter(m, s, [5, 6])
+    otpt.max_flow = ConstantScenarioParameter(m, s, [5, 6, 2])
 
     return m
 
@@ -811,7 +811,7 @@ def cyclical_linear_model(simple_linear_model):
     """ Extends simple_storage_model to have a cyclical boundary condition """
     from pywr.parameters import AnnualHarmonicSeriesParameter, ConstantScenarioParameter
     m = simple_linear_model
-    s = Scenario(m, name='Scenario A', size=2)
+    s = Scenario(m, name='Scenario A', size=3)
 
     m.timestepper.end = '2017-12-31'
     m.timestepper.delta = 5
@@ -820,7 +820,7 @@ def cyclical_linear_model(simple_linear_model):
     inpt.max_flow = AnnualHarmonicSeriesParameter(m, 5, [1.0, 0.0, 0.5], [0.0, 0.0, 0.0])
 
     otpt = m.nodes['Output']
-    otpt.max_flow = ConstantScenarioParameter(m, s, [5, 6])
+    otpt.max_flow = ConstantScenarioParameter(m, s, [5, 6, 2])
     otpt.cost = -10.0
 
     return m
@@ -838,6 +838,7 @@ class TestEventRecorder:
         # Create the trigger using a threhsold parameter
         trigger = StorageThresholdRecorder(m, strg, 4.0, predicate='<=')
         evt_rec = EventRecorder(m, trigger)
+        evt_dur = EventDurationRecorder(m, evt_rec, recorder_agg_func='sum', agg_func='max')
 
         m.run()
 
@@ -855,6 +856,14 @@ class TestEventRecorder:
 
         # Test that the volumes in the Storage node during the event periods match
         assert_equal(triggered, arry.data <= 4)
+
+        df = evt_rec.to_dataframe()
+
+        assert len(df) == len(evt_rec.events)
+
+        expected_durations = np.sum(arry.data <= 4, axis=0)*m.timestepper.delta.days
+        assert_allclose(evt_dur.values(), expected_durations)
+        assert_allclose(evt_dur.aggregated_value(), np.max(expected_durations))
 
     def test_event_capture_with_node(self, cyclical_linear_model):
         """ Test Node flow events using a NodeThresholdRecorder """
