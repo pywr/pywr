@@ -446,3 +446,14 @@ def test_json_invalid_include(solver):
     with pytest.raises(ValueError) as excinfo:
         model = Model.load(filename, solver=solver)
     assert("invalid.json" in str(excinfo.value))
+
+
+def test_variable_load(solver):
+    """Current timestep before model has started is undefined"""
+    filename = os.path.join(TEST_FOLDER, "models", "demand_saving2_with_variables.json")
+    model = Model.load(filename, solver=solver)
+
+    assert len(model.variables) == 3
+    assert len(model.objectives) == 1
+    assert len(model.constraints) == 1
+

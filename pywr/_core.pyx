@@ -496,19 +496,6 @@ cdef class Node(AbstractNode):
             else:
                 self._conversion_factor = value
 
-    property variables:
-        """ Returns a list of any set Parameters with is_variable == True
-        """
-        def __get__(self):
-            variables = []
-            if self._cost_param is not None:
-                variables.extend(self._cost_param.variables)
-            if self._min_flow_param is not None:
-                variables.extend(self._min_flow_param.variables)
-            if self._max_flow_param is not None:
-                variables.extend(self._max_flow_param.variables)
-            return variables
-
     cpdef double get_conversion_factor(self) except? -1:
         """Get the conversion factor
 
@@ -772,19 +759,6 @@ cdef class Storage(AbstractStorage):
 
         def __set__(self, value):
             self._domain = value
-
-    property variables:
-        """ Returns a list of any set Parameters with is_variable == True
-        """
-        def __get__(self):
-            variables = []
-            if self._cost_param is not None:
-                variables.extend(self._cost_param.variables)
-            if self._min_volume_param is not None:
-                variables.extend(self._min_volume_param.variables)
-            if self._max_volume_param is not None:
-                variables.extend(self._max_volume_param.variables)
-            return variables
 
     cpdef reset(self):
         """Called at the beginning of a run"""
