@@ -7,11 +7,12 @@ from ._parameters import (
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter,
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
-    IndexParameter, CachedParameter, RecorderThresholdParameter,
     AggregatedParameter, AggregatedIndexParameter,
     align_and_resample_dataframe, DataFrameParameter,
+    IndexParameter, AggregatedParameter, AggregatedIndexParameter,
     load_parameter, load_parameter_values, load_dataframe)
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
+from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
 from past.builtins import basestring
 import numpy as np
 import pandas

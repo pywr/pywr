@@ -70,18 +70,31 @@ extensions = [
     Extension('pywr._component', ['pywr/_component.pyx'],
               include_dirs=[np.get_include()],
               define_macros=define_macros),
+
+    # Parameters sub-package
+
     Extension('pywr.parameters._parameters', ['pywr/parameters/_parameters.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr.recorders._recorders', ['pywr/recorders/_recorders.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr.parameters._control_curves', ['pywr/parameters/_control_curves.pyx'],
               include_dirs=[np.get_include()],
               define_macros=define_macros),
     Extension('pywr.parameters._polynomial', ['pywr/parameters/_polynomial.pyx'],
               include_dirs=[np.get_include()],
               define_macros=define_macros),
+    Extension('pywr.parameters._thresholds', ['pywr/parameters/_thresholds.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
+    Extension('pywr.parameters._control_curves', ['pywr/parameters/_control_curves.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
+
+    # Other modules
+    Extension('pywr.recorders._recorders', ['pywr/recorders/_recorders.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
+    Extension('pywr.recorders._thresholds', ['pywr/recorders/_thresholds.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
+
+
 ]
 
 extensions_optional = []

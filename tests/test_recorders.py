@@ -9,7 +9,7 @@ from pywr.core import Model, Input, Output, Scenario, AggregatedNode
 import numpy as np
 import pandas
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
@@ -17,6 +17,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
     RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
+    EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter
@@ -784,3 +785,110 @@ class TestCalibrationRecorders:
         assert(values.shape[0] == len(model.scenarios.combinations))
         assert(values.ndim == 1)
         assert_allclose(metric, values)
+
+
+@pytest.fixture
+def cyclical_storage_model(simple_storage_model):
+    """ Extends simple_storage_model to have a cyclical boundary condition """
+    from pywr.parameters import AnnualHarmonicSeriesParameter, ConstantScenarioParameter
+    m = simple_storage_model
+    s = Scenario(m, name='Scenario A', size=3)
+
+    m.timestepper.end = '2017-12-31'
+    m.timestepper.delta = 5
+
+    inpt = m.nodes['Input']
+    inpt.max_flow = AnnualHarmonicSeriesParameter(m, 5, [0.1, 0.0, 0.25], [0.0, 0.0, 0.0])
+
+    otpt = m.nodes['Output']
+    otpt.max_flow = ConstantScenarioParameter(m, s, [5, 6, 2])
+
+    return m
+
+
+@pytest.fixture
+def cyclical_linear_model(simple_linear_model):
+    """ Extends simple_storage_model to have a cyclical boundary condition """
+    from pywr.parameters import AnnualHarmonicSeriesParameter, ConstantScenarioParameter
+    m = simple_linear_model
+    s = Scenario(m, name='Scenario A', size=3)
+
+    m.timestepper.end = '2017-12-31'
+    m.timestepper.delta = 5
+
+    inpt = m.nodes['Input']
+    inpt.max_flow = AnnualHarmonicSeriesParameter(m, 5, [1.0, 0.0, 0.5], [0.0, 0.0, 0.0])
+
+    otpt = m.nodes['Output']
+    otpt.max_flow = ConstantScenarioParameter(m, s, [5, 6, 2])
+    otpt.cost = -10.0
+
+    return m
+
+
+class TestEventRecorder:
+    """ Tests for EventRecorder """
+    def test_event_capture_with_storage(self, cyclical_storage_model):
+        """ Test Storage events using a StorageThresholdRecorder """
+        m = cyclical_storage_model
+
+        strg = m.nodes['Storage']
+        arry = NumpyArrayStorageRecorder(m, strg)
+
+        # Create the trigger using a threhsold parameter
+        trigger = StorageThresholdRecorder(m, strg, 4.0, predicate='<=')
+        evt_rec = EventRecorder(m, trigger)
+        evt_dur = EventDurationRecorder(m, evt_rec, recorder_agg_func='sum', agg_func='max')
+
+        m.run()
+
+        # Ensure there is at least one event
+        assert evt_rec.events
+
+        # Build a timeseries of when the events say an event is active
+        triggered = np.zeros_like(arry.data, dtype=np.int)
+        for evt in evt_rec.events:
+            triggered[evt.start.index:evt.end.index, evt.scenario_index.global_id] = 1
+
+            # Check the duration
+            td = evt.start.datetime - evt.end.datetime
+            assert evt.duration == td.days
+
+        # Test that the volumes in the Storage node during the event periods match
+        assert_equal(triggered, arry.data <= 4)
+
+        df = evt_rec.to_dataframe()
+
+        assert len(df) == len(evt_rec.events)
+
+        expected_durations = np.sum(arry.data <= 4, axis=0)*m.timestepper.delta.days
+        assert_allclose(evt_dur.values(), expected_durations)
+        assert_allclose(evt_dur.aggregated_value(), np.max(expected_durations))
+
+    def test_event_capture_with_node(self, cyclical_linear_model):
+        """ Test Node flow events using a NodeThresholdRecorder """
+        m = cyclical_linear_model
+
+        otpt = m.nodes['Output']
+        arry = NumpyArrayNodeRecorder(m, otpt)
+
+        # Create the trigger using a threhsold parameter
+        trigger = NodeThresholdRecorder(m, otpt, 4.0, predicate='>')
+        evt_rec = EventRecorder(m, trigger)
+
+        m.run()
+
+        # Ensure there is at least one event
+        assert evt_rec.events
+
+        # Build a timeseries of when the events say an event is active
+        triggered = np.zeros_like(arry.data, dtype=np.int)
+        for evt in evt_rec.events:
+            triggered[evt.start.index:evt.end.index, evt.scenario_index.global_id] = 1
+
+            # Check the duration
+            td = evt.start.datetime - evt.end.datetime
+            assert evt.duration == td.days
+
+        # Test that the volumes in the Storage node during the event periods match
+        assert_equal(triggered, arry.data > 4)
