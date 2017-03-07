@@ -151,7 +151,7 @@ class EventDurationRecorder(Recorder):
         self.event_recorder.parents.add(self)
 
     def setup(self):
-        self._values = np.zeros(len(self.model.scenarios.combinations))
+        self._values = np.empty(len(self.model.scenarios.combinations))
 
     def reset(self):
         self._values[...] = 0.0

@@ -18,4 +18,5 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     cdef public Parameter param
 
 cdef class RecorderThresholdParameter(AbstractThresholdParameter):
-    cdef Recorder recorder
+    cdef public Recorder recorder
+    cdef public initial_value

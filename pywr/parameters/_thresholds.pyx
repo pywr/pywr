@@ -171,10 +171,11 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
 
     """
 
-    def __init__(self,  model, Recorder recorder, *args, **kwargs):
+    def __init__(self,  model, Recorder recorder, *args, initial_value=1, **kwargs):
         super(RecorderThresholdParameter, self).__init__(model, *args, **kwargs)
         self.recorder = recorder
         self.recorder.parents.add(self)
+        self.initial_value = initial_value
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         # TODO Make this a more general API on Recorder
@@ -187,7 +188,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
         if index == 0:
             # on the first day the recorder doesn't have a value so we have no
             # threshold to compare to
-            ind = 1
+            ind = self.initial_value
         else:
             ind = super(RecorderThresholdParameter, self).index(timestep, scenario_index)
         return ind
