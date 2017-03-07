@@ -615,10 +615,6 @@ def test_run(solver):
     result = model.run()
     assert(result.timestep.index == 364)
 
-    # try to run finished model
-    timestep = model.run(reset=False)
-    assert(timestep is None)
-
     # reset model and run again
     result = model.run()
     assert(result.timestep.index == 364)
@@ -627,29 +623,6 @@ def test_run(solver):
     model.reset(start=pandas.to_datetime('2015-12-01'))
     result = model.run()
     assert(result.timestep.index == 364)
-
-
-@pytest.mark.xfail
-def test_run_until_failure(solver):
-    model = load_model('simple1.xml', solver=solver)
-
-    # run until failure
-    model.timestamp = pandas.to_datetime('2015-12-01')
-    demand1 = model.nodes['demand1']
-    def demand_func(node, timestamp):
-        return timestamp.datetime.day
-    demand1.min_flow = pywr.parameters.ParameterFunction(demand1, demand_func)
-    timesteps = model.run(until_failure=True)
-    assert(model.failure)
-    assert(timesteps == 16)
-
-
-def test_run_until_date(solver):
-    model = load_model('simple1.json', solver=solver)
-
-    # run until date
-    timestep = model.run(until_date=pandas.to_datetime('2015-01-20'))
-    assert(timestep.index == 20)
 
 
 def test_select_solver():

@@ -11,6 +11,7 @@ from pywr._core import Timestep, ScenarioIndex
 from pywr.core import *
 from pywr.domains.river import *
 from pywr.parameters import Parameter, ConstantParameter, DataFrameParameter
+from pywr.recorders import assert_rec, AssertionRecorder
 
 TEST_FOLDER = os.path.dirname(__file__)
 
@@ -228,10 +229,11 @@ def test_timeseries_excel(simple_linear_model, filename):
     # need to assign parameter for it's setup method to be called
     model.nodes["Input"].max_flow = ts
 
-    model.run(until_date=datetime.datetime(2015, 1, 14))
+    @assert_rec(model, ts)
+    def expected(timestep, scenario_index):
+        return ts.dataframe.loc[timestep.datetime]
 
-    scenario_index = ScenarioIndex(0, np.array([], dtype=np.int32))
-    assert(ts.get_value(scenario_index) == 28.24)
+    model.run()
 
 def test_dirty_model(solver):
     """Test that the LP is updated when the model structure is redefined"""

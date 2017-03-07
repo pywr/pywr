@@ -61,7 +61,6 @@ class Model(object):
         self.timestepper = Timestepper(start, end, timestep)
 
         self.data = {}
-        self.failure = set()
         self.dirty = True
 
         self.path = kwargs.pop('path', None)
@@ -513,8 +512,6 @@ class Model(object):
 
     def _step(self):
         self.before()
-        # reset any failures
-        self.failure = set()
         # solve the current timestep
         ret = self.solve()
         self.after()
@@ -524,20 +521,8 @@ class Model(object):
         """Call solver to solve the current timestep"""
         return self.solver.solve(self)
 
-    def run(self, until_date=None, until_failure=False, reset=True):
-        """Run model until exit condition is reached
-
-        Parameters
-        ----------
-        until_date : datetime (optional)
-            Stop model when date is reached
-        until_failure: bool (optional)
-            Stop model run when failure condition occurs
-        reset : bool (optional)
-            If true, start the run from the beginning. Otherwise continue
-            from the current state.
-
-        Returns the number of last Timestep that was run.
+    def run(self):
+        """Run the model
         """
         t0 = time.time()
         timestep = None
@@ -545,25 +530,19 @@ class Model(object):
             if self.dirty:
                 self.setup()
                 self.timestepper.reset()
-            elif reset:
+            else:
                 self.reset()
             t1 = time.time()
             for timestep in self.timestepper:
                 self.timestep = timestep
                 ret = self._step()
-                if until_failure is True and self.failure:
-                    return timestep
-                elif until_date and timestep.datetime > until_date:
-                    return timestep
-                elif timestep.datetime > self.timestepper.end:
-                    return timestep
             t2 = time.time()
         finally:
             self.finish()
         t3 = time.time()
 
         if timestep is None:
-            return None
+            raise RuntimeError("Nothing to run! Timestepper length is {}".format(len(self.timestepper)))
 
         # return ModelResult instance
         time_taken = t2 - t1
