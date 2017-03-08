@@ -4,8 +4,8 @@ from pywr.parameters._parameters cimport Parameter, IndexParameter
 
 
 cdef class Recorder(Component):
-    cdef bint _is_objective
-    cdef bint _is_constraint
+    cdef public bint is_objective
+    cdef public bint is_constraint
     cdef public double epsilon
     cdef public bint ignore_nan
     cdef object _agg_user_func

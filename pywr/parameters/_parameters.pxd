@@ -4,7 +4,7 @@ from .._core cimport Timestep, Scenario, ScenarioIndex, AbstractNode
 
 cdef class Parameter(Component):
     cdef int _size
-    cdef bint _is_variable
+    cdef public bint is_variable
     cdef AbstractNode _node
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cdef double[:] __values

@@ -64,13 +64,6 @@ cdef class Parameter(Component):
         def __set__(self, value):
             self._size = value
 
-    property is_variable:
-        def __get__(self):
-            return self._is_variable
-
-        def __set__(self, value):
-            self._is_variable = value
-
     @classmethod
     def load(cls, model, data):
         # If a scenario is given don't pass this to the load values methods

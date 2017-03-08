@@ -53,20 +53,6 @@ cdef class Recorder(Component):
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
-    property is_objective:
-        def __get__(self):
-            return self._is_objective
-
-        def __set__(self, value):
-            self._is_objective = value
-
-    property is_constraint:
-        def __get__(self):
-            return self._is_constraint
-
-        def __set__(self, value):
-            self._is_constraint = value
-
     cpdef double aggregated_value(self) except? -1:
         cdef double[:] values = self.values()
 

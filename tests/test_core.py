@@ -453,7 +453,12 @@ def test_variable_load(solver):
     filename = os.path.join(TEST_FOLDER, "models", "demand_saving2_with_variables.json")
     model = Model.load(filename, solver=solver)
 
+    # Test the correct number of each component is loaded
     assert len(model.variables) == 3
     assert len(model.objectives) == 1
     assert len(model.constraints) == 1
+    # Test the names are as expected
+    assert sorted([c.name for c in model.variables]) == ["demand_profile", "level1", "level2"]
+    assert sorted([c.name for c in model.objectives]) == ["total_deficit", ]
+    assert sorted([c.name for c in model.constraints]) == ["min_volume", ]
 
