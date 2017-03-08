@@ -411,8 +411,6 @@ def test_parameter_child_variables(model):
 
     p1 = Parameter(model)
     # Default parameter
-    assert p1 not in p1.variables
-    assert len(p1.variables) == 0
     assert len(p1.parents) == 0
     assert len(p1.children) == 0
 
@@ -422,40 +420,14 @@ def test_parameter_child_variables(model):
     assert c1 in p1.children
     assert p1 in c1.parents
 
-    assert p1 not in p1.variables
-    assert len(p1.variables) == 0
-
-    c1.is_variable = True
-    # Now parent should see find child as a variable
-    assert p1 not in p1.variables
-    assert c1 in p1.variables
-    assert len(p1.variables) == 1
-
     # Test third level
     c2 = Parameter(model)
     c2.parents.add(c1)
-    c2.is_variable = True
-    assert p1 not in p1.variables
-    assert c1 in p1.variables
-    assert c2 in p1.variables
-    assert len(p1.variables) == 2
-
-    # Disable middle parameter as variable
-    c1.is_variable = False
-    assert p1 not in p1.variables
-    assert c1 not in p1.variables
-    assert c2 in p1.variables
-    assert len(p1.variables) == 1
 
     # Disable parent
     c1.parents.clear()
 
-    assert len(p1.variables) == 0
     assert len(p1.children) == 0
-    # Child variables still OK.
-    assert c1 not in c1.variables
-    assert c2 in c1.variables
-    assert len(c1.variables) == 1
 
 
 def test_scaled_profile_nested_load(model):

@@ -109,6 +109,18 @@ class Model(object):
     def parameters(self):
         return NamedIterator(n for n in self.components if isinstance(n, BaseParameter))
 
+    @property
+    def variables(self):
+        return NamedIterator(n for n in self.parameters if n.is_variable)
+
+    @property
+    def constraints(self):
+        return NamedIterator(n for n in self.recorders if n.is_constraint)
+
+    @property
+    def objectives(self):
+        return NamedIterator(n for n in self.recorders if n.is_objective)
+
     def check(self):
         """Check the validity of the model
 

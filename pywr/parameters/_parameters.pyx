@@ -12,6 +12,9 @@ import warnings
 parameter_registry = {}
 
 cdef class Parameter(Component):
+    def __init__(self, *args, is_variable=False, **kwargs):
+        super(Parameter, self).__init__(*args, **kwargs)
+        self.is_variable = is_variable
 
     @classmethod
     def register(cls):
@@ -61,33 +64,6 @@ cdef class Parameter(Component):
         def __set__(self, value):
             self._size = value
 
-    property is_variable:
-        def __get__(self):
-            return self._is_variable
-
-        def __set__(self, value):
-            self._is_variable = value
-
-    property variables:
-        def __get__(self):
-            cdef Parameter var
-            vars = []
-            if self._is_variable:
-                vars.append(self)
-            for var in self.children:
-                vars.extend(var.variables)
-            return vars
-
-    property recorders:
-        """ Returns a list of `Recorder` objects attached to this node.
-
-         See also
-         --------
-         `Recorder`
-         """
-        def __get__(self):
-            return self._recorders
-
     @classmethod
     def load(cls, model, data):
         # If a scenario is given don't pass this to the load values methods
@@ -98,17 +74,14 @@ cdef class Parameter(Component):
         data.pop("url", None)
         name = data.pop("name", None)
         comment = data.pop("comment", None)
-        if data:
-            key = list(data.keys())[0]
-            raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
 
         if scenario is not None:
             scenario = model.scenarios[scenario]
             # Only pass scenario object if one provided; most Parameter subclasses
             # do not accept a scenario argument.
-            return cls(model, scenario=scenario, values=values, name=name, comment=None)
+            return cls(model, scenario=scenario, values=values, name=name, comment=None, **data)
         else:
-            return cls(model, values=values, name=name, comment=None)
+            return cls(model, values=values, name=name, comment=None, **data)
 Parameter.register()
 
 cdef class ConstantParameter(Parameter):

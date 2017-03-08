@@ -53,6 +53,21 @@ def test_numpy_recorder(simple_linear_model):
     assert df.shape == (365, 1)
     assert np.all((df.values - 10.0) < 1e-12)
 
+
+def test_numpy_recorder_from_json(simple_linear_model):
+    """ Test loading NumpyArrayNodeRecorder from JSON style data """
+
+    model = simple_linear_model
+
+    data = {
+        "type": "numpyarraynode",
+        "node": "Output"
+    }
+
+    rec = load_recorder(model, data)
+    assert isinstance(rec, NumpyArrayNodeRecorder)
+
+
 def test_fdc_recorder():
     """
     Test the FlowDurationCurveRecorder
