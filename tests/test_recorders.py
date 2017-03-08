@@ -926,10 +926,9 @@ class TestEventRecorder:
 
         m.run()
 
-        # Ensure there is at least one event
+        # Ensure there are no events in this test
         assert len(evt_rec.events) == 0
         df = evt_rec.to_dataframe()
-
         assert len(df) == 0
 
         assert_allclose(evt_dur.values(), np.zeros(len(m.scenarios.combinations)))
