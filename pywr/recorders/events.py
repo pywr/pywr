@@ -111,19 +111,20 @@ class EventRecorder(Recorder):
 
     def to_dataframe(self):
         """ Returns a DataFrame containing all of the events. """
+        # Return empty dataframe if no events are found.
+        if len(self.events) == 0:
+            return pandas.DataFrame(columns=['scenario_id', 'start', 'end'])
 
-        df = pandas.DataFrame(columns=['scenario_id', 'start', 'end'])
+        scen_id = np.empty(len(self.events), dtype=np.int)
+        start = np.empty_like(scen_id, dtype=object)
+        end = np.empty_like(scen_id, dtype=object)
 
-        for evt in self.events:
-            df = df.append({
-                'scenario_id': evt.scenario_index.global_id,
-                'start': evt.start.datetime,
-                'end': evt.end.datetime,
-            }, ignore_index=True)
+        for i, evt in enumerate(self.events):
+            scen_id[i] = evt.scenario_index.global_id
+            start[i] = evt.start.datetime
+            end[i] = evt.end.datetime
 
-        # Coerce ID to correct type. It defaults to float
-        df['scenario_id'] = df['scenario_id'].astype(int)
-        return df
+        return pandas.DataFrame({'scenario_id': scen_id, 'start': start, 'end': end})
 
 
 class EventDurationRecorder(Recorder):
