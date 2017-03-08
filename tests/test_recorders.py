@@ -920,7 +920,7 @@ class TestEventRecorder:
         arry = NumpyArrayStorageRecorder(m, strg)
 
         # Create the trigger using a threhsold parameter
-        trigger = StorageThresholdRecorder(m, strg, 0.0, predicate='<')
+        trigger = StorageThresholdRecorder(m, strg, -1.0, predicate='<')
         evt_rec = EventRecorder(m, trigger)
         evt_dur = EventDurationRecorder(m, evt_rec, recorder_agg_func=recorder_agg_func, agg_func='max')
 
