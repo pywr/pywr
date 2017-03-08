@@ -843,7 +843,10 @@ def cyclical_linear_model(simple_linear_model):
 
 class TestEventRecorder:
     """ Tests for EventRecorder """
-    def test_event_capture_with_storage(self, cyclical_storage_model):
+    funcs = {"min": np.min, "max": np.max, "mean": np.mean, "median": np.median, "sum": np.sum}
+
+    @pytest.mark.parametrize("recorder_agg_func", ["min", "max", "mean", "median", "sum"])
+    def test_event_capture_with_storage(self, cyclical_storage_model, recorder_agg_func):
         """ Test Storage events using a StorageThresholdRecorder """
         m = cyclical_storage_model
 
@@ -853,7 +856,7 @@ class TestEventRecorder:
         # Create the trigger using a threhsold parameter
         trigger = StorageThresholdRecorder(m, strg, 4.0, predicate='<=')
         evt_rec = EventRecorder(m, trigger)
-        evt_dur = EventDurationRecorder(m, evt_rec, recorder_agg_func='sum', agg_func='max')
+        evt_dur = EventDurationRecorder(m, evt_rec, recorder_agg_func=recorder_agg_func, agg_func='max')
 
         m.run()
 
@@ -866,7 +869,7 @@ class TestEventRecorder:
             triggered[evt.start.index:evt.end.index, evt.scenario_index.global_id] = 1
 
             # Check the duration
-            td = evt.start.datetime - evt.end.datetime
+            td = evt.end.datetime - evt.start.datetime
             assert evt.duration == td.days
 
         # Test that the volumes in the Storage node during the event periods match
@@ -876,7 +879,22 @@ class TestEventRecorder:
 
         assert len(df) == len(evt_rec.events)
 
-        expected_durations = np.sum(arry.data <= 4, axis=0)*m.timestepper.delta.days
+        func = TestEventRecorder.funcs[recorder_agg_func]
+
+        # Now check the EventDurationRecorder does the aggregation correctly
+        expected_durations = []
+        for si in m.scenarios.combinations:
+            event_durations = []
+            for evt in evt_rec.events:
+                if evt.scenario_index.global_id == si.global_id:
+                    event_durations.append(evt.duration)
+
+            # If there are no events then the metric is zero
+            if len(event_durations) > 0:
+                expected_durations.append(func(event_durations))
+            else:
+                expected_durations.append(0.0)
+
         assert_allclose(evt_dur.values(), expected_durations)
         assert_allclose(evt_dur.aggregated_value(), np.max(expected_durations))
 
@@ -902,8 +920,31 @@ class TestEventRecorder:
             triggered[evt.start.index:evt.end.index, evt.scenario_index.global_id] = 1
 
             # Check the duration
-            td = evt.start.datetime - evt.end.datetime
+            td = evt.end.datetime - evt.start.datetime
             assert evt.duration == td.days
 
         # Test that the volumes in the Storage node during the event periods match
         assert_equal(triggered, arry.data > 4)
+
+    @pytest.mark.parametrize("recorder_agg_func", ["min", "max", "mean", "median", "sum"])
+    def test_no_event_capture_with_storage(self, cyclical_storage_model, recorder_agg_func):
+        """ Test Storage events using a StorageThresholdRecorder """
+        m = cyclical_storage_model
+
+        strg = m.nodes['Storage']
+        arry = NumpyArrayStorageRecorder(m, strg)
+
+        # Create the trigger using a threhsold parameter
+        trigger = StorageThresholdRecorder(m, strg, -1.0, predicate='<')
+        evt_rec = EventRecorder(m, trigger)
+        evt_dur = EventDurationRecorder(m, evt_rec, recorder_agg_func=recorder_agg_func, agg_func='max')
+
+        m.run()
+
+        # Ensure there are no events in this test
+        assert len(evt_rec.events) == 0
+        df = evt_rec.to_dataframe()
+        assert len(df) == 0
+
+        assert_allclose(evt_dur.values(), np.zeros(len(m.scenarios.combinations)))
+        assert_allclose(evt_dur.aggregated_value(), 0)
