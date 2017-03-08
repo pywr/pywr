@@ -13,7 +13,7 @@ class Event(object):
 
     @property
     def duration(self):
-        td = self.start.datetime - self.end.datetime
+        td = self.end.datetime - self.start.datetime
         return td.days
 
 
@@ -164,8 +164,16 @@ class EventDurationRecorder(Recorder):
 
     def finish(self):
         df = self.event_recorder.to_dataframe()
+
+        self._values[...] = 0.0
+        # No events found
+        if len(df) == 0:
+            return
+
         # Calculate duration
         df['duration'] = df['end'] - df['start']
+        # Convert to int of days
+        df['duration'] = df['duration'].dt.days
         # Drop other columns
         df = df[['scenario_id', 'duration']]
 
@@ -173,4 +181,4 @@ class EventDurationRecorder(Recorder):
         grouped = df.groupby('scenario_id').agg(self.recorder_agg_func)
         # ... and update the internal values
         for index, row in grouped.iterrows():
-            self._values[index] = row['duration'].days
+            self._values[index] = row['duration']
