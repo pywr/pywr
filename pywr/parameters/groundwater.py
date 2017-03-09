@@ -39,7 +39,9 @@ class KeatingStreamFlowParameter(Parameter):
 
     def value(self, ts, scenario_index):
         # Get the current level of the aquifer
-        level = self.storage_node.get_level(ts, scenario_index)
+        # TODO: this is a HACK - we can't use get_level/get_value as there is
+        #       no way to define the parent/child relationship
+        level = self.storage_node.level.value(ts, scenario_index)
 
         # Coefficient
         C = self.coefficient
