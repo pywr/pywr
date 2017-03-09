@@ -344,7 +344,8 @@ cdef class CythonGLPKSolver:
             'number_of_nodes': len(self.all_nodes)
         }
 
-        self.stats['bounds_update_routes'] = 0.0
+        self.stats['bounds_update_node_costs'] = 0.0
+        self.stats['bounds_update_route_costs'] = 0.0
         self.stats['bounds_update_nonstorage'] = 0.0
         self.stats['bounds_update_storage'] = 0.0
 
@@ -397,6 +398,9 @@ cdef class CythonGLPKSolver:
             data = _node.__data
             node_costs[data.id] = _node.get_cost(timestep, scenario_index)
 
+        self.stats['bounds_update_node_costs'] += time.clock() - t0
+        t0 = time.clock()
+
         # calculate the total cost of each route
         for col, route in enumerate(routes):
             cost = 0.0
@@ -404,7 +408,7 @@ cdef class CythonGLPKSolver:
                 cost += node_costs[node_id]
             glp_set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
-        self.stats['bounds_update_routes'] += time.clock() - t0
+        self.stats['bounds_update_route_costs'] += time.clock() - t0
         t0 = time.clock()
 
         # update non-storage properties

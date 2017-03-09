@@ -510,11 +510,11 @@ cdef class Node(AbstractNode):
         times and there is a benefit to caching the values.
         """
         if self._min_flow_param is not None:
-            self._min_flow = self._min_flow_param.value(ts, scenario_index)
+            self._min_flow = self._min_flow_param.get_value(scenario_index)
         if self._max_flow_param is not None:
-            self._max_flow = self._max_flow_param.value(ts, scenario_index)
+            self._max_flow = self._max_flow_param.get_value(scenario_index)
         if self._cost_param is not None:
-            self._cost = self._cost_param.value(ts, scenario_index)
+            self._cost = self._cost_param.get_value(scenario_index)
 
 
 cdef class BaseLink(Node):
@@ -690,7 +690,7 @@ cdef class Storage(AbstractStorage):
         """
         if self._cost_param is None:
             return self._cost
-        return self._cost_param.value(ts, scenario_index)
+        return self._cost_param.get_value(scenario_index)
 
     property initial_volume:
         def __get__(self, ):
@@ -715,7 +715,7 @@ cdef class Storage(AbstractStorage):
     cpdef double get_min_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         if self._min_volume_param is None:
             return self._min_volume
-        return self._min_volume_param.value(ts, scenario_index)
+        return self._min_volume_param.get_value(scenario_index)
 
     property max_volume:
         def __get__(self):
@@ -733,7 +733,7 @@ cdef class Storage(AbstractStorage):
     cpdef double get_max_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         if self._max_volume_param is None:
             return self._max_volume
-        return self._max_volume_param.value(ts, scenario_index)
+        return self._max_volume_param.get_value(scenario_index)
 
     property level:
         def __get__(self):
@@ -751,7 +751,7 @@ cdef class Storage(AbstractStorage):
     cpdef double get_level(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         if self._level_param is None:
             return self._level
-        return self._level_param.value(ts, scenario_index)
+        return self._level_param.get_value(scenario_index)
 
     property domain:
         def __get__(self):
@@ -774,7 +774,7 @@ cdef class Storage(AbstractStorage):
             self._volume[i] = self._initial_volume
             # Ensure variable maximum volume is taken in to account
             if self._max_volume_param is not None:
-                mxv = self._max_volume_param.value(self.model.timestepper.current, si)
+                mxv = self._max_volume_param.get_value(si)
             try:
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
@@ -790,7 +790,7 @@ cdef class Storage(AbstractStorage):
             self._volume[i] += self._flow[i]*ts._days
             # Ensure variable maximum volume is taken in to account
             if self._max_volume_param is not None:
-                mxv = self._max_volume_param.value(self.model.timestepper.current, si)
+                mxv = self._max_volume_param.get_value(si)
             try:
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
