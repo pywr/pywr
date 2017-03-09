@@ -163,6 +163,8 @@ def test_control_curve(solver):
     lnk.connect(reservoir)
     reservoir.connect(demand)
 
+    model.setup()
+
     model.step()
     # Reservoir is currently above control curve. 2 should be taken from the
     # reservoir
@@ -181,7 +183,10 @@ def test_control_curve(solver):
     from pywr.parameters.control_curves import ControlCurveParameter
     # We know what we're doing with the control_curve Parameter so unset its parent before overriding
     # the cost parameter.
+    # We need to call setup() again because we're adding a parameter.
     reservoir.cost = ControlCurveParameter(model, reservoir, control_curve, [-20.0, -20.0])
+    reservoir.initial_volume = 8
+    model.setup()
     model.step()
     assert(reservoir.volume == 10)
     assert(demand.flow == 6)

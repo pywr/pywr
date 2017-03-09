@@ -1,5 +1,7 @@
 from libc.stdlib cimport malloc, free
 from cython.view cimport array as cvarray
+import numpy as np
+cimport numpy as np
 
 cimport cython
 
@@ -30,9 +32,11 @@ cdef class CythonGLPKSolver:
     cdef list non_storages
     cdef list storages
     cdef list virtual_storages
-    cdef list routes_cost
+
+    cdef int[:] routes_cost
+    cdef int[:] routes_cost_indptr
+
     cdef list all_nodes
-    cdef list nodes_with_cost
     cdef int num_nodes
     cdef int num_routes
     cdef int num_storages
@@ -80,14 +84,11 @@ cdef class CythonGLPKSolver:
         self.all_nodes = list(sorted(model.graph.nodes(), key=lambda n:n.name))
         if not self.all_nodes:
             raise ModelStructureError("Model is empty")
-        self.nodes_with_cost = []
 
         n = 0
         for _node in self.all_nodes:
             _node.__data = AbstractNodeData()
             _node.__data.id = n
-            if hasattr(_node, "get_cost"):
-                self.nodes_with_cost.append(_node)
             if isinstance(_node, BaseLink):
                 _node.__data.is_link = True
             n += 1
@@ -314,6 +315,7 @@ cdef class CythonGLPKSolver:
 
         # update route properties
         routes_cost = []
+        routes_cost_indptr = [0, ]
         for col, route in enumerate(routes):
             route_cost = []
             route_cost.append(route[0].__data.id)
@@ -321,32 +323,36 @@ cdef class CythonGLPKSolver:
                 if isinstance(some_node, BaseLink):
                     route_cost.append(some_node.__data.id)
             route_cost.append(route[-1].__data.id)
-            routes_cost.append(route_cost)
+            routes_cost.extend(route_cost)
+            routes_cost_indptr.append(len(routes_cost))
+
+        assert(len(routes_cost_indptr) == len(routes) + 1)
+
+        self.routes_cost_indptr = np.array(routes_cost_indptr, dtype=np.int32)
+        self.routes_cost = np.array(routes_cost, dtype=np.int32)
 
         self.routes = routes
         self.non_storages = non_storages
         self.storages = storages
         self.virtual_storages = virtual_storages
-        self.routes_cost = routes_cost
+
 
         # reset stats
         self.stats = {
             'total': 0.0,
             'lp_solve': 0.0,
             'result_update': 0.0,
-            'bounds_update_routes': 0.0,
             'bounds_update_nonstorage': 0.0,
             'bounds_update_storage': 0.0,
+            'bounds_update_nonstorage': 0.0,
+            'bounds_update_storage': 0.0,
+            'objective_update': 0.0,
             'number_of_rows': glp_get_num_rows(self.prob),
             'number_of_cols': glp_get_num_cols(self.prob),
             'number_of_nonzero': glp_get_num_nz(self.prob),
             'number_of_routes': len(routes),
             'number_of_nodes': len(self.all_nodes)
         }
-
-        self.stats['bounds_update_routes'] = 0.0
-        self.stats['bounds_update_nonstorage'] = 0.0
-        self.stats['bounds_update_storage'] = 0.0
 
     cpdef object solve(self, model):
         t0 = time.clock()
@@ -358,6 +364,8 @@ cdef class CythonGLPKSolver:
         self.stats['total'] += time.clock() - t0
 
     @cython.boundscheck(False)
+    @cython.initializedcheck(False)
+    @cython.cdivision(True)
     cdef object _solve_scenario(self, model, ScenarioIndex scenario_index):
         cdef Node node
         cdef Storage storage
@@ -378,11 +386,14 @@ cdef class CythonGLPKSolver:
         cdef int status
         cdef cross_domain_col
         cdef list route
-        cdef int node_id
+        cdef int node_id, indptr, nroutes
         cdef double flow
+        cdef int n, m
+        cdef Py_ssize_t length
 
         timestep = model.timestep
-        routes = self.routes
+        cdef list routes = self.routes
+        nroutes = len(routes)
         non_storages = self.non_storages
         storages = self.storages
         virtual_storages = self.virtual_storages
@@ -393,25 +404,26 @@ cdef class CythonGLPKSolver:
 
         # update the cost of each node in the model
         cdef double[:] node_costs = self.node_costs_arr
-        for _node in self.nodes_with_cost:
+        for _node in self.all_nodes:
             data = _node.__data
             node_costs[data.id] = _node.get_cost(timestep, scenario_index)
 
         # calculate the total cost of each route
-        for col, route in enumerate(routes):
+        for col in range(nroutes):
             cost = 0.0
-            for node_id in self.routes_cost[col]:
+            for indptr in range(self.routes_cost_indptr[col], self.routes_cost_indptr[col+1]):
+                node_id = self.routes_cost[indptr]
                 cost += node_costs[node_id]
-            glp_set_obj_coef(self.prob, self.idx_col_routes+col, cost)
+            set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
-        self.stats['bounds_update_routes'] += time.clock() - t0
+        self.stats['objective_update'] += time.clock() - t0
         t0 = time.clock()
 
         # update non-storage properties
         for col, node in enumerate(non_storages):
             min_flow = inf_to_dbl_max(node.get_min_flow(timestep, scenario_index))
             max_flow = inf_to_dbl_max(node.get_max_flow(timestep, scenario_index))
-            glp_set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
+            set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.clock() - t0
         t0 = time.clock()
@@ -422,9 +434,9 @@ cdef class CythonGLPKSolver:
             avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
-            lb = -avail_volume/timestep.days
-            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
-            glp_set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
+            lb = -avail_volume/timestep._days
+            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep._days
+            set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
@@ -432,15 +444,15 @@ cdef class CythonGLPKSolver:
             avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
-            lb = -avail_volume/timestep.days
-            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
-            glp_set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
+            lb = -avail_volume/timestep._days
+            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep._days
+            set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update_storage'] += time.clock() - t0
 
         # attempt to solve the linear programme
         t0 = time.clock()
-        glp_simplex(self.prob, &self.smcp)
+        simplex(self.prob, self.smcp)
 
         status = glp_get_status(self.prob)
         if status != GLP_OPT:
@@ -460,26 +472,33 @@ cdef class CythonGLPKSolver:
         # collect the total flow via each node
         cdef double[:] node_flows = self.node_flows_arr
         node_flows[:] = 0.0
-        for n in range(0, self.num_routes):
-            route = routes[n]
+        for n, route in enumerate(routes):
             flow = route_flows[n]
-            # first and last node
-            _node = route[0]
-            data = _node.__data
-            node_flows[data.id] += flow
-            _node = route[-1]
-            data = _node.__data
-            node_flows[data.id] += flow
-            # intermediate nodes
-            for _node in route[1:-1]:
+            if flow == 0:
+                continue
+            length = len(route)
+            for m, _node in enumerate(route):
                 data = _node.__data
-                if data.is_link:
+                if (m == 0) or (m == length-1) or data.is_link:
                     node_flows[data.id] += flow
 
         # commit the total flows
         for n in range(0, self.num_nodes):
-            self.all_nodes[n].commit(scenario_index._global_id, node_flows[n])
+            _node = self.all_nodes[n]
+            _node.commit(scenario_index._global_id, node_flows[n])
 
         self.stats['result_update'] += time.clock() - t0
 
         return route_flows, change_in_storage
+
+
+cdef int simplex(glp_prob *P, glp_smcp parm):
+    return glp_simplex(P, &parm)
+
+
+cdef set_obj_coef(glp_prob *P, int j, double coef):
+    glp_set_obj_coef(P, j, coef)
+
+
+cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
+    glp_set_row_bnds(P, i, type, lb, ub)

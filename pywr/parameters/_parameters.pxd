@@ -80,7 +80,7 @@ cdef class TablesArrayParameter(IndexParameter):
     cdef int _scenario_index
 
 cdef class IndexedArrayParameter(Parameter):
-    cdef public Parameter index_parameter
+    cdef public IndexParameter index_parameter
     cdef public list params
 
 cdef class AnnualHarmonicSeriesParameter(Parameter):
