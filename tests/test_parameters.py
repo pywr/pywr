@@ -351,9 +351,9 @@ class DummyIndexParameter(IndexParameter):
 
 class TestAggregatedIndexParameter:
     """Tests for AggregatedIndexParameter"""
-    funcs = {"min": np.min, "max": np.max, "sum": np.sum}
+    funcs = {"min": np.min, "max": np.max, "sum": np.sum, "product": np.product}
 
-    @pytest.mark.parametrize("agg_func", ["min", "max", "sum"])
+    @pytest.mark.parametrize("agg_func", ["min", "max", "sum", "product"])
     def test_agg(self, simple_linear_model, agg_func):
         model = simple_linear_model
         model.timestepper.delta = 1
@@ -368,7 +368,7 @@ class TestAggregatedIndexParameter:
 
         p = AggregatedIndexParameter(model, [p1, p2], agg_func=agg_func)
 
-        func = TestAggregatedParameter.funcs[agg_func]
+        func = TestAggregatedIndexParameter.funcs[agg_func]
 
         @assert_rec(model, p)
         def expected_func(timestep, scenario_index):

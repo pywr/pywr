@@ -879,7 +879,7 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
         The parameters to aggregate
     agg_func : callable or str
         The aggregation function. Must be one of {"sum", "min", "max", "any",
-        "all"}, or a callable function which accepts a list of values.
+        "all", "product"}, or a callable function which accepts a list of values.
     """
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
@@ -902,6 +902,11 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
                 value2 = parameter.get_index(scenario_index)
                 if value2 < value:
                     value = value2
+        elif self._agg_func == AggFuncs.PRODUCT:
+            value = 1
+            for parameter in self.parameters:
+                value2 = parameter.get_index(scenario_index)
+                value *= value2
         elif self._agg_func == AggFuncs.ANY:
             value = 0
             for parameter in self.parameters:
