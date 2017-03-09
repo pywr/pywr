@@ -330,7 +330,10 @@ cdef class CythonGLPKSolver:
             'total': 0.0,
             'lp_solve': 0.0,
             'result_update': 0.0,
-            'bounds_update_routes': 0.0,
+            'bounds_update_nonstorage': 0.0,
+            'bounds_update_storage': 0.0,
+            'bounds_update_node_costs': 0.0,
+            'bounds_update_route_costs': 0.0,
             'bounds_update_nonstorage': 0.0,
             'bounds_update_storage': 0.0,
             'number_of_rows': glp_get_num_rows(self.prob),
@@ -339,11 +342,6 @@ cdef class CythonGLPKSolver:
             'number_of_routes': len(routes),
             'number_of_nodes': len(self.all_nodes)
         }
-
-        self.stats['bounds_update_node_costs'] = 0.0
-        self.stats['bounds_update_route_costs'] = 0.0
-        self.stats['bounds_update_nonstorage'] = 0.0
-        self.stats['bounds_update_storage'] = 0.0
 
     cpdef object solve(self, model):
         t0 = time.clock()
@@ -377,6 +375,8 @@ cdef class CythonGLPKSolver:
         cdef list route
         cdef int node_id
         cdef double flow
+        cdef int n, m
+        cdef Py_ssize_t length
 
         timestep = model.timestep
         routes = self.routes
@@ -460,20 +460,14 @@ cdef class CythonGLPKSolver:
         # collect the total flow via each node
         cdef double[:] node_flows = self.node_flows_arr
         node_flows[:] = 0.0
-        for n in range(0, self.num_routes):
-            route = routes[n]
+        for n, route in enumerate(routes):
             flow = route_flows[n]
-            # first and last node
-            _node = route[0]
-            data = _node.__data
-            node_flows[data.id] += flow
-            _node = route[-1]
-            data = _node.__data
-            node_flows[data.id] += flow
-            # intermediate nodes
-            for _node in route[1:-1]:
+            if flow == 0:
+                continue
+            length = len(route)
+            for m, _node in enumerate(route):
                 data = _node.__data
-                if data.is_link:
+                if (m == 0) or (m == length-1) or data.is_link:
                     node_flows[data.id] += flow
 
         # commit the total flows
