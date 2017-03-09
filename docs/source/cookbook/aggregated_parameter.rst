@@ -37,15 +37,15 @@ An example of creating an ``AggregatedParameter`` in JSON is given below. This p
 
 Aggregated parameters can be used to build up complex functions. A more detailed explanation of the above example can be found in :ref:`demand_saving`.
 
-Sum, Min, Max
-=============
+Sum, Min, Max, Product
+======================
 
-The ``"sum"``, ``"min"`` and ``"max"`` aggregation functions are available to both aggregated value and aggregated index parameters.
+The ``"sum"``, ``"min"``, ``"max"`` and ``"product"`` aggregation functions are available to both aggregated value and aggregated index parameters.
 
-Product, Mean, Median
-=====================
+Mean and Median
+===============
 
-The ``"product"``, ``"mean"`` and ``"median"`` aggregation functions are only available for aggregated value parameters, as they could return non-integer values.
+The ``"mean"`` and ``"median"`` aggregation functions are only available for aggregated value parameters, as they could return non-integer values.
 
 Any and All
 ===========
@@ -61,7 +61,7 @@ Custom aggregation functions can be used via the Python API only. The function i
 
 .. code-block:: python
 
-    func = lambda *x: np.percentile(x, 25)
+    func = lambda x: np.percentile(x, 25)
     parameter = AggregatedParameter(parameters, agg_func=func)
 
 MaxParameter, MinParameter and NegativeParameter, NegativeMaxParameter
