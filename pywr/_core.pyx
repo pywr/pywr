@@ -768,6 +768,7 @@ cdef class Storage(AbstractStorage):
     cpdef _reset_storage_only(self):
         cdef int i
         cdef double mxv = self._max_volume
+        cdef double mnv = self._min_volume
         cdef ScenarioIndex si
 
         for i, si in enumerate(self.model.scenarios.combinations):
@@ -775,8 +776,11 @@ cdef class Storage(AbstractStorage):
             # Ensure variable maximum volume is taken in to account
             if self._max_volume_param is not None:
                 mxv = self._max_volume_param.value(self.model.timestepper.current, si)
+            # Ensure variable minimum volume is taken in to account
+            if self._min_volume_param is not None:
+                mnv = self._min_volume_param.value(self.model.timestepper.current, si)
             try:
-                self._current_pc[i] = self._volume[i] / mxv
+                self._current_pc[i] = self._volume[i] / (mxv - mnv)
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
 
@@ -784,6 +788,7 @@ cdef class Storage(AbstractStorage):
         AbstractStorage.after(self, ts)
         cdef int i
         cdef double mxv = self._max_volume
+        cdef double mnv = self._min_volume
         cdef ScenarioIndex si
 
         for i, si in enumerate(self.model.scenarios.combinations):
@@ -791,8 +796,11 @@ cdef class Storage(AbstractStorage):
             # Ensure variable maximum volume is taken in to account
             if self._max_volume_param is not None:
                 mxv = self._max_volume_param.value(self.model.timestepper.current, si)
+            # Ensure variable minimum volume is taken in to account
+            if self._min_volume_param is not None:
+                mnv = self._min_volume_param.value(self.model.timestepper.current, si)
             try:
-                self._current_pc[i] = self._volume[i] / mxv
+                self._current_pc[i] = self._volume[i] / (mxv - mnv)
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
 
