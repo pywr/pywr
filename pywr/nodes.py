@@ -379,10 +379,12 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         num_inputs = int(data.pop('inputs', 1))
         num_outputs = int(data.pop('outputs', 1))
         initial_volume = float(data.pop('initial_volume'))
-        max_volume = float(data.pop('max_volume'))
-        min_volume = data.pop('min_volume', None)
-        if min_volume is not None:
-            min_volume = float(min_volume)
+        max_volume = data.pop('max_volume')
+        min_volume = data.pop('min_volume', 0.0)
+
+        max_volume = load_parameter(model, max_volume)
+        min_volume = load_parameter(model, min_volume)
+
         cost = data.pop('cost', 0.0)
         data.pop('type', None)
         node = cls(

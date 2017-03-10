@@ -13,7 +13,14 @@
         {
             "name": "supply1",
             "type": "Storage",
-            "max_volume": 35,
+            "max_volume": {
+                "type": "constant",
+                "value": 35
+            },
+            "min_volume": {
+                "type": "constant",
+                "value": 0
+            },
             "initial_volume": 35
         },
         {
