@@ -804,7 +804,7 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
-        cdef int days = self.model.timestepper.delta.days
+        cdef int days = self.model.timestepper.current.days
         cdef AbstractNode node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(ts, scenario_index)
@@ -827,7 +827,7 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
     cpdef after(self):
         cdef ScenarioIndex scenario_index
         cdef int i
-        cdef int days = self.model.timestepper.delta.days
+        cdef int days = self.model.timestepper.current.days
         for scenario_index in self.model.scenarios.combinations:
             i = scenario_index._global_id
             self._values[i] += self._node._flow[i]*self.factor*days
