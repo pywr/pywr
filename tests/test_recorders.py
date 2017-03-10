@@ -755,7 +755,7 @@ def test_annual_count_index_parameter_recorder(simple_storage_model):
     model.run()
     # We expect no failures in the first ensemble, but 3 out of 5 in the second
     assert_allclose(rec.values(), [0, 3])
-    assert_allclose(rp.values(), [0/5, 3/5])
+    assert_allclose(rp.values(), [0/5.0, 3/5.0])
 
 
 # The following fixtures are used for testing the recorders in
