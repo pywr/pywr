@@ -961,6 +961,45 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
 AnnualCountIndexParameterRecorder.register()
 
 
+cdef class AnnualReturnPeriodRecorder(Recorder):
+    """ Computes the annualised return period of another Recorder's values.
+
+    The calculation requires to estimate the number of complete years in the
+    model run. An approximation is used by calculating the number of years
+    assuming 365 days in a year. Provided this approximation is within 10 days
+    of a factor of 365 days then it is considered acceptable to perform the
+    calculation. Otherwise a ValueError is raised.
+    """
+    def __init__(self, model, Recorder recorder, *args, **kwargs):
+        super(AnnualReturnPeriodRecorder, self).__init__(model, *args, **kwargs)
+        self.recorder = recorder
+        recorder.parents.add(self)
+
+    cpdef setup(self):
+        # Calculate the number of years in the model
+        start = self.model.timestepper.start
+        end = self.model.timestepper.end
+        # Total timedelta of model run.
+        dt = end - start
+        cdef double remainder_of_year = dt.days / 365.0 % 1.0
+        # Use a fixed ratio of 10 days either side of a full year
+        cdef double threshold = 10.0/365.0
+        if threshold < remainder_of_year < (1 - threshold):
+            raise ValueError('The start and end dates create a factor of 365 days to within +/- 10 days.')
+        # Set the actual number of years to use in the calculation
+        # as the nearest integer
+        self._nyears = np.rint(dt.days / 365.0)
+
+    cpdef double[:] values(self):
+        cdef double[:] x = self.recorder.values()
+        cdef double[:] ret = np.empty_like(x)
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        for i in range(ncomb):
+            ret[i] = x[i] / self._nyears
+        return ret
+AnnualReturnPeriodRecorder.register()
+
+
 def load_recorder(model, data):
     recorder = None
 

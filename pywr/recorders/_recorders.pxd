@@ -96,3 +96,7 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
     cdef int[:] _count
     cdef int _current_year
     cdef int[:] _current_max
+
+cdef class AnnualReturnPeriodRecorder(Recorder):
+    cdef public recorder
+    cdef double _nyears
