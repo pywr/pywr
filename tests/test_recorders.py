@@ -20,7 +20,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
 
-from pywr.parameters import DailyProfileParameter, FunctionParameter
+from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
 import os
 
@@ -948,3 +948,41 @@ class TestEventRecorder:
 
         assert_allclose(evt_dur.values(), np.zeros(len(m.scenarios.combinations)))
         assert_allclose(evt_dur.aggregated_value(), 0)
+
+    @pytest.mark.parametrize("minimum_length", [1, 2, 3, 4])
+    def test_hysteresis(self, simple_linear_model, minimum_length):
+        """ Test the minimum_event_length keyword of EventRecorder """
+        m = simple_linear_model
+
+        flow = np.zeros(len(m.timestepper))
+
+        flow[:10] = [0, 0, 10, 0, 10, 10, 10, 0, 0, 0]
+        # With min event length of 1. There are two events with lengths (1, 3)
+        #                 |---|   |---------|
+        # With min event length up to 4. There is one event with length 3
+        #                         |---------|
+        # Min event length >= 4 gives no events
+
+        inpt = m.nodes['Input']
+        inpt.max_flow = ArrayIndexedParameter(m, flow)
+
+        # Force through whatever flow Input can provide
+        otpt = m.nodes['Output']
+        otpt.max_flow = 100
+        otpt.cost = -100
+
+        # Create the trigger using a threhsold parameter
+        trigger = NodeThresholdRecorder(m, otpt, 4.0, predicate='>')
+        evt_rec = EventRecorder(m, trigger, minimum_event_length=minimum_length)
+
+        m.run()
+
+        if minimum_length == 1:
+            assert len(evt_rec.events) == 2
+            assert_equal([1, 3], [e.duration for e in evt_rec.events])
+        elif minimum_length < 4:
+            assert len(evt_rec.events) == 1
+            assert_equal([3, ], [e.duration for e in evt_rec.events])
+        else:
+            assert len(evt_rec.events) == 0
+
