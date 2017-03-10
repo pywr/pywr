@@ -43,8 +43,8 @@ class EventRecorder(Recorder):
 
 
      """
-    def __init__(self, model, threshold, *args, minimum_event_length=1, **kwargs):
-        super(EventRecorder, self).__init__(model, *args, **kwargs)
+    def __init__(self, model, threshold, minimum_event_length=1, **kwargs):
+        super(EventRecorder, self).__init__(model, **kwargs)
         self.threshold = threshold
         self.threshold.parents.add(self)
         if minimum_event_length < 1:
