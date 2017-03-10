@@ -103,7 +103,7 @@
         "total_deficit": {
             "type": "totaldeficitnode",
             "node": "Demand",
-            "is_objective": true
+            "is_objective": "minimise"
         },
         "min_volume": {
             "type": "MinimumVolumeStorage",

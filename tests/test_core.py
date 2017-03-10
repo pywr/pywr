@@ -460,5 +460,6 @@ def test_variable_load(solver):
     # Test the names are as expected
     assert sorted([c.name for c in model.variables]) == ["demand_profile", "level1", "level2"]
     assert sorted([c.name for c in model.objectives]) == ["total_deficit", ]
+    assert sorted([c.is_objective for c in model.objectives]) == ["minimise", ]
     assert sorted([c.name for c in model.constraints]) == ["min_volume", ]
 
