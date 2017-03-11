@@ -31,6 +31,11 @@ class EventRecorder(Recorder):
     ----------
     threshold - IndexParameter
        The parameter that defines the start and end of an event.
+    minimum_event_lenght - int (default=1)
+        The minimum number of time-steps that an event must last for
+        to be recorded. This is useful to not record events that are
+        caused by model hysteresis. The default will cause all events
+        to be recorded.
 
      See also
      --------
@@ -38,11 +43,13 @@ class EventRecorder(Recorder):
 
 
      """
-    def __init__(self, model, threshold, *args, **kwargs):
-        super(EventRecorder, self).__init__(model, *args, **kwargs)
+    def __init__(self, model, threshold, minimum_event_length=1, **kwargs):
+        super(EventRecorder, self).__init__(model, **kwargs)
         self.threshold = threshold
         self.threshold.parents.add(self)
-
+        if minimum_event_length < 1:
+            raise ValueError('Keyword "minimum_event_length" must be >= 1')
+        self.minimum_event_length = minimum_event_length
         self.events = None
         self._current_events = None
 
@@ -79,11 +86,18 @@ class EventRecorder(Recorder):
                     # Current event continues
                     pass
                 else:
-                    # Current event ends
+                    # Update the end of the current event.
                     current_event.end = ts
-                    self.events.append(current_event)
-                    # Event has ended; no further updates
-                    current_event = None
+                    current_length = ts.index - current_event.start.index
+
+                    if current_length >= self.minimum_event_length:
+                        # Current event ends
+                        self.events.append(current_event)
+                        # Event has ended; no further updates
+                        current_event = None
+                    else:
+                        # Event wasn't long enough; don't append
+                        current_event = None
             else:
                 # No current event
                 if triggered:
