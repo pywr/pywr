@@ -596,6 +596,7 @@ def test_total_deficit_node_recorder(simple_linear_model):
     Test TotalDeficitNodeRecorder
     """
     model = simple_linear_model
+    model.timestepper.delta = 5
     otpt = model.nodes['Output']
     otpt.max_flow = 30.0
     model.nodes['Input'].max_flow = 10.0
@@ -603,10 +604,10 @@ def test_total_deficit_node_recorder(simple_linear_model):
     rec = TotalDeficitNodeRecorder(model, otpt)
 
     model.step()
-    assert_allclose(20.0, rec.aggregated_value(), atol=1e-7)
+    assert_allclose(20.0*5, rec.aggregated_value(), atol=1e-7)
 
     model.step()
-    assert_allclose(40.0, rec.aggregated_value(), atol=1e-7)
+    assert_allclose(40.0*5, rec.aggregated_value(), atol=1e-7)
 
 
 def test_total_flow_node_recorder(simple_linear_model):
