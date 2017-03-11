@@ -27,8 +27,22 @@ _agg_func_lookup = {
     "all": AggFuncs.ALL,
 }
 
+cdef enum ObjDirection:
+    NONE = 0
+    MAXIMISE = 1
+    MINIMISE = 2
+_obj_direction_lookup = {
+    "maximize": ObjDirection.MAXIMISE,
+    "maximise": ObjDirection.MAXIMISE,
+    "max": ObjDirection.MAXIMISE,
+    "minimise": ObjDirection.MINIMISE,
+    "minimize": ObjDirection.MINIMISE,
+    "min": ObjDirection.MINIMISE,
+}
+
 cdef class Recorder(Component):
-    def __init__(self, model, agg_func="mean", ignore_nan=False, is_objective=False, is_constraint=False, name=None, **kwargs):
+    def __init__(self, model, agg_func="mean", ignore_nan=False, is_objective=None, epsilon=1.0,
+                 is_constraint=False, name=None, **kwargs):
         if name is None:
             name = self.__class__.__name__.lower()
         super(Recorder, self).__init__(model, name=name, **kwargs)
@@ -36,6 +50,7 @@ cdef class Recorder(Component):
         self.ignore_nan = ignore_nan
         self.is_objective = is_objective
         self.is_constraint = is_constraint
+        self.epsilon = epsilon
 
     property agg_func:
         def __set__(self, agg_func):
@@ -48,6 +63,22 @@ cdef class Recorder(Component):
             else:
                 raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
             self._agg_func = agg_func
+
+    property is_objective:
+        def __set__(self, value):
+            if value is None:
+                self._is_objective = ObjDirection.NONE
+            else:
+                self._is_objective = _obj_direction_lookup[value]
+        def __get__(self):
+            if self._is_objective == ObjDirection.NONE:
+                return None
+            elif self._is_objective == ObjDirection.MAXIMISE:
+                return 'maximise'
+            elif self._is_objective == ObjDirection.MINIMISE:
+                return 'minimise'
+            else:
+                raise ValueError("Objective direction type not recognised.")
 
 
     def __repr__(self):
