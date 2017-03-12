@@ -39,11 +39,12 @@ cdef class Parameter(Component):
     cpdef calc_values(self, Timestep timestep):
         # default implementation calls Parameter.value in loop
         cdef ScenarioIndex scenario_index
-        for scenario_index in self.model.scenarios.combinations:
-            self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
+        cdef ScenarioCollection scenario_collection = self.model.scenarios
+        for scenario_index in scenario_collection.combinations:
+            self.__values[<int>(scenario_index._global_id)] = self.value(timestep, scenario_index)
 
     cpdef double get_value(self, ScenarioIndex scenario_index):
-        return self.__values[<int>(scenario_index.global_id)]
+        return self.__values[<int>(scenario_index._global_id)]
 
     cpdef double[:] get_all_values(self):
         return self.__values
@@ -586,12 +587,13 @@ cdef class IndexParameter(Parameter):
 
     cpdef calc_values(self, Timestep timestep):
         cdef ScenarioIndex scenario_index
-        for scenario_index in self.model.scenarios.combinations:
-            self.__indices[<int>(scenario_index.global_id)] = self.index(timestep, scenario_index)
-            self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
+        cdef ScenarioCollection scenario_collection = self.model.scenarios
+        for scenario_index in scenario_collection.combinations:
+            self.__indices[<int>(scenario_index._global_id)] = self.index(timestep, scenario_index)
+            self.__values[<int>(scenario_index._global_id)] = self.value(timestep, scenario_index)
 
     cpdef int get_index(self, ScenarioIndex scenario_index):
-        return self.__indices[<int>(scenario_index.global_id)]
+        return self.__indices[<int>(scenario_index._global_id)]
 
     cpdef int[:] get_all_indices(self):
         return self.__indices
