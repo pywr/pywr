@@ -60,7 +60,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns a value from the values attribute, using the index"""
-        cdef int ind = self.index(timestep, scenario_index)
+        cdef int ind = self.get_index(scenario_index)
         cdef double v
         if self.values is not None:
             v = self.values[ind]

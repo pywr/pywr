@@ -569,7 +569,7 @@ cdef class IndexParameter(Parameter):
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the current index as a float"""
         # return index as a float
-        return float(self.index(timestep, scenario_index))
+        return float(self.get_index(scenario_index))
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the current index"""
