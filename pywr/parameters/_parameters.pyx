@@ -39,7 +39,8 @@ cdef class Parameter(Component):
     cpdef calc_values(self, Timestep timestep):
         # default implementation calls Parameter.value in loop
         cdef ScenarioIndex scenario_index
-        for scenario_index in self.model.scenarios.combinations:
+        cdef ScenarioCollection scenario_collection = self.model.scenarios
+        for scenario_index in scenario_collection.combinations:
             self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
 
     cpdef double get_value(self, ScenarioIndex scenario_index):
@@ -568,7 +569,7 @@ cdef class IndexParameter(Parameter):
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the current index as a float"""
         # return index as a float
-        return float(self.index(timestep, scenario_index))
+        return float(self.get_index(scenario_index))
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the current index"""
@@ -586,7 +587,8 @@ cdef class IndexParameter(Parameter):
 
     cpdef calc_values(self, Timestep timestep):
         cdef ScenarioIndex scenario_index
-        for scenario_index in self.model.scenarios.combinations:
+        cdef ScenarioCollection scenario_collection = self.model.scenarios
+        for scenario_index in scenario_collection.combinations:
             self.__indices[<int>(scenario_index.global_id)] = self.index(timestep, scenario_index)
             self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
 

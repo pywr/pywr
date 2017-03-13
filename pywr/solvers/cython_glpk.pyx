@@ -431,21 +431,21 @@ cdef class CythonGLPKSolver:
         # update storage node constraint
         for col, storage in enumerate(storages):
             max_volume = storage.get_max_volume(timestep, scenario_index)
-            avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
+            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep._days
-            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep._days
+            ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep._days
             set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
             max_volume = storage.get_max_volume(timestep, scenario_index)
-            avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
+            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep._days
-            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep._days
+            ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep._days
             set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update_storage'] += time.clock() - t0
@@ -485,7 +485,7 @@ cdef class CythonGLPKSolver:
         # commit the total flows
         for n in range(0, self.num_nodes):
             _node = self.all_nodes[n]
-            _node.commit(scenario_index._global_id, node_flows[n])
+            _node.commit(scenario_index.global_id, node_flows[n])
 
         self.stats['result_update'] += time.clock() - t0
 

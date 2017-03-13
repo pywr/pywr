@@ -128,7 +128,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             self._values = np.array(values)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = scenario_index._global_id
+        cdef int i = scenario_index.global_id
         cdef int j
         cdef Parameter cc_param
         cdef double cc, cc_prev
@@ -227,7 +227,7 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         cdef double target_percentage
         cdef int index, j
         cdef Parameter control_curve
-        current_percentage = self.storage_node._current_pc[scenario_index._global_id]
+        current_percentage = self.storage_node._current_pc[scenario_index.global_id]
         index = len(self.control_curves)
         for j, control_curve in enumerate(self.control_curves):
             target_percentage = control_curve.get_value(scenario_index)

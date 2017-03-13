@@ -60,7 +60,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns a value from the values attribute, using the index"""
-        cdef int ind = self.index(timestep, scenario_index)
+        cdef int ind = self.get_index(scenario_index)
         cdef double v
         if self.values is not None:
             v = self.values[ind]
@@ -99,7 +99,7 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
         self.storage = storage
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return self.storage._volume[scenario_index._global_id]
+        return self.storage._volume[scenario_index.global_id]
 
     @classmethod
     def load(cls, model, data):
@@ -124,7 +124,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
         self.node = node
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return self.node._flow[scenario_index._global_id]
+        return self.node._flow[scenario_index.global_id]
 
     @classmethod
     def load(cls, model, data):
@@ -179,7 +179,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         # TODO Make this a more general API on Recorder
-        return self.recorder.data[timestep._index - 1, scenario_index._global_id]
+        return self.recorder.data[timestep._index - 1, scenario_index.global_id]
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns 1 if the predicate evalutes True, else 0"""
