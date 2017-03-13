@@ -20,7 +20,7 @@ cdef class ScenarioCombinations:
     cdef ScenarioCollection _collection
 
 cdef class ScenarioIndex:
-    cdef int _global_id
+    cdef readonly int global_id
     cdef int[:] _indices
 
 cdef class Timestep:

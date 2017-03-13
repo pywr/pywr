@@ -839,7 +839,7 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
         cdef AbstractNode node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(ts, scenario_index)
-            self._values[scenario_index._global_id] += (max_flow - node._flow[scenario_index._global_id])*days
+            self._values[scenario_index.global_id] += (max_flow - node._flow[scenario_index.global_id])*days
 
         return 0
 TotalDeficitNodeRecorder.register()
@@ -860,7 +860,7 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
         cdef int i
         cdef int days = self.model.timestepper.current.days
         for scenario_index in self.model.scenarios.combinations:
-            i = scenario_index._global_id
+            i = scenario_index.global_id
             self._values[i] += self._node._flow[i]*self.factor*days
         return 0
 TotalFlowNodeRecorder.register()
@@ -877,8 +877,8 @@ cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
         cdef AbstractNode node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(ts, scenario_index)
-            if abs(node._flow[scenario_index._global_id] - max_flow) > 1e-6:
-                self._values[scenario_index._global_id] += 1.0
+            if abs(node._flow[scenario_index.global_id] - max_flow) > 1e-6:
+                self._values[scenario_index.global_id] += 1.0
 
     cpdef finish(self):
         cdef int i
@@ -975,8 +975,8 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
             value = self._param.get_index(scenario_index)
 
             # Update annual max if a new maximum is found
-            if value > self._current_max[scenario_index._global_id]:
-                self._current_max[scenario_index._global_id] = value
+            if value > self._current_max[scenario_index.global_id]:
+                self._current_max[scenario_index.global_id] = value
 
         return 0
 

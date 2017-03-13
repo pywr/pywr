@@ -72,8 +72,8 @@ cdef class StorageThresholdRecorder(StorageRecorder):
         cdef double volume
         cdef ScenarioIndex scenario_index
         for scenario_index in self.model.scenarios.combinations:
-            volume = self._node._volume[scenario_index._global_id]
-            self._state[scenario_index._global_id] = compare(volume, self.threshold, self.predicate)
+            volume = self._node._volume[scenario_index.global_id]
+            self._state[scenario_index.global_id] = compare(volume, self.threshold, self.predicate)
         return 0
 
 
@@ -117,8 +117,8 @@ cdef class NodeThresholdRecorder(NodeRecorder):
         cdef double flow
         cdef ScenarioIndex scenario_index
         for scenario_index in self.model.scenarios.combinations:
-            flow = self._node._flow[scenario_index._global_id]
-            self._state[scenario_index._global_id] = compare(flow, self.threshold, self.predicate)
+            flow = self._node._flow[scenario_index.global_id]
+            self._state[scenario_index.global_id] = compare(flow, self.threshold, self.predicate)
         return 0
 
 

@@ -498,21 +498,21 @@ cdef class CythonLPSolveSolver:
         # update storage node constraint
         for col, storage in enumerate(storages):
             max_volume = storage.get_max_volume(timestep, scenario_index)
-            avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
+            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep.days
-            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
+            ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
             set_row_bnds(self.prob, self.idx_row_storages+col, lb, ub)
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
             max_volume = storage.get_max_volume(timestep, scenario_index)
-            avail_volume = max(storage._volume[scenario_index._global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
+            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep.days
-            ub = (max_volume-storage._volume[scenario_index._global_id])/timestep.days
+            ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
             set_row_bnds(self.prob, self.idx_row_virtual_storages+col, lb, ub)
 
         self.stats['bounds_update_storage'] += time.clock() - t0
@@ -539,11 +539,11 @@ cdef class CythonLPSolveSolver:
 
         for route, flow in zip(routes, route_flow):
             # TODO make this cleaner.
-            route[0].commit(scenario_index._global_id, flow)
-            route[-1].commit(scenario_index._global_id, flow)
+            route[0].commit(scenario_index.global_id, flow)
+            route[-1].commit(scenario_index.global_id, flow)
             for node in route[1:-1]:
                 if isinstance(node, BaseLink):
-                    node.commit(scenario_index._global_id, flow)
+                    node.commit(scenario_index.global_id, flow)
 
         self.stats['result_update'] += time.clock() - t0
 

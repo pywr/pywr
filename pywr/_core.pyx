@@ -196,19 +196,15 @@ cdef class ScenarioCollection:
 
 cdef class ScenarioIndex:
     def __init__(self, int global_id, int[:] indices):
-        self._global_id = global_id
+        self.global_id = global_id
         self._indices = indices
-
-    property global_id:
-        def __get__(self):
-            return self._global_id
 
     property indices:
         def __get__(self):
             return np.array(self._indices)
 
     def __repr__(self):
-        return "<ScenarioIndex gid={:d} indices={}>".format(self._global_id, tuple(np.asarray(self._indices)))
+        return "<ScenarioIndex gid={:d} indices={}>".format(self.global_id, tuple(np.asarray(self._indices)))
 
 
 cdef class Timestep:
