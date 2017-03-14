@@ -828,44 +828,64 @@ cdef class AggregatedParameter(AggregatedParameterBase):
         The aggregation function. Must be one of {"sum", "min", "max", "mean",
         "product"}, or a callable function which accepts a list of values.
     """
-
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        cdef Parameter parameter
-        cdef double value, value2
+    cpdef setup(self):
+        super(AggregatedParameter, self).setup()
         assert(len(self.parameters))
+
+    cpdef calc_values(self, Timestep timestep):
+        cdef Parameter parameter
+        cdef double[:] accum = self.__values  # View of the underlying location for the data
+        cdef double[:] values
+        cdef int i
+        cdef int nparam
+        cdef int n = accum.shape[0]
+        cdef ScenarioIndex scenario_index
+
         if self._agg_func == AggFuncs.PRODUCT:
-            value = 1.0
+            accum[...] = 1.0
             for parameter in self.parameters:
-                value *= parameter.get_value(scenario_index)
+                values = parameter.get_all_values()
+                for i in range(n):
+                    accum[i] *= values[i]
         elif self._agg_func == AggFuncs.SUM:
-            value = 0
+            accum[...] = 0.0
             for parameter in self.parameters:
-                value += parameter.get_value(scenario_index)
+                values = parameter.get_all_values()
+                for i in range(n):
+                    accum[i] += values[i]
         elif self._agg_func == AggFuncs.MAX:
-            value = float("-inf")
+            accum[...] = float("-inf")
             for parameter in self.parameters:
-                value2 = parameter.get_value(scenario_index)
-                if value2 > value:
-                    value = value2
+                values = parameter.get_all_values()
+                for i in range(n):
+                    if values[i] > accum[i]:
+                        accum[i] = values[i]
         elif self._agg_func == AggFuncs.MIN:
-            value = float("inf")
+            accum[...] = float("inf")
             for parameter in self.parameters:
-                value2 = parameter.get_value(scenario_index)
-                if value2 < value:
-                    value = value2
+                values = parameter.get_all_values()
+                for i in range(n):
+                    if values[i] < accum[i]:
+                        accum[i] = values[i]
         elif self._agg_func == AggFuncs.MEAN:
-            value = 0
+            accum[...] = 0.0
             for parameter in self.parameters:
-                value += parameter.get_value(scenario_index)
-            value /= len(self.parameters)
+                values = parameter.get_all_values()
+                for i in range(n):
+                    accum[i] += values[i]
+
+            nparam = len(self.parameters)
+            for i in range(n):
+                accum[i] /= nparam
+
         elif self._agg_func == AggFuncs.MEDIAN:
-            value = np.median([parameter.get_value(scenario_index) for parameter in self.parameters])
+            for i, scenario_index in enumerate(self.model.scenarios.combinations):
+                accum[i] = np.median([parameter.get_value(scenario_index) for parameter in self.parameters])
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self._agg_user_func([parameter.get_value(scenario_index) for parameter in self.parameters])
+            for i, scenario_index in enumerate(self.model.scenarios.combinations):
+                accum[i] = self._agg_user_func([parameter.get_value(scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
-        return value
-
 AggregatedParameter.register()
 
 cdef class AggregatedIndexParameter(AggregatedParameterBase):
