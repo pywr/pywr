@@ -93,6 +93,10 @@ cdef class ConstantParameter(Parameter):
         self._lower_bounds = np.ones(self.size) * lower_bounds
         self._upper_bounds = np.ones(self.size) * upper_bounds
 
+    cpdef calc_values(self, Timestep timestep):
+        # constant parameter can just set the entire array to one value
+        self.__values[...] = self._value
+
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._value
 
