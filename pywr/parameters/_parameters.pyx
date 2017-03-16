@@ -153,7 +153,7 @@ def align_and_resample_dataframe(df, datetime_index):
 
 cdef class DataFrameParameter(Parameter):
     """Timeseries parameter with automatic alignment and resampling
-    
+
     Parameters
     ----------
     model : pywr.model.Model

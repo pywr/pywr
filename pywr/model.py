@@ -21,6 +21,7 @@ from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
 from pywr._component import ROOT_NODE
 from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
 from pywr._core import ScenarioCollection, Scenario
+from pywr._component import Component
 from pywr.parameters._parameters import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
@@ -671,6 +672,29 @@ class Model(object):
             # sequence which respects dependencies
             self.component_tree_flat = self.component_tree_flat[::-1]
         return self.component_tree_flat
+
+    def find_orphaned_parameters(self):
+        """Helper function to find orphaned parameters
+
+        Returns a set of parameters which:
+            1) Have no parent components
+            2) Are not referenced directly by a node
+        """
+        all_parameters = set(self.parameters)
+        visited = set()
+        # add all parameters referenced by another component
+        for parameter in self.components:
+            if parameter.parents:
+                visited.add(parameter)
+        # Find all parameters referenced by a node. This is a bit hackish;
+        # ideally Nodes would provide a method to access their children.
+        #attrs = ["max_flow", "min_flow", "cost", "max_volume", "min_volume", "initial_volume", "mrf", "mrf_cost"]
+        for node in self.graph.nodes():
+            for component in node.components:
+                visited.add(component)
+        # identify unseen parameters
+        orphans = all_parameters - visited
+        return orphans
 
 class NodeIterator(object):
     """Iterator for Nodes in a Model which also supports indexing

@@ -125,7 +125,7 @@ def test_parameter_array_indexed_scenario_monthly_factors_json(model):
     model.path = os.path.join(TEST_DIR, "models")
     scA = Scenario(model, 'Scenario A', size=2)
     scB = Scenario(model, 'Scenario B', size=3)
-    
+
     p1 = ArrayIndexedScenarioMonthlyFactorsParameter.load(model, {
         "scenario": "Scenario A",
         "values": list(range(32)),
@@ -591,7 +591,7 @@ def test_simple_json_parameter_reference(solver):
 def test_threshold_parameter(simple_linear_model):
     model = simple_linear_model
     model.timestepper.delta = 150
-    
+
     scenario = Scenario(model, "Scenario", size=2)
 
     class DummyRecorder(Recorder):
@@ -608,7 +608,7 @@ def test_threshold_parameter(simple_linear_model):
 
     threshold = 10.0
     values = [50.0, 60.0]
-    
+
     rec1 = DummyRecorder(model, threshold-5, name="rec1")  # below
     rec2 = DummyRecorder(model, threshold, name="rec2")    # equal
     rec3 = DummyRecorder(model, threshold+5, name="rec3")  # above
@@ -620,7 +620,7 @@ def test_threshold_parameter(simple_linear_model):
         ("LE", (1, 1, 0)),
         ("GE", (0, 1, 1)),
     ]
-    
+
     for predicate, (value_lt, value_eq, value_gt) in expected:
         for rec in (rec1, rec2, rec3):
             param = RecorderThresholdParameter(model, rec, threshold, values=values, predicate=predicate)
@@ -629,7 +629,7 @@ def test_threshold_parameter(simple_linear_model):
             e[0, :] = values[1] # first timestep is always "on"
             r = AssertionRecorder(model, param, expected_data=e)
             r.name = "assert {} {} {}".format(rec.val, predicate, threshold)
-    
+
     model.run()
 
 
@@ -915,7 +915,7 @@ class TestMinMaxNegativeParameter:
         model = simple_linear_model
         model.timestepper.start = "2017-01-01"
         model.timestepper.end = "2017-01-15"
-        
+
         data = {
             "type": ptype,
             "parameter": {
@@ -925,18 +925,18 @@ class TestMinMaxNegativeParameter:
             }
         }
 
-        
+
         if ptype in ("max", "min"):
             data["threshold"] = 3
-        
+
         func = {"min": min, "max": max, "negative": lambda t,x: -x, "negativemax": lambda t,x: max(t, -x)}[ptype]
-        
+
         model.nodes["Input"].max_flow = parameter = load_parameter(model, data)
         model.nodes["Output"].max_flow = 9999
         model.nodes["Output"].cost = -100
-        
+
         daily_profile = model.parameters["raw"]
-        
+
         @assert_rec(model, parameter)
         def expected(timestep, scenario_index):
             value = daily_profile.get_value(scenario_index)
@@ -1052,3 +1052,11 @@ class TestThresholdParameters:
         # flow < 5
         assert p1.index(m.timestepper.current, si) == 0
 
+def test_orphaned_components(simple_linear_model):
+    model = simple_linear_model
+    model.nodes["Input"].max_flow = ConstantParameter(model, 10.0)
+    orphan1 = ConstantParameter(model, 5.0)
+    orphan2 = ConstantParameter(model, 10.0)
+    orphans = {orphan1, orphan2}
+    result = model.find_orphaned_parameters()
+    assert(orphans == result)
