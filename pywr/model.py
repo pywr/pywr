@@ -686,9 +686,7 @@ class Model(object):
         for parameter in self.components:
             if parameter.parents:
                 visited.add(parameter)
-        # Find all parameters referenced by a node. This is a bit hackish;
-        # ideally Nodes would provide a method to access their children.
-        #attrs = ["max_flow", "min_flow", "cost", "max_volume", "min_volume", "initial_volume", "mrf", "mrf_cost"]
+        # find all parameters referenced by a node
         for node in self.graph.nodes():
             for component in node.components:
                 visited.add(component)
