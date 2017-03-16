@@ -858,14 +858,14 @@ cdef class AggregatedParameter(AggregatedParameterBase):
                 for i in range(n):
                     accum[i] += values[i]
         elif self._agg_func == AggFuncs.MAX:
-            accum[...] = float("-inf")
+            accum[...] = np.NINF
             for parameter in self.parameters:
                 values = parameter.get_all_values()
                 for i in range(n):
                     if values[i] > accum[i]:
                         accum[i] = values[i]
         elif self._agg_func == AggFuncs.MIN:
-            accum[...] = float("inf")
+            accum[...] = np.PINF
             for parameter in self.parameters:
                 values = parameter.get_all_values()
                 for i in range(n):
@@ -907,51 +907,70 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
         The aggregation function. Must be one of {"sum", "min", "max", "any",
         "all", "product"}, or a callable function which accepts a list of values.
     """
-
-    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        cdef IndexParameter parameter
-        cdef int value, value2
+    cpdef setup(self):
+        super(AggregatedIndexParameter, self).setup()
         assert(len(self.parameters))
-        if self._agg_func == AggFuncs.SUM:
-            value = 0
+
+    cpdef calc_values(self, Timestep timestep):
+        cdef Parameter parameter
+        cdef int[:] accum = self.__indices  # View of the underlying location for the data
+        cdef int[:] values
+        cdef int i
+        cdef int nparam
+        cdef int n = accum.shape[0]
+        cdef ScenarioIndex scenario_index
+
+        if self._agg_func == AggFuncs.PRODUCT:
+            accum[...] = 1
             for parameter in self.parameters:
-                value += parameter.get_index(scenario_index)
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    accum[i] *= values[i]
+        elif self._agg_func == AggFuncs.SUM:
+            accum[...] = 0
+            for parameter in self.parameters:
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    accum[i] += values[i]
         elif self._agg_func == AggFuncs.MAX:
-            value = INT_MIN
+            accum[...] = INT_MIN
             for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                if value2 > value:
-                    value = value2
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    if values[i] > accum[i]:
+                        accum[i] = values[i]
         elif self._agg_func == AggFuncs.MIN:
-            value = INT_MAX
+            accum[...] = INT_MAX
             for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                if value2 < value:
-                    value = value2
-        elif self._agg_func == AggFuncs.PRODUCT:
-            value = 1
-            for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                value *= value2
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    if values[i] < accum[i]:
+                        accum[i] = values[i]
         elif self._agg_func == AggFuncs.ANY:
-            value = 0
+            accum[...] = 0
             for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                if value2:
-                    value = 1
-                    break
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    if values[i]:
+                        accum[i] = 1
         elif self._agg_func == AggFuncs.ALL:
-            value = 1
+            accum[...] = 1
             for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                if not value2:
-                    value = 0
-                    break
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    if not values[i]:
+                        accum[i] = 0
+
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self._agg_user_func([parameter.get_index(scenario_index) for parameter in self.parameters])
+            for i, scenario_index in enumerate(self.model.scenarios.combinations):
+                accum[i] = self._agg_user_func([parameter.get_index(scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
-        return value
+
+        # Finally set the float values
+        for i in range(n):
+            self.__values[i] = accum[i]
+
 
 AggregatedIndexParameter.register()
 
@@ -969,8 +988,12 @@ cdef class NegativeParameter(Parameter):
         self.parameter = parameter
         self.children.add(parameter)
 
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return -self.parameter.get_value(scenario_index)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = -self.parameter.__values[i]
 
     @classmethod
     def load(cls, model, data):
@@ -998,8 +1021,12 @@ cdef class MaxParameter(Parameter):
         self.children.add(parameter)
         self.threshold = threshold
 
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return max(self.parameter.get_value(scenario_index), self.threshold)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = max(self.parameter.__values[i], self.threshold)
 
     @classmethod
     def load(cls, model, data):
@@ -1010,8 +1037,13 @@ MaxParameter.register()
 
 cdef class NegativeMaxParameter(MaxParameter):
     """ Parameter that takes maximum of the negative of a `Parameter` and constant value (threshold) """
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return max(-self.parameter.get_value(scenario_index), self.threshold)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = max(-self.parameter.__values[i], self.threshold)
+
 NegativeMaxParameter.register()
 
 
@@ -1034,8 +1066,12 @@ cdef class MinParameter(Parameter):
         self.children.add(parameter)
         self.threshold = threshold
 
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return min(self.parameter.get_value(scenario_index), self.threshold)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = min(self.parameter.__values[i], self.threshold)
 
     @classmethod
     def load(cls, model, data):
@@ -1046,8 +1082,12 @@ MinParameter.register()
 
 cdef class NegativeMinParameter(MinParameter):
     """ Parameter that takes minimum of the negative of a `Parameter` and constant value (threshold) """
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return min(-self.parameter.get_value(scenario_index), self.threshold)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = min(-self.parameter.__values[i], self.threshold)
 NegativeMinParameter.register()
 
 

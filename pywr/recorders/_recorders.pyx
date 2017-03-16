@@ -196,7 +196,7 @@ cdef class AggregatedRecorder(Recorder):
                         value[i] = value2[i]
         elif self._recorder_agg_func == AggFuncs.MIN:
             value = np.empty(n)
-            value[:] = np.INF
+            value[:] = np.PINF
             for recorder in self.recorders:
                 value2 = recorder.values()
                 for i in range(n):

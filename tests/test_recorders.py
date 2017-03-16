@@ -628,22 +628,29 @@ def test_total_flow_node_recorder(simple_linear_model):
     assert_allclose(20.0, rec.aggregated_value(), atol=1e-7)
 
 
-def test_aggregated_recorder(simple_linear_model):
-    model = simple_linear_model
-    otpt = model.nodes['Output']
-    otpt.max_flow = 30.0
-    model.nodes['Input'].max_flow = 10.0
-    otpt.cost = -2.0
-    rec1 = TotalFlowNodeRecorder(model, otpt)
-    rec2 = TotalDeficitNodeRecorder(model, otpt)
+class TestAggregatedParameter:
+    """Tests for AggregatedParameter"""
+    funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
 
-    rec = AggregatedRecorder(model, [rec1, rec2], agg_func="max")
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum"])
+    def test_aggregated_recorder(self, simple_linear_model, agg_func):
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        otpt.max_flow = 30.0
+        model.nodes['Input'].max_flow = 10.0
+        otpt.cost = -2.0
+        rec1 = TotalFlowNodeRecorder(model, otpt)
+        rec2 = TotalDeficitNodeRecorder(model, otpt)
 
-    model.step()
-    assert_allclose(20.0, rec.aggregated_value(), atol=1e-7)
+        func = TestAggregatedParameter.funcs[agg_func]
 
-    model.step()
-    assert_allclose(40.0, rec.aggregated_value(), atol=1e-7)
+        rec = AggregatedRecorder(model, [rec1, rec2], agg_func=agg_func)
+
+        model.step()
+        assert_allclose(func([10.0, 20.0]), rec.aggregated_value(), atol=1e-7)
+
+        model.step()
+        assert_allclose(func([20.0, 40.0]), rec.aggregated_value(), atol=1e-7)
 
 
 def test_reset_timestepper_recorder(solver):
