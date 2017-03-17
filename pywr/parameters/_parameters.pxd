@@ -1,6 +1,6 @@
 from pywr.recorders._recorders cimport Recorder
 from pywr._component cimport Component
-from .._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode
+from .._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node
 
 cdef class Parameter(Component):
     cdef int _size
@@ -133,3 +133,5 @@ cdef class MinParameter(Parameter):
 cdef class NegativeMinParameter(MinParameter):
     pass
 
+cdef class DeficitParameter(Parameter):
+    cdef public Node node

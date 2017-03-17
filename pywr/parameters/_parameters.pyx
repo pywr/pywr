@@ -157,7 +157,7 @@ def align_and_resample_dataframe(df, datetime_index):
 
 cdef class DataFrameParameter(Parameter):
     """Timeseries parameter with automatic alignment and resampling
-    
+
     Parameters
     ----------
     model : pywr.model.Model
@@ -1090,6 +1090,54 @@ cdef class NegativeMinParameter(MinParameter):
             self.__values[i] = min(-self.parameter.__values[i], self.threshold)
 NegativeMinParameter.register()
 
+
+cdef class DeficitParameter(Parameter):
+    """Parameter track the deficit (max_flow - actual flow) of a Node
+
+    Parameters
+    ----------
+    model : pywr.model.Model
+    node : Node
+      The node that will have it's deficit tracked
+
+    Notes
+    -----
+    This parameter is a little unusual in that it's value is calculated during
+    the after method, not calc_values. It is intended to be used in combination
+    with a recorder (e.g. NumpyArrayNodeRecorder) to record the deficit (
+    defined as requested - actual flow) at a node. Note that this means
+    recording this parameter does *not* give you the value that was used by
+    the solver in this timestep. Alternatively, this parameter can be used
+    in the model by other parameters and will evaluate to *yesterdays* deficit,
+    where the deficit in the zeroth timestep is zero.
+    """
+    def __init__(self, model, node, *args, **kwargs):
+        super(DeficitParameter, self).__init__(model, *args, **kwargs)
+        self.node = node
+
+    cpdef reset(self):
+        self.__values[...] = 0.0
+
+    cpdef calc_values(self, Timestep timestep):
+        pass # calculation done in after
+
+    cpdef after(self):
+        cdef double[:] max_flow
+        cdef int i
+        if self.node._max_flow_param is None:
+            for i in range(0, self.node._flow.shape[0]):
+                self.__values[i] = self.node._max_flow - self.node._flow[i]
+        else:
+            max_flow = self.node._max_flow_param.get_all_values()
+            for i in range(0, self.node._flow.shape[0]):
+                self.__values[i] = max_flow[i] - self.node._flow[i]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        return cls(model, node=node, **data)
+
+DeficitParameter.register()
 
 def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""
