@@ -683,7 +683,7 @@ cdef class Storage(AbstractStorage):
         self._domain = None
         self._allow_isolated = True
 
-    component_attrs = ["cost", "initial_volume", "min_volume", "max_volume", "level"]
+    component_attrs = ["cost", "min_volume", "max_volume", "level"]
 
     property cost:
         """The cost per unit increased in volume stored
