@@ -10,6 +10,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 from pywr.recorders import AssertionRecorder, assert_rec
+from pywr.model import OrphanedParameterWarning
 
 from pywr.recorders import Recorder
 from fixtures import simple_linear_model, simple_storage_model
@@ -1055,8 +1056,22 @@ class TestThresholdParameters:
 def test_orphaned_components(simple_linear_model):
     model = simple_linear_model
     model.nodes["Input"].max_flow = ConstantParameter(model, 10.0)
+
+    result = model.find_orphaned_parameters()
+    assert(not result)
+    # assert that warning not raised by check
+    with pytest.warns(None) as record:
+        model.check()
+    for w in record:
+        if isinstance(w, OperhanedParameterWarning):
+            pytest.fail("OrphanedParameterWarning raised unexpectedly!")
+
+    # add some orphans
     orphan1 = ConstantParameter(model, 5.0)
     orphan2 = ConstantParameter(model, 10.0)
     orphans = {orphan1, orphan2}
     result = model.find_orphaned_parameters()
     assert(orphans == result)
+
+    with pytest.warns(OrphanedParameterWarning):
+        model.check()

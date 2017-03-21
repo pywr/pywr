@@ -26,6 +26,9 @@ from pywr.parameters._parameters import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
 
+class OrphanedParameterWarning(Warning):
+    pass
+
 class ModelDocumentWarning(Warning): # TODO
     pass
 
@@ -130,6 +133,9 @@ class Model(object):
         for node in self.nodes:
             node.check()
         self.check_graph()
+        orphans = self.find_orphaned_parameters()
+        if orphans:
+            warnings.warn("Model has {} orphaned parameters".format(len(orphans)), OrphanedParameterWarning)
 
     def check_graph(self):
         """Check the connectivity of the graph is valid"""
