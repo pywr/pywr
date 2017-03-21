@@ -1063,7 +1063,7 @@ def test_orphaned_components(simple_linear_model):
     with pytest.warns(None) as record:
         model.check()
     for w in record:
-        if isinstance(w, OperhanedParameterWarning):
+        if isinstance(w, OrphanedParameterWarning):
             pytest.fail("OrphanedParameterWarning raised unexpectedly!")
 
     # add some orphans
