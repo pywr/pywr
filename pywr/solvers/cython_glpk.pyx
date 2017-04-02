@@ -53,6 +53,7 @@ cdef class CythonGLPKSolver:
         # disable console messages
         glp_init_smcp(&self.smcp)
         self.smcp.msg_lev = GLP_MSG_ERR
+        self.smcp.tm_lim = 5000  # 5 second limit
 
     def __init__(self):
         self.stats = None
@@ -383,7 +384,7 @@ cdef class CythonGLPKSolver:
         cdef double lb
         cdef double ub
         cdef Timestep timestep
-        cdef int status
+        cdef int status, simplex_ret
         cdef cross_domain_col
         cdef list route
         cdef int node_id, indptr, nroutes
@@ -452,12 +453,21 @@ cdef class CythonGLPKSolver:
 
         # attempt to solve the linear programme
         t0 = time.clock()
-        simplex(self.prob, self.smcp)
-
+        simplex_ret = simplex(self.prob, self.smcp)
         status = glp_get_status(self.prob)
-        if status != GLP_OPT:
-            raise RuntimeError(status_string[status])
-
+        if status != GLP_OPT or simplex_ret != 0:
+            # try creating a new basis and resolving
+            print("Simplex solve returned: {}".format(simplex_ret))
+            print("Simplex status: {}".format(status))
+            print('Retrying solve with new basis.')
+            glp_std_basis(self.prob)
+            simplex_ret = simplex(self.prob, self.smcp)
+            status = glp_get_status(self.prob)
+            if status != GLP_OPT or simplex_ret != 0:
+                print("Simplex solve returned: {}".format(simplex_ret))
+                print("Simplex status: {}".format(status))
+                glp_write_mps(self.prob, GLP_MPS_FILE, NULL, 'pywr_glpk_debug.mps')
+                raise RuntimeError(status_string[status])
         self.stats['lp_solve'] += time.clock() - t0
         t0 = time.clock()
 
