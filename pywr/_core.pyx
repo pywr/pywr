@@ -1,4 +1,5 @@
 from pywr._core cimport *
+from pywr._component cimport Component
 import itertools
 import numpy as np
 cimport numpy as np
@@ -264,6 +265,23 @@ cdef class AbstractNode:
         if kwargs:
             raise TypeError("__init__() got an unexpected keyword argument '{}'".format(list(kwargs.items())[0]))
 
+    component_attrs = [] # redefined by subclasses
+    property components:
+        """Generator that returns all of the Components attached to the Node
+
+        This is used by Model.find_orphaned_parameters and isn't performance
+        critical.
+        """
+        def __get__(self):
+            for attr in self.component_attrs:
+                try:
+                    component = getattr(self, attr)
+                except AttributeError:
+                    pass
+                else:
+                    if isinstance(component, Component):
+                        yield component
+
     property allow_isolated:
         """ A property to flag whether this Node can be unconnected in a network. """
         def __get__(self):
@@ -401,6 +419,8 @@ cdef class Node(AbstractNode):
         self._cost_param = None
         self._conversion_factor_param = None
         self._domain = None
+
+    component_attrs = ["min_flow", "max_flow", "cost", "conversion_factor"]
 
     property cost:
         """The cost per unit flow via the node
@@ -662,6 +682,8 @@ cdef class Storage(AbstractStorage):
         self._cost_param = None
         self._domain = None
         self._allow_isolated = True
+
+    component_attrs = ["cost", "min_volume", "max_volume", "level"]
 
     property cost:
         """The cost per unit increased in volume stored
