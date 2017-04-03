@@ -93,6 +93,10 @@ cdef class ConstantParameter(Parameter):
         self._lower_bounds = np.ones(self.size) * lower_bounds
         self._upper_bounds = np.ones(self.size) * upper_bounds
 
+    cpdef calc_values(self, Timestep timestep):
+        # constant parameter can just set the entire array to one value
+        self.__values[...] = self._value
+
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._value
 
@@ -828,44 +832,64 @@ cdef class AggregatedParameter(AggregatedParameterBase):
         The aggregation function. Must be one of {"sum", "min", "max", "mean",
         "product"}, or a callable function which accepts a list of values.
     """
-
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        cdef Parameter parameter
-        cdef double value, value2
+    cpdef setup(self):
+        super(AggregatedParameter, self).setup()
         assert(len(self.parameters))
+
+    cpdef calc_values(self, Timestep timestep):
+        cdef Parameter parameter
+        cdef double[:] accum = self.__values  # View of the underlying location for the data
+        cdef double[:] values
+        cdef int i
+        cdef int nparam
+        cdef int n = accum.shape[0]
+        cdef ScenarioIndex scenario_index
+
         if self._agg_func == AggFuncs.PRODUCT:
-            value = 1.0
+            accum[...] = 1.0
             for parameter in self.parameters:
-                value *= parameter.get_value(scenario_index)
+                values = parameter.get_all_values()
+                for i in range(n):
+                    accum[i] *= values[i]
         elif self._agg_func == AggFuncs.SUM:
-            value = 0
+            accum[...] = 0.0
             for parameter in self.parameters:
-                value += parameter.get_value(scenario_index)
+                values = parameter.get_all_values()
+                for i in range(n):
+                    accum[i] += values[i]
         elif self._agg_func == AggFuncs.MAX:
-            value = float("-inf")
+            accum[...] = np.NINF
             for parameter in self.parameters:
-                value2 = parameter.get_value(scenario_index)
-                if value2 > value:
-                    value = value2
+                values = parameter.get_all_values()
+                for i in range(n):
+                    if values[i] > accum[i]:
+                        accum[i] = values[i]
         elif self._agg_func == AggFuncs.MIN:
-            value = float("inf")
+            accum[...] = np.PINF
             for parameter in self.parameters:
-                value2 = parameter.get_value(scenario_index)
-                if value2 < value:
-                    value = value2
+                values = parameter.get_all_values()
+                for i in range(n):
+                    if values[i] < accum[i]:
+                        accum[i] = values[i]
         elif self._agg_func == AggFuncs.MEAN:
-            value = 0
+            accum[...] = 0.0
             for parameter in self.parameters:
-                value += parameter.get_value(scenario_index)
-            value /= len(self.parameters)
+                values = parameter.get_all_values()
+                for i in range(n):
+                    accum[i] += values[i]
+
+            nparam = len(self.parameters)
+            for i in range(n):
+                accum[i] /= nparam
+
         elif self._agg_func == AggFuncs.MEDIAN:
-            value = np.median([parameter.get_value(scenario_index) for parameter in self.parameters])
+            for i, scenario_index in enumerate(self.model.scenarios.combinations):
+                accum[i] = np.median([parameter.get_value(scenario_index) for parameter in self.parameters])
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self._agg_user_func([parameter.get_value(scenario_index) for parameter in self.parameters])
+            for i, scenario_index in enumerate(self.model.scenarios.combinations):
+                accum[i] = self._agg_user_func([parameter.get_value(scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
-        return value
-
 AggregatedParameter.register()
 
 cdef class AggregatedIndexParameter(AggregatedParameterBase):
@@ -883,51 +907,70 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
         The aggregation function. Must be one of {"sum", "min", "max", "any",
         "all", "product"}, or a callable function which accepts a list of values.
     """
-
-    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        cdef IndexParameter parameter
-        cdef int value, value2
+    cpdef setup(self):
+        super(AggregatedIndexParameter, self).setup()
         assert(len(self.parameters))
-        if self._agg_func == AggFuncs.SUM:
-            value = 0
+
+    cpdef calc_values(self, Timestep timestep):
+        cdef Parameter parameter
+        cdef int[:] accum = self.__indices  # View of the underlying location for the data
+        cdef int[:] values
+        cdef int i
+        cdef int nparam
+        cdef int n = accum.shape[0]
+        cdef ScenarioIndex scenario_index
+
+        if self._agg_func == AggFuncs.PRODUCT:
+            accum[...] = 1
             for parameter in self.parameters:
-                value += parameter.get_index(scenario_index)
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    accum[i] *= values[i]
+        elif self._agg_func == AggFuncs.SUM:
+            accum[...] = 0
+            for parameter in self.parameters:
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    accum[i] += values[i]
         elif self._agg_func == AggFuncs.MAX:
-            value = INT_MIN
+            accum[...] = INT_MIN
             for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                if value2 > value:
-                    value = value2
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    if values[i] > accum[i]:
+                        accum[i] = values[i]
         elif self._agg_func == AggFuncs.MIN:
-            value = INT_MAX
+            accum[...] = INT_MAX
             for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                if value2 < value:
-                    value = value2
-        elif self._agg_func == AggFuncs.PRODUCT:
-            value = 1
-            for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                value *= value2
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    if values[i] < accum[i]:
+                        accum[i] = values[i]
         elif self._agg_func == AggFuncs.ANY:
-            value = 0
+            accum[...] = 0
             for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                if value2:
-                    value = 1
-                    break
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    if values[i]:
+                        accum[i] = 1
         elif self._agg_func == AggFuncs.ALL:
-            value = 1
+            accum[...] = 1
             for parameter in self.parameters:
-                value2 = parameter.get_index(scenario_index)
-                if not value2:
-                    value = 0
-                    break
+                values = parameter.get_all_indices()
+                for i in range(n):
+                    if not values[i]:
+                        accum[i] = 0
+
         elif self._agg_func == AggFuncs.CUSTOM:
-            value = self._agg_user_func([parameter.get_index(scenario_index) for parameter in self.parameters])
+            for i, scenario_index in enumerate(self.model.scenarios.combinations):
+                accum[i] = self._agg_user_func([parameter.get_index(scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
-        return value
+
+        # Finally set the float values
+        for i in range(n):
+            self.__values[i] = accum[i]
+
 
 AggregatedIndexParameter.register()
 
@@ -945,8 +988,12 @@ cdef class NegativeParameter(Parameter):
         self.parameter = parameter
         self.children.add(parameter)
 
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return -self.parameter.get_value(scenario_index)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = -self.parameter.__values[i]
 
     @classmethod
     def load(cls, model, data):
@@ -974,8 +1021,12 @@ cdef class MaxParameter(Parameter):
         self.children.add(parameter)
         self.threshold = threshold
 
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return max(self.parameter.get_value(scenario_index), self.threshold)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = max(self.parameter.__values[i], self.threshold)
 
     @classmethod
     def load(cls, model, data):
@@ -986,8 +1037,13 @@ MaxParameter.register()
 
 cdef class NegativeMaxParameter(MaxParameter):
     """ Parameter that takes maximum of the negative of a `Parameter` and constant value (threshold) """
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return max(-self.parameter.get_value(scenario_index), self.threshold)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = max(-self.parameter.__values[i], self.threshold)
+
 NegativeMaxParameter.register()
 
 
@@ -1010,8 +1066,12 @@ cdef class MinParameter(Parameter):
         self.children.add(parameter)
         self.threshold = threshold
 
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return min(self.parameter.get_value(scenario_index), self.threshold)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = min(self.parameter.__values[i], self.threshold)
 
     @classmethod
     def load(cls, model, data):
@@ -1022,10 +1082,62 @@ MinParameter.register()
 
 cdef class NegativeMinParameter(MinParameter):
     """ Parameter that takes minimum of the negative of a `Parameter` and constant value (threshold) """
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return min(-self.parameter.get_value(scenario_index), self.threshold)
+    cpdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = min(-self.parameter.__values[i], self.threshold)
 NegativeMinParameter.register()
 
+
+cdef class DeficitParameter(Parameter):
+    """Parameter track the deficit (max_flow - actual flow) of a Node
+
+    Parameters
+    ----------
+    model : pywr.model.Model
+    node : Node
+      The node that will have it's deficit tracked
+
+    Notes
+    -----
+    This parameter is a little unusual in that it's value is calculated during
+    the after method, not calc_values. It is intended to be used in combination
+    with a recorder (e.g. NumpyArrayNodeRecorder) to record the deficit (
+    defined as requested - actual flow) at a node. Note that this means
+    recording this parameter does *not* give you the value that was used by
+    the solver in this timestep. Alternatively, this parameter can be used
+    in the model by other parameters and will evaluate to *yesterdays* deficit,
+    where the deficit in the zeroth timestep is zero.
+    """
+    def __init__(self, model, node, *args, **kwargs):
+        super(DeficitParameter, self).__init__(model, *args, **kwargs)
+        self.node = node
+
+    cpdef reset(self):
+        self.__values[...] = 0.0
+
+    cpdef calc_values(self, Timestep timestep):
+        pass # calculation done in after
+
+    cpdef after(self):
+        cdef double[:] max_flow
+        cdef int i
+        if self.node._max_flow_param is None:
+            for i in range(0, self.node._flow.shape[0]):
+                self.__values[i] = self.node._max_flow - self.node._flow[i]
+        else:
+            max_flow = self.node._max_flow_param.get_all_values()
+            for i in range(0, self.node._flow.shape[0]):
+                self.__values[i] = max_flow[i] - self.node._flow[i]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        return cls(model, node=node, **data)
+
+DeficitParameter.register()
 
 def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""

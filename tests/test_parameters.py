@@ -1075,3 +1075,26 @@ def test_orphaned_components(simple_linear_model):
 
     with pytest.warns(OrphanedParameterWarning):
         model.check()
+
+def test_deficit_parameter(solver):
+    """Test DeficitParameter
+
+    Here we test both uses of the DeficitParameter:
+      1) Recording the deficit for a node each timestep
+      2) Using yesterday's deficit to control today's flow
+    """
+    model = load_model("deficit.json", solver=solver)
+
+    model.run()
+
+    max_flow = np.array([5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8])
+    demand = 10.0
+    supplied = np.minimum(max_flow, demand)
+    expected = demand - supplied
+    actual = model.recorders["deficit_recorder"].data
+    assert_allclose(expected, actual[:,0])
+
+    expected_yesterday = [0]+list(expected[0:-1])
+    actual_yesterday = model.recorders["yesterday_recorder"].data
+    assert_allclose(expected_yesterday, actual_yesterday[:,0])
+

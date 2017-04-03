@@ -1,0 +1,59 @@
+{
+    "metadata": {
+        "title": "Deficit",
+        "description": "Example of deficit parameter",
+        "minimum_version": "0.4dev0"
+    },
+    "timestepper": {
+        "start": "2015-01-20",
+        "end": "2015-12-31",
+        "timestep": 31
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": {
+                "type": "monthlyprofile",
+                "values": [5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8]
+            }
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        },
+        {
+            "name": "yesterday_deficit",
+            "type": "input",
+            "max_flow": "deficit"
+        },
+        {
+            "name": "dummy_output",
+            "type": "output",
+            "max_flow": null,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "demand1"],
+        ["yesterday_deficit", "dummy_output"]
+    ],
+    "parameters": {
+        "deficit": {
+            "type": "deficit",
+            "node": "demand1"
+        }
+    },
+    "recorders": {
+        "deficit_recorder": {
+            "type": "numpyarrayparameterrecorder",
+            "parameter": "deficit"
+        },
+        "yesterday_recorder": {
+            "type": "numpyarraynoderecorder",
+            "node": "yesterday_deficit"
+        }
+    }
+}
