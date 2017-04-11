@@ -771,13 +771,24 @@ def wrap_const(model, value):
         value = ConstantParameter(model, value)
     return value
 
-cdef class AggregatedParameterBase(IndexParameter):
-    """Base class for aggregated parameters
 
-    Do not instance this class directly. Use one of the subclasses.
+cdef class AggregatedParameter(Parameter):
+    """A collection of IndexParameters
+
+    This class behaves like a set. Parameters can be added or removed from it.
+    It's value is the value of it's child parameters aggregated using a
+    aggregating function (e.g. sum).
+
+    Parameters
+    ----------
+    parameters : iterable of `IndexParameter`
+        The parameters to aggregate
+    agg_func : callable or str
+        The aggregation function. Must be one of {"sum", "min", "max", "mean",
+        "product"}, or a callable function which accepts a list of values.
     """
     def __init__(self, model, parameters, agg_func=None, **kwargs):
-        super(AggregatedParameterBase, self).__init__(model, **kwargs)
+        super(AggregatedParameter, self).__init__(model, **kwargs)
         self.agg_func = agg_func
         self.parameters = set(parameters)
         for parameter in self.parameters:
@@ -817,21 +828,6 @@ cdef class AggregatedParameterBase(IndexParameter):
     def __len__(self):
         return len(self.parameters)
 
-cdef class AggregatedParameter(AggregatedParameterBase):
-    """A collection of IndexParameters
-
-    This class behaves like a set. Parameters can be added or removed from it.
-    It's value is the value of it's child parameters aggregated using a
-    aggregating function (e.g. sum).
-
-    Parameters
-    ----------
-    parameters : iterable of `IndexParameter`
-        The parameters to aggregate
-    agg_func : callable or str
-        The aggregation function. Must be one of {"sum", "min", "max", "mean",
-        "product"}, or a callable function which accepts a list of values.
-    """
     cpdef setup(self):
         super(AggregatedParameter, self).setup()
         assert(len(self.parameters))
@@ -892,7 +888,7 @@ cdef class AggregatedParameter(AggregatedParameterBase):
             raise ValueError("Unsupported aggregation function.")
 AggregatedParameter.register()
 
-cdef class AggregatedIndexParameter(AggregatedParameterBase):
+cdef class AggregatedIndexParameter(IndexParameter):
     """A collection of IndexParameters
 
     This class behaves like a set. Parameters can be added or removed from it.
@@ -907,6 +903,47 @@ cdef class AggregatedIndexParameter(AggregatedParameterBase):
         The aggregation function. Must be one of {"sum", "min", "max", "any",
         "all", "product"}, or a callable function which accepts a list of values.
     """
+    def __init__(self, model, parameters, agg_func=None, **kwargs):
+        super(AggregatedIndexParameter, self).__init__(model, **kwargs)
+        self.agg_func = agg_func
+        self.parameters = set(parameters)
+        for parameter in self.parameters:
+            self.children.add(parameter)
+
+    @classmethod
+    def load(cls, model, data):
+        parameters_data = data.pop("parameters")
+        parameters = set()
+        for pdata in parameters_data:
+            parameter = load_parameter(model, pdata)
+            parameters.add(wrap_const(model, parameter))
+
+        agg_func = data.pop("agg_func", None)
+        return cls(model, parameters=parameters, agg_func=agg_func, **data)
+
+    property agg_func:
+        def __set__(self, agg_func):
+            self._agg_user_func = None
+            if isinstance(agg_func, basestring):
+                agg_func = _agg_func_lookup[agg_func.lower()]
+            elif callable(agg_func):
+                self._agg_user_func = agg_func
+                agg_func = AggFuncs.CUSTOM
+            else:
+                raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
+            self._agg_func = agg_func
+
+    cpdef add(self, Parameter parameter):
+        self.parameters.add(parameter)
+        parameter.parents.add(self)
+
+    cpdef remove(self, Parameter parameter):
+        self.parameters.remove(parameter)
+        parameter.parent.remove(self)
+
+    def __len__(self):
+        return len(self.parameters)
+
     cpdef setup(self):
         super(AggregatedIndexParameter, self).setup()
         assert(len(self.parameters))

@@ -7,7 +7,6 @@ from ._parameters import (
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter,
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
-    AggregatedParameter, AggregatedIndexParameter,
     align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter,
     load_parameter, load_parameter_values, load_dataframe)
