@@ -44,6 +44,17 @@ cdef extern from "glpk.h":
         pass
     ctypedef struct glp_smcp:
         int msg_lev
+        int meth
+        double tol_bnd
+        double tol_dj
+        double tol_piv
+        double obj_ll
+        double obj_ul
+        int it_lim
+        int tm_lim
+        int presolve
+    ctypedef struct glp_mpscp:
+        pass
 
     int GLP_MIN = 1 # minimization
     int GLP_MAX = 2 # maximization
@@ -64,6 +75,15 @@ cdef extern from "glpk.h":
     int GLP_MSG_OFF = 0 # no output
     int GLP_MSG_ERR = 1 # warning and error messages only
     int GLP_MSG_ON = 2 # normal output
+    int GLP_MSG_ALL = 3 # full output
+    int GLP_MSG_DBG = 4 # debug output
+
+    int GLP_PRIMAL = 1 # use primal simplex
+    int GLP_DUALP = 2 # use dual; if it fails, use primal
+    int GLP_DUAL = 3 # use dual simplex
+
+    int GLP_MPS_DECK = 1 # fixed (ancient)
+    int GLP_MPS_FILE = 2 # free (modern)
 
     glp_prob* glp_create_prob()
     void glp_init_smcp(glp_smcp *parm)
@@ -83,7 +103,8 @@ cdef extern from "glpk.h":
     void glp_set_obj_coef(glp_prob *P, int j, double coef)
 
     void glp_set_obj_dir(glp_prob *P, int dir);
-    
+
+    void glp_std_basis(glp_prob *P)
     int glp_simplex(glp_prob *P, const glp_smcp *parm)
 
     int glp_get_status(glp_prob *P)
@@ -95,3 +116,5 @@ cdef extern from "glpk.h":
     int glp_get_num_cols(glp_prob *P)
     int glp_get_num_nz(glp_prob *P)
 
+    int glp_write_mps(glp_prob *P, int fmt, const glp_mpscp *parm,
+      const char *fname)
