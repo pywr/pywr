@@ -14,7 +14,6 @@ class InspyredOptimisationModel(Model):
     def _cache_variable_parameters(self):
         variables = []
         variable_map = [0, ]
-
         for var in self.variables:
             variable_map.append(variable_map[-1]+var.size)
             variables.append(var)
