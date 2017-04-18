@@ -466,7 +466,7 @@ cdef class CythonGLPKSolver:
             if status != GLP_OPT or simplex_ret != 0:
                 print("Simplex solve returned: {}".format(simplex_ret))
                 print("Simplex status: {}".format(status))
-                glp_write_mps(self.prob, GLP_MPS_FILE, NULL, 'pywr_glpk_debug.mps')
+                self.dump_mps('pywr_glpk_debug.mps')
                 raise RuntimeError(status_string[status])
         self.stats['lp_solve'] += time.clock() - t0
         t0 = time.clock()
@@ -500,6 +500,9 @@ cdef class CythonGLPKSolver:
         self.stats['result_update'] += time.clock() - t0
 
         return route_flows, change_in_storage
+
+    cpdef dump_mps(self, filename):
+        glp_write_mps(self.prob, GLP_MPS_FILE, NULL, filename)
 
 
 cdef int simplex(glp_prob *P, glp_smcp parm):

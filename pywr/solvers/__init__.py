@@ -47,6 +47,9 @@ else:
         def solve(self, model):
             return self._cy_solver.solve(model)
 
+        def dump_mps(self, filename):
+            return self._cy_solver.dump_mps(filename)
+
         @property
         def stats(self):
             return self._cy_solver.stats
