@@ -2,6 +2,7 @@ import numpy as np
 cimport numpy as np
 from .parameters import parameter_registry, ConstantParameter
 from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter
+from libc.math cimport isnan
 
 
 cdef class BaseControlCurveParameter(Parameter):
@@ -137,7 +138,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         cdef double current_pc = node._current_pc[i]
         cdef double weight
 
-        if current_pc > 1.0:
+        if current_pc > 1.0 or isnan(current_pc):
             return self._values[0]
 
         if current_pc < 0.0:
