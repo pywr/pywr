@@ -453,6 +453,7 @@ cdef class CythonGLPKSolver:
 
         # attempt to solve the linear programme
         t0 = time.clock()
+        glp_std_basis(self.prob)
         simplex_ret = simplex(self.prob, self.smcp)
         status = glp_get_status(self.prob)
         if status != GLP_OPT or simplex_ret != 0:
