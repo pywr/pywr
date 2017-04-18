@@ -85,6 +85,9 @@ cdef extern from "glpk.h":
     int GLP_MPS_DECK = 1 # fixed (ancient)
     int GLP_MPS_FILE = 2 # free (modern)
 
+    int GLP_ON = 1
+    int GLP_OFF = 0
+
     glp_prob* glp_create_prob()
     void glp_init_smcp(glp_smcp *parm)
     void glp_erase_prob(glp_prob *P)
@@ -105,9 +108,11 @@ cdef extern from "glpk.h":
     void glp_set_obj_dir(glp_prob *P, int dir);
 
     void glp_std_basis(glp_prob *P)
+    void glp_adv_basis(glp_prob *P, int flags)
     int glp_simplex(glp_prob *P, const glp_smcp *parm)
 
     int glp_get_status(glp_prob *P)
+    int glp_term_out(int flag)
     
     double glp_get_row_prim(glp_prob *P, int i)
     double glp_get_col_prim(glp_prob *P, int j)

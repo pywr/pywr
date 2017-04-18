@@ -54,6 +54,7 @@ cdef class CythonGLPKSolver:
         glp_init_smcp(&self.smcp)
         self.smcp.msg_lev = GLP_MSG_ERR
         self.smcp.tm_lim = 5000  # 5 second limit
+        glp_term_out(GLP_OFF)  # Disable terminal output
 
     def __init__(self):
         self.stats = None
@@ -453,7 +454,8 @@ cdef class CythonGLPKSolver:
 
         # attempt to solve the linear programme
         t0 = time.clock()
-        glp_std_basis(self.prob)
+        #glp_std_basis(self.prob)
+        glp_adv_basis(self.prob, 0)
         simplex_ret = simplex(self.prob, self.smcp)
         status = glp_get_status(self.prob)
         if status != GLP_OPT or simplex_ret != 0:
