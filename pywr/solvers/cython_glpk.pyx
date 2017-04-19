@@ -469,7 +469,7 @@ cdef class CythonGLPKSolver:
             if status != GLP_OPT or simplex_ret != 0:
                 print("Simplex solve returned: {}".format(simplex_ret))
                 print("Simplex status: {}".format(status))
-                self.dump_mps('pywr_glpk_debug.mps')
+                self.dump_mps(b'pywr_glpk_debug.mps')
                 raise RuntimeError(status_string[status])
         self.stats['lp_solve'] += time.clock() - t0
         t0 = time.clock()
