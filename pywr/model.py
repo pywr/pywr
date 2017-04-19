@@ -614,6 +614,8 @@ class Model(object):
                 component.setup()
             component.reset()
 
+        self.solver.reset()
+
     def before(self):
         """ Perform initialisation work before solve on each timestep.
 

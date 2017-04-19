@@ -19,6 +19,8 @@ class Solver(object):
         raise NotImplementedError('Solver should be subclassed to provide setup()')
     def solve(self, model, timestep):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
+    def reset(self):
+        raise NotImplementedError('Solver should be subclassed to provide reset()')
     @property
     def stats(self):
         return {}
@@ -46,6 +48,9 @@ else:
 
         def solve(self, model):
             return self._cy_solver.solve(model)
+
+        def reset(self):
+            return self._cy_solver.reset()
 
         def dump_mps(self, filename):
             return self._cy_solver.dump_mps(filename)
@@ -77,6 +82,9 @@ else:
 
         def solve(self, model):
             return self._cy_solver.solve(model)
+
+        def reset(self):
+            pass
 
         @property
         def stats(self):

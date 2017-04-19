@@ -63,6 +63,7 @@ cdef class CythonGLPKSolver:
 
     def __init__(self):
         self.stats = None
+        self.is_first_solve = True
 
     def __dealloc__(self):
         # free the problem
@@ -399,6 +400,10 @@ cdef class CythonGLPKSolver:
                 glp_set_row_stat(self.prob, i+1, self.row_stat[global_id, i])
             for i in range(ncols):
                 glp_set_col_stat(self.prob, i+1, self.col_stat[global_id, i])
+
+    def reset(self):
+        # Resetting this triggers a crashing of a new basis in each scenario
+        self.is_first_solve = True
 
     cpdef object solve(self, model):
         t0 = time.clock()
