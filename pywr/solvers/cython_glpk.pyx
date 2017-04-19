@@ -47,6 +47,11 @@ cdef class CythonGLPKSolver:
     cdef list aggregated
     cdef public object stats
 
+    # Internal representation of the basis for each scenario
+    cdef int[:, :] row_stat
+    cdef int[:, :] col_stat
+    cdef bint is_first_solve
+
     def __cinit__(self):
         # create a new problem
         self.prob = glp_create_prob()
@@ -338,6 +343,8 @@ cdef class CythonGLPKSolver:
         self.storages = storages
         self.virtual_storages = virtual_storages
 
+        self._init_basis_arrays(model)
+        self.is_first_solve = True
 
         # reset stats
         self.stats = {
@@ -356,6 +363,43 @@ cdef class CythonGLPKSolver:
             'number_of_nodes': len(self.all_nodes)
         }
 
+    cdef _init_basis_arrays(self, model):
+        """ Initialise the arrays use for storing the LP basis by scenario """
+        cdef int nscenarios = len(model.scenarios.combinations)
+        cdef int nrows = glp_get_num_rows(self.prob)
+        cdef int ncols = glp_get_num_cols(self.prob)
+
+        self.row_stat = np.empty((nscenarios, nrows), dtype=np.int32)
+        self.col_stat = np.empty((nscenarios, ncols), dtype=np.int32)
+
+    cdef _save_basis(self, int global_id):
+        """ Save the current basis for scenario associated with global_id """
+        cdef int i
+        cdef int nrows = glp_get_num_rows(self.prob)
+        cdef int ncols = glp_get_num_cols(self.prob)
+
+        for i in range(nrows):
+            self.row_stat[global_id, i] = glp_get_row_stat(self.prob, i+1)
+        for i in range(ncols):
+            self.col_stat[global_id, i] = glp_get_col_stat(self.prob, i+1)
+
+    cdef _set_basis(self, int global_id):
+        """ Set the current basis for scenario associated with global_id """
+        cdef int i, nrows, ncols
+
+        if self.is_first_solve:
+            # First time solving we use the default advanced basis
+            glp_adv_basis(self.prob, 0)
+        else:
+            # otherwise we restore basis from previous solve of this scenario
+            nrows = glp_get_num_rows(self.prob)
+            ncols = glp_get_num_cols(self.prob)
+
+            for i in range(nrows):
+                glp_set_row_stat(self.prob, i+1, self.row_stat[global_id, i])
+            for i in range(ncols):
+                glp_set_col_stat(self.prob, i+1, self.col_stat[global_id, i])
+
     cpdef object solve(self, model):
         t0 = time.clock()
         cdef int[:] scenario_combination
@@ -364,6 +408,8 @@ cdef class CythonGLPKSolver:
         for scenario_index in model.scenarios.combinations:
             self._solve_scenario(model, scenario_index)
         self.stats['total'] += time.clock() - t0
+        # After solving this is always false
+        self.is_first_solve = False
 
     @cython.boundscheck(False)
     @cython.initializedcheck(False)
@@ -452,10 +498,11 @@ cdef class CythonGLPKSolver:
 
         self.stats['bounds_update_storage'] += time.clock() - t0
 
-        # attempt to solve the linear programme
         t0 = time.clock()
-        #glp_std_basis(self.prob)
-        glp_adv_basis(self.prob, 0)
+
+        # Set the basis for this scenario
+        self._set_basis(scenario_index.global_id)
+        # attempt to solve the linear programme
         simplex_ret = simplex(self.prob, self.smcp)
         status = glp_get_status(self.prob)
         if status != GLP_OPT or simplex_ret != 0:
@@ -471,6 +518,9 @@ cdef class CythonGLPKSolver:
                 print("Simplex status: {}".format(status))
                 self.dump_mps(b'pywr_glpk_debug.mps')
                 raise RuntimeError(status_string[status])
+        # Now save the basis
+        self._save_basis(scenario_index.global_id)
+
         self.stats['lp_solve'] += time.clock() - t0
         t0 = time.clock()
 

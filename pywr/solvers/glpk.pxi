@@ -123,3 +123,8 @@ cdef extern from "glpk.h":
 
     int glp_write_mps(glp_prob *P, int fmt, const glp_mpscp *parm,
       const char *fname)
+
+    int glp_get_row_stat(glp_prob *P, int i)
+    int glp_get_col_stat(glp_prob *P, int i)
+    void glp_set_row_stat(glp_prob *P, int i, int state)
+    void glp_set_col_stat(glp_prob *P, int i, int state)
