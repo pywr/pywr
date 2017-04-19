@@ -51,6 +51,8 @@ cdef class CythonGLPKSolver:
     cdef int[:, :] row_stat
     cdef int[:, :] col_stat
     cdef bint is_first_solve
+    cdef bint has_presolved
+    cdef bint use_presolve
 
     def __cinit__(self):
         # create a new problem
@@ -64,6 +66,8 @@ cdef class CythonGLPKSolver:
     def __init__(self):
         self.stats = None
         self.is_first_solve = True
+        self.has_presolved = False
+        self.use_presolve = True
 
     def __dealloc__(self):
         # free the problem
@@ -346,6 +350,7 @@ cdef class CythonGLPKSolver:
 
         self._init_basis_arrays(model)
         self.is_first_solve = True
+        self.has_presolved = False
 
         # reset stats
         self.stats = {
@@ -504,6 +509,13 @@ cdef class CythonGLPKSolver:
         self.stats['bounds_update_storage'] += time.clock() - t0
 
         t0 = time.clock()
+
+        # Apply presolve if required
+        if self.use_presolve and not self.has_presolved:
+            self.smcp.presolve = GLP_ON
+            self.has_presolved = True
+        else:
+            self.smcp.presolve = GLP_OFF
 
         # Set the basis for this scenario
         self._set_basis(scenario_index.global_id)
