@@ -2,8 +2,10 @@ import numpy as np
 cimport numpy as np
 from .parameters import parameter_registry, ConstantParameter
 from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter
-from libc.math cimport isnan
 
+# http://stackoverflow.com/a/20031818/1300519
+cdef extern from "numpy/npy_math.h":
+    bint npy_isnan(double x)
 
 cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
@@ -102,7 +104,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     interpolated between 0 and 5. Between 50% and 30% the cost is interpolated
     between 5 and 10. Between 30% and 0% the cost is interpolated between 10
     and 20.
-    
+
     Volume:  100%            50%      30%       0%
              |...............|........|..........|
       Cost:  0.0             5.0      10.0    20.0
@@ -138,7 +140,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         cdef double current_pc = node._current_pc[i]
         cdef double weight
 
-        if current_pc > 1.0 or isnan(current_pc):
+        if current_pc > 1.0 or npy_isnan(current_pc):
             return self._values[0]
 
         if current_pc < 0.0:
