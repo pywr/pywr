@@ -370,7 +370,7 @@ cdef class CythonGLPKSolver:
         }
 
     cdef _init_basis_arrays(self, model):
-        """ Initialise the arrays use for storing the LP basis by scenario """
+        """ Initialise the arrays used for storing the LP basis by scenario """
         cdef int nscenarios = len(model.scenarios.combinations)
         cdef int nrows = glp_get_num_rows(self.prob)
         cdef int ncols = glp_get_num_cols(self.prob)
