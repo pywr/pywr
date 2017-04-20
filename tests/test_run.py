@@ -644,7 +644,7 @@ def test_solver_unrecognised():
 @pytest.mark.parametrize("use_presolve", ["true", "false"])
 def test_select_glpk_presolve(use_presolve):
     """Test specifying the solver in JSON"""
-    solver_names = [solver.name for solver in pywr.solvers.solver_registry]
+    solver_names = ["glpk"]
     for solver_name in solver_names:
         data = '''{"metadata": {}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s", "use_presolve": %s}}''' % (solver_name, use_presolve)
         model = load_model(data=data)
