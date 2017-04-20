@@ -52,7 +52,7 @@ cdef class CythonGLPKSolver:
     cdef int[:, :] col_stat
     cdef bint is_first_solve
     cdef bint has_presolved
-    cdef bint use_presolve
+    cdef public bint use_presolve
 
     def __cinit__(self):
         # create a new problem
@@ -63,11 +63,11 @@ cdef class CythonGLPKSolver:
         self.smcp.tm_lim = 5000  # 5 second limit
         glp_term_out(GLP_OFF)  # Disable terminal output
 
-    def __init__(self):
+    def __init__(self, use_presolve=False):
         self.stats = None
         self.is_first_solve = True
         self.has_presolved = False
-        self.use_presolve = True
+        self.use_presolve = use_presolve
 
     def __dealloc__(self):
         # free the problem

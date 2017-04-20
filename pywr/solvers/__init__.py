@@ -15,6 +15,8 @@ solver_registry = []
 class Solver(object):
     """Solver base class from which all solvers should inherit"""
     name = 'default'
+    def __init__(self, *args, **kwargs):
+        pass
     def setup(self, model):
         raise NotImplementedError('Solver should be subclassed to provide setup()')
     def solve(self, model, timestep):
@@ -41,7 +43,7 @@ else:
 
         def __init__(self, *args, **kwargs):
             super(CythonGLPKSolver, self).__init__(*args, **kwargs)
-            self._cy_solver = cy_CythonGLPKSolver()
+            self._cy_solver = cy_CythonGLPKSolver(**kwargs)
 
         def setup(self, model):
             return self._cy_solver.setup(model)
@@ -75,7 +77,7 @@ else:
 
         def __init__(self, *args, **kwargs):
             super(CythonLPSolveSolver, self).__init__(*args, **kwargs)
-            self._cy_solver = cy_CythonLPSolveSolver()
+            self._cy_solver = cy_CythonLPSolveSolver(**kwargs)
 
         def setup(self, model):
             return self._cy_solver.setup(model)

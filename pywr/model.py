@@ -56,7 +56,8 @@ class Model(object):
         self.graph = nx.DiGraph()
         self.metadata = {}
 
-        solver_name = kwargs.pop('solver', None)
+        solver_name = kwargs.pop("solver", None)
+        solver_args = kwargs.pop("solver_args", {})
 
         # time arguments
         start = kwargs.pop("start", "2015-01-01")
@@ -87,7 +88,7 @@ class Model(object):
         else:
             # use default solver
             solver = solver_registry[0]
-        self.solver = solver()
+        self.solver = solver(**solver_args)
         self.component_graph = nx.DiGraph()
         self.component_graph.add_node(ROOT_NODE)
         self.component_tree_flat = None
@@ -266,8 +267,10 @@ class Model(object):
             solver_data = data['solver']
         except KeyError:
             solver_name = solver
+            solver_args = {}
         else:
-            solver_name = data['solver']['name']
+            solver_name = data["solver"].pop("name")
+            solver_args = data["solver"]
 
         try:
             timestepper_data = data['timestepper']
@@ -282,6 +285,7 @@ class Model(object):
         if model is None:
             model = cls(
                 solver=solver_name,
+                solver_args=solver_args,
                 start=start,
                 end=end,
                 timestep=timestep,

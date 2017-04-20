@@ -626,17 +626,27 @@ def test_run(solver):
 
 
 def test_select_solver():
-    """Test specifying the solver in XML"""
+    """Test specifying the solver in JSON"""
     solver_names = [solver.name for solver in pywr.solvers.solver_registry]
     for solver_name in solver_names:
         data = '''{"metadata": {}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s"}}''' % solver_name
         model = load_model(data=data)
         assert(model.solver.name.lower() == solver_name)
 
-
 def test_solver_unrecognised():
-    '''Test specifying an unrecognised solver XML'''
+    '''Test specifying an unrecognised solver JSON'''
     solver_name = 'foobar'
     data = '''{"metadata": {}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s"}}''' % solver_name
     with pytest.raises(KeyError):
         model = load_model(data=data)
+
+@pytest.mark.skipif(pytest.config.getoption("--solver") != "glpk", reason="only valid for glpk")
+@pytest.mark.parametrize("use_presolve", ["true", "false"])
+def test_select_glpk_presolve(use_presolve):
+    """Test specifying the solver in JSON"""
+    solver_names = [solver.name for solver in pywr.solvers.solver_registry]
+    for solver_name in solver_names:
+        data = '''{"metadata": {}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s", "use_presolve": %s}}''' % (solver_name, use_presolve)
+        model = load_model(data=data)
+        assert(model.solver.name.lower() == solver_name)
+        assert(model.solver._cy_solver.use_presolve == (use_presolve == "true"))
