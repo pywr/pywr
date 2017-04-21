@@ -65,7 +65,7 @@ cdef class Node(AbstractNode):
     cdef double _min_flow
     cdef double _max_flow
     cdef double _conversion_factor
-    cdef object _min_flow_param
+    cdef Parameter _min_flow_param
     cdef Parameter _max_flow_param
 
     cdef Parameter _conversion_factor_param
@@ -79,6 +79,11 @@ cdef class AggregatedNode(AbstractNode):
     cdef double[:] _factors
     cdef double _max_flow
     cdef double _min_flow
+    cdef Parameter _min_flow_param
+    cdef Parameter _max_flow_param
+
+    cpdef double get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1
+    cpdef double get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1
 
 cdef class BaseInput(Node):
     cdef object _licenses

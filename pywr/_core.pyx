@@ -462,7 +462,10 @@ cdef class Node(AbstractNode):
             return self._min_flow_param
 
         def __set__(self, value):
-            if isinstance(value, Parameter):
+            if value is None:
+                self._min_flow = 0
+                self._min_flow_param = None
+            elif isinstance(value, Parameter):
                 self._min_flow_param = value
             else:
                 self._min_flow_param = None
@@ -489,6 +492,7 @@ cdef class Node(AbstractNode):
         def __set__(self, value):
             if value is None:
                 self._max_flow = inf
+                self._max_flow_param = None
             elif isinstance(value, Parameter):
                 self._max_flow_param = value
             else:
@@ -559,6 +563,8 @@ cdef class AggregatedNode(AbstractNode):
         self._factors = None
         self._min_flow = -inf
         self._max_flow = inf
+        self._min_flow_param = None
+        self._max_flow_param = None
 
     property nodes:
         def __get__(self):
@@ -591,26 +597,65 @@ cdef class AggregatedNode(AbstractNode):
             self._factors = values
             self.model.dirty = True
 
-    property max_flow:
-        def __get__(self):
-            return self._max_flow
-        def __set__(self, value):
-            if value is None:
-                value = inf
-            self._max_flow = value
-            self.model.dirty = True
-
     property min_flow:
+        """The minimum flow constraint on the node
+
+        The minimum flow may be set to either a constant (i.e. a float) or a
+        Parameter.
+        """
         def __get__(self):
-            return self._min_flow
+            if self._min_flow_param is None:
+                return self._min_flow
+            return self._min_flow_param
+
         def __set__(self, value):
             if value is None:
-                value = -inf
-            self._min_flow = value
-            self.model.dirty = True
+                self._min_flow = -inf
+                self._min_flow_param = None
+            elif isinstance(value, Parameter):
+                self._min_flow_param = value
+            else:
+                self._min_flow_param = None
+                self._min_flow = value
+
+    cpdef double get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the minimum flow at a given timestep
+        """
+        if self._min_flow_param is None:
+            return self._min_flow
+        return self._min_flow_param.get_value(scenario_index)
+
+    property max_flow:
+        """The maximum flow constraint on the node
+
+        The maximum flow may be set to either a constant (i.e. a float) or a
+        Parameter.
+        """
+        def __get__(self):
+            if self._max_flow_param is None:
+                return self._max_flow
+            return self._max_flow_param
+
+        def __set__(self, value):
+            if value is None:
+                self._max_flow = inf
+                self._max_flow_param = None
+            elif isinstance(value, Parameter):
+                self._max_flow_param = value
+            else:
+                self._max_flow_param = None
+                self._max_flow = value
+
+    cpdef double get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the maximum flow at a given timestep
+        """
+        if self._max_flow_param is None:
+            return self._max_flow
+        return self._max_flow_param.get_value(scenario_index)
 
     @classmethod
     def load(cls, data, model):
+        from pywr.parameters import load_parameter
         name = data["name"]
         nodes = [model._get_node_from_ref(model, node_name) for node_name in data["nodes"]]
         agg = cls(model, name, nodes)
@@ -618,10 +663,10 @@ cdef class AggregatedNode(AbstractNode):
             agg.factors = data["factors"]
         except KeyError: pass
         try:
-            agg.min_flow = data["min_flow"]
+            agg.min_flow = load_parameter(model, data["min_flow"])
         except KeyError: pass
         try:
-            agg.max_flow = data["max_flow"]
+            agg.max_flow = load_parameter(model, data["max_flow"])
         except KeyError: pass
         return agg
 

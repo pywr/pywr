@@ -32,6 +32,7 @@ cdef class CythonGLPKSolver:
     cdef list non_storages
     cdef list storages
     cdef list virtual_storages
+    cdef list aggregated
 
     cdef int[:] routes_cost
     cdef int[:] routes_cost_indptr
@@ -44,7 +45,6 @@ cdef class CythonGLPKSolver:
     cdef cvarray node_flows_arr
     cdef cvarray route_flows_arr
     cdef cvarray change_in_storage_arr
-    cdef list aggregated
     cdef public object stats
 
     # Internal representation of the basis for each scenario
@@ -116,8 +116,9 @@ cdef class CythonGLPKSolver:
         non_storages = []
         storages = []
         virtual_storages = []
+        aggregated_with_factors = []
         aggregated = []
-        aggregated_min_max = []
+
         for some_node in model.graph.nodes():
             if isinstance(some_node, (BaseInput, BaseLink, BaseOutput)):
                 non_storages.append(some_node)
@@ -127,10 +128,8 @@ cdef class CythonGLPKSolver:
                 storages.append(some_node)
             elif isinstance(some_node, AggregatedNode):
                 if some_node.factors is not None:
-                    aggregated.append(some_node)
-                if some_node.min_flow > -inf or \
-                   some_node.max_flow < inf:
-                    aggregated_min_max.append(some_node)
+                    aggregated_with_factors.append(some_node)
+                aggregated.append(some_node)
 
         if len(routes) == 0:
             raise ModelStructureError("Model has no valid routes")
@@ -261,9 +260,9 @@ cdef class CythonGLPKSolver:
             free(val)
 
         # aggregated node flow ratio constraints
-        if len(aggregated):
+        if len(aggregated_with_factors):
             self.idx_row_aggregated = self.idx_row_virtual_storages + len(virtual_storages)
-        for agg_node in aggregated:
+        for agg_node in aggregated_with_factors:
             nodes = agg_node.nodes
             factors = agg_node.factors
             assert(len(nodes) == len(factors))
@@ -296,19 +295,12 @@ cdef class CythonGLPKSolver:
                 glp_set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
 
         # aggregated node min/max flow constraints
-        if aggregated_min_max:
-            self.idx_row_aggregated_min_max = glp_add_rows(self.prob, len(aggregated_min_max))
-        for row, agg_node in enumerate(aggregated_min_max):
+        if aggregated:
+            self.idx_row_aggregated_min_max = glp_add_rows(self.prob, len(aggregated))
+        for row, agg_node in enumerate(aggregated):
             row = self.idx_row_aggregated_min_max + row
             nodes = agg_node.nodes
-            min_flow = agg_node.min_flow
-            max_flow = agg_node.max_flow
-            if min_flow is None:
-                min_flow = -inf
-            if max_flow is None:
-                max_flow = inf
-            min_flow = inf_to_dbl_max(min_flow)
-            max_flow = inf_to_dbl_max(max_flow)
+
             matrix = set()
             for some_node in nodes:
                 for n, route in enumerate(routes):
@@ -321,7 +313,7 @@ cdef class CythonGLPKSolver:
                 ind[1+i] = 1+col
                 val[1+i] = 1.0
             glp_set_mat_row(self.prob, row, length, ind, val)
-            glp_set_row_bnds(self.prob, row, constraint_type(min_flow, max_flow), min_flow, max_flow)
+            glp_set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
             free(ind)
             free(val)
 
@@ -347,6 +339,7 @@ cdef class CythonGLPKSolver:
         self.non_storages = non_storages
         self.storages = storages
         self.virtual_storages = virtual_storages
+        self.aggregated = aggregated
 
         self._init_basis_arrays(model)
         self.is_first_solve = True
@@ -429,6 +422,7 @@ cdef class CythonGLPKSolver:
         cdef Storage storage
         cdef AbstractNode _node
         cdef AbstractNodeData data
+        cdef AggregatedNode agg_node
         cdef double min_flow
         cdef double max_flow
         cdef double cost
@@ -452,9 +446,10 @@ cdef class CythonGLPKSolver:
         timestep = model.timestep
         cdef list routes = self.routes
         nroutes = len(routes)
-        non_storages = self.non_storages
-        storages = self.storages
-        virtual_storages = self.virtual_storages
+        cdef list non_storages = self.non_storages
+        cdef list storages = self.storages
+        cdef list virtual_storages = self.virtual_storages
+        cdef list aggregated = self.aggregated
 
         # update route cost
 
@@ -482,6 +477,11 @@ cdef class CythonGLPKSolver:
             min_flow = inf_to_dbl_max(node.get_min_flow(timestep, scenario_index))
             max_flow = inf_to_dbl_max(node.get_max_flow(timestep, scenario_index))
             set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
+
+        for col, agg_node in enumerate(aggregated):
+            min_flow = inf_to_dbl_max(agg_node.get_min_flow(timestep, scenario_index))
+            max_flow = inf_to_dbl_max(agg_node.get_max_flow(timestep, scenario_index))
+            glp_set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.clock() - t0
         t0 = time.clock()
