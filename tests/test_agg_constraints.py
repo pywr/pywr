@@ -107,6 +107,7 @@ def test_aggregated_node_max_flow(model):
     assert_allclose(B.flow, 10.0)
 
 
+@pytest.mark.skipif(pytest.config.getoption("--solver") != "glpk", reason="only valid for glpk")
 def test_aggregated_node_max_flow_parameter(model):
     """Nodes constrained by the max_flow of their AggregatedNode using a Parameter """
     A = Input(model, "A", max_flow=20.0, cost=1)
@@ -144,7 +145,9 @@ def test_aggregated_node_min_flow(model):
     assert_allclose(A.flow, 15.0)
     assert_allclose(B.flow, 0.0)
 
-def test_aggregated_node_min_flow(model):
+
+@pytest.mark.skipif(pytest.config.getoption("--solver") != "glpk", reason="only valid for glpk")
+def test_aggregated_node_min_flow_parameter(model):
     """Nodes constrained by the min_flow of their AggregatedNode"""
     A = Input(model, "A", max_flow=20.0, cost=1)
     B = Input(model, "B", max_flow=20.0, cost=100)
