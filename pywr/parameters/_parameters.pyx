@@ -303,7 +303,6 @@ cdef class TablesArrayParameter(IndexParameter):
         if self.scenario is not None:
             self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
 
-    cpdef reset(self):
         self.h5store = H5Store(self.h5file, None, "r")
         node = self.h5store.file.get_node(self.where, self.node)
 
