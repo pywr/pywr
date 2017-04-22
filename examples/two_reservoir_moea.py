@@ -32,7 +32,6 @@ def create_model(harmonic=True):
     flow.set_index('Date', inplace=True)
     # resample input to weekly average
     flow = flow.resample('7D', how='mean')
-    flow_parameter = ArrayIndexedParameter(flow['flow'].values)
 
     model = InspyredOptimisationModel(
         solver='glpk',
@@ -41,6 +40,8 @@ def create_model(harmonic=True):
         timestep=datetime.timedelta(7),  # weekly time-step
     )
 
+    flow_parameter = ArrayIndexedParameter(model, flow['flow'].values)
+
     catchment1 = Input(model, 'catchment1', min_flow=flow_parameter, max_flow=flow_parameter)
     catchment2 = Input(model, 'catchment2', min_flow=flow_parameter, max_flow=flow_parameter)
 
@@ -48,12 +49,12 @@ def create_model(harmonic=True):
     reservoir2 = Storage(model, 'reservoir2', min_volume=3000, max_volume=20000, initial_volume=16000)
 
     if harmonic:
-        control_curve = AnnualHarmonicSeriesParameter(0.5, [0.5], [0.0], mean_upper_bounds=1.0, amplitude_upper_bounds=1.0)
+        control_curve = AnnualHarmonicSeriesParameter(model, 0.5, [0.5], [0.0], mean_upper_bounds=1.0, amplitude_upper_bounds=1.0)
     else:
-        control_curve = MonthlyProfileParameter(np.array([0.0]*12), lower_bounds=0.0, upper_bounds=1.0)
+        control_curve = MonthlyProfileParameter(model, np.array([0.0]*12), lower_bounds=0.0, upper_bounds=1.0)
 
     control_curve.is_variable = True
-    controller = ControlCurveParameter(reservoir1, control_curve, [0.0, 10.0])
+    controller = ControlCurveParameter(model, reservoir1, control_curve, [0.0, 10.0])
     transfer = Link(model, 'transfer', max_flow=controller, cost=-500)
 
     demand1 = Output(model, 'demand1', max_flow=45.0, cost=-101)
@@ -87,9 +88,9 @@ def create_model(harmonic=True):
     r1 = TotalDeficitNodeRecorder(model, demand1)
     r2 = TotalDeficitNodeRecorder(model, demand2)
     r3 = AggregatedRecorder(model, [r1, r2], agg_func="mean")
-    r3.is_objective = True
+    r3.is_objective = 'minimise'
     r4 = TotalFlowNodeRecorder(model, transfer)
-    r4.is_objective = True
+    r4.is_objective = 'minimise'
 
     return model
 

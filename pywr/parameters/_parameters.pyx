@@ -216,6 +216,10 @@ cdef class ArrayIndexedParameter(Parameter):
         super(ArrayIndexedParameter, self).__init__(model, *args, **kwargs)
         self.values = np.asarray(values, dtype=np.float64)
 
+    cpdef calc_values(self, Timestep ts):
+        # constant parameter can just set the entire array to one value
+        self.__values[...] = self.values[ts._index]
+
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the parameter at a given timestep
         """

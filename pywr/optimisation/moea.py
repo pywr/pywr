@@ -14,19 +14,18 @@ class InspyredOptimisationModel(Model):
     def _cache_variable_parameters(self):
         variables = []
         variable_map = [0, ]
-        for node in self.nodes:
-            for var in node.variables:
-                variable_map.append(variable_map[-1]+var.size)
-                variables.append(var)
+        for var in self.variables:
+            variable_map.append(variable_map[-1]+var.size)
+            variables.append(var)
 
         self._variables = variables
         self._variable_map = variable_map
 
     def _cache_objectives(self):
+        # This is done to make sure the order is fixed during optimisation.
         objectives = []
-        for r in self.recorders:
-            if r.is_objective:
-                objectives.append(r)
+        for r in self.objectives:
+            objectives.append(r)
 
         self._objectives = objectives
 
