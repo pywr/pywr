@@ -136,6 +136,10 @@ class CSVRecorder(Recorder):
         self._fh.close()
 CSVRecorder.register()
 
+class DeficitWrapper():
+    def __init__(self, node):
+        self.node = node
+
 
 class TablesRecorder(Recorder):
     """
@@ -145,7 +149,7 @@ class TablesRecorder(Recorder):
     Each CArray stores the data for all scenarios on the specific node. This
     is useful for analysis of Node statistics across multiple scenarios.
     """
-    def __init__(self, model, h5file, nodes=None, parameters=None, where='/', time='/time', scenarios='/scenarios', **kwargs):
+    def __init__(self, model, h5file, nodes=None, parameters=None, deficit_nodes=None, where='/', time='/time', scenarios='/scenarios', **kwargs):
         """
 
         Parameters
@@ -161,6 +165,10 @@ class TablesRecorder(Recorder):
             keyword as the first item and a Node object or name as the second item. If
             an iterable of tuples is provided then the node specific where keyword is
             used in preference to the where keyword (see below).
+        deficit_nodes: iterable or None
+            output nodes for which the difference between the flow request and the flow
+            provided is recorded. As for nodes it can be an iterable of Node objects,
+            node names, or tuples that contain a node specific keyword and the node.
         parameters : iterable or None
             Parameters to save. Similar to the nodes keyword, except refers to Parameter
             objects or names thereof.
@@ -199,6 +207,7 @@ class TablesRecorder(Recorder):
         self._arrays = {}
         self.nodes = nodes
         self.parameters = parameters
+        self.deficit_nodes = deficit_nodes
         self.where = where
         self.time = time
         self.scenarios = scenarios
@@ -273,6 +282,25 @@ class TablesRecorder(Recorder):
 
                 where = where.replace("//", "/")
                 nodes.append((where, param))
+
+        if self.deficit_nodes is not None:
+            for n in self.deficit_nodes:
+
+                try:
+                    where, node = n
+                except (TypeError, ValueError):
+                    node = n
+                    where = self.where + "/" + node
+
+                # Accept a str, and lookup node by name instead.
+                if isinstance(node, basestring):
+                    node = self.model.nodes[node]
+                # Otherwise assume it is a node object anyway
+
+                deficit_node = DeficitWrapper(node)
+
+                where = where.replace("//", "/")
+                nodes.append((where, deficit_node))
 
         self._nodes = nodes
 
@@ -355,6 +383,9 @@ class TablesRecorder(Recorder):
             elif isinstance(node, Parameter):
                 a = node.get_all_values()
                 ca[idx, :] = np.reshape(a, scenario_shape)
+            elif isinstance(node, DeficitWrapper):
+                deficit = node.node.max_flow - node.node.flow
+                ca[idx, :] = np.reshape(deficit, scenario_shape)
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
 

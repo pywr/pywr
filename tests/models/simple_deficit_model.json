@@ -1,0 +1,51 @@
+{
+    "metadata": {
+        "title": "Simple 1",
+        "description": "A very simple example.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 15
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand",
+            "type": "Output",
+            "max_flow": 25,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand"]
+    ],
+    "recorders": {
+        "database": {
+            "type": "TablesRecorder",
+            "url": "output.h5",
+            "deficit_nodes": [
+                ["/outputs/demand", "demand"]
+            ],
+            "mode": "w",
+            "filter_kwds": {
+                "complevel": 5,
+                "complib": "zlib"
+            },
+            "metadata": {
+                "author": "pytest",
+                "run_number": 0
+            }
+        }
+    }
+}

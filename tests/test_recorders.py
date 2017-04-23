@@ -390,6 +390,41 @@ class TestTablesRecorder:
                 assert row['name'] == s.name
                 assert row['size'] == s.size
 
+    def test_deficit_nodes(self, solver, tmpdir):
+        """
+        tests if TableRecorder correctly records deficits
+        """
+        import os, tables, json
+        filename = "simple_deficit_model.json"
+        
+        path = os.path.join(os.path.dirname(__file__), 'models')
+        with open(os.path.join(path, filename), 'r') as f:
+            data = f.read()
+        data = json.loads(data)
+
+        # Make an absolute, but temporary, path for the recorder
+        url = data['recorders']['database']['url']
+        data['recorders']['database']['url'] = str(tmpdir.join(url))
+
+        model = Model.load(data, path=path, solver=solver)
+
+        model.check()
+
+        model.run()
+
+        h5file = tmpdir.join('output.h5')
+        with tables.open_file(str(h5file), 'r') as h5f:
+            assert model.metadata['title'] == h5f.title
+            # Check metadata on root node
+            assert h5f.root._v_attrs.author == 'pytest'
+            assert h5f.root._v_attrs.run_number == 0
+
+            rec_demand = h5f.get_node('/outputs/demand').read()
+
+            assert (rec_demand[0] == 10.0)
+
+
+
     def test_multiple_scenarios(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder
