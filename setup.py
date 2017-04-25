@@ -58,6 +58,7 @@ if not optional:
     optional.add('lpsolve')
 
 compiler_directives = {}
+compile_time_env = {}
 if '--enable-profiling' in sys.argv:
      compiler_directives['profile'] = True
      sys.argv.remove('--enable-profiling')
@@ -67,6 +68,13 @@ if '--enable-trace' in sys.argv:
     compiler_directives['linetrace'] = True
     define_macros.append(('CYTHON_TRACE', '1'))
     sys.argv.remove('--enable-trace')
+
+if '--enable-solver-debug' in sys.argv:
+    compile_time_env['SOLVER_DEBUG'] = 1
+    sys.argv.remove('--enable-solver-debug')
+else:
+    compile_time_env['SOLVER_DEBUG'] = 0
+
 
 extensions = [
     Extension('pywr._core', ['pywr/_core.pyx'],
@@ -135,5 +143,6 @@ else:
     setup_kwargs["package_data"]["pywr"] = ["GIT_VERSION.txt"]
 
 # build the core extension(s)
-setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional, compiler_directives=compiler_directives, annotate=annotate)
+setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional, compiler_directives=compiler_directives,
+                                        annotate=annotate, compile_time_env=compile_time_env)
 setup(**setup_kwargs)

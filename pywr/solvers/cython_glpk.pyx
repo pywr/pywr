@@ -13,6 +13,12 @@ include "glpk.pxi"
 
 inf = float('inf')
 
+IF SOLVER_DEBUG:
+    DEF SOLVER_NAN_CHECK = 1
+
+cdef extern from "numpy/npy_math.h":
+    bint npy_isnan(double x)
+
 cdef class AbstractNodeData:
     cdef public int id
     cdef public bint is_link
@@ -459,7 +465,14 @@ cdef class CythonGLPKSolver:
         cdef double[:] node_costs = self.node_costs_arr
         for _node in self.all_nodes:
             data = _node.__data
-            node_costs[data.id] = _node.get_cost(timestep, scenario_index)
+
+            cost = _node.get_cost(timestep, scenario_index)
+
+            IF SOLVER_NAN_CHECK:
+                if npy_isnan(cost):
+                    raise RuntimeError('NaN found in cost parameter for node: "{}"'.format(_node.name))
+
+            node_costs[data.id] = cost
 
         # calculate the total cost of each route
         for col in range(nroutes):
@@ -467,6 +480,11 @@ cdef class CythonGLPKSolver:
             for indptr in range(self.routes_cost_indptr[col], self.routes_cost_indptr[col+1]):
                 node_id = self.routes_cost[indptr]
                 cost += node_costs[node_id]
+
+            IF SOLVER_NAN_CHECK:
+                if npy_isnan(cost):
+                    raise RuntimeError('NaN found in LP objective function column: {:d}'.format(self.idx_col_routes+col))
+
             set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
         self.stats['objective_update'] += time.clock() - t0
@@ -476,11 +494,21 @@ cdef class CythonGLPKSolver:
         for col, node in enumerate(non_storages):
             min_flow = inf_to_dbl_max(node.get_min_flow(timestep, scenario_index))
             max_flow = inf_to_dbl_max(node.get_max_flow(timestep, scenario_index))
+
+            IF SOLVER_NAN_CHECK:
+                if npy_isnan(min_flow) or npy_isnan(max_flow):
+                    raise RuntimeError('NaN found in LP node ("{}") row bounds: {:d}'.format(node.name, self.idx_row_non_storages+col))
+
             set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         for col, agg_node in enumerate(aggregated):
             min_flow = inf_to_dbl_max(agg_node.get_min_flow(timestep, scenario_index))
             max_flow = inf_to_dbl_max(agg_node.get_max_flow(timestep, scenario_index))
+
+            IF SOLVER_NAN_CHECK:
+                if npy_isnan(min_flow) or npy_isnan(max_flow):
+                    raise RuntimeError('NaN found in LP aggregated node ("{}") row bounds: {:d}'.format(agg_node.name, self.idx_row_aggregated_min_max + col))
+
             glp_set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.clock() - t0
@@ -494,6 +522,11 @@ cdef class CythonGLPKSolver:
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep._days
             ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep._days
+
+            IF SOLVER_NAN_CHECK:
+                if npy_isnan(lb) or npy_isnan(ub):
+                    raise RuntimeError('NaN found in LP storage node ("{}") row bounds: {:d}'.format(storage.name, self.idx_row_storages+col))
+
             set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # update virtual storage node constraint
@@ -504,6 +537,11 @@ cdef class CythonGLPKSolver:
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep._days
             ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep._days
+
+            IF SOLVER_NAN_CHECK:
+                if npy_isnan(lb) or npy_isnan(ub):
+                    raise RuntimeError('NaN found in LP virtual storage node ("{}") row bounds: {:d}'.format(storage.name, self.idx_row_virtual_storages+col))
+
             set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update_storage'] += time.clock() - t0
