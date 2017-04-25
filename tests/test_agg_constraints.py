@@ -1,4 +1,5 @@
 from pywr.core import Model, Input, Output, Link, Storage, AggregatedNode, PiecewiseLink, MultiSplitLink
+from pywr.parameters import ConstantParameter
 
 import pytest
 from numpy.testing import assert_allclose
@@ -86,6 +87,7 @@ def test_aggregated_node_two_factors_time_varying(model):
     assert_allclose(A.flow, 20.0)
     assert_allclose(B.flow, 40.0)
 
+
 def test_aggregated_node_max_flow(model):
     """Nodes constrained by the max_flow of their AggregatedNode"""
     A = Input(model, "A", max_flow=20.0, cost=1)
@@ -104,6 +106,27 @@ def test_aggregated_node_max_flow(model):
     assert_allclose(A.flow, 20.0)
     assert_allclose(B.flow, 10.0)
 
+
+@pytest.mark.skipif(pytest.config.getoption("--solver") != "glpk", reason="only valid for glpk")
+def test_aggregated_node_max_flow_parameter(model):
+    """Nodes constrained by the max_flow of their AggregatedNode using a Parameter """
+    A = Input(model, "A", max_flow=20.0, cost=1)
+    B = Input(model, "B", max_flow=20.0, cost=2)
+    Z = Output(model, "Z", max_flow=100, cost=-10)
+
+    A.connect(Z)
+    B.connect(Z)
+
+    agg = AggregatedNode(model, "agg", [A, B])
+    agg.max_flow = ConstantParameter(model, 30.0)
+
+    model.run()
+
+    assert_allclose(agg.flow, 30.0)
+    assert_allclose(A.flow, 20.0)
+    assert_allclose(B.flow, 10.0)
+
+
 def test_aggregated_node_min_flow(model):
     """Nodes constrained by the min_flow of their AggregatedNode"""
     A = Input(model, "A", max_flow=20.0, cost=1)
@@ -115,6 +138,26 @@ def test_aggregated_node_min_flow(model):
 
     agg = AggregatedNode(model, "agg", [A, B])
     agg.min_flow = 15.0
+
+    model.run()
+
+    assert_allclose(agg.flow, 15.0)
+    assert_allclose(A.flow, 15.0)
+    assert_allclose(B.flow, 0.0)
+
+
+@pytest.mark.skipif(pytest.config.getoption("--solver") != "glpk", reason="only valid for glpk")
+def test_aggregated_node_min_flow_parameter(model):
+    """Nodes constrained by the min_flow of their AggregatedNode"""
+    A = Input(model, "A", max_flow=20.0, cost=1)
+    B = Input(model, "B", max_flow=20.0, cost=100)
+    Z = Output(model, "Z", max_flow=100, cost=0)
+
+    A.connect(Z)
+    B.connect(Z)
+
+    agg = AggregatedNode(model, "agg", [A, B])
+    agg.min_flow = ConstantParameter(model, 15.0)
 
     model.run()
 
