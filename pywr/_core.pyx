@@ -172,6 +172,8 @@ cdef class ScenarioCollection:
 
     property shape:
         def __get__(self):
+            if self._user_combinations is not None:
+                raise ValueError("ScenarioCollection.shape is undefined if user_combinations is defined.")
             if len(self._scenarios) == 0:
                 return (1, )
             return tuple(len(range(sc.size)[sc.slice]) if sc.slice is not None else sc.size for sc in self._scenarios)
