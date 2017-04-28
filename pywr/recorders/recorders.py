@@ -55,7 +55,10 @@ class AssertionRecorder(Recorder):
             elif self.expected_data is not None:
                 expected_value = self.expected_data[timestep.index, scenario_index.global_id]
             value = self.parameter.get_value(scenario_index)
-            np.testing.assert_allclose(value, expected_value)
+            try:
+                np.testing.assert_allclose(value, expected_value)
+            except AssertionError:
+                raise AssertionError("Expected {}, got {} from \"{}\" [timestep={}, scenario={}]".format(expected_value, value, self.parameter.name, timestep.index, scenario_index.global_id))
 
     def finish(self):
         super(AssertionRecorder, self).finish()

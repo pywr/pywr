@@ -992,34 +992,42 @@ class TestThresholdParameters:
         # Storage < 10
         assert p1.index(m.timestepper.current, si) == 0
 
-    def test_node_threshold_parameter(self, simple_linear_model):
-        """ Test NodeThresholdParameter """
-        m = simple_linear_model
-        m.nodes['Input'].max_flow = 10.0
-        m.nodes['Output'].cost = -10.0
+    def test_node_threshold_parameter2(self, simple_linear_model):
+        model = simple_linear_model
+        model.nodes["Input"].max_flow = ArrayIndexedParameter(model, np.arange(0, 20))
+        model.nodes["Output"].cost = -10.0
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-15"
+        model.timestepper.delta = 1
 
-        data = {
-            "type": "nodethreshold",
-            "node": "Output",
-            "threshold": 5.0,
-            "predicate": "<"
-        }
+        threshold = 5.0
 
-        p1 = load_parameter(m, data)
+        parameters = {}
+        for predicate in (">", "<", "="):
+            data = {
+                "type": "nodethreshold",
+                "node": "Output",
+                "threshold": 5.0,
+                "predicate": predicate,
+                # we need to define values so AssertionRecorder can be used
+                "values": [0.0, 1.0],
+            }
+            parameter = load_parameter(model, data)
+            parameter.name = "nodethresold {}".format(predicate)
+            parameters[predicate] = parameter
 
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+            if predicate == ">":
+                expected_data = (np.arange(-1, 20) > threshold).astype(int)
+            elif predicate == "<":
+                expected_data = (np.arange(-1, 20) < threshold).astype(int)
+            else:
+                expected_data = (np.arange(-1, 20) == threshold).astype(int)
+            expected_data[0] = 0 # previous flow in initial timestep is undefined
+            expected_data = expected_data[:, np.newaxis]
 
-        m.nodes['Output'].max_flow = 10.0
-        m.setup()
-        m.step()
-        # Flow > 5
-        assert p1.index(m.timestepper.current, si) == 0
+            rec = AssertionRecorder(model, parameter, expected_data=expected_data, name="assertion recorder {}".format(predicate))
 
-        m.nodes['Output'].max_flow = 4.0
-        m.setup()
-        m.step()
-        # flow < 5
-        assert p1.index(m.timestepper.current, si) == 1
+        model.run()
 
     def test_parameter_threshold_parameter(self, simple_linear_model):
         """ Test ParameterThresholdParameter """
@@ -1097,4 +1105,3 @@ def test_deficit_parameter(solver):
     expected_yesterday = [0]+list(expected[0:-1])
     actual_yesterday = model.recorders["yesterday_recorder"].data
     assert_allclose(expected_yesterday, actual_yesterday[:,0])
-
