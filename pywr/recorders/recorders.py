@@ -7,6 +7,7 @@ from .events import *
 from .calibration import *
 from past.builtins import basestring
 from pywr.h5tools import H5Store
+from ..parameters import load_parameter
 
 def assert_rec(model, parameter, name=None):
     """Decorator for creating AssertionRecorder objects
@@ -198,13 +199,45 @@ class TablesRecorder(Recorder):
         self.h5store = None
         self._arrays = {}
         self.nodes = nodes
-        self.parameters = parameters
         self.where = where
         self.time = time
         self.scenarios = scenarios
 
+        self.parameters = []
+        if parameters:
+            for parameter in parameters:
+                self._add_parameter(parameter)
+
         self._arrays = None
         self._time_table = None
+
+    def _add_parameter(self, parameter):
+        try:
+            where, param = parameter
+        except (TypeError, ValueError):
+            where = None
+            param = parameter
+        if isinstance(param, basestring):
+            param = load_parameter(self.model, param)
+        if not param.name:
+            raise ValueError("Can only record named Parameter objects")
+        if where is None:
+            where = self.where + "/" + param.name
+        where = where.replace("//", "/")
+        self.children.add(param)
+        self.parameters.append((where, param))
+
+    def _remove_parameter(self, parameter):
+        if isinstance(parameter, basestring):
+            parameter = self.model.parameters[parameter]
+        index = None
+        for n, (where, param) in enumerate(self.parameters):
+            if param is parameter:
+                index = n
+        if index is None:
+            raise KeyError("Parameter is not in TablesRecorder: {}".format(parameter))
+        self.parameters.pop(index)
+        self.children.remove(parameter)
 
     @classmethod
     def load(cls, model, data):
@@ -254,25 +287,7 @@ class TablesRecorder(Recorder):
                 nodes.append((where, node))
 
         if self.parameters is not None:
-            for p in self.parameters:
-
-                try:
-                    where, param = p
-                except (TypeError, ValueError):
-                    param = p
-                    where = None
-
-                if isinstance(param, basestring):
-                    param = self.model.parameters[param]
-
-                if param.name is None:
-                    raise ValueError('Can only record named Parameter objects.')
-
-                if where is None:
-                    where = self.where + "/" + param.name
-
-                where = where.replace("//", "/")
-                nodes.append((where, param))
+            nodes.extend(self.parameters)
 
         self._nodes = nodes
 

@@ -185,7 +185,7 @@ def test_numpy_parameter_recorder(simple_linear_model):
 def test_numpy_index_parameter_recorder(simple_storage_model):
     """
     Test the NumpyArrayIndexParameterRecorder
-    
+
     Note the parameter is recorded at the start of the timestep, while the
     storage is recorded at the end of the timestep.
     """
@@ -442,6 +442,12 @@ class TestTablesRecorder:
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
             rec = TablesRecorder(model, h5f, parameters=[p, ])
+
+            # check parameters have been added to the component tree
+            # this is particularly important for parameters which update their
+            # values in `after`, e.g. DeficitParameter (see #465)
+            assert(not model.find_orphaned_parameters())
+            assert(p in rec.children)
 
             model.run()
 
@@ -993,4 +999,3 @@ class TestEventRecorder:
             assert_equal([3, ], [e.duration for e in evt_rec.events])
         else:
             assert len(evt_rec.events) == 0
-
