@@ -112,7 +112,7 @@ StorageThresholdParameter.register()
 
 
 cdef class NodeThresholdParameter(AbstractThresholdParameter):
-    """ Returns one of two values depending on current flow in a node
+    """ Returns one of two values depending on previous flow in a node
 
     Parameters
     ----------
@@ -124,7 +124,13 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
         self.node = node
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        return self.node._flow[scenario_index.global_id]
+        return self.node._prev_flow[scenario_index.global_id]
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        if timestep.index == 0:
+            # previous flow on initial timestep is undefined
+            return 0
+        return AbstractThresholdParameter.index(self, timestep, scenario_index)
 
     @classmethod
     def load(cls, model, data):
