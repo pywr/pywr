@@ -124,7 +124,6 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
         self.node = node
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        print("prev", self.node._prev_flow[scenario_index.global_id])
         return self.node._prev_flow[scenario_index.global_id]
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
