@@ -101,17 +101,17 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     -------
     In the example below the cost of a storage node is related to it's volume.
     At 100% full the cost is 0. Between 100% and 50% the cost is linearly
-    interpolated between 0 and 5. Between 50% and 30% the cost is interpolated
-    between 5 and 10. Between 30% and 0% the cost is interpolated between 10
-    and 20.
+    interpolated between 0 and -5. Between 50% and 30% the cost is interpolated
+    between -5 and -10. Between 30% and 0% the cost is interpolated between -10
+    and -20.
 
     Volume:  100%            50%      30%       0%
              |...............|........|..........|
-      Cost:  0.0             5.0      10.0    20.0
+      Cost:  0.0            -5.0     -10.0   -20.0
 
     >>> storage_node = Storage(model, "reservoir", max_volume=100, initial_volume=100)
     >>> ccs = [ConstantParameter(0.5), ConstantParameter(0.3)]
-    >>> values = [0.0, 5.0, 10.0, 20.0]
+    >>> values = [0.0, -5.0, -10.0, -20.0]
     >>> cost = ControlCurveInterpolatedParameter(storage_node, ccs, values)
     >>> storage_node.cost = cost
     """
