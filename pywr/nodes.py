@@ -21,10 +21,7 @@ class Drawable(object):
 
 
 class Connectable(object):
-    """
-    Connectable is a mixin class that provides methods for connect the object to
-    others view a NetworkX graph store in self.model.graph
-    """
+    """A mixin class providing methods for connecting nodes in the model graph"""
     def iter_slots(self, slot_name=None, is_connector=True):
         """ Returns the object(s) wich should be connected to given slot_name
 
