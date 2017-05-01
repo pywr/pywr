@@ -433,6 +433,10 @@ class TestTablesRecorder:
         p = ConstantParameter(model, 10.0, name='max_flow')
         inpt.max_flow = p
 
+        # ensure TablesRecorder can handle parameters with a / in the name
+        p_slash = ConstantParameter(model, 0.0, name='name with a / in it')
+        inpt.min_flow = p_slash
+
         agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
 
         inpt.max_flow = 10.0
@@ -441,13 +445,14 @@ class TestTablesRecorder:
         h5file = tmpdir.join('output.h5')
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
-            rec = TablesRecorder(model, h5f, parameters=[p, ])
+            rec = TablesRecorder(model, h5f, parameters=[p, p_slash])
 
             # check parameters have been added to the component tree
             # this is particularly important for parameters which update their
             # values in `after`, e.g. DeficitParameter (see #465)
             assert(not model.find_orphaned_parameters())
             assert(p in rec.children)
+            assert(p_slash in rec.children)
 
             model.run()
 
@@ -456,6 +461,9 @@ class TestTablesRecorder:
                 assert ca.shape == (365, 1)
                 if node_name == 'Sum':
                     np.testing.assert_allclose(ca, 20.0)
+                elif "name with a" in node_name:
+                    assert(node_name == "name with a _ in it")
+                    np.testing.assert_allclose(ca, 0.0)
                 else:
                     np.testing.assert_allclose(ca, 10.0)
 

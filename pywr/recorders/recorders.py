@@ -8,6 +8,10 @@ from .calibration import *
 from past.builtins import basestring
 from pywr.h5tools import H5Store
 from ..parameters import load_parameter
+import warnings
+
+class ParameterNameWarning(UserWarning):
+    pass
 
 def assert_rec(model, parameter, name=None):
     """Decorator for creating AssertionRecorder objects
@@ -222,7 +226,13 @@ class TablesRecorder(Recorder):
         if not param.name:
             raise ValueError("Can only record named Parameter objects")
         if where is None:
-            where = self.where + "/" + param.name
+            name = param.name.replace("/", "_")
+            if name != param.name:
+                warnings.warn(
+                    "Recorded parameter has \"/\" in name, replaced with \"_\" to avoid creation of subgroup: {}".format(param.name),
+                    ParameterNameWarning
+                )
+            where = self.where + "/" + name
         where = where.replace("//", "/")
         self.children.add(param)
         self.parameters.append((where, param))
