@@ -18,11 +18,14 @@ from pywr.recorders import load_recorder
 
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
     StorageOutput, Timestep, ScenarioIndex)
-from pywr._component import ROOT_NODE, Component
+from pywr._component import ROOT_NODE
+from pywr._component cimport Component
 from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
 from pywr._core import ScenarioCollection, Scenario
+from pywr._core cimport AbstractNode
 from pywr.parameters._parameters import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
+from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
 
 class OrphanedParameterWarning(Warning):
@@ -629,19 +632,25 @@ class Model(object):
         --------
         `Model.step`
         """
+        cdef AbstractNode node
+        cdef Component component
+        cdef BaseParameter param
         for node in self.graph.nodes():
             node.before(self.timestep)
-        components = self.flatten_component_tree(rebuild=False)
+        cdef list components = self.flatten_component_tree(rebuild=False)
         for component in components:
             component.before()
         for component in components:
             if isinstance(component, BaseParameter):
-                component.calc_values(self.timestep)
+                param = component
+                param.calc_values(self.timestep)
 
     def after(self):
+        cdef AbstractNode node
+        cdef Component component
         for node in self.graph.nodes():
             node.after(self.timestep)
-        components = self.flatten_component_tree(rebuild=False)
+        cdef list components = self.flatten_component_tree(rebuild=False)
         for component in components:
             component.after()
 
