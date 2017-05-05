@@ -246,7 +246,7 @@ cdef class CythonLPSolveSolver:
 
             #set_rowex(self.prob, self.idx_row_supplys+col, len(cols)+1, val, ind)
             #set_row_bnds(self.prob, self.idx_row_supplys+col, 0.0, 0.0)
-            
+
             free(ind)
             free(val)
 
@@ -305,7 +305,7 @@ cdef class CythonLPSolveSolver:
             add_constraintex(self.prob, len(cols_output)+len(cols_input), val, ind, EQ, 0.0)
             free(ind)
             free(val)
-        
+
         if len(virtual_storages):
             self.idx_row_virtual_storages = get_Norig_rows(self.prob) + 1
             ret = resize_lp(self.prob, get_Norig_rows(self.prob)+len(virtual_storages), get_Norig_columns(self.prob))
@@ -331,7 +331,7 @@ cdef class CythonLPSolveSolver:
                 val[n] = -f
 
             add_constraintex(self.prob, len(cols), val, ind, EQ, 0.0)
-            
+
             free(ind)
             free(val)
 
@@ -368,7 +368,7 @@ cdef class CythonLPSolveSolver:
                     val[len(cols[0])+i] = -factors_norm[n+1]
 
                 add_constraintex(self.prob, length, val, ind, EQ, 0.0)
-                
+
                 free(ind)
                 free(val)
 
@@ -467,10 +467,10 @@ cdef class CythonLPSolveSolver:
 
         # update route properties
         for col, route in enumerate(routes):
-            cost = route[0].get_cost(timestep, scenario_index)
+            cost = route[0].get_cost(scenario_index)
             for node in route[1:-1]:
                 if isinstance(node, BaseLink):
-                    cost += node.get_cost(timestep, scenario_index)
+                    cost += node.get_cost(scenario_index)
             set_obj(self.prob, self.idx_col_routes+col, cost)
 
         self.stats['bounds_update_routes'] += time.clock() - t0
@@ -479,16 +479,16 @@ cdef class CythonLPSolveSolver:
 
         # update supply properties
         for col, supply in enumerate(supplys):
-            min_flow = inf_to_dbl_max(supply.get_min_flow(timestep, scenario_index))
-            max_flow = inf_to_dbl_max(supply.get_max_flow(timestep, scenario_index))
+            min_flow = inf_to_dbl_max(supply.get_min_flow(scenario_index))
+            max_flow = inf_to_dbl_max(supply.get_max_flow(scenario_index))
             set_row_bnds(self.prob, self.idx_row_supplys+col, min_flow, max_flow)
 
 
         # update demand properties
         for col, demand in enumerate(demands):
-            min_flow = inf_to_dbl_max(demand.get_min_flow(timestep, scenario_index))
-            max_flow = inf_to_dbl_max(demand.get_max_flow(timestep, scenario_index))
-            cost = demand.get_cost(timestep, scenario_index)
+            min_flow = inf_to_dbl_max(demand.get_min_flow(scenario_index))
+            max_flow = inf_to_dbl_max(demand.get_max_flow(scenario_index))
+            cost = demand.get_cost(scenario_index)
             set_bounds(self.prob, self.idx_col_demands+col, min_flow, max_flow)
             set_obj(self.prob, self.idx_col_demands+col, cost)
 
@@ -497,8 +497,8 @@ cdef class CythonLPSolveSolver:
 
         # update storage node constraint
         for col, storage in enumerate(storages):
-            max_volume = storage.get_max_volume(timestep, scenario_index)
-            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
+            max_volume = storage.get_max_volume(scenario_index)
+            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep.days
@@ -507,8 +507,8 @@ cdef class CythonLPSolveSolver:
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
-            max_volume = storage.get_max_volume(timestep, scenario_index)
-            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
+            max_volume = storage.get_max_volume(scenario_index)
+            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep.days
