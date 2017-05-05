@@ -835,7 +835,10 @@ cdef class Storage(AbstractStorage):
 
         def __set__(self, value):
             self._level_param = None
-            if isinstance(value, Parameter):
+            if value is None:
+                self._level_param = None
+                self._level = 0.0
+            elif isinstance(value, Parameter):
                 self._level_param = value
             else:
                 self._level = value

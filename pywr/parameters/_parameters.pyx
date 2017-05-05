@@ -309,7 +309,6 @@ cdef class TablesArrayParameter(IndexParameter):
 
         self.h5store = H5Store(self.h5file, None, "r")
         node = self.h5store.file.get_node(self.where, self.node)
-
         if not node.dtype in (np.float32, np.float64, np.int8, np.int16, np.int32):
             raise TypeError("Unexpected dtype in array: {}".format(node.dtype))
 

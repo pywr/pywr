@@ -1,0 +1,104 @@
+{
+    "metadata": {
+        "title": "Hydropower example",
+        "description": "A model with a single reservoir and hydro-power recorder",
+        "minimum_version": "0.4"
+    },
+    "timestepper": {
+        "start": "2100-01-01",
+        "end": "2110-01-01",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "catchment1",
+            "type": "catchment",
+            "flow": {
+              "type": "dataframe",
+              "url": "data/thames_stochastic_flow.gz",
+              "column": "flow",
+              "index_col": "Date",
+              "parse_dates": true
+            }
+        },
+        {
+            "name": "reservoir1",
+            "type": "storage",
+            "max_volume": 200000,
+            "initial_volume": 100000,
+            "level":  {
+              "type": "interpolatedlevel",
+              "node": "reservoir1",
+              "volumes": [0, 25000, 50000, 75000, 100000, 150000, 200000],
+              "levels": [0, 29.2, 36.8, 42.2, 46.4, 53.1, 58.5],
+              "kind": "cubic"
+            }
+        },
+        {
+            "name": "release1",
+            "type": "link",
+            "max_flow": 50,
+            "cost": -500
+        },
+        {
+            "name": "turbine1",
+            "type": "link",
+            "max_flow": "turbine1_discharge",
+            "cost": -200
+        },
+        {
+            "name": "spill1",
+            "type": "link",
+            "cost": 1000
+        },
+        {
+            "name": "reach1",
+            "type": "link"
+        },
+        {
+            "name": "end1",
+            "type": "output"
+        }
+    ],
+    "edges": [
+        ["catchment1", "reservoir1"],
+        ["reservoir1", "release1"],
+        ["reservoir1", "turbine1"],
+        ["reservoir1", "spill1"],
+        ["release1", "reach1"],
+        ["turbine1", "reach1"],
+        ["spill1", "reach1"],
+        ["reach1", "end1"]
+    ],
+    "parameters": {
+        "turbine1_discharge": {
+            "type": "indexedarray",
+            "index_parameter": "turbine1_control",
+            "params": [
+                200.0,
+                0.0
+            ]
+        },
+        "turbine1_control": {
+            "type": "controlcurveindex",
+            "storage_node": "reservoir1",
+            "control_curves": [
+                "turbine1_control_curve"
+            ]
+        },
+        "turbine1_control_curve": {
+            "type": "monthlyprofile",
+            "values": [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8]
+        }
+    },
+    "recorders": {
+        "turbine1_energy": {
+            "type": "HydroPowerRecorder",
+            "node": "turbine1",
+            "storage_node": "reservoir1",
+            "level": 20.0,
+            "efficiency": 0.85,
+            "flow_unit_conversion": 0.011574074074074073
+        }
+    }
+}

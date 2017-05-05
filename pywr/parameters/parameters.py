@@ -65,6 +65,14 @@ class InterpolatedLevelParameter(Parameter):
         level = self.interp(v)
         return level
 
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        volumes = np.array(data.pop("volumes"))
+        levels = np.array(data.pop("levels"))
+        kind = data.pop("kind", "linear")
+        return cls(model, node, volumes, levels, kind=kind)
+InterpolatedLevelParameter.register()
 
 def pop_kwarg_parameter(kwargs, key, default):
     """Pop a parameter from the keyword arguments dictionary

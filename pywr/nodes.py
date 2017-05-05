@@ -300,6 +300,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
         initial_volume = kwargs.pop('initial_volume', 0.0)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+        level = pop_kwarg_parameter(kwargs, 'level', None)
 
         position = kwargs.pop("position", {})
 
@@ -318,6 +319,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         self.initial_volume = initial_volume
         self.cost = cost
         self.position = position
+        self.level = level
 
         # TODO FIXME!
         # StorageOutput and StorageInput are Cython classes, which do not have
@@ -378,6 +380,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         initial_volume = data.pop('initial_volume')
         max_volume = data.pop('max_volume')
         min_volume = data.pop('min_volume', 0.0)
+        level = data.pop('level', None)
 
         # Coerce initial volume to float.
         try:
@@ -400,6 +403,11 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         if cost is None:
             cost = 0.0
         node.cost = cost
+
+        if level is not None:
+            level = load_parameter(model, level)
+        print(level)
+        node.level = level
 
         return node
 
