@@ -459,7 +459,7 @@ cdef class CythonGLPKSolver:
         cdef double[:] node_costs = self.node_costs_arr
         for _node in self.all_nodes:
             data = _node.__data
-            node_costs[data.id] = _node.get_cost(timestep, scenario_index)
+            node_costs[data.id] = _node.get_cost(scenario_index)
 
         # calculate the total cost of each route
         for col in range(nroutes):
@@ -474,13 +474,13 @@ cdef class CythonGLPKSolver:
 
         # update non-storage properties
         for col, node in enumerate(non_storages):
-            min_flow = inf_to_dbl_max(node.get_min_flow(timestep, scenario_index))
-            max_flow = inf_to_dbl_max(node.get_max_flow(timestep, scenario_index))
+            min_flow = inf_to_dbl_max(node.get_min_flow(scenario_index))
+            max_flow = inf_to_dbl_max(node.get_max_flow(scenario_index))
             set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         for col, agg_node in enumerate(aggregated):
-            min_flow = inf_to_dbl_max(agg_node.get_min_flow(timestep, scenario_index))
-            max_flow = inf_to_dbl_max(agg_node.get_max_flow(timestep, scenario_index))
+            min_flow = inf_to_dbl_max(agg_node.get_min_flow(scenario_index))
+            max_flow = inf_to_dbl_max(agg_node.get_max_flow(scenario_index))
             glp_set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.clock() - t0
@@ -488,8 +488,8 @@ cdef class CythonGLPKSolver:
 
         # update storage node constraint
         for col, storage in enumerate(storages):
-            max_volume = storage.get_max_volume(timestep, scenario_index)
-            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
+            max_volume = storage.get_max_volume(scenario_index)
+            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep._days
@@ -498,8 +498,8 @@ cdef class CythonGLPKSolver:
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
-            max_volume = storage.get_max_volume(timestep, scenario_index)
-            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(timestep, scenario_index), 0.0)
+            max_volume = storage.get_max_volume(scenario_index)
+            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
             # change in storage cannot be more than the current volume or
             # result in maximum volume being exceeded
             lb = -avail_volume/timestep._days

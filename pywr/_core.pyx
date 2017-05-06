@@ -399,7 +399,7 @@ cdef class AbstractNode:
     cpdef check(self,):
         pass
 
-    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         return 0.0
 
 cdef class Node(AbstractNode):
@@ -445,7 +445,7 @@ cdef class Node(AbstractNode):
                 self._cost_param = None
                 self._cost = value
 
-    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         """Get the cost per unit flow at a given timestep
         """
         if self._cost_param is None:
@@ -473,7 +473,7 @@ cdef class Node(AbstractNode):
                 self._min_flow_param = None
                 self._min_flow = value
 
-    cpdef double get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1:
         """Get the minimum flow at a given timestep
         """
         if self._min_flow_param is None:
@@ -501,7 +501,7 @@ cdef class Node(AbstractNode):
                 self._max_flow_param = None
                 self._max_flow = value
 
-    cpdef double get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1:
         """Get the maximum flow at a given timestep
         """
         if self._max_flow_param is None:
@@ -528,7 +528,7 @@ cdef class Node(AbstractNode):
         """
         return self._conversion_factor
 
-    cdef set_parameters(self, Timestep ts, ScenarioIndex scenario_index):
+    cdef set_parameters(self, ScenarioIndex scenario_index):
         """Update the constant attributes by evaluating any Parameter objects
 
         This is useful when the `get_` functions need to be accessed multiple
@@ -620,7 +620,7 @@ cdef class AggregatedNode(AbstractNode):
                 self._min_flow_param = None
                 self._min_flow = value
 
-    cpdef double get_min_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1:
         """Get the minimum flow at a given timestep
         """
         if self._min_flow_param is None:
@@ -648,7 +648,7 @@ cdef class AggregatedNode(AbstractNode):
                 self._max_flow_param = None
                 self._max_flow = value
 
-    cpdef double get_max_flow(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1:
         """Get the maximum flow at a given timestep
         """
         if self._max_flow_param is None:
@@ -677,18 +677,18 @@ cdef class StorageInput(BaseInput):
         BaseInput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, -volume)
 
-    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         # Return negative of parent cost
-        return -self.parent.get_cost(ts, scenario_index)
+        return -self.parent.get_cost(scenario_index)
 
 cdef class StorageOutput(BaseOutput):
     cpdef commit(self, int scenario_index, double volume):
         BaseOutput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, volume)
 
-    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         # Return parent cost
-        return self.parent.get_cost(ts, scenario_index)
+        return self.parent.get_cost(scenario_index)
 
 
 cdef class AbstractStorage(AbstractNode):
@@ -753,7 +753,7 @@ cdef class Storage(AbstractStorage):
                 self._cost_param = None
                 self._cost = value
 
-    cpdef double get_cost(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         """Get the cost per unit flow at a given timestep
         """
         if self._cost_param is None:
@@ -780,7 +780,7 @@ cdef class Storage(AbstractStorage):
             else:
                 self._min_volume = value
 
-    cpdef double get_min_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_min_volume(self, ScenarioIndex scenario_index) except? -1:
         if self._min_volume_param is None:
             return self._min_volume
         return self._min_volume_param.get_value(scenario_index)
@@ -798,7 +798,7 @@ cdef class Storage(AbstractStorage):
             else:
                 self._max_volume = value
 
-    cpdef double get_max_volume(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_max_volume(self, ScenarioIndex scenario_index) except? -1:
         if self._max_volume_param is None:
             return self._max_volume
         return self._max_volume_param.get_value(scenario_index)
@@ -816,7 +816,7 @@ cdef class Storage(AbstractStorage):
             else:
                 self._level = value
 
-    cpdef double get_level(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_level(self, ScenarioIndex scenario_index) except? -1:
         if self._level_param is None:
             return self._level
         return self._level_param.get_value(scenario_index)
@@ -892,7 +892,7 @@ cdef class AggregatedStorage(AbstractStorage):
 
         for i, si in enumerate(self.model.scenarios.combinations):
             for s in self._storage_nodes:
-                mxv += s.get_max_volume(self.model.timestepper.current, si)
+                mxv += s.get_max_volume(si)
 
             self._volume[i] = self.initial_volume
             # Ensure variable maximum volume is taken in to account
@@ -912,7 +912,7 @@ cdef class AggregatedStorage(AbstractStorage):
             mxv = 0.0
             for s in self._storage_nodes:
                 self._flow[i] += s._flow[i]
-                mxv += s.get_max_volume(ts, si)
+                mxv += s.get_max_volume(si)
             self._volume[i] += self._flow[i]*ts._days
 
             # Ensure variable maximum volume is taken in to account

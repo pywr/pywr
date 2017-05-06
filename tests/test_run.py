@@ -160,8 +160,8 @@ def test_run_cost1(solver):
     supply2 = model.nodes['supply2']
     demand1 = model.nodes['demand1']
 
-    assert_allclose(supply1.get_cost(None, None), 1)
-    assert_allclose(supply2.get_cost(None, None), 2)  # more expensive
+    assert_allclose(supply1.get_cost(None), 1)
+    assert_allclose(supply2.get_cost(None), 2)  # more expensive
 
     result = model.step()
     # check entire demand was supplied by supply1
