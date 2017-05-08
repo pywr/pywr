@@ -187,27 +187,6 @@ def test_node_position(solver):
     assert(storage.position["schematic"] == (99, 70))
     assert(storage.position["geographic"] == (-2.5, 55.6))
 
-# TODO Update this test. RiverSplit is deprecated.
-@pytest.mark.xfail
-def test_slots_from(solver):
-    model = Model(solver=solver)
-
-    riversplit = RiverSplit(model, name='split')
-    river1 = River(model, name='river1')
-    river2 = River(model, name='river2')
-
-    riversplit.connect(river1, from_slot=1)
-    assert((riversplit, river1) in model.edges())
-
-    riversplit.connect(river2, from_slot=2)
-    assert((riversplit, river2) in model.edges())
-
-    riversplit.disconnect(river2)
-    assert(riversplit.slots[2] is None)
-    assert(riversplit.slots[1] is river1)
-
-    riversplit.disconnect()
-    assert(len(model.edges()) == 0)
 
 test_data = ["timeseries1.xlsx", os.path.join("models", "timeseries1.csv")]
 @pytest.mark.parametrize("filename", test_data)

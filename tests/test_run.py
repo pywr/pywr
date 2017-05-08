@@ -184,77 +184,6 @@ def test_run_cost1(solver):
     assert_allclose(supply2.flow, 15.0, atol=1e-7)
     assert_allclose(demand1.flow, 30.0, atol=1e-7)
 
-# Licence XML needs addressing
-@pytest.mark.xfail
-def test_run_license1(solver):
-    model = load_model('simple1.xml', solver=solver)
-
-    model.timestamp = datetime.datetime(2015, 1, 1)
-
-    # add licenses to supply node
-    supply1 = model.nodes['supply1']
-    daily_lic = pywr.licenses.DailyLicense(5)
-    annual_lic = pywr.licenses.AnnualLicense(7)
-    collection = pywr.licenses.LicenseCollection([daily_lic, annual_lic])
-    supply1.licenses = collection
-
-    model.check()
-
-    # daily license is limit
-    result = model.step()
-    d1 = model.nodes['demand1']
-    assert_allclose(d1.flow, 5.0, atol=1e-7)
-
-    # resource state is getting worse
-    assert(annual_lic.resource_state(model.timestep) < 1.0)
-
-    # annual license is limit
-    result = model.step()
-    d1 = model.nodes['demand1']
-    assert_allclose(d1.flow, 2.0, atol=1e-7)
-
-    # annual license is exhausted
-    result = model.step()
-    d1 = model.nodes['demand1']
-    assert_allclose(d1.flow, 0.0, atol=1e-7)
-    assert_allclose(annual_lic.resource_state(model.timestep), 0.0, atol=1e-7)
-
-# Licence XML needs addressing
-@pytest.mark.xfail
-def test_run_license2(solver):
-    '''Test licenses loaded from XML'''
-    model = load_model('license1.xml', solver=solver)
-
-    model.timestamp = datetime.datetime(2015, 1, 1)
-
-    supply1 = model.nodes['supply1']
-
-    assert(len(supply1.licenses) == 2)
-
-    # daily license limit
-    result = model.step()
-    d1 = model.nodes['demand1']
-    assert_allclose(d1.flow, 5.0, atol=1e-7)
-
-    # annual license limit
-    result = model.step()
-    assert_allclose(d1.flow, 2.0, atol=1e-7)
-
-
-@pytest.mark.xfail
-def test_run_license_group(solver):
-    '''Test license groups'''
-    model = load_model('groups1.xml', solver=solver)
-
-    supply1 = model.nodes['supply1']
-    supply2 = model.nodes['supply2']
-
-    assert(len(model.group) == 2)
-
-    result = model.step()
-    d1 = model.nodes['demand1']
-    assert_allclose(d1.flow, 6.0, atol=1e-7)
-
 
 def test_run_bottleneck(solver):
     '''Test max flow constraint on intermediate nodes is upheld'''
@@ -289,79 +218,6 @@ def test_run_discharge_downstream(solver):
     term = model.nodes['term1']
     assert_allclose(demand.flow, 5.0, atol=1e-7)
     assert_allclose(term.flow, 3.0, atol=1e-7)
-
-
-@pytest.mark.xfail
-def test_run_blender1(solver):
-    '''Test blender constraint/component'''
-    model = load_model('blender1.xml', solver=solver)
-
-    blender = model.nodes['blender1']
-    supply1 = model.nodes['supply1']
-    supply2 = model.nodes['supply2']
-    supply3 = model.nodes['supply3']
-
-    # check blender ratio
-    assert_allclose(blender.properties['ratio'].value(model.timestamp), 0.75, atol=1e-7)
-
-    # check supplies have been connected correctly
-    assert(len(blender.slots) == 2)
-    assert(blender.slots[1] is supply1)
-    assert(blender.slots[2] is supply2)
-
-    # test model results
-    result = model.step()
-    assert_allclose(result[3][(supply1, blender)], 7.5, atol=1e-7)
-    assert_allclose(result[3][(supply2, blender)], 2.5, atol=1e-7)
-
-@pytest.mark.xfail
-def test_run_blender2(solver):
-    '''Test blender constraint/component'''
-    model = load_model('blender2.xml', solver=solver)
-
-    blender = model.nodes['blender1']
-    supply1 = model.nodes['supply1']
-    supply2 = model.nodes['supply2']
-
-    # test model results
-    result = model.step()
-    assert_allclose(result[3][(supply1, blender)], 3.0, atol=1e-7)
-    assert_allclose(result[3][(supply2, blender)], 7.0, atol=1e-7)
-
-@pytest.mark.xfail
-def test_run_demand_discharge(solver):
-    """Test demand discharge node"""
-    model = pywr.core.Model(solver=solver)
-    catchment = pywr.core.Catchment(model, 'catchment', flow=10.0)
-    abstraction1 = pywr.core.RiverAbstraction(model, 'abstraction1', max_flow=100)
-    demand1 = pywr.core.Demand(model, 'demand1', demand=8.0)
-    discharge = pywr.core.DemandDischarge(model, 'discharge')
-    abstraction2 = pywr.core.RiverAbstraction(model, 'abstraction2', max_flow=100)
-    demand2 = pywr.core.Demand(model, 'demand2', demand=5.0)
-    term = pywr.core.Terminator(model, 'term')
-    catchment.connect(abstraction1)
-    abstraction1.connect(demand1)
-    abstraction1.connect(discharge)
-    demand1.connect(discharge)
-    discharge.connect(abstraction2)
-    abstraction2.connect(demand2)
-    abstraction2.connect(term)
-
-    # when consumption is 100% there is not enough water
-    # 8 + 5 > 10
-    demand1.properties['consumption'] = pywr.parameters.ParameterConstant(1.0)
-    result = model.step()
-    assert(model.failure)
-
-    # when demand #1 consumes 90% of it's supply there still isn't enough
-    demand1.properties['consumption'] = pywr.parameters.ParameterConstant(0.9)
-    result = model.step()
-    assert(model.failure)
-
-    # when demand #1 only consumes 50% of it's supply there is enough for all
-    demand1.properties['consumption'] = pywr.parameters.ParameterConstant(0.5)
-    result = model.step()
-    assert(not model.failure)
 
 def test_new_storage(solver):
     """Test new-style storage node with multiple inputs"""
@@ -584,21 +440,6 @@ def test_reservoir_circle(solver):
     assert_allclose(compensation.flow, 50)
     assert_allclose(pumping_station.flow, 0)
     assert_allclose(demand.flow, 50)
-
-
-# Licence XML needs addressing
-@pytest.mark.xfail
-def test_reset(solver):
-    """Test model reset"""
-    model = load_model('license1.xml', solver=solver)
-    supply1 = model.nodes['supply1']
-    license_collection = supply1.licenses
-    license = [lic for lic in license_collection._licenses if isinstance(lic, pywr.licenses.AnnualLicense)][0]
-    assert_allclose(license.available(None), 7.0, atol=1e-7)
-    model.step()
-    assert_allclose(license.available(None), 2.0, atol=1e-7)
-    model.reset()
-    assert_allclose(license.available(None), 7.0, atol=1e-7)
 
 
 def test_run_empty(solver):
