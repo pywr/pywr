@@ -390,6 +390,12 @@ class TestTablesRecorder:
                 assert row['name'] == s.name
                 assert row['size'] == s.size
 
+            model.reset()
+            model.run()
+
+            time = h5f.get_node('/time')
+            assert len(time) == len(model.timestepper)
+
     def test_multiple_scenarios(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder

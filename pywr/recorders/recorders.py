@@ -314,14 +314,6 @@ class TablesRecorder(Recorder):
                 group_name = self.h5store.file.root
             self.h5store.file.create_carray(group_name, node_name, atom, shape, createparents=True)
 
-        # Create time table
-        if self.time is not None:
-            group_name, node_name = self.time.rsplit('/', 1)
-            if "group_name" == "/":
-                group_name = self.h5store.file.root
-            description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
-            self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
-
         # Create scenario tables
         if self.scenarios is not None:
             group_name, node_name = self.scenarios.rsplit('/', 1)
@@ -343,6 +335,8 @@ class TablesRecorder(Recorder):
         self.h5store = None
 
     def reset(self):
+        import tables
+
         mode = "r+"  # always need to append, as file already created in setup
         self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
         self._arrays = {}
@@ -350,8 +344,22 @@ class TablesRecorder(Recorder):
             self._arrays[node] = self.h5store.file.get_node(where)
 
         self._time_table = None
+        # Create time table
+        # This is created in reset so that the table is always recreated
         if self.time is not None:
-            self._time_table = self.h5store.file.get_node(self.time)
+            group_name, node_name = self.time.rsplit('/', 1)
+            if group_name == "":
+                group_name = "/"
+            description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
+            print(group_name, node_name)
+            try:
+                self.h5store.file.remove_node(group_name, node_name)
+            except tables.NoSuchNodeError:
+                pass
+            finally:
+                self._time_table = self.h5store.file.create_table(group_name, node_name,
+                                                                  description=description,
+                                                                  createparents=True)
 
     def after(self):
         """
