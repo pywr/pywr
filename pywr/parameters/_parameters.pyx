@@ -36,7 +36,7 @@ cdef class Parameter(Component):
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         raise NotImplementedError("Parameter must be subclassed")
 
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         # default implementation calls Parameter.value in loop
         cdef ScenarioIndex scenario_index
         cdef ScenarioCollection scenario_collection = self.model.scenarios
@@ -93,7 +93,7 @@ cdef class ConstantParameter(Parameter):
         self._lower_bounds = np.ones(self.size) * lower_bounds
         self._upper_bounds = np.ones(self.size) * upper_bounds
 
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         # constant parameter can just set the entire array to one value
         self.__values[...] = self._value
 
@@ -216,7 +216,7 @@ cdef class ArrayIndexedParameter(Parameter):
         super(ArrayIndexedParameter, self).__init__(model, *args, **kwargs)
         self.values = np.asarray(values, dtype=np.float64)
 
-    cpdef calc_values(self, Timestep ts):
+    cdef calc_values(self, Timestep ts):
         # constant parameter can just set the entire array to one value
         self.__values[...] = self.values[ts._index]
 
@@ -592,7 +592,7 @@ cdef class IndexParameter(Parameter):
             num_comb = 1
         self.__indices = np.empty([num_comb], np.int32)
 
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         cdef ScenarioIndex scenario_index
         cdef ScenarioCollection scenario_collection = self.model.scenarios
         for scenario_index in scenario_collection.combinations:
@@ -835,7 +835,7 @@ cdef class AggregatedParameter(Parameter):
         super(AggregatedParameter, self).setup()
         assert(len(self.parameters))
 
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         cdef Parameter parameter
         cdef double[:] accum = self.__values  # View of the underlying location for the data
         cdef double[:] values
@@ -951,7 +951,7 @@ cdef class AggregatedIndexParameter(IndexParameter):
         super(AggregatedIndexParameter, self).setup()
         assert(len(self.parameters))
 
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         cdef Parameter parameter
         cdef int[:] accum = self.__indices  # View of the underlying location for the data
         cdef int[:] values
@@ -1028,7 +1028,7 @@ cdef class NegativeParameter(Parameter):
         self.parameter = parameter
         self.children.add(parameter)
 
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         cdef int i
         cdef int n = self.__values.shape[0]
 
@@ -1061,7 +1061,7 @@ cdef class MaxParameter(Parameter):
         self.children.add(parameter)
         self.threshold = threshold
 
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         cdef int i
         cdef int n = self.__values.shape[0]
 
@@ -1077,7 +1077,7 @@ MaxParameter.register()
 
 cdef class NegativeMaxParameter(MaxParameter):
     """ Parameter that takes maximum of the negative of a `Parameter` and constant value (threshold) """
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         cdef int i
         cdef int n = self.__values.shape[0]
 
@@ -1106,7 +1106,7 @@ cdef class MinParameter(Parameter):
         self.children.add(parameter)
         self.threshold = threshold
 
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         cdef int i
         cdef int n = self.__values.shape[0]
 
@@ -1122,7 +1122,7 @@ MinParameter.register()
 
 cdef class NegativeMinParameter(MinParameter):
     """ Parameter that takes minimum of the negative of a `Parameter` and constant value (threshold) """
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         cdef int i
         cdef int n = self.__values.shape[0]
 
@@ -1158,7 +1158,7 @@ cdef class DeficitParameter(Parameter):
     cpdef reset(self):
         self.__values[...] = 0.0
 
-    cpdef calc_values(self, Timestep timestep):
+    cdef calc_values(self, Timestep timestep):
         pass # calculation done in after
 
     cpdef after(self):

@@ -957,9 +957,8 @@ def test_ocptt(simple_linear_model):
     model.setup()
     model.reset()
     model.step()
-    timestep = model.timestepper.current
-    p.calc_values(timestep)
-    values1 = [p.get_value(scenario_index) for  scenario_index in model.scenarios.combinations]
+
+    values1 = [p.get_value(scenario_index) for scenario_index in model.scenarios.combinations]
     values2 = list(p.get_all_values())
     assert_allclose(values1, [0, 0, 5, 5, 20, 20])
     assert_allclose(values2, [0, 0, 5, 5, 20, 20])

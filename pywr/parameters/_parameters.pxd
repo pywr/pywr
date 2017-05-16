@@ -8,7 +8,7 @@ cdef class Parameter(Component):
     cdef AbstractNode _node
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cdef double[:] __values
-    cpdef calc_values(self, Timestep ts)
+    cdef calc_values(self, Timestep ts)
     cpdef double get_value(self, ScenarioIndex scenario_index)
     cpdef double[:] get_all_values(self)
     cpdef update(self, double[:] values)
