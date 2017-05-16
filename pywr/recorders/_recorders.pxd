@@ -1,5 +1,5 @@
 from pywr._component cimport Component
-from pywr._core cimport Timestep, AbstractNode, Storage, ScenarioIndex, Scenario
+from pywr._core cimport Timestep, AbstractNode, AbstractStorage, ScenarioIndex, Scenario
 from pywr.parameters._parameters cimport Parameter, IndexParameter
 
 
@@ -22,7 +22,7 @@ cdef class NodeRecorder(Recorder):
     cdef AbstractNode _node
 
 cdef class StorageRecorder(Recorder):
-    cdef Storage _node
+    cdef AbstractStorage _node
 
 cdef class ParameterRecorder(Recorder):
     cdef readonly Parameter _param
@@ -50,6 +50,12 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
     cdef int _fdc_agg_func
     cdef double[:] _percentiles
     cdef double[:, :] _fdc
+
+cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
+    cdef object sdc_agg_func
+    cdef int _sdc_agg_func
+    cdef double[:] _percentiles
+    cdef double[:, :] _sdc
 
 cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     cdef double[:, :] _target_fdc
