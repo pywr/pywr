@@ -18,7 +18,8 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
     EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
-    FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
+    FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
+    load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
@@ -129,6 +130,37 @@ def test_fdc_dev_recorder():
     assert rec.fdc_deviations.shape == (len(percentiles), len(model.scenarios.combinations))
     df = rec.to_dataframe()
     assert df.shape == (len(percentiles), len(model.scenarios.combinations))
+
+
+def test_sdc_recorder():
+    """
+    Test the StorageDurationCurveRecorder
+    """
+    model = load_model("timeseries3.json")
+    input = model.nodes['catchment1']
+    strg = model.nodes['reservoir1']
+
+    percentiles = np.linspace(20., 100., 5)
+    flow_rec = NumpyArrayNodeRecorder(model, input)
+    rec = StorageDurationCurveRecorder(model, strg, percentiles, sdc_agg_func="max", agg_func="min")
+
+    # test retrieval of recorder
+    assert model.recorders['storagedurationcurverecorder.reservoir1'] == rec
+
+    model.run()
+
+    # Manually calculate expected storage and percentiles
+    strg_volume = strg.initial_volume + np.cumsum(flow_rec.data - 23.0, axis=0)
+    strg_pciles = np.percentile(strg_volume, percentiles, axis=0)
+
+    assert_allclose(rec.sdc, strg_pciles)
+    assert_allclose(np.max(rec.sdc, axis=0), rec.values())
+    assert_allclose(np.min(np.max(rec.sdc, axis=0)), rec.aggregated_value())
+
+    assert rec.sdc.shape == (len(percentiles), len(model.scenarios.combinations))
+    df = rec.to_dataframe()
+    assert df.shape == (len(percentiles), len(model.scenarios.combinations))
+
 
 def test_numpy_storage_recorder(simple_storage_model):
     """
