@@ -838,6 +838,14 @@ cdef class Storage(AbstractStorage):
         cdef double mxv = self._max_volume
         cdef ScenarioIndex si
 
+        # TODO at some point remove this limitation
+        # See issue #470 https://github.com/pywr/pywr/issues/470
+        if self._max_volume_param is not None:
+            if len(self._max_volume_param.children) > 0:
+                raise RuntimeError('Only parameters with no dependencies are supported for max_volume.')
+            # We ensure that this is called in reset
+            self._max_volume_param.calc_values(self._model.timestepper.current)
+
         for i, si in enumerate(self.model.scenarios.combinations):
             self._volume[i] = self._initial_volume
             # Ensure variable maximum volume is taken in to account

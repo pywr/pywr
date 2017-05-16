@@ -10,7 +10,7 @@ from pywr._core import Timestep, ScenarioIndex
 
 from pywr.core import *
 from pywr.domains.river import *
-from pywr.parameters import Parameter, ConstantParameter, DataFrameParameter
+from pywr.parameters import Parameter, ConstantParameter, DataFrameParameter, AggregatedParameter
 from pywr.recorders import assert_rec, AssertionRecorder
 
 TEST_FOLDER = os.path.dirname(__file__)
@@ -364,6 +364,61 @@ def test_storage_max_volume_zero(solver):
 
     model.run()
     assert np.isnan(storage.current_pc)
+
+
+def test_storage_max_volume_param(solver):
+    """Test a that an max_volume with a Parameter results in the correct current_pc
+
+    """
+
+    model = Model(
+        solver=solver,
+        start=pandas.to_datetime('2016-01-01'),
+        end=pandas.to_datetime('2016-01-01')
+    )
+
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    otpt = Output(model, 'output', max_flow=99999, cost=-99999)
+    storage.connect(otpt)
+
+    p = ConstantParameter(model, 20.0)
+    storage.max_volume = p
+    storage.initial_volume = 10.0
+
+    model.setup()
+    np.testing.assert_allclose(storage.current_pc, 0.5)
+
+    model.run()
+
+    p.update(np.asarray([40.0, ]))
+    model.reset()
+    np.testing.assert_allclose(storage.current_pc, 0.25)
+
+
+def test_storage_max_volume_param_raises(solver):
+    """Test a that an max_volume with a Parameter that has children is an error
+
+    """
+
+    model = Model(
+        solver=solver,
+        start=pandas.to_datetime('2016-01-01'),
+        end=pandas.to_datetime('2016-01-01')
+    )
+
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    otpt = Output(model, 'output', max_flow=99999, cost=-99999)
+    storage.connect(otpt)
+
+    p = AggregatedParameter(model, [ConstantParameter(model, 20.0), ConstantParameter(model, 20.0)], agg_func='sum')
+
+    storage.max_volume = p
+    storage.initial_volume = 10.0
+
+    with pytest.raises(RuntimeError):
+        model.run()
+
+
 
 def test_json_include(solver):
     """Test include in JSON document"""
