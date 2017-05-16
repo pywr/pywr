@@ -548,17 +548,23 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         else:
             return self._agg_user_func(np.array(self._fdc_deviations), axis=0)
 
-    def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
-
-        This DataFrame contains a MultiIndex for the columns with the recorder name
-        as the first level and scenario combination names as the second level. This
-        allows for easy combination with multiple recorder's DataFrames
+    def to_dataframe(self, return_fdc=False):
+        """ Return a `pandas.DataFrame` of the deviations from the target FDCs
+                
+        Parameters
+        ----------
+        return_fdc : bool (default=False)
+            If true returns a tuple of two dataframes. The first is the deviations, the second
+            is the actual FDC.
         """
         index = self._percentiles
         sc_index = self.model.scenarios.multiindex
 
-        return pd.DataFrame(data=np.array(self._fdc_deviations), index=index, columns=sc_index)
+        df = pd.DataFrame(data=np.array(self._fdc_deviations), index=index, columns=sc_index)
+        if return_fdc:
+            return df, super(FlowDurationCurveDeviationRecorder, self).to_dataframe()
+        else:
+            return df
 
 FlowDurationCurveDeviationRecorder.register()
 
