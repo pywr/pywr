@@ -12,13 +12,13 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
-    AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
-    TotalFlowNodeRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
-    NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
-    RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
-    PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
-    EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
-    FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
+                            AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
+                            TotalFlowNodeRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder, AnnualReturnPeriodRecorder,
+                            NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
+                            RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
+                            PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
+                            EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
+                            FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
@@ -791,10 +791,13 @@ def test_annual_count_index_parameter_recorder(simple_storage_model):
 
     # Create the recorder with a threshold of 1
     rec = AnnualCountIndexParameterRecorder(model, param, 1)
+    # Also test the annual return period calculation
+    rp = AnnualReturnPeriodRecorder(model, rec)
 
     model.run()
     # We expect no failures in the first ensemble, but 3 out of 5 in the second
     assert_allclose(rec.values(), [0, 3])
+    assert_allclose(rp.values(), [0/5.0, 3/5.0])
 
 
 # The following fixtures are used for testing the recorders in
