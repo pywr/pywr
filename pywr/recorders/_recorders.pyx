@@ -498,7 +498,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         cdef int i, j, k, sc_index
         cdef ScenarioIndex scenario_index
         cdef double[:] utrgt_fdc, ltrgt_fdc
-        cdef udev, ldev
+        cdef double udev, ldev
 
 
         # We have to do this the slow way by iterating through all scenario combinations
