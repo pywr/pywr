@@ -1,0 +1,31 @@
+{
+    "metadata": {
+        "minimum_version": "0.4dev0"
+    },
+    "timestepper": {
+        "start": "1995-01-01",
+        "end": "1995-01-05",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "A",
+            "type": "input"
+        },
+        {
+            "name": "C",
+            "type": "output",
+            "cost": -1,
+            "max_flow": 100.0
+        },
+        {
+            "name": "B",
+            "type": "breaklink",
+            "max_flow": 20.0
+        }
+    ],
+    "edges": [
+        ["A", "B"],
+        ["B", "C"]
+    ]
+}

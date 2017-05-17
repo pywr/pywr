@@ -442,6 +442,19 @@ def test_reservoir_circle(solver):
     assert_allclose(demand.flow, 50)
 
 
+def test_breaklink_node(solver):
+    model = load_model('breaklink.json', solver=solver)
+    supply = model.nodes["A"]
+    transfer = model.nodes["B"]
+    demand = model.nodes["C"]
+    model.check()
+    model.run()
+    assert_allclose(supply.flow, 20)
+    assert_allclose(transfer.flow, 20)
+    assert_allclose(demand.flow, 20)
+    assert_allclose(transfer.storage.volume, 0)
+
+
 def test_run_empty(solver):
     # empty model should raise an exception if run
     model = Model(solver=solver)
