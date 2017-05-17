@@ -104,12 +104,20 @@ def test_fdc_dev_recorder():
     input = model.nodes['catchment1']
     scenarioA = model.scenarios['scenario A']
 
-    percentiles = np.linspace(20., 100., 5)
-    input_fdc = np.array([[5, 15, 20, 25, 35],[20, 30, 40, 50, 60]])
-    # np.tile is used so that the input FDC has equal dimensions the FDCs produced in the model
+    natural_flow = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries2.csv'),
+                                   parse_dates=True, dayfirst=True, index_col=0)
 
-    input_fdc_repeat = np.repeat(input_fdc, 5, axis=0).transpose()
-    rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, input_fdc_repeat, fdc_agg_func="min",
+    percentiles = np.linspace(20., 100., 5)
+
+    natural_fdc = np.percentile(natural_flow, percentiles, axis=0)
+
+    # Lower target is 20% below natural
+    lower_input_fdc = natural_fdc * 0.8
+    # Upper is 10% above
+    upper_input_fdc = natural_fdc * 1.1
+
+    rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, lower_input_fdc, upper_input_fdc,
+                                             fdc_agg_func="min",
                                              agg_func="mean", scenario=scenarioA)
 
     # test retrieval of recorder
@@ -122,7 +130,13 @@ def test_fdc_dev_recorder():
 
     model.run()
 
-    assert_allclose(rec.fdc_deviations[:, 0], [3.084,  0.452,  0.161,  0.0588, -0.16257143])
+    # Compute deviation
+    lower_deviation = (lower_input_fdc - natural_fdc) / lower_input_fdc
+    upper_deviation = (natural_fdc - upper_input_fdc) / upper_input_fdc
+    deviation = np.maximum(np.maximum(lower_deviation, upper_deviation), np.zeros_like(lower_deviation))
+    print(deviation, lower_deviation, upper_deviation)
+
+    assert_allclose(rec.fdc_deviations[:, 0], deviation[:, 0])
     assert_allclose(np.min(rec.fdc_deviations, axis=0), rec.values())
     assert_allclose(np.mean(np.min(rec.fdc_deviations, axis=0)), rec.aggregated_value())
 
