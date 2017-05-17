@@ -442,8 +442,8 @@ def test_reservoir_circle(solver):
     assert_allclose(demand.flow, 50)
 
 
-def test_transfer_node(solver):
-    model = load_model('transfer.json', solver=solver)
+def test_breaklink_node(solver):
+    model = load_model('breaklink.json', solver=solver)
     supply = model.nodes["A"]
     transfer = model.nodes["B"]
     demand = model.nodes["C"]

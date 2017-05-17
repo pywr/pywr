@@ -746,20 +746,31 @@ class AggregatedNode(with_metaclass(NodeMeta, Drawable, _core.AggregatedNode)):
         super(AggregatedNode, self).__init__(model, name, **kwargs)
         self.nodes = nodes
 
-class Transfer(Node):
+class BreakLink(Node):
     """Compound node used to reduce the number of routes in a model
-    
+
+    Parameters
+    ----------
+    model : `pywr.model.Model`
+    name : string
+    min_flow : float or `pywr.parameters.Parameter`
+    max_flow : float or `pywr.parameters.Parameter`
+    cost : float or `pywr.parameters.Parameter`
+
+    Notes
+    -----
+
     In a model with form (3, 1, 3), i.e. 3 (A,B,C) inputs connected to 3
     outputs (D,E,F) via a bottleneck (X), there are 3*3 routes = 9 routes.
-    
+
     A -->\ /--> D
     B --> X --> E
     C -->/ \--> F
-    
+
     If X is a storage, there are only 6 routes: A->X_o, B->X_o, C->X_o and
     X_i->D_o, X_i->E_o, X_i->F_o.
-    
-    The `Transfer` node is a compound node composed of a `Storage` with zero
+
+    The `BreakLink` node is a compound node composed of a `Storage` with zero
     volume and a `Link`. It can be used in place of a normal `Link`, but
     with the benefit that it reduces the number of routes in the model (in
     the situation described above). The resulting LP is easier to solve.
@@ -789,7 +800,7 @@ class Transfer(Node):
 
         self.storage.connect(self.link)
 
-        super(Transfer, self).__init__(model, name, *args, **kwargs)
+        super(BreakLink, self).__init__(model, name, *args, **kwargs)
 
     def min_flow():
         def fget(self):
@@ -824,7 +835,7 @@ class Transfer(Node):
             yield self.storage.outputs[0]
 
     def after(self, timestep):
-        super(Transfer, self).after(timestep)
+        super(BreakLink, self).after(timestep)
         # update flow on transfer node to flow via link node
         self.commit_all(self.link.flow)
 

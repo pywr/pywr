@@ -20,7 +20,7 @@
         },
         {
             "name": "B",
-            "type": "transfer",
+            "type": "breaklink",
             "max_flow": 20.0
         }
     ],
