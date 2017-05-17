@@ -167,6 +167,9 @@ cdef class AggregatedRecorder(Recorder):
         super(AggregatedRecorder, self).__init__(model, **kwargs)
         self.recorders = list(recorders)
 
+        for rec in self.recorders:
+            self.children.add(rec)
+
     cpdef double[:] values(self):
         cdef Recorder recorder
         cdef double[:] value, value2
