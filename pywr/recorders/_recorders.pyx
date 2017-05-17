@@ -643,7 +643,7 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
         index = self._percentiles
         sc_index = self.model.scenarios.multiindex
 
-        return pd.DataFrame(data=np.array(self.sdc), index=index, columns=sc_index)
+        return pd.DataFrame(data=self.sdc, index=index, columns=sc_index)
 
 StorageDurationCurveRecorder.register()
 

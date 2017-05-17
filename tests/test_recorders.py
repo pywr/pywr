@@ -137,11 +137,11 @@ def test_sdc_recorder():
     Test the StorageDurationCurveRecorder
     """
     model = load_model("timeseries3.json")
-    input = model.nodes['catchment1']
+    inpt = model.nodes['catchment1']
     strg = model.nodes['reservoir1']
 
     percentiles = np.linspace(20., 100., 5)
-    flow_rec = NumpyArrayNodeRecorder(model, input)
+    flow_rec = NumpyArrayNodeRecorder(model, inpt)
     rec = StorageDurationCurveRecorder(model, strg, percentiles, sdc_agg_func="max", agg_func="min")
 
     # test retrieval of recorder
