@@ -419,6 +419,14 @@ def test_storage_max_volume_param_raises(solver):
         model.run()
 
 
+def test_storage_initial_volume_table():
+    """ Test loading initial storage volume from a table """
+    filename = os.path.join(TEST_FOLDER, "models", "reservoir_initial_vol_from_table.json")
+    model = Model.load(filename)
+
+    np.testing.assert_allclose(model.nodes["supply1"].initial_volume, 0.0)
+    np.testing.assert_allclose(model.nodes["supply2"].initial_volume, 35.0)
+
 
 def test_json_include(solver):
     """Test include in JSON document"""
