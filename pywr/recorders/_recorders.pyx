@@ -246,7 +246,7 @@ NodeRecorder.register()
 
 
 cdef class StorageRecorder(Recorder):
-    def __init__(self, model, Storage node, name=None, **kwargs):
+    def __init__(self, model, AbstractStorage node, name=None, **kwargs):
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), node.name)
         super(StorageRecorder, self).__init__(model, name=name, **kwargs)
@@ -602,6 +602,80 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 
 NumpyArrayStorageRecorder.register()
+
+
+cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
+    """
+    This recorder calculates a storage duration curve for each scenario.
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.AbstractStorage`
+        The node to record
+    percentiles : array
+        The percentiles to use in the calculation of the flow duration curve.
+        Values must be in the range 0-100.
+    agg_func: str, optional
+        function used for aggregating the FDC across percentiles.
+        Numpy style functions that support an axis argument are supported.
+    sdc_agg_func: str, optional
+        optional different function for aggregating across scenarios.
+    """
+
+    def __init__(self, model, AbstractStorage node, percentiles, **kwargs):
+
+        # Optional different method for aggregating across percentiles
+        agg_func = kwargs.pop('sdc_agg_func', kwargs.get('agg_func', 'mean'))
+        super(StorageDurationCurveRecorder, self).__init__(model, node, **kwargs)
+
+        if isinstance(agg_func, basestring):
+            agg_func = _agg_func_lookup[agg_func.lower()]
+        elif callable(agg_func):
+            self.agg_user_func = agg_func
+            agg_func = AggFuncs.CUSTOM
+        else:
+            raise ValueError("Unrecognised recorder aggregation function: \"{}\".".format(agg_func))
+        self._sdc_agg_func = agg_func
+
+        self._percentiles = np.asarray(percentiles, dtype=np.float64)
+
+
+    cpdef finish(self):
+        self._sdc = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
+
+    property sdc:
+        def __get__(self, ):
+            return np.array(self._sdc)
+
+    cpdef double[:] values(self):
+
+        if self._sdc_agg_func == AggFuncs.PRODUCT:
+            return np.product(self._sdc, axis=0)
+        elif self._sdc_agg_func == AggFuncs.SUM:
+            return np.sum(self._sdc, axis=0)
+        elif self._sdc_agg_func == AggFuncs.MAX:
+            return np.max(self._sdc, axis=0)
+        elif self._sdc_agg_func == AggFuncs.MIN:
+            return np.min(self._sdc, axis=0)
+        elif self._sdc_agg_func == AggFuncs.MEAN:
+            return np.mean(self._sdc, axis=0)
+        elif self._sdc_agg_func == AggFuncs.MEDIAN:
+            return np.median(self._sdc, axis=0)
+        else:
+            return self._agg_user_func(np.array(self._sdc), axis=0)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = self._percentiles
+        sc_index = self.model.scenarios.multiindex
+
+        return pd.DataFrame(data=self.sdc, index=index, columns=sc_index)
+
+StorageDurationCurveRecorder.register()
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
     cpdef setup(self):
