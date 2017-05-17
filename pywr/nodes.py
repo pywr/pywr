@@ -6,7 +6,7 @@ from pywr._core import Node as BaseNode
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
     StorageOutput, Timestep, ScenarioIndex)
 
-from pywr.parameters import pop_kwarg_parameter, load_parameter
+from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values
 
 from pywr.domains import Domain
 
@@ -375,10 +375,15 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         name = data.pop('name')
         num_inputs = int(data.pop('inputs', 1))
         num_outputs = int(data.pop('outputs', 1))
-        initial_volume = float(data.pop('initial_volume'))
+        initial_volume = data.pop('initial_volume')
         max_volume = data.pop('max_volume')
         min_volume = data.pop('min_volume', 0.0)
 
+        # Coerce initial volume to float.
+        try:
+            initial_volume = float(initial_volume)
+        except TypeError:
+            initial_volume = load_parameter_values(model, initial_volume)
         max_volume = load_parameter(model, max_volume)
         min_volume = load_parameter(model, min_volume)
 

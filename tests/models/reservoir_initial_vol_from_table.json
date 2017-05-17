@@ -1,0 +1,58 @@
+{
+    "metadata": {
+        "title": "Reservoir 1",
+        "description": "Reservoirs initial volume from table",
+        "minimum_version": "0.4"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Storage",
+            "max_volume": 35,
+            "initial_volume": {
+                "table": "initial_volumes",
+                "column": "Initial Volume",
+                "index": "supply1"
+            },
+            "outputs": 0
+        },
+        {
+            "name": "supply2",
+            "type": "Storage",
+            "max_volume": 35,
+            "initial_volume": {
+                "table": "initial_volumes",
+                "column": "Initial Volume",
+                "index": "supply2"
+            },
+            "outputs": 0
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["supply2", "link1"],
+        ["link1", "demand1"]
+    ],
+    "tables": {
+        "initial_volumes": {
+            "url": "initial_volumes.csv",
+            "index_col": 0,
+            "header": 0
+        }
+    }
+}
