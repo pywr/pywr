@@ -351,7 +351,7 @@ class TablesRecorder(Recorder):
             if group_name == "":
                 group_name = "/"
             description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
-            print(group_name, node_name)
+            
             try:
                 self.h5store.file.remove_node(group_name, node_name)
             except tables.NoSuchNodeError:
