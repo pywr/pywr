@@ -473,7 +473,7 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
 
         df = pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)        
         mask = df.index.map(lambda x: x.month in self._months)
-        self._fdc = np.percentile(df[mask], np.asarray(self._percentiles), axis=0) 
+        self._fdc = np.percentile(df.loc[mask, :], np.asarray(self._percentiles), axis=0) 
 
 SeasonalFlowDurationCurveRecorder.register()
 
