@@ -464,7 +464,7 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
 
     def __init__(self, model, AbstractNode node, percentiles, months, **kwargs):
         super(SeasonalFlowDurationCurveRecorder, self).__init__(model, node, percentiles, **kwargs)
-        self._months = np.array(months)
+        self._months = np.array(months, dtype=np.int32)
     
     def finish(self):
         # this is a def method rather than cpdef because closures inside cpdef functions are not supported yet.        
