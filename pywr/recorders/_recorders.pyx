@@ -442,6 +442,7 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
 
 FlowDurationCurveRecorder.register()
 
+
 cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
     """
     This recorder calculates a flow duration curve for each scenario for a given season
@@ -464,16 +465,19 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
 
     def __init__(self, model, AbstractNode node, percentiles, months, **kwargs):
         super(SeasonalFlowDurationCurveRecorder, self).__init__(model, node, percentiles, **kwargs)
-        self._months = np.array(months, dtype=np.int32)
+        self._months = set(months)
     
-    def finish(self):
+    cpdef finish(self):
         # this is a def method rather than cpdef because closures inside cpdef functions are not supported yet.        
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
 
         df = pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)        
-        mask = df.index.map(lambda x: x.month in self._months)
-        self._fdc = np.percentile(df.loc[mask, :], np.asarray(self._percentiles), axis=0) 
+        mask = np.asarray(df.index.map(self.is_season))
+        self._fdc = np.percentile(df.loc[mask, :], np.asarray(self._percentiles), axis=0)
+
+    def is_season(self, x):
+        return x.month in self._months
 
 SeasonalFlowDurationCurveRecorder.register()
 

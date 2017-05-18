@@ -105,4 +105,4 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
     cdef int[:] _current_max
 
 cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
-    cdef int[:] _months
+    cdef set _months
