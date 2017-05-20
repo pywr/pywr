@@ -103,20 +103,17 @@ def test_seasonal_fdc_recorder():
     Test the FlowDurationCurveRecorder
     """
     model = load_model("timeseries4.json")
-    #input = model.nodes['catchment1']
-
-    #
-    #months = [6, 7, 8]
-    #rec = SeasonalFlowDurationCurveRecorder(model, input, percentiles, months)
 
     df = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries3.csv'),
                          parse_dates=True, dayfirst=True, index_col=0)
 
     percentiles = np.linspace(20., 100., 5)
+
     summer_flows = df.loc[pandas.Timestamp("2014-06-01"):pandas.Timestamp("2014-08-31"), :]
     summer_fdc = np.percentile(summer_flows, percentiles, axis=0)
 
     model.run()
+
     rec = model.recorders["seasonal_fdc"]
     assert_allclose(rec.fdc, summer_fdc)
 
