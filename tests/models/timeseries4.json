@@ -49,5 +49,13 @@
         ["reservoir1", "abs1"],
         ["abs1", "demand1"],
         ["reservoir1", "term1"]
-    ]
+    ],
+    "recorders" : {
+      "seasonal_fdc": {
+              "type": "seasonalflowdurationcurverecorder",
+              "node": "catchment1",
+              "months": [6, 7, 8],
+              "percentiles": [20.0, 40.0, 60.0, 80.0, 100.0]
+      }
+    }
 }
