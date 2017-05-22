@@ -1,0 +1,61 @@
+{
+    "metadata": {
+        "title": "Timeseries example",
+        "description": "A model with a timeseries",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2014-01-01",
+        "end": "2014-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "catchment1",
+            "type": "catchment",
+            "flow": {
+                "type": "dataframe",
+                "url" : "timeseries3.csv",
+                "parse_dates": true,
+                "dayfirst": true,
+                "index_col": 0
+            }
+        },
+        {
+            "name": "reservoir1",
+            "type": "Storage",
+            "initial_volume": 50.0,
+            "max_volume": 9999
+        },
+        {
+            "name": "abs1",
+            "type": "link",
+            "max_flow": 50
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 23.0,
+            "cost": -10
+        },
+        {
+            "name": "term1",
+            "type": "Output",
+            "cost": 5
+        }
+    ],
+    "edges": [
+        ["catchment1", "reservoir1"],
+        ["reservoir1", "abs1"],
+        ["abs1", "demand1"],
+        ["reservoir1", "term1"]
+    ],
+    "recorders" : {
+      "seasonal_fdc": {
+              "type": "seasonalflowdurationcurverecorder",
+              "node": "catchment1",
+              "months": [6, 7, 8],
+              "percentiles": [20.0, 40.0, 60.0, 80.0, 100.0]
+      }
+    }
+}

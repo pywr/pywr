@@ -19,7 +19,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
     EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-    load_recorder)
+    SeasonalFlowDurationCurveRecorder, load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
@@ -96,6 +96,27 @@ def test_fdc_recorder():
     assert rec.fdc.shape == (len(percentiles), len(model.scenarios.combinations))
     df = rec.to_dataframe()
     assert df.shape == (len(percentiles), len(model.scenarios.combinations))
+
+
+def test_seasonal_fdc_recorder():
+    """
+    Test the FlowDurationCurveRecorder
+    """
+    model = load_model("timeseries4.json")
+
+    df = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries3.csv'),
+                         parse_dates=True, dayfirst=True, index_col=0)
+
+    percentiles = np.linspace(20., 100., 5)
+
+    summer_flows = df.loc[pandas.Timestamp("2014-06-01"):pandas.Timestamp("2014-08-31"), :]
+    summer_fdc = np.percentile(summer_flows, percentiles, axis=0)
+
+    model.run()
+
+    rec = model.recorders["seasonal_fdc"]
+    assert_allclose(rec.fdc, summer_fdc)
+
 
 def test_fdc_dev_recorder():
     """
