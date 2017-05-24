@@ -395,6 +395,35 @@ def test_storage_max_volume_param(solver):
     np.testing.assert_allclose(storage.current_pc, 0.25)
 
 
+def test_storage_initial_volume_pc(solver):
+    """Test that setting initial volume as a percentage works as expected.
+    """
+    model = Model(
+        solver=solver,
+        start=pandas.to_datetime('2016-01-01'),
+        end=pandas.to_datetime('2016-01-01')
+    )
+
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    otpt = Output(model, 'output', max_flow=99999, cost=-99999)
+    storage.connect(otpt)
+
+    p = ConstantParameter(model, 20.0)
+    storage.max_volume = p
+    storage.initial_volume_pc = 0.5
+
+    model.setup()
+    np.testing.assert_allclose(storage.current_pc, 0.5)
+    np.testing.assert_allclose(storage.volume, 10.0)
+
+    model.run()
+
+    p.update(np.asarray([40.0, ]))
+    model.reset()
+    np.testing.assert_allclose(storage.current_pc, 0.5)
+    np.testing.assert_allclose(storage.volume, 20.0)
+
+
 def test_storage_max_volume_param_raises(solver):
     """Test a that an max_volume with a Parameter that has children.
     

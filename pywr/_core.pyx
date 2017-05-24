@@ -718,7 +718,8 @@ cdef class Storage(AbstractStorage):
     Do not initialise this class directly. Use `pywr.core.Storage`.
     """
     def __cinit__(self, ):
-        self._initial_volume = 0.0
+        self.initial_volume = 0.0
+        self.initial_volume_pc = None
         self._min_volume = 0.0
         self._max_volume = 0.0
         self._cost = 0.0
@@ -765,7 +766,20 @@ cdef class Storage(AbstractStorage):
             return self._initial_volume
 
         def __set__(self, value):
-            self._initial_volume = value
+            if value is None:
+                self._initial_volume = np.nan
+            else:
+                self._initial_volume = value
+
+    property initial_volume_pc:
+        def __get__(self, ):
+            return self._initial_volume_pc
+
+        def __set__(self, value):
+            if value is None:
+                self._initial_volume_pc = np.nan
+            else:
+                self._initial_volume_pc = value
 
     property min_volume:
         def __get__(self):
@@ -858,10 +872,17 @@ cdef class Storage(AbstractStorage):
             self._max_volume_param.calc_values(self._model.timestepper.current)
 
         for i, si in enumerate(self.model.scenarios.combinations):
-            self._volume[i] = self._initial_volume
             # Ensure variable maximum volume is taken in to account
             if self._max_volume_param is not None:
                 mxv = self._max_volume_param.get_value(si)
+
+            if np.isfinite(self._initial_volume_pc):
+                self._volume[i] = self._initial_volume_pc * mxv
+            elif np.isfinite(self._initial_volume):
+                self._volume[i] = self._initial_volume
+            else:
+                raise RuntimeError('Initial volume must be set as either a percentage or absolute volume.')
+
             try:
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
