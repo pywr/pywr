@@ -837,11 +837,22 @@ cdef class Storage(AbstractStorage):
         cdef int i
         cdef double mxv = self._max_volume
         cdef ScenarioIndex si
+        cdef Parameter p
+        # These are the supported aggregated style parameters that can be used for max_volume
+        # They only work if all their children have no children themselves.
+        from .parameters import AggregatedParameter, AggregatedIndexParameter, ArrayIndexedParameter
 
         # TODO at some point remove this limitation
         # See issue #470 https://github.com/pywr/pywr/issues/470
         if self._max_volume_param is not None:
-            if len(self._max_volume_param.children) > 0:
+            if isinstance(self._max_volume_param, (AggregatedParameter, AggregatedIndexParameter, ArrayIndexedParameter)):
+                # Some simple aggregated style parameters are accepted so long as they have simple children
+                for p in self._max_volume_param.children:
+                    if len(p.children) > 0:
+                        raise RuntimeError('Only children of agregated parameters with no dependencies are supported for max_volume.')
+                    p.calc_values(self._model.timestepper.current)
+
+            elif len(self._max_volume_param.children) > 0:
                 raise RuntimeError('Only parameters with no dependencies are supported for max_volume.')
             # We ensure that this is called in reset
             self._max_volume_param.calc_values(self._model.timestepper.current)

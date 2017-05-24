@@ -396,8 +396,9 @@ def test_storage_max_volume_param(solver):
 
 
 def test_storage_max_volume_param_raises(solver):
-    """Test a that an max_volume with a Parameter that has children is an error
-
+    """Test a that an max_volume with a Parameter that has children.
+    
+    Only some aggregated style parameters should work here.
     """
 
     model = Model(
@@ -413,6 +414,31 @@ def test_storage_max_volume_param_raises(solver):
     p = AggregatedParameter(model, [ConstantParameter(model, 20.0), ConstantParameter(model, 20.0)], agg_func='sum')
 
     storage.max_volume = p
+    storage.initial_volume = 10.0
+
+    model.setup()
+    np.testing.assert_allclose(storage.current_pc, 0.25)
+
+
+def test_storage_max_volume_param_raises(solver):
+    """Test a that an max_volume with a Parameter that has children is an error
+
+    """
+
+    model = Model(
+        solver=solver,
+        start=pandas.to_datetime('2016-01-01'),
+        end=pandas.to_datetime('2016-01-01')
+    )
+
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    otpt = Output(model, 'output', max_flow=99999, cost=-99999)
+    storage.connect(otpt)
+
+    p = AggregatedParameter(model, [ConstantParameter(model, 20.0), ConstantParameter(model, 20.0)], agg_func='sum')
+    p1 = AggregatedParameter(model, [p, ConstantParameter(model, 1.5)], agg_func="product")
+
+    storage.max_volume = p1
     storage.initial_volume = 10.0
 
     with pytest.raises(RuntimeError):
