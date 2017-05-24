@@ -297,7 +297,7 @@ cdef class TablesArrayParameter(IndexParameter):
         self._scenario_ids = None
 
     cpdef setup(self):
-        cdef int n, i
+        cdef Py_ssize_t n, i
 
         super(TablesArrayParameter, self).setup()
         self._scenario_index = -1
@@ -314,7 +314,7 @@ cdef class TablesArrayParameter(IndexParameter):
             if self.scenario and self.scenario.slice and not self.model.scenarios.user_combinations:
                 # only load the data required
                 self._values_dbl = node[:, self.scenario.slice]
-                self._scenario_ids = np.ones(self.scenario.size, dtype=np.int)
+                self._scenario_ids = np.ones(self.scenario.size, dtype=np.int32)
                 for n, i in enumerate(range(*self.scenario.slice.indices(self.scenario.slice.stop))):
                     self._scenario_ids[i] = n
             else:
