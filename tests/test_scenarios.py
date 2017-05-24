@@ -229,6 +229,21 @@ def test_timeseries_with_scenarios_hdf(solver):
 
     model.finish()
 
+def test_tablesarrayparameter_scenario_slice(solver):
+    model = load_model('timeseries2_hdf.json', solver=solver)
+    catchment1 = model.nodes['catchment1']
+    scenario = model.scenarios["scenario A"]
+    scenario.slice = slice(0, 10, 2)
+    model.setup()
+    model.reset()
+    model.step()
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
+    assert_allclose(catchment1.flow, step1[::2], atol=1e-1)
+    model.step()
+    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80])
+    assert_allclose(catchment1.flow, step2[::2], atol=1e-1)
+    model.finish()
+
 def test_tables_array_index_error(solver):
     # check an exception is raised (before the model starts) if the length
     # of the data passed to a TablesArrayParameter is not long enough

@@ -78,6 +78,7 @@ cdef class TablesArrayParameter(IndexParameter):
     cdef public object where
 
     cdef int _scenario_index
+    cdef int[:] _scenario_ids
 
 cdef class IndexedArrayParameter(Parameter):
     cdef public IndexParameter index_parameter

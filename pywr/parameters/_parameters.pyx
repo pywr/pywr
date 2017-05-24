@@ -294,8 +294,11 @@ cdef class TablesArrayParameter(IndexParameter):
         self._values_dbl = None
         self._values_int = None
         self._scenario_index = -1
+        self._scenario_ids = None
 
     cpdef setup(self):
+        cdef int n, i
+
         super(TablesArrayParameter, self).setup()
         self._scenario_index = -1
         # This setup must find out the index of self._scenario in the model
@@ -308,7 +311,15 @@ cdef class TablesArrayParameter(IndexParameter):
 
         # detect data type and read into memoryview
         if node.dtype in (np.float32, np.float64):
-            self._values_dbl = node.read().astype(np.float64)
+            if self.scenario and self.scenario.slice and not self.model.scenarios.user_combinations:
+                # only load the data required
+                self._values_dbl = node[:, self.scenario.slice]
+                self._scenario_ids = np.ones(self.scenario.size, dtype=np.int)
+                for n, i in enumerate(range(*self.scenario.slice.indices(self.scenario.slice.stop))):
+                    self._scenario_ids[i] = n
+            else:
+                # load all of the data
+                self._values_dbl = node.read().astype(np.float64)
             if np.min(self._values_dbl) < 0.0:
                 warnings.warn('Negative values in input file "{}" from node: {}'.format(self.h5file, self.node))
             self._values_int = None
@@ -321,9 +332,9 @@ cdef class TablesArrayParameter(IndexParameter):
             raise TypeError("Unexpected dtype in array: {}".format(node.dtype))
 
         if self.scenario is not None:
-            if shape[1] < self.scenario.size:
+            if node.shape[1] < self.scenario.size:
                 raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
-            elif shape[1] > self.scenario.size:
+            elif node.shape[1] > self.scenario.size:
                 warnings.warn("The length of the second dimension of the tables Node is greater than the size of the specified Scenario. Not all data is being used!")
         if shape[0] < len(self.model.timestepper):
             raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
@@ -338,6 +349,8 @@ cdef class TablesArrayParameter(IndexParameter):
             return self._values_dbl[i, 0]
         else:
             j = scenario_index._indices[self._scenario_index]
+            if self._scenario_ids is not None:
+                j = self._scenario_ids[j]
             return self._values_dbl[i, j]
 
     cpdef int index(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
