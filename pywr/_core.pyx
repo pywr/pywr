@@ -854,12 +854,12 @@ cdef class Storage(AbstractStorage):
         cdef Parameter p
         # These are the supported aggregated style parameters that can be used for max_volume
         # They only work if all their children have no children themselves.
-        from .parameters import AggregatedParameter, AggregatedIndexParameter, ArrayIndexedParameter
+        from .parameters._parameters import AggregatedParameter, AggregatedIndexParameter, IndexedArrayParameter
 
         # TODO at some point remove this limitation
         # See issue #470 https://github.com/pywr/pywr/issues/470
         if self._max_volume_param is not None:
-            if isinstance(self._max_volume_param, (AggregatedParameter, AggregatedIndexParameter, ArrayIndexedParameter)):
+            if isinstance(self._max_volume_param, (AggregatedParameter, AggregatedIndexParameter, IndexedArrayParameter)):
                 # Some simple aggregated style parameters are accepted so long as they have simple children
                 for p in self._max_volume_param.children:
                     if len(p.children) > 0:
