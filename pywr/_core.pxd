@@ -95,6 +95,7 @@ cdef class AbstractStorage(AbstractNode):
 cdef class Storage(AbstractStorage):
     cdef double _cost
     cdef double _initial_volume
+    cdef double _initial_volume_pc
     cdef double _min_volume
     cdef double _max_volume
     cdef double _level
