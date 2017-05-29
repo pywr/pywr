@@ -196,11 +196,11 @@ def test_timeseries_with_scenarios(solver):
     model.step()
     catchment1 = model.nodes['catchment1']
 
-    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71], dtype=np.float64)
     assert_allclose(catchment1.flow, step1)
 
     model.step()
-    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80])
+    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80], dtype=np.float64)
     # Low tolerance because test values were truncated to 2 decimal places.
     assert_allclose(catchment1.flow, step2)
 
@@ -218,12 +218,12 @@ def test_timeseries_with_scenarios_hdf(solver):
     catchment1 = model.nodes['catchment1']
 
     model.step()
-    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71], dtype=np.float64)
     # Low tolerance because test values were truncated to 2 decimal places.
     assert_allclose(catchment1.flow, step1, atol=1e-1)
 
     model.step()
-    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80])
+    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80], dtype=np.float64)
     # Low tolerance because test values were truncated to 2 decimal places.
     assert_allclose(catchment1.flow, step2, atol=1e-1)
 
@@ -237,11 +237,30 @@ def test_tablesarrayparameter_scenario_slice(solver):
     model.setup()
     model.reset()
     model.step()
-    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71])
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71], dtype=np.float64)
     assert_allclose(catchment1.flow, step1[::2], atol=1e-1)
     model.step()
-    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80])
+    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80], dtype=np.float64)
     assert_allclose(catchment1.flow, step2[::2], atol=1e-1)
+    model.finish()
+
+def test_tablesarrayparameter_scenario_user_combinations(solver):
+    """Test TablesArrayParameter with user defined combination of scenarios"""
+    model = load_model('timeseries2_hdf.json', solver=solver)
+    catchment1 = model.nodes['catchment1']
+    scenario = model.scenarios["scenario A"]
+    scenario2 = Scenario(model, "scenario B", size=2)
+    # combinations are intentially out of order and with duplicates
+    model.scenarios.user_combinations = [(0, 0), (2, 0), (6, 1), (2, 1)]
+    model.setup()
+    model.reset()
+    assert(len(model.scenarios.combinations) == 4)
+    model.step()
+    step1 = np.array([21.64, 21.72, 23.97, 23.35, 21.79, 21.52, 21.21, 22.58, 26.19, 25.71], dtype=np.float64)
+    assert_allclose(catchment1.flow, step1[[0, 2, 6, 2]], atol=1e-1)
+    model.step()
+    step2 = np.array([20.03, 20.10, 22.18, 21.62, 20.17, 19.92, 19.63, 20.90, 24.24, 23.80], dtype=np.float64)
+    assert_allclose(catchment1.flow, step2[[0, 2, 6, 2]], atol=1e-1)
     model.finish()
 
 def test_tables_array_index_error(solver):
