@@ -6,8 +6,8 @@
     },
     "timestepper": {
         "start": "2100-01-01",
-        "end": "2110-01-01",
-        "timestep": 1
+        "end": "2199-01-01",
+        "timestep": 7
     },
     "nodes": [
         {
@@ -25,7 +25,7 @@
             "name": "reservoir1",
             "type": "storage",
             "max_volume": 200000,
-            "initial_volume": 100000,
+            "initial_volume": 170000,
             "level":  {
               "type": "interpolatedlevel",
               "node": "reservoir1",
@@ -37,7 +37,7 @@
         {
             "name": "release1",
             "type": "link",
-            "max_flow": 50,
+            "max_flow": 10,
             "cost": -500
         },
         {
@@ -75,7 +75,7 @@
             "type": "indexedarray",
             "index_parameter": "turbine1_control",
             "params": [
-                200.0,
+                40.0,
                 0.0
             ]
         },
@@ -96,9 +96,25 @@
             "type": "HydroPowerRecorder",
             "node": "turbine1",
             "storage_node": "reservoir1",
-            "level": 20.0,
+            "level": 35.0,
             "efficiency": 0.85,
             "flow_unit_conversion": 0.011574074074074073
+        },
+        "catchment1_flow": {
+            "type": "numpyarraynoderecorder",
+            "node": "catchment1"
+        },
+        "reservoir1_storage": {
+            "type": "numpyarraystoragerecorder",
+            "node": "reservoir1"
+        },
+        "turbine1_flow": {
+            "type": "numpyarraynoderecorder",
+            "node": "turbine1"
+        },
+        "release1_flow": {
+            "type": "numpyarraynoderecorder",
+            "node": "release1"
         }
     }
 }

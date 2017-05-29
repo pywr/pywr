@@ -1,7 +1,7 @@
 from pywr.core import Model
 from pywr.recorders import Recorder
 from pywr.recorders._recorders import NodeRecorder
-
+import pandas
 import numpy as np
 
 
@@ -53,27 +53,31 @@ class HydroPowerRecorder(NodeRecorder):
             raise ValueError('One or both of storage_node or level must be given.')
 
     def setup(self):
-        self._values = np.zeros(len(self.model.scenarios.combinations))
+
+        ncomb = len(self.model.scenarios.combinations)
+        nts = len(self.model.timestepper)
+        self._data = np.zeros((nts, ncomb))
 
     def reset(self):
-        self._values[...] = 0.0
+        self._data[...] = 0.0
 
     def values(self):
-        return self._values
+        # Return the total power
+        return self._data.sum(axis=0)
 
     def after(self):
 
         ts = self.model.timestepper.current
+        flow = self.node.flow
+
         # Timestep in seconds
         delta = self.model.timestepper.delta.days
-        delta *= 24*3600
-
-        flow = self.node.flow
+        delta *= 24
 
         for scenario_index in self.model.scenarios.combinations:
 
             if self.storage_node is not None:
-                head = self.storage_node.get_level(ts, scenario_index)
+                head = self.storage_node.get_level(scenario_index)
                 if self.level is not None:
                     head -= self.level
             elif self.level is not None:
@@ -84,14 +88,20 @@ class HydroPowerRecorder(NodeRecorder):
             # -ve head is not valid
             head = max(head, 0.0)
 
-            # Convert flow to correct units
+            # Convert flow to correct units (typically to m3/s)
             q = flow[scenario_index.global_id] * self.flow_unit_conversion
 
             # Power
             power = self.density * q * 9.81 * head
-            print(q, power)
             # Accumulate total energy
-            self._values[scenario_index.global_id] += power * delta
+            self._data[ts.index, scenario_index.global_id] = power * delta * 1e-6
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data  """
+        index = self.model.timestepper.datetime_index
+        sc_index = self.model.scenarios.multiindex
+
+        return pandas.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 
     @classmethod
     def load(cls, model, data):
@@ -113,3 +123,9 @@ if __name__ == '__main__':
 
     print(m.recorders["turbine1_energy"].values())
 
+    df = m.to_dataframe()
+    print(df.head())
+
+    from matplotlib import pyplot as plt
+    df.plot(subplots=True)
+    plt.show()
