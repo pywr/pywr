@@ -363,7 +363,7 @@ cdef class TablesArrayParameter(IndexParameter):
         cdef Py_ssize_t i = ts._index
         cdef Py_ssize_t j
         if self._values_dbl is None:
-            return float(self.get_index(scenario_index))
+            return float(self.index(ts, scenario_index))
         # Support 1D and 2D indexing when scenario is or is not given.
         if self._scenario_index == -1:
             return self._values_dbl[i, 0]
@@ -377,7 +377,7 @@ cdef class TablesArrayParameter(IndexParameter):
         cdef Py_ssize_t i = ts._index
         cdef Py_ssize_t j
         if self._values_int is None:
-            return int(self.get_value(scenario_index))
+            return int(self.value(ts, scenario_index))
         # Support 1D and 2D indexing when scenario is or is not given.
         if self._scenario_index == -1:
             return self._values_int[i, 0]
