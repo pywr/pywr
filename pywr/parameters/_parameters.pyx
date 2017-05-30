@@ -336,18 +336,18 @@ cdef class TablesArrayParameter(IndexParameter):
                 for n, i in enumerate(scenario_indices):
                     self._scenario_ids[i] = n
                 if node.dtype in (np.float32, np.float64):
-                    self._values_dbl = node[:len(self.model.timestepper), scenario_indices]
+                    self._values_dbl = node[:len(self.model.timestepper), scenario_indices].astype(np.float64)
                 else:
-                    self._values_int = node[:len(self.model.timestepper), scenario_indices]
+                    self._values_int = node[:len(self.model.timestepper), scenario_indices].astype(np.int32)
             elif self.scenario.slice:
                 self._scenario_ids = np.ones(self.scenario.size, dtype=np.int32)
                 scenario_indices = range(*self.scenario.slice.indices(self.scenario.slice.stop))
                 for n, i in enumerate(scenario_indices):
                     self._scenario_ids[i] = n
                 if node.dtype in (np.float32, np.float64):
-                    self._values_dbl = node[:len(self.model.timestepper), self.scenario.slice]
+                    self._values_dbl = node[:len(self.model.timestepper), self.scenario.slice].astype(np.float64)
                 else:
-                    self._values_int = node[:len(self.model.timestepper), self.scenario.slice]
+                    self._values_int = node[:len(self.model.timestepper), self.scenario.slice].astype(np.int32)
             # else: scenario is defined, but all data required
         if node.dtype in (np.float32, np.float64):
             if self._values_dbl is None:
