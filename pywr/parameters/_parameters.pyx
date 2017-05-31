@@ -291,10 +291,11 @@ cdef class TablesArrayParameter(IndexParameter):
         self.scenario = scenario
 
         # Private attributes, initialised during setup()
-        self._values_dbl = None
-        self._values_int = None
+        self._values_dbl = None  # Stores the loaded data if float
+        self._values_int = None  # Stores the loaded data if integer
+        # If a scenario is present this is the index in the model list of scenarios
         self._scenario_index = -1
-        self._scenario_ids = None
+        self._scenario_ids = None  # Lookup of scenario index to the loaded data index
 
     cpdef setup(self):
         cdef Py_ssize_t n, i
@@ -327,28 +328,31 @@ cdef class TablesArrayParameter(IndexParameter):
         if self.scenario:
             # if possible, only load the data required
             scenario_indices = None
+            # Default to index that is just out of bounds to cause IndexError if something goes wrong
+            self._scenario_ids = np.ones(self.scenario.size, dtype=np.int32) * self.scenario.size
+
+            # Calculate the scenario indices to load dependning on how scenario combinations are defined.
             if self.model.scenarios.user_combinations:
                 scenario_indices = set()
                 for user_combination in self.model.scenarios.user_combinations:
                     scenario_indices.add(user_combination[self._scenario_index])
                 scenario_indices = sorted(list(scenario_indices))
-                self._scenario_ids = np.ones(self.scenario.size, dtype=np.int32)
+            elif self.scenario.slice:
+                scenario_indices = range(*self.scenario.slice.indices(self.scenario.slice.stop))
+            else:
+                # scenario is defined, but all data required
+                self._scenario_ids = None
+
+            if scenario_indices is not None:
+                # Now load only the required data
                 for n, i in enumerate(scenario_indices):
                     self._scenario_ids[i] = n
+
                 if node.dtype in (np.float32, np.float64):
                     self._values_dbl = node[:len(self.model.timestepper), scenario_indices].astype(np.float64)
                 else:
                     self._values_int = node[:len(self.model.timestepper), scenario_indices].astype(np.int32)
-            elif self.scenario.slice:
-                self._scenario_ids = np.ones(self.scenario.size, dtype=np.int32)
-                scenario_indices = range(*self.scenario.slice.indices(self.scenario.slice.stop))
-                for n, i in enumerate(scenario_indices):
-                    self._scenario_ids[i] = n
-                if node.dtype in (np.float32, np.float64):
-                    self._values_dbl = node[:len(self.model.timestepper), self.scenario.slice].astype(np.float64)
-                else:
-                    self._values_int = node[:len(self.model.timestepper), self.scenario.slice].astype(np.int32)
-            # else: scenario is defined, but all data required
+
         if node.dtype in (np.float32, np.float64):
             if self._values_dbl is None:
                 self._values_dbl = node.read().astype(np.float64)
