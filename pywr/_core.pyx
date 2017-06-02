@@ -568,6 +568,8 @@ cdef class AggregatedNode(AbstractNode):
         self._min_flow_param = None
         self._max_flow_param = None
 
+    component_attrs = ["min_flow", "max_flow"]
+
     property nodes:
         def __get__(self):
             return self._nodes
