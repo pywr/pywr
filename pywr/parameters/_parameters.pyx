@@ -290,12 +290,16 @@ cdef class TablesArrayParameter(IndexParameter):
         self.where = where
         self.scenario = scenario
 
-        # Private attributes, initialised during reset()
-        self._values_dbl = None
-        self._values_int = None
+        # Private attributes, initialised during setup()
+        self._values_dbl = None  # Stores the loaded data if float
+        self._values_int = None  # Stores the loaded data if integer
+        # If a scenario is present this is the index in the model list of scenarios
         self._scenario_index = -1
+        self._scenario_ids = None  # Lookup of scenario index to the loaded data index
 
     cpdef setup(self):
+        cdef Py_ssize_t n, i
+
         super(TablesArrayParameter, self).setup()
         self._scenario_index = -1
         # This setup must find out the index of self._scenario in the model
@@ -306,50 +310,85 @@ cdef class TablesArrayParameter(IndexParameter):
         self.h5store = H5Store(self.h5file, None, "r")
         node = self.h5store.file.get_node(self.where, self.node)
 
-        # detect data type and read into memoryview
-        if node.dtype in (np.float32, np.float64):
-            self._values_dbl = node.read().astype(np.float64)
-            if np.min(self._values_dbl) < 0.0:
-                warnings.warn('Negative values in input file "{}" from node: {}'.format(self.h5file, self.node))
-            self._values_int = None
-            shape = self._values_dbl.shape
-        elif node.dtype in (np.int8, np.int16, np.int32):
-            self._values_dbl = None
-            self._values_int = node.read().astype(np.int32)
-            shape = self._values_int.shape
-        else:
+        if not node.dtype in (np.float32, np.float64, np.int8, np.int16, np.int32):
             raise TypeError("Unexpected dtype in array: {}".format(node.dtype))
 
+        # check the shape of the data is valid
         if self.scenario is not None:
-            if shape[1] < self.scenario.size:
+            if node.shape[1] < self.scenario.size:
                 raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
-            elif shape[1] > self.scenario.size:
+            elif node.shape[1] > self.scenario.size:
                 warnings.warn("The length of the second dimension of the tables Node is greater than the size of the specified Scenario. Not all data is being used!")
-        if shape[0] < len(self.model.timestepper):
+        if node.shape[0] < len(self.model.timestepper):
             raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
 
+        # detect data type and read into memoryview
+        self._values_dbl = None
+        self._values_int = None
+        if self.scenario:
+            # if possible, only load the data required
+            scenario_indices = None
+            # Default to index that is just out of bounds to cause IndexError if something goes wrong
+            self._scenario_ids = np.ones(self.scenario.size, dtype=np.int32) * self.scenario.size
+
+            # Calculate the scenario indices to load dependning on how scenario combinations are defined.
+            if self.model.scenarios.user_combinations:
+                scenario_indices = set()
+                for user_combination in self.model.scenarios.user_combinations:
+                    scenario_indices.add(user_combination[self._scenario_index])
+                scenario_indices = sorted(list(scenario_indices))
+            elif self.scenario.slice:
+                scenario_indices = range(*self.scenario.slice.indices(self.scenario.slice.stop))
+            else:
+                # scenario is defined, but all data required
+                self._scenario_ids = None
+
+            if scenario_indices is not None:
+                # Now load only the required data
+                for n, i in enumerate(scenario_indices):
+                    self._scenario_ids[i] = n
+
+                if node.dtype in (np.float32, np.float64):
+                    self._values_dbl = node[:len(self.model.timestepper), scenario_indices].astype(np.float64)
+                else:
+                    self._values_int = node[:len(self.model.timestepper), scenario_indices].astype(np.int32)
+
+        if node.dtype in (np.float32, np.float64):
+            if self._values_dbl is None:
+                self._values_dbl = node.read().astype(np.float64)
+            # negative values are often erroneous
+            if np.min(self._values_dbl) < 0.0:
+                warnings.warn('Negative values in input file "{}" from node: {}'.format(self.h5file, self.node))
+        else:
+            if self._values_int is None:
+                self._values_int = node.read().astype(np.int32)
+
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts._index
-        cdef int j
+        cdef Py_ssize_t i = ts._index
+        cdef Py_ssize_t j
         if self._values_dbl is None:
-            return float(self.get_index(scenario_index))
+            return float(self.index(ts, scenario_index))
         # Support 1D and 2D indexing when scenario is or is not given.
         if self._scenario_index == -1:
             return self._values_dbl[i, 0]
         else:
             j = scenario_index._indices[self._scenario_index]
+            if self._scenario_ids is not None:
+                j = self._scenario_ids[j]
             return self._values_dbl[i, j]
 
     cpdef int index(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts._index
-        cdef int j
+        cdef Py_ssize_t i = ts._index
+        cdef Py_ssize_t j
         if self._values_int is None:
-            return int(self.get_value(scenario_index))
+            return int(self.value(ts, scenario_index))
         # Support 1D and 2D indexing when scenario is or is not given.
         if self._scenario_index == -1:
             return self._values_int[i, 0]
         else:
             j = scenario_index._indices[self._scenario_index]
+            if self._scenario_ids is not None:
+                j = self._scenario_ids[j]
             return self._values_int[i, j]
 
     cpdef finish(self):
