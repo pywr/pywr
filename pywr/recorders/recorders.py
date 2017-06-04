@@ -310,15 +310,15 @@ class TablesRecorder(Recorder):
             else:
                 atom = tables.Float64Atom()
             group_name, node_name = where.rsplit("/", 1)
-            if "group_name" == "/":
-                group_name = self.h5store.file.root
+            if group_name == "":
+                group_name = "/"
             self.h5store.file.create_carray(group_name, node_name, atom, shape, createparents=True)
 
         # Create scenario tables
         if self.scenarios is not None:
             group_name, node_name = self.scenarios.rsplit('/', 1)
-            if "group_name" == "/":
-                group_name = self.h5store.file.root
+            if group_name == "":
+                group_name = "/"
             description = {
                 # TODO make string length configurable
                 'name': tables.StringCol(1024),
@@ -328,9 +328,20 @@ class TablesRecorder(Recorder):
             # Now add the scenarios
             entry = tbl.row
             for scenario in self.model.scenarios.scenarios:
-                entry['name'] = scenario.name
+                entry['name'] = scenario.name.encode('utf-8')
                 entry['size'] = scenario.size
                 entry.append()
+            tbl.flush()
+
+            if self.model.scenarios.user_combinations is not None:
+                description = {s.name: tables.Int64Col() for s in self.model.scenarios.scenarios}
+                tbl = self.h5store.file.create_table(group_name, 'scenario_combinations', description=description)
+                entry = tbl.row
+                for comb in self.model.scenarios.user_combinations:
+                    for s, i in zip(self.model.scenarios.scenarios, comb):
+                        entry[s.name] = i
+                    entry.append()
+                tbl.flush()
 
         self.h5store = None
 
