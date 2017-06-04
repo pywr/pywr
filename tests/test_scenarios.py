@@ -342,10 +342,8 @@ def test_scenario_user_combinations(simple_linear_model):
     model.scenarios.user_combinations = [[0, 1], [1, 1]]
     combinations = model.scenarios.get_combinations()
     assert(len(combinations) == 2)
-
-    # ScenarioCollection.shape is undefined if user combinations are defined
-    with pytest.raises(ValueError):
-        model.scenarios.shape
+    # ScenarioCollection.shape is simply the number of combinations
+    assert model.scenarios.shape == (2, )
 
     # Test wrong number of dimensions
     with pytest.raises(ValueError):
