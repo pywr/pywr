@@ -87,16 +87,18 @@ cdef class Parameter(Component):
 Parameter.register()
 
 cdef class ConstantParameter(Parameter):
-    def __init__(self, model, value, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+    def __init__(self, model, value, lower_bounds=0.0, upper_bounds=np.inf, scale=1.0, offset=0.0, **kwargs):
         super(ConstantParameter, self).__init__(model, **kwargs)
         self._value = value
+        self.scale = scale
+        self.offset = offset
         self.size = 1
         self._lower_bounds = np.ones(self.size) * lower_bounds
         self._upper_bounds = np.ones(self.size) * upper_bounds
 
     cdef calc_values(self, Timestep timestep):
         # constant parameter can just set the entire array to one value
-        self.__values[...] = self._value
+        self.__values[...] = self.offset + self._value * self.scale
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._value
@@ -1257,6 +1259,7 @@ cdef class DeficitParameter(Parameter):
         return cls(model, node=node, **data)
 
 DeficitParameter.register()
+
 
 def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""
