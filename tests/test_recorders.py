@@ -19,7 +19,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
     EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-    SeasonalFlowDurationCurveRecorder, load_recorder)
+    SeasonalFlowDurationCurveRecorder, RoutesRecorder, load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
@@ -676,6 +676,109 @@ class TestTablesRecorder:
             demand_saving = 0.5
             assert (rec_storage[11, 0] < (0.5 * max_volume))
             assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
+
+
+class TestRoutesRecorder:
+
+    def test_create_directory(self, simple_linear_model, tmpdir):
+        """ Test RoutesRecorder to create a new directory """
+
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+
+        inpt.max_flow = 10.0
+        otpt.cost = -2.0
+        # Make a path with a new directory
+        folder = tmpdir.join('outputs')
+        h5file = folder.join('output.h5')
+        assert(not folder.exists())
+        rec = RoutesRecorder(model, str(h5file), create_directories=True)
+        model.run()
+        assert(folder.exists())
+        assert(h5file.exists())
+
+    def test_nodes(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
+
+        """
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+
+        inpt.max_flow = 10.0
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = RoutesRecorder(model, h5f)
+
+            model.run()
+
+            flows = h5f.get_node('/flows')
+            assert flows.shape == (365, 1, 1)
+            np.testing.assert_allclose(flows.read(), np.ones((365, 1, 1))*10)
+
+            routes = h5f.get_node('/routes')
+            assert routes.shape[0] == 1
+            row = routes[0]
+            row['start'] = "Input"
+            row['end'] = "Output"
+
+            from datetime import date, timedelta
+            d = date(2015, 1, 1)
+            time = h5f.get_node('/time')
+            for i in range(len(model.timestepper)):
+                row = time[i]
+                assert row['year'] == d.year
+                assert row['month'] == d.month
+                assert row['day'] == d.day
+
+                d += timedelta(1)
+
+            scenarios = h5f.get_node('/scenarios')
+            for s in model.scenarios.scenarios:
+                row = scenarios[i]
+                assert row['name'] == s.name
+                assert row['size'] == s.size
+
+            model.reset()
+            model.run()
+
+            time = h5f.get_node('/time')
+            assert len(time) == len(model.timestepper)
+
+    def test_multiple_scenarios(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
+
+        """
+        from pywr.parameters import ConstantScenarioParameter
+        model = simple_linear_model
+        scA = Scenario(model, name='A', size=4)
+        scB = Scenario(model, name='B', size=2)
+
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = RoutesRecorder(model, h5f)
+
+            model.run()
+
+            flows = h5f.get_node('/flows')
+            assert flows.shape == (365, 1, 4, 2)
+            np.testing.assert_allclose(flows[0, 0], [[10, 10], [20, 20], [20, 30], [20, 40]])
 
 
 def test_total_deficit_node_recorder(simple_linear_model):

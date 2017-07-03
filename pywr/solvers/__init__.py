@@ -58,6 +58,14 @@ else:
             return self._cy_solver.dump_mps(filename)
 
         @property
+        def routes(self):
+            return self._cy_solver.routes
+
+        @property
+        def routes_flows_array(self):
+            return self._cy_solver.route_flows_arr
+
+        @property
         def stats(self):
             return self._cy_solver.stats
     solver_registry.append(CythonGLPKSolver)

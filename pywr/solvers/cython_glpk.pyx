@@ -28,7 +28,7 @@ cdef class CythonGLPKSolver:
     cdef int idx_row_aggregated
     cdef int idx_row_aggregated_min_max
 
-    cdef list routes
+    cdef public list routes
     cdef list non_storages
     cdef list storages
     cdef list virtual_storages
@@ -140,7 +140,7 @@ cdef class CythonGLPKSolver:
             raise ModelStructureError("Model has no non-storage nodes")
 
         self.num_routes = len(routes)
-        self.num_scenarios = len(model.scenarios)
+        self.num_scenarios = len(model.scenarios.combinations)
         self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes), itemsize=sizeof(double), format="d")
         self.num_storages = len(storages)
         if self.num_storages > 0:

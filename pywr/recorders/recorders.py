@@ -451,7 +451,7 @@ class RoutesRecorder(Recorder):
             except KeyError:
                 title = ''
         self.title = title
-        super(TablesRecorder, self).__init__(model, **kwargs)
+        super(RoutesRecorder, self).__init__(model, **kwargs)
 
         self.h5file = h5file
         self.h5store = None
@@ -472,30 +472,20 @@ class RoutesRecorder(Recorder):
         from pywr.parameters import IndexParameter
         import tables
 
-        # The first dimension is the number of timesteps.
-        # The following dimensions are sized per scenario
-        scenario_shape = list(self.model.scenarios.shape)
-        shape = [len(self.model.timestepper)] + scenario_shape
-
         self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title, metadata=self.metadata,
                                create_directories=self.create_directories)
-
-        # Create a CArray for the flows
-        self._array = None
-
-        atom = tables.Float64Atom()
-        self.h5store.file.create_carray(self.where, self.node_name, atom, shape, createparents=True)
 
         # Create scenario tables
         if self.scenarios is not None:
             group_name, node_name = self.scenarios.rsplit('/', 1)
-            if "group_name" == "/":
-                group_name = self.h5store.file.root
+            if group_name == "":
+                group_name = "/"
             description = {
                 # TODO make string length configurable
                 'name': tables.StringCol(1024),
                 'size': tables.Int64Col()
             }
+
             tbl = self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
             # Now add the scenarios
             entry = tbl.row
@@ -511,9 +501,47 @@ class RoutesRecorder(Recorder):
 
         mode = "r+"  # always need to append, as file already created in setup
         self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
-        self._arrays = {}
-        for where, node in self._nodes:
-            self._arrays[node] = self.h5store.file.get_node(where)
+
+        # Create a CArray for the flows
+        # The first dimension is the number of timesteps.
+        # The second dimension is the number of routes
+        # The following dimensions are sized per scenario
+        scenario_shape = list(self.model.scenarios.shape)
+        shape = [len(self.model.timestepper), len(self.model.solver.routes)] + scenario_shape
+        atom = tables.Float64Atom()
+        self._array = None
+        try:
+            self.h5store.file.remove_node(self.where, self.node_name)
+        except tables.NoSuchNodeError:
+            pass
+        finally:
+            self._array = self.h5store.file.create_carray(self.where, self.node_name, atom, shape, createparents=True)
+
+        # Create routes table. This must be done in reset
+        if self.routes is not None:
+            group_name, node_name = self.routes.rsplit('/', 1)
+            if group_name == "":
+                group_name = "/"
+
+            description = {
+                # TODO make string length configurable
+                'start': tables.StringCol(1024),
+                'end': tables.StringCol(1024),
+            }
+            try:
+                self.h5store.file.remove_node(group_name, node_name)
+            except tables.NoSuchNodeError:
+                pass
+            finally:
+                tbl = self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
+
+            entry = tbl.row
+            for route in self.model.solver.routes:
+                entry['start'] = route[0].name
+                entry['end'] = route[-1].name
+                entry.append()
+
+            tbl.flush()
 
         self._time_table = None
         # Create time table
@@ -532,5 +560,32 @@ class RoutesRecorder(Recorder):
                 self._time_table = self.h5store.file.create_table(group_name, node_name,
                                                                   description=description,
                                                                   createparents=True)
+
+    def after(self):
+        """
+        Save data to the tables
+        """
+        scenario_shape = [len(self.model.solver.routes), ] + list(self.model.scenarios.shape)
+        ts = self.model.timestepper.current
+        idx = ts.index
+        dt = ts.datetime
+
+        if self._time_table is not None:
+            entry = self._time_table.row
+            entry['year'] = dt.year
+            entry['month'] = dt.month
+            entry['day'] = dt.day
+            entry['index'] = idx
+            entry.append()
+
+        self._array[idx, ...] = np.reshape(self.model.solver.routes_flows_array, scenario_shape)
+
+    def finish(self):
+        if self._time_table is not None:
+            self._time_table.flush()
+
+        self.h5store = None
+        self._array = None
+
 
 RoutesRecorder.register()
