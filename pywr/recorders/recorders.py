@@ -401,3 +401,136 @@ class TablesRecorder(Recorder):
         self._arrays = {}
 
 TablesRecorder.register()
+
+
+class RoutesRecorder(Recorder):
+    """
+    A recorder that saves routes data to PyTables CArray
+
+    This Recorder creates a CArray for the flow data for every route in the model.
+    """
+    def __init__(self, model, h5file, node_name='flows', where='/', routes='/routes', time='/time', scenarios='/scenarios', **kwargs):
+        """
+
+        Parameters
+        ----------
+        model : pywr.core.Model
+            The model to record nodes from.
+        h5file : tables.File or filename
+            The tables file handle or filename to attach the CArray objects to. If a
+            filename is given the object will open and close the file handles.
+        node_name : string 
+            Default node name to save the
+        where : string
+            Default path to create the CArrays inside the database.
+        routes : basestring
+            Default full node path to save a routes tables.Table. If None no table is created.
+        time : string
+            Default full node path to save a time tables.Table. If None no table is created.
+        scenarios : string
+            Default full node path to save a scenarios tables.Table. If None no table is created.
+        filter_kwds : dict
+            Filter keywords to pass to tables.open_file when opening a file.
+        mode : string
+            Model argument to pass to tables.open_file. Defaults to 'w'
+        metadata : dict
+            Dict of user defined attributes to save on the root node (`root._v_attrs`)
+        create_directories : bool
+            If a file path is given and create_directories is True then attempt to make the intermediate
+            directories. This uses os.makedirs() underneath.
+        """
+        self.filter_kwds = kwargs.pop('filter_kwds', {})
+        self.mode = kwargs.pop('mode', 'w')
+        self.metadata = kwargs.pop('metadata', {})
+        self.create_directories = kwargs.pop('create_directories', False)
+
+        title = kwargs.pop('title', None)
+        if title is None:
+            try:
+                title = model.metadata['title']
+            except KeyError:
+                title = ''
+        self.title = title
+        super(TablesRecorder, self).__init__(model, **kwargs)
+
+        self.h5file = h5file
+        self.h5store = None
+        self._array = None
+        self.node_name = node_name
+        self.where = where
+        self.routes = routes
+        self.time = time
+        self.scenarios = scenarios
+
+        self._array = None
+        self._time_table = None
+
+    def setup(self):
+        """
+        Setup the tables
+        """
+        from pywr.parameters import IndexParameter
+        import tables
+
+        # The first dimension is the number of timesteps.
+        # The following dimensions are sized per scenario
+        scenario_shape = list(self.model.scenarios.shape)
+        shape = [len(self.model.timestepper)] + scenario_shape
+
+        self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title, metadata=self.metadata,
+                               create_directories=self.create_directories)
+
+        # Create a CArray for the flows
+        self._array = None
+
+        atom = tables.Float64Atom()
+        self.h5store.file.create_carray(self.where, self.node_name, atom, shape, createparents=True)
+
+        # Create scenario tables
+        if self.scenarios is not None:
+            group_name, node_name = self.scenarios.rsplit('/', 1)
+            if "group_name" == "/":
+                group_name = self.h5store.file.root
+            description = {
+                # TODO make string length configurable
+                'name': tables.StringCol(1024),
+                'size': tables.Int64Col()
+            }
+            tbl = self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
+            # Now add the scenarios
+            entry = tbl.row
+            for scenario in self.model.scenarios.scenarios:
+                entry['name'] = scenario.name
+                entry['size'] = scenario.size
+                entry.append()
+
+        self.h5store = None
+
+    def reset(self):
+        import tables
+
+        mode = "r+"  # always need to append, as file already created in setup
+        self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
+        self._arrays = {}
+        for where, node in self._nodes:
+            self._arrays[node] = self.h5store.file.get_node(where)
+
+        self._time_table = None
+        # Create time table
+        # This is created in reset so that the table is always recreated
+        if self.time is not None:
+            group_name, node_name = self.time.rsplit('/', 1)
+            if group_name == "":
+                group_name = "/"
+            description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
+
+            try:
+                self.h5store.file.remove_node(group_name, node_name)
+            except tables.NoSuchNodeError:
+                pass
+            finally:
+                self._time_table = self.h5store.file.create_table(group_name, node_name,
+                                                                  description=description,
+                                                                  createparents=True)
+
+RoutesRecorder.register()

@@ -41,9 +41,10 @@ cdef class CythonGLPKSolver:
     cdef int num_nodes
     cdef int num_routes
     cdef int num_storages
+    cdef int num_scenarios
     cdef cvarray node_costs_arr
     cdef cvarray node_flows_arr
-    cdef cvarray route_flows_arr
+    cdef public cvarray route_flows_arr
     cdef cvarray change_in_storage_arr
     cdef public object stats
 
@@ -53,6 +54,7 @@ cdef class CythonGLPKSolver:
     cdef bint is_first_solve
     cdef bint has_presolved
     cdef public bint use_presolve
+    cdef public bint save_routes_flows
 
     def __cinit__(self):
         # create a new problem
@@ -63,11 +65,12 @@ cdef class CythonGLPKSolver:
         self.smcp.tm_lim = 5000  # 5 second limit
         glp_term_out(GLP_OFF)  # Disable terminal output
 
-    def __init__(self, use_presolve=False):
+    def __init__(self, use_presolve=False, save_routes_flows=False):
         self.stats = None
         self.is_first_solve = True
         self.has_presolved = False
         self.use_presolve = use_presolve
+        self.save_routes_flows = save_routes_flows
 
     def __dealloc__(self):
         # free the problem
@@ -137,7 +140,8 @@ cdef class CythonGLPKSolver:
             raise ModelStructureError("Model has no non-storage nodes")
 
         self.num_routes = len(routes)
-        self.route_flows_arr = cvarray(shape=(self.num_routes,), itemsize=sizeof(double), format="d")
+        self.num_scenarios = len(model.scenarios)
+        self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes), itemsize=sizeof(double), format="d")
         self.num_storages = len(storages)
         if self.num_storages > 0:
             self.change_in_storage_arr = cvarray(shape=(self.num_storages,), itemsize=sizeof(double), format="d")
@@ -541,7 +545,7 @@ cdef class CythonGLPKSolver:
         self.stats['lp_solve'] += time.clock() - t0
         t0 = time.clock()
 
-        cdef double[:] route_flows = self.route_flows_arr
+        cdef double[:] route_flows = self.route_flows_arr[scenario_index.global_id, :]
         for col in range(0, self.num_routes):
             route_flows[col] = glp_get_col_prim(self.prob, col+1)
 
