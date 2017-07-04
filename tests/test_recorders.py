@@ -19,7 +19,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
     EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-    SeasonalFlowDurationCurveRecorder, RoutesRecorder, load_recorder)
+    SeasonalFlowDurationCurveRecorder, load_recorder)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
@@ -722,29 +722,7 @@ class TestTablesRecorder:
             assert (rec_storage[11, 0] < (0.5 * max_volume))
             assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
 
-
-class TestRoutesRecorder:
-
-    def test_create_directory(self, simple_linear_model, tmpdir):
-        """ Test RoutesRecorder to create a new directory """
-
-        model = simple_linear_model
-        otpt = model.nodes['Output']
-        inpt = model.nodes['Input']
-        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
-
-        inpt.max_flow = 10.0
-        otpt.cost = -2.0
-        # Make a path with a new directory
-        folder = tmpdir.join('outputs')
-        h5file = folder.join('output.h5')
-        assert(not folder.exists())
-        rec = RoutesRecorder(model, str(h5file), create_directories=True)
-        model.run()
-        assert(folder.exists())
-        assert(h5file.exists())
-
-    def test_nodes(self, simple_linear_model, tmpdir):
+    def test_routes(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder
 
@@ -760,7 +738,7 @@ class TestRoutesRecorder:
         h5file = tmpdir.join('output.h5')
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
-            rec = RoutesRecorder(model, h5f)
+            rec = TablesRecorder(model, h5f, routes_flows='flows')
 
             model.run()
 
@@ -797,7 +775,7 @@ class TestRoutesRecorder:
             time = h5f.get_node('/time')
             assert len(time) == len(model.timestepper)
 
-    def test_multiple_scenarios(self, simple_linear_model, tmpdir):
+    def test_routes_multiple_scenarios(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder
 
@@ -817,7 +795,7 @@ class TestRoutesRecorder:
         h5file = tmpdir.join('output.h5')
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
-            rec = RoutesRecorder(model, h5f)
+            rec = TablesRecorder(model, h5f, routes_flows='flows')
 
             model.run()
 
@@ -825,7 +803,7 @@ class TestRoutesRecorder:
             assert flows.shape == (365, 1, 4, 2)
             np.testing.assert_allclose(flows[0, 0], [[10, 10], [20, 20], [20, 30], [20, 40]])
 
-    def test_user_scenarios(self, simple_linear_model, tmpdir):
+    def test_routes_user_scenarios(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder with user defined scenario subset
 
@@ -848,7 +826,7 @@ class TestRoutesRecorder:
         h5file = tmpdir.join('output.h5')
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
-            rec = RoutesRecorder(model, h5f)
+            rec = TablesRecorder(model, h5f, routes_flows='flows')
 
             model.run()
 
@@ -862,6 +840,18 @@ class TestRoutesRecorder:
                 row = combinations[i]
                 assert row['A'] == comb[0]
                 assert row['B'] == comb[1]
+
+        from pywr.notebook.sankey import routes_to_sankey_links
+
+        links = routes_to_sankey_links(str(h5file), 'flows')
+        # Value is mean of 10 and 40
+        assert links[0] == {'source': 'Input', 'target': 'Output', 'value': 25.0}
+
+        links = routes_to_sankey_links(str(h5file), 'flows', scenario_slice=0)
+        assert links[0] == {'source': 'Input', 'target': 'Output', 'value': 10.0}
+
+        links = routes_to_sankey_links(str(h5file), 'flows', scenario_slice=1, time_slice=0)
+        assert links[0] == {'source': 'Input', 'target': 'Output', 'value': 40.0}
 
 
 def test_total_deficit_node_recorder(simple_linear_model):

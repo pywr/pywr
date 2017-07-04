@@ -153,7 +153,8 @@ class TablesRecorder(Recorder):
     Each CArray stores the data for all scenarios on the specific node. This
     is useful for analysis of Node statistics across multiple scenarios.
     """
-    def __init__(self, model, h5file, nodes=None, parameters=None, where='/', time='/time', scenarios='/scenarios', **kwargs):
+    def __init__(self, model, h5file, nodes=None, parameters=None, where='/', time='/time',
+                 routes_flows=None, routes='/routes', scenarios='/scenarios', **kwargs):
         """
 
         Parameters
@@ -178,6 +179,10 @@ class TablesRecorder(Recorder):
             Default full node path to save a time tables.Table. If None no table is created.
         scenarios : string
             Default full node path to save a scenarios tables.Table. If None no table is created.
+        routes_flows : string
+            Relative (to `where`) node path to save the routes flow CArray. If None (default) no array is created.
+        routes : string
+            Full node path to save the routes tables.Table. If None not table is created.
         filter_kwds : dict
             Filter keywords to pass to tables.open_file when opening a file.
         mode : string
@@ -209,6 +214,9 @@ class TablesRecorder(Recorder):
         self.where = where
         self.time = time
         self.scenarios = scenarios
+        self.routes = routes
+        self.routes_flows = routes_flows
+
 
         self.parameters = []
         if parameters:
@@ -217,6 +225,7 @@ class TablesRecorder(Recorder):
 
         self._arrays = None
         self._time_table = None
+        self._routes_flow_array = None
 
     def _add_parameter(self, parameter):
         try:
@@ -372,6 +381,57 @@ class TablesRecorder(Recorder):
                                                                   description=description,
                                                                   createparents=True)
 
+        self._routes_flow_array = None
+        if self.routes_flows is not None:
+            # Create a CArray for the flows
+            # The first dimension is the number of timesteps.
+            # The second dimension is the number of routes
+            # The following dimensions are sized per scenario
+            scenario_shape = list(self.model.scenarios.shape)
+            shape = [len(self.model.timestepper), len(self.model.solver.routes)] + scenario_shape
+            atom = tables.Float64Atom()
+
+            try:
+                self.h5store.file.remove_node(self.where, self.routes_flows)
+            except tables.NoSuchNodeError:
+                pass
+            finally:
+                self._routes_flow_array = self.h5store.file.create_carray(self.where, self.routes_flows, atom, shape, createparents=True)
+
+            # Create routes table. This must be done in reset
+            if self.routes is not None:
+                group_name, node_name = self.routes.rsplit('/', 1)
+                if group_name == "":
+                    group_name = "/"
+
+                description = {
+                    # TODO make string length configurable
+                    'start': tables.StringCol(1024),
+                    'end': tables.StringCol(1024),
+                }
+                try:
+                    self.h5store.file.remove_node(group_name, node_name)
+                except tables.NoSuchNodeError:
+                    pass
+                finally:
+                    tbl = self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
+
+                entry = tbl.row
+                for route in self.model.solver.routes:
+                    node_first = route[0]
+                    node_last = route[-1]
+
+                    if node_first.parent is not None:
+                        node_first = node_first.parent
+                    if node_last.parent is not None:
+                        node_last = node_last.parent
+
+                    entry['start'] = node_first.name.encode('utf-8')
+                    entry['end'] = node_last.name.encode('utf-8')
+                    entry.append()
+
+                tbl.flush()
+
     def after(self):
         """
         Save data to the tables
@@ -405,208 +465,16 @@ class TablesRecorder(Recorder):
             else:
                 raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
 
+        if self._routes_flow_array is not None:
+            routes_shape = [len(self.model.solver.routes), ] + scenario_shape
+            self._routes_flow_array[idx, ...] = np.reshape(self.model.solver.routes_flows_array.T, routes_shape)
+
     def finish(self):
         if self._time_table is not None:
             self._time_table.flush()
         self.h5store = None
         self._arrays = {}
+        self._routes_flow_array = None
 
 TablesRecorder.register()
 
-
-class RoutesRecorder(Recorder):
-    """
-    A recorder that saves routes data to PyTables CArray
-
-    This Recorder creates a CArray for the flow data for every route in the model.
-    """
-    def __init__(self, model, h5file, node_name='flows', where='/', routes='/routes', time='/time', scenarios='/scenarios', **kwargs):
-        """
-
-        Parameters
-        ----------
-        model : pywr.core.Model
-            The model to record nodes from.
-        h5file : tables.File or filename
-            The tables file handle or filename to attach the CArray objects to. If a
-            filename is given the object will open and close the file handles.
-        node_name : string 
-            Default node name to save the
-        where : string
-            Default path to create the CArrays inside the database.
-        routes : basestring
-            Default full node path to save a routes tables.Table. If None no table is created.
-        time : string
-            Default full node path to save a time tables.Table. If None no table is created.
-        scenarios : string
-            Default full node path to save a scenarios tables.Table. If None no table is created.
-        filter_kwds : dict
-            Filter keywords to pass to tables.open_file when opening a file.
-        mode : string
-            Model argument to pass to tables.open_file. Defaults to 'w'
-        metadata : dict
-            Dict of user defined attributes to save on the root node (`root._v_attrs`)
-        create_directories : bool
-            If a file path is given and create_directories is True then attempt to make the intermediate
-            directories. This uses os.makedirs() underneath.
-        """
-        self.filter_kwds = kwargs.pop('filter_kwds', {})
-        self.mode = kwargs.pop('mode', 'w')
-        self.metadata = kwargs.pop('metadata', {})
-        self.create_directories = kwargs.pop('create_directories', False)
-
-        title = kwargs.pop('title', None)
-        if title is None:
-            try:
-                title = model.metadata['title']
-            except KeyError:
-                title = ''
-        self.title = title
-        super(RoutesRecorder, self).__init__(model, **kwargs)
-
-        self.h5file = h5file
-        self.h5store = None
-        self._array = None
-        self.node_name = node_name
-        self.where = where
-        self.routes = routes
-        self.time = time
-        self.scenarios = scenarios
-
-        self._array = None
-        self._time_table = None
-
-    def setup(self):
-        """
-        Setup the tables
-        """
-        from pywr.parameters import IndexParameter
-        import tables
-
-        self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title, metadata=self.metadata,
-                               create_directories=self.create_directories)
-
-        # Create scenario tables
-        if self.scenarios is not None:
-            group_name, node_name = self.scenarios.rsplit('/', 1)
-            if group_name == "":
-                group_name = "/"
-            description = {
-                # TODO make string length configurable
-                'name': tables.StringCol(1024),
-                'size': tables.Int64Col()
-            }
-
-            tbl = self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
-            # Now add the scenarios
-            entry = tbl.row
-            for scenario in self.model.scenarios.scenarios:
-                entry['name'] = scenario.name
-                entry['size'] = scenario.size
-                entry.append()
-
-            if self.model.scenarios.user_combinations is not None:
-                description = {s.name: tables.Int64Col() for s in self.model.scenarios.scenarios}
-                tbl = self.h5store.file.create_table(group_name, 'scenario_combinations', description=description)
-                entry = tbl.row
-                for comb in self.model.scenarios.user_combinations:
-                    for s, i in zip(self.model.scenarios.scenarios, comb):
-                        entry[s.name] = i
-                    entry.append()
-                tbl.flush()
-
-        self.h5store = None
-
-    def reset(self):
-        import tables
-
-        mode = "r+"  # always need to append, as file already created in setup
-        self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
-
-        # Create a CArray for the flows
-        # The first dimension is the number of timesteps.
-        # The second dimension is the number of routes
-        # The following dimensions are sized per scenario
-        scenario_shape = list(self.model.scenarios.shape)
-        shape = [len(self.model.timestepper), len(self.model.solver.routes)] + scenario_shape
-        atom = tables.Float64Atom()
-        self._array = None
-        try:
-            self.h5store.file.remove_node(self.where, self.node_name)
-        except tables.NoSuchNodeError:
-            pass
-        finally:
-            self._array = self.h5store.file.create_carray(self.where, self.node_name, atom, shape, createparents=True)
-
-        # Create routes table. This must be done in reset
-        if self.routes is not None:
-            group_name, node_name = self.routes.rsplit('/', 1)
-            if group_name == "":
-                group_name = "/"
-
-            description = {
-                # TODO make string length configurable
-                'start': tables.StringCol(1024),
-                'end': tables.StringCol(1024),
-            }
-            try:
-                self.h5store.file.remove_node(group_name, node_name)
-            except tables.NoSuchNodeError:
-                pass
-            finally:
-                tbl = self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
-
-            entry = tbl.row
-            for route in self.model.solver.routes:
-                entry['start'] = route[0].name
-                entry['end'] = route[-1].name
-                entry.append()
-
-            tbl.flush()
-
-        self._time_table = None
-        # Create time table
-        # This is created in reset so that the table is always recreated
-        if self.time is not None:
-            group_name, node_name = self.time.rsplit('/', 1)
-            if group_name == "":
-                group_name = "/"
-            description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
-
-            try:
-                self.h5store.file.remove_node(group_name, node_name)
-            except tables.NoSuchNodeError:
-                pass
-            finally:
-                self._time_table = self.h5store.file.create_table(group_name, node_name,
-                                                                  description=description,
-                                                                  createparents=True)
-
-    def after(self):
-        """
-        Save data to the tables
-        """
-        scenario_shape = [len(self.model.solver.routes), ] + list(self.model.scenarios.shape)
-        ts = self.model.timestepper.current
-        idx = ts.index
-        dt = ts.datetime
-
-        if self._time_table is not None:
-            entry = self._time_table.row
-            entry['year'] = dt.year
-            entry['month'] = dt.month
-            entry['day'] = dt.day
-            entry['index'] = idx
-            entry.append()
-
-        self._array[idx, ...] = np.reshape(self.model.solver.routes_flows_array, scenario_shape)
-
-    def finish(self):
-        if self._time_table is not None:
-            self._time_table.flush()
-
-        self.h5store = None
-        self._array = None
-
-
-RoutesRecorder.register()
