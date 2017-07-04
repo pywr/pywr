@@ -505,6 +505,16 @@ class RoutesRecorder(Recorder):
                 entry['size'] = scenario.size
                 entry.append()
 
+            if self.model.scenarios.user_combinations is not None:
+                description = {s.name: tables.Int64Col() for s in self.model.scenarios.scenarios}
+                tbl = self.h5store.file.create_table(group_name, 'scenario_combinations', description=description)
+                entry = tbl.row
+                for comb in self.model.scenarios.user_combinations:
+                    for s, i in zip(self.model.scenarios.scenarios, comb):
+                        entry[s.name] = i
+                    entry.append()
+                tbl.flush()
+
         self.h5store = None
 
     def reset(self):

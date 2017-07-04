@@ -825,6 +825,44 @@ class TestRoutesRecorder:
             assert flows.shape == (365, 1, 4, 2)
             np.testing.assert_allclose(flows[0, 0], [[10, 10], [20, 20], [20, 30], [20, 40]])
 
+    def test_user_scenarios(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder with user defined scenario subset
+
+        """
+        from pywr.parameters import ConstantScenarioParameter
+        model = simple_linear_model
+        scA = Scenario(model, name='A', size=4)
+        scB = Scenario(model, name='B', size=2)
+
+        # Use first and last combinations
+        model.scenarios.user_combinations = [[0, 0], [3, 1]]
+
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = RoutesRecorder(model, h5f)
+
+            model.run()
+
+            flows = h5f.get_node('/flows')
+            assert flows.shape == (365, 1, 2)
+            np.testing.assert_allclose(flows[0, 0], [10, 40])
+
+            # check combinations table exists
+            combinations = h5f.get_node('/scenario_combinations')
+            for i, comb in enumerate(model.scenarios.user_combinations):
+                row = combinations[i]
+                assert row['A'] == comb[0]
+                assert row['B'] == comb[1]
+
 
 def test_total_deficit_node_recorder(simple_linear_model):
     """
