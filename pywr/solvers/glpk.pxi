@@ -93,15 +93,24 @@ cdef extern from "glpk.h":
     void glp_erase_prob(glp_prob *P)
     void glp_delete_prob(glp_prob *P)
     void glp_free(void *ptr)
-    
+
     int glp_add_rows(glp_prob *P, int nrs)
     int glp_add_cols(glp_prob *P, int ncs)
-    
-    void glp_set_mat_row(glp_prob *P, int i, int len, const int ind[], const double val[]);
-    void glp_set_mat_col(glp_prob *P, int j, int len, const int ind[], const double val[]);
+
+    void glp_set_mat_row(glp_prob *P, int i, int len, const int ind[], const double val[])
+    void glp_set_mat_col(glp_prob *P, int j, int len, const int ind[], const double val[])
 
     void glp_set_row_bnds(glp_prob *P, int i, int type, double lb, double ub)
     void glp_set_col_bnds(glp_prob *P, int j, int type, double lb, double ub)
+
+    double glp_get_row_lb(glp_prob *P, int i)
+    double glp_get_row_ub(glp_prob *P, int i)
+    double glp_get_col_lb(glp_prob *P, int j)
+    double glp_get_col_ub(glp_prob *P, int j)
+    int glp_get_row_type(glp_prob *P, int i)
+    int glp_get_col_type(glp_prob *P, int j)
+    int glp_get_mat_row(glp_prob *P, int i, int ind[], double val[])
+    int glp_get_mat_col(glp_prob *P, int j, int ind[], double val[])
 
     void glp_set_obj_coef(glp_prob *P, int j, double coef)
 
@@ -113,7 +122,7 @@ cdef extern from "glpk.h":
 
     int glp_get_status(glp_prob *P)
     int glp_term_out(int flag)
-    
+
     double glp_get_row_prim(glp_prob *P, int i)
     double glp_get_col_prim(glp_prob *P, int j)
 
@@ -128,3 +137,11 @@ cdef extern from "glpk.h":
     int glp_get_col_stat(glp_prob *P, int i)
     void glp_set_row_stat(glp_prob *P, int i, int state)
     void glp_set_col_stat(glp_prob *P, int i, int state)
+
+row_types = {
+    GLP_FR: "FR",
+    GLP_LO: "LO",
+    GLP_UP: "UP",
+    GLP_DB: "DB",
+    GLP_FX: "FX",
+}
