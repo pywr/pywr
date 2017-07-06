@@ -574,6 +574,62 @@ cdef class CythonGLPKSolver:
     cpdef dump_mps(self, filename):
         glp_write_mps(self.prob, GLP_MPS_FILE, NULL, filename)
 
+    cpdef dump_html(self):
+        cdef int i, j
+        cdef int num_cols = glp_get_num_cols(self.prob)
+        cdef int num_rows = glp_get_num_rows(self.prob)
+
+        cdef int *ind = <int*>malloc(sizeof(int) * (num_cols+1))
+        cdef double *val = <double*>malloc(sizeof(double) * (num_cols+1))
+        cdef int n
+
+        html = "<table class=\"lp\">\n"
+
+        # column bounds
+        lbs = np.empty([num_cols], np.float64)
+        ubs = np.empty([num_cols], np.float64)
+        for j in range(num_cols):
+            lbs[j] = glp_get_col_lb(self.prob, 1+j)
+            ubs[j] = glp_get_col_ub(self.prob, 1+j)
+        html += "<tr><th>LB</th>" + "".join(["<td>{}</td>".format(dbl_max_to_inf(lb)) for lb in lbs]) + "</tr>\n"
+        html += "<tr><th>UB</th>" + "".join(["<td>{}</td>".format(dbl_max_to_inf(ub)) for ub in ubs]) + "</tr>\n"
+
+        # rows
+        for i in range(num_rows):
+            lb = glp_get_row_lb(self.prob, 1+i)
+            ub = glp_get_row_ub(self.prob, 1+i)
+            t = glp_get_row_type(self.prob, 1+i)
+            if t == GLP_LO:
+                const = "X >= {}".format(dbl_max_to_inf(lb))
+            elif t == GLP_UP:
+                const = "X <= {}".format(dbl_max_to_inf(ub))
+            elif t == GLP_FX:
+                const = "X == {}".format(dbl_max_to_inf(lb))
+            elif t == GLP_DB:
+                const = "{} <= X <= {}".format(dbl_max_to_inf(lb), dbl_max_to_inf(ub))
+            else:
+                const = ""
+
+            matrix = ""
+            n = glp_get_mat_row(self.prob, 1+i, ind, val)
+            mat = {}
+            for x in range(n):
+                mat[ind[1+x]] = val[1+x]
+            for j in range(num_cols):
+                try:
+                    matrix += "<td>{}</td>".format(mat[ind[1+j]])
+                except KeyError:
+                    matrix += "<td class=\"matzero\">0.0</td>"
+
+            html += "<tr><td>{}</td>{}</tr>\n".format(const, matrix)
+
+        html += "</table>\n"
+
+        free(ind)
+        free(val)
+
+        return html
+
 
 cdef int simplex(glp_prob *P, glp_smcp parm):
     return glp_simplex(P, &parm)

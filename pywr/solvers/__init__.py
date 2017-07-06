@@ -57,6 +57,9 @@ else:
         def dump_mps(self, filename):
             return self._cy_solver.dump_mps(filename)
 
+        def dump_html(self):
+            return self._cy_solver.dump_html()
+
         @property
         def stats(self):
             return self._cy_solver.stats
