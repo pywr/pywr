@@ -141,7 +141,14 @@ cdef class CythonGLPKSolver:
 
         self.num_routes = len(routes)
         self.num_scenarios = len(model.scenarios.combinations)
-        self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes), itemsize=sizeof(double), format="d")
+
+        if self.save_routes_flows:
+            # If saving flows this array needs to be 2D (one for each scenario)
+            self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes), itemsize=sizeof(double), format="d")
+        else:
+            # Otherwise the array can just be used to store a single solve to save some memory
+            self.route_flows_arr = cvarray(shape=(self.num_routes, ), itemsize=sizeof(double), format="d")
+
         self.num_storages = len(storages)
         if self.num_storages > 0:
             self.change_in_storage_arr = cvarray(shape=(self.num_storages,), itemsize=sizeof(double), format="d")
@@ -545,7 +552,12 @@ cdef class CythonGLPKSolver:
         self.stats['lp_solve'] += time.clock() - t0
         t0 = time.clock()
 
-        cdef double[:] route_flows = self.route_flows_arr[scenario_index.global_id, :]
+        cdef double[:] route_flows
+        if self.save_routes_flows:
+            route_flows = self.route_flows_arr[scenario_index.global_id, :]
+        else:
+            route_flows = self.route_flows_arr
+
         for col in range(0, self.num_routes):
             route_flows[col] = glp_get_col_prim(self.prob, col+1)
 

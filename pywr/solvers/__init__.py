@@ -58,6 +58,14 @@ else:
             return self._cy_solver.dump_mps(filename)
 
         @property
+        def save_routes_flows(self):
+            return self._cy_solver.save_routes_flows
+
+        @save_routes_flows.setter
+        def save_routes_flows(self, value):
+            self._cy_solver.save_routes_flows = value
+
+        @property
         def routes(self):
             return self._cy_solver.routes
 
@@ -95,6 +103,22 @@ else:
 
         def reset(self):
             pass
+
+        @property
+        def save_routes_flows(self):
+            return self._cy_solver.save_routes_flows
+
+        @save_routes_flows.setter
+        def save_routes_flows(self, value):
+            self._cy_solver.save_routes_flows = value
+
+        @property
+        def routes(self):
+            return self._cy_solver.routes
+
+        @property
+        def routes_flows_array(self):
+            return self._cy_solver.route_flows_arr
 
         @property
         def stats(self):

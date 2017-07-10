@@ -845,13 +845,23 @@ class TestTablesRecorder:
 
         links = routes_to_sankey_links(str(h5file), 'flows')
         # Value is mean of 10 and 40
-        assert links[0] == {'source': 'Input', 'target': 'Output', 'value': 25.0}
+
+        link = links[0]
+        assert link['source'] == 'Input'
+        assert link['target'] == 'Output'
+        np.testing.assert_allclose(link['value'], 25.0)
 
         links = routes_to_sankey_links(str(h5file), 'flows', scenario_slice=0)
-        assert links[0] == {'source': 'Input', 'target': 'Output', 'value': 10.0}
+        link = links[0]
+        assert link['source'] == 'Input'
+        assert link['target'] == 'Output'
+        np.testing.assert_allclose(link['value'], 10.0)
 
         links = routes_to_sankey_links(str(h5file), 'flows', scenario_slice=1, time_slice=0)
-        assert links[0] == {'source': 'Input', 'target': 'Output', 'value': 40.0}
+        link = links[0]
+        assert link['source'] == 'Input'
+        assert link['target'] == 'Output'
+        np.testing.assert_allclose(link['value'], 40.0)
 
 
 def test_total_deficit_node_recorder(simple_linear_model):

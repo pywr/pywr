@@ -217,6 +217,9 @@ class TablesRecorder(Recorder):
         self.routes = routes
         self.routes_flows = routes_flows
 
+        # Enable saving routes in the solver.
+        if routes_flows:
+            self.model.solver.save_routes_flows = True
 
         self.parameters = []
         if parameters:

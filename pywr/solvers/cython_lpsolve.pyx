@@ -1,6 +1,6 @@
 from libc.float cimport DBL_MAX
 from libc.stdlib cimport malloc, free
-
+from cython.view cimport array as cvarray
 from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
 from pywr.core import ModelStructureError
@@ -116,13 +116,18 @@ cdef class CythonLPSolveSolver:
     cdef int idx_row_aggregated
     cdef int idx_row_aggregated_min_max
 
-    cdef list routes
+    cdef public list routes
     cdef list supplys
     cdef list demands
     cdef list storages
     cdef list virtual_storages
     cdef list aggregated
     cdef public object stats
+    cdef int num_routes
+    cdef int num_scenarios
+    cdef cvarray node_flows_arr
+    cdef public cvarray route_flows_arr
+    cdef public bint save_routes_flows
 
     def __cinit__(self):
         # create a new problem
@@ -135,6 +140,10 @@ cdef class CythonLPSolveSolver:
         if self.prob is not NULL:
             # free the problem
             delete_lp(self.prob)
+
+    def __init__(self, save_routes_flows=False):
+        self.stats = None
+        self.save_routes_flows = save_routes_flows
 
 
     cpdef object setup(self, model):
@@ -197,6 +206,15 @@ cdef class CythonLPSolveSolver:
             return -1
         set_minim(self.prob)
 
+        self.num_routes = len(routes)
+        self.num_scenarios = len(model.scenarios.combinations)
+
+        if self.save_routes_flows:
+            # If saving flows this array needs to be 2D (one for each scenario)
+            self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes), itemsize=sizeof(double), format="d")
+        else:
+            # Otherwise the array can just be used to store a single solve to save some memory
+            self.route_flows_arr = cvarray(shape=(self.num_routes, ), itemsize=sizeof(double), format="d")
 
         # add a column for each route and demand
         self.idx_col_routes = get_Norig_columns(self.prob)+1
@@ -532,12 +550,21 @@ cdef class CythonLPSolveSolver:
 
         get_ptr_variables(self.prob, &ptr_var)
 
-        route_flow = [ptr_var[col] for col in range(0, len(routes))]
+        cdef double[:] route_flows
+        if self.save_routes_flows:
+            route_flows = self.route_flows_arr[scenario_index.global_id, :]
+        else:
+            route_flows = self.route_flows_arr
+
+        for col in range(0, len(routes)):
+            route_flows[col] = ptr_var[col]
+
         change_in_storage = []
 
         result = {}
 
-        for route, flow in zip(routes, route_flow):
+        for col, route in enumerate(routes):
+            flow = route_flows[col]
             # TODO make this cleaner.
             route[0].commit(scenario_index.global_id, flow)
             route[-1].commit(scenario_index.global_id, flow)
@@ -547,4 +574,4 @@ cdef class CythonLPSolveSolver:
 
         self.stats['result_update'] += time.clock() - t0
 
-        return route_flow, change_in_storage
+        return route_flows, change_in_storage
