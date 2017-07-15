@@ -72,6 +72,8 @@ compile_time_env = {}
 if '--enable-debug' in sys.argv:
     compile_time_env['SOLVER_DEBUG'] = True
     sys.argv.remove('--enable-debug')
+else:
+    compile_time_env['SOLVER_DEBUG'] = False
 
 
 extensions = [
