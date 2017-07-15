@@ -59,18 +59,24 @@ cdef class CythonGLPKSolver:
     def __cinit__(self):
         # create a new problem
         self.prob = glp_create_prob()
-        # disable console messages
-        glp_init_smcp(&self.smcp)
-        self.smcp.msg_lev = GLP_MSG_ERR
-        self.smcp.tm_lim = 5000  # 5 second limit
-        glp_term_out(GLP_OFF)  # Disable terminal output
 
-    def __init__(self, use_presolve=False, save_routes_flows=False):
+    def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level='error', save_routes_flows=False):
         self.stats = None
         self.is_first_solve = True
         self.has_presolved = False
         self.use_presolve = use_presolve
         self.save_routes_flows = save_routes_flows
+
+        # Set solver options
+        glp_init_smcp(&self.smcp)
+        self.smcp.msg_lev = message_levels[message_level]
+        if time_limit is not None:
+            self.smcp.tm_lim = time_limit  # 5 second limit
+        if iteration_limit is not None:
+            self.smcp.it_lim = iteration_limit
+
+        glp_term_hook(term_hook, NULL)
+
 
     def __dealloc__(self):
         # free the problem
@@ -492,7 +498,7 @@ cdef class CythonGLPKSolver:
         for col, agg_node in enumerate(aggregated):
             min_flow = inf_to_dbl_max(agg_node.get_min_flow(scenario_index))
             max_flow = inf_to_dbl_max(agg_node.get_max_flow(scenario_index))
-            glp_set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow), min_flow, max_flow)
+            set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.clock() - t0
         t0 = time.clock()
@@ -535,17 +541,17 @@ cdef class CythonGLPKSolver:
         status = glp_get_status(self.prob)
         if status != GLP_OPT or simplex_ret != 0:
             # try creating a new basis and resolving
-            print("Simplex solve returned: {}".format(simplex_ret))
-            print("Simplex status: {}".format(status))
+            print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
+            print("Simplex status: {} ({})".format(status_string[status], status))
             print('Retrying solve with new basis.')
             glp_std_basis(self.prob)
             simplex_ret = simplex(self.prob, self.smcp)
             status = glp_get_status(self.prob)
             if status != GLP_OPT or simplex_ret != 0:
-                print("Simplex solve returned: {}".format(simplex_ret))
-                print("Simplex status: {}".format(status))
+                print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
+                print("Simplex status: {} ({})".format(status_string[status], status))
                 self.dump_mps(b'pywr_glpk_debug.mps')
-                raise RuntimeError(status_string[status])
+                raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(simplex_status_string[simplex_ret], status_string[status]))
         # Now save the basis
         self._save_basis(scenario_index.global_id)
 
@@ -596,8 +602,14 @@ cdef int simplex(glp_prob *P, glp_smcp parm):
 
 
 cdef set_obj_coef(glp_prob *P, int j, double coef):
+    IF SOLVER_DEBUG:
+        assert np.isfinite(coef)
     glp_set_obj_coef(P, j, coef)
 
 
 cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
+    IF SOLVER_DEBUG:
+        assert np.isfinite(lb)
+        assert np.isfinite(ub)
+        assert lb <= ub
     glp_set_row_bnds(P, i, type, lb, ub)

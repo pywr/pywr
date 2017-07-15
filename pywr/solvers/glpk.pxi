@@ -10,6 +10,36 @@ status_string = [
     'solution is unbounded',
 ]
 
+simplex_status_string = [
+    None,
+    'invalid basis',
+    'singular matrix',
+    'ill-conditioned matrix',
+    'invalid bounds',
+    'solver failed',
+    'objective lower limit reached',
+    'objective upper limit reached',
+    'iteration limit exceeded',
+    'time limit exceeded',
+    'no primal feasible solution',
+    'no dual feasible solution',
+    'root LP optimum not provided',
+    'search terminated by application',
+    'relative mip gap tolerance reached',
+    'no primal/dual feasible solution',
+    'no convergence',
+    'numerical instability',
+    'invalid data',
+    'result out of range',
+]
+
+cdef int term_hook(void *info, const char *s):
+    """ Callback function to print GLPK messages through Python's print function """
+    # TODO make this use logging.
+    print(s.strip().decode('UTF-8'))
+    return 1
+
+
 cdef inline int constraint_type(double a, double b):
     if a == b:
         return GLP_FX
@@ -113,6 +143,8 @@ cdef extern from "glpk.h":
 
     int glp_get_status(glp_prob *P)
     int glp_term_out(int flag)
+    void glp_term_hook(int (*func)(void *info, const char *s), void *info);
+
     
     double glp_get_row_prim(glp_prob *P, int i)
     double glp_get_col_prim(glp_prob *P, int j)
@@ -128,3 +160,11 @@ cdef extern from "glpk.h":
     int glp_get_col_stat(glp_prob *P, int i)
     void glp_set_row_stat(glp_prob *P, int i, int state)
     void glp_set_col_stat(glp_prob *P, int i, int state)
+
+message_levels = {
+    'off': GLP_MSG_OFF,
+    'error': GLP_MSG_ERR,
+    'normal': GLP_MSG_ON,
+    'all': GLP_MSG_ALL,
+    'debug': GLP_MSG_DBG,
+}

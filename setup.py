@@ -68,6 +68,12 @@ if '--enable-trace' in sys.argv:
     define_macros.append(('CYTHON_TRACE', '1'))
     sys.argv.remove('--enable-trace')
 
+compile_time_env = {}
+if '--enable-debug' in sys.argv:
+    compile_time_env['SOLVER_DEBUG'] = True
+    sys.argv.remove('--enable-debug')
+
+
 extensions = [
     Extension('pywr._core', ['pywr/_core.pyx'],
               include_dirs=[np.get_include()],
@@ -138,5 +144,7 @@ else:
     setup_kwargs["package_data"]["pywr"] = ["GIT_VERSION.txt"]
 
 # build the core extension(s)
-setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional, compiler_directives=compiler_directives, annotate=annotate)
+setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional,
+                                        compiler_directives=compiler_directives, annotate=annotate,
+                                        compile_time_env=compile_time_env)
 setup(**setup_kwargs)

@@ -167,7 +167,7 @@ class Model(object):
         return self.graph.edges()
 
     @classmethod
-    def loads(cls, data, model=None, path=None, solver=None):
+    def loads(cls, data, model=None, path=None, solver=None, **kwargs):
         """Read JSON data from a string and parse it as a model document"""
         try:
             data = json.loads(data)
@@ -177,7 +177,7 @@ class Model(object):
                 e.args = ("{} [{}]".format(e.args[0], os.path.basename(path)),)
             raise(e)
         cls._load_includes(data, path)
-        return cls.load(data, model, path, solver)
+        return cls.load(data, model, path, solver, **kwargs)
 
     @classmethod
     def _load_includes(cls, data, path=None):
@@ -221,7 +221,7 @@ class Model(object):
         return None  # data modified in-place
 
     @classmethod
-    def load(cls, data, model=None, path=None, solver=None):
+    def load(cls, data, model=None, path=None, solver=None, **kwargs):
         """Load an existing model
 
         Parameters
@@ -269,7 +269,7 @@ class Model(object):
             solver_data = data['solver']
         except KeyError:
             solver_name = solver
-            solver_args = {}
+            solver_args = kwargs.pop('solver_args', {})
         else:
             solver_name = data["solver"].pop("name")
             solver_args = data["solver"]
