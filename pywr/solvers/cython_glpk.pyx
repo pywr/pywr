@@ -9,6 +9,7 @@ from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
 from pywr.core import ModelStructureError
 import time
+
 include "glpk.pxi"
 
 inf = float('inf')
@@ -182,7 +183,7 @@ cdef class CythonGLPKSolver:
 
         # explicitly set bounds on route and demand columns
         for col, route in enumerate(routes):
-            glp_set_col_bnds(self.prob, self.idx_col_routes+col, GLP_LO, 0.0, DBL_MAX)
+            set_col_bnds(self.prob, self.idx_col_routes+col, GLP_LO, 0.0, DBL_MAX)
 
         # constrain supply minimum and maximum flow
         self.idx_row_non_storages = glp_add_rows(self.prob, len(non_storages))
@@ -207,8 +208,8 @@ cdef class CythonGLPKSolver:
             for n, c in enumerate(cols):
                 ind[1+n] = 1+c
                 val[1+n] = 1
-            glp_set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
-            glp_set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
+            set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
+            set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
             free(ind)
             free(val)
 
@@ -224,8 +225,8 @@ cdef class CythonGLPKSolver:
                 for n, (c, v) in enumerate(col_vals):
                     ind[1+n+len(cols)] = 1+c
                     val[1+n+len(cols)] = 1./v
-                glp_set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
-                glp_set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
+                set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
+                set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
                 free(ind)
                 free(val)
                 cross_domain_row += 1
@@ -244,7 +245,7 @@ cdef class CythonGLPKSolver:
             for n, c in enumerate(cols_input):
                 ind[1+len(cols_output)+n] = self.idx_col_routes+c
                 val[1+len(cols_output)+n] = -1
-            glp_set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
+            set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
             free(ind)
             free(val)
 
@@ -272,7 +273,7 @@ cdef class CythonGLPKSolver:
                 ind[1+n] = self.idx_col_routes+c
                 val[1+n] = -f
 
-            glp_set_mat_row(self.prob, self.idx_row_virtual_storages+col, len(cols), ind, val)
+            set_mat_row(self.prob, self.idx_row_virtual_storages+col, len(cols), ind, val)
             free(ind)
             free(val)
 
@@ -305,11 +306,11 @@ cdef class CythonGLPKSolver:
                 for i, c in enumerate(cols[n+1]):
                     ind[1+len(cols[0])+i] = 1+c
                     val[1+len(cols[0])+i] = -factors_norm[n+1]
-                glp_set_mat_row(self.prob, row+n, length, ind, val)
+                set_mat_row(self.prob, row+n, length, ind, val)
                 free(ind)
                 free(val)
 
-                glp_set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
+                set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
 
         # aggregated node min/max flow constraints
         if aggregated:
@@ -329,8 +330,8 @@ cdef class CythonGLPKSolver:
             for i, col in enumerate(matrix):
                 ind[1+i] = 1+col
                 val[1+i] = 1.0
-            glp_set_mat_row(self.prob, row, length, ind, val)
-            glp_set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
+            set_mat_row(self.prob, row, length, ind, val)
+            set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
             free(ind)
             free(val)
 
@@ -444,6 +445,7 @@ cdef class CythonGLPKSolver:
         cdef double max_flow
         cdef double cost
         cdef double max_volume
+        cdef double min_volume
         cdef double avail_volume
         cdef double t0
         cdef int col
@@ -506,22 +508,32 @@ cdef class CythonGLPKSolver:
         # update storage node constraint
         for col, storage in enumerate(storages):
             max_volume = storage.get_max_volume(scenario_index)
-            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
-            # change in storage cannot be more than the current volume or
-            # result in maximum volume being exceeded
-            lb = -avail_volume/timestep._days
-            ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep._days
-            set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
+            min_volume = storage.get_min_volume(scenario_index)
+
+            if max_volume == min_volume:
+                set_row_bnds(self.prob, self.idx_row_storages+col, GLP_FX, 0.0, 0.0)
+            else:
+                avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
+                # change in storage cannot be more than the current volume or
+                # result in maximum volume being exceeded
+                lb = -avail_volume/timestep._days
+                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep._days
+                set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
             max_volume = storage.get_max_volume(scenario_index)
-            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
-            # change in storage cannot be more than the current volume or
-            # result in maximum volume being exceeded
-            lb = -avail_volume/timestep._days
-            ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep._days
-            set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
+            min_volume = storage.get_min_volume(scenario_index)
+
+            if max_volume == min_volume:
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+col, GLP_FX, 0.0, 0.0)
+            else:
+                avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
+                # change in storage cannot be more than the current volume or
+                # result in maximum volume being exceeded
+                lb = -avail_volume/timestep._days
+                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep._days
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update_storage'] += time.clock() - t0
 
@@ -543,15 +555,20 @@ cdef class CythonGLPKSolver:
             # try creating a new basis and resolving
             print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
             print("Simplex status: {} ({})".format(status_string[status], status))
+            print("Scenario ID: {}".format(scenario_index.global_id))
             print('Retrying solve with new basis.')
-            glp_std_basis(self.prob)
+            self.dump_lp(b'pywr_glpk_debug.lp')
+            #glp_std_basis(self.prob)
+
+            self.smcp.msg_lev = GLP_MSG_DBG
             simplex_ret = simplex(self.prob, self.smcp)
             status = glp_get_status(self.prob)
-            if status != GLP_OPT or simplex_ret != 0:
-                print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
-                print("Simplex status: {} ({})".format(status_string[status], status))
-                self.dump_mps(b'pywr_glpk_debug.mps')
-                raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(simplex_status_string[simplex_ret], status_string[status]))
+
+#            if status != GLP_OPT or simplex_ret != 0:
+            print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
+            print("Simplex status: {} ({})".format(status_string[status], status))
+#            self.dump_lp(b'pywr_glpk_debug.lp')
+            raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(simplex_status_string[simplex_ret], status_string[status]))
         # Now save the basis
         self._save_basis(scenario_index.global_id)
 
@@ -596,6 +613,9 @@ cdef class CythonGLPKSolver:
     cpdef dump_mps(self, filename):
         glp_write_mps(self.prob, GLP_MPS_FILE, NULL, filename)
 
+    cpdef dump_lp(self, filename):
+        glp_write_lp(self.prob, NULL, filename)
+
 
 cdef int simplex(glp_prob *P, glp_smcp parm):
     return glp_simplex(P, &parm)
@@ -604,6 +624,9 @@ cdef int simplex(glp_prob *P, glp_smcp parm):
 cdef set_obj_coef(glp_prob *P, int j, double coef):
     IF SOLVER_DEBUG:
         assert np.isfinite(coef)
+        if np.abs(coef) < 1e-12:
+            if np.abs(coef) != 0.0:
+                print(j, coef)
     glp_set_obj_coef(P, j, coef)
 
 
@@ -612,4 +635,34 @@ cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
         assert np.isfinite(lb)
         assert np.isfinite(ub)
         assert lb <= ub
+        if np.abs(lb) < 1e-12:
+            if np.abs(lb) != 0.0:
+                print(i, type, lb, ub)
+
+                assert False
+        if np.abs(ub) < 1e-12:
+            if np.abs(ub) != 0.0:
+                print(i, type, lb, ub)
+                assert False
+
     glp_set_row_bnds(P, i, type, lb, ub)
+
+
+cdef set_col_bnds(glp_prob *P, int i, int type, double lb, double ub):
+    IF SOLVER_DEBUG:
+        assert np.isfinite(lb)
+        assert np.isfinite(ub)
+        assert lb <= ub
+    glp_set_col_bnds(P, i, type, lb, ub)
+
+
+cdef set_mat_row(glp_prob *P, int i, int len, int* ind, double* val):
+    IF SOLVER_DEBUG:
+        cdef int j
+        for j in range(len):
+            assert np.isfinite(val[j+1])
+
+            assert np.abs(val[j+1]) > 1e-6
+            assert ind[j+1] > 0
+
+    glp_set_mat_row(P, i, len, ind, val)

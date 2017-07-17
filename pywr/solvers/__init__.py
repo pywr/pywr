@@ -57,6 +57,9 @@ else:
         def dump_mps(self, filename):
             return self._cy_solver.dump_mps(filename)
 
+        def dump_lp(self, filename):
+            return self._cy_solver.dump_lp(filename)
+
         @property
         def save_routes_flows(self):
             return self._cy_solver.save_routes_flows
