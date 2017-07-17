@@ -894,14 +894,21 @@ cdef class Storage(AbstractStorage):
     cpdef after(self, Timestep ts):
         AbstractStorage.after(self, ts)
         cdef int i
-        cdef double mxv = self._max_volume
+        cdef double mxv, mnv
         cdef ScenarioIndex si
 
         for i, si in enumerate(self.model.scenarios.combinations):
             self._volume[i] += self._flow[i]*ts._days
             # Ensure variable maximum volume is taken in to account
-            if self._max_volume_param is not None:
-                mxv = self._max_volume_param.get_value(si)
+
+            mxv = self.get_max_volume(si)
+            mnv = self.get_min_volume(si)
+
+            if abs(self._volume[i] - mxv) < 1e-6:
+                self._volume[i] = mxv
+            if abs(self._volume[i] - mnv) < 1e-6:
+                self._volume[i] = mnv
+
             try:
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
