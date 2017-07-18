@@ -57,6 +57,33 @@ else:
         def dump_mps(self, filename):
             return self._cy_solver.dump_mps(filename)
 
+        def dump_lp(self, filename):
+            return self._cy_solver.dump_lp(filename)
+
+        def retry_solve():
+            def fget(self):
+                return self._cy_solver.retry_solve
+            def fset(self, value):
+                self._cy_solver.retry_solve = value
+            return locals()
+        retry_solve = property(**retry_solve())
+
+        def save_routes_flows():
+            def fget(self):
+                return self._cy_solver.save_routes_flows
+            def fset(self, value):
+                self._cy_solver.save_routes_flows = value
+            return locals()
+        save_routes_flows = property(**save_routes_flows())
+
+        @property
+        def routes(self):
+            return self._cy_solver.routes
+
+        @property
+        def routes_flows_array(self):
+            return self._cy_solver.route_flows_arr
+
         @property
         def stats(self):
             return self._cy_solver.stats
@@ -87,6 +114,22 @@ else:
 
         def reset(self):
             pass
+
+        @property
+        def save_routes_flows(self):
+            return self._cy_solver.save_routes_flows
+
+        @save_routes_flows.setter
+        def save_routes_flows(self, value):
+            self._cy_solver.save_routes_flows = value
+
+        @property
+        def routes(self):
+            return self._cy_solver.routes
+
+        @property
+        def routes_flows_array(self):
+            return self._cy_solver.route_flows_arr
 
         @property
         def stats(self):

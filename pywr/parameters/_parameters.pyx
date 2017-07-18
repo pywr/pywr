@@ -832,17 +832,17 @@ cdef class AggregatedParameter(Parameter):
     def __init__(self, model, parameters, agg_func=None, **kwargs):
         super(AggregatedParameter, self).__init__(model, **kwargs)
         self.agg_func = agg_func
-        self.parameters = set(parameters)
+        self.parameters = list(parameters)
         for parameter in self.parameters:
             self.children.add(parameter)
 
     @classmethod
     def load(cls, model, data):
         parameters_data = data.pop("parameters")
-        parameters = set()
+        parameters = []
         for pdata in parameters_data:
             parameter = load_parameter(model, pdata)
-            parameters.add(wrap_const(model, parameter))
+            parameters.append(wrap_const(model, parameter))
 
         agg_func = data.pop("agg_func", None)
         return cls(model, parameters=parameters, agg_func=agg_func, **data)
@@ -860,7 +860,7 @@ cdef class AggregatedParameter(Parameter):
             self._agg_func = agg_func
 
     cpdef add(self, Parameter parameter):
-        self.parameters.add(parameter)
+        self.parameters.append(parameter)
         parameter.parents.add(self)
 
     cpdef remove(self, Parameter parameter):
@@ -948,17 +948,17 @@ cdef class AggregatedIndexParameter(IndexParameter):
     def __init__(self, model, parameters, agg_func=None, **kwargs):
         super(AggregatedIndexParameter, self).__init__(model, **kwargs)
         self.agg_func = agg_func
-        self.parameters = set(parameters)
+        self.parameters = list(parameters)
         for parameter in self.parameters:
             self.children.add(parameter)
 
     @classmethod
     def load(cls, model, data):
         parameters_data = data.pop("parameters")
-        parameters = set()
+        parameters = list()
         for pdata in parameters_data:
             parameter = load_parameter(model, pdata)
-            parameters.add(wrap_const(model, parameter))
+            parameters.append(wrap_const(model, parameter))
 
         agg_func = data.pop("agg_func", None)
         return cls(model, parameters=parameters, agg_func=agg_func, **data)
@@ -976,7 +976,7 @@ cdef class AggregatedIndexParameter(IndexParameter):
             self._agg_func = agg_func
 
     cpdef add(self, Parameter parameter):
-        self.parameters.add(parameter)
+        self.parameters.append(parameter)
         parameter.parents.add(self)
 
     cpdef remove(self, Parameter parameter):

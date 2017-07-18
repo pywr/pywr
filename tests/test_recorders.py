@@ -452,9 +452,9 @@ class TestTablesRecorder:
                 d += timedelta(1)
 
             scenarios = h5f.get_node('/scenarios')
-            for s in model.scenarios.scenarios:
+            for i, s in enumerate(model.scenarios.scenarios):
                 row = scenarios[i]
-                assert row['name'] == s.name
+                assert row['name'] == s.name.encode('utf-8')
                 assert row['size'] == s.size
 
             model.reset()
@@ -491,6 +491,51 @@ class TestTablesRecorder:
                 ca = h5f.get_node('/', node_name)
                 assert ca.shape == (365, 4, 2)
                 np.testing.assert_allclose(ca[0, ...], [[10, 10], [20, 20], [20, 30], [20, 40]])
+
+            scenarios = h5f.get_node('/scenarios')
+            for i, s in enumerate(model.scenarios.scenarios):
+                row = scenarios[i]
+                assert row['name'] == s.name.encode('utf-8')
+                assert row['size'] == s.size
+
+    def test_user_scenarios(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder with user defined scenario subset
+
+        """
+        from pywr.parameters import ConstantScenarioParameter
+        model = simple_linear_model
+        scA = Scenario(model, name='A', size=4)
+        scB = Scenario(model, name='B', size=2)
+
+        # Use first and last combinations
+        model.scenarios.user_combinations = [[0, 0], [3, 1]]
+
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = TablesRecorder(model, h5f)
+
+            model.run()
+
+            for node_name in model.nodes.keys():
+                ca = h5f.get_node('/', node_name)
+                assert ca.shape == (365, 2)
+                np.testing.assert_allclose(ca[0, ...], [10, 40])
+
+            # check combinations table exists
+            combinations = h5f.get_node('/scenario_combinations')
+            for i, comb in enumerate(model.scenarios.user_combinations):
+                row = combinations[i]
+                assert row['A'] == comb[0]
+                assert row['B'] == comb[1]
 
     def test_parameters(self, simple_linear_model, tmpdir):
         """
@@ -676,6 +721,147 @@ class TestTablesRecorder:
             demand_saving = 0.5
             assert (rec_storage[11, 0] < (0.5 * max_volume))
             assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
+
+    def test_routes(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
+
+        """
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+        agg_node = AggregatedNode(model, 'Sum', [otpt, inpt])
+
+        inpt.max_flow = 10.0
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = TablesRecorder(model, h5f, routes_flows='flows')
+
+            model.run()
+
+            flows = h5f.get_node('/flows')
+            assert flows.shape == (365, 1, 1)
+            np.testing.assert_allclose(flows.read(), np.ones((365, 1, 1))*10)
+
+            routes = h5f.get_node('/routes')
+            assert routes.shape[0] == 1
+            row = routes[0]
+            row['start'] = "Input"
+            row['end'] = "Output"
+
+            from datetime import date, timedelta
+            d = date(2015, 1, 1)
+            time = h5f.get_node('/time')
+            for i in range(len(model.timestepper)):
+                row = time[i]
+                assert row['year'] == d.year
+                assert row['month'] == d.month
+                assert row['day'] == d.day
+
+                d += timedelta(1)
+
+            scenarios = h5f.get_node('/scenarios')
+            for s in model.scenarios.scenarios:
+                row = scenarios[i]
+                assert row['name'] == s.name
+                assert row['size'] == s.size
+
+            model.reset()
+            model.run()
+
+            time = h5f.get_node('/time')
+            assert len(time) == len(model.timestepper)
+
+    def test_routes_multiple_scenarios(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
+
+        """
+        from pywr.parameters import ConstantScenarioParameter
+        model = simple_linear_model
+        scA = Scenario(model, name='A', size=4)
+        scB = Scenario(model, name='B', size=2)
+
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = TablesRecorder(model, h5f, routes_flows='flows')
+
+            model.run()
+
+            flows = h5f.get_node('/flows')
+            assert flows.shape == (365, 1, 4, 2)
+            np.testing.assert_allclose(flows[0, 0], [[10, 10], [20, 20], [20, 30], [20, 40]])
+
+    def test_routes_user_scenarios(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder with user defined scenario subset
+
+        """
+        from pywr.parameters import ConstantScenarioParameter
+        model = simple_linear_model
+        scA = Scenario(model, name='A', size=4)
+        scB = Scenario(model, name='B', size=2)
+
+        # Use first and last combinations
+        model.scenarios.user_combinations = [[0, 0], [3, 1]]
+
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        import tables
+        with tables.open_file(str(h5file), 'w') as h5f:
+            rec = TablesRecorder(model, h5f, routes_flows='flows')
+
+            model.run()
+
+            flows = h5f.get_node('/flows')
+            assert flows.shape == (365, 1, 2)
+            np.testing.assert_allclose(flows[0, 0], [10, 40])
+
+            # check combinations table exists
+            combinations = h5f.get_node('/scenario_combinations')
+            for i, comb in enumerate(model.scenarios.user_combinations):
+                row = combinations[i]
+                assert row['A'] == comb[0]
+                assert row['B'] == comb[1]
+
+        from pywr.notebook.sankey import routes_to_sankey_links
+
+        links = routes_to_sankey_links(str(h5file), 'flows')
+        # Value is mean of 10 and 40
+
+        link = links[0]
+        assert link['source'] == 'Input'
+        assert link['target'] == 'Output'
+        np.testing.assert_allclose(link['value'], 25.0)
+
+        links = routes_to_sankey_links(str(h5file), 'flows', scenario_slice=0)
+        link = links[0]
+        assert link['source'] == 'Input'
+        assert link['target'] == 'Output'
+        np.testing.assert_allclose(link['value'], 10.0)
+
+        links = routes_to_sankey_links(str(h5file), 'flows', scenario_slice=1, time_slice=0)
+        link = links[0]
+        assert link['source'] == 'Input'
+        assert link['target'] == 'Output'
+        np.testing.assert_allclose(link['value'], 40.0)
 
 
 def test_total_deficit_node_recorder(simple_linear_model):
