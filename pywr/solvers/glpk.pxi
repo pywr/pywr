@@ -131,7 +131,10 @@ cdef extern from "glpk.h":
     void glp_set_mat_col(glp_prob *P, int j, int len, const int ind[], const double val[]);
 
     void glp_set_row_bnds(glp_prob *P, int i, int type, double lb, double ub)
+    void glp_set_row_name(glp_prob *P, int i, const char *name)
+
     void glp_set_col_bnds(glp_prob *P, int j, int type, double lb, double ub)
+    void glp_set_col_name(glp_prob *P, int j, const char *name)
 
     void glp_set_obj_coef(glp_prob *P, int j, double coef)
 

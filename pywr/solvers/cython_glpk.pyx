@@ -56,17 +56,20 @@ cdef class CythonGLPKSolver:
     cdef bint has_presolved
     cdef public bint use_presolve
     cdef public bint save_routes_flows
+    cdef public bint retry_solve
 
     def __cinit__(self):
         # create a new problem
         self.prob = glp_create_prob()
 
-    def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level='error', save_routes_flows=False):
+    def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level='error',
+                 save_routes_flows=False, retry_solve=False):
         self.stats = None
         self.is_first_solve = True
         self.has_presolved = False
         self.use_presolve = use_presolve
         self.save_routes_flows = save_routes_flows
+        self.retry_solve = retry_solve
 
         # Set solver options
         glp_init_smcp(&self.smcp)
@@ -210,6 +213,7 @@ cdef class CythonGLPKSolver:
                 val[1+n] = 1
             set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
             set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
+            glp_set_row_name(self.prob, self.idx_row_non_storages+row, b'ns.'+some_node.name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -227,6 +231,7 @@ cdef class CythonGLPKSolver:
                     val[1+n+len(cols)] = 1./v
                 set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
                 set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
+                glp_set_row_name(self.prob, self.idx_row_cross_domain+cross_domain_row, b'cd.'+some_node.name.encode('utf-8'))
                 free(ind)
                 free(val)
                 cross_domain_row += 1
@@ -246,6 +251,7 @@ cdef class CythonGLPKSolver:
                 ind[1+len(cols_output)+n] = self.idx_col_routes+c
                 val[1+len(cols_output)+n] = -1
             set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
+            glp_set_row_name(self.prob, self.idx_row_storages+col, b's.'+storage.name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -274,6 +280,7 @@ cdef class CythonGLPKSolver:
                 val[1+n] = -f
 
             set_mat_row(self.prob, self.idx_row_virtual_storages+col, len(cols), ind, val)
+            glp_set_row_name(self.prob, self.idx_row_virtual_storages+col, b'vs.'+storage.name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -311,6 +318,7 @@ cdef class CythonGLPKSolver:
                 free(val)
 
                 set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
+                glp_set_row_name(self.prob, row+n, 'ag.f{}.{}'.format(n, agg_node.name).encode('utf-8'))
 
         # aggregated node min/max flow constraints
         if aggregated:
@@ -332,6 +340,7 @@ cdef class CythonGLPKSolver:
                 val[1+i] = 1.0
             set_mat_row(self.prob, row, length, ind, val)
             set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
+            glp_set_row_name(self.prob, row, b'ag.'+agg_node.name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -551,23 +560,24 @@ cdef class CythonGLPKSolver:
         # attempt to solve the linear programme
         simplex_ret = simplex(self.prob, self.smcp)
         status = glp_get_status(self.prob)
-        if status != GLP_OPT or simplex_ret != 0:
+        if (status != GLP_OPT or simplex_ret != 0) and self.retry_solve:
             # try creating a new basis and resolving
-            print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
-            print("Simplex status: {} ({})".format(status_string[status], status))
-            print("Scenario ID: {}".format(scenario_index.global_id))
             print('Retrying solve with new basis.')
-            self.dump_lp(b'pywr_glpk_debug.lp')
-            #glp_std_basis(self.prob)
-
-            self.smcp.msg_lev = GLP_MSG_DBG
+            glp_std_basis(self.prob)
             simplex_ret = simplex(self.prob, self.smcp)
             status = glp_get_status(self.prob)
 
-#            if status != GLP_OPT or simplex_ret != 0:
+        if status != GLP_OPT or simplex_ret != 0:
+            # If problem is not solved. Print some debugging information and error.
             print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
             print("Simplex status: {} ({})".format(status_string[status], status))
-#            self.dump_lp(b'pywr_glpk_debug.lp')
+            print("Scenario ID: {}".format(scenario_index.global_id))
+            self.dump_mps(b'pywr_glpk_debug.mps')
+
+            self.smcp.msg_lev = GLP_MSG_DBG
+            # Retry solve with debug messages
+            simplex_ret = simplex(self.prob, self.smcp)
+            status = glp_get_status(self.prob)
             raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(simplex_status_string[simplex_ret], status_string[status]))
         # Now save the basis
         self._save_basis(scenario_index.global_id)
@@ -627,6 +637,7 @@ cdef set_obj_coef(glp_prob *P, int j, double coef):
         if np.abs(coef) < 1e-12:
             if np.abs(coef) != 0.0:
                 print(j, coef)
+                assert False
     glp_set_obj_coef(P, j, coef)
 
 
