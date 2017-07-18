@@ -571,7 +571,7 @@ cdef class AggregatedNode(AbstractNode):
         self._allow_isolated = True
         self.virtual = True
         self._factors = None
-        self._min_flow = -inf
+        self._min_flow = 0.0
         self._max_flow = inf
         self._min_flow_param = None
         self._max_flow_param = None
