@@ -106,7 +106,7 @@ cdef class CythonGLPKSolver:
         cdef cross_domain_row
         cdef int n, num
 
-        self.all_nodes = list(sorted(model.graph.nodes(), key=lambda n:n.name))
+        self.all_nodes = list(sorted(model.graph.nodes(), key=lambda n:n.fully_qualified_name))
         if not self.all_nodes:
             raise ModelStructureError("Model is empty")
 
@@ -132,7 +132,7 @@ cdef class CythonGLPKSolver:
         aggregated_with_factors = []
         aggregated = []
 
-        for some_node in model.graph.nodes():
+        for some_node in self.all_nodes:
             if isinstance(some_node, (BaseInput, BaseLink, BaseOutput)):
                 non_storages.append(some_node)
             elif isinstance(some_node, VirtualStorage):
@@ -213,7 +213,7 @@ cdef class CythonGLPKSolver:
                 val[1+n] = 1
             set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
             set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
-            glp_set_row_name(self.prob, self.idx_row_non_storages+row, b'ns.'+some_node.name.encode('utf-8'))
+            #glp_set_row_name(self.prob, self.idx_row_non_storages+row, b'ns.'+some_node.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -231,7 +231,7 @@ cdef class CythonGLPKSolver:
                     val[1+n+len(cols)] = 1./v
                 set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
                 set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
-                glp_set_row_name(self.prob, self.idx_row_cross_domain+cross_domain_row, b'cd.'+some_node.name.encode('utf-8'))
+                #glp_set_row_name(self.prob, self.idx_row_cross_domain+cross_domain_row, b'cd.'+some_node.fully_qualified_name.encode('utf-8'))
                 free(ind)
                 free(val)
                 cross_domain_row += 1
@@ -251,7 +251,7 @@ cdef class CythonGLPKSolver:
                 ind[1+len(cols_output)+n] = self.idx_col_routes+c
                 val[1+len(cols_output)+n] = -1
             set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
-            glp_set_row_name(self.prob, self.idx_row_storages+col, b's.'+storage.name.encode('utf-8'))
+            #glp_set_row_name(self.prob, self.idx_row_storages+col, b's.'+storage.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -280,7 +280,7 @@ cdef class CythonGLPKSolver:
                 val[1+n] = -f
 
             set_mat_row(self.prob, self.idx_row_virtual_storages+col, len(cols), ind, val)
-            glp_set_row_name(self.prob, self.idx_row_virtual_storages+col, b'vs.'+storage.name.encode('utf-8'))
+            #glp_set_row_name(self.prob, self.idx_row_virtual_storages+col, b'vs.'+storage.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -318,7 +318,7 @@ cdef class CythonGLPKSolver:
                 free(val)
 
                 set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
-                glp_set_row_name(self.prob, row+n, 'ag.f{}.{}'.format(n, agg_node.name).encode('utf-8'))
+                #glp_set_row_name(self.prob, row+n, 'ag.f{}.{}'.format(n, agg_node.fully_qualified_name).encode('utf-8'))
 
         # aggregated node min/max flow constraints
         if aggregated:
@@ -340,7 +340,7 @@ cdef class CythonGLPKSolver:
                 val[1+i] = 1.0
             set_mat_row(self.prob, row, length, ind, val)
             set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
-            glp_set_row_name(self.prob, row, b'ag.'+agg_node.name.encode('utf-8'))
+            #glp_set_row_name(self.prob, row, b'ag.'+agg_node.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -495,6 +495,9 @@ cdef class CythonGLPKSolver:
             for indptr in range(self.routes_cost_indptr[col], self.routes_cost_indptr[col+1]):
                 node_id = self.routes_cost[indptr]
                 cost += node_costs[node_id]
+
+            if np.abs(cost) < 1e-8:
+                cost = 0.0
             set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
         self.stats['objective_update'] += time.clock() - t0
@@ -634,7 +637,7 @@ cdef int simplex(glp_prob *P, glp_smcp parm):
 cdef set_obj_coef(glp_prob *P, int j, double coef):
     IF SOLVER_DEBUG:
         assert np.isfinite(coef)
-        if np.abs(coef) < 1e-12:
+        if np.abs(coef) < 1e-9:
             if np.abs(coef) != 0.0:
                 print(j, coef)
                 assert False
@@ -646,12 +649,12 @@ cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
         assert np.isfinite(lb)
         assert np.isfinite(ub)
         assert lb <= ub
-        if np.abs(lb) < 1e-12:
+        if np.abs(lb) < 1e-9:
             if np.abs(lb) != 0.0:
                 print(i, type, lb, ub)
 
                 assert False
-        if np.abs(ub) < 1e-12:
+        if np.abs(ub) < 1e-9:
             if np.abs(ub) != 0.0:
                 print(i, type, lb, ub)
                 assert False

@@ -490,7 +490,7 @@ class Model(object):
                         all_routes.append(route)
 
         # Now sort the routes to ensure determinism
-        all_routes = sorted(all_routes, key=lambda r: tuple(n.name for n in r))
+        all_routes = sorted(all_routes, key=lambda r: tuple(n.fully_qualified_name for n in r))
         return all_routes
 
     def step(self):

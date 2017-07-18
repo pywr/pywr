@@ -304,6 +304,13 @@ cdef class AbstractNode:
             # apply new name
             self._name = name
 
+    property fully_qualified_name:
+        def __get__(self):
+            if self._parent is not None:
+                return '{}.{}'.format(self._parent.fully_qualified_name, self.name)
+            return self.name
+
+
     property recorders:
         """ Returns a list of `Recorder` objects attached to this node.
 
