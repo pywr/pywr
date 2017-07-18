@@ -103,7 +103,9 @@ cdef class CachedParameter(IndexParameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
 cdef class AggregatedParameter(Parameter):
-    cdef public set parameters
+    # This is a list rather than a set due to floating point arithmetic.
+    # The order is important for maintaining determinism.
+    cdef public list parameters
     cdef object _agg_user_func
     cdef int _agg_func
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
@@ -111,7 +113,8 @@ cdef class AggregatedParameter(Parameter):
     cpdef remove(self, Parameter parameter)
 
 cdef class AggregatedIndexParameter(IndexParameter):
-    cdef public set parameters
+    # This is a list; see above AggregatedParameter.
+    cdef public list parameters
     cdef object _agg_user_func
     cdef int _agg_func
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
