@@ -506,12 +506,20 @@ cdef class CythonGLPKSolver:
         # update non-storage properties
         for col, node in enumerate(non_storages):
             min_flow = inf_to_dbl_max(node.get_min_flow(scenario_index))
+            if np.abs(min_flow) < 1e-8:
+                min_flow = 0.0
             max_flow = inf_to_dbl_max(node.get_max_flow(scenario_index))
+            if np.abs(max_flow) < 1e-8:
+                max_flow = 0.0
             set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         for col, agg_node in enumerate(aggregated):
             min_flow = inf_to_dbl_max(agg_node.get_min_flow(scenario_index))
+            if np.abs(min_flow) < 1e-8:
+                min_flow = 0.0
             max_flow = inf_to_dbl_max(agg_node.get_max_flow(scenario_index))
+            if np.abs(max_flow) < 1e-8:
+                max_flow = 0.0
             set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.clock() - t0
@@ -530,6 +538,11 @@ cdef class CythonGLPKSolver:
                 # result in maximum volume being exceeded
                 lb = -avail_volume/timestep._days
                 ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep._days
+
+                if np.abs(lb) < 1e-8:
+                    lb = 0.0
+                if np.abs(ub) < 1e-8:
+                    ub = 0.0
                 set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
         # update virtual storage node constraint
@@ -545,6 +558,11 @@ cdef class CythonGLPKSolver:
                 # result in maximum volume being exceeded
                 lb = -avail_volume/timestep._days
                 ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep._days
+
+                if np.abs(lb) < 1e-8:
+                    lb = 0.0
+                if np.abs(ub) < 1e-8:
+                    ub = 0.0
                 set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update_storage'] += time.clock() - t0
