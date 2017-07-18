@@ -335,7 +335,7 @@ cdef class CythonGLPKSolver:
             length = len(matrix)
             ind = <int*>malloc(1+length * sizeof(int))
             val = <double*>malloc(1+length * sizeof(double))
-            for i, col in enumerate(matrix):
+            for i, col in enumerate(sorted(matrix)):
                 ind[1+i] = 1+col
                 val[1+i] = 1.0
             set_mat_row(self.prob, row, length, ind, val)
