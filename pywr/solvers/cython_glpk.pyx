@@ -1,4 +1,5 @@
 from libc.stdlib cimport malloc, free
+from libc.math cimport abs
 from cython.view cimport array as cvarray
 import numpy as np
 cimport numpy as np
@@ -496,7 +497,7 @@ cdef class CythonGLPKSolver:
                 node_id = self.routes_cost[indptr]
                 cost += node_costs[node_id]
 
-            if np.abs(cost) < 1e-8:
+            if abs(cost) < 1e-8:
                 cost = 0.0
             set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
@@ -506,19 +507,19 @@ cdef class CythonGLPKSolver:
         # update non-storage properties
         for col, node in enumerate(non_storages):
             min_flow = inf_to_dbl_max(node.get_min_flow(scenario_index))
-            if np.abs(min_flow) < 1e-8:
+            if abs(min_flow) < 1e-8:
                 min_flow = 0.0
             max_flow = inf_to_dbl_max(node.get_max_flow(scenario_index))
-            if np.abs(max_flow) < 1e-8:
+            if abs(max_flow) < 1e-8:
                 max_flow = 0.0
             set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
         for col, agg_node in enumerate(aggregated):
             min_flow = inf_to_dbl_max(agg_node.get_min_flow(scenario_index))
-            if np.abs(min_flow) < 1e-8:
+            if abs(min_flow) < 1e-8:
                 min_flow = 0.0
             max_flow = inf_to_dbl_max(agg_node.get_max_flow(scenario_index))
-            if np.abs(max_flow) < 1e-8:
+            if abs(max_flow) < 1e-8:
                 max_flow = 0.0
             set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow), min_flow, max_flow)
 
@@ -539,9 +540,9 @@ cdef class CythonGLPKSolver:
                 lb = -avail_volume/timestep._days
                 ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep._days
 
-                if np.abs(lb) < 1e-8:
+                if abs(lb) < 1e-8:
                     lb = 0.0
-                if np.abs(ub) < 1e-8:
+                if abs(ub) < 1e-8:
                     ub = 0.0
                 set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
 
@@ -559,9 +560,9 @@ cdef class CythonGLPKSolver:
                 lb = -avail_volume/timestep._days
                 ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep._days
 
-                if np.abs(lb) < 1e-8:
+                if abs(lb) < 1e-8:
                     lb = 0.0
-                if np.abs(ub) < 1e-8:
+                if abs(ub) < 1e-8:
                     ub = 0.0
                 set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
 
@@ -657,8 +658,8 @@ cdef int simplex(glp_prob *P, glp_smcp parm):
 cdef set_obj_coef(glp_prob *P, int j, double coef):
     IF SOLVER_DEBUG:
         assert np.isfinite(coef)
-        if np.abs(coef) < 1e-9:
-            if np.abs(coef) != 0.0:
+        if abs(coef) < 1e-9:
+            if abs(coef) != 0.0:
                 print(j, coef)
                 assert False
     glp_set_obj_coef(P, j, coef)
@@ -669,13 +670,13 @@ cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
         assert np.isfinite(lb)
         assert np.isfinite(ub)
         assert lb <= ub
-        if np.abs(lb) < 1e-9:
-            if np.abs(lb) != 0.0:
+        if abs(lb) < 1e-9:
+            if abs(lb) != 0.0:
                 print(i, type, lb, ub)
 
                 assert False
-        if np.abs(ub) < 1e-9:
-            if np.abs(ub) != 0.0:
+        if abs(ub) < 1e-9:
+            if abs(ub) != 0.0:
                 print(i, type, lb, ub)
                 assert False
 
@@ -695,7 +696,7 @@ cdef set_mat_row(glp_prob *P, int i, int len, int* ind, double* val):
         cdef int j
         for j in range(len):
             assert np.isfinite(val[j+1])
-            assert np.abs(val[j+1]) > 1e-6
+            assert abs(val[j+1]) > 1e-6
             assert ind[j+1] > 0
 
     glp_set_mat_row(P, i, len, ind, val)
