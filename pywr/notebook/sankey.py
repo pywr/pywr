@@ -41,20 +41,18 @@ def routes_to_sankey_links(filename, node_name, where='/', routes='/routes', ren
         assert flows.ndim == 1
 
         for i in range(flows.shape[0]):
-
-            if flows[i] <= flow_threshold:
-                continue
-
             row = routes[i]
             start = row['start'].decode('utf-8')
             end = row['end'].decode('utf-8')
 
             if callback_func is not None:
-                callback_func(start, end, flows[i])
+                ret = callback_func(start, end, flows[i])
+                if ret is None:
+                    continue
 
             if rename_func is not None:
-                start = rename_func(start)
-                end = rename_func(end)
+                start = rename_func(start, True)
+                end = rename_func(end, False)
 
             if ignore_circular and start == end:
                 continue
@@ -64,6 +62,8 @@ def routes_to_sankey_links(filename, node_name, where='/', routes='/routes', ren
     links = []
     for source, targets in sources.items():
         for target, value in targets.items():
+            if value < flow_threshold:
+                continue
             links.append({
                 'source': source,
                 'target': target,
