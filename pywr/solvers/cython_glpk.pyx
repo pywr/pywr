@@ -589,7 +589,7 @@ cdef class CythonGLPKSolver:
             simplex_ret = simplex(self.prob, self.smcp)
             status = glp_get_status(self.prob)
 
-        if status != GLP_OPT or simplex_ret != 0:
+        if (status != GLP_OPT and status != GLP_FEAS) or simplex_ret != 0:
             # If problem is not solved. Print some debugging information and error.
             print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
             print("Simplex status: {} ({})".format(status_string[status], status))
