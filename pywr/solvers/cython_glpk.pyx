@@ -603,6 +603,14 @@ cdef class CythonGLPKSolver:
             simplex_ret = simplex(self.prob, self.smcp)
             status = glp_get_status(self.prob)
             raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(simplex_status_string[simplex_ret], status_string[status]))
+
+        if status != GLP_OPT:
+            print("Solve continued with non-optimal solution!")
+            print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
+            print("Simplex status: {} ({})".format(status_string[status], status))
+            print("Scenario ID: {}".format(scenario_index.global_id))
+            print("Timestep index: {}".format(timestep._index))
+            
         # Now save the basis
         self._save_basis(scenario_index.global_id)
 
