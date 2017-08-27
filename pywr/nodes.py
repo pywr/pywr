@@ -595,7 +595,7 @@ class PiecewiseLink(Node):
 
 
 class MultiSplitLink(PiecewiseLink):
-    """ An extension of PiecewiseLink that includes additional additional slots to connect from.
+    """ An extension of PiecewiseLink that includes additional slots to connect from.
 
     Conceptually this node looks like the following internally,
 
@@ -605,12 +605,12 @@ class MultiSplitLink(PiecewiseLink):
                      |
                      Bo -->-- Bi --> D
 
-    An additional sublink in the PiecewiseLink (i.e. X2 above) and nodes (i.e. Bo and Bi) in this
-     class are added for each extra slot.
+    An additional sublink in the PiecewiseLink (i.e. X2 above) and nodes
+    (i.e. Bo and Bi) in this class are added for each extra slot.
 
-    Finally a mechanism is provided to (optionally) fix the ratio between the last non-split
-     sublink (i.e. X1) and each of extra sublinks (i.e. X2). This mechanism uses `AggregatedNode`
-     internally.
+    Finally a mechanism is provided to (optionally) fix the ratio between the
+    last non-split sublink (i.e. X1) and each of the extra sublinks (i.e. X2).
+    This mechanism uses `AggregatedNode` internally.
 
     Parameters
     ----------
@@ -619,22 +619,27 @@ class MultiSplitLink(PiecewiseLink):
     cost : iterable
         A list of costs corresponding to the max_flow steps
     extra_slots : int, optional (default 1)
-        Number of additional slots (and sublinks) to provide. Must be greater than zero.
+        Number of additional slots (and sublinks) to provide. Must be greater
+        than zero.
     slot_names : iterable, optional (default range of ints)
-        The names to by which to refer to the slots during connection to other nodes. Length
-        must be one more than the number of extra_slots. The first item refers to the PiecewiseLink
-        connection with the following items for each extra slot.
+        The names by which to refer to the slots during connection to other
+        nodes. Length must be one more than the number of extra_slots. The first
+        item refers to the PiecewiseLink connection with the following items for
+        each extra slot.
     factors : iterable, optional (default None)
-        If given the length must be equal one more than the number of extra_slots. Each item is the proportion
-        of total flow to pass through the additional sublinks. If no factor is required for a particular
-        sublink then use `None` for its items. Factors are normalised prior to use in the solver.
+        If given, the length must be equal to one more than the number of
+        extra_slots. Each item is the proportion of total flow to pass through
+        the additional sublinks. If no factor is required for a particular
+        sublink then use `None` for its items. Factors are normalised prior to
+        use in the solver.
 
     Notes
     -----
-    Users must be careful when using the factormechanism. Factors use the last non-split
-     sublink (i.e. X1 but not X0). If this link is constrained with a maximum or minimum flow,
-     or if it there is another unconstrained link (i.e. if X0 is unconstrained) then ratios
-     across this whole node may not be enforced as expected.
+    Users must be careful when using the factor mechanism. Factors use the last
+    non-split sublink (i.e. X1 but not X0). If this link is constrained with a
+    maximum or minimum flow, or if it there is another unconstrained link
+    (i.e. if X0 is unconstrained) then ratios across this whole node may not be
+    enforced as expected.
 
     """
     def __init__(self, *args, **kwargs):
