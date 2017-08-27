@@ -18,19 +18,19 @@ class Event(object):
 
 
 class EventRecorder(Recorder):
-    """ Track discerete events based on a threshold parameter.
+    """Track discrete events using a Parameter or Recorder
 
-    The recorder is intended to work with `IndexParameter` objects
-     that return a binary value. An event is considered active
-     while the threshold returns a non-zero index value.
+    The recorder works with an `IndexParameter`, `Parameter` or `Recorder`. An
+    event is considered active while the value of the threshold is non-zero.
 
     The events are stored in a flat list across all scenarios. Each
-     event is stored as a separate object.
+    event is stored as a separate `Event` object. Events can be accessed as a
+    dataframe using the `to_dataframe` method.
 
     Parameters
     ----------
-    threshold - IndexParameter
-       The parameter that defines the start and end of an event.
+    threshold - IndexParameter, Parameter or Recorder
+       The object that defines the start and end of an event.
     minimum_event_lenght - int (default=1)
         The minimum number of time-steps that an event must last for
         to be recorded. This is useful to not record events that are
