@@ -483,14 +483,14 @@ def test_select_solver():
     """Test specifying the solver in JSON"""
     solver_names = [solver.name for solver in pywr.solvers.solver_registry]
     for solver_name in solver_names:
-        data = '''{"metadata": {}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s"}}''' % solver_name
+        data = '''{"metadata": {"minimum_version": "0.1"}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s"}}''' % solver_name
         model = load_model(data=data)
         assert(model.solver.name.lower() == solver_name)
 
 def test_solver_unrecognised():
     '''Test specifying an unrecognised solver JSON'''
     solver_name = 'foobar'
-    data = '''{"metadata": {}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s"}}''' % solver_name
+    data = '''{"metadata": {"minimum_version": "0.1"}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s"}}''' % solver_name
     with pytest.raises(KeyError):
         model = load_model(data=data)
 
@@ -500,7 +500,7 @@ def test_select_glpk_presolve(use_presolve):
     """Test specifying the solver in JSON"""
     solver_names = ["glpk"]
     for solver_name in solver_names:
-        data = '''{"metadata": {}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s", "use_presolve": %s}}''' % (solver_name, use_presolve)
+        data = '''{"metadata": {"minimum_version": "0.1"}, "nodes": {}, "edges": {}, "timestepper": {"start": "1990-01-01","end": "1999-12-31","timestep": 1}, "solver": {"name": "%s", "use_presolve": %s}}''' % (solver_name, use_presolve)
         model = load_model(data=data)
         assert(model.solver.name.lower() == solver_name)
         assert(model.solver._cy_solver.use_presolve == (use_presolve == "true"))

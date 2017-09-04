@@ -60,6 +60,9 @@ else:
         def dump_lp(self, filename):
             return self._cy_solver.dump_lp(filename)
 
+        def dump_glpk(self, filename):
+            return self._cy_solver.dump_glpk(filename)
+
         def retry_solve():
             def fget(self):
                 return self._cy_solver.retry_solve

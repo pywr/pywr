@@ -650,6 +650,9 @@ cdef class CythonGLPKSolver:
     cpdef dump_lp(self, filename):
         glp_write_lp(self.prob, NULL, filename)
 
+    cpdef dump_glpk(self, filename):
+        glp_write_prob(self.prob, 0, filename)
+
 
 cdef int simplex(glp_prob *P, glp_smcp parm):
     return glp_simplex(P, &parm)

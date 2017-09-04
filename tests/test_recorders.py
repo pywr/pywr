@@ -19,7 +19,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
     EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-    SeasonalFlowDurationCurveRecorder, load_recorder)
+    SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
@@ -563,7 +563,8 @@ class TestTablesRecorder:
         h5file = tmpdir.join('output.h5')
         import tables
         with tables.open_file(str(h5file), 'w') as h5f:
-            rec = TablesRecorder(model, h5f, parameters=[p, p_slash])
+            with pytest.warns(ParameterNameWarning):
+                rec = TablesRecorder(model, h5f, parameters=[p, p_slash])
 
             # check parameters have been added to the component tree
             # this is particularly important for parameters which update their
@@ -572,7 +573,8 @@ class TestTablesRecorder:
             assert(p in rec.children)
             assert(p_slash in rec.children)
 
-            model.run()
+            with pytest.warns(tables.NaturalNameWarning):
+                model.run()
 
             for node_name in model.nodes.keys():
                 ca = h5f.get_node('/', node_name)
@@ -841,6 +843,8 @@ class TestTablesRecorder:
                 assert row['A'] == comb[0]
                 assert row['B'] == comb[1]
 
+        # This part of the test requires IPython (see `pywr.notebook`)
+        pytest.importorskip("IPython")  # triggers a skip of the test if IPython not found.
         from pywr.notebook.sankey import routes_to_sankey_links
 
         links = routes_to_sankey_links(str(h5file), 'flows')

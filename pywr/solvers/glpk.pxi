@@ -156,9 +156,9 @@ cdef extern from "glpk.h":
     int glp_get_num_cols(glp_prob *P)
     int glp_get_num_nz(glp_prob *P)
 
-    int glp_write_mps(glp_prob *P, int fmt, const glp_mpscp *parm,
-      const char *fname)
-    int glp_write_lp(glp_prob *lp, const void *parm, const char *fname);
+    int glp_write_mps(glp_prob *P, int fmt, const glp_mpscp *parm, const char *fname)
+    int glp_write_lp(glp_prob *lp, const void *parm, const char *fname)
+    int glp_write_prob(glp_prob *P, int flags, const char *fname)
 
     int glp_get_row_stat(glp_prob *P, int i)
     int glp_get_col_stat(glp_prob *P, int i)
