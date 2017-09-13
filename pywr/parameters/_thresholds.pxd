@@ -3,7 +3,8 @@ from pywr.recorders._recorders cimport Recorder
 from .._core cimport Timestep, Scenario, ScenarioIndex, AbstractNode, AbstractStorage
 
 cdef class AbstractThresholdParameter(IndexParameter):
-    cdef public double threshold
+    cdef public double _threshold
+    cdef public Parameter _threshold_parameter
     cdef double[:] values
     cdef int predicate
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1

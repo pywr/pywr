@@ -21,7 +21,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
 
     Parameters
     ----------
-    threshold : double
+    threshold : double or Parameter
         Threshold to compare the value of the recorder to
     values : iterable of doubles
         If the predicate evaluates False the zeroth value is returned,
@@ -42,9 +42,14 @@ cdef class AbstractThresholdParameter(IndexParameter):
     the previous day. In this case the predicate evaluates to True.
 
     """
-    def __init__(self, model, threshold, *args,  values=None, predicate=None, **kwargs):
+    def __init__(self, model, threshold, *args, values=None, predicate=None, **kwargs):
         super(AbstractThresholdParameter, self).__init__(model, *args, **kwargs)
-        self.threshold = threshold
+        threshold = load_parameter(model, threshold)
+        if isinstance(threshold, Parameter):
+            self._threshold_parameter = threshold
+        else:
+            self._threshold_parameter = None
+            self._threshold = threshold
         if values is None:
             self.values = None
         else:
@@ -73,18 +78,37 @@ cdef class AbstractThresholdParameter(IndexParameter):
         cdef double x
         x = self._value_to_compare(timestep, scenario_index)
 
-        if self.predicate == Predicates.LT:
-            ind = x < self.threshold
-        elif self.predicate == Predicates.GT:
-            ind = x > self.threshold
-        elif self.predicate == Predicates.LE:
-            ind = x <= self.threshold
-        elif self.predicate == Predicates.GE:
-            ind = x >= self.threshold
+        cdef double threshold
+        if self._threshold_parameter is not None:
+            threshold = self._threshold_parameter.value(timestep, scenario_index)
         else:
-            ind = x == self.threshold
+            threshold = self._threshold
+
+        if self.predicate == Predicates.LT:
+            ind = x < threshold
+        elif self.predicate == Predicates.GT:
+            ind = x > threshold
+        elif self.predicate == Predicates.LE:
+            ind = x <= threshold
+        elif self.predicate == Predicates.GE:
+            ind = x >= threshold
+        else:
+            ind = x == threshold
         return ind
 
+    property threshold:
+        def __get__(self):
+            if self._threshold_parameter is not None:
+                return self._threshold_parameter
+            else:
+                return self._threshold
+
+        def __set__(self, value):
+            if isinstance(value, Parameter):
+                self._threshold_parameter = value
+            else:
+                self._threshold = value
+                self._threshold_parameter = None
 
 cdef class StorageThresholdParameter(AbstractThresholdParameter):
     """ Returns one of two values depending on current volume in a Storage node
