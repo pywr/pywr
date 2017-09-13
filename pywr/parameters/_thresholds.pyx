@@ -44,12 +44,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
     """
     def __init__(self, model, threshold, *args, values=None, predicate=None, **kwargs):
         super(AbstractThresholdParameter, self).__init__(model, *args, **kwargs)
-        threshold = load_parameter(model, threshold)
-        if isinstance(threshold, Parameter):
-            self._threshold_parameter = threshold
-        else:
-            self._threshold_parameter = None
-            self._threshold = threshold
+        self.threshold = threshold
         if values is None:
             self.values = None
         else:
@@ -104,11 +99,14 @@ cdef class AbstractThresholdParameter(IndexParameter):
                 return self._threshold
 
         def __set__(self, value):
+            if self._threshold_parameter is not None:
+                self.children.remove(self._threshold_parameter)
+                self._threshold_parameter = None
             if isinstance(value, Parameter):
                 self._threshold_parameter = value
+                self.children.add(self._threshold_parameter)
             else:
                 self._threshold = value
-                self._threshold_parameter = None
 
 cdef class StorageThresholdParameter(AbstractThresholdParameter):
     """ Returns one of two values depending on current volume in a Storage node
@@ -128,7 +126,7 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
     @classmethod
     def load(cls, model, data):
         node = model._get_node_from_ref(model, data.pop("storage_node"))
-        threshold = data.pop("threshold")
+        threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
         return cls(model, node, threshold, values=values, predicate=predicate, **data)
@@ -159,7 +157,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
     @classmethod
     def load(cls, model, data):
         node = model._get_node_from_ref(model, data.pop("node"))
-        threshold = data.pop("threshold")
+        threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
         return cls(model, node, threshold, values=values, predicate=predicate, **data)
@@ -185,7 +183,7 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     @classmethod
     def load(cls, model, data):
         param = load_parameter(model, data.pop('parameter'))
-        threshold = data.pop("threshold")
+        threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
         return cls(model, param, threshold, values=values, predicate=predicate, **data)
@@ -227,7 +225,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
     def load(cls, model, data):
         from pywr.recorders._recorders import load_recorder  # delayed to prevent circular reference
         recorder = load_recorder(model, data.pop("recorder"))
-        threshold = data.pop("threshold")
+        threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
         return cls(model, recorder, threshold, values=values, predicate=predicate, **data)
