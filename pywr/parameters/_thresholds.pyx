@@ -21,7 +21,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
 
     Parameters
     ----------
-    threshold : double
+    threshold : double or Parameter
         Threshold to compare the value of the recorder to
     values : iterable of doubles
         If the predicate evaluates False the zeroth value is returned,
@@ -42,7 +42,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
     the previous day. In this case the predicate evaluates to True.
 
     """
-    def __init__(self, model, threshold, *args,  values=None, predicate=None, **kwargs):
+    def __init__(self, model, threshold, *args, values=None, predicate=None, **kwargs):
         super(AbstractThresholdParameter, self).__init__(model, *args, **kwargs)
         self.threshold = threshold
         if values is None:
@@ -73,18 +73,40 @@ cdef class AbstractThresholdParameter(IndexParameter):
         cdef double x
         x = self._value_to_compare(timestep, scenario_index)
 
-        if self.predicate == Predicates.LT:
-            ind = x < self.threshold
-        elif self.predicate == Predicates.GT:
-            ind = x > self.threshold
-        elif self.predicate == Predicates.LE:
-            ind = x <= self.threshold
-        elif self.predicate == Predicates.GE:
-            ind = x >= self.threshold
+        cdef double threshold
+        if self._threshold_parameter is not None:
+            threshold = self._threshold_parameter.value(timestep, scenario_index)
         else:
-            ind = x == self.threshold
+            threshold = self._threshold
+
+        if self.predicate == Predicates.LT:
+            ind = x < threshold
+        elif self.predicate == Predicates.GT:
+            ind = x > threshold
+        elif self.predicate == Predicates.LE:
+            ind = x <= threshold
+        elif self.predicate == Predicates.GE:
+            ind = x >= threshold
+        else:
+            ind = x == threshold
         return ind
 
+    property threshold:
+        def __get__(self):
+            if self._threshold_parameter is not None:
+                return self._threshold_parameter
+            else:
+                return self._threshold
+
+        def __set__(self, value):
+            if self._threshold_parameter is not None:
+                self.children.remove(self._threshold_parameter)
+                self._threshold_parameter = None
+            if isinstance(value, Parameter):
+                self._threshold_parameter = value
+                self.children.add(self._threshold_parameter)
+            else:
+                self._threshold = value
 
 cdef class StorageThresholdParameter(AbstractThresholdParameter):
     """ Returns one of two values depending on current volume in a Storage node
@@ -104,7 +126,7 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
     @classmethod
     def load(cls, model, data):
         node = model._get_node_from_ref(model, data.pop("storage_node"))
-        threshold = data.pop("threshold")
+        threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
         return cls(model, node, threshold, values=values, predicate=predicate, **data)
@@ -135,7 +157,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
     @classmethod
     def load(cls, model, data):
         node = model._get_node_from_ref(model, data.pop("node"))
-        threshold = data.pop("threshold")
+        threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
         return cls(model, node, threshold, values=values, predicate=predicate, **data)
@@ -161,7 +183,7 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     @classmethod
     def load(cls, model, data):
         param = load_parameter(model, data.pop('parameter'))
-        threshold = data.pop("threshold")
+        threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
         return cls(model, param, threshold, values=values, predicate=predicate, **data)
@@ -203,7 +225,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
     def load(cls, model, data):
         from pywr.recorders._recorders import load_recorder  # delayed to prevent circular reference
         recorder = load_recorder(model, data.pop("recorder"))
-        threshold = data.pop("threshold")
+        threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
         return cls(model, recorder, threshold, values=values, predicate=predicate, **data)

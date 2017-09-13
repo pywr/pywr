@@ -1028,7 +1028,11 @@ class TestThresholdParameters:
 
         model.run()
 
-    def test_parameter_threshold_parameter(self, simple_linear_model):
+    @pytest.mark.parametrize("threshold", [
+        5.0,
+        {"type": "constant", "value": 5.0},
+    ], ids=["double", "parameter"])
+    def test_parameter_threshold_parameter(self, simple_linear_model, threshold):
         """ Test ParameterThresholdParameter """
         m = simple_linear_model
         m.nodes['Input'].max_flow = 10.0
@@ -1040,14 +1044,13 @@ class TestThresholdParameters:
                 "type": "constant",
                 "value": 3.0
             },
-            "threshold": 5.0,
+            "threshold": threshold,
             "predicate": "<"
         }
 
         p1 = load_parameter(m, data)
 
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-
 
         m.setup()
         m.step()
