@@ -406,7 +406,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
 
         if level is not None:
             level = load_parameter(model, level)
-        print(level)
+
         node.level = level
 
         return node
