@@ -69,102 +69,110 @@ def test_numpy_recorder_from_json(simple_linear_model):
     assert isinstance(rec, NumpyArrayNodeRecorder)
 
 
-def test_fdc_recorder():
-    """
-    Test the FlowDurationCurveRecorder
-    """
-    model = load_model("timeseries2.json")
-    input = model.nodes['catchment1']
+class TestFlowDurationCurveRecorders:
+    funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
 
-    percentiles = np.linspace(20., 100., 5)
-    rec = FlowDurationCurveRecorder(model, input, percentiles, fdc_agg_func="max", agg_func="min")
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum"])
+    def test_fdc_recorder(self, agg_func):
+        """
+        Test the FlowDurationCurveRecorder
+        """
+        model = load_model("timeseries2.json")
+        input = model.nodes['catchment1']
 
-    # test retrieval of recorder
-    assert model.recorders['flowdurationcurverecorder.catchment1'] == rec
-    # test changing name of recorder
-    rec.name = 'timeseries.Input'
-    assert model.recorders['timeseries.Input'] == rec
-    with pytest.raises(KeyError):
-        model.recorders['flowdurationcurverecorder.catchment1']
+        percentiles = np.linspace(20., 100., 5)
+        rec = FlowDurationCurveRecorder(model, input, percentiles, fdc_agg_func=agg_func, agg_func="min")
 
-    model.run()
+        # test retrieval of recorder
+        assert model.recorders['flowdurationcurverecorder.catchment1'] == rec
+        # test changing name of recorder
+        rec.name = 'timeseries.Input'
+        assert model.recorders['timeseries.Input'] == rec
+        with pytest.raises(KeyError):
+            model.recorders['flowdurationcurverecorder.catchment1']
 
-    assert_allclose(rec.fdc[:, 0], [20.42,  21.78,  23.22,  26.47,  29.31])
-    assert_allclose(np.max(rec.fdc, axis=0), rec.values())
-    assert_allclose(np.min(np.max(rec.fdc, axis=0)), rec.aggregated_value())
+        model.run()
 
-    assert rec.fdc.shape == (len(percentiles), len(model.scenarios.combinations))
-    df = rec.to_dataframe()
-    assert df.shape == (len(percentiles), len(model.scenarios.combinations))
+        func = TestAggregatedRecorder.funcs[agg_func]
+
+        assert_allclose(rec.fdc[:, 0], [20.42,  21.78,  23.22,  26.47,  29.31])
+        assert_allclose(func(rec.fdc, axis=0), rec.values())
+        assert_allclose(np.min(func(rec.fdc, axis=0)), rec.aggregated_value())
+
+        assert rec.fdc.shape == (len(percentiles), len(model.scenarios.combinations))
+        df = rec.to_dataframe()
+        assert df.shape == (len(percentiles), len(model.scenarios.combinations))
+
+    def test_seasonal_fdc_recorder(self):
+        """
+        Test the FlowDurationCurveRecorder
+        """
+        model = load_model("timeseries4.json")
+
+        df = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries3.csv'),
+                             parse_dates=True, dayfirst=True, index_col=0)
+
+        percentiles = np.linspace(20., 100., 5)
+
+        summer_flows = df.loc[pandas.Timestamp("2014-06-01"):pandas.Timestamp("2014-08-31"), :]
+        summer_fdc = np.percentile(summer_flows, percentiles, axis=0)
+
+        model.run()
+
+        rec = model.recorders["seasonal_fdc"]
+        assert_allclose(rec.fdc, summer_fdc)
+
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum"])
+    def test_fdc_dev_recorder(self, agg_func):
+        """
+        Test the FlowDurationCurveDeviationRecorder
+        """
+        model = load_model("timeseries2.json")
+        input = model.nodes['catchment1']
+        term = model.nodes['term1']
+        scenarioA = model.scenarios['scenario A']
+
+        natural_flow = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries2.csv'),
+                                       parse_dates=True, dayfirst=True, index_col=0)
+        percentiles = np.linspace(20., 100., 5)
+
+        natural_fdc = np.percentile(natural_flow, percentiles, axis=0)
 
 
-def test_seasonal_fdc_recorder():
-    """
-    Test the FlowDurationCurveRecorder
-    """
-    model = load_model("timeseries4.json")
+        # Lower target is 20% below natural
+        lower_input_fdc = natural_fdc * 0.8
+        # Upper is 10% above
+        upper_input_fdc = natural_fdc * 1.1
 
-    df = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries3.csv'),
-                         parse_dates=True, dayfirst=True, index_col=0)
+        rec = FlowDurationCurveDeviationRecorder(model, term, percentiles, lower_input_fdc, upper_input_fdc,
+                                                 fdc_agg_func=agg_func,
+                                                 agg_func="mean", scenario=scenarioA)
 
-    percentiles = np.linspace(20., 100., 5)
+        # test retrieval of recorder
+        assert model.recorders['flowdurationcurvedeviationrecorder.term1'] == rec
+        # test changing name of recorder
+        rec.name = 'timeseries.Input'
+        assert model.recorders['timeseries.Input'] == rec
+        with pytest.raises(KeyError):
+            model.recorders['flowdurationcurvedeviationrecorder.term1']
 
-    summer_flows = df.loc[pandas.Timestamp("2014-06-01"):pandas.Timestamp("2014-08-31"), :]
-    summer_fdc = np.percentile(summer_flows, percentiles, axis=0)
+        model.run()
 
-    model.run()
+        actual_fdc = np.maximum(natural_fdc - 23, 0.0)
+        # Compute deviation
+        lower_deviation = (lower_input_fdc - actual_fdc) / lower_input_fdc
+        upper_deviation = (actual_fdc - upper_input_fdc) / upper_input_fdc
+        deviation = np.maximum(np.maximum(lower_deviation, upper_deviation), np.zeros_like(lower_deviation))
 
-    rec = model.recorders["seasonal_fdc"]
-    assert_allclose(rec.fdc, summer_fdc)
+        func = TestAggregatedRecorder.funcs[agg_func]
 
+        assert_allclose(rec.fdc_deviations[:, 0], deviation[:, 0])
+        assert_allclose(func(rec.fdc_deviations, axis=0), rec.values())
+        assert_allclose(np.mean(func(rec.fdc_deviations, axis=0)), rec.aggregated_value())
 
-def test_fdc_dev_recorder():
-    """
-    Test the FlowDurationCurveDeviationRecorder
-    """
-    model = load_model("timeseries2.json")
-    input = model.nodes['catchment1']
-    scenarioA = model.scenarios['scenario A']
-
-    natural_flow = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries2.csv'),
-                                   parse_dates=True, dayfirst=True, index_col=0)
-
-    percentiles = np.linspace(20., 100., 5)
-
-    natural_fdc = np.percentile(natural_flow, percentiles, axis=0)
-
-    # Lower target is 20% below natural
-    lower_input_fdc = natural_fdc * 0.8
-    # Upper is 10% above
-    upper_input_fdc = natural_fdc * 1.1
-
-    rec = FlowDurationCurveDeviationRecorder(model, input, percentiles, lower_input_fdc, upper_input_fdc,
-                                             fdc_agg_func="min",
-                                             agg_func="mean", scenario=scenarioA)
-
-    # test retrieval of recorder
-    assert model.recorders['flowdurationcurvedeviationrecorder.catchment1'] == rec
-    # test changing name of recorder
-    rec.name = 'timeseries.Input'
-    assert model.recorders['timeseries.Input'] == rec
-    with pytest.raises(KeyError):
-        model.recorders['flowdurationcurvedeviationrecorder.catchment1']
-
-    model.run()
-
-    # Compute deviation
-    lower_deviation = (lower_input_fdc - natural_fdc) / lower_input_fdc
-    upper_deviation = (natural_fdc - upper_input_fdc) / upper_input_fdc
-    deviation = np.maximum(np.maximum(lower_deviation, upper_deviation), np.zeros_like(lower_deviation))
-    print(deviation, lower_deviation, upper_deviation)
-
-    assert_allclose(rec.fdc_deviations[:, 0], deviation[:, 0])
-    assert_allclose(np.min(rec.fdc_deviations, axis=0), rec.values())
-    assert_allclose(np.mean(np.min(rec.fdc_deviations, axis=0)), rec.aggregated_value())
-
-    assert rec.fdc_deviations.shape == (len(percentiles), len(model.scenarios.combinations))
-    df = rec.to_dataframe()
-    assert df.shape == (len(percentiles), len(model.scenarios.combinations))
+        assert rec.fdc_deviations.shape == (len(percentiles), len(model.scenarios.combinations))
+        df = rec.to_dataframe()
+        assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
 
 def test_sdc_recorder():
