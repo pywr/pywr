@@ -43,14 +43,20 @@ class JupyterProgressRecorder(ProgressRecorder):
         super(JupyterProgressRecorder, self).__init__(*args, **kwargs)
 
     def reset(self):
-        from ipywidgets import FloatProgress
+        from ipywidgets import FloatProgress, HBox, Label, Layout
         from IPython.display import display
         super(JupyterProgressRecorder, self).reset()
         self.progress_bar = FloatProgress(min=0, max=100, description='Running:')
-        display(self.progress_bar)
+        self.label = Label("", layout=Layout(width='100%'))
+        self.box = HBox([self.progress_bar, self.label])
+        display(self.box)
 
     def update_progress(self, progress, speed):
         self.progress_bar.value = progress
+        if speed is not None:
+            self.label.value = "{:.0f} steps/second".format(speed)
+        else:
+            self.label.value = ""
 
     def finish(self):
         super(JupyterProgressRecorder, self).finish()
