@@ -1276,5 +1276,6 @@ class TestEventRecorder:
             assert len(evt_rec.events) == 0
 
 def test_progress_recorder(simple_linear_model):
-    rec = ProgressRecorder(simple_linear_model)
+    model = simple_linear_model
+    rec = ProgressRecorder(model)
     model.run()
