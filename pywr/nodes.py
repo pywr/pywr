@@ -591,13 +591,17 @@ class PiecewiseLink(Node):
     def load(cls, data, model):
         # accept plurals of max_flow and cost
         try:
-            data["max_flow"] = data.pop("max_flows")
+            max_flow = data.pop("max_flows")
         except KeyError:
             pass
+        else:
+            data["max_flow"] = [load_parameter(p) for p in max_flow]
         try:
-            data["cost"] = data.pop("costs")
+            cost = data.pop("costs")
         except KeyError:
             pass
+        else:
+            data["cost"] = [load_parameter(p) for p in cost]
         del(data["type"])
         return cls(model, **data)
 
