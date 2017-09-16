@@ -22,6 +22,10 @@
             "max_flow": {
                 "type": "dataframe",
                 "url" : "timeseries2.csv",
+                "checksum": {
+                    "md5": "a5c4032e2d8f5205ca99dedcfa4cd18e",
+                    "sha256": "0f75b3cee325d37112687d3d10596f44e0add374f4e40a1b6687912c05e65366"
+                },
                 "scenario": "scenario A",
                 "parse_dates": true,
                 "dayfirst": true,

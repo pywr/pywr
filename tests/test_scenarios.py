@@ -7,6 +7,7 @@ A series of tests of the Scenario objects and associated infrastructure
 from pywr.core import Model, Input, Output, Link, Storage, Scenario
 from pywr.parameters import ConstantScenarioParameter
 from pywr.recorders import NumpyArrayStorageRecorder, NumpyArrayNodeRecorder
+from pywr.hashes import HashMismatchError
 from helpers import assert_model, load_model
 from fixtures import simple_linear_model
 import numpy as np
@@ -228,6 +229,12 @@ def test_timeseries_with_scenarios_hdf(solver):
     assert_allclose(catchment1.flow, step2, atol=1e-1)
 
     model.finish()
+
+
+def test_timeseries_with_wrong_hash(solver):
+    with pytest.raises(HashMismatchError):
+        load_model('timeseries2_hdf_wrong_hash.json', solver=solver)
+
 
 def test_tablesarrayparameter_scenario_slice(solver):
     model = load_model('timeseries2_hdf.json', solver=solver)
