@@ -20,6 +20,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
     SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
+from pywr.recorders.progress import ProgressRecorder
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
@@ -1281,3 +1282,8 @@ class TestEventRecorder:
             assert_equal([3, ], [e.duration for e in evt_rec.events])
         else:
             assert len(evt_rec.events) == 0
+
+def test_progress_recorder(simple_linear_model):
+    model = simple_linear_model
+    rec = ProgressRecorder(model)
+    model.run()
