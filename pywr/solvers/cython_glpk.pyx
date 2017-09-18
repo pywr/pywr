@@ -63,7 +63,7 @@ cdef class CythonGLPKSolver:
         # create a new problem
         self.prob = glp_create_prob()
 
-    def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level='off',
+    def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level='error',
                  save_routes_flows=False, retry_solve=False):
         self.stats = None
         self.is_first_solve = True
