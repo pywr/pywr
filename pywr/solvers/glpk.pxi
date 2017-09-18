@@ -36,7 +36,13 @@ simplex_status_string = [
 cdef int term_hook(void *info, const char *s):
     """ Callback function to print GLPK messages through Python's print function """
     # TODO make this use logging.
-    print(s.strip().decode('UTF-8'))
+    message = s.strip().decode('UTF-8')
+    if message.startswith("Constructing initial basis"):
+        pass
+    elif message.startswith("Size of triangular part is"):
+        pass
+    else:
+        print(message)
     return 1
 
 
