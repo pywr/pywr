@@ -702,7 +702,12 @@ cdef class StorageOutput(BaseOutput):
 
 
 cdef class AbstractStorage(AbstractNode):
+    """ Base class for all Storage objects.
 
+    Notes
+    -----
+    Do not initialise this class directly. Use `pywr.core.Storage`.
+    """
     property volume:
         def __get__(self, ):
             return np.asarray(self._volume)
@@ -721,12 +726,6 @@ cdef class AbstractStorage(AbstractNode):
 
 
 cdef class Storage(AbstractStorage):
-    """ Base class for all Storage objects.
-
-    Notes
-    -----
-    Do not initialise this class directly. Use `pywr.core.Storage`.
-    """
     def __cinit__(self, ):
         self.initial_volume = 0.0
         self.initial_volume_pc = None
@@ -737,11 +736,12 @@ cdef class Storage(AbstractStorage):
         self._min_volume_param = None
         self._max_volume_param = None
         self._level_param = None
+        self._area_param = None
         self._cost_param = None
         self._domain = None
         self._allow_isolated = True
 
-    component_attrs = ["cost", "min_volume", "max_volume", "level"]
+    component_attrs = ["cost", "min_volume", "max_volume", "level", "area"]
 
     property cost:
         """The cost per unit increased in volume stored
@@ -847,6 +847,27 @@ cdef class Storage(AbstractStorage):
         if self._level_param is None:
             return self._level
         return self._level_param.get_value(scenario_index)
+
+    property area:
+        def __get__(self):
+            if self._area_param is None:
+                return self._area
+            return self._area_param
+
+        def __set__(self, value):
+            self._area_param = None
+            if value is None:
+                self._area_param = None
+                self._area = 0.0
+            elif isinstance(value, Parameter):
+                self._area_param = value
+            else:
+                self._area = value
+
+    cpdef double get_area(self, ScenarioIndex scenario_index) except? -1:
+        if self._area_param is None:
+            return self._area
+        return self._area_param.get_value(scenario_index)
 
     property domain:
         def __get__(self):
