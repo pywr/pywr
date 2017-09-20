@@ -301,6 +301,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         initial_volume = kwargs.pop('initial_volume', 0.0)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
         level = pop_kwarg_parameter(kwargs, 'level', None)
+        area = pop_kwarg_parameter(kwargs, 'area', None)
 
         position = kwargs.pop("position", {})
 

@@ -455,6 +455,14 @@ def test_breaklink_node(solver):
     assert_allclose(transfer.storage.volume, 0)
 
 
+def test_reservoir_surface_area(solver):
+    model = load_model('reservoir_evaporation.json', solver=solver)
+    model.timestepper.start = "1920-01-01"
+    model.timestepper.end = "1920-01-02"
+    res = model.run()
+    assert_allclose(model.nodes["evaporation"].flow, 2.46875)
+
+
 def test_run_empty(solver):
     # empty model should raise an exception if run
     model = Model(solver=solver)
