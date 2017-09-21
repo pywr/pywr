@@ -37,7 +37,7 @@ class GraphInterface:
         if self is self.obj.children:
             return [n for n in self.graph.predecessors(self.obj) if n != ROOT_NODE]
         else:
-            return self.graph.successors(self.obj)
+            return [x for x in self.graph.successors(self.obj)]
 
     def __len__(self):
         """Returns the number of nodes in the model"""
