@@ -483,6 +483,22 @@ def test_storage_initial_volume_table():
     np.testing.assert_allclose(model.nodes["supply2"].initial_volume, 35.0)
 
 
+def test_recursive_delete(solver):
+    """Test recursive deletion of child nodes for compound nodes"""
+    model = Model()
+    n1 = Input(model, "n1")
+    n2 = Output(model, "n2")
+    s = Storage(model, "s", num_outputs=2)
+    assert len(model.nodes) == 3
+    assert len(model.graph.nodes()) == 6
+    del(model.nodes["n1"])
+    assert len(model.nodes) == 2
+    assert len(model.graph.nodes()) == 5
+    del(model.nodes["s"])
+    assert len(model.nodes) == 1
+    assert len(model.graph.nodes()) == 1
+
+
 def test_json_include(solver):
     """Test include in JSON document"""
     filename = os.path.join(TEST_FOLDER, "models", "extra1.json")
