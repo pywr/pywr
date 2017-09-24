@@ -749,9 +749,13 @@ class NodeIterator(object):
         else:
             node = key
         # recursive delete to remove all sub-nodes
+        nodes_to_delete = []
         for node2 in self.model.graph.nodes():
             if node2.parent == node:
-                del(self[node2])
+                nodes_to_delete.append(node2)
+        # Avoid dictionary modification
+        for node2 in nodes_to_delete:
+            del(self[node2])
         self.model.graph.remove_node(node)
 
     def keys(self):
