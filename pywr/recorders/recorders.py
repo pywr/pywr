@@ -110,7 +110,29 @@ class CSVRecorder(Recorder):
         if self.nodes is None:
             self.node_names = sorted(self.model.nodes.keys())
         else:
-            self.node_names = sorted(n.name for n in self.nodes)
+            # the next line is commented because when the nodes names are provided (e.g. loaded from the json)
+            # it will throw an exception
+            # self.node_names = sorted(n.name for n in self.nodes)
+            nodes = []
+            node_names = []
+            for node_ in self.nodes:
+                # test if the node name is provided
+                if isinstance(node_, basestring):
+                    try:
+                        # lookup node by name
+                        nodes.append(self.model.nodes[node_])
+                        node_names.append(node_)
+                    except:
+                        raise ValueError ("node name is not in the model: {}".format(node_))
+                else:
+                    try:
+                        nodes.append(node_)
+                        node_names.append((node_.name))
+                    except:
+                        # raise an error if the object is not recognized
+                        raise ValueError("Unrecognised node object: {}".format(node_))
+            self.node_names = node_names
+            self.nodes = nodes
 
     def reset(self):
         import csv
