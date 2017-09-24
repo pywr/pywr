@@ -77,7 +77,7 @@ class Connectable(object):
             self._disconnect(node, slot_name=slot_name, all_slots=all_slots)
         else:
             neighbors = self.model.graph.neighbors(self)
-            for neighbor in neighbors:
+            for neighbor in [neighbor for neighbor in neighbors]:
                 self._disconnect(neighbor, slot_name=slot_name, all_slots=all_slots)
 
     def _disconnect(self, node, slot_name=None, all_slots=True):
