@@ -97,8 +97,7 @@ class CSVRecorder(Recorder):
         self.scenario_index = scenario_index
         self.nodes = nodes
         self.csv_kwargs = kwargs.pop('csv_kwargs', {})
-        self.node_names = None
-
+        self._node_names = None
         self._fh = None
         self._writer = None
 
@@ -108,31 +107,17 @@ class CSVRecorder(Recorder):
         """
 
         if self.nodes is None:
-            self.node_names = sorted(self.model.nodes.keys())
-        else:
-            # the next line is commented because when the nodes names are provided (e.g. loaded from the json)
-            # it will throw an exception
-            # self.node_names = sorted(n.name for n in self.nodes)
-            nodes = []
+            self._node_names = sorted(self.model.nodes.keys())
+        else:            
             node_names = []
             for node_ in self.nodes:
                 # test if the node name is provided
                 if isinstance(node_, basestring):
-                    try:
-                        # lookup node by name
-                        nodes.append(self.model.nodes[node_])
-                        node_names.append(node_)
-                    except:
-                        raise ValueError ("node name is not in the model: {}".format(node_))
+                    # lookup node by name                        
+                    node_names.append(node_)                    
                 else:
-                    try:
-                        nodes.append(node_)
-                        node_names.append((node_.name))
-                    except:
-                        # raise an error if the object is not recognized
-                        raise ValueError("Unrecognised node object: {}".format(node_))
-            self.node_names = node_names
-            self.nodes = nodes
+                    node_names.append((node_.name))                    
+            self._node_names = node_names           
 
     def reset(self):
         import csv
@@ -142,7 +127,7 @@ class CSVRecorder(Recorder):
             self._fh = open(self.csvfile, 'w')
         self._writer = csv.writer(self._fh, **self.csv_kwargs)
         # Write header data
-        self._writer.writerow(['Datetime']+self.node_names)
+        self._writer.writerow(['Datetime']+self._node_names)
 
     def after(self):
         """
@@ -151,7 +136,7 @@ class CSVRecorder(Recorder):
         from pywr._core import Node, Storage
 
         values = [self.model.timestepper.current.datetime.isoformat()]
-        for node_name in self.node_names:
+        for node_name in self._node_names:
             node = self.model.nodes[node_name]
             if isinstance(node, Node):
                 values.append(node.flow[self.scenario_index])
