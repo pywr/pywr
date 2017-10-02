@@ -1,3 +1,8 @@
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 ROOT_NODE = "root"
 
@@ -88,10 +93,10 @@ cdef class Component:
             self._name = name
 
     cpdef setup(self):
-        pass
+        logger.debug('Setting up {}: "{}"'.format(self.__class__.__name__, self.name))
 
     cpdef reset(self):
-        pass
+        logger.debug('Resetting up {}: "{}"'.format(self.__class__.__name__, self.name))
 
     cpdef before(self):
         pass
