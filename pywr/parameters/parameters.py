@@ -48,12 +48,12 @@ class ScaledProfileParameter(Parameter):
 ScaledProfileParameter.register()
 
 
-class InterpolatedLevelParameter(Parameter):
+class InterpolatedParameter(Parameter):
     """
     Level parameter calculated by interpolation from current volume
     """
     def __init__(self, model, node, volumes, levels, kind='linear', **kwargs):
-        super(InterpolatedLevelParameter, self).__init__(model, **kwargs)
+        super(InterpolatedParameter, self).__init__(model, **kwargs)
         from scipy.interpolate import interp1d
         # Create level interpolator
         self.interp = interp1d(volumes, levels, bounds_error=True, kind=kind)
@@ -72,7 +72,8 @@ class InterpolatedLevelParameter(Parameter):
         levels = np.array(data.pop("levels"))
         kind = data.pop("kind", "linear")
         return cls(model, node, volumes, levels, kind=kind)
-InterpolatedLevelParameter.register()
+InterpolatedParameter.register()
+
 
 def pop_kwarg_parameter(kwargs, key, default):
     """Pop a parameter from the keyword arguments dictionary
