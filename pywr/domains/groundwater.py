@@ -1,5 +1,5 @@
 from ..core import Storage
-from ..parameters import InterpolatedParameter
+from ..parameters import InterpolatedVolumeParameter
 from ..parameters.groundwater import KeatingStreamFlowParameter
 
 import numbers
@@ -88,7 +88,8 @@ class KeatingAquifer(Storage):
 
         self.max_volume = max(volumes)
         self.min_volume = min(volumes)
-        self.level = InterpolatedParameter(model, self, volumes, levels)
+
+        self.level = InterpolatedVolumeParameter(model, self, volumes, levels)
 
         # initialise streamflow parameters
         for n, node in enumerate(self.inputs[0:num_streams]):

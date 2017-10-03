@@ -14,6 +14,7 @@ from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
 from past.builtins import basestring
 import numpy as np
+from scipy.interpolate import interp1d
 import pandas
 
 
@@ -48,22 +49,37 @@ class ScaledProfileParameter(Parameter):
 ScaledProfileParameter.register()
 
 
-class InterpolatedParameter(Parameter):
-    """
-    Level parameter calculated by interpolation from current volume
-    """
-    def __init__(self, model, node, volumes, values, kind='linear', **kwargs):
-        super(InterpolatedParameter, self).__init__(model, **kwargs)
-        from scipy.interpolate import interp1d
-        # Create level interpolator
-        self.interp = interp1d(volumes, values, bounds_error=True, kind=kind)
+class AbstractInterpolatedParameter(Parameter):
+    def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
+        super(AbstractInterpolatedParameter, self).__init__(model, **kwargs)
+        self.x = x
+        self.y = y
         self._node = node
+        self.interp = None
+        default_interp_kwargs = dict(kind='linear', bounds_error=True)
+        if interp_kwargs is not None:
+            # Overwrite or add to defaults with given values
+            default_interp_kwargs.update(interp_kwargs)
+        self.interp_kwargs = default_interp_kwargs
+
+    def _value_to_interpolate(self, ts, scenario_index):
+        raise NotImplementedError()
+
+    def setup(self):
+        super(AbstractInterpolatedParameter, self).setup()
+        self.interp = interp1d(self.x, self.y, **self.interp_kwargs)
 
     def value(self, ts, scenario_index):
-        # Return interpolated value from current volume
-        v = self._node.volume[scenario_index.global_id]
-        level = self.interp(v)
-        return level
+        v = self._value_to_interpolate(ts, scenario_index)
+        return self.interp(v)
+
+
+class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
+    """
+    Generic interpolation parameter calculated from current volume
+    """
+    def _value_to_interpolate(self, ts, scenario_index):
+        return self._node.volume[scenario_index.global_id]
 
     @classmethod
     def load(cls, model, data):
@@ -71,8 +87,8 @@ class InterpolatedParameter(Parameter):
         volumes = np.array(data.pop("volumes"))
         values = np.array(data.pop("values"))
         kind = data.pop("kind", "linear")
-        return cls(model, node, volumes, values, kind=kind)
-InterpolatedParameter.register()
+        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+InterpolatedVolumeParameter.register()
 
 
 def pop_kwarg_parameter(kwargs, key, default):
