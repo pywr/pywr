@@ -40,7 +40,7 @@
             "type": "interpolated",
             "node": "reservoir1",
             "volumes": [0, 1000],
-            "levels": [0, 500],
+            "values": [0, 500],
             "kind": "linear"
         },
         "evaporation_mm": {

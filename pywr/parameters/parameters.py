@@ -52,11 +52,11 @@ class InterpolatedParameter(Parameter):
     """
     Level parameter calculated by interpolation from current volume
     """
-    def __init__(self, model, node, volumes, levels, kind='linear', **kwargs):
+    def __init__(self, model, node, volumes, values, kind='linear', **kwargs):
         super(InterpolatedParameter, self).__init__(model, **kwargs)
         from scipy.interpolate import interp1d
         # Create level interpolator
-        self.interp = interp1d(volumes, levels, bounds_error=True, kind=kind)
+        self.interp = interp1d(volumes, values, bounds_error=True, kind=kind)
         self._node = node
 
     def value(self, ts, scenario_index):
@@ -69,9 +69,9 @@ class InterpolatedParameter(Parameter):
     def load(cls, model, data):
         node = model._get_node_from_ref(model, data.pop("node"))
         volumes = np.array(data.pop("volumes"))
-        levels = np.array(data.pop("levels"))
+        values = np.array(data.pop("values"))
         kind = data.pop("kind", "linear")
-        return cls(model, node, volumes, levels, kind=kind)
+        return cls(model, node, volumes, values, kind=kind)
 InterpolatedParameter.register()
 
 
