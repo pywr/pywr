@@ -1,5 +1,5 @@
-py.test %SRC_DIR%\tests --solver=glpk
-py.test %SRC_DIR%\tests --solver=lpsolve
+py.test %SRC_DIR%\tests --verbose --solver=glpk
+py.test %SRC_DIR%\tests --verbose --solver=lpsolve
 
 if errorlevel 1 exit 1
 
