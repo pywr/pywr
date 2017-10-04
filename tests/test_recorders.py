@@ -399,7 +399,29 @@ def test_csv_recorder(simple_linear_model, tmpdir):
                 assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
             assert expected == actual
 
-
+def test_loading_csv_recorder_from_json():
+    """
+    Test the CSV Recorder which is loaded from json
+    """
+    model = Model.load('CSV_Recorder.json')
+    csvfile = 'output.csv'
+    model.run()
+    import csv
+    with open(str(csvfile), 'r') as fh:
+        dialect = csv.Sniffer().sniff(fh.read(1024))
+        fh.seek(0)
+        reader = csv.reader(fh, dialect)
+        for irow, row in enumerate(reader):
+            if irow == 0:
+                expected = ['Datetime', 'inpt', 'otpt']
+                actual = row
+            else:
+                dt = model.timestepper.start+(irow-1)*model.timestepper.delta
+                expected = [dt.isoformat()]
+                actual = [row[0]]
+                assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
+            assert expected == actual
+       
 class TestTablesRecorder:
 
     def test_create_directory(self, simple_linear_model, tmpdir):
