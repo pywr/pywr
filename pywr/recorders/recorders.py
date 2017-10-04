@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from functools import wraps
+from pywr._core import AbstractNode, AbstractStorage
 from ._recorders import *
 from ._thresholds import *
 from .events import *
@@ -101,6 +102,14 @@ class CSVRecorder(Recorder):
         self._fh = None
         self._writer = None
 
+    @classmethod
+    def load(cls, model, data):
+        import os
+        url = data.pop("url")
+        if not os.path.isabs(url) and model.path is not None:
+            url = os.path.join(model.path, url)
+        return cls(model, url, **data)
+
     def setup(self):
         """
         Setup the CSV file recorder.
@@ -133,8 +142,6 @@ class CSVRecorder(Recorder):
         """
         Write the node values to the CSV file
         """
-        from pywr._core import Node, Storage
-
         values = [self.model.timestepper.current.datetime.isoformat()]
         for node_name in self._node_names:
             node = self.model.nodes[node_name]

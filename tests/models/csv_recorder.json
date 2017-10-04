@@ -8,14 +8,13 @@
         "start": "2015-01-01",
         "end": "2015-01-02",
         "timestep": 1
-    },   
+    },
     "nodes": [
         {
             "name": "inpt",
             "type": "input",
             "max_flow": 10.0
         },
-       
         {
             "name": "otpt",
             "type": "Output",
@@ -23,16 +22,14 @@
         }
     ],
     "edges": [
-        
         ["inpt", "otpt"]
     ],
-	"recorders":  {
+    "recorders": {
         "model_out": {
             "comment": "flow to opt node",
             "type": "CSVRecorder",
-			"nodes": ["inpt","otpt"],
-			"csvfile": "output.csv"
-        }		
-		
-	}
+            "nodes": ["inpt","otpt"],
+            "url": "output.csv"
+        }
+    }
 }
