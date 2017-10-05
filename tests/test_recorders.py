@@ -9,6 +9,8 @@ from pywr.core import Model, Input, Output, Scenario, AggregatedNode
 import numpy as np
 import pandas
 import pytest
+import tables
+import json
 from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
@@ -400,6 +402,44 @@ def test_csv_recorder(simple_linear_model, tmpdir):
             assert expected == actual
 
 
+def test_loading_csv_recorder_from_json(solver, tmpdir):
+    """
+    Test the CSV Recorder which is loaded from json
+    """
+
+    filename = 'csv_recorder.json'
+
+    # This is a bit horrible, but need to edit the JSON dynamically
+    # so that the output.h5 is written in the temporary directory
+    path = os.path.join(os.path.dirname(__file__), 'models')
+    with open(os.path.join(path, filename), 'r') as f:
+        data = f.read()
+    data = json.loads(data)
+
+    # Make an absolute, but temporary, path for the recorder
+    url = data['recorders']['model_out']['url']
+    data['recorders']['model_out']['url'] = str(tmpdir.join(url))
+
+    model = Model.load(data, path=path, solver=solver)
+
+    csvfile = tmpdir.join('output.csv')
+    model.run()
+    import csv
+    with open(str(csvfile), 'r') as fh:
+        dialect = csv.Sniffer().sniff(fh.read(1024))
+        fh.seek(0)
+        reader = csv.reader(fh, dialect)
+        for irow, row in enumerate(reader):
+            if irow == 0:
+                expected = ['Datetime', 'inpt', 'otpt']
+                actual = row
+            else:
+                dt = model.timestepper.start+(irow-1)*model.timestepper.delta
+                expected = [dt.isoformat()]
+                actual = [row[0]]
+                assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
+            assert expected == actual
+       
 class TestTablesRecorder:
 
     def test_create_directory(self, simple_linear_model, tmpdir):
@@ -682,7 +722,6 @@ class TestTablesRecorder:
 
         This time the TablesRecorder is defined in JSON.
         """
-        import os, json, tables
         filename = "demand_saving_with_tables_recorder.json"
         # This is a bit horrible, but need to edit the JSON dynamically
         # so that the output.h5 is written in the temporary directory

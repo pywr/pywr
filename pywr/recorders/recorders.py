@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from functools import wraps
+from pywr._core import AbstractNode, AbstractStorage
 from ._recorders import *
 from ._thresholds import *
 from .events import *
@@ -97,10 +98,17 @@ class CSVRecorder(Recorder):
         self.scenario_index = scenario_index
         self.nodes = nodes
         self.csv_kwargs = kwargs.pop('csv_kwargs', {})
-        self.node_names = None
-
+        self._node_names = None
         self._fh = None
         self._writer = None
+
+    @classmethod
+    def load(cls, model, data):
+        import os
+        url = data.pop("url")
+        if not os.path.isabs(url) and model.path is not None:
+            url = os.path.join(model.path, url)
+        return cls(model, url, **data)
 
     def setup(self):
         """
@@ -108,9 +116,17 @@ class CSVRecorder(Recorder):
         """
 
         if self.nodes is None:
-            self.node_names = sorted(self.model.nodes.keys())
-        else:
-            self.node_names = sorted(n.name for n in self.nodes)
+            self._node_names = sorted(self.model.nodes.keys())
+        else:            
+            node_names = []
+            for node_ in self.nodes:
+                # test if the node name is provided
+                if isinstance(node_, basestring):
+                    # lookup node by name                        
+                    node_names.append(node_)                    
+                else:
+                    node_names.append((node_.name))                    
+            self._node_names = node_names           
 
     def reset(self):
         import csv
@@ -120,20 +136,18 @@ class CSVRecorder(Recorder):
             self._fh = open(self.csvfile, 'w')
         self._writer = csv.writer(self._fh, **self.csv_kwargs)
         # Write header data
-        self._writer.writerow(['Datetime']+self.node_names)
+        self._writer.writerow(['Datetime']+self._node_names)
 
     def after(self):
         """
         Write the node values to the CSV file
         """
-        from pywr._core import Node, Storage
-
         values = [self.model.timestepper.current.datetime.isoformat()]
-        for node_name in self.node_names:
+        for node_name in self._node_names:
             node = self.model.nodes[node_name]
-            if isinstance(node, Node):
+            if isinstance(node, AbstractNode):
                 values.append(node.flow[self.scenario_index])
-            elif isinstance(node, Storage):
+            elif isinstance(node, AbstractStorage):
                 values.append(node.volume[self.scenario_index])
             else:
                 raise ValueError("Unrecognised Node type '{}' for CSV writer".format(type(node)))

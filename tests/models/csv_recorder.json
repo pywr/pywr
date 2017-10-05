@@ -1,0 +1,35 @@
+{
+    "metadata": {
+        "title": "json with csv recoder example",
+        "description": "A model with a csv recoder",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-01-02",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "inpt",
+            "type": "input",
+            "max_flow": 10.0
+        },
+        {
+            "name": "otpt",
+            "type": "Output",
+            "cost": -2
+        }
+    ],
+    "edges": [
+        ["inpt", "otpt"]
+    ],
+    "recorders": {
+        "model_out": {
+            "comment": "flow to opt node",
+            "type": "CSVRecorder",
+            "nodes": ["inpt","otpt"],
+            "url": "output.csv"
+        }
+    }
+}
