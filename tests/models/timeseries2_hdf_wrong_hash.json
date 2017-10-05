@@ -23,7 +23,7 @@
                 "type": "tablesarray",
                 "scenario": "scenario A",
                 "checksum": {
-                    "md5": "0f6c65a36851c89c7c4e63ab1893554b"
+                    "md5": "this hash is incorrect!"
                 },
                 "url" : "timeseries2.h5",
                 "where": "/timeseries2",

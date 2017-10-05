@@ -6,6 +6,7 @@ from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
 from pywr.h5tools import H5Store
+from pywr.hashes import check_hash
 import warnings
 
 
@@ -404,6 +405,11 @@ cdef class TablesArrayParameter(IndexParameter):
             url = os.path.join(model.path, url)
         node = data.pop('node')
         where = data.pop('where', '/')
+
+        # Check hashes if given before reading the data
+        checksums = data.pop('checksum', {})
+        for algo, hash in checksums.items():
+            check_hash(url, hash, algorithm=algo)
 
         return cls(model, url, node, where=where, scenario=scenario)
 TablesArrayParameter.register()
@@ -1370,6 +1376,12 @@ def read_dataframe(model, data):
     url = data.pop('url')
     if not os.path.isabs(url) and model.path is not None:
         url = os.path.join(model.path, url)
+
+    # Check hashes if given before reading the data
+    checksums = data.pop('checksum', {})
+    for algo, hash in checksums.items():
+        check_hash(url, hash, algorithm=algo)
+
     try:
         filetype = data.pop('filetype')
     except KeyError:
