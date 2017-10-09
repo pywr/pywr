@@ -8,6 +8,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     DataFrameParameter, AggregatedParameter, ConstantParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
+    InterpolatedParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
@@ -827,6 +828,19 @@ class Test1DPolynomialParameter:
             return 0.5 + 2.5*xscaled
         model.run()
 
+def test_interpolated_parameter(simple_linear_model):
+    model = simple_linear_model
+    model.timestepper.start = "1920-01-01"
+    model.timestepper.end = "1920-01-12"
+
+    p1 = ArrayIndexedParameter(model, [0,1,2,3,4,5,6,7,8,9,10,11])
+    p2 = InterpolatedParameter(model, p1, [0, 5, 10, 11], [0, 5*2, 10*3, 2])
+
+    @assert_rec(model, p2)
+    def expected_func(timestep, scenario_index):
+        values = [0, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 2]
+        return values[timestep.index]
+    model.run()
 
 class Test2DStoragePolynomialParameter:
 
