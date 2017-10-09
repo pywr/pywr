@@ -82,7 +82,7 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
     >>> x = [0, 5, 10, 20]
     >>> y = [0, 10, 30, -5]
     >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
-    >>> p2 = InterpolatedParameter(model, x, y, interp_kwargs={"kind": "linear")
+    >>> p2 = InterpolatedParameter(model, x, y, interp_kwargs={"kind": "linear"})
     """
     def __init__(self, model, parameter, x, y, interp_kwargs=None, **kwargs):
         super(InterpolatedParameter, self).__init__(model, x, y, interp_kwargs, **kwargs)
