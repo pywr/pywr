@@ -50,11 +50,10 @@ ScaledProfileParameter.register()
 
 
 class AbstractInterpolatedParameter(Parameter):
-    def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
+    def __init__(self, model, x, y, interp_kwargs=None, **kwargs):
         super(AbstractInterpolatedParameter, self).__init__(model, **kwargs)
         self.x = x
         self.y = y
-        self._node = node
         self.interp = None
         default_interp_kwargs = dict(kind='linear', bounds_error=True)
         if interp_kwargs is not None:
@@ -74,10 +73,44 @@ class AbstractInterpolatedParameter(Parameter):
         return self.interp(v)
 
 
+class InterpolatedParameter(AbstractInterpolatedParameter):
+    """
+    Parameter value is equal to the interpolation of another parameter
+
+    Example
+    -------
+    >>> x = [0, 5, 10, 20]
+    >>> y = [0, 10, 30, -5]
+    >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
+    >>> p2 = InterpolatedParameter(model, x, y, interp_kwargs={"kind": "linear")
+    """
+    def __init__(self, model, parameter, x, y, interp_kwargs=None, **kwargs):
+        super(InterpolatedParameter, self).__init__(model, x, y, interp_kwargs, **kwargs)
+        self._parameter = None
+        self.parameter = parameter
+
+    def parameter():
+        def fget(self):
+            return self._parameter
+        def fset(self, value):
+            self.children.remove(self._parameter)
+            self._parameter = value
+            self.children.add(value)
+        return locals()
+    parameter = property(**parameter())
+
+    def _value_to_interpolate(self, ts, scenario_index):
+        return self._parameter.get_value(scenario_index)
+
+
 class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
     """
     Generic interpolation parameter calculated from current volume
     """
+    def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
+        super(InterpolatedVolumeParameter, self).__init__(model, x, y, interp_kwargs, **kwargs)
+        self._node = node
+
     def _value_to_interpolate(self, ts, scenario_index):
         return self._node.volume[scenario_index.global_id]
 
