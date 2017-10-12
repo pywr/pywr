@@ -695,8 +695,12 @@ cdef class IndexedArrayParameter(Parameter):
     @classmethod
     def load(cls, model, data):
         index_parameter = load_parameter(model, data.pop("index_parameter"))
-        params = [load_parameter(model, parameter_data) for parameter_data in data.pop("params")]
-        return cls(model, index_parameter, params, **data)
+        try:
+            parameters = data.pop("params")
+        except KeyError:
+            parameters = data.pop("parameters")
+        parameters = [load_parameter(model, parameter_data) for parameter_data in parameters]
+        return cls(model, index_parameter, parameters, **data)
 IndexedArrayParameter.register()
 
 
