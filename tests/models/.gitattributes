@@ -1,0 +1,2 @@
+# we test the checksum of this file, so line endings must be preserved
+timeseries2.csv text eol=lf
