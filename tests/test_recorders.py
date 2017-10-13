@@ -368,7 +368,8 @@ def test_concatenated_dataframes(simple_storage_model):
     assert df.columns.names == ['Recorder', 'A', 'B']
 
 
-def test_csv_recorder(simple_linear_model, tmpdir):
+@pytest.mark.parametrize("complib", [None, "gzip", "bz2"])
+def test_csv_recorder(simple_linear_model, tmpdir, complib):
     """
     Test the CSV Recorder
 
@@ -381,25 +382,37 @@ def test_csv_recorder(simple_linear_model, tmpdir):
     csvfile = tmpdir.join('output.csv')
     # By default the CSVRecorder saves all nodes in alphabetical order
     # and scenario index 0.
-    rec = CSVRecorder(model, str(csvfile))
+    rec = CSVRecorder(model, str(csvfile), complib=complib, complevel=5)
 
     model.run()
 
     import csv
-    with open(str(csvfile), 'r') as fh:
-        dialect = csv.Sniffer().sniff(fh.read(1024))
-        fh.seek(0)
-        reader = csv.reader(fh, dialect)
-        for irow, row in enumerate(reader):
-            if irow == 0:
-                expected = ['Datetime', 'Input', 'Link', 'Output']
-                actual = row
-            else:
-                dt = model.timestepper.start+(irow-1)*model.timestepper.delta
-                expected = [dt.isoformat()]
-                actual = [row[0]]
-                assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
-            assert expected == actual
+
+    if complib == "gzip":
+        import gzip
+        fh = gzip.open(str(csvfile), "rt")
+    elif complib in ("bz2", "bzip2"):
+        import bz2
+        fh = bz2.open(str(csvfile), "rt")
+    else:
+        fh = open(str(csvfile), "rt")
+    
+    data = fh.read(1024)
+    dialect = csv.Sniffer().sniff(data)
+    fh.seek(0)
+    reader = csv.reader(fh, dialect)
+    for irow, row in enumerate(reader):
+        if irow == 0:
+            expected = ['Datetime', 'Input', 'Link', 'Output']
+            actual = row
+        else:
+            dt = model.timestepper.start+(irow-1)*model.timestepper.delta
+            expected = [dt.isoformat()]
+            actual = [row[0]]
+            assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
+        assert expected == actual
+        
+    fh.close()
 
 
 def test_loading_csv_recorder_from_json(solver, tmpdir):

@@ -81,7 +81,7 @@ class CSVRecorder(Recorder):
 
     This class uses the csv package from the Python standard library
     """
-    def __init__(self, model, csvfile, scenario_index=0, nodes=None, **kwargs):
+    def __init__(self, model, csvfile, scenario_index=0, nodes=None, complib=None, complevel=9, **kwargs):
         """
 
         :param model: The model to record nodes from.
@@ -101,6 +101,8 @@ class CSVRecorder(Recorder):
         self._node_names = None
         self._fh = None
         self._writer = None
+        self.complib = complib
+        self.complevel = complevel
 
     @classmethod
     def load(cls, model, data):
@@ -130,10 +132,21 @@ class CSVRecorder(Recorder):
 
     def reset(self):
         import csv
+        
         if sys.version_info.major >= 3:
-            self._fh = open(self.csvfile, 'w', newline='')
+            kwargs = {"newline": ""}
         else:
-            self._fh = open(self.csvfile, 'w')
+            kwargs = {}
+        if self.complib == "gzip":
+            import gzip
+            self._fh = gzip.open(self.csvfile, "wt", self.complevel, **kwargs)
+        elif self.complib in ("bz2", "bzip2"):
+            import bz2
+            self._fh = bz2.open(self.csvfile, "wt", self.complevel, **kwargs)
+        elif self.complib is None:
+            self._fh = open(self.csvfile, "w", **kwargs)
+        else:
+            raise KeyError("Unexpected compression library: {}".format(self.complib))
         self._writer = csv.writer(self._fh, **self.csv_kwargs)
         # Write header data
         self._writer.writerow(['Datetime']+self._node_names)
@@ -155,7 +168,8 @@ class CSVRecorder(Recorder):
         self._writer.writerow(values)
 
     def finish(self):
-        self._fh.close()
+        if self._fh:
+            self._fh.close()
 CSVRecorder.register()
 
 
