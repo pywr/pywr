@@ -547,6 +547,9 @@ cdef class WeeklyProfileParameter(Parameter):
         v = np.squeeze(np.array(values))
         if v.ndim != 1:
             raise ValueError("values must be 1-dimensional.")
+        if len(values) == 53:
+            values = values[:52]
+            warnings.warn("Truncating 53 week profile to 52 weeks.")
         if len(values) != 52:
             raise ValueError("52 values must be given for a weekly profile.")
         self._values = v
