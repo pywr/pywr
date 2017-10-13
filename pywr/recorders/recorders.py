@@ -142,7 +142,13 @@ class CSVRecorder(Recorder):
             self._fh = gzip.open(self.csvfile, "wt", self.complevel, **kwargs)
         elif self.complib in ("bz2", "bzip2"):
             import bz2
-            self._fh = bz2.open(self.csvfile, "wt", self.complevel, **kwargs)
+            import io
+            if sys.version_info.major >= 3:
+                self._fh = bz2.open(self.csvfile, "wt", self.complevel, **kwargs)
+            else:
+                fh = bz2.BZ2File(self.csvfile, "wb", self.complevel)
+                self._fh = io.TextIOWrapper(fh, **kwargs)
+                self._fh.close = fh.close
         elif self.complib is None:
             self._fh = open(self.csvfile, "w", **kwargs)
         else:
