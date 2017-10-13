@@ -8,7 +8,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     DataFrameParameter, AggregatedParameter, ConstantParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
-    InterpolatedParameter,
+    InterpolatedParameter, WeeklyProfileParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
@@ -250,6 +250,25 @@ def test_daily_profile_leap_day(model):
     model.timestepper.end = pd.to_datetime("2016-12-31")
     model.run()
     assert_allclose(inpt.flow, 365)
+
+def test_weekly_profile(simple_linear_model):
+    model = simple_linear_model
+
+    model.timestepper.start = "2004-01-01"
+    model.timestepper.end = "2005-05-01"
+    model.timestepper.delta = 7
+
+    values = np.arange(0, 52) ** 2 + 27.5
+
+    p = WeeklyProfileParameter.load(model, {"values": values})
+
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        week = int(min((timestep.dayofyear - 1) // 7, 51))
+        value = week ** 2 + 27.5
+        return value
+
+    model.run()
 
 class TestAnnualHarmonicSeriesParameter:
     """ Tests for `AnnualHarmonicSeriesParameter` """

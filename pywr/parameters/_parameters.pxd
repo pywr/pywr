@@ -51,6 +51,9 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
 cdef class DailyProfileParameter(Parameter):
     cdef double[:] _values
 
+cdef class WeeklyProfileParameter(Parameter):
+    cdef double[:] _values
+
 cdef class MonthlyProfileParameter(Parameter):
     cdef double[:] _values
     cdef double[:] _lower_bounds

@@ -537,6 +537,37 @@ cdef class DailyProfileParameter(Parameter):
         return self._values[i]
 DailyProfileParameter.register()
 
+cdef class WeeklyProfileParameter(Parameter):
+    """Weekly profile (52-week year)
+
+    The last week of the year will have more than 7 days, as 365 / 7 is not whole.
+    """
+    def __init__(self, model, values, *args, **kwargs):
+        super(WeeklyProfileParameter, self).__init__(model, *args, **kwargs)
+        v = np.squeeze(np.array(values))
+        if v.ndim != 1:
+            raise ValueError("values must be 1-dimensional.")
+        if len(values) == 53:
+            values = values[:52]
+            warnings.warn("Truncating 53 week profile to 52 weeks.")
+        if len(values) != 52:
+            raise ValueError("52 values must be given for a weekly profile.")
+        self._values = v
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(<int>(ts._datetime.year)):
+            if i > 58: # 28th Feb
+                i += 1
+        cdef Py_ssize_t week
+        if i >= 364:
+            # last week of year is slightly longer than 7 days
+            week = 51
+        else:
+            week = i // 7
+        return self._values[week]
+WeeklyProfileParameter.register()
+
 cdef class MonthlyProfileParameter(Parameter):
     """ Parameter which provides a monthly profile
 

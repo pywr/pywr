@@ -5,7 +5,7 @@ from ._parameters import (
     ConstantScenarioParameter, AnnualHarmonicSeriesParameter,
     ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
-    DailyProfileParameter, MonthlyProfileParameter,
+    DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
     align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter,
