@@ -157,7 +157,7 @@ class CSVRecorder(Recorder):
             raise KeyError("Unexpected compression library: {}".format(self.complib))
         self._writer = csv.writer(self._fh, **self.csv_kwargs)
         # Write header data
-        self._writer.writerow(['Datetime']+self._node_names)
+        self._writer.writerow(["Datetime"]+[name.encode("utf-8") for name in self._node_names])
 
     def after(self):
         """
