@@ -392,17 +392,22 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
 
     import csv
 
+    if sys.version_info.major >= 3:
+        mode = "rt"
+    else:
+        mode = "r"
+
     if complib == "gzip":
         import gzip
-        fh = gzip.open(str(csvfile), "rt")
+        fh = gzip.open(str(csvfile), mode)
     elif complib in ("bz2", "bzip2"):
         import bz2
         if sys.version_info.major >= 3:
-            fh = bz2.open(str(csvfile), "rt")
+            fh = bz2.open(str(csvfile), mode)
         else:
-            fh = bz2.BZ2File(str(csvfile), "r")
+            fh = bz2.BZ2File(str(csvfile), mode)
     else:
-        fh = open(str(csvfile), "rt")
+        fh = open(str(csvfile), mode)
     
     data = fh.read(1024)
     dialect = csv.Sniffer().sniff(data)
