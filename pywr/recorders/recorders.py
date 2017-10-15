@@ -142,20 +142,11 @@ class CSVRecorder(Recorder):
             self._fh = gzip.open(self.csvfile, "wt", self.complevel, **kwargs)
         elif self.complib in ("bz2", "bzip2"):
             import bz2
+            # Different API between Python 2 and 3 unfortunately.
             if sys.version_info.major >= 3:
                 self._fh = bz2.open(self.csvfile, "wt", self.complevel, **kwargs)
             else:
-                import io
-                class BZ2File(bz2.BZ2File):
-                    def readable(self):
-                        return False
-                    def writable(self):
-                        return True
-                    def seekable(self):
-                        return True
-                fh = BZ2File(self.csvfile, "wb", self.complevel)
-                self._fh = io.TextIOWrapper(fh, **kwargs)
-                self._fh.close = fh.close
+                self._fh = bz2.BZ2File(self.csvfile, 'w', self.complevel)
         elif self.complib is None:
             self._fh = open(self.csvfile, "w", **kwargs)
         else:

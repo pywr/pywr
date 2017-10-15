@@ -27,6 +27,7 @@ from pywr.recorders.progress import ProgressRecorder
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
 import os
+import sys
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -393,7 +394,10 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
         fh = gzip.open(str(csvfile), "rt")
     elif complib in ("bz2", "bzip2"):
         import bz2
-        fh = bz2.open(str(csvfile), "rt")
+        if sys.version_info.major >= 3:
+            fh = bz2.open(str(csvfile), "rt")
+        else:
+            fh = bz2.BZ2File(str(csvfile), "r")
     else:
         fh = open(str(csvfile), "rt")
     
