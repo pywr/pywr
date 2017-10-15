@@ -1,5 +1,5 @@
-py.test ${SRC_DIR}/tests --solver=glpk
-py.test ${SRC_DIR}/tests --solver=lpsolve
+py.test -v ${SRC_DIR}/tests --solver=glpk
+py.test -v ${SRC_DIR}/tests --solver=lpsolve
 
 if [ "${PY3K}" == "1" ]; then
     PY_VER=3
