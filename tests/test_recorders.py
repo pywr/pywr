@@ -380,6 +380,9 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
     model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
 
+    # Rename output to a unicode character to check encoding to files
+    otpt.name = u"\u03A9"
+
     csvfile = tmpdir.join('output.csv')
     # By default the CSVRecorder saves all nodes in alphabetical order
     # and scenario index 0.
@@ -407,7 +410,7 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
     reader = csv.reader(fh, dialect)
     for irow, row in enumerate(reader):
         if irow == 0:
-            expected = ['Datetime', 'Input', 'Link', 'Output']
+            expected = ['Datetime', 'Input', 'Link', u"\u03A9"]
             actual = row
         else:
             dt = model.timestepper.start+(irow-1)*model.timestepper.delta
