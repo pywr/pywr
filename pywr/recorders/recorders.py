@@ -119,36 +119,40 @@ class CSVRecorder(Recorder):
 
         if self.nodes is None:
             self._node_names = sorted(self.model.nodes.keys())
-        else:            
+        else:
             node_names = []
             for node_ in self.nodes:
                 # test if the node name is provided
                 if isinstance(node_, basestring):
-                    # lookup node by name                        
-                    node_names.append(node_)                    
+                    # lookup node by name
+                    node_names.append(node_)
                 else:
-                    node_names.append((node_.name))                    
-            self._node_names = node_names           
+                    node_names.append((node_.name))
+            self._node_names = node_names
 
     def reset(self):
         import csv
-        
+
         if sys.version_info.major >= 3:
             kwargs = {"newline": ""}
         else:
             kwargs = {}
+        if sys.version_info.major >= 3:
+            mode = "wt"
+        else:
+            mode = "w"
         if self.complib == "gzip":
             import gzip
-            self._fh = gzip.open(self.csvfile, "wt", self.complevel, **kwargs)
+            self._fh = gzip.open(self.csvfile, mode, self.complevel, **kwargs)
         elif self.complib in ("bz2", "bzip2"):
             import bz2
             # Different API between Python 2 and 3 unfortunately.
             if sys.version_info.major >= 3:
-                self._fh = bz2.open(self.csvfile, "wt", self.complevel, **kwargs)
+                self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
             else:
-                self._fh = bz2.BZ2File(self.csvfile, 'w', self.complevel)
+                self._fh = bz2.BZ2File(self.csvfile, mode, self.complevel)
         elif self.complib is None:
-            self._fh = open(self.csvfile, "w", **kwargs)
+            self._fh = open(self.csvfile, mode, **kwargs)
         else:
             raise KeyError("Unexpected compression library: {}".format(self.complib))
         self._writer = csv.writer(self._fh, **self.csv_kwargs)
@@ -406,7 +410,7 @@ class TablesRecorder(Recorder):
             if group_name == "":
                 group_name = "/"
             description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
-            
+
             try:
                 self.h5store.file.remove_node(group_name, node_name)
             except tables.NoSuchNodeError:
@@ -512,4 +516,3 @@ class TablesRecorder(Recorder):
         self._routes_flow_array = None
 
 TablesRecorder.register()
-
