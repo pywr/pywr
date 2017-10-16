@@ -18,6 +18,7 @@ cdef class Parameter(Component):
 
 cdef class ConstantParameter(Parameter):
     cdef double _value
+    cdef public double scale, offset
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
 
