@@ -49,6 +49,7 @@ class TimestepLicense(License):
 
     def resource_state(self, timestep):
         return None
+TimestepLicense.register()
 
 
 # for now, assume a daily timestep
@@ -81,23 +82,34 @@ class StorageLicense(License):
 
     def after(self):
         timestep = self.model.timestepper.current
-        self._remaining -= self._node.flow*timestep.days
+        self._remaining -= self._node.flow * timestep.days
         self._remaining[self._remaining < 0] = 0.0
 
     def reset(self):
         self._remaining[...] = self._amount
 
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        amount = data.pop("amount")
+        return cls(model, node, amount=amount, **data)
+
+StorageLicense.register()
+
 
 class AnnualLicense(StorageLicense):
-    """An annual license"""
-    def __init__(self, *args, **kwargs):
-        """
-        Parameters
-        ----------
-        amount : float
-            The total annual volume for this license
+    """An annual license that apportions remaining volume equally for the rest of the year
 
-        """
+    value = (volume remaining) / (days remaining) * (timestep length)
+
+    Parameters
+    ----------
+    node : Node
+        The node that consumes the licence
+    amount : float
+        The total annual volume for this license
+    """
+    def __init__(self, *args, **kwargs):
         super(AnnualLicense, self).__init__(*args, **kwargs)
         # Record year ready to reset licence when the year changes.
         self._prev_year = None
@@ -110,7 +122,8 @@ class AnnualLicense(StorageLicense):
         if day_of_year == days_in_year:
             return self._remaining[i]
         else:
-            return self._remaining[i] / (days_in_year - day_of_year + 1)
+            days_remaining = days_in_year - (day_of_year - 1)
+            return self._remaining[i] / days_remaining
 
     def before(self):
         # Reset licence if year changes.
@@ -126,6 +139,7 @@ class AnnualLicense(StorageLicense):
             self._remaining[...] -= days_before_reset*self._node.prev_flow
 
             self._prev_year = timestep.datetime.year
+AnnualLicense.register()
 
 
 class AnnualExponentialLicense(AnnualLicense):
@@ -160,6 +174,7 @@ class AnnualExponentialLicense(AnnualLicense):
         expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
         x = remaining / expected
         return self._max_value * np.exp(-x / self._k)
+AnnualExponentialLicense.register()
 
 
 class AnnualHyperbolaLicense(AnnualLicense):
@@ -194,3 +209,4 @@ class AnnualHyperbolaLicense(AnnualLicense):
             return self._value / x
         except ZeroDivisionError:
             return inf
+AnnualHyperbolaLicense.register()
