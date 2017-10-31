@@ -1,4 +1,4 @@
-language: python
+language: generic
 
 sudo: false
 
@@ -34,6 +34,10 @@ install:
 
 script:
     - conda build conda-recipe
+
+before_cache:
+    - rm -rf ${HOME}/miniconda3/conda-bld/*
+    - rm -rf ${HOME}/miniconda3/envs/*
 
 notifications:
     email: false
