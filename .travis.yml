@@ -2,6 +2,10 @@ language: python
 
 sudo: false
 
+cache:
+    directories:
+        - ${HOME}/miniconda3
+
 env:
     matrix:
         - CONDA_NPY=111  CONDA_PY=27
@@ -14,11 +18,12 @@ install:
       MINICONDA_FILE="Miniconda3-latest-Linux-x86_64.sh"
       wget ${MINICONDA_URL}/${MINICONDA_FILE}
       bash ${MINICONDA_FILE} -b
-      export PATH=/home/travis/miniconda3/bin:$PATH
-      conda update --yes conda
+      export PATH=${HOME}/miniconda3/bin:$PATH
 
       conda config --add channels snorfalorpagus
       conda config --add channels conda-forge
+      
+      conda update --yes conda
 
       conda config --set show_channel_urls true
       conda install --yes --quiet conda-build
