@@ -25,7 +25,10 @@
         {
             "name": "demand1",
             "type": "Output",
-            "max_flow": 50,
+            "max_flow": {
+                "type": "arrayindexed",
+                "values": [50, 50, 0, 50, 50, 50, 50]
+            },
             "cost": -10
         }
     ],

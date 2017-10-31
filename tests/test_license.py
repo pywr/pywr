@@ -66,6 +66,11 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     assert_allclose(lic.value(m.timestepper._next, si), remaining / (365 - 3))
 
 def test_annual_license_json(solver):
+    """
+    This test demonstrates how an annual licence can be forceably distributed
+    evenly across a year. The licence must build up a surplus before it can
+    use more than the average.
+    """
     model = load_model("annual_license.json")
 
     model.timestepper.start = "2001-01-01"
@@ -76,8 +81,23 @@ def test_annual_license_json(solver):
 
     model.run()
 
-    assert_allclose(rec.data[0], 200.0 / 365.0)
-    assert_allclose(rec.data[0], (200.0 - rec.data[0] * 5) / 360.0)
+    initial_amount = 200.0
+    # first day evenly apportions initial amount for each day of year
+    first_day = initial_amount / 365
+    assert_allclose(rec.data[0], first_day)
+    # second day does the same, minus yesterday and with less days remaining
+    remaining_days = 365 - 5
+    second_day = (initial_amount - first_day * 5) / remaining_days
+    assert_allclose(rec.data[1], second_day)
+    # actual amount is the same as maximum was taken
+    assert_allclose(first_day, second_day)
+    # third day nothing is taken (no demand), so licence is saved
+    assert_allclose(rec.data[2], 0.0)
+    # fourth day more can be supplied as we've built up a surplus
+    remaining_days = 365 - 5 * 3
+    fourth_day = (initial_amount - (first_day+second_day)*5) / remaining_days
+    assert_allclose(rec.data[3], fourth_day)
+    assert fourth_day > first_day
 
 
 def test_simple_model_with_annual_licence_multi_year(simple_linear_model):
