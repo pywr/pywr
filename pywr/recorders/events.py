@@ -45,6 +45,7 @@ class EventRecorder(Recorder):
 
      """
     def __init__(self, model, threshold, minimum_event_length=1, tracked_parameter=None, **kwargs):
+        self.event_agg_func = kwargs.pop('event_agg_func', kwargs.get('agg_func'))
         super(EventRecorder, self).__init__(model, **kwargs)
         self.threshold = threshold
         self.threshold.parents.add(self)
@@ -62,7 +63,6 @@ class EventRecorder(Recorder):
         pass
 
     def reset(self):
-        print('reset')
         self.events = []
         # This list stores if an event is current active in each scenario.
         self._current_events = [None for si in self.model.scenarios.combinations]
@@ -146,13 +146,20 @@ class EventRecorder(Recorder):
         scen_id = np.empty(len(self.events), dtype=np.int)
         start = np.empty_like(scen_id, dtype=object)
         end = np.empty_like(scen_id, dtype=object)
+        values = np.empty_like(scen_id, dtype=float)
 
         for i, evt in enumerate(self.events):
             scen_id[i] = evt.scenario_index.global_id
             start[i] = evt.start.datetime
             end[i] = evt.end.datetime
+            if self.tracked_parameter is not None and self.event_agg_func is not None:
+                values[i] = pandas.Series(evt.values).aggregate(self.event_agg_func)
 
-        return pandas.DataFrame({'scenario_id': scen_id, 'start': start, 'end': end})
+        df_dict = {'scenario_id': scen_id, 'start': start, 'end': end}
+        if self.tracked_parameter is not None and self.event_agg_func is not None:
+            df_dict["value"] = values
+
+        return pandas.DataFrame(df_dict)
 
 
 class EventDurationRecorder(Recorder):
