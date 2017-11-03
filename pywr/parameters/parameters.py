@@ -10,6 +10,7 @@ from ._parameters import (
     align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter,
     load_parameter, load_parameter_values, load_dataframe)
+from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
 from past.builtins import basestring

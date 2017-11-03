@@ -1,0 +1,39 @@
+{
+    "metadata": {
+        "title": "Annual license test",
+        "minimum_version": "0.5dev0"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": {
+                "type": "annuallicense",
+                "node": "supply1",
+                "amount": 200
+            }
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": {
+                "type": "arrayindexed",
+                "values": [50, 50, 0, 50, 50, 50, 50]
+            },
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ]
+}
