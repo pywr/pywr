@@ -192,9 +192,6 @@ class EventDurationRecorder(Recorder):
     def reset(self):
         self._values[...] = 0.0
 
-    def after(self):
-        pass
-
     def values(self):
         return self._values
 
