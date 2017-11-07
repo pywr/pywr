@@ -32,11 +32,21 @@ class EventRecorder(Recorder):
     ----------
     threshold - IndexParameter, Parameter or Recorder
        The object that defines the start and end of an event.
-    minimum_event_lenght - int (default=1)
+    minimum_event_length - int (default=1)
         The minimum number of time-steps that an event must last for
         to be recorded. This is useful to not record events that are
         caused by model hysteresis. The default will cause all events
         to be recorded.
+    agg_func - string, callable
+        Function used for aggregating across the recorders. Numpy style functions that
+        support an axis argument are supported.
+    event_agg_func - string, callable
+        Optional different function for aggregating the `tracked_parameter` across events.
+        If given this aggregation will be added as a `value` column in the `to_dataframe` method.
+    tracked_parameter - `Parameter`
+        The parameter to track across each event. The values from this parameter are appended each
+        time-step to each event. These can then be used with other event recorders for statistical
+        aggregation, or with `event_agg_func`.
 
      See also
      --------
@@ -138,7 +148,13 @@ class EventRecorder(Recorder):
                 self._current_events[si.global_id] = None
 
     def to_dataframe(self):
-        """ Returns a DataFrame containing all of the events. """
+        """ Returns a `pandas.DataFrame` containing all of the events.
+
+        If `event_agg_func` is a valid aggregation function and `tracked_parameter`
+         is given then a "value" column is added to the dataframe containing the
+         result of the aggregation.
+
+        """
         # Return empty dataframe if no events are found.
         if len(self.events) == 0:
             return pandas.DataFrame(columns=['scenario_id', 'start', 'end'])
@@ -175,6 +191,12 @@ class EventDurationRecorder(Recorder):
     ----------
     event_recorder : EventRecorder
         EventRecorder instance to calculate the events.
+    agg_func - string, callable
+        Function used for aggregating across the recorders. Numpy style functions that
+        support an axis argument are supported.
+    recorder_agg_func - string, callable
+        Optional aggregating function for all events in each scenario. The function
+        must be supported by the `DataFrame.group_by` method.
 
     """
     def __init__(self, model, event_recorder, **kwargs):
@@ -233,7 +255,15 @@ class EventStatisticRecorder(Recorder):
     model : pywr.model.Model
     event_recorder : EventRecorder
         EventRecorder instance to calculate the events.
-
+    agg_func - string, callable
+        Function used for aggregating across the recorders. Numpy style functions that
+        support an axis argument are supported.
+    recorder_agg_func - string, callable
+        Optional aggregating function for all events in each scenario. The function
+        must be supported by the `DataFrame.group_by` method.
+    event_agg_func - string, callable
+        Optional different function for aggregating the `tracked_parameter` across events.
+        If given this aggregation will be added as a `value` column in the `to_dataframe` method.
     """
     def __init__(self, model, event_recorder, **kwargs):
         # Optional different method for aggregating across self.recorders scenarios
