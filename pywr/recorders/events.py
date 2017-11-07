@@ -192,9 +192,6 @@ class EventDurationRecorder(Recorder):
     def reset(self):
         self._values[...] = 0.0
 
-    def after(self):
-        pass
-
     def values(self):
         return self._values
 
@@ -224,7 +221,7 @@ class EventStatisticRecorder(Recorder):
     """ Recorder for the duration of events found by an EventRecorder
 
     This Recorder uses the results of an EventRecorder to calculate aggregated statistics
-    of those events in each scenario. This requires the EventRecorder to be given a tracked_parameter
+    of those events in each scenario. This requires the EventRecorder to be given a `tracked_parameter`
     in order to save an array of values during each event. This recorder uses `event_agg_func` to aggregate
     those saved values in each event before applying `recorder_agg_func` to those values in each scenario.
     Aggregation by scenario is done via the pandas.DataFrame.groupby() method.
@@ -233,6 +230,7 @@ class EventStatisticRecorder(Recorder):
 
     Parameters
     ----------
+    model : pywr.model.Model
     event_recorder : EventRecorder
         EventRecorder instance to calculate the events.
 
@@ -257,9 +255,6 @@ class EventStatisticRecorder(Recorder):
     def reset(self):
         self._values[...] = np.nan
 
-    def after(self):
-        pass
-
     def values(self):
         return self._values
 
@@ -268,7 +263,6 @@ class EventStatisticRecorder(Recorder):
         events = self.event_recorder.events
         # Return NaN if no events found
         if len(events) == 0:
-            self._values[...] = np.nan
             return
 
         scen_id = np.empty(len(events), dtype=np.int)
