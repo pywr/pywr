@@ -399,15 +399,15 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
 
     if complib == "gzip":
         import gzip
-        fh = gzip.open(str(csvfile), mode)
+        fh = gzip.open(str(csvfile), mode, encoding="utf-8")
     elif complib in ("bz2", "bzip2"):
         import bz2
         if sys.version_info.major >= 3:
-            fh = bz2.open(str(csvfile), mode)
+            fh = bz2.open(str(csvfile), mode, encoding="utf-8")
         else:
-            fh = bz2.BZ2File(str(csvfile), mode)
+            fh = bz2.BZ2File(str(csvfile), mode, encoding="utf-8")
     else:
-        fh = open(str(csvfile), mode)
+        fh = open(str(csvfile), mode, encoding="utf-8")
     
     data = fh.read(1024)
     dialect = csv.Sniffer().sniff(data)

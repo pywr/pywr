@@ -75,6 +75,7 @@ class AssertionRecorder(Recorder):
             # this still requires model.run() to have been called...
             raise RuntimeError("AssertionRecorder was never called!")
 
+
 class CSVRecorder(Recorder):
     """
     A Recorder that saves Node values to a CSV file.
@@ -134,9 +135,9 @@ class CSVRecorder(Recorder):
         import csv
 
         if sys.version_info.major >= 3:
-            kwargs = {"newline": ""}
+            kwargs = {"newline": "", "encoding": "utf-8"}
         else:
-            kwargs = {}
+            kwargs = {"encoding": "utf-8"}
         if sys.version_info.major >= 3:
             mode = "wt"
         else:
@@ -157,7 +158,8 @@ class CSVRecorder(Recorder):
             raise KeyError("Unexpected compression library: {}".format(self.complib))
         self._writer = csv.writer(self._fh, **self.csv_kwargs)
         # Write header data
-        self._writer.writerow(["Datetime"]+[name.encode("utf-8") for name in self._node_names])
+        row = ["Datetime"] + [name for name in self._node_names]
+        self._writer.writerow(row)
 
     def after(self):
         """
