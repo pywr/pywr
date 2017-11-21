@@ -27,6 +27,7 @@ from pywr.recorders.progress import ProgressRecorder
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
 from helpers import load_model
 import os
+import sys
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -368,7 +369,8 @@ def test_concatenated_dataframes(simple_storage_model):
     assert df.columns.names == ['Recorder', 'A', 'B']
 
 
-def test_csv_recorder(simple_linear_model, tmpdir):
+@pytest.mark.parametrize("complib", [None, "gzip", "bz2"])
+def test_csv_recorder(simple_linear_model, tmpdir, complib):
     """
     Test the CSV Recorder
 
@@ -378,28 +380,59 @@ def test_csv_recorder(simple_linear_model, tmpdir):
     model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
 
+    # Rename output to a unicode character to check encoding to files
+    if sys.version_info.major >= 3:
+        # This only works with Python 3.
+        # There are some limitations with encoding with the CSV writers in Python 2
+        otpt.name = u"\u03A9"
+        expected_header = ['Datetime', 'Input', 'Link', u"\u03A9"]
+    else:
+        expected_header = ['Datetime', 'Input', 'Link', 'Output']
+
     csvfile = tmpdir.join('output.csv')
     # By default the CSVRecorder saves all nodes in alphabetical order
     # and scenario index 0.
-    rec = CSVRecorder(model, str(csvfile))
+    rec = CSVRecorder(model, str(csvfile), complib=complib, complevel=5)
 
     model.run()
 
     import csv
-    with open(str(csvfile), 'r') as fh:
-        dialect = csv.Sniffer().sniff(fh.read(1024))
-        fh.seek(0)
-        reader = csv.reader(fh, dialect)
-        for irow, row in enumerate(reader):
-            if irow == 0:
-                expected = ['Datetime', 'Input', 'Link', 'Output']
-                actual = row
-            else:
-                dt = model.timestepper.start+(irow-1)*model.timestepper.delta
-                expected = [dt.isoformat()]
-                actual = [row[0]]
-                assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
-            assert expected == actual
+
+    if sys.version_info.major >= 3:
+        kwargs = {"encoding": "utf-8"}
+        mode = "rt"
+    else:
+        kwargs = {}
+        mode = "r"
+
+    if complib == "gzip":
+        import gzip
+        fh = gzip.open(str(csvfile), mode, **kwargs)
+    elif complib in ("bz2", "bzip2"):
+        import bz2
+        if sys.version_info.major >= 3:
+            fh = bz2.open(str(csvfile), mode, **kwargs)
+        else:
+            fh = bz2.BZ2File(str(csvfile), mode)
+    else:
+        fh = open(str(csvfile), mode, **kwargs)
+    
+    data = fh.read(1024)
+    dialect = csv.Sniffer().sniff(data)
+    fh.seek(0)
+    reader = csv.reader(fh, dialect)
+    for irow, row in enumerate(reader):
+        if irow == 0:
+            expected = expected_header
+            actual = row
+        else:
+            dt = model.timestepper.start+(irow-1)*model.timestepper.delta
+            expected = [dt.isoformat()]
+            actual = [row[0]]
+            assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
+        assert expected == actual
+        
+    fh.close()
 
 
 def test_loading_csv_recorder_from_json(solver, tmpdir):

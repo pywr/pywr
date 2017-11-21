@@ -75,13 +75,14 @@ class AssertionRecorder(Recorder):
             # this still requires model.run() to have been called...
             raise RuntimeError("AssertionRecorder was never called!")
 
+
 class CSVRecorder(Recorder):
     """
     A Recorder that saves Node values to a CSV file.
 
     This class uses the csv package from the Python standard library
     """
-    def __init__(self, model, csvfile, scenario_index=0, nodes=None, **kwargs):
+    def __init__(self, model, csvfile, scenario_index=0, nodes=None, complib=None, complevel=9, **kwargs):
         """
 
         :param model: The model to record nodes from.
@@ -101,6 +102,8 @@ class CSVRecorder(Recorder):
         self._node_names = None
         self._fh = None
         self._writer = None
+        self.complib = complib
+        self.complevel = complevel
 
     @classmethod
     def load(cls, model, data):
@@ -117,26 +120,46 @@ class CSVRecorder(Recorder):
 
         if self.nodes is None:
             self._node_names = sorted(self.model.nodes.keys())
-        else:            
+        else:
             node_names = []
             for node_ in self.nodes:
                 # test if the node name is provided
                 if isinstance(node_, basestring):
-                    # lookup node by name                        
-                    node_names.append(node_)                    
+                    # lookup node by name
+                    node_names.append(node_)
                 else:
-                    node_names.append((node_.name))                    
-            self._node_names = node_names           
+                    node_names.append((node_.name))
+            self._node_names = node_names
 
     def reset(self):
         import csv
+
         if sys.version_info.major >= 3:
-            self._fh = open(self.csvfile, 'w', newline='')
+            kwargs = {"newline": "", "encoding": "utf-8"}
         else:
-            self._fh = open(self.csvfile, 'w')
+            kwargs = {}
+        if sys.version_info.major >= 3:
+            mode = "wt"
+        else:
+            mode = "w"
+        if self.complib == "gzip":
+            import gzip
+            self._fh = gzip.open(self.csvfile, mode, self.complevel, **kwargs)
+        elif self.complib in ("bz2", "bzip2"):
+            import bz2
+            # Different API between Python 2 and 3 unfortunately.
+            if sys.version_info.major >= 3:
+                self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
+            else:
+                self._fh = bz2.BZ2File(self.csvfile, mode, self.complevel)
+        elif self.complib is None:
+            self._fh = open(self.csvfile, mode, **kwargs)
+        else:
+            raise KeyError("Unexpected compression library: {}".format(self.complib))
         self._writer = csv.writer(self._fh, **self.csv_kwargs)
         # Write header data
-        self._writer.writerow(['Datetime']+self._node_names)
+        row = ["Datetime"] + [name for name in self._node_names]
+        self._writer.writerow(row)
 
     def after(self):
         """
@@ -155,7 +178,8 @@ class CSVRecorder(Recorder):
         self._writer.writerow(values)
 
     def finish(self):
-        self._fh.close()
+        if self._fh:
+            self._fh.close()
 CSVRecorder.register()
 
 
@@ -388,7 +412,7 @@ class TablesRecorder(Recorder):
             if group_name == "":
                 group_name = "/"
             description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
-            
+
             try:
                 self.h5store.file.remove_node(group_name, node_name)
             except tables.NoSuchNodeError:
@@ -494,4 +518,3 @@ class TablesRecorder(Recorder):
         self._routes_flow_array = None
 
 TablesRecorder.register()
-
