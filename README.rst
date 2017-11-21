@@ -23,6 +23,15 @@ Models can be developed using the Python API, either in a script or interactivel
 
 New users are encouraged to read the `Pywr Tutorial <https://pywr.github.io/pywr-docs/tutorial.html>`__.
 
+Design goals
+============
+
+Pywr is a tool for solving network resource allocation problems. It has many similarities with other software packages such as WEAP, Wathnet, Aquator and MISER, but also has some significant differences. Pywr’s principle design goals are that it is:
+
+- Fast enough to handle large stochastic datasets and large numbers of scenarios and function evaluations required by advanced decision making methodologies;
+- Free to use without restriction – licensed under the GNU General Public Licence;
+- Extendable – uses the Python programming language to define complex operational rules and control model runs.
+
 Installation
 ============
 
