@@ -381,7 +381,13 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
     otpt.cost = -2.0
 
     # Rename output to a unicode character to check encoding to files
-    otpt.name = u"\u03A9"
+    if sys.version_info.major >= 3:
+        # This only works with Python 3.
+        # There are some limitations with encoding with the CSV writers in Python 2
+        otpt.name = u"\u03A9"
+        expected_header = ['Datetime', 'Input', 'Link', u"\u03A9"]
+    else:
+        expected_header = ['Datetime', 'Input', 'Link', 'Output']
 
     csvfile = tmpdir.join('output.csv')
     # By default the CSVRecorder saves all nodes in alphabetical order
@@ -393,21 +399,23 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
     import csv
 
     if sys.version_info.major >= 3:
+        kwargs = {"encoding": "utf-8"}
         mode = "rt"
     else:
+        kwargs = {}
         mode = "r"
 
     if complib == "gzip":
         import gzip
-        fh = gzip.open(str(csvfile), mode, encoding="utf-8")
+        fh = gzip.open(str(csvfile), mode, **kwargs)
     elif complib in ("bz2", "bzip2"):
         import bz2
         if sys.version_info.major >= 3:
-            fh = bz2.open(str(csvfile), mode, encoding="utf-8")
+            fh = bz2.open(str(csvfile), mode, **kwargs)
         else:
-            fh = bz2.BZ2File(str(csvfile), mode, encoding="utf-8")
+            fh = bz2.BZ2File(str(csvfile), mode)
     else:
-        fh = open(str(csvfile), mode, encoding="utf-8")
+        fh = open(str(csvfile), mode, **kwargs)
     
     data = fh.read(1024)
     dialect = csv.Sniffer().sniff(data)
@@ -415,7 +423,7 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
     reader = csv.reader(fh, dialect)
     for irow, row in enumerate(reader):
         if irow == 0:
-            expected = ['Datetime', 'Input', 'Link', u"\u03A9"]
+            expected = expected_header
             actual = row
         else:
             dt = model.timestepper.start+(irow-1)*model.timestepper.delta

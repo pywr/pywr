@@ -137,7 +137,7 @@ class CSVRecorder(Recorder):
         if sys.version_info.major >= 3:
             kwargs = {"newline": "", "encoding": "utf-8"}
         else:
-            kwargs = {"encoding": "utf-8"}
+            kwargs = {}
         if sys.version_info.major >= 3:
             mode = "wt"
         else:
