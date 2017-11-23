@@ -10,92 +10,56 @@ script should be run twice (once with --harmonic) to generate results for both t
 this --plot can be used to generate an animation and PNG of the pareto frontier.
 
 """
-
+import json
 import os
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-import datetime
-import inspyred
-from pywr.core import Model, Input, Output, Link, Storage
-from pywr.parameters import ArrayIndexedParameter, MonthlyProfileParameter, AnnualHarmonicSeriesParameter
-from pywr.parameters.control_curves import ControlCurveParameter
-from pywr.recorders import TotalDeficitNodeRecorder, TotalFlowNodeRecorder, AggregatedRecorder
-from pywr.optimisation.moea import InspyredOptimisationModel
 
 
-def create_model(harmonic=True):
-    # import flow timeseries for catchments
-    flow = pd.read_csv(os.path.join('data', 'thames_stochastic_flow.gz'))
+def load_model(klass, harmonic=True):
 
-    flow['Date'] = flow['Date'].apply(pd.to_datetime)
-    flow.set_index('Date', inplace=True)
-    # resample input to weekly average
-    flow = flow.resample('7D', how='mean')
-
-    model = InspyredOptimisationModel(
-        solver='glpk',
-        start=flow.index[0],
-        end=flow.index[365*10],  # roughly 10 years
-        timestep=datetime.timedelta(7),  # weekly time-step
-    )
-
-    flow_parameter = ArrayIndexedParameter(model, flow['flow'].values)
-
-    catchment1 = Input(model, 'catchment1', min_flow=flow_parameter, max_flow=flow_parameter)
-    catchment2 = Input(model, 'catchment2', min_flow=flow_parameter, max_flow=flow_parameter)
-
-    reservoir1 = Storage(model, 'reservoir1', min_volume=3000, max_volume=20000, initial_volume=16000)
-    reservoir2 = Storage(model, 'reservoir2', min_volume=3000, max_volume=20000, initial_volume=16000)
+    with open('two_reservoir.json') as fh:
+        data = json.load(fh)
 
     if harmonic:
-        control_curve = AnnualHarmonicSeriesParameter(model, 0.5, [0.5], [0.0], mean_upper_bounds=1.0, amplitude_upper_bounds=1.0)
-    else:
-        control_curve = MonthlyProfileParameter(model, np.array([0.0]*12), lower_bounds=0.0, upper_bounds=1.0)
+        # Patch the control curve parameter
+        data['parameters']['control_curve'] = {
+            'type': 'AnnualHarmonicSeries',
+            'mean': 0.5,
+            'amplitudes': [0.5, 0.0],
+            'phases': [0.0, 0.0],
+            'mean_upper_bounds': 1.0,
+            'amplitude_upper_bounds': 1.0,
+            'is_variable': True
+        }
 
-    control_curve.is_variable = True
-    controller = ControlCurveParameter(model, reservoir1, control_curve, [0.0, 10.0])
-    transfer = Link(model, 'transfer', max_flow=controller, cost=-500)
-
-    demand1 = Output(model, 'demand1', max_flow=45.0, cost=-101)
-    demand2 = Output(model, 'demand2', max_flow=20.0, cost=-100)
-
-    river1 = Link(model, 'river1')
-    river2 = Link(model, 'river2')
-
-    # compensation flows from reservoirs
-    compensation1 = Link(model, 'compensation1', max_flow=5.0, cost=-9999)
-    compensation2 = Link(model, 'compensation2', max_flow=5.0, cost=-9998)
-
-    terminator = Output(model, 'terminator', cost=1.0)
-
-    catchment1.connect(reservoir1)
-    catchment2.connect(reservoir2)
-    reservoir1.connect(demand1)
-    reservoir2.connect(demand2)
-    reservoir2.connect(transfer)
-    transfer.connect(reservoir1)
-    reservoir1.connect(river1)
-    reservoir2.connect(river2)
-    river1.connect(terminator)
-    river2.connect(terminator)
-
-    reservoir1.connect(compensation1)
-    reservoir2.connect(compensation2)
-    compensation1.connect(terminator)
-    compensation2.connect(terminator)
-
-    r1 = TotalDeficitNodeRecorder(model, demand1)
-    r2 = TotalDeficitNodeRecorder(model, demand2)
-    r3 = AggregatedRecorder(model, [r1, r2], agg_func="mean")
-    r3.is_objective = 'minimise'
-    r4 = TotalFlowNodeRecorder(model, transfer)
-    r4.is_objective = 'minimise'
-
-    return model
+    return klass.load(data)
 
 
-def moea_main(prng=None, display=False, harmonic=False):
+def platypus_main(harmonic=False):
+    import platypus
+    from pywr.optimisation.platypus import PlatypusOptimisationModel
+
+    model = load_model(PlatypusOptimisationModel, harmonic=harmonic)
+    problem = model.setup()
+
+    algorithm = platypus.NSGAII(problem)
+    algorithm.run(10000)
+
+    plt.scatter([s.objectives[0] for s in algorithm.result],
+                [s.objectives[1] for s in algorithm.result])
+
+    plt.xlabel(model._objectives[0].name)
+    plt.ylabel(model._objectives[1].name)
+    plt.grid(True)
+    title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
+    plt.savefig('{} Example ({}).pdf'.format('platypus', title), format='pdf')
+    plt.show()
+
+
+def inspyred_main(prng=None, display=False, harmonic=False):
+    import inspyred
+    from pywr.optimisation.inspyred import InspyredOptimisationModel
     from random import Random
     from time import time
 
@@ -107,7 +71,7 @@ def moea_main(prng=None, display=False, harmonic=False):
     stats_file = open('{}-{}-statistics-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
     individuals_file = open('{}-{}-individuals-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
 
-    problem = create_model(harmonic=harmonic)
+    problem = InspyredOptimisationModel.load('two_reservoir.json')
     problem.setup()
     ea = inspyred.ec.emo.NSGA2(prng)
     ea.variator = [inspyred.ec.variators.blend_crossover,
@@ -220,6 +184,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--harmonic', action='store_true', help='Use an harmonic control curve.')
     parser.add_argument('--plot', action='store_true', help='Plot the pareto frontier.')
+    parser.add_argument('--library', type=str, choices=['inspyred', 'platypus'])
     args = parser.parse_args()
 
     if args.plot:
@@ -230,4 +195,7 @@ if __name__ == '__main__':
         animate_generations(objs, ('b', 'r'))
         plt.show()
     else:
-        moea_main(display=True, harmonic=args.harmonic)
+        if args.library == 'inspyred':
+            inspyred_main(display=True, harmonic=args.harmonic)
+        elif args.library == 'platypus':
+            platypus_main(harmonic=args.harmonic)
