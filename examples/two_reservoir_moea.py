@@ -52,6 +52,8 @@ def platypus_main(harmonic=False):
     plt.xlabel(model._objectives[0].name)
     plt.ylabel(model._objectives[1].name)
     plt.grid(True)
+    plt.ylim(0, 4000)
+    plt.xlim(215000, 215500)
     title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
     plt.savefig('{} Example ({}).pdf'.format('platypus', title), format='pdf')
     plt.show()
@@ -71,21 +73,21 @@ def inspyred_main(prng=None, display=False, harmonic=False):
     stats_file = open('{}-{}-statistics-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
     individuals_file = open('{}-{}-individuals-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
 
-    problem = InspyredOptimisationModel.load('two_reservoir.json')
+    problem = load_model(InspyredOptimisationModel, harmonic=harmonic)
     problem.setup()
     ea = inspyred.ec.emo.NSGA2(prng)
-    ea.variator = [inspyred.ec.variators.blend_crossover,
-                   inspyred.ec.variators.gaussian_mutation]
+    #ea.variator = [inspyred.ec.variators.blend_crossover,
+    #               inspyred.ec.variators.gaussian_mutation]
     ea.terminator = inspyred.ec.terminators.generation_termination
     ea.observer = [
         inspyred.ec.observers.file_observer,
     ]
     final_pop = ea.evolve(generator=problem.generator,
                           evaluator=problem.evaluator,
-                          pop_size=25,
+                          pop_size=100,
                           bounder=problem.bounder,
                           maximize=False,
-                          max_generations=50,
+                          max_generations=200,
                           statistics_file=stats_file,
                           individuals_file=individuals_file)
 
@@ -111,6 +113,9 @@ def inspyred_main(prng=None, display=False, harmonic=False):
         plt.scatter(x, y, c='b')
         plt.xlabel('Total demand deficit [Ml/d]')
         plt.ylabel('Total Transferred volume [Ml/d]')
+        plt.ylim(0, 4000)
+        plt.xlim(215000, 215500)
+        plt.grid()
         title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
         plt.savefig('{0} Example ({1}).pdf'.format(ea.__class__.__name__, title), format='pdf')
         plt.show()
