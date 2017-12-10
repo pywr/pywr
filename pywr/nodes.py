@@ -299,6 +299,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
             min_volume = 0.0
         max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
         initial_volume = kwargs.pop('initial_volume', 0.0)
+        initial_volume_pc = kwargs.pop('initial_volume_pc', None)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
         level = pop_kwarg_parameter(kwargs, 'level', None)
         area = pop_kwarg_parameter(kwargs, 'area', None)
@@ -318,6 +319,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         self.min_volume = min_volume
         self.max_volume = max_volume
         self.initial_volume = initial_volume
+        self.initial_volume_pc = initial_volume_pc
         self.cost = cost
         self.position = position
         self.level = level
@@ -341,7 +343,6 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
             elif key.startswith('output_'):
                 output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
         '''
-
 
     def iter_slots(self, slot_name=None, is_connector=True, all_slots=False):
         if is_connector:
@@ -378,7 +379,12 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         name = data.pop('name')
         num_inputs = int(data.pop('inputs', 1))
         num_outputs = int(data.pop('outputs', 1))
-        initial_volume = data.pop('initial_volume')
+
+        if 'initial_volume' not in data and 'initial_volume_pc' not in data:
+            raise ValueError('Initial volume must be specified in absolute or relative terms.')
+
+        initial_volume = data.pop('initial_volume', 0.0)
+        initial_volume_pc = data.pop('initial_volume_pc', None)
         max_volume = data.pop('max_volume')
         min_volume = data.pop('min_volume', 0.0)
         level = data.pop('level', None)
@@ -396,6 +402,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         node = cls(
             model=model, name=name, num_inputs=num_inputs,
             num_outputs=num_outputs, initial_volume=initial_volume,
+            initial_volume_pc=initial_volume_pc,
             max_volume=max_volume, min_volume=min_volume,
             **data
         )
