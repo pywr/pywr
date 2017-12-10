@@ -18,30 +18,30 @@ class TransientDecisionParameter(Parameter):
     ----------
     decision_date : string or pandas.Timestamp
         The trigger date for the decision.
-    before : Parameter
+    before_parameter : Parameter
         The value to use before the decision date.
-    after: Parameter
+    after_parameter: Parameter
         The value to use after the decision date.
 
     """
-    def __init__(self, model, decision_date, before, after, **kwargs):
+    def __init__(self, model, decision_date, before_parameter, after_parameter, **kwargs):
         super(TransientDecisionParameter, self).__init__(model, **kwargs)
         self._decision_date = None
         self.decision_date = decision_date
 
-        if not isinstance(before, Parameter):
+        if not isinstance(before_parameter, Parameter):
             raise ValueError('The `before` value should be a Parameter instance.')
-        before.parents.add(self)
-        self.before = before
+        before_parameter.parents.add(self)
+        self.before_parameter = before_parameter
 
-        if not isinstance(after, Parameter):
+        if not isinstance(after_parameter, Parameter):
             raise ValueError('The `after` value should be a Parameter instance.')
-        after.parents.add(self)
-        self.after = after
+        after_parameter.parents.add(self)
+        self.after_parameter = after_parameter
 
     def decision_date():
         def fget(self):
-            return self._start
+            return self._decision_date
         def fset(self, value):
             if isinstance(value, pandas.Timestamp):
                 self._decision_date = value
@@ -52,10 +52,11 @@ class TransientDecisionParameter(Parameter):
 
     def value(self, ts, scenario_index):
 
-        if ts.datetime > self.decision_date:
-            self.after.get_value(scenario_index)
+        if ts.datetime >= self.decision_date:
+            v = self.after_parameter.get_value(scenario_index)
         else:
-            self.before.get_value(scenario_index)
+            v = self.before_parameter.get_value(scenario_index)
+        return v
 
 
             
