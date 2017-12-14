@@ -56,12 +56,14 @@ def test_model_results(solver):
     print(res)
     print(res._repr_html_())
 
-def test_run_reservoir1(solver):
+
+@pytest.mark.parametrize("json_file", ['reservoir1.json', 'reservoir1_pc.json'])
+def test_run_reservoir1(json_file, solver):
     '''Test a reservoir with no refill
 
     Without an additional supply the reservoir should empty and cause a failure.
     '''
-    model = load_model('reservoir1.json', solver=solver)
+    model = load_model(json_file, solver=solver)
     demand1 = model.nodes['demand1']
     supply1 = model.nodes['supply1']
     for demand, stored in [(10.0, 25.0), (10.0, 15.0), (10.0, 5.0), (5.0, 0.0), (0.0, 0.0)]:
