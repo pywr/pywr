@@ -19,7 +19,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
     RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
-    EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder,
+    EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
     SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
 from pywr.recorders.progress import ProgressRecorder
@@ -1354,6 +1354,43 @@ class TestEventRecorder:
             assert_equal([3, ], [e.duration for e in evt_rec.events])
         else:
             assert len(evt_rec.events) == 0
+
+    @pytest.mark.parametrize("recorder_agg_func", ["min", "max", "mean", "median", "sum"])
+    def test_statistic_recorder(self, cyclical_storage_model, recorder_agg_func):
+        """ Test EventStatisticRecorder """
+        m = cyclical_storage_model
+
+        strg = m.nodes['Storage']
+        inpt = m.nodes['Input']
+        arry = NumpyArrayNodeRecorder(m, inpt)
+
+        # Create the trigger using a threhsold parameter
+        trigger = StorageThresholdRecorder(m, strg, 4.0, predicate='<=')
+        evt_rec = EventRecorder(m, trigger, tracked_parameter=inpt.max_flow)
+        evt_stat = EventStatisticRecorder(m, evt_rec, agg_func='max', event_agg_func='min', recorder_agg_func=recorder_agg_func)
+
+        m.run()
+
+        # Ensure there is at least one event
+        assert evt_rec.events
+
+        evt_values = {si.global_id:[] for si in m.scenarios.combinations}
+        for evt in evt_rec.events:
+            evt_values[evt.scenario_index.global_id].append(np.min(arry.data[evt.start.index:evt.end.index, evt.scenario_index.global_id]))
+
+        func = TestEventRecorder.funcs[recorder_agg_func]
+
+        agg_evt_values = []
+        for k, v in sorted(evt_values.items()):
+            if len(v) > 0:
+                agg_evt_values.append(func(v))
+            else:
+                agg_evt_values.append(np.nan)
+
+        # Test that the
+        assert_allclose(evt_stat.values(), agg_evt_values)
+        assert_allclose(evt_stat.aggregated_value(), np.max(agg_evt_values))
+
 
 def test_progress_recorder(simple_linear_model):
     model = simple_linear_model

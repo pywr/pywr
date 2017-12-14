@@ -361,6 +361,8 @@ cdef class TablesArrayParameter(IndexParameter):
             # negative values are often erroneous
             if np.min(self._values_dbl) < 0.0:
                 warnings.warn('Negative values in input file "{}" from node: {}'.format(self.h5file, self.node))
+            if not np.all(np.isfinite(self._values_dbl)):
+                raise ValueError('Non-finite values in input file "{}" from node: {}'.format(self.h5file, self.node))
         else:
             if self._values_int is None:
                 self._values_int = node.read().astype(np.int32)
