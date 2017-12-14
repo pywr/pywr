@@ -152,6 +152,7 @@ def align_and_resample_dataframe(df, datetime_index):
             raise ValueError('Start date of DataFrame can not be aligned with the desired index start date.')
         # Take mean at the model's frequency
         df = df.resample(datetime_index.freq).mean()
+        df.index.freq = datetime_index.freq
     else:
         raise NotImplementedError('Upsampling DataFrame not implemented.')
 
