@@ -6,8 +6,6 @@ import os
 
 class H5Store(object):
     def __init__(self, filename, filter_kwds=None, mode="r", title='', metadata=None, create_directories=False):
-        filter_kwds = filter_kwds
-        mode = mode
         self._opened = False
         if isinstance(filename, basestring):
             # filename is a path to open

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import os
 
-__all__ = ['core', 'xmlutils']
-
 __version__ = "0.5dev"
 
 
