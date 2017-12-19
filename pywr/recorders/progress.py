@@ -1,8 +1,25 @@
 from pywr.recorders import Recorder
 import time
+import logging
+logger = logging.getLogger(__name__)
+
 
 class ProgressRecorder(Recorder):
-    """Simple text-based progress notifications"""
+    """Simple text-based progress notifications
+
+    Parameters
+    ----------
+    print_func : callable or None
+        The function to call when updating progress. The function is given a single str argument that
+        contains the progress message. Defaults to `logger.info`.
+    """
+    def __init__(self, *args, **kwargs):
+        print_func = kwargs.pop('print_func', None)
+        super(ProgressRecorder, self).__init__(*args, **kwargs)
+        if print_func is None:
+            print_func = logger.info
+        self.print_func = print_func
+
     def setup(self):
         self.last_progress = -1
         self.last_timestep = 0
@@ -33,9 +50,9 @@ class ProgressRecorder(Recorder):
 
     def update_progress(self, progress, speed=None):
         if speed is not None:
-            print("Completed {}%, {:.0f} steps/second".format(progress, speed))
+            self.print_func("Completed {}%, {:.0f} steps/second".format(progress, speed))
         else:
-            print("Completed {}%".format(progress))
+            self.print_func("Completed {}%".format(progress))
 
 class JupyterProgressRecorder(ProgressRecorder):
     """Graphical progress bar for use in Jupyter notebooks"""
