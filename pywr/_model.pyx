@@ -8,6 +8,9 @@ from packaging.version import parse as parse_version
 import warnings
 import inspect
 import time
+import logging
+logger = logging.getLogger(__name__)
+
 
 import pywr
 from pywr.timestepper import Timestepper
@@ -133,6 +136,7 @@ class Model(object):
 
         Raises an Exception if the model is invalid.
         """
+        logger.info("Checking model ...")
         for node in self.nodes:
             node.check()
         self.check_graph()
@@ -239,12 +243,14 @@ class Model(object):
         """
         if isinstance(data, basestring):
             # argument is a filename
+            logger.info('Loading model from file: "{}"'.format(path))
             path = data
             with open(path, "r") as f:
                 data = f.read()
             return cls.loads(data, model, path, solver)
 
         if hasattr(data, 'read'):
+            logger.info('Loading model from file-like object.')
             # argument is a file-like object
             data = data.read()
             return cls.loads(data, model, path, solver)
@@ -389,6 +395,7 @@ class Model(object):
             node_to = model.nodes[node_to_name]
             node_from.connect(node_to, from_slot=slot_from, to_slot=slot_to)
 
+        logger.info('Model load complete!')
         return model
 
     @classmethod
@@ -549,6 +556,7 @@ class Model(object):
     def run(self):
         """Run the model
         """
+        logger.info('Start model run ...')
         t0 = time.time()
         timestep = None
         try:
@@ -588,11 +596,13 @@ class Model(object):
             version=pywr.__version__,
             git_hash=pywr.__git_hash__,
         )
+        logger.info('Model run complete!')
         return result
 
     def setup(self, ):
         """Setup the model for the first time or if it has changed since
         last run."""
+        logger.info('Setting up model ...')
         self.scenarios.setup()
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
@@ -605,9 +615,11 @@ class Model(object):
         self.solver.setup(self)
         self.reset()
         self.dirty = False
+        logger.info('Setting up complete!')
 
     def reset(self, start=None):
         """Reset model to it's initial conditions"""
+        logger.info('Resetting model ...')
         length_changed = self.timestepper.reset(start=start)
         for node in self.nodes:
             if length_changed:
@@ -621,6 +633,7 @@ class Model(object):
             component.reset()
 
         self.solver.reset()
+        logger.info('Reset complete!')
 
     def before(self):
         """ Perform initialisation work before solve on each timestep.
