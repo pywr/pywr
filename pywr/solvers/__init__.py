@@ -19,7 +19,7 @@ class Solver(object):
         pass
     def setup(self, model):
         raise NotImplementedError('Solver should be subclassed to provide setup()')
-    def solve(self, model, timestep):
+    def solve(self, model):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
     def reset(self):
         raise NotImplementedError('Solver should be subclassed to provide reset()')
