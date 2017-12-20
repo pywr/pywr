@@ -20,8 +20,11 @@ build:
   script_env:
     - FEATURE_OLDGLIBC [linux]
 
-  {% if OLDGLIBC %}
   features:
+    - vc9  # [win and py27]
+    - vc10  # [win and py34]
+    - vc14  # [win and (py35 or py36)]
+  {% if OLDGLIBC %}
     - oldglibc
   {% endif %}
 
