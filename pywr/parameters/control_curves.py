@@ -3,11 +3,26 @@ This module contains a set of pywr._core.Parameter subclasses for defining contr
 """
 
 from ._control_curves import BaseControlCurveParameter, ControlCurveInterpolatedParameter, ControlCurveIndexParameter
-from .parameters import parameter_registry, load_parameter_values, load_parameter, Parameter
+from .parameters import parameter_registry, load_parameter_values, load_parameter, Parameter, parameter_property
 import numpy as np
 
 
 class PiecewiseLinearControlCurve(Parameter):
+    """Piecewise function composed of two linear curves
+    
+    Parameters
+    ----------
+    model : Model
+    storage_node : Storage
+    control_curve : Parameter
+    values : [(float, float), (float, float)]
+        Iterable of 2-tuples, representing the lower and upper value of the
+        linear interpolation below and above the control curve, respectively.
+    minimum : float
+        The storage considered the bottom of the lower curve, 0-1 (default=0).
+    maximum : float
+        The storage considered the top of the upper curve, 0-1 (default=1).
+    """
     def __init__(self, model, storage_node, control_curve, values, minimum=0.0, maximum=1.0, *args, **kwargs):
         super(PiecewiseLinearControlCurve, self).__init__(model, *args, **kwargs)
         self._control_curve = None
@@ -18,16 +33,7 @@ class PiecewiseLinearControlCurve(Parameter):
         self.minimum = minimum
         self.maximum = maximum
 
-    def control_curve():
-        def fget(self):
-            return self._control_curve
-        def fset(self, control_curve):
-            if self._control_curve:
-                self.children.remove(self._control_curve)
-            self.children.add(control_curve)
-            self._control_curve = control_curve
-        return locals()
-    control_curve = property(**control_curve())
+    control_curve = parameter_property("_control_curve")
 
     def value(self, timestamp, scenario_index):
         control_curve = self._control_curve.get_value(scenario_index)
