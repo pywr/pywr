@@ -33,7 +33,7 @@ requirements:
     - numpy x.x
     - cython
     - glpk
-    - lpsolve
+    - lp_solve
     - future
     - packaging
     {% if OLDGLIBC %}
@@ -45,7 +45,7 @@ requirements:
     - pandas
     - networkx
     - glpk
-    - lpsolve
+    - lp_solve
     - pytables
     - xlrd
     - scipy
