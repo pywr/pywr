@@ -20,8 +20,11 @@ build:
   script_env:
     - FEATURE_OLDGLIBC [linux]
 
-  {% if OLDGLIBC %}
   features:
+    - vc9  # [win and py27]
+    - vc10  # [win and py34]
+    - vc14  # [win and (py35 or py36)]
+  {% if OLDGLIBC %}
     - oldglibc
   {% endif %}
 
@@ -29,11 +32,16 @@ build:
 requirements:
   build:
     - python
+    - vc 9  # [win and py27]
+    - vc 10  # [win and py34]
+    - vc 14  # [win and (py35 or py36)]
     - setuptools
-    - numpy x.x
+    - numpy 1.8.*  # [not (win and (py35 or py36))]
+    - numpy 1.9.*  # [win and py35]
+    - numpy 1.11.*  # [win and py36]
     - cython
     - glpk
-    - lpsolve
+    - lp_solve
     - future
     - packaging
     {% if OLDGLIBC %}
@@ -41,11 +49,16 @@ requirements:
     {% endif %}
   run:
     - python
-    - numpy x.x
+    - vc 9  # [win and py27]
+    - vc 10  # [win and py34]
+    - vc 14  # [win and (py35 or py36)]
+    - numpy >=1.8  # [not (win and (py35 or py36))]
+    - numpy >=1.9  # [win and py35]
+    - numpy >=1.11  # [win and py36]
     - pandas
     - networkx
     - glpk
-    - lpsolve
+    - lp_solve
     - pytables
     - xlrd
     - scipy

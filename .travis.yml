@@ -8,9 +8,9 @@ cache:
 
 env:
     matrix:
-        - CONDA_NPY=111  CONDA_PY=27
-        - CONDA_NPY=111  CONDA_PY=34
-        - CONDA_NPY=113  CONDA_PY=36
+        - CONDA_PY=27
+        - CONDA_PY=34
+        - CONDA_PY=36
 
 install:
     - |
@@ -24,7 +24,6 @@ install:
       fi
       export PATH=${HOME}/miniconda3/bin:$PATH
 
-      conda config --add channels snorfalorpagus
       conda config --add channels conda-forge
       
       conda update --yes conda
