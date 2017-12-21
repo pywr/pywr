@@ -11,7 +11,7 @@ cdef class PiecewiseLinearControlCurve(Parameter):
     cdef public double minimum
     cdef public double maximum
 
-cpdef _interpolate(double current_position, double lower_bound, double upper_bound, double lower_value, double upper_value)
+cpdef double _interpolate(double current_position, double lower_bound, double upper_bound, double lower_value, double upper_value)
 
 cdef class BaseControlCurveParameter(Parameter):
     cdef AbstractStorage _storage_node

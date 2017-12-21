@@ -1,3 +1,4 @@
+import cython
 import numpy as np
 cimport numpy as np
 from .parameters import parameter_registry, ConstantParameter, parameter_property
@@ -75,7 +76,9 @@ cdef class PiecewiseLinearControlCurve(Parameter):
 
 PiecewiseLinearControlCurve.register()
 
-cpdef _interpolate(double current_position, double lower_bound, double upper_bound, double lower_value, double upper_value):
+
+@cython.cdivision(True)
+cpdef double _interpolate(double current_position, double lower_bound, double upper_bound, double lower_value, double upper_value):
     """Interpolation function used by PiecewiseLinearControlCurve"""
     cdef double factor
     cdef double value
@@ -89,6 +92,7 @@ cpdef _interpolate(double current_position, double lower_bound, double upper_bou
         factor = (current_position - lower_bound) / (upper_bound - lower_bound)
         value = lower_value + (upper_value - lower_value) * factor
     return value
+
 
 cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
