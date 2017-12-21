@@ -2,7 +2,7 @@ from .._core cimport Timestep, Scenario, ScenarioIndex, AbstractNode, Storage, A
 from ._parameters cimport Parameter, IndexParameter
 
 cdef class PiecewiseLinearControlCurve(Parameter):
-    cdef public Storage storage_node
+    cdef public AbstractStorage storage_node
     cdef Parameter _control_curve
     cdef public double below_lower
     cdef public double below_upper
