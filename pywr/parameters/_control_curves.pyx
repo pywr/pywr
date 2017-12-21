@@ -245,3 +245,170 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         control_curves = [load_parameter(model, data) for data in data["control_curves"]]
         return cls(model, storage_node, control_curves)
 ControlCurveIndexParameter.register()
+
+
+cdef class ControlCurveParameter(BaseControlCurveParameter):
+    """ A generic multi-levelled control curve Parameter.
+
+     This parameter can be used to return different values when a `Storage` node's current
+      volumes is at different percentage of `max_volume` relative to predefined control curves.
+      Control curves must be defined in the range [0, 1] corresponding to 0% and 100% volume.
+
+     By default this parameter returns an integer sequence from zero if the first control curve
+      is passed, and incrementing by one for each control curve (or "level") the `Storage` node
+      is below.
+
+    Parameters
+    ----------
+    storage_node : `Storage`
+        An optional `Storage` node that can be used to query the current percentage volume.
+    control_curves : `float`, `int` or `Parameter` object, or iterable thereof
+        The position of the control curves. Internally `float` or `int` types are cast to
+        `ConstantParameter`. Multiple values correspond to multiple control curve positions.
+        These should be specified in descending order.
+    values : array_like or `None`, optional
+        The values to return if the `Storage` object is above the correspond control curve.
+        I.e. the first value is returned if the current volume is above the first control curve,
+        and second value if above the second control curve, and so on. The length of `values`
+        must be one more than than the length of `control_curves`.
+    parameters : iterable `Parameter` objects or `None`, optional
+        If `values` is `None` then `parameters` can specify a `Parameter` object to use at level
+        of the control curves. In the same way as `values` the first `Parameter` is used if
+        `Storage` is above the first control curve, and second `Parameter` if above the
+        second control curve, and so on.
+    variable_indices : iterable of ints, optional
+        A list of indices that correspond to items in `values` which are to be considered variables
+         when `self.is_variable` is True. This mechanism allows a subset of `values` to be variable.
+    lower_bounds, upper_bounds : array_like, optional
+        Bounds of the variables. The length must correspond to the length of `variable_indices`, i.e.
+         there are bounds for each index to be considered as a variable.
+
+    Notes
+    -----
+    If `values` and `parameters` are both `None`, the default, then `values` defaults to
+     a range of integers, starting at zero, one more than length of `control_curves`.
+
+    See also
+    --------
+    `BaseControlCurveParameter`
+
+    """
+    def __init__(self, model, storage_node, control_curves, values=None, parameters=None,
+                 variable_indices=None, upper_bounds=None, lower_bounds=None, **kwargs):
+        super(ControlCurveParameter, self).__init__(model, storage_node, control_curves, **kwargs)
+        # Expected number of values is number of control curves plus one.
+        self.size = nvalues = len(self.control_curves) + 1
+        self.parameters = None
+        if values is not None:
+            if len(values) != nvalues:
+                raise ValueError('Length of values should be one more than the number of '
+                                 'control curves ({}).'.format(nvalues))
+            self.values = values
+        elif parameters is not None:
+            if len(parameters) != nvalues:
+                raise ValueError('Length of parameters should be one more than the number of '
+                                 'control curves ({}).'.format(nvalues))
+            self.parameters = list(parameters)
+            for p in self.parameters:
+                p.parents.add(self)
+        else:
+            # No values or parameters given, default to sequence of integers
+            self.values = np.arange(nvalues)
+
+        # Default values
+        self._upper_bounds = None
+        self._lower_bounds = None
+
+        if variable_indices is not None:
+            self.variable_indices = variable_indices
+            self.size = len(variable_indices)
+        else:
+            self.size = 0
+        # Bounds for use as a variable (i.e. when self.is_variable = True)
+        if upper_bounds is not None:
+            if self.values is None or variable_indices is None:
+                raise ValueError('Upper bounds can only be specified if `values` and `variable_indices` '
+                                 'is not `None`.')
+            if len(upper_bounds) != self.size:
+                raise ValueError('Length of upper_bounds should be equal to the length of `variable_indices` '
+                                 '({}).'.format(self.size))
+            self._upper_bounds = np.array(upper_bounds)
+
+        if lower_bounds is not None:
+            if self.values is None or variable_indices is None:
+                raise ValueError('Lower bounds can only be specified if `values` and `variable_indices` '
+                                 'is not `None`.')
+            if len(lower_bounds) != self.size:
+                raise ValueError('Length of lower_bounds should be equal to the length of `variable_indices` '
+                                 '({}).'.format(self.size))
+            self._lower_bounds = np.array(lower_bounds)
+
+    property values:
+        def __get__(self):
+            return np.asarray(self._values)
+        def __set__(self, values):
+            self._values = np.asarray(values, dtype=np.float64)
+
+    property variable_indices:
+        def __get__(self):
+            return np.array(self._variable_indices)
+        def __set__(self, values):
+            self._variable_indices = np.array(values, dtype=np.int)
+
+    @classmethod
+    def load(cls, model, data):
+        control_curves = super(ControlCurveParameter, cls)._load_control_curves(model, data)
+        storage_node = super(ControlCurveParameter, cls)._load_storage_node(model, data)
+
+        parameters = None
+        values = None
+        if 'values' in data:
+            values = load_parameter_values(model, data)
+        elif 'parameters' in data:
+            # Load parameters
+            parameters_data = data['parameters']
+            parameters = []
+            for pdata in parameters_data:
+                parameters.append(load_parameter(model, pdata))
+
+        return cls(model, storage_node, control_curves, values=values, parameters=parameters)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = scenario_index.global_id
+        cdef int j
+        cdef AbstractStorage node
+        cdef double cc
+        cdef Parameter param, cc_param
+        node = self.node if self.storage_node is None else self.storage_node
+
+        # Assumes control_curves is sorted highest to lowest
+        for j, cc_param in enumerate(self.control_curves):
+            cc = cc_param.get_value(scenario_index)
+            # If level above control curve then return this level's value
+            if node._current_pc[i] >= cc:
+                if self.parameters is not None:
+                    param = self.parameters[j]
+                    return param.get_value(scenario_index)
+                else:
+                    return self._values[j]
+
+        if self.parameters is not None:
+            param = self.parameters[-1]
+            return param.get_value(scenario_index)
+        else:
+            return self._values[-1]
+
+    cpdef update(self, double[:] values):
+        cdef int i
+        cdef double v
+        if self.size != 0:
+            for i, v in zip(self.variable_indices, values):
+                self._values[i] = v
+
+    cpdef double[:] lower_bounds(self):
+        return self._lower_bounds
+
+    cpdef double[:] upper_bounds(self):
+        return self._upper_bounds
+
+ControlCurveParameter.register()

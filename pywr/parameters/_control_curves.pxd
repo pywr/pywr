@@ -11,3 +11,11 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
 cdef class ControlCurveIndexParameter(IndexParameter):
     cdef public AbstractStorage storage_node
     cdef list _control_curves
+
+
+cdef class ControlCurveParameter(BaseControlCurveParameter):
+    cdef double[:] _values
+    cdef public list parameters
+    cdef int[:] _variable_indices
+    cdef double[:] _upper_bounds
+    cdef double[:] _lower_bounds
