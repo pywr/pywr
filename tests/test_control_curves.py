@@ -3,6 +3,7 @@ from __future__ import division
 from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep, Output
 from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter, MonthlyProfileControlCurveParameter, PiecewiseLinearControlCurve
+from pywr.parameters._control_curves import _interpolate
 from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, assert_rec
 import numpy as np
 import pandas as pd
@@ -71,7 +72,7 @@ class TestPiecewiseLinearControlCurve:
     ])
     def test_interpolation(self, configuration, expected_value):
         current_position, lower_bound, upper_bound, lower_value, upper_value = configuration
-        assert PiecewiseLinearControlCurve._interpolate(current_position, lower_bound, upper_bound, lower_value, upper_value) == expected_value
+        assert _interpolate(current_position, lower_bound, upper_bound, lower_value, upper_value) == expected_value
 
     def test_json(self, simple_storage_model):
         model = simple_storage_model
