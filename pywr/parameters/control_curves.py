@@ -3,8 +3,83 @@ This module contains a set of pywr._core.Parameter subclasses for defining contr
 """
 
 from ._control_curves import BaseControlCurveParameter, ControlCurveInterpolatedParameter, ControlCurveIndexParameter
-from .parameters import parameter_registry, load_parameter_values, load_parameter, Parameter
+from .parameters import parameter_registry, load_parameter_values, load_parameter, Parameter, parameter_property
 import numpy as np
+
+
+class PiecewiseLinearControlCurve(Parameter):
+    """Piecewise function composed of two linear curves
+    
+    Parameters
+    ----------
+    model : Model
+    storage_node : Storage
+    control_curve : Parameter
+    values : [(float, float), (float, float)]
+        Iterable of 2-tuples, representing the lower and upper value of the
+        linear interpolation below and above the control curve, respectively.
+    minimum : float
+        The storage considered the bottom of the lower curve, 0-1 (default=0).
+    maximum : float
+        The storage considered the top of the upper curve, 0-1 (default=1).
+    """
+    def __init__(self, model, storage_node, control_curve, values, minimum=0.0, maximum=1.0, *args, **kwargs):
+        super(PiecewiseLinearControlCurve, self).__init__(model, *args, **kwargs)
+        self._control_curve = None
+        self.storage_node = storage_node
+        self.control_curve = control_curve
+        self.below_lower, self.below_upper = values[0]
+        self.above_lower, self.above_upper = values[1]
+        self.minimum = minimum
+        self.maximum = maximum
+
+    control_curve = parameter_property("_control_curve")
+
+    def value(self, timestamp, scenario_index):
+        control_curve = self._control_curve.get_value(scenario_index)
+        current_pc = self.storage_node.current_pc[scenario_index.global_id]
+        if current_pc > control_curve:
+            value = self._interpolate(current_pc, control_curve, self.maximum, self.above_lower, self.above_upper)
+        else:
+            value = self._interpolate(current_pc, self.minimum, control_curve, self.below_lower, self.below_upper)
+        return value
+
+    @staticmethod
+    def _interpolate(current_position, lower_bound, upper_bound, lower_value, upper_value):
+        if current_position < lower_bound:
+            value = lower_value
+        elif current_position > upper_bound:
+            value = upper_value
+        else:
+            try:
+                factor = (current_position - lower_bound) / (upper_bound - lower_bound)
+            except ZeroDivisionError:
+                factor = 1.0
+            value = lower_value + (upper_value - lower_value) * factor
+        return value
+
+    def reset(self):
+        super(PiecewiseLinearControlCurve, self).setup()
+        assert self.maximum > self.minimum
+        assert np.isfinite(self.below_lower)
+        assert np.isfinite(self.below_upper)
+        assert np.isfinite(self.above_lower)
+        assert np.isfinite(self.above_upper)
+
+    @classmethod
+    def load(cls, model, data):
+        storage_node = model._get_node_from_ref(model, data["storage_node"])
+        control_curve = load_parameter(model, data["control_curve"])
+        values = data["values"]
+        kwargs = {}
+        if "minimum" in data.keys():
+            kwargs["minimum"] = data["minimum"]
+        if "maximum" in data.keys():
+            kwargs["maximum"] = data["maximum"]
+        parameter = cls(model, storage_node, control_curve, values, **kwargs)
+        return parameter
+
+PiecewiseLinearControlCurve.register()
 
 
 class ControlCurveParameter(BaseControlCurveParameter):

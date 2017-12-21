@@ -8,7 +8,7 @@ from .events import *
 from .calibration import *
 from past.builtins import basestring
 from pywr.h5tools import H5Store
-from ..parameters import load_parameter
+from ..parameters import load_parameter, parameter_property
 import warnings
 
 class ParameterNameWarning(UserWarning):
@@ -44,9 +44,12 @@ class AssertionRecorder(Recorder):
         pywr.recorders.assert_rec
         """
         super(AssertionRecorder, self).__init__(model, **kwargs)
+        self._parameter = None
         self.parameter = parameter
         self.expected_data = expected_data
         self.expected_func = expected_func
+
+    parameter = parameter_property("_parameter")
 
     def setup(self):
         super(AssertionRecorder, self).setup()
@@ -60,11 +63,11 @@ class AssertionRecorder(Recorder):
                 expected_value = self.expected_func(timestep, scenario_index)
             elif self.expected_data is not None:
                 expected_value = self.expected_data[timestep.index, scenario_index.global_id]
-            value = self.parameter.get_value(scenario_index)
+            value = self._parameter.get_value(scenario_index)
             try:
                 np.testing.assert_allclose(value, expected_value)
             except AssertionError:
-                raise AssertionError("Expected {}, got {} from \"{}\" [timestep={}, scenario={}]".format(expected_value, value, self.parameter.name, timestep.index, scenario_index.global_id))
+                raise AssertionError("Expected {}, got {} from \"{}\" [timestep={}, scenario={}]".format(expected_value, value, self._parameter.name, timestep.index, scenario_index.global_id))
 
     def finish(self):
         super(AssertionRecorder, self).finish()
