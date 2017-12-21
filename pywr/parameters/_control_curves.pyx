@@ -1,11 +1,94 @@
 import numpy as np
 cimport numpy as np
-from .parameters import parameter_registry, ConstantParameter
+from .parameters import parameter_registry, ConstantParameter, parameter_property
 from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter
 
 # http://stackoverflow.com/a/20031818/1300519
 cdef extern from "numpy/npy_math.h":
     bint npy_isnan(double x)
+
+cdef class PiecewiseLinearControlCurve(Parameter):
+    """Piecewise function composed of two linear curves
+    
+    Parameters
+    ----------
+    model : Model
+    storage_node : Storage
+    control_curve : Parameter
+    values : [(float, float), (float, float)]
+        Iterable of 2-tuples, representing the lower and upper value of the
+        linear interpolation below and above the control curve, respectively.
+    minimum : float
+        The storage considered the bottom of the lower curve, 0-1 (default=0).
+    maximum : float
+        The storage considered the top of the upper curve, 0-1 (default=1).
+    """
+    def __init__(self, model, storage_node, control_curve, values, minimum=0.0, maximum=1.0, *args, **kwargs):
+        super(PiecewiseLinearControlCurve, self).__init__(model, *args, **kwargs)
+        self._control_curve = None
+        self.storage_node = storage_node
+        self.control_curve = control_curve
+        self.below_lower, self.below_upper = values[0]
+        self.above_lower, self.above_upper = values[1]
+        self.minimum = minimum
+        self.maximum = maximum
+
+    property control_curve:
+        def __get__(self):
+            return self._control_curve
+        def __set__(self, parameter):
+            if self._control_curve:
+                self.children.remove(self._control_curve)
+            self.children.add(parameter)
+            self._control_curve = parameter
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef double value
+        cdef double control_curve = self._control_curve.get_value(scenario_index)
+        cdef double current_pc = self.storage_node._current_pc[scenario_index.global_id]
+        if current_pc > control_curve:
+            value = _interpolate(current_pc, control_curve, self.maximum, self.above_lower, self.above_upper)
+        else:
+            value = _interpolate(current_pc, self.minimum, control_curve, self.below_lower, self.below_upper)
+        return value
+
+    cpdef reset(self):
+        super(PiecewiseLinearControlCurve, self).setup()
+        assert self.maximum > self.minimum
+        assert np.isfinite(self.below_lower)
+        assert np.isfinite(self.below_upper)
+        assert np.isfinite(self.above_lower)
+        assert np.isfinite(self.above_upper)
+
+    @classmethod
+    def load(cls, model, data):
+        storage_node = model._get_node_from_ref(model, data["storage_node"])
+        control_curve = load_parameter(model, data["control_curve"])
+        values = data["values"]
+        kwargs = {}
+        if "minimum" in data.keys():
+            kwargs["minimum"] = data["minimum"]
+        if "maximum" in data.keys():
+            kwargs["maximum"] = data["maximum"]
+        parameter = cls(model, storage_node, control_curve, values, **kwargs)
+        return parameter
+
+PiecewiseLinearControlCurve.register()
+
+cpdef _interpolate(double current_position, double lower_bound, double upper_bound, double lower_value, double upper_value):
+    """Interpolation function used by PiecewiseLinearControlCurve"""
+    cdef double factor
+    cdef double value
+    if current_position < lower_bound:
+        value = lower_value
+    elif current_position > upper_bound:
+        value = upper_value
+    elif upper_bound == lower_bound:
+        value = lower_value
+    else:
+        factor = (current_position - lower_bound) / (upper_bound - lower_bound)
+        value = lower_value + (upper_value - lower_value) * factor
+    return value
 
 cdef class BaseControlCurveParameter(Parameter):
     """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter
