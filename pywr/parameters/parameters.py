@@ -1,5 +1,6 @@
 import os
 import datetime
+from ..parameter_property import parameter_property
 from ._parameters import (
     Parameter, parameter_registry, ConstantParameter,
     ConstantScenarioParameter, AnnualHarmonicSeriesParameter,
@@ -9,7 +10,8 @@ from ._parameters import (
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
     align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter,
-    load_parameter, load_parameter_values, load_dataframe)
+    NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
+    DeficitParameter, load_parameter, load_parameter_values, load_dataframe)
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
@@ -17,31 +19,6 @@ from past.builtins import basestring
 import numpy as np
 from scipy.interpolate import interp1d
 import pandas
-
-
-def parameter_property(private_name):
-    """Factory for parameter properties
-
-    This property handles adding/removing parameters from the tree.
-
-    Usage
-    =====
-
-    class NewParameter(Parameter):
-        control_curve = parameter_property("_control_curve")
-    """
-    def parameter():
-        def fget(self):
-            return getattr(self, private_name)
-        def fset(self, parameter):
-            old_parameter = getattr(self, private_name)
-            if old_parameter:
-                self.children.remove(old_parameter)
-            self.children.add(parameter)
-            setattr(self, private_name, parameter)
-        return {"fget": fget, "fset": fset}
-    parameter = property(**parameter())
-    return parameter
 
 
 class FunctionParameter(Parameter):

@@ -1,5 +1,4 @@
 from ._recorders import Recorder
-from pywr.parameters import Parameter, IndexParameter
 import numpy as np
 import pandas
 
@@ -80,6 +79,8 @@ class EventRecorder(Recorder):
     def after(self):
         # Current timestep
         ts = self.model.timestepper.current
+
+        from pywr.parameters import Parameter, IndexParameter
 
         if isinstance(self.threshold, Recorder):
             all_triggered = np.array(self.threshold.values(), dtype=np.int)

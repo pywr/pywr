@@ -16,7 +16,7 @@ Contents:
    tutorial.rst
    formulation.rst
    json.rst
-   Python API reference <api/modules.rst>
+   Python API reference <api/pywr.rst>
    cookbook/demand_saving.rst
    cookbook/dataframes.rst
    cookbook/aggregated_parameter.rst

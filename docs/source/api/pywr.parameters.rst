@@ -1,38 +1,92 @@
-pywr.parameters package
-=======================
+Parameters
+==========
 
-Submodules
-----------
-
-pywr.parameters.control_curves module
--------------------------------------
-
-.. automodule:: pywr.parameters.control_curves
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pywr.parameters.licenses module
--------------------------------
-
-.. automodule:: pywr.parameters.licenses
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pywr.parameters.parameters module
----------------------------------
-
-.. automodule:: pywr.parameters.parameters
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. currentmodule:: pywr.parameters
 
 
-Module contents
----------------
+Base Parameter class
+--------------------
 
-.. automodule:: pywr.parameters
-    :members:
-    :undoc-members:
-    :show-inheritance:
+All the `Parameter` subclass in `pywr` are descended from a common base class.
+
+.. autosummary::
+   :toctree: generated/
+
+   Parameter
+   IndexParameter
+
+
+Simple parameters
+-----------------
+
+.. autosummary::
+   :toctree: generated/
+
+   ConstantParameter
+   ConstantScenarioParameter
+
+
+Combining multiple parameters
+-----------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   AggregatedParameter
+   AggregatedIndexParameter
+   NegativeParameter
+   MaxParameter
+   NegativeMaxParameter
+   MinParameter
+   NegativeMinParameter
+
+Annual profile parameters
+-------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   DailyProfileParameter
+   WeeklyProfileParameter
+   MonthlyProfileParameter
+   ScenarioMonthlyProfileParameter
+   ArrayIndexedScenarioMonthlyFactorsParameter
+
+Dataframe parameter
+-------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   DataFrameParameter
+
+
+HDF5 Parameter
+--------------
+.. autosummary::
+   :toctree: generated/
+
+   TablesArrayParameter
+
+
+Array based parameters
+-------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   ArrayIndexedParameter
+   ArrayIndexedScenarioParameter
+   IndexedArrayParameter
+
+
+Other parameters
+----------------
+
+.. autosummary::
+   :toctree: generated/
+
+   AnnualHarmonicSeriesParameter
+   DeficitParameter
+
+

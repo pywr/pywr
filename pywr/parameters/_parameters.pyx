@@ -525,6 +525,17 @@ cdef inline bint is_leap_year(int year):
     return ((year & 3) == 0 and ((year % 25) != 0 or (year & 15) == 0))
 
 cdef class DailyProfileParameter(Parameter):
+    """ An annual profile consisting of daily values.
+
+    This parameter provides a repeating annual profile with a daily resolution. A total of 366 values
+    must be provided. These values are coerced to a `numpy.array` internally.
+
+    Parameters
+    ----------
+    values : iterable, array
+        The 366 values that represent the daily profile.
+
+    """
     def __init__(self, model, values, *args, **kwargs):
         super(DailyProfileParameter, self).__init__(model, *args, **kwargs)
         v = np.squeeze(np.array(values))
@@ -747,7 +758,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
      days. The calculation is performed using the Julien day of the year minus 1
      This causes a small discontinuity in non-leap years.
 
-    .. math:: f(t) = A + \sum_{n=1}^N A_n\cdot \cos(\tfrac{2\pi nt}{365}+\phi_n)
+    .. math:: f(t) = A + \sum_{n=1}^N A_n\cdot \cos((2\pi nt)/365+\phi_n)
 
     Parameters
     ----------

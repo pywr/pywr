@@ -13,7 +13,6 @@ Several different evaluation metrics are implemented in this module. Many are
 
 """
 from .recorders import NumpyArrayNodeRecorder
-from pywr.parameters import align_and_resample_dataframe
 import numpy as np
 
 
@@ -30,6 +29,7 @@ class AbstractComparisonNodeRecorder(NumpyArrayNodeRecorder):
     def setup(self):
         super(AbstractComparisonNodeRecorder, self).setup()
         # Align the observed data to the model
+        from pywr.parameters import align_and_resample_dataframe
         self._aligned_observed = align_and_resample_dataframe(self.observed, self.model.timestepper.datetime_index)
 
 

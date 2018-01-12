@@ -312,11 +312,11 @@ cdef class AbstractNode:
 
 
     property recorders:
-        """ Returns a list of `Recorder` objects attached to this node.
+        """ Returns a list of `pywr.recorders.Recorder` objects attached to this node.
 
          See also
          --------
-         `Recorder`
+         pywr.recorders.Recorder
          """
         def __get__(self):
             return self._recorders
