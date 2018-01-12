@@ -43,7 +43,9 @@ script:
         cd docs
         make html
         cd ..
-        doctr deploy --no-require-master --deploy-repo pywr/pywr-docs "docs-$TRAVIS_BRANCH"
+        if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
+            doctr deploy --deploy-repo pywr/pywr-docs .
+        fi
       fi
 
 before_cache:
