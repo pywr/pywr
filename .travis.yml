@@ -43,7 +43,7 @@ script:
         cd docs
         make html
         cd ..
-        doctr deploy --no-require-master --deploy-repo pywr/pywr-docs
+        doctr deploy --no-require-master --deploy-repo pywr/pywr-docs "docs-$TRAVIS_BRANCH"
       fi
 
 before_cache:
