@@ -74,6 +74,10 @@ test:
   requires:
     - pytest
     - nbconvert
+    - doctr
+    - sphinx
+    - sphinx_rtd_theme
+    - numpydoc
   source_files:
     - tests/*
 

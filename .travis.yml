@@ -38,13 +38,8 @@ script:
       set -e
       conda build conda-recipe
       if [ "$BUILD_DOC" -eq "1" ]; then
-        echo "Building documentation!"
-        pip install doctr sphinx matplotlib sphinx_rtd_theme numpydoc
-        cd docs
-        make html
-        cd ..
         if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
-            doctr deploy --deploy-repo pywr/pywr-docs .
+            doctr deploy . --deploy-repo pywr/pywr-docs --built-docs ${SRC_DIR}/docs/build/html/
         fi
       fi
 

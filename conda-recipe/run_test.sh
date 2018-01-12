@@ -7,3 +7,8 @@ else
     PY_VER=2
 fi
 jupyter nbconvert --to html --execute --ExecutePreprocessor.kernel_name=python${PY_VER} ${SRC_DIR}/tests/notebook.ipynb
+
+echo "Building documentation!"
+cd ${SRC_DIR}/docs
+make html
+cd -
