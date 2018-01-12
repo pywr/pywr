@@ -1,15 +1,12 @@
 Pywr reference documentation.
 =============================
 
-
-
-Subpackages
------------
-
 .. toctree::
+   :maxdepth: 2
 
-    pywr.optimisation
-    pywr.parameters
-    pywr.domains
-    pywr.solvers
+   pywr.optimisation
+   pywr.parameters
+   pywr.recorders
+   pywr.domains
+   pywr.solvers
 

@@ -4,7 +4,7 @@ from ..parameter_property import parameter_property
 from ._parameters import (
     Parameter, parameter_registry, ConstantParameter,
     ConstantScenarioParameter, AnnualHarmonicSeriesParameter,
-    ArrayIndexedParameter, ConstantScenarioParameter,
+    ArrayIndexedParameter, ConstantScenarioParameter, IndexedArrayParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,

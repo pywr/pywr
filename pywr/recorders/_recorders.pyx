@@ -372,6 +372,8 @@ NumpyArrayNodeRecorder.register()
 cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
     """
     This recorder calculates a flow duration curve for each scenario.
+
+    Parameters
     ----------
     model : `pywr.core.Model`
     node : `pywr.core.Node`
@@ -447,6 +449,8 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
     """
     This recorder calculates a flow duration curve for each scenario for a given season
     specified in months.
+
+    Parameters
     ----------
     model : `pywr.core.Model`
     node : `pywr.core.Node`
@@ -508,6 +512,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         Numpy style functions that support an axis argument are supported.
     fdc_agg_func: str, optional
         Optional different function for aggregating across scenarios.
+
     """
     def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc, upper_target_fdc, scenario=None, name=None, **kwargs):
         super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
@@ -649,6 +654,8 @@ NumpyArrayStorageRecorder.register()
 cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
     """
     This recorder calculates a storage duration curve for each scenario.
+
+    Parameters
     ----------
     model : `pywr.core.Model`
     node : `pywr.core.AbstractStorage`
@@ -661,6 +668,7 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
         Numpy style functions that support an axis argument are supported.
     sdc_agg_func: str, optional
         optional different function for aggregating across scenarios.
+
     """
 
     def __init__(self, model, AbstractStorage node, percentiles, **kwargs):
@@ -879,6 +887,7 @@ RollingWindowParameterRecorder.register()
 
 cdef class MeanFlowRecorder(NodeRecorder):
     """Records the mean flow of a Node for the previous N timesteps
+
     Parameters
     ----------
     model : `pywr.core.Model`
@@ -888,6 +897,7 @@ cdef class MeanFlowRecorder(NodeRecorder):
         The number of timesteps to calculate the mean flow for
     name : str (optional)
         The name of the recorder
+
     """
     def __init__(self, model, node, timesteps=None, days=None, name=None, **kwargs):
         super(MeanFlowRecorder, self).__init__(model, node, name=name, **kwargs)

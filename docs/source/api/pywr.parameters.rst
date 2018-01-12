@@ -7,7 +7,7 @@ Parameters
 Base Parameter class
 --------------------
 
-All the `Parameter` subclass in `pywr` are descended from a common base class.
+All the `Parameter` subclasses in `pywr` are descended from a common base class.
 
 .. autosummary::
    :toctree: generated/
@@ -70,7 +70,7 @@ HDF5 Parameter
 
 
 Array based parameters
--------------------
+----------------------
 
 .. autosummary::
    :toctree: generated/
@@ -78,6 +78,17 @@ Array based parameters
    ArrayIndexedParameter
    ArrayIndexedScenarioParameter
    IndexedArrayParameter
+
+
+Control curve parameters
+------------------------
+
+.. autosummary::
+    :toctree: generated/
+
+    control_curves.BaseControlCurveParameter
+    control_curves.ControlCurveInterpolatedParameter
+    control_curves.ControlCurveIndexParameter
 
 
 Other parameters

@@ -81,6 +81,9 @@ BaseControlCurveParameter.register()
 cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     """A control curve Parameter that interpolates between three or more values
 
+    Return values are linearly interpolated between control curves, with the
+    first and last value being 100% and 0% respectively.
+
     Parameters
     ----------
     storage_node : `Storage`
@@ -94,20 +97,20 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         A list of values to return corresponding to the control curves. The
         length of the list should be 2 + len(control_curves).
 
-    Return values are linearly interpolated between control curves, with the
-    first and last value being 100% and 0% respectively.
-
-    Example
-    -------
+    Examples
+    --------
     In the example below the cost of a storage node is related to it's volume.
     At 100% full the cost is 0. Between 100% and 50% the cost is linearly
     interpolated between 0 and -5. Between 50% and 30% the cost is interpolated
     between -5 and -10. Between 30% and 0% the cost is interpolated between -10
-    and -20.
+    and -20
 
-    Volume:  100%            50%      30%       0%
-             |...............|........|..........|
-      Cost:  0.0            -5.0     -10.0   -20.0
+    ::
+
+        Volume:  100%             50%      30%       0%
+                  |----------------|--------|--------|
+          Cost:  0.0            -5.0     -10.0   -20.0
+
 
     >>> storage_node = Storage(model, "reservoir", max_volume=100, initial_volume=100)
     >>> ccs = [ConstantParameter(0.5), ConstantParameter(0.3)]
