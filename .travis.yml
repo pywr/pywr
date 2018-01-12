@@ -39,7 +39,7 @@ script:
       conda build conda-recipe
       if [ "$BUILD_DOC" -eq "1" ]; then
         echo "Building documentation!"
-        pip install doctr sphinx
+        pip install doctr sphinx matplotlib
         cd docs
         make html
         cd ..
