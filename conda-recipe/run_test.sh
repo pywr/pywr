@@ -12,6 +12,7 @@ if [ "${BUILD_DOC}" == "1" ]; then
     echo "Building documentation!"
     cd ${SRC_DIR}/docs
     make html
-    cp -r ${SRC_DIR}/docs/build/html ${HOME}/pywr/docs/html
+    mkdir -p ${HOME}/pywr/docs
+    cp -r ${SRC_DIR}/docs/build/html ${HOME}/pywr/docs/
     cd -
 fi
