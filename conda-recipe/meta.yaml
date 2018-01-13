@@ -74,13 +74,17 @@ test:
   requires:
     - pytest
     - nbconvert
+    {% if BUILD_DOC %}
     - doctr
     - sphinx
     - sphinx_rtd_theme
     - numpydoc
+    {% endif %}
   source_files:
     - tests/*
+    {% if BUILD_DOC %}
     - docs/*
+    {% endif %}
 
 about:
   home: https://github.com/pywr/pywr
