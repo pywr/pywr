@@ -25,6 +25,7 @@ build:
 
   script_env:
     - FEATURE_OLDGLIBC [linux]
+    - BUILD_DOC
 
   features:
     - vc9  # [win and py27]
