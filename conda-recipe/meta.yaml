@@ -82,7 +82,6 @@ test:
     - pytest
     - nbconvert
     {% if BUILD_DOC %}
-    - doctr
     - sphinx
     - sphinx_rtd_theme
     - numpydoc

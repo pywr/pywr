@@ -40,7 +40,7 @@ script:
       if [ "$BUILD_DOC" -eq "1" ]; then
         if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
             pip install doctr
-            doctr deploy . --deploy-repo pywr/pywr-docs --built-docs ${SRC_DIR}/docs/build/html/
+            doctr deploy . --deploy-repo pywr/pywr-docs --built-docs ${HOME}/pywr/docs/html
         fi
       fi
 
