@@ -7,6 +7,12 @@
 {% set OLDGLIBC = 0 %}
 {% endif %}
 
+{% if os.environ.get("BUILD_DOC", "0") == "1" %}
+{% set BUILD_DOC = 1 %}
+{% else %}
+{% set BUILD_DOC = 0 %}
+{% endif %}
+
 package:
   name: {{ name }}
   version: {{ version }}
@@ -19,6 +25,7 @@ build:
 
   script_env:
     - FEATURE_OLDGLIBC [linux]
+    - BUILD_DOC
 
   features:
     - vc9  # [win and py27]
@@ -74,8 +81,17 @@ test:
   requires:
     - pytest
     - nbconvert
+    {% if BUILD_DOC %}
+    - sphinx
+    - sphinx_rtd_theme
+    - numpydoc
+    {% endif %}
+
   source_files:
     - tests/*
+    {% if BUILD_DOC %}
+    - docs/*
+    {% endif %}
 
 about:
   home: https://github.com/pywr/pywr

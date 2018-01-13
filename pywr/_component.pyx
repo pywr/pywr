@@ -63,14 +63,14 @@ cdef class Component:
      registering the instances on the `Model.component_graph` and
      managing the parent/children interface.
 
-    The parent/children interface, through the `Model.component_graph`
+    The parent/children interface, through the `pywr.Model.component_graph`
      is used to create a dependency tree such that the methods are
      called in the correct order. E.g. that a `before` method in
      one component that is a parent of another is called first.
 
     See also
     --------
-    `Model`
+    pywr.Model
 
     """
     def __init__(self, model, name=None, comment=None):

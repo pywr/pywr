@@ -1,40 +1,12 @@
-pywr package
-============
-
-Subpackages
------------
+Pywr reference documentation.
+=============================
 
 .. toctree::
+   :maxdepth: 2
 
-    pywr.domains
-    pywr.optimisation
-    pywr.parameters
-    pywr.solvers
+   pywr.optimisation
+   pywr.parameters
+   pywr.recorders
+   pywr.domains
+   pywr.solvers
 
-Submodules
-----------
-
-pywr.core module
-----------------
-
-.. automodule:: pywr.core
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pywr.recorders module
----------------------
-
-.. automodule:: pywr.recorders
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: pywr
-    :members:
-    :undoc-members:
-    :show-inheritance:

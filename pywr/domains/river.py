@@ -107,7 +107,7 @@ class River(RiverDomainMixin, Link):
 class RiverSplit(MultiSplitLink):
     """A split in the river network
 
-    RiverSplit is a specialised version of `MultiSplitLink` with a more convenient init method.
+    RiverSplit is a specialised version of `pywr.nodes.MultiSplitLink` with a more convenient init method.
      It is intended for a simple case of where fixed ratio of flow is required to be distributed
      to multiple downstream routes.
 
@@ -115,14 +115,14 @@ class RiverSplit(MultiSplitLink):
     ----------
     factors : iterable of floats
         The factors to force on the additional splits. Number of extra_slot is assumed to be one less
-        than the length of factors (as per `MultiSplitLink` documentation).
+        than the length of factors (as per `pywr.nodes.MultiSplitLink` documentation).
     slot_names : iterable
         The identifiers to refer to the slots when connect from this Node. Length must be one more than
          the number of extra slots required.
 
     See also
     --------
-    `MultiSplitLink`
+    pywr.nodes.MultiSplitLink
 
     """
     def __init__(self, *args, **kwargs):

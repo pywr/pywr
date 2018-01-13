@@ -8,7 +8,7 @@ from .events import *
 from .calibration import *
 from past.builtins import basestring
 from pywr.h5tools import H5Store
-from ..parameters import load_parameter, parameter_property
+from ..parameter_property import parameter_property
 import warnings
 
 class ParameterNameWarning(UserWarning):
@@ -278,6 +278,7 @@ class TablesRecorder(Recorder):
             where = None
             param = parameter
         if isinstance(param, basestring):
+            from ..parameters import load_parameter
             param = load_parameter(self.model, param)
         if not param.name:
             raise ValueError("Can only record named Parameter objects")
