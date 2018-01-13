@@ -80,6 +80,7 @@ test:
     - numpydoc
   source_files:
     - tests/*
+    - docs/*
 
 about:
   home: https://github.com/pywr/pywr
