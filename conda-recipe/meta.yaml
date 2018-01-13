@@ -7,6 +7,12 @@
 {% set OLDGLIBC = 0 %}
 {% endif %}
 
+{% if os.environ.get("BUILD_DOC", "0") == "1" %}
+{% set BUILD_DOC = 1 %}
+{% else %}
+{% set BUILD_DOC = 0 %}
+{% endif %}
+
 package:
   name: {{ name }}
   version: {{ version }}
@@ -74,12 +80,11 @@ test:
   requires:
     - pytest
     - nbconvert
-    {% if BUILD_DOC %}
     - doctr
     - sphinx
     - sphinx_rtd_theme
     - numpydoc
-    {% endif %}
+
   source_files:
     - tests/*
     {% if BUILD_DOC %}
