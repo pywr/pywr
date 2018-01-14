@@ -333,6 +333,27 @@ def test_control_curve_interpolated_json(solver):
     model.run()
 
 
+@pytest.mark.xfail(reason="Circular dependency in the JSON definition. "
+                          "See GitHub issue #380: https://github.com/pywr/pywr/issues/380")
+def test_circular_control_curve_interpolated_json(solver):
+    # this is a little hack-y, as the parameters don't provide access to their
+    # data once they've been initalised
+    model = load_model("reservoir_with_circular_cc.json", solver=solver)
+    reservoir1 = model.nodes["reservoir1"]
+    model.setup()
+    path = os.path.join(os.path.dirname(__file__), "models", "control_curve.csv")
+    control_curve = pd.read_csv(path)["Control Curve"].values
+    values = [-8, -6, -4]
+
+    @assert_rec(model, reservoir1.cost)
+    def expected_cost(timestep, si):
+        # calculate expected cost manually and compare to parameter output
+        volume_factor = reservoir1._current_pc[si.global_id]
+        cc = control_curve[timestep.index]
+        return np.interp(volume_factor, [0.0, cc, 1.0], values[::-1])
+    model.run()
+
+
 class TestMonthlyProfileControlCurveParameter:
     """ Test `MonthlyProfileControlCurveParameter` """
     def _assert_results(self, model, s, p, scale=1.0):
