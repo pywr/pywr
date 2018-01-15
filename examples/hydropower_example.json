@@ -27,10 +27,10 @@
             "max_volume": 200000,
             "initial_volume": 170000,
             "level":  {
-              "type": "interpolatedlevel",
+              "type": "interpolatedvolume",
               "node": "reservoir1",
               "volumes": [0, 25000, 50000, 75000, 100000, 150000, 200000],
-              "levels": [0, 29.2, 36.8, 42.2, 46.4, 53.1, 58.5],
+              "values": [0, 29.2, 36.8, 42.2, 46.4, 53.1, 58.5],
               "kind": "cubic"
             }
         },
@@ -98,7 +98,7 @@
             "storage_node": "reservoir1",
             "level": 35.0,
             "efficiency": 0.85,
-            "flow_unit_conversion": 0.011574074074074073
+            "flow_unit_conversion": 1e3
         },
         "catchment1_flow": {
             "type": "numpyarraynoderecorder",

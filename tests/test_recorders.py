@@ -21,7 +21,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
     EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-    SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
+    HydroPowerRecorder, SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
 from pywr.recorders.progress import ProgressRecorder
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
@@ -1396,3 +1396,79 @@ def test_progress_recorder(simple_linear_model):
     model = simple_linear_model
     rec = ProgressRecorder(model)
     model.run()
+
+
+class TestHydroPowerRecorder:
+
+    def test_constant_level(self, simple_storage_model):
+        """ Test HydroPowerRecorder """
+        m = simple_storage_model
+
+        strg = m.nodes['Storage']
+        otpt = m.nodes['Output']
+
+        strg.level = 100
+        rec = HydroPowerRecorder(m, otpt, strg)
+
+        m.setup()
+        m.step()
+
+        # First step
+        # Head: 100m
+        # Flow: 8 m3/s
+        # Power: 1000 * 9.81 * 8 * 100
+        # Energy: power * 1 day = power * 24 * 3600
+        np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 100 * 24 * 3600 * 1e-6)
+        # Second step has the same answer in this model
+        m.step()
+        np.testing.assert_allclose(rec._data[1, 0], 1000 * 9.81 * 8 * 100 * 24 * 3600 * 1e-6)
+
+    def test_varying_level(self, simple_storage_model):
+        """ Test HydroPowerRecorder with varying level on Storage node """
+        from pywr.parameters import InterpolatedVolumeParameter
+        m = simple_storage_model
+
+        strg = m.nodes['Storage']
+        otpt = m.nodes['Output']
+
+        strg.level = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
+        rec = HydroPowerRecorder(m, otpt, strg)
+
+        m.setup()
+        m.step()
+
+        # First step
+        # Head: 100m
+        # Flow: 8 m3/s
+        # Power: 1000 * 9.81 * 8 * 100
+        # Energy: power * 1 day = power * 24 * 3600
+        np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        # Second step is at a lower head
+        # Head: 70m
+        m.step()
+        np.testing.assert_allclose(rec._data[1, 0], 1000 * 9.81 * 8 * 70 * 1e-6)
+
+    def test_varying_level_with_turbine_level(self, simple_storage_model):
+        """ Test HydroPowerRecorder with varying level on Storage and defined level on the recorder """
+        from pywr.parameters import InterpolatedVolumeParameter
+        m = simple_storage_model
+
+        strg = m.nodes['Storage']
+        otpt = m.nodes['Output']
+
+        strg.level = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
+        rec = HydroPowerRecorder(m, otpt, strg, level=80)
+
+        m.setup()
+        m.step()
+
+        # First step
+        # Head: 100 - 80 = 20m
+        # Flow: 8 m3/s
+        # Power: 1000 * 9.81 * 8 * 100
+        # Energy: power * 1 day = power * 24 * 3600
+        np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 20 * 1e-6)
+        # Second step is at a lower head
+        # Head: 70 - 80: -10m (i.e. not sufficient)
+        m.step()
+        np.testing.assert_allclose(rec._data[1, 0], 1000 * 9.81 * 8 * 0 * 1e-6)
