@@ -12,6 +12,12 @@ import warnings
 
 parameter_registry = {}
 
+
+class UnutilisedDataWarning(Warning):
+    """ Simple warning to indicate that not all data has been used. """
+    pass
+
+
 cdef class Parameter(Component):
     def __init__(self, *args, is_variable=False, **kwargs):
         super(Parameter, self).__init__(*args, **kwargs)
@@ -141,8 +147,13 @@ def align_and_resample_dataframe(df, datetime_index):
 
     if df_index[0] > start:
         raise ValueError('DataFrame data begins after the index start date.')
+    elif df_index[0] < start:
+        warnings.warn("Model starts after the beginning of the DataFrame. Some data is not used.", UnutilisedDataWarning)
+
     if df_index[-1] < end:
         raise ValueError('DataFrame data ends before the index end date.')
+    elif df_index[-1] > end:
+        warnings.warn("Model ends before the end of the DataFrame. Some data is not used.", UnutilisedDataWarning)
 
     # Downsampling (i.e. from high freq to lower model freq)
     if datetime_index.freq >= df_freq:
@@ -321,9 +332,11 @@ cdef class TablesArrayParameter(IndexParameter):
             if node.shape[1] < self.scenario.size:
                 raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
             elif node.shape[1] > self.scenario.size:
-                warnings.warn("The length of the second dimension of the tables Node is greater than the size of the specified Scenario. Not all data is being used!")
+                warnings.warn("The length of the second dimension of the tables Node is greater than the size of the specified Scenario. Not all data is being used!", UnutilisedDataWarning)
         if node.shape[0] < len(self.model.timestepper):
             raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
+        elif node.shape[0] > len(self.model.timestepper):
+            warnings.warn("The length of the first dimension of the tables Node is greater than the number of timesteps. Not all data is being used!", UnutilisedDataWarning)
 
         # detect data type and read into memoryview
         self._values_dbl = None
