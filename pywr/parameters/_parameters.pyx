@@ -217,8 +217,11 @@ cdef class DataFrameParameter(Parameter):
         scenario = data.pop('scenario', None)
         if scenario is not None:
             scenario = model.scenarios[scenario]
+        name = data.pop('name', None)
+        comment = data.pop('comment', None)
         df = load_dataframe(model, data)
-        return cls(model, df, scenario=scenario, **data)
+        kwargs = dict(scenario=scenario, name=name, comment=comment)
+        return cls(model, df, **kwargs)
 
 DataFrameParameter.register()
 
