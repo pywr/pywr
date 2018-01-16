@@ -73,3 +73,21 @@ Index recorders
    :toctree: generated/
 
    AnnualCountIndexParameterRecorder
+
+File recorders
+--------------
+
+.. autosummary::
+   :toctree: generated/
+
+   CSVRecorder
+   TablesRecorder
+
+
+Hydro-power recorders
+---------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   HydroPowerRecorder
