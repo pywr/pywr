@@ -1415,13 +1415,13 @@ class TestHydroPowerRecorder:
 
         # First step
         # Head: 100m
-        # Flow: 8 m3/s
+        # Flow: 8 m3/day
         # Power: 1000 * 9.81 * 8 * 100
-        # Energy: power * 1 day = power * 24 * 3600
-        np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 100 * 24 * 3600 * 1e-6)
+        # Energy: power * 1 day = power
+        np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
         # Second step has the same answer in this model
         m.step()
-        np.testing.assert_allclose(rec._data[1, 0], 1000 * 9.81 * 8 * 100 * 24 * 3600 * 1e-6)
+        np.testing.assert_allclose(rec._data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
 
     def test_varying_level(self, simple_storage_model):
         """ Test HydroPowerRecorder with varying level on Storage node """
@@ -1439,9 +1439,9 @@ class TestHydroPowerRecorder:
 
         # First step
         # Head: 100m
-        # Flow: 8 m3/s
+        # Flow: 8 m3/day
         # Power: 1000 * 9.81 * 8 * 100
-        # Energy: power * 1 day = power * 24 * 3600
+        # Energy: power * 1 day = power
         np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
         # Second step is at a lower head
         # Head: 70m
@@ -1464,9 +1464,9 @@ class TestHydroPowerRecorder:
 
         # First step
         # Head: 100 - 80 = 20m
-        # Flow: 8 m3/s
+        # Flow: 8 m3/day
         # Power: 1000 * 9.81 * 8 * 100
-        # Energy: power * 1 day = power * 24 * 3600
+        # Energy: power * 1 day = power
         np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 20 * 1e-6)
         # Second step is at a lower head
         # Head: 70 - 80: -10m (i.e. not sufficient)
