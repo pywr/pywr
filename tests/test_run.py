@@ -457,6 +457,8 @@ def test_breaklink_node(solver):
     assert_allclose(transfer.storage.volume, 0)
 
 
+@pytest.mark.xfail(reason="Circular dependency in the JSON definition. "
+                          "See GitHub issue #380: https://github.com/pywr/pywr/issues/380")
 def test_reservoir_surface_area(solver):
     from pywr.parameters import InterpolatedVolumeParameter
     model = load_model('reservoir_evaporation.json', solver=solver)
@@ -464,6 +466,15 @@ def test_reservoir_surface_area(solver):
     model.timestepper.end = "1920-01-02"
     res = model.run()
     assert isinstance(model.nodes["reservoir1"].area, InterpolatedVolumeParameter)
+    assert_allclose(model.nodes["evaporation"].flow, 2.46875)
+
+
+def test_reservoir_surface_area_without_area_property(solver):
+    """ Temporary test while the above test is not working. """
+    model = load_model('reservoir_evaporation_without_area_property.json', solver=solver)
+    model.timestepper.start = "1920-01-01"
+    model.timestepper.end = "1920-01-02"
+    res = model.run()
     assert_allclose(model.nodes["evaporation"].flow, 2.46875)
 
 
