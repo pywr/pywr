@@ -1169,7 +1169,7 @@ def load_recorder(model, data):
             # we're still in the process of loading data from JSON and
             # the parameter requested hasn't been loaded yet - do it now
             try:
-                data = model._recorders_to_load[recorder_name]
+                data = model._recorders_to_load.pop(recorder_name)
             except KeyError:
                 raise KeyError("Unknown recorder: '{}'".format(data))
             recorder = load_recorder(model, data)
