@@ -363,9 +363,19 @@ class Model(object):
                     recorders_to_load[key]["name"] = key
         model._recorders_to_load = recorders_to_load
 
+        # load the remaining nodes
+        for node_name in list(nodes_to_load.keys()):
+            node = cls._get_node_from_ref(model, node_name)
+
         # load parameters and recorders
-        for name, rdata in model._recorders_to_load.items():
-            load_recorder(model, rdata)
+        while True:
+            try:
+                name, rdata = model._recorders_to_load.popitem()
+            except KeyError:
+                break
+            recorder = load_recorder(model, rdata)
+
+
         while True:
             try:
                 name, pdata = model._parameters_to_load.popitem()
@@ -374,10 +384,6 @@ class Model(object):
             parameter = load_parameter(model, pdata, name)
             if not isinstance(parameter, BaseParameter):
                 raise TypeError("Named parameters cannot be literal values. Use type \"constant\" instead.")
-
-        # load the remaining nodes
-        for node_name in list(nodes_to_load.keys()):
-            node = cls._get_node_from_ref(model, node_name)
 
         del(model._recorders_to_load)
         del(model._parameters_to_load)
