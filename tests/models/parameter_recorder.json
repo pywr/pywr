@@ -42,7 +42,6 @@
         },
         "supply_max_recorder": {
             "type": "NumpyArrayParameterRecorder",
-            "node": "supply1",
             "parameter": "supply_max"
         }
     }

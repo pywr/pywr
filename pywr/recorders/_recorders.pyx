@@ -110,13 +110,8 @@ cdef class Recorder(Component):
 
     @classmethod
     def load(cls, model, data):
-        try:
-            node_name = data["node"]
-        except KeyError:
-            pass
-        else:
-            data["node"] = model._get_node_from_ref(model, node_name)
-        return cls(model, **data)
+        recorder = cls(model, **data)
+        return recorder
 
     @classmethod
     def register(cls):
@@ -229,11 +224,10 @@ AggregatedRecorder.register()
 
 cdef class NodeRecorder(Recorder):
     def __init__(self, model, AbstractNode node, name=None, **kwargs):
-        if name is None:
+        if name is None and node is not None:
             name = "{}.{}".format(self.__class__.__name__.lower(), node.name)
         super(NodeRecorder, self).__init__(model, name=name, **kwargs)
-        self._node = node
-        node._recorders.append(self)
+        self.node = node
 
     cpdef double[:] values(self):
         return self._node._flow
@@ -241,20 +235,31 @@ cdef class NodeRecorder(Recorder):
     property node:
         def __get__(self):
             return self._node
+        def __set__(self, value):
+            if self._node is not None:
+                self._node._recorders.remove(self)
+            self._node = value
+            if self._node is not None:
+                self._node._recorders.append(self)
 
     def __repr__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 
+    @classmethod
+    def load(cls, model, data):
+        node_name = data.pop("node", None)
+        recorder = cls(model, None, **data)
+        recorder.node = model._get_node_from_ref(model, node_name)
+        return recorder
 NodeRecorder.register()
 
 
 cdef class StorageRecorder(Recorder):
     def __init__(self, model, AbstractStorage node, name=None, **kwargs):
-        if name is None:
+        if name is None and node is not None:
             name = "{}.{}".format(self.__class__.__name__.lower(), node.name)
         super(StorageRecorder, self).__init__(model, name=name, **kwargs)
-        self._node = node
-        node._recorders.append(self)
+        self.node = node
 
     cpdef double[:] values(self):
         return self._node._volume
@@ -262,10 +267,22 @@ cdef class StorageRecorder(Recorder):
     property node:
         def __get__(self):
             return self._node
+        def __set__(self, value):
+            if self._node is not None:
+                self._node._recorders.remove(self)
+            self._node = value
+            if self._node is not None:
+                self._node._recorders.append(self)
 
     def __repr__(self):
         return '<{} on {} "{}">'.format(self.__class__.__name__, self.node, self.name)
 
+    @classmethod
+    def load(cls, model, data):
+        node_name = data.pop("node", None)
+        recorder = cls(model, None, **data)
+        recorder.node = model._get_node_from_ref(model, node_name)
+        return recorder
 StorageRecorder.register()
 
 
@@ -289,20 +306,9 @@ cdef class ParameterRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        # when the parameter being recorder is defined inline (i.e. not in the
-        # parameters section, but within the node) we need to make sure the
-        # node has been loaded first
-        try:
-            node_name = data["node"]
-        except KeyError:
-            node = None
-        else:
-            del(data["node"])
-            node = model._get_node_from_ref(model, node_name)
         from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
-        return cls(model, parameter, **data)
-
+        recorder = cls(model, parameter, **data)
 ParameterRecorder.register()
 
 
@@ -948,21 +954,6 @@ cdef class MeanFlowRecorder(NodeRecorder):
     property data:
         def __get__(self):
             return np.array(self._data, dtype=np.float64)
-
-    @classmethod
-    def load(cls, model, data):
-        name = data.get("name")
-        node = model._get_node_from_ref(model, data["node"])
-        if "timesteps" in data:
-            timesteps = int(data["timesteps"])
-        else:
-            timesteps = None
-        if "days" in data:
-            days = int(data["days"])
-        else:
-            days = None
-        return cls(model, node, timesteps=timesteps, days=days, name=name)
-
 MeanFlowRecorder.register()
 
 cdef class BaseConstantNodeRecorder(NodeRecorder):

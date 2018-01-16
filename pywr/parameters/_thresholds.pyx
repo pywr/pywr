@@ -125,11 +125,15 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("storage_node"))
+        node_name = data.pop("storage_node")
         threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
-        return cls(model, node, threshold, values=values, predicate=predicate, **data)
+        # Load nodes after class has been initialised to prevent circular loading
+        parameter = cls(model, None, threshold, values=values, predicate=predicate, **data)
+        node = model._get_node_from_ref(model, node_name)
+        parameter.storage = node
+        return parameter
 StorageThresholdParameter.register()
 
 
@@ -156,11 +160,15 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node_name = data.pop("node")
         threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
-        return cls(model, node, threshold, values=values, predicate=predicate, **data)
+        # Load nodes after class has been initialised to prevent circular loading
+        parameter = cls(model, None, threshold, values=values, predicate=predicate, **data)
+        node = model._get_node_from_ref(model, node_name)
+        parameter.node = node
+        return parameter
 NodeThresholdParameter.register()
 
 

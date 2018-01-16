@@ -40,7 +40,7 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
     @classmethod
     def load(cls, model, data):
         control_curves = super(AbstractProfileControlCurveParameter, cls)._load_control_curves(model, data)
-        storage_node = super(AbstractProfileControlCurveParameter, cls)._load_storage_node(model, data)
+        storage_node_name = data.pop("storage_node")
         values = load_parameter_values(model, data)
         # Now try loading a profile
         if 'profile' in data:
@@ -61,7 +61,12 @@ class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
         else:
             scale = 1.0
 
-        return cls(model, storage_node, control_curves, values=values, profile=profile, scale=scale)
+        # Load nodes after class has been initialised to prevent circular loading
+        parameter = cls(model, None, control_curves, values=values, profile=profile, scale=scale)
+        storage_node = model._get_node_from_ref(model, storage_node_name)
+        parameter.storage_node = storage_node
+        return parameter
+
 
     def _profile_index(self, ts, scenario_index):
         raise NotImplementedError()
