@@ -388,24 +388,31 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         max_volume = data.pop('max_volume')
         min_volume = data.pop('min_volume', 0.0)
         level = data.pop('level', None)
+        area = data.pop('area', None)
+        cost = data.pop('cost', 0.0)
 
-        # Coerce initial volume to float.
+        data.pop('type', None)
+        # Create the instance
+        node = cls(model=model, name=name, num_inputs=num_inputs, num_outputs=num_outputs, **data)
+
+        # Load the parameters after the instance has been created to prevent circular
+        # loading errors
+
+        # Try to coerce initial volume to float.
         try:
             initial_volume = float(initial_volume)
         except TypeError:
             initial_volume = load_parameter_values(model, initial_volume)
-        max_volume = load_parameter(model, max_volume)
-        min_volume = load_parameter(model, min_volume)
+        node.initial_volume = initial_volume
+        node.initial_volume_pc = initial_volume_pc
 
-        cost = data.pop('cost', 0.0)
-        data.pop('type', None)
-        node = cls(
-            model=model, name=name, num_inputs=num_inputs,
-            num_outputs=num_outputs, initial_volume=initial_volume,
-            initial_volume_pc=initial_volume_pc,
-            max_volume=max_volume, min_volume=min_volume,
-            **data
-        )
+        max_volume = load_parameter(model, max_volume)
+        if max_volume is not None:
+            node.max_volume = max_volume
+
+        min_volume = load_parameter(model, min_volume)
+        if min_volume is not None:
+            node.min_volume = min_volume
 
         cost = load_parameter(model, cost)
         if cost is None:
@@ -414,8 +421,11 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
 
         if level is not None:
             level = load_parameter(model, level)
-
         node.level = level
+
+        if area is not None:
+            area = load_parameter(model, area)
+        node.area = area
 
         return node
 
