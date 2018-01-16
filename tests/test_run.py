@@ -458,10 +458,12 @@ def test_breaklink_node(solver):
 
 
 def test_reservoir_surface_area(solver):
+    from pywr.parameters import InterpolatedVolumeParameter
     model = load_model('reservoir_evaporation.json', solver=solver)
     model.timestepper.start = "1920-01-01"
     model.timestepper.end = "1920-01-02"
     res = model.run()
+    assert isinstance(model.nodes["reservoir1"].area, InterpolatedVolumeParameter)
     assert_allclose(model.nodes["evaporation"].flow, 2.46875)
 
 
