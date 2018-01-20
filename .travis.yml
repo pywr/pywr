@@ -28,7 +28,11 @@ install:
       if [ ! -f ${HOME}/miniconda3/bin/conda ] ; then
           echo "Fresh miniconda install..."
           MINICONDA_URL="https://repo.continuum.io/miniconda"
-          MINICONDA_FILE="Miniconda3-latest-Linux-x86_64.sh"
+          if [ `uname` == "Darwin" ]; then
+              MINICONDA_FILE="Miniconda3-latest-MacOSX-x86_64.sh"
+          else
+              MINICONDA_FILE="Miniconda3-latest-Linux-x86_64.sh"
+          fi
           wget ${MINICONDA_URL}/${MINICONDA_FILE}
           rm -rf ${HOME}/miniconda3
           bash ${MINICONDA_FILE} -b -p ${HOME}/miniconda3
