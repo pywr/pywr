@@ -22,6 +22,7 @@ matrix:
         env: CONDA_PY=36 BUILD_DOC=1
       - os: osx
         env: CONDA_PY=36
+             MACOSX_DEPLOYMENT_TARGET=10.9
 
 install:
     - |
