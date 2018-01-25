@@ -109,6 +109,9 @@ extensions = [
     Extension('pywr.recorders._thresholds', ['pywr/recorders/_thresholds.pyx'],
               include_dirs=[np.get_include()],
               define_macros=define_macros),
+    Extension('pywr.recorders._hydropower', ['pywr/recorders/_hydropower.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
 
 
 ]

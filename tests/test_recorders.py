@@ -21,10 +21,11 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
     PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
     EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
     FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-    HydroPowerRecorder, SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
+    HydroPowerRecorder, TotalHydroEnergyRecorder, SeasonalFlowDurationCurveRecorder,
+    load_recorder, ParameterNameWarning)
 from pywr.recorders.progress import ProgressRecorder
 
-from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
+from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter
 from helpers import load_model
 import os
 import sys
@@ -1407,8 +1408,9 @@ class TestHydroPowerRecorder:
         strg = m.nodes['Storage']
         otpt = m.nodes['Output']
 
-        strg.level = 100
-        rec = HydroPowerRecorder(m, otpt, strg)
+        elevation = ConstantParameter(m, 100)
+        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
 
         m.setup()
         m.step()
@@ -1418,10 +1420,11 @@ class TestHydroPowerRecorder:
         # Flow: 8 m3/day
         # Power: 1000 * 9.81 * 8 * 100
         # Energy: power * 1 day = power
-        np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
         # Second step has the same answer in this model
         m.step()
-        np.testing.assert_allclose(rec._data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec_total.values()[0], 2* 1000 * 9.81 * 8 * 100 * 1e-6)
 
     def test_varying_level(self, simple_storage_model):
         """ Test HydroPowerRecorder with varying level on Storage node """
@@ -1431,8 +1434,9 @@ class TestHydroPowerRecorder:
         strg = m.nodes['Storage']
         otpt = m.nodes['Output']
 
-        strg.level = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
-        rec = HydroPowerRecorder(m, otpt, strg)
+        elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
+        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
 
         m.setup()
         m.step()
@@ -1442,11 +1446,12 @@ class TestHydroPowerRecorder:
         # Flow: 8 m3/day
         # Power: 1000 * 9.81 * 8 * 100
         # Energy: power * 1 day = power
-        np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
         # Second step is at a lower head
         # Head: 70m
         m.step()
-        np.testing.assert_allclose(rec._data[1, 0], 1000 * 9.81 * 8 * 70 * 1e-6)
+        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 70 * 1e-6)
+        np.testing.assert_allclose(rec_total.values()[0], 1000 * 9.81 * 8 * 170 * 1e-6)
 
     def test_varying_level_with_turbine_level(self, simple_storage_model):
         """ Test HydroPowerRecorder with varying level on Storage and defined level on the recorder """
@@ -1456,8 +1461,9 @@ class TestHydroPowerRecorder:
         strg = m.nodes['Storage']
         otpt = m.nodes['Output']
 
-        strg.level = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
-        rec = HydroPowerRecorder(m, otpt, strg, level=80)
+        elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
+        rec = HydroPowerRecorder(m, otpt, elevation, turbine_elevation=80)
+        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation, turbine_elevation=80)
 
         m.setup()
         m.step()
@@ -1467,8 +1473,9 @@ class TestHydroPowerRecorder:
         # Flow: 8 m3/day
         # Power: 1000 * 9.81 * 8 * 100
         # Energy: power * 1 day = power
-        np.testing.assert_allclose(rec._data[0, 0], 1000 * 9.81 * 8 * 20 * 1e-6)
+        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 20 * 1e-6)
         # Second step is at a lower head
         # Head: 70 - 80: -10m (i.e. not sufficient)
         m.step()
-        np.testing.assert_allclose(rec._data[1, 0], 1000 * 9.81 * 8 * 0 * 1e-6)
+        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 0 * 1e-6)
+        np.testing.assert_allclose(rec_total.values()[0], 1000 * 9.81 * 8 * 20 * 1e-6)
