@@ -1,4 +1,4 @@
-from pywr.parameters.transient import TransientDecisionParameter
+from pywr.parameters.transient import TransientDecisionParameter, ScenarioTreeDecisionItem, ScenarioTreeDecisionParameter
 from pywr.parameters import ConstantParameter
 from pywr.core import ScenarioIndex
 import pytest
@@ -78,5 +78,35 @@ class TestTransientDecisionParameter:
         # Finally check updating the variable works as expected
         p.update(np.array([0.8, ]))
         assert p.decision_date == pandas.to_datetime('2016-01-01')
+
+
+class TestScenarioTreeDecisionParameter:
+
+    def test_creating_simple_scenario_tree(self, simple_linear_model):
+        """ Test the basic API for creating a scenario tree
+
+        The test creates a simple tree
+
+        |-- stage 1 --|--- stage 2a ---|
+                      |--- stage 2b ---|
+
+        """
+        model = simple_linear_model
+
+        stage1 = ScenarioTreeDecisionItem('stage 1', '1930-01-01')
+
+        stage2a = ScenarioTreeDecisionItem('stage 2a', '1950-01-01')
+        stage2b = ScenarioTreeDecisionItem('stage 2b', '1950-01-01')
+
+        stage1.children.append(stage2a)
+        stage1.children.append(stage2b)
+
+        paths = (
+            (stage1, stage2a),
+            (stage1, stage2b)
+        )
+
+        for p1, p2 in zip(stage1.paths, paths):
+            assert p1 == p2
 
 

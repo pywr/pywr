@@ -125,5 +125,61 @@ class TransientDecisionParameter(Parameter):
         self.decision_date = self._feasible_dates[int(round(values[0]))]
 
 
+class ScenarioTreeDecisionItem:
+    def __init__(self, name, end_data):
+        self.name = name
+        self.end_data = end_data
+        self.children = []
 
-            
+    @property
+    def paths(self):
+        if len(self.children) == 0:
+            yield (self, )
+        else:
+            for child in self.children:
+                for path in child.paths:
+                    yield tuple([self, ] + [c for c in path])
+
+
+class ScenarioTreeDecisionParameter(Parameter):
+    def __init__(self, model, root, tree_scenario_mapping, parameter_factory, **kwargs):
+        super(ScenarioTreeDecisionParameter, self).__init__(model, **kwargs)
+        self.root = root
+        self.tree_scenario_mapping = tree_scenario_mapping
+        self.parameter_factory = parameter_factory
+
+        # Setup the parameters associated with the tree
+        self._create_scenario_parameters()
+
+    def _create_scenario_parameters(self):
+
+        parameters = {}
+        def make_parameter(scenario):
+            p = self.parameter_factory(self.model, scenario)
+            parameters[scenario] = p
+            self.children.add(p)  # Ensure that these parameters are children of this
+            # Recursively call to make parameters for children
+            for child in scenario.children:
+                make_parameter(child)
+
+        make_parameter(self.root)
+
+    def setup(self):
+
+        # During setup we take the tree to scenario mapping to make
+        # a more efficiency index based lookup array
+
+        # Cache the scenario tree paths
+        self._cached_paths = paths = tuple(p for p in self.root.paths)
+
+        nscenarios = len(self.model.scenarios.combinations)
+        path_index = np.array()
+
+
+
+    def value(self, ts, scenario_index):
+        if ts.datetime >= self.decision_date:
+            v = self.after_parameter.get_value(scenario_index)
+        else:
+            v = self.before_parameter.get_value(scenario_index)
+        return v
