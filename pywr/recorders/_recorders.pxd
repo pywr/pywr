@@ -70,7 +70,7 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
     cdef double[:, :] _memory
     cdef double[:, :] _data
 
-cdef class MeanFlowRecorder(NodeRecorder):
+cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
     cdef int position
     cdef public int timesteps
     cdef public int days
@@ -84,6 +84,9 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
     pass
 
 cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
+    cdef public double factor
+
+cdef class MeanFlowNodeRecorder(BaseConstantNodeRecorder):
     cdef public double factor
 
 cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
