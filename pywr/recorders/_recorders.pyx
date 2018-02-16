@@ -1035,7 +1035,6 @@ cdef class MeanFlowNodeRecorder(BaseConstantNodeRecorder):
     cpdef after(self):
         cdef ScenarioIndex scenario_index
         cdef int i
-        cdef int days = self.model.timestepper.current.days
         for scenario_index in self.model.scenarios.combinations:
             i = scenario_index.global_id
             self._values[i] += self._node._flow[i]*self.factor
