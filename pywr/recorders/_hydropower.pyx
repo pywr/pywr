@@ -155,7 +155,7 @@ cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
         from pywr.parameters import load_parameter
         node = model._get_node_from_ref(model, data.pop("node"))
         if "water_elevation_parameter" in data:
-            water_elevation_parameter = load_parameter(data.pop("water_elevation_parameter"))
+            water_elevation_parameter = load_parameter(model, data.pop("water_elevation_parameter"))
         else:
             water_elevation_parameter = None
 
@@ -262,7 +262,7 @@ cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
         from pywr.parameters import load_parameter
         node = model._get_node_from_ref(model, data.pop("node"))
         if "water_elevation_parameter" in data:
-            water_elevation_parameter = load_parameter(data.pop("water_elevation_parameter"))
+            water_elevation_parameter = load_parameter(model, data.pop("water_elevation_parameter"))
         else:
             water_elevation_parameter = None
 

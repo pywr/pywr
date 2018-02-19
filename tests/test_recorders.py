@@ -1479,3 +1479,9 @@ class TestHydroPowerRecorder:
         m.step()
         np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 0 * 1e-6)
         np.testing.assert_allclose(rec_total.values()[0], 1000 * 9.81 * 8 * 20 * 1e-6)
+
+    def test_load_from_json(self, ):
+        """ Test example hydropower model loads and runs. """
+        model = load_model("hydropower_example.json")
+        model.run()
+
