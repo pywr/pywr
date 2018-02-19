@@ -159,7 +159,7 @@ cdef class NegativeMinParameter(MinParameter):
 cdef class DeficitParameter(Parameter):
     cdef public Node node
 
-cdef class BinaryVariableParameter(Parameter):
+cdef class BinaryVariableParameter(IndexParameter):
     cdef public Parameter enabled_parameter
     cdef public Parameter disabled_parameter
     cdef bint _value

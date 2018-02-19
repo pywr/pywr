@@ -1338,7 +1338,7 @@ cdef class DeficitParameter(Parameter):
 DeficitParameter.register()
 
 
-cdef class BinaryVariableParameter(Parameter):
+cdef class BinaryVariableParameter(IndexParameter):
     """ Parameter to be used as a binary switch between two other parameters.
 
     This parameter is intended to be used as a variable (i.e. is_variable=True). It will
@@ -1372,8 +1372,10 @@ cdef class BinaryVariableParameter(Parameter):
         for i in range(n):
             if self._value == 0:
                 self.__values[i] = self.disabled_parameter.__values[i]
+                self.__indices[i] = 0
             else:
                 self.__values[i] = self.enabled_parameter.__values[i]
+                self.__indices[i] = 1
 
     cpdef update(self, double[:] values):
         self._value = int(np.round(values[0], 0))
