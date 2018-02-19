@@ -1,0 +1,44 @@
+{
+    "metadata": {
+        "title": "A model with a circular reference on the storage node.",
+        "description": "This is a simple demonstration of a circular reference problem with group control curves. See github issue #380: https://github.com/pywr/pywr/issues/380",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "reservoir1",
+            "type": "Storage",
+            "max_volume": 1000,
+            "initial_volume": 1000,
+            "outputs": 0,
+            "cost": "reservoir1_cost"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 300,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["reservoir1", "demand1"]
+    ],
+    "parameters": {
+        "reservoir1_cost": {
+                "type": "ControlCurveInterpolated",
+                "control_curve": {
+                    "type": "dailyprofile",
+                    "url": "control_curve.csv",
+                    "parse_dates": false,
+                    "column": "Control Curve"
+                },
+                "storage_node": "reservoir1",
+                "values": [-8, -6, -4]
+            }
+    }
+}

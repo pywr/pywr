@@ -885,7 +885,7 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
 
 RollingWindowParameterRecorder.register()
 
-cdef class MeanFlowRecorder(NodeRecorder):
+cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
     """Records the mean flow of a Node for the previous N timesteps
 
     Parameters
@@ -900,7 +900,7 @@ cdef class MeanFlowRecorder(NodeRecorder):
 
     """
     def __init__(self, model, node, timesteps=None, days=None, name=None, **kwargs):
-        super(MeanFlowRecorder, self).__init__(model, node, name=name, **kwargs)
+        super(RollingMeanFlowNodeRecorder, self).__init__(model, node, name=name, **kwargs)
         self.model = model
         if not timesteps and not days:
             raise ValueError("Either `timesteps` or `days` must be specified.")
@@ -915,7 +915,7 @@ cdef class MeanFlowRecorder(NodeRecorder):
         self._data = None
 
     cpdef setup(self):
-        super(MeanFlowRecorder, self).setup()
+        super(RollingMeanFlowNodeRecorder, self).setup()
         self.position = 0
         self._data = np.empty([len(self.model.timestepper), len(self.model.scenarios.combinations)])
         if self.days:
@@ -963,7 +963,7 @@ cdef class MeanFlowRecorder(NodeRecorder):
             days = None
         return cls(model, node, timesteps=timesteps, days=days, name=name)
 
-MeanFlowRecorder.register()
+RollingMeanFlowNodeRecorder.register()
 
 cdef class BaseConstantNodeRecorder(NodeRecorder):
     """
@@ -1020,6 +1020,32 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
             self._values[i] += self._node._flow[i]*self.factor*days
         return 0
 TotalFlowNodeRecorder.register()
+
+
+cdef class MeanFlowNodeRecorder(BaseConstantNodeRecorder):
+    """
+    Record the mean flow for a Node.
+
+    A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+    """
+    def __init__(self, *args, **kwargs):
+        self.factor = kwargs.pop('factor', 1.0)
+        super(MeanFlowNodeRecorder, self).__init__(*args, **kwargs)
+
+    cpdef after(self):
+        cdef ScenarioIndex scenario_index
+        cdef int i
+        for scenario_index in self.model.scenarios.combinations:
+            i = scenario_index.global_id
+            self._values[i] += self._node._flow[i]*self.factor
+        return 0
+
+    cpdef finish(self):
+        cdef int i
+        cdef int nt = self.model.timestepper.current.index
+        for i in range(self._values.shape[0]):
+            self._values[i] /= nt
+MeanFlowNodeRecorder.register()
 
 
 cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):

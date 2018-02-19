@@ -5,12 +5,21 @@ from ._control_curves import (PiecewiseLinearControlCurve, ControlCurveParameter
     ControlCurveInterpolatedParameter, ControlCurveIndexParameter)
 from .parameters import parameter_registry, load_parameter_values, load_parameter, Parameter, parameter_property
 import numpy as np
+import warnings
 
 
 class AbstractProfileControlCurveParameter(BaseControlCurveParameter):
     _profile_size = None
 
     def __init__(self, model, storage_node, control_curves, values, profile=None, scale=1.0, **kwargs):
+        warnings.warn(
+            """This Parameter class and any children will be removed in the following version of Pywr.
+            
+            This includes `MonthlyProfileControlCurveParameter` and `DailyProfileControlCurveParameter`. Please
+            update your models to use a more dynamic approach combining the various profile parameters with
+            `ControlCurveIndexParameter` or `ControlCurveParameter`. Please the demand restrictions example in the
+            documentation for an example of this approach.            
+            """, DeprecationWarning)
         super(AbstractProfileControlCurveParameter, self).__init__(model, storage_node, control_curves, **kwargs)
 
         nvalues = len(self.control_curves) + 1
