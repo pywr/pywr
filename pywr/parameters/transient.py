@@ -3,7 +3,8 @@
 Examples include the modelling of a decision at a fixed point during a simulation.
 
 """
-from ._parameters import Parameter
+from .._component import Component
+from ._parameters import Parameter, ConstantParameter, BinaryVariableParameter
 import numpy as np
 import pandas
 
@@ -125,11 +126,21 @@ class TransientDecisionParameter(Parameter):
         self.decision_date = self._feasible_dates[int(round(values[0]))]
 
 
-class ScenarioTreeDecisionItem:
-    def __init__(self, name, end_data):
-        self.name = name
-        self.end_data = end_data
-        self.children = []
+class ScenarioTreeDecisionItem(Component):
+    def __init__(self, model, name, end_date, **kwargs):
+        super(ScenarioTreeDecisionItem, self).__init__(model, name, **kwargs)
+        self.end_date = end_date
+        self.scenarios = []
+
+    @property
+    def start_date(self):
+        # Find if there is a parent stage in the tree
+        for parent in self.parents:
+            if isinstance(parent, ScenarioTreeDecisionItem):
+                # The start of this stage is the end of parent stage
+                return parent.end_date
+        # Otherwise the start is the start of the model
+        return self.model.timestepper.start
 
     @property
     def paths(self):
@@ -140,19 +151,34 @@ class ScenarioTreeDecisionItem:
                 for path in child.paths:
                     yield tuple([self, ] + [c for c in path])
 
+    def end_date():
+        def fget(self):
+            if self._latest_date is not None:
+                return self._latest_date
+            else:
+                return self.model.timestepper.end
+        def fset(self, value):
+            if isinstance(value, pandas.Timestamp):
+                self._latest_date = value
+            else:
+                self._latest_date = pandas.to_datetime(value)
+        return locals()
+    end_date = property(**end_date())
+
 
 class ScenarioTreeDecisionParameter(Parameter):
-    def __init__(self, model, root, tree_scenario_mapping, parameter_factory, **kwargs):
+    def __init__(self, model, root, parameter_factory, **kwargs):
         super(ScenarioTreeDecisionParameter, self).__init__(model, **kwargs)
         self.root = root
-        self.tree_scenario_mapping = tree_scenario_mapping
         self.parameter_factory = parameter_factory
 
+        self.path_index = None
+        self._cached_paths = None
+        self.parameters = None
         # Setup the parameters associated with the tree
         self._create_scenario_parameters()
 
     def _create_scenario_parameters(self):
-
         parameters = {}
         def make_parameter(scenario):
             p = self.parameter_factory(self.model, scenario)
@@ -163,9 +189,10 @@ class ScenarioTreeDecisionParameter(Parameter):
                 make_parameter(child)
 
         make_parameter(self.root)
+        self.parameters = parameters
 
     def setup(self):
-
+        super(ScenarioTreeDecisionParameter, self).setup()
         # During setup we take the tree to scenario mapping to make
         # a more efficiency index based lookup array
 
@@ -173,13 +200,124 @@ class ScenarioTreeDecisionParameter(Parameter):
         self._cached_paths = paths = tuple(p for p in self.root.paths)
 
         nscenarios = len(self.model.scenarios.combinations)
-        path_index = np.array()
+        path_index = np.empty(nscenarios, dtype=np.int)
+        path_index[:] = np.nan
 
+        for i, path in enumerate(paths):
+            final_stage = path[-1]
+            for scenario_index in final_stage.scenarios:
+                path_index[scenario_index.global_id] = i
 
+        if len(np.where(path_index == np.nan)[0]) > 0:
+            raise ValueError('One or more scenarios are not assigned to final stages in the scenario tree.')
+
+        self.path_index = path_index
 
     def value(self, ts, scenario_index):
-        if ts.datetime >= self.decision_date:
-            v = self.after_parameter.get_value(scenario_index)
-        else:
-            v = self.before_parameter.get_value(scenario_index)
-        return v
+
+        i = self.path_index[scenario_index.global_id]
+        path = self._cached_paths[i]
+
+        for stage in path:
+            if ts.datetime < stage.end_date:
+                parameter = self.parameters[stage]
+                return parameter.get_value(scenario_index)
+
+        raise ValueError('No parameter found from stages for current time-step.')
+
+
+class TransientScenarioTreeDecisionParameter(ScenarioTreeDecisionParameter):
+    def __init__(self, model, root, enabled_parameter_factory, earliest_date=None, latest_date=None,
+                 decision_freq='AS', **kwargs):
+
+        self.enabled_parameter_factory = enabled_parameter_factory
+
+        # These parameters are mostly used if this class is used as variable.
+        self._earliest_date = None
+        self.earliest_date = earliest_date
+        self._latest_date = None
+        self.latest_date = latest_date
+        self.decision_freq = decision_freq
+
+        super(TransientScenarioTreeDecisionParameter, self).__init__(model, root, self._transient_parameter_factory, **kwargs)
+
+    def _transient_parameter_factory(self, model, stage):
+        """ Private factory function for creating the transient parameters """
+
+        name = '{}.{}.{}'.format(self.name, stage.name, '{}')
+
+        # When the parameter is not active (either off or before decision) data
+        # default to a zero value.
+        # TODO make this disabled value configurable.
+        disabled_parameter = ConstantParameter(model, 0, name=name.format('disabled'))
+
+        # Use the given factory function to create the enabled parameter
+        enabled_parameter = self.enabled_parameter_factory(model, stage)
+        enabled_parameter.name = name.format('enabled')
+
+        # Make the transient parameter
+        earliest_date = stage.start_date
+        latest_date = stage.end_date
+        current_date = latest_date
+
+        p = TransientDecisionParameter(model, current_date, disabled_parameter, enabled_parameter,
+                                       earliest_date=earliest_date, latest_date=latest_date,
+                                       name=name.format('transient'))
+
+        # Finally wrap the transient parameter in a binary variable
+        # This defaults to `is_variable=True` because that is the intended use of this overall parameter.
+        return BinaryVariableParameter(model, p, disabled_parameter, is_variable=True, name=name.format('binary'))
+
+    def earliest_date():
+        def fget(self):
+            if self._earliest_date is not None:
+                return self._earliest_date
+            else:
+                return self.model.timestepper.start
+
+        def fset(self, value):
+            if isinstance(value, pandas.Timestamp):
+                self._earliest_date = value
+            else:
+                self._earliest_date = pandas.to_datetime(value)
+
+        return locals()
+
+    earliest_date = property(**earliest_date())
+
+    def latest_date():
+        def fget(self):
+            if self._latest_date is not None:
+                return self._latest_date
+            else:
+                return self.model.timestepper.end
+
+        def fset(self, value):
+            if isinstance(value, pandas.Timestamp):
+                self._latest_date = value
+            else:
+                self._latest_date = pandas.to_datetime(value)
+
+        return locals()
+
+    latest_date = property(**latest_date())
+
+    def value(self, ts, scenario_index):
+
+        i = self.path_index[scenario_index.global_id]
+        path = self._cached_paths[i]
+
+        for stage in path:
+            parameter = self.parameters[stage]
+            # Fetch the state from the binary variable parameter
+            # The index returns 0 or 1 depending on the internal state
+            active = parameter.get_index(scenario_index)
+
+            # The stages are iterated through in time order (first to last)
+            # Therefore if this stage has an active binary variable we
+            # ignore the current time-step and use the value of this stage's parameter
+            print(self.name, ts.datetime, stage.name, stage.end_date, active, parameter.get_value(scenario_index))
+            if ts.datetime < stage.end_date or active:
+                return parameter.get_value(scenario_index)
+
+        raise ValueError('No parameter found from stages for current time-step.')

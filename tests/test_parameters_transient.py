@@ -1,6 +1,6 @@
-from pywr.parameters.transient import TransientDecisionParameter, ScenarioTreeDecisionItem, ScenarioTreeDecisionParameter
+from pywr.parameters.transient import TransientDecisionParameter, ScenarioTreeDecisionItem, ScenarioTreeDecisionParameter, TransientScenarioTreeDecisionParameter
 from pywr.parameters import ConstantParameter
-from pywr.core import ScenarioIndex
+from pywr.core import ScenarioIndex, Scenario
 import pytest
 import numpy as np
 import pandas
@@ -80,26 +80,44 @@ class TestTransientDecisionParameter:
         assert p.decision_date == pandas.to_datetime('2016-01-01')
 
 
+@pytest.fixture()
+def simple_model_with_scenario_tree(simple_linear_model):
+    model = simple_linear_model
+
+    stage1 = ScenarioTreeDecisionItem(model, 'stage 1', '2030-01-01')
+    stage2a = ScenarioTreeDecisionItem(model, 'stage 2a', '2050-01-01')
+    stage2b = ScenarioTreeDecisionItem(model, 'stage 2b', '2050-01-01')
+
+    stage1.children.add(stage2a)
+    stage1.children.add(stage2b)
+
+    # Add a single scenario to the model
+    scenario = Scenario(model, 'A', size=10)
+
+    # Now add the scenario indices to the tree
+    # The first 5 are on stage1a and the last five on 2b
+    for scenario_index in model.scenarios.get_combinations():
+        if scenario_index.global_id < 5:
+            stage2a.scenarios.append(scenario_index)
+        else:
+            stage2b.scenarios.append(scenario_index)
+
+    return model, (stage1, stage2a, stage2b)
+
+
+
 class TestScenarioTreeDecisionParameter:
 
-    def test_creating_simple_scenario_tree(self, simple_linear_model):
+    def test_creating_simple_scenario_tree(self, simple_model_with_scenario_tree):
         """ Test the basic API for creating a scenario tree
 
-        The test creates a simple tree
+        The test creates a simple tree as follows:
 
         |-- stage 1 --|--- stage 2a ---|
                       |--- stage 2b ---|
 
         """
-        model = simple_linear_model
-
-        stage1 = ScenarioTreeDecisionItem('stage 1', '1930-01-01')
-
-        stage2a = ScenarioTreeDecisionItem('stage 2a', '1950-01-01')
-        stage2b = ScenarioTreeDecisionItem('stage 2b', '1950-01-01')
-
-        stage1.children.append(stage2a)
-        stage1.children.append(stage2b)
+        model, (stage1, stage2a, stage2b) = simple_model_with_scenario_tree
 
         paths = (
             (stage1, stage2a),
@@ -109,4 +127,103 @@ class TestScenarioTreeDecisionParameter:
         for p1, p2 in zip(stage1.paths, paths):
             assert p1 == p2
 
+        def factory(model, stage):
+            if '1' in stage.name:
+                p = ConstantParameter(model, 1)
+            elif '2a' in stage.name:
+                p = ConstantParameter(model, 2)
+            elif '2b' in stage.name:
+                p = ConstantParameter(model, 3)
+            else:
+                raise ValueError('Unrecognised stage name.')
+            return p
+
+        # Now create the parameters
+        parameter = ScenarioTreeDecisionParameter(model, stage1, factory)
+
+        # There should be one parameter for each of the stages in the tree
+        assert len(parameter.children) == 3
+
+        # This model run is 5 year; it should create 6 possible dates
+        model.timestepper.start = '2025-01-01'
+        model.timestepper.end = '2040-01-01'
+
+        @assert_rec(model, parameter)
+        def expected_func(timestep, scenario_index):
+            if timestep.year < 2030:
+                return 1
+            else:
+                if scenario_index.global_id < 5:
+                    return 2
+                else:
+                    return 3
+
+        model.run()
+
+    def test_creating_transient_scenario_tree(self, simple_model_with_scenario_tree):
+        """ Test creating the specialised transient scenario tree.
+
+        """
+        model, (stage1, stage2a, stage2b) = simple_model_with_scenario_tree
+
+        def factory(model, stage):
+            if '1' in stage.name:
+                p = ConstantParameter(model, 1)
+            elif '2a' in stage.name:
+                p = ConstantParameter(model, 2)
+            elif '2b' in stage.name:
+                p = ConstantParameter(model, 3)
+            else:
+                raise ValueError('Unrecognised stage name.')
+            return p
+
+        # Now create the parameters
+        parameter_all_off = TransientScenarioTreeDecisionParameter(model, stage1, factory, name='all_off')
+        parameter_stage1_on = TransientScenarioTreeDecisionParameter(model, stage1, factory, name='stage1_on')
+        parameter_stage2_on = TransientScenarioTreeDecisionParameter(model, stage1, factory, name='stage2_on')
+
+        # There should be one parameter for each of the stages in the tree
+        assert len(parameter_all_off.children) == 3
+
+        # Default setup is all disabled.
+        @assert_rec(model, parameter_all_off, name='all_off_rec')
+        def expected_func(timestep, scenario_index):
+            return 0
+
+        # Turn on stage 1
+        model.parameters['stage1_on.stage 1.binary'].update(np.array([1.0, ]))
+        model.parameters['stage1_on.stage 1.transient'].decision_date = '2027-01-01'
+
+        @assert_rec(model, parameter_stage1_on, name='stage1_on_rec')
+        def expected_func(timestep, scenario_index):
+            if timestep.year < 2027:
+                return 0
+            else:
+                return 1
+
+        # Turn on stage 2
+        # This tests that stage 1 is zero, but there are different decisions dates
+        # in the the two different stage 2 branches.
+        model.parameters['stage2_on.stage 2a.binary'].update(np.array([1.0, ]))
+        model.parameters['stage2_on.stage 2a.transient'].decision_date = '2035-01-01'
+        model.parameters['stage2_on.stage 2b.binary'].update(np.array([1.0, ]))
+        model.parameters['stage2_on.stage 2b.transient'].decision_date = '2037-01-01'
+
+        @assert_rec(model, parameter_stage2_on, name='stage2_on_rec')
+        def expected_func(timestep, scenario_index):
+            if timestep.year < 2030:
+                val = 0
+            else:
+                if scenario_index.global_id < 5:
+                    val = 0 if timestep.year < 2035 else 2
+                else:
+                    val = 0 if timestep.year < 2037 else 3
+            return val
+
+        # This model run is 5 year; it should create 6 possible dates
+        model.timestepper.start = '2025-01-01'
+        model.timestepper.end = '2040-01-01'
+        model.timestepper.delta = 10
+
+        model.run()
 
