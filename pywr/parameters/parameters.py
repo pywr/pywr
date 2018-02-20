@@ -2,7 +2,7 @@ import os
 import datetime
 from ..parameter_property import parameter_property
 from ._parameters import (
-    Parameter, parameter_registry, ConstantParameter,
+    Parameter, parameter_registry, UnutilisedDataWarning, ConstantParameter,
     ConstantScenarioParameter, AnnualHarmonicSeriesParameter,
     ArrayIndexedParameter, ConstantScenarioParameter, IndexedArrayParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
