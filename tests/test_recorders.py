@@ -1483,5 +1483,17 @@ class TestHydroPowerRecorder:
     def test_load_from_json(self, ):
         """ Test example hydropower model loads and runs. """
         model = load_model("hydropower_example.json")
+
+        r = model.recorders['turbine1_energy']
+
+        # Check the recorder has loaded correctly
+        assert r.water_elevation_parameter == model.parameters['reservoir1_level']
+        assert r.node == model.nodes['turbine1']
+
+        assert_allclose(r.turbine_elevation, 35.0)
+        assert_allclose(r.efficiency, 0.85)
+        assert_allclose(r.flow_unit_conversion, 1e3)
+
+        # Finally, check model runs with the loaded recorder.
         model.run()
 
