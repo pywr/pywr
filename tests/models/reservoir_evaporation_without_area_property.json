@@ -1,0 +1,59 @@
+{
+    "metadata": {
+        "title": "Reservoir Evaporation",
+        "description": "A model with a reservoir, with evaporation proportional to surface area",
+        "minimum_version": "0.5dev0"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "reservoir1",
+            "type": "Storage",
+            "max_volume": 1000,
+            "initial_volume": 1000,
+            "outputs": 0
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        },
+        {
+            "name": "evaporation",
+            "type": "Output",
+            "max_flow": "reservoir_evaporation",
+            "cost": -1000
+        }        
+    ],
+    "edges": [
+        ["reservoir1", "evaporation"],
+        ["reservoir1", "demand1"]
+    ],
+    "parameters": {
+        "reservoir_area": {
+            "type": "interpolatedvolume",
+            "node": "reservoir1",
+            "volumes": [0, 1000],
+            "values": [0, 500],
+            "kind": "linear"
+        },
+        "evaporation_mm": {
+            "type": "monthlyprofile",
+            "values": [5.0, 5.0, 5.0, 5.0, 5.0, 6.0, 6.0, 6.0, 5.0, 5.0, 5.0, 5.0]
+        },
+        "reservoir_evaporation": {
+            "type": "aggregated",
+            "agg_func": "product",
+            "parameters": [
+                "reservoir_area",
+                "evaporation_mm",
+                0.001
+            ]
+        }
+    }
+}

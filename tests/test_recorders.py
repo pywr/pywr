@@ -14,15 +14,16 @@ import json
 from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
-    AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
-    TotalFlowNodeRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
-    NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
-    RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
-    PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
-    EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
-    FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-    HydroPowerRecorder, TotalHydroEnergyRecorder, SeasonalFlowDurationCurveRecorder,
-    load_recorder, ParameterNameWarning)
+                            AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
+                            TotalFlowNodeRecorder, RollingMeanFlowNodeRecorder, MeanFlowNodeRecorder, NumpyArrayParameterRecorder,
+                            NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
+                            RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
+                            PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
+                            EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
+                            FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
+                            HydroPowerRecorder, TotalHydroEnergyRecorder,
+                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
+
 from pywr.recorders.progress import ProgressRecorder
 
 from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter
@@ -987,6 +988,23 @@ def test_total_flow_node_recorder(simple_linear_model):
     assert_allclose(20.0, rec.aggregated_value(), atol=1e-7)
 
 
+def test_mean_flow_node_recorder(simple_linear_model):
+    """
+    Test MeanFlowNodeRecorder
+    """
+    model = simple_linear_model
+    nt = len(model.timestepper)
+
+    otpt = model.nodes['Output']
+    otpt.max_flow = 30.0
+    model.nodes['Input'].max_flow = 10.0
+    otpt.cost = -2.0
+    rec = MeanFlowNodeRecorder(model, otpt)
+
+    model.run()
+    assert_allclose(10.0, rec.aggregated_value(), atol=1e-7)
+
+
 class TestAggregatedRecorder:
     """Tests for AggregatedRecorder"""
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
@@ -1044,7 +1062,7 @@ def test_mean_flow_recorder(solver):
     inpt.connect(otpt)
 
     rec_flow = NumpyArrayNodeRecorder(model, inpt)
-    rec_mean = MeanFlowRecorder(model, node=inpt, timesteps=3)
+    rec_mean = RollingMeanFlowNodeRecorder(model, node=inpt, timesteps=3)
 
     scenario = Scenario(model, "dummy", size=2)
 
@@ -1069,7 +1087,7 @@ def test_mean_flow_recorder_days(solver):
     otpt = Output(model, "output")
     inpt.connect(otpt)
 
-    rec_mean = MeanFlowRecorder(model, node=inpt, days=31)
+    rec_mean = RollingMeanFlowNodeRecorder(model, node=inpt, days=31)
 
     model.run()
     assert(rec_mean.timesteps == 4)
