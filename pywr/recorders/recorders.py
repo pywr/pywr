@@ -4,6 +4,7 @@ from functools import wraps
 from pywr._core import AbstractNode, AbstractStorage
 from ._recorders import *
 from ._thresholds import *
+from ._hydropower import *
 from .events import *
 from .calibration import *
 from past.builtins import basestring
@@ -84,19 +85,22 @@ class CSVRecorder(Recorder):
     A Recorder that saves Node values to a CSV file.
 
     This class uses the csv package from the Python standard library
+
+    Parameters
+    ----------
+
+    model : `pywr.model.Model`
+        The model to record nodes from.
+    csvfile : str
+        The path to the CSV file.
+    scenario_index : int
+        The scenario index of the model to save.
+    nodes : iterable (default=None)
+        An iterable of nodes to save data. It defaults to None which is all nodes in the model
+    kwargs : Additional keyword arguments to pass to the `csv.writer` object
+
     """
     def __init__(self, model, csvfile, scenario_index=0, nodes=None, complib=None, complevel=9, **kwargs):
-        """
-
-        :param model: The model to record nodes from.
-        :param csvfile: The path to the CSV file.
-        :param scenario_index: The scenario index of the model to save.
-        :param nodes: An iterable of nodes to save data. It defaults
-        to None which is all nodes in the model
-        :param kwargs: Additional keyword arguments to pass to the csv.writer
-        object
-
-        """
         super(CSVRecorder, self).__init__(model, **kwargs)
         self.csvfile = csvfile
         self.scenario_index = scenario_index
@@ -200,7 +204,7 @@ class TablesRecorder(Recorder):
 
         Parameters
         ----------
-        model : pywr.core.Model
+        model : `pywr.model.Model`
             The model to record nodes from.
         h5file : tables.File or filename
             The tables file handle or filename to attach the CArray objects to. If a
