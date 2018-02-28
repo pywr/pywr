@@ -14,17 +14,19 @@ import json
 from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
 from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
-    AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
-    TotalFlowNodeRecorder, MeanFlowRecorder, NumpyArrayParameterRecorder,
-    NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
-    RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
-    PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
-    EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
-    FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-    SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
+                            AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
+                            TotalFlowNodeRecorder, RollingMeanFlowNodeRecorder, MeanFlowNodeRecorder, NumpyArrayParameterRecorder,
+                            NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
+                            RootMeanSquaredErrorNodeRecorder, MeanAbsoluteErrorNodeRecorder, MeanSquareErrorNodeRecorder,
+                            PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
+                            EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
+                            FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
+                            HydroPowerRecorder, TotalHydroEnergyRecorder,
+                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
+
 from pywr.recorders.progress import ProgressRecorder
 
-from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter
+from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter
 from helpers import load_model
 import os
 import sys
@@ -986,6 +988,23 @@ def test_total_flow_node_recorder(simple_linear_model):
     assert_allclose(20.0, rec.aggregated_value(), atol=1e-7)
 
 
+def test_mean_flow_node_recorder(simple_linear_model):
+    """
+    Test MeanFlowNodeRecorder
+    """
+    model = simple_linear_model
+    nt = len(model.timestepper)
+
+    otpt = model.nodes['Output']
+    otpt.max_flow = 30.0
+    model.nodes['Input'].max_flow = 10.0
+    otpt.cost = -2.0
+    rec = MeanFlowNodeRecorder(model, otpt)
+
+    model.run()
+    assert_allclose(10.0, rec.aggregated_value(), atol=1e-7)
+
+
 class TestAggregatedRecorder:
     """Tests for AggregatedRecorder"""
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
@@ -1043,7 +1062,7 @@ def test_mean_flow_recorder(solver):
     inpt.connect(otpt)
 
     rec_flow = NumpyArrayNodeRecorder(model, inpt)
-    rec_mean = MeanFlowRecorder(model, node=inpt, timesteps=3)
+    rec_mean = RollingMeanFlowNodeRecorder(model, node=inpt, timesteps=3)
 
     scenario = Scenario(model, "dummy", size=2)
 
@@ -1068,7 +1087,7 @@ def test_mean_flow_recorder_days(solver):
     otpt = Output(model, "output")
     inpt.connect(otpt)
 
-    rec_mean = MeanFlowRecorder(model, node=inpt, days=31)
+    rec_mean = RollingMeanFlowNodeRecorder(model, node=inpt, days=31)
 
     model.run()
     assert(rec_mean.timesteps == 4)
@@ -1396,3 +1415,103 @@ def test_progress_recorder(simple_linear_model):
     model = simple_linear_model
     rec = ProgressRecorder(model)
     model.run()
+
+
+class TestHydroPowerRecorder:
+
+    def test_constant_level(self, simple_storage_model):
+        """ Test HydroPowerRecorder """
+        m = simple_storage_model
+
+        strg = m.nodes['Storage']
+        otpt = m.nodes['Output']
+
+        elevation = ConstantParameter(m, 100)
+        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
+
+        m.setup()
+        m.step()
+
+        # First step
+        # Head: 100m
+        # Flow: 8 m3/day
+        # Power: 1000 * 9.81 * 8 * 100
+        # Energy: power * 1 day = power
+        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        # Second step has the same answer in this model
+        m.step()
+        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec_total.values()[0], 2* 1000 * 9.81 * 8 * 100 * 1e-6)
+
+    def test_varying_level(self, simple_storage_model):
+        """ Test HydroPowerRecorder with varying level on Storage node """
+        from pywr.parameters import InterpolatedVolumeParameter
+        m = simple_storage_model
+
+        strg = m.nodes['Storage']
+        otpt = m.nodes['Output']
+
+        elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
+        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
+
+        m.setup()
+        m.step()
+
+        # First step
+        # Head: 100m
+        # Flow: 8 m3/day
+        # Power: 1000 * 9.81 * 8 * 100
+        # Energy: power * 1 day = power
+        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        # Second step is at a lower head
+        # Head: 70m
+        m.step()
+        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 70 * 1e-6)
+        np.testing.assert_allclose(rec_total.values()[0], 1000 * 9.81 * 8 * 170 * 1e-6)
+
+    def test_varying_level_with_turbine_level(self, simple_storage_model):
+        """ Test HydroPowerRecorder with varying level on Storage and defined level on the recorder """
+        from pywr.parameters import InterpolatedVolumeParameter
+        m = simple_storage_model
+
+        strg = m.nodes['Storage']
+        otpt = m.nodes['Output']
+
+        elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
+        rec = HydroPowerRecorder(m, otpt, elevation, turbine_elevation=80)
+        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation, turbine_elevation=80)
+
+        m.setup()
+        m.step()
+
+        # First step
+        # Head: 100 - 80 = 20m
+        # Flow: 8 m3/day
+        # Power: 1000 * 9.81 * 8 * 100
+        # Energy: power * 1 day = power
+        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 20 * 1e-6)
+        # Second step is at a lower head
+        # Head: 70 - 80: -10m (i.e. not sufficient)
+        m.step()
+        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 0 * 1e-6)
+        np.testing.assert_allclose(rec_total.values()[0], 1000 * 9.81 * 8 * 20 * 1e-6)
+
+    def test_load_from_json(self, ):
+        """ Test example hydropower model loads and runs. """
+        model = load_model("hydropower_example.json")
+
+        r = model.recorders['turbine1_energy']
+
+        # Check the recorder has loaded correctly
+        assert r.water_elevation_parameter == model.parameters['reservoir1_level']
+        assert r.node == model.nodes['turbine1']
+
+        assert_allclose(r.turbine_elevation, 35.0)
+        assert_allclose(r.efficiency, 0.85)
+        assert_allclose(r.flow_unit_conversion, 1e3)
+
+        # Finally, check model runs with the loaded recorder.
+        model.run()
+

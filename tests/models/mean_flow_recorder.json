@@ -53,7 +53,7 @@
         },
         "Mean Flow": {
             "comment": "Mean flow (last 3 days) from supply1",
-            "type": "MeanFlow",
+            "type": "rollingMeanFlownode",
             "node": "supply1",
             "timesteps": 3
         },
