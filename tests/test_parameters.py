@@ -754,9 +754,11 @@ class Test1DPolynomialParameter:
         """ Test initialisation raises error with too many keywords """
         stg = simple_storage_model.nodes['Storage']
         param = ConstantParameter(simple_storage_model, 2.0)
+
+        # Passing both "parameter" and "storage_node" is invalid
+        Polynomial1DParameter(simple_storage_model, [0.5, np.pi], parameter=param, storage_node=stg)
         with pytest.raises(ValueError):
-            # Passing both "parameter" and "storage_node" is invalid
-            Polynomial1DParameter(simple_storage_model, [0.5, np.pi], parameter=param, storage_node=stg)
+            simple_storage_model.setup()
 
     def test_1st_order_with_parameter(self, simple_linear_model):
         """ Test 1st order with a `Parameter` """

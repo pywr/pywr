@@ -41,7 +41,16 @@ cdef class Polynomial1DParameter(Parameter):
         self.use_proportional_volume = kwargs.pop('use_proportional_volume', False)
         self.offset = kwargs.pop('offset', 0.0)
         self.scale = kwargs.pop('scale', 1.0)
-        # Check only one of the above is given
+        super(Polynomial1DParameter, self).__init__(model, *args, **kwargs)
+
+        # Finally register parent relationship if parameter is given
+        if self._parameter is not None:
+            self.children.add(self._parameter)
+
+    cpdef setup(self):
+        super(Polynomial1DParameter, self).setup()
+
+        # Check only one of the below is given
         arg_check = [
             self._other_node is not None,
             self._storage_node is not None,
@@ -51,12 +60,11 @@ cdef class Polynomial1DParameter(Parameter):
         if arg_check.count(True) > 1:
             raise ValueError('Only one of "node", "storage_node" or "parameter" keywords should be given.')
 
-        super(Polynomial1DParameter, self).__init__(model, *args, **kwargs)
-
-        # Finally register parent relationship if parameter is given
-        if self._parameter is not None:
-            self.children.add(self._parameter)
-
+    property storage_node:
+        def __get__(self):
+            return self._storage_node
+        def __set__(self, value):
+            self._storage_node = value
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i
@@ -85,18 +93,25 @@ cdef class Polynomial1DParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        node = None
+        node_name = None
         if 'node' in data:
-            node = model._get_node_from_ref(model, data.pop("node"))
-        storage_node = None
+            node_name = data.pop("node")
+        storage_node_name = None
         if 'storage_node' in data:
-            storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
+            storage_node_name = data.pop("storage_node")
         parameter = None
         if 'parameter' in data:
             parameter = load_parameter(model, data.pop("parameter"))
 
         coefficients = data.pop("coefficients")
-        parameter = cls(model, coefficients, node=node, storage_node=storage_node, parameter=parameter, **data)
+        parameter = cls(model, coefficients, parameter=parameter, **data)
+
+        if node_name is not None:
+            parameter.node = model._get_node_from_ref(model, node_name)
+
+        if storage_node_name is not None:
+            parameter.storage_node = model._get_node_from_ref(model, storage_node_name)
+
         return parameter
 Polynomial1DParameter.register()
 
@@ -166,11 +181,20 @@ cdef class Polynomial2DStorageParameter(Parameter):
                 z += self.coefficients[i, j]*x**i*y**j
         return z
 
+    property storage_node:
+        def __get__(self):
+            return self._storage_node
+        def __set__(self, value):
+            self._storage_node = value
+
     @classmethod
     def load(cls, model, data):
-        storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
+        storage_node_name = data.pop("storage_node")
         parameter = load_parameter(model, data.pop("parameter"))
         coefficients = data.pop("coefficients")
-        parameter = cls(model, coefficients, storage_node, parameter, **data)
+        # Load nodes after class has been initialised to prevent circular loading
+        parameter = cls(model, coefficients, None, parameter, **data)
+        storage_node = model._get_node_from_ref(model, storage_node_name)
+        parameter.storage_node = storage_node
         return parameter
 Polynomial2DStorageParameter.register()

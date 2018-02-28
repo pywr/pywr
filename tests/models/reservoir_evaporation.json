@@ -11,6 +11,12 @@
     },
     "nodes": [
         {
+            "name": "evaporation",
+            "type": "Output",
+            "max_flow": "reservoir_evaporation",
+            "cost": -1000
+        },
+        {
             "name": "reservoir1",
             "type": "Storage",
             "max_volume": 1000,
@@ -23,13 +29,8 @@
             "type": "Output",
             "max_flow": 10,
             "cost": -10
-        },
-        {
-            "name": "evaporation",
-            "type": "Output",
-            "max_flow": "reservoir_evaporation",
-            "cost": -1000
-        }        
+        }
+
     ],
     "edges": [
         ["reservoir1", "evaporation"],

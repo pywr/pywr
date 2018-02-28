@@ -217,8 +217,11 @@ cdef class DataFrameParameter(Parameter):
         scenario = data.pop('scenario', None)
         if scenario is not None:
             scenario = model.scenarios[scenario]
+        name = data.pop('name', None)
+        comment = data.pop('comment', None)
         df = load_dataframe(model, data)
-        return cls(model, df, scenario=scenario, **data)
+        kwargs = dict(scenario=scenario, name=name, comment=comment)
+        return cls(model, df, **kwargs)
 
 DataFrameParameter.register()
 
@@ -429,7 +432,7 @@ cdef class TablesArrayParameter(IndexParameter):
         for algo, hash in checksums.items():
             check_hash(url, hash, algorithm=algo)
 
-        return cls(model, url, node, where=where, scenario=scenario)
+        return cls(model, url, node, where=where, scenario=scenario, **data)
 TablesArrayParameter.register()
 
 
@@ -514,21 +517,23 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         if scenario is not None:
             scenario = model.scenarios[scenario]
 
-        if isinstance(data["values"], list):
-            values = np.asarray(data["values"], np.float64)
-        elif isinstance(data["values"], dict):
-            values = load_parameter_values(model, data["values"])
+        values = data.pop("values")
+        if isinstance(values, list):
+            values = np.asarray(values, np.float64)
+        elif isinstance(values, dict):
+            values = load_parameter_values(model, values)
         else:
             raise TypeError("Unexpected type for \"values\" in {}".format(cls.__name__))
 
-        if isinstance(data["factors"], list):
-            factors = np.asarray(data["factors"], np.float64)
-        elif isinstance(data["factors"], dict):
-            factors = load_parameter_values(model, data["factors"])
+        factors = data.pop("factors")
+        if isinstance(factors, list):
+            factors = np.asarray(factors, np.float64)
+        elif isinstance(factors, dict):
+            factors = load_parameter_values(model, factors)
         else:
             raise TypeError("Unexpected type for \"factors\" in {}".format(cls.__name__))
 
-        return cls(model, scenario, values, factors)
+        return cls(model, scenario, values, factors, **data)
 
 ArrayIndexedScenarioMonthlyFactorsParameter.register()
 
@@ -1305,7 +1310,7 @@ def load_parameter(model, data, parameter_name=None):
                     data = model._parameters_to_load.pop(name)
                 except KeyError:
                     raise KeyError("Unknown parameter: '{}'".format(data))
-                parameter = load_parameter(model, data)
+                parameter = load_parameter(model, data, parameter_name=name)
             else:
                 raise KeyError("Unknown parameter: '{}'".format(data))
     elif isinstance(data, (float, int)) or data is None:
@@ -1334,14 +1339,16 @@ def load_parameter(model, data, parameter_name=None):
 
         kwargs = dict([(k,v) for k,v in data.items()])
         del(kwargs["type"])
-        if "name" in kwargs:
-            del(kwargs["name"])
+        # if "name" in kwargs:
+        #     del(kwargs["name"])
+        if parameter_name is not None:
+            kwargs["name"] = parameter_name
         parameter = cls.load(model, kwargs)
 
-    if parameter_name is not None:
-        # TODO FIXME: memory leak if parameter is subsequently removed from the model
-        parameter.name = parameter_name
-        model.parameters[parameter_name] = parameter
+    # if parameter_name is not None:
+    #     # TODO FIXME: memory leak if parameter is subsequently removed from the model
+    #     parameter.name = parameter_name
+    #     model.parameters[parameter_name] = parameter
 
     return parameter
 

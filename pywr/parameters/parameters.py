@@ -111,11 +111,14 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
         volumes = np.array(data.pop("volumes"))
         values = np.array(data.pop("values"))
         kind = data.pop("kind", "linear")
-        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+        node_name = data.pop("node")
+        # Must load the node after the parameter as been initialised in order to stop circular loading
+        param = cls(model, None, volumes, values, interp_kwargs={'kind': kind}, **data)
+        param._node = model._get_node_from_ref(model, node_name)
+        return param
 InterpolatedVolumeParameter.register()
 
 

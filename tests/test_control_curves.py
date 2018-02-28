@@ -333,8 +333,6 @@ def test_control_curve_interpolated_json(solver):
     model.run()
 
 
-@pytest.mark.xfail(reason="Circular dependency in the JSON definition. "
-                          "See GitHub issue #380: https://github.com/pywr/pywr/issues/380")
 def test_circular_control_curve_interpolated_json(solver):
     # this is a little hack-y, as the parameters don't provide access to their
     # data once they've been initalised

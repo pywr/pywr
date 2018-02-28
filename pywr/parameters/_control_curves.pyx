@@ -63,17 +63,14 @@ cdef class PiecewiseLinearControlCurve(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        storage_node = model._get_node_from_ref(model, data["storage_node"])
-        control_curve = load_parameter(model, data["control_curve"])
-        values = data["values"]
-        kwargs = {}
-        if "minimum" in data.keys():
-            kwargs["minimum"] = data["minimum"]
-        if "maximum" in data.keys():
-            kwargs["maximum"] = data["maximum"]
-        parameter = cls(model, storage_node, control_curve, values, **kwargs)
+        storage_node_name = data.pop("storage_node")
+        control_curve = load_parameter(model, data.pop("control_curve"))
+        values = data.pop("values")
+        # Load nodes after class has been initialised to prevent circular loading
+        parameter = cls(model, None, control_curve, values, **data)
+        storage_node = model._get_node_from_ref(model, storage_node_name)
+        parameter.storage_node = storage_node
         return parameter
-
 PiecewiseLinearControlCurve.register()
 
 
@@ -110,9 +107,7 @@ cdef class BaseControlCurveParameter(Parameter):
         """
         super(BaseControlCurveParameter, self).__init__(model, **kwargs)
         self.control_curves = control_curves
-        if storage_node is None:
-            raise ValueError("storage_node is required")
-        self._storage_node = storage_node
+        self.storage_node = storage_node
 
     property control_curves:
         def __get__(self):
@@ -149,19 +144,11 @@ cdef class BaseControlCurveParameter(Parameter):
 
         control_curves = []
         if 'control_curve' in data:
-            control_curves.append(load_parameter(model, data['control_curve']))
+            control_curves.append(load_parameter(model, data.pop('control_curve')))
         elif 'control_curves' in data:
-            for pdata in data['control_curves']:
+            for pdata in data.pop('control_curves'):
                 control_curves.append(load_parameter(model, pdata))
         return control_curves
-
-    @classmethod
-    def _load_storage_node(cls, model, data):
-        """ Private class method to load storage node from dict. """
-        node = model._get_node_from_ref(model, data["storage_node"])
-        return node
-
-
 BaseControlCurveParameter.register()
 
 
@@ -205,8 +192,8 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     >>> cost = ControlCurveInterpolatedParameter(storage_node, ccs, values)
     >>> storage_node.cost = cost
     """
-    def __init__(self, model, storage_node, control_curves, values):
-        super(ControlCurveInterpolatedParameter, self).__init__(model, storage_node, control_curves)
+    def __init__(self, model, storage_node, control_curves, values, **kwargs):
+        super(ControlCurveInterpolatedParameter, self).__init__(model, storage_node, control_curves, **kwargs)
         # Expected number of values is number of control curves plus two.
         nvalues = len(self.control_curves) + 2
         if len(values) != nvalues:
@@ -265,9 +252,12 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     @classmethod
     def load(cls, model, data):
         control_curves = super(ControlCurveInterpolatedParameter, cls)._load_control_curves(model, data)
-        storage_node = super(ControlCurveInterpolatedParameter, cls)._load_storage_node(model, data)
+        storage_node_name = data.pop("storage_node")
         values = load_parameter_values(model, data)
-        parameter = cls(model, storage_node, control_curves, values)
+        # Load nodes after class has been initialised to prevent circular loading
+        parameter = cls(model, None, control_curves, values, **data)
+        storage_node = model._get_node_from_ref(model, storage_node_name)
+        parameter.storage_node = storage_node
         return parameter
 
 ControlCurveInterpolatedParameter.register()
@@ -331,9 +321,11 @@ cdef class ControlCurveIndexParameter(IndexParameter):
 
     @classmethod
     def load(cls, model, data):
-        storage_node = model._get_node_from_ref(model, data["storage_node"])
-        control_curves = [load_parameter(model, data) for data in data["control_curves"]]
-        return cls(model, storage_node, control_curves)
+        storage_node_name = data.pop("storage_node")
+        control_curves = [load_parameter(model, d) for d in data.pop("control_curves")]
+        param = cls(model, None, control_curves, **data)
+        param.storage_node = model._get_node_from_ref(model, storage_node_name)
+        return param
 ControlCurveIndexParameter.register()
 
 
@@ -448,7 +440,7 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
     @classmethod
     def load(cls, model, data):
         control_curves = super(ControlCurveParameter, cls)._load_control_curves(model, data)
-        storage_node = super(ControlCurveParameter, cls)._load_storage_node(model, data)
+        storage_node_name = data.pop("storage_node")
 
         parameters = None
         values = None
@@ -456,12 +448,16 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
             values = load_parameter_values(model, data)
         elif 'parameters' in data:
             # Load parameters
-            parameters_data = data['parameters']
+            parameters_data = data.pop('parameters')
             parameters = []
             for pdata in parameters_data:
                 parameters.append(load_parameter(model, pdata))
 
-        return cls(model, storage_node, control_curves, values=values, parameters=parameters)
+        # Load nodes after class has been initialised to prevent circular loading
+        parameter = cls(model, None, control_curves, values=values, parameters=parameters, **data)
+        storage_node = model._get_node_from_ref(model, storage_node_name)
+        parameter.storage_node = storage_node
+        return parameter
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = scenario_index.global_id
