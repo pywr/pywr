@@ -109,7 +109,9 @@ class TransientDecisionParameter(Parameter):
 
     def value(self, ts, scenario_index):
 
-        if ts.datetime >= self.decision_date:
+        if ts is None:
+            v = self.before_parameter.get_value(scenario_index)
+        elif ts.datetime >= self.decision_date:
             v = self.after_parameter.get_value(scenario_index)
         else:
             v = self.before_parameter.get_value(scenario_index)
