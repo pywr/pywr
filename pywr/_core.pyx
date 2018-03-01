@@ -885,30 +885,25 @@ cdef class Storage(AbstractStorage):
         cdef int i
         cdef double mxv = self._max_volume
         cdef ScenarioIndex si
-        cdef Parameter p
         # These are the supported aggregated style parameters that can be used for max_volume
         # They only work if all their children have no children themselves.
-        from .parameters._parameters import AggregatedParameter, AggregatedIndexParameter, IndexedArrayParameter
+        from .parameters._parameters import _calc_child_values
 
         # TODO at some point remove this limitation
         # See issue #470 https://github.com/pywr/pywr/issues/470
         if self._max_volume_param is not None:
-            if isinstance(self._max_volume_param, (AggregatedParameter, AggregatedIndexParameter, IndexedArrayParameter)):
-                # Some simple aggregated style parameters are accepted so long as they have simple children
-                for p in self._max_volume_param.children:
-                    if len(p.children) > 0:
-                        raise RuntimeError('Only children of agregated parameters with no dependencies are supported for max_volume.')
-                    p.calc_values(self._model.timestepper.current)
-
-            elif len(self._max_volume_param.children) > 0:
-                raise RuntimeError('Only parameters with no dependencies are supported for max_volume.')
-            # We ensure that this is called in reset
-            self._max_volume_param.calc_values(self._model.timestepper.current)
+            # This will recursively call `calc_values` on all children of the given
+            # parameter. Potentially a bit dangerous or inefficient.
+            _calc_child_values(self._max_volume_param, self._model.timestepper.current)
 
         for i, si in enumerate(self.model.scenarios.combinations):
             # Ensure variable maximum volume is taken in to account
             if self._max_volume_param is not None:
                 mxv = self._max_volume_param.get_value(si)
+
+            if not np.isfinite(mxv):
+                raise RuntimeError('Calculated max_volume is not finite. Check if a complex parameter tree is being'
+                                   'used for max_volume.')
 
             if np.isfinite(self._initial_volume_pc):
                 self._volume[i] = self._initial_volume_pc * mxv

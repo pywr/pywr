@@ -1587,3 +1587,17 @@ def read_dataframe(model, data):
     data.clear()
 
     return df
+
+
+
+def _calc_child_values(Parameter parameter, Timestep timestep):
+    """ Use with caution; this is a helper function for the `Storage` class.
+
+    This function crudely recursively calls `calc_values` on all children of the given
+    parameter. It does not deal with complex dependencies.
+
+    """
+    for child in parameter.children:
+        _calc_child_values(child, timestep)
+
+    parameter.calc_values(timestep)
