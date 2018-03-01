@@ -1001,6 +1001,30 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
 TotalDeficitNodeRecorder.register()
 
 
+cdef class DecadalDeficitNodeRecorder(BaseConstantNodeRecorder):
+    """
+    Recorder to total the difference between modelled flow and max_flow for a Node in a particular decade
+    """
+    def __init__(self, model, node, decade, **kwargs):
+        super(DecadalDeficitNodeRecorder, self).__init__(model, node, **kwargs)
+        self.decade = decade
+
+    cpdef after(self):
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int days = self.model.timestepper.current.days
+        cdef AbstractNode node = self._node
+
+        if 0 <= (ts.year - self.decade) < 10:
+            for scenario_index in self.model.scenarios.combinations:
+                max_flow = node.get_max_flow(scenario_index)
+                self._values[scenario_index.global_id] += (max_flow - node._flow[scenario_index.global_id])*days
+
+        return 0
+DecadalDeficitNodeRecorder.register()
+
+
 cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
     """
     Recorder to total the flow for a Node.

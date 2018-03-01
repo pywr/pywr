@@ -83,6 +83,9 @@ cdef class BaseConstantNodeRecorder(NodeRecorder):
 cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
     pass
 
+cdef class DecadalDeficitNodeRecorder(BaseConstantNodeRecorder):
+    cdef public int decade
+
 cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
     cdef public double factor
 
