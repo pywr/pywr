@@ -32,6 +32,59 @@ def model(solver):
     return Model(solver=solver)
 
 
+class TestConstantParameter:
+    """ Tests for `ConstantParameter` """
+    def test_basic_use(self, simple_linear_model):
+        """ Test the basic use of `ConstantParameter` using the Python API """
+        model = simple_linear_model
+        # Add two scenarios
+        scA = Scenario(model, 'Scenario A', size=2)
+        scB = Scenario(model, 'Scenario B', size=5)
+
+        p = ConstantParameter(model, np.pi, name='pi', comment='Mmmmm Pi!')
+
+        assert not p.is_variable
+        assert p.double_size == 1
+        assert p.integer_size == 0
+
+        model.setup()
+        ts = model.timestepper.current
+        # Now ensure the appropriate value is returned for all scenarios
+        for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
+            si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
+            np.testing.assert_allclose(p.value(ts, si), np.pi)
+
+    def test_being_a_variable(self, simple_linear_model):
+        """ Test the basic use of `ConstantParameter` when `is_variable=True` """
+        model = simple_linear_model
+        p = ConstantParameter(model, np.pi, name='pi', comment='Mmmmm Pi!', is_variable=True,
+                              lower_bounds=np.pi/2, upper_bounds=2*np.pi)
+        model.setup()
+
+        assert p.is_variable
+        assert p.double_size == 1
+        assert p.integer_size == 0
+
+        np.testing.assert_allclose(p.get_double_lower_bounds(), np.array([np.pi/2]))
+        np.testing.assert_allclose(p.get_double_upper_bounds(), np.array([2*np.pi]))
+        np.testing.assert_allclose(p.get_double_variables(), np.array([np.pi]))
+
+        # No test updating the variables
+        p.set_double_variables(np.array([1.5*np.pi, ]))
+        np.testing.assert_allclose(p.get_double_variables(), np.array([1.5*np.pi]))
+
+        # None of the integer functions should be implemented because this parameter
+        # has no integer variables
+        with pytest.raises(NotImplementedError):
+            p.get_integer_lower_bounds()
+
+        with pytest.raises(NotImplementedError):
+            p.get_integer_upper_bounds()
+
+        with pytest.raises(NotImplementedError):
+            p.get_integer_variables()
+
+
 def test_parameter_array_indexed(simple_linear_model):
     """
     Test ArrayIndexedParameter
