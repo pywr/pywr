@@ -16,6 +16,10 @@ class InspyredOptimisationModel(Model):
         variable_map = [0, ]
         for var in self.variables:
             size = var.double_size + var.integer_size
+
+            if size <= 0:
+                raise ValueError('Variable parameter "{}" does not have a size > 0.'.format(var.name))
+
             variable_map.append(variable_map[-1]+size)
             variables.append(var)
 
@@ -52,7 +56,11 @@ class InspyredOptimisationModel(Model):
             lower = np.concatenate(lower)
             upper = np.concatenate(upper)
 
-            for i in range(var.size):
+            if len(lower) != len(upper):
+                raise ValueError('Upper and lower bounds are different lengths. Malformed bound data from Parameter:'
+                                 ' "{}"'.format(var.name))
+
+            for i in range(len(lower)):
                 values.append(random.uniform(lower[i], upper[i]))
 
         return values
