@@ -59,7 +59,7 @@ class TransientDecisionParameter(Parameter):
 
         self.decision_freq = decision_freq
         self._feasible_dates = None
-        self.size = 1  # This parameter is always size 1
+        self.integer_size = 1  # This parameter has a single integer variable
 
     def decision_date():
         def fget(self):
@@ -117,15 +117,26 @@ class TransientDecisionParameter(Parameter):
             v = self.before_parameter.get_value(scenario_index)
         return v
 
-    def lower_bounds(self):
-        return np.array([0.0, ])
+    def get_integer_lower_bounds(self):
+        return np.array([0, ], dtype=np.int)
 
-    def upper_bounds(self):
-        return np.array([len(self._feasible_dates)-1, ], dtype=np.float64)
+    def get_integer_upper_bounds(self):
+        return np.array([len(self._feasible_dates)-1, ], dtype=np.int)
 
-    def update(self, values):
+    def set_integer_variables(self, values):
         # Update the decision date with the corresponding feasible date
-        self.decision_date = self._feasible_dates[int(round(values[0]))]
+        self.decision_date = self._feasible_dates[values[0]]
+
+    def dump(self):
+
+        data = {
+            'earliest_date': self.earliest_date.isoformat(),
+            'latest_date': self.latest_date.isoformat(),
+            'decision_date': self.decision_date.isoformat(),
+            'decision_frequency': self.decision_freq
+        }
+
+        return data
 
 
 class ScenarioTreeDecisionItem(Component):
