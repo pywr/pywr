@@ -406,17 +406,23 @@ cdef class CythonLPSolveSolver:
                 max_flow = inf
             min_flow = inf_to_dbl_max(min_flow)
             max_flow = inf_to_dbl_max(max_flow)
-            matrix = set()
-            for node in nodes:
+
+            weights = agg_node.flow_weights
+            if weights is None:
+                weights = [1.0]*len(nodes)
+
+            matrix = {}
+            for node, w in zip(nodes, weights):
                 for n, route in enumerate(routes):
                     if node in route:
-                        matrix.add(n)
+                        matrix[n] = w
+
             length = len(matrix)
             ind = <int*>malloc(length * sizeof(int))
             val = <double*>malloc(length * sizeof(double))
             for i, col in enumerate(matrix):
                 ind[i] = 1+col
-                val[i] = 1.0
+                val[i] = matrix[col]
             add_constraintex(self.prob, length, val, ind, EQ, 0.0)
             set_row_bnds(self.prob, row, min_flow, max_flow)
             free(ind)
