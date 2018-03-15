@@ -30,12 +30,13 @@ install:
     - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
     - cmd: set PYTHONUNBUFFERED=1
 
-    # Update conda
-    - cmd: conda update --yes --quiet conda
-    
     # Add our channels
     - cmd: conda config --set show_channel_urls true
     - cmd: conda config --add channels conda-forge
+    - cmd: conda config --add channels defaults
+
+    # Update conda
+    - cmd: conda update --yes --quiet conda
 
     # Configure the VM.
     - cmd: conda install -n root --quiet --yes obvious-ci
