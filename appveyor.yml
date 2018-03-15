@@ -30,17 +30,20 @@ install:
     - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
     - cmd: set PYTHONUNBUFFERED=1
 
+    # Update conda
+    - cmd: conda update --yes --quiet conda
+
     # Add our channels
     - cmd: conda config --set show_channel_urls true
     - cmd: conda config --add channels conda-forge
 
-    # Update conda
-    # TODO Downgrading from 4.4 to 4.3 is broken. Disable this update.
-    #- cmd: conda update --yes --quiet conda
 
     # Configure the VM.
+    - cmd: conda.exe install -n root --quiet --yes conda-forge-build-setup
+    - cmd: run_conda_forge_build_setup
+
     - cmd: conda install -n root --quiet --yes obvious-ci
-    - cmd: conda install -n root --quiet --yes conda-build anaconda-client jinja2 setuptools
+    - cmd: conda install -n root --quiet --yes anaconda-client jinja2 setuptools
 
 # Skip .NET project specific build phase.
 build: off
