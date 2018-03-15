@@ -137,8 +137,8 @@ cdef class ConstantParameter(Parameter):
         self.offset = offset
         self.double_size = 1
         self.integer_size = 0
-        self._lower_bounds = np.ones(self.size) * lower_bounds
-        self._upper_bounds = np.ones(self.size) * upper_bounds
+        self._lower_bounds = np.ones(self.double_size) * lower_bounds
+        self._upper_bounds = np.ones(self.double_size) * upper_bounds
 
     cdef calc_values(self, Timestep timestep):
         # constant parameter can just set the entire array to one value
@@ -848,7 +848,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         self._phase_upper_bounds = np.ones(n)*kwargs.pop('phase_upper_bounds', np.pi*2)
         super(AnnualHarmonicSeriesParameter, self).__init__(model, *args, **kwargs)
         # Size must be set after call to super.
-        self.size = 1 + 2*n
+        self.double_size = 1 + 2*n
         self._value_cache = 0.0
         self._ts_index_cache = -1
 
