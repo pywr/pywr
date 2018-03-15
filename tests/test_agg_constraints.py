@@ -107,7 +107,12 @@ def test_aggregated_node_max_flow(model):
     assert_allclose(B.flow, 10.0)
 
 
-def test_aggregated_node_max_flow_with_weights(model):
+@pytest.mark.parametrize("flow_weights,expected_agg_flow,expected_A_flow,expected_B_flow",
+                         [
+                             ([2.0, 1.0], 30.0, 15.0, 0.0),
+                             ([0.5, 2.0], 30.0, 20.0, 10.0),
+                         ])
+def test_aggregated_node_max_flow_with_weights(model, flow_weights, expected_agg_flow, expected_A_flow, expected_B_flow):
     """Nodes constrained by the weighted max_flow of their AggregatedNode"""
     A = Input(model, "A", max_flow=20.0, cost=1)
     B = Input(model, "B", max_flow=20.0, cost=8)
@@ -117,14 +122,14 @@ def test_aggregated_node_max_flow_with_weights(model):
     B.connect(Z)
 
     agg = AggregatedNode(model, "agg", [A, B])
-    agg.flow_weights = [2.0, 1.0]
+    agg.flow_weights = flow_weights
     agg.max_flow = 30.0
 
     model.run()
 
-    assert_allclose(agg.flow, 30.0)
-    assert_allclose(A.flow, 15.0)
-    assert_allclose(B.flow, 0.0)
+    assert_allclose(agg.flow, expected_agg_flow)
+    assert_allclose(A.flow, expected_A_flow)
+    assert_allclose(B.flow, expected_B_flow)
 
 
 @pytest.mark.skipif(pytest.config.getoption("--solver") != "glpk", reason="only valid for glpk")
