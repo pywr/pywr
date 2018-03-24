@@ -6,20 +6,14 @@
     },
     "timestepper": {
         "start": "2100-01-01",
-        "end": "2199-01-01",
+        "end": "2101-01-01",
         "timestep": 7
     },
     "nodes": [
         {
             "name": "catchment1",
             "type": "catchment",
-            "flow": {
-              "type": "dataframe",
-              "url": "data/thames_stochastic_flow.gz",
-              "column": "flow",
-              "index_col": "Date",
-              "parse_dates": true
-            }
+            "flow": 100.0
         },
         {
             "name": "reservoir1",

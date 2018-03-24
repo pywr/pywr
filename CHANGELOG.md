@@ -2,7 +2,11 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
-## Master since v0.4
+## Master
+
+- None yet.
+
+## v0.5
 
 ### New features
 
@@ -23,6 +27,7 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 - Added optional checksum when loading DataFrameParameter and TablesArrayParameter using hashlib.
 - Added ProgressRecorder and JupyterProgressRecorder (#520)
 - The threshold in `*ThresholdParameter` can now be a Parameter. (#517)
+- Added `HydroPowerRecorder` and `TotalHydroEnergyRecorder` for hydropower studies (#584)
 
 ### Bug fixes
 - Explicitly set the frequency during dataframe resampling (#563)
