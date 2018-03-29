@@ -124,7 +124,7 @@ def create_node_class_trees():
     return node_class_trees
 
 
-def draw_graph(model, width=500, height=400, labels="false", css=None):
+def draw_graph(model, width=500, height=400, labels=False, css=None):
     """Display a Pywr model using D3 in Jupyter
 
     Parameters
@@ -138,7 +138,7 @@ def draw_graph(model, width=500, height=400, labels="false", css=None):
     display(js)
 
 
-def _draw_graph(model, width=500, height=400, labels="false", css=None):
+def _draw_graph(model, width=500, height=400, labels=False, css=None):
     """Creates Javascript/D3 code for graph"""
     if isinstance(model, Model):
         graph = pywr_model_to_d3_json(model)

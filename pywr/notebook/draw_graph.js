@@ -124,18 +124,18 @@ nodes.append("circle")
         return clss;
     });
 
-if (true){
-    nodes.append("text")
-        .attr("dx", 10)
-        .attr("dy", 5)
-        .style("font-weight", 100)
-        .text(function(d){
-            return d.name
-        });
-} else {
-    nodes.append("title")
-        .text(function(d) { return d.name; });
-}
+{% if labels %}
+nodes.append("text")
+    .attr("dx", 10)
+    .attr("dy", 5)
+    .style("font-weight", 100)
+    .text(function(d){
+        return d.name
+    });
+{% else %}
+nodes.append("title")
+     .text(function(d) { return d.name; });
+{% endif %}
 
 function tick() {
     if(browser == "ie") {
