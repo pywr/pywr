@@ -1,5 +1,5 @@
-
-from pywr.nodes import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink
+import marshmallow
+from pywr.nodes import Node, NodeSchema, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink
 from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter
 
@@ -16,6 +16,12 @@ class RiverDomainMixin(object):
 
 class Catchment(RiverDomainMixin, Input):
     """A hydrological catchment, supplying water to the river network"""
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        flow = marshmallow.fields.Raw(allow_none=True)
+        cost = marshmallow.fields.Raw()
+
     def __init__(self, *args, **kwargs):
         """Initialise a new Catchment node.
 
@@ -125,6 +131,14 @@ class RiverSplit(MultiSplitLink):
     pywr.nodes.MultiSplitLink
 
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        max_flow = marshmallow.fields.List(marshmallow.fields.Number)
+        cost = marshmallow.fields.List(marshmallow.fields.Number)
+        factors = marshmallow.fields.List(marshmallow.fields.Number)
+        slot_names = marshmallow.fields.List(marshmallow.fields.Str)
+
     def __init__(self, *args, **kwargs):
         def _make_iterable(val):
             try:
@@ -170,6 +184,16 @@ class RiverSplitWithGauge(RiverSplit):
         The identifiers to refer to the slots when connect from this Node. Length must be one more than
          the number of extra slots required.
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        max_flow = marshmallow.fields.Raw(allow_none=True)
+        mrf = marshmallow.fields.Raw()
+        cost = marshmallow.fields.Raw()
+        mrf_cost = marshmallow.fields.Raw()
+        factors = marshmallow.fields.List(marshmallow.fields.Number)
+        slot_names = marshmallow.fields.List(marshmallow.fields.Str)
+
     def __init__(self, model, name, mrf=0.0, cost=0.0, mrf_cost=0.0, **kwargs):
         kwargs['cost'] = [mrf_cost, cost]
         kwargs['max_flow'] = [mrf, None]
@@ -196,6 +220,14 @@ class Discharge(Catchment):
 class RiverGauge(RiverDomainMixin, PiecewiseLink):
     """A river gauging station, with a minimum residual flow (MRF)
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        max_flow = marshmallow.fields.Raw(allow_none=True)
+        mrf = marshmallow.fields.Raw()
+        cost = marshmallow.fields.Raw()
+        mrf_cost = marshmallow.fields.Raw()
+
     def __init__(self, *args, **kwargs):
         """Initialise a new RiverGauge instance
 

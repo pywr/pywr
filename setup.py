@@ -37,9 +37,8 @@ setup_kwargs = {
     'author_email': 'josh@snorfalorpagus.net',
     'url': 'http://snorf.net/pywr/',
     'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters', 'pywr.recorders', 'pywr.notebook', 'pywr.optimisation'],
-    'install_requires': ['pandas', 'networkx', 'scipy', 'tables', 'future', 'xlrd', 'packaging']
+    'install_requires': ['pandas', 'networkx', 'scipy', 'tables', 'future', 'xlrd', 'packaging', 'marshmallow']
 }
-
 
 define_macros = []
 

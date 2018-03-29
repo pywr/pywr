@@ -1,6 +1,6 @@
 from six import with_metaclass
 import numpy as np
-
+import marshmallow
 from pywr import _core
 from pywr._core import Node as BaseNode
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
@@ -119,6 +119,19 @@ class NodeMeta(type):
         return node
 
 
+class NodeSchema(marshmallow.Schema):
+    """ Default schema for all Pywr nodes. """
+    name = marshmallow.fields.Str()
+    type = marshmallow.fields.Str()
+    comment = marshmallow.fields.Str()
+
+    @marshmallow.validates_schema(pass_original=True)
+    def check_unknown_fields(self, data, original_data):
+        unknown = set(original_data) - set(self.fields)
+        if unknown:
+            raise marshmallow.ValidationError('Unknown field', unknown)
+
+
 class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
     """Base object from which all other nodes inherit
 
@@ -127,6 +140,13 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
     class for other Node types (e.g. StorageInput) that are not directly
     Connectable.
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        max_flow = marshmallow.fields.Raw(allow_none=True)
+        min_flow = marshmallow.fields.Raw(allow_none=True)
+        cost = marshmallow.fields.Raw()
+
     def __init__(self, model, name, **kwargs):
         """Initialise a new Node object
 
@@ -288,6 +308,20 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
     records changes in storage. Any recorders set on the output or input
     sub-nodes record flow as normal.
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        max_volume = marshmallow.fields.Raw(required=False)
+        min_volume = marshmallow.fields.Raw(required=False)
+        cost = marshmallow.fields.Raw(required=False)
+        initial_volume = marshmallow.fields.Raw(required=False)
+        initial_volume_pc = marshmallow.fields.Number(required=False)
+        level = marshmallow.fields.Raw(required=False)
+        area = marshmallow.fields.Raw(required=False)
+        inputs = marshmallow.fields.Integer(required=False, default=1)
+        outputs = marshmallow.fields.Integer(required=False, default=1)
+
+
     def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
         # cast number of inputs/outputs to integer
         # this is needed if values come in as strings sometimes
@@ -459,6 +493,16 @@ class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
     -----
     TODO: The cost property is not currently respected. See issue #242.
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        nodes = marshmallow.fields.List(marshmallow.fields.Str, required=True)
+        max_volume = marshmallow.fields.Raw(required=False)
+        min_volume = marshmallow.fields.Raw(required=False)
+        cost = marshmallow.fields.Raw(required=False)
+        initial_volume = marshmallow.fields.Raw(required=False)
+        factors = marshmallow.fields.List(marshmallow.fields.Number, required=True)
+
     def __init__(self, model, name, nodes, **kwargs):
         min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         if min_volume is None:
@@ -514,6 +558,18 @@ class AnnualVirtualStorage(VirtualStorage):
     reset_month: int
         The month of the year (0-12) to reset the volume to the initial value.
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        nodes = marshmallow.fields.List(marshmallow.fields.Str, required=True)
+        max_volume = marshmallow.fields.Raw(required=False)
+        min_volume = marshmallow.fields.Raw(required=False)
+        cost = marshmallow.fields.Raw(required=False)
+        initial_volume = marshmallow.fields.Raw(required=False)
+        factors = marshmallow.fields.List(marshmallow.fields.Number, required=True)
+        reset_day = marshmallow.fields.Integer()
+        reset_month = marshmallow.fields.Integer()
+
     def __init__(self, *args, **kwargs):
         self.reset_day = kwargs.pop('reset_day', 1)
         self.reset_month = kwargs.pop('reset_month', 1)
@@ -561,6 +617,14 @@ class PiecewiseLink(Node):
         A list of costs corresponding to the max_flow steps
 
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        max_flows = marshmallow.fields.List(marshmallow.fields.Raw)
+        max_flow = marshmallow.fields.List(marshmallow.fields.Raw(allow_none=True))
+        costs = marshmallow.fields.List(marshmallow.fields.Raw)
+        cost = marshmallow.fields.List(marshmallow.fields.Number)
+
     def __init__(self, *args, **kwargs):
         self.allow_isolated = True
         costs = kwargs.pop('cost')
@@ -759,6 +823,11 @@ class AggregatedStorage(with_metaclass(NodeMeta, Drawable, _core.AggregatedStora
     This node can not be connected to other nodes in the network.
 
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        storage_nodes = marshmallow.fields.List(marshmallow.fields.Str())
+
     def __init__(self, model, name, storage_nodes, **kwargs):
         super(AggregatedStorage, self).__init__(model, name, **kwargs)
         self.storage_nodes = storage_nodes
@@ -782,6 +851,14 @@ class AggregatedNode(with_metaclass(NodeMeta, Drawable, _core.AggregatedNode)):
     This node can not be connected to other nodes in the network.
 
     """
+    class Schema(NodeSchema):
+        # The main attributes are not validated (i.e. `Raw`)
+        # They could be many different things.
+        max_flow = marshmallow.fields.Raw(required=False)
+        min_flow = marshmallow.fields.Raw(required=False)
+        factors = marshmallow.fields.Raw(required=False)
+        nodes = marshmallow.fields.List(marshmallow.fields.Str())
+
     def __init__(self, model, name, nodes, **kwargs):
         super(AggregatedNode, self).__init__(model, name, **kwargs)
         self.nodes = nodes
