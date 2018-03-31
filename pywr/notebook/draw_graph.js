@@ -129,6 +129,7 @@ nodes.append("text")
     .attr("dx", 10)
     .attr("dy", 5)
     .style("font-weight", 100)
+    .classed("node-text", true)
     .text(function(d){
         return d.name
     });
@@ -170,4 +171,37 @@ force.on("tick", tick);
 
 force.start();
 
+nodes.on("mouseover", function(d){
+    
+    var table  = d3.selectAll(element)
+                   .append("table")
+                   .classed("table-tooltip", true);
 
+    var thead = table.append('thead')
+    var	tbody = table.append('tbody');
+    
+    var columns = ["Attribute", "Type", "Value"]
+    thead.append('tr')
+		  .selectAll('th')
+		  .data(columns).enter()
+		  .append('th')
+          .text(function (column) { return column; });
+          
+    var rows = tbody.selectAll('tr')
+                    .data(d["attributes"])
+                    .enter()
+                    .append('tr');
+
+    var cells = rows.selectAll('td')
+                    .data(function (d) {
+                        return columns.map(function (column) {
+                        return {column: column, value: d[column]};
+                        });
+                    })
+                    .enter()
+                    .append('td')
+                        .text(function (d) { return d.value; });
+
+}).on("mouseout", function(){
+    d3.select(".table-tooltip").remove()
+});

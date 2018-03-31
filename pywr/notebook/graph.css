@@ -4,7 +4,7 @@
     fill: grey;
 }
 
-.node text {
+.node-text {
     pointer-events: none;
     font: 10px sans-serif;
 }
@@ -27,4 +27,14 @@
 }
 .node-reservoir {
     fill: firebrick;
+}
+
+.table-tooltip{
+    position: relative;
+    border: solid 1px grey;
+    background-color: white;
+    pointer-events: none;
+    font: 10px sans-serif;
+    color: black;
+    z-index: 99999;
 }

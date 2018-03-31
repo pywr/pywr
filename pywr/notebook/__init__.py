@@ -90,7 +90,8 @@ def get_node_attr(node):
         att_type = type(att_val).__name__ 
         
         attrs_to_skip = ["component_attrs", "components", "color", "model",  "input", "output",
-                         "inputs", "outputs", "sub_domain", "sub_output", "sublinks"]
+                         "inputs", "outputs", "sub_domain", "sub_output", "sublinks", "visible",
+                         "fully_qualified_name", "allow_isolated"]
         if not att_val or att_name.lower() in attrs_to_skip:
             continue    
         
@@ -109,7 +110,7 @@ def get_node_attr(node):
         else:
             att_val = str(att_val)
 
-        attribute_data.append({"name": att_name, "type": att_type, "value": att_val})
+        attribute_data.append({"Attribute": att_name, "Type": att_type, "Value": att_val})
 
     return attribute_data
 
