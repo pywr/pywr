@@ -19,7 +19,7 @@ with open(os.path.join(folder, "draw_graph.js"), "r") as f:
 with open(os.path.join(folder, "graph.css"), "r") as f:
     draw_graph_css = f.read()
 
-def pywr_model_to_d3_json(model):
+def pywr_model_to_d3_json(model, attributes):
     """Convert a Pywr graph to a structure d3 can display"""
     nodes = []
     node_names = []
@@ -66,7 +66,9 @@ def pywr_model_to_d3_json(model):
             node["position"] = node.position["schematic"]
         except KeyError:
             pass
-        node_dict["attributes"] = get_node_attr(node)
+    
+        if attributes:
+            node_dict["attributes"] = get_node_attr(node)
         
         json_nodes.append(node_dict)
 
@@ -167,7 +169,7 @@ def create_node_class_trees():
     return node_class_trees
 
 
-def draw_graph(model, width=500, height=400, labels=False, css=None):
+def draw_graph(model, width=500, height=400, labels=False, attributes=False, css=None):
     """Display a Pywr model using D3 in Jupyter
 
     Parameters
@@ -177,14 +179,14 @@ def draw_graph(model, width=500, height=400, labels=False, css=None):
     css : string
         Stylesheet data to use instead of default
     """
-    js = _draw_graph(model, width, height, labels, css)
+    js = _draw_graph(model, width, height, labels, attributes, css)
     display(js)
 
 
-def _draw_graph(model, width=500, height=400, labels=False, css=None):
+def _draw_graph(model, width=500, height=400, labels=False, attributes=False, css=None):
     """Creates Javascript/D3 code for graph"""
     if isinstance(model, Model):
-        graph = pywr_model_to_d3_json(model)
+        graph = pywr_model_to_d3_json(model, attributes)
     else:
         graph = pywr_json_to_d3_json(model)
 
@@ -197,6 +199,7 @@ def _draw_graph(model, width=500, height=400, labels=False, css=None):
             width=width,
             height=height,
             labels=labels,
+            attributes=attributes,
             css=css.replace("\n","")
         ),
         lib="http://d3js.org/d3.v3.min.js",
