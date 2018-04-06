@@ -19,8 +19,16 @@ with open(os.path.join(folder, "draw_graph.js"), "r") as f:
 with open(os.path.join(folder, "graph.css"), "r") as f:
     draw_graph_css = f.read()
 
-def pywr_model_to_d3_json(model, attributes):
-    """Convert a Pywr graph to a structure d3 can display"""
+def pywr_model_to_d3_json(model, attributes=False):
+    """
+    Convert a Pywr graph to a structure d3 can display
+    
+    Parameters
+    ----------
+    model : `pywr.core.Model
+    attributes: bool (default=False)
+        If True, attribute data for each node is extract
+    """
     nodes = []
     node_names = []
     for node in model.graph.nodes():
@@ -81,14 +89,19 @@ def pywr_model_to_d3_json(model, attributes):
 
 def get_node_attr(node):
     """
-    Returns a dictionary that contains node attributes
+    Returns a dictionary that contains node attributes as strings
+
+    Parameters
+    ----------
+    node : a pywr node object 
     """
     attrs = inspect.getmembers(node, lambda a:not(inspect.isroutine(a)))
-    filtered_attrs = [attr for attr in attrs if attr[0][0] != "_"]
     attribute_data = []
-    for att in filtered_attrs:
+    for att in attrs:
         
         att_name, att_val = att
+        if att_name.startswith("_"):
+            continue
         att_type = type(att_val).__name__ 
         
         attrs_to_skip = ["component_attrs", "components", "color", "model",  "input", "output",
@@ -101,7 +114,7 @@ def get_node_attr(node):
             att_val = att_val.name
             if not att_val:
                 att_val = ""
-                
+     
         if isinstance(att_val, list):
             new_vals = []
             for val in att_val:
@@ -119,6 +132,11 @@ def get_node_attr(node):
 def pywr_json_to_d3_json(model):
     """
     converts a json file or a json-derived dict into structure that D3 can use
+
+    Parameters
+    ----------
+    model : dict or str
+        str inputs should be a path to a json file containing the model. 
     """
    
     if isinstance(model, str):
@@ -176,6 +194,15 @@ def draw_graph(model, width=500, height=400, labels=False, attributes=False, css
     ----------
     model : pywr.core.Model or json-dict that describes a model
         The model to display
+    width : int
+        The width of the svg canvas to draw the graph on
+    height : int
+        The height of the svg canvas to draw the graph on
+    labels : bool
+        If True, each graph node is labelled with its name. If false, the node names are displayed
+        during mouseover events
+    attributes : bool
+        If True, a table of node attributes is displayed during mouseover events 
     css : string
         Stylesheet data to use instead of default
     """

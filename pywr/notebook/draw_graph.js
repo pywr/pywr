@@ -179,7 +179,7 @@ force.start();
                     .classed("table-tooltip", true);
 
         var thead = table.append('thead')
-        var	tbody = table.append('tbody');
+        var tbody = table.append('tbody');
         
         var columns = ["Attribute", "Type", "Value"]
         thead.append('tr')
@@ -201,7 +201,7 @@ force.start();
                         })
                         .enter()
                         .append('td')
-                            .text(function (d) { return d.value; });
+                        .text(function (d) { return d.value; });
 
     }).on("mouseout", function(){
         d3.select(".table-tooltip").remove()
