@@ -4,10 +4,6 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 ## Master
 
-- None yet.
-
-## v0.6
-
 ### New features
 
  - Added additional labeling functionaility to notebook graphing functions.
