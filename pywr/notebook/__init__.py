@@ -131,7 +131,7 @@ def get_node_attr(node):
 
 def pywr_json_to_d3_json(model):
     """
-    converts a json file or a json-derived dict into structure that D3 can use
+    Converts a JSON file or a JSON-derived dict into structure that d3js can use.
 
     Parameters
     ----------
