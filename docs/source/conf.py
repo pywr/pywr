@@ -57,7 +57,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Pywr'
-copyright = 'Copyright (C) 2014-17 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester'
+copyright = 'Copyright (C) 2014-18 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester'
 author = 'Joshua Arnott, James E. Tomlinson'
 
 # The version info for the project you're documenting, acts as replacement for
