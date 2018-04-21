@@ -187,7 +187,7 @@ force.start();
             .data(columns).enter()
             .append('th')
             .text(function (column) { return column; });
-            
+        console.log(d)    
         var rows = tbody.selectAll('tr')
                         .data(d["attributes"])
                         .enter()

@@ -129,7 +129,7 @@ def get_node_attr(node):
 
     return attribute_data
 
-def pywr_json_to_d3_json(model):
+def pywr_json_to_d3_json(model, attributes=False):
     """
     converts a json file or a json-derived dict into structure that D3 can use
 
@@ -153,12 +153,24 @@ def pywr_json_to_d3_json(model):
 
     nodes = []
     node_classes = create_node_class_trees()
+    params = [param for param in model["parameters"]]
     for node in model["nodes"]:
-        json_node = {'name': node["name"], 'clss': node_classes[node["type"].lower()]}
+        json_node = {'name': node.pop("name"), 'clss': node_classes[node["type"].lower()]}
         try:
             json_node['position'] = node['position']['schematic']
         except KeyError:
             pass
+
+        if attributes:
+            json_node["attributes"] = []
+            for name, val in node.items():
+                val_type = " "
+                if val in params or isinstance(val, dict):
+                    val_type = "parameter"
+                if isinstance(val, dict):
+                    val = "Parameter defined inplace"
+                attr_dict = {"Attribute": name, "Type": val_type, "Value": val}
+                json_node["attributes"].append(attr_dict)
 
         nodes.append(json_node)
 
@@ -215,7 +227,7 @@ def _draw_graph(model, width=500, height=400, labels=False, attributes=False, cs
     if isinstance(model, Model):
         graph = pywr_model_to_d3_json(model, attributes)
     else:
-        graph = pywr_json_to_d3_json(model)
+        graph = pywr_json_to_d3_json(model, attributes)
 
     if css is None:
         css = draw_graph_css
