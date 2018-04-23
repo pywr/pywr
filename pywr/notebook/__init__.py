@@ -99,33 +99,35 @@ def get_node_attr(node):
     attribute_data = []
     for att in attrs:
         
-        att_name, att_val = att
-        if att_name.startswith("_"):
+        attr_name, attr_val = att
+        if attr_name.startswith("_"):
             continue
-        att_type = type(att_val).__name__ 
+        attr_type = type(attr_val).__name__ 
         
         attrs_to_skip = ["component_attrs", "components", "color", "model",  "input", "output",
                          "inputs", "outputs", "sub_domain", "sub_output", "sublinks", "visible",
                          "fully_qualified_name", "allow_isolated"]
-        if not att_val or att_name.lower() in attrs_to_skip:
+        if not attr_val or attr_name.lower() in attrs_to_skip:
             continue    
         
-        if isinstance(att_val, Component): 
-            att_val = att_val.name
-            if not att_val:
-                att_val = ""
+        if isinstance(attr_val, Component): 
+            attr_val = attr_val.name
+            if not attr_val:
+                attr_val = attr_type
+            else:
+                attr_val = attr_val + " - " + attr_type
      
-        if isinstance(att_val, list):
+        if isinstance(attr_val, list):
             new_vals = []
-            for val in att_val:
+            for val in attr_val:
                 val_name = str(val)
                 val_name = val_name.replace("[", "").replace("]", "")
                 new_vals.append(val_name)
-            att_val = "".join(new_vals)
+            attr_val = "".join(new_vals)
         else:
-            att_val = str(att_val)
+            attr_val = str(attr_val)
 
-        attribute_data.append({"Attribute": att_name, "Type": att_type, "Value": att_val})
+        attribute_data.append({"attribute": attr_name,  "value": attr_val})
 
     return attribute_data
 
@@ -153,7 +155,7 @@ def pywr_json_to_d3_json(model, attributes=False):
 
     nodes = []
     node_classes = create_node_class_trees()
-    params = [param for param in model["parameters"]]
+
     for node in model["nodes"]:
         json_node = {'name': node.pop("name"), 'clss': node_classes[node["type"].lower()]}
         try:
@@ -164,12 +166,23 @@ def pywr_json_to_d3_json(model, attributes=False):
         if attributes:
             json_node["attributes"] = []
             for name, val in node.items():
-                val_type = " "
-                if val in params or isinstance(val, dict):
-                    val_type = "parameter"
+
+                if name == "type":
+                    continue
+                
+                attr_val = val
+
                 if isinstance(val, dict):
-                    val = "Parameter defined inplace"
-                attr_dict = {"Attribute": name, "Type": val_type, "Value": val}
+                    try:
+                        attr_val = val["type"] + " parameter"
+                    except KeyError:
+                        pass
+                elif val in model["parameters"].keys():
+                    param = model["parameters"][val]
+                    attr_type = param["type"] + " parameter"
+                    attr_val = attr_val + " - " + attr_type
+  
+                attr_dict = {"attribute": name, "value": attr_val}
                 json_node["attributes"].append(attr_dict)
 
         nodes.append(json_node)

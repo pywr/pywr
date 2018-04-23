@@ -9,7 +9,7 @@ def get_node(nodes, name):
 
 def get_node_attribute(node, attr_name):
     for attr in node["attributes"]:
-        if attr["Attribute"] == attr_name:
+        if attr["attribute"] == attr_name:
             return attr 
 
 def test_from_model():
@@ -27,7 +27,7 @@ def test_from_model():
 
     catchment = get_node(json_dict["nodes"], "catchment1")
     catchment_max_flow = get_node_attribute(catchment, "max_flow")
-    assert catchment_max_flow["Value"] == "5.0"
+    assert catchment_max_flow["value"] == "5.0"
     
 def test_from_json():
 
@@ -43,4 +43,4 @@ def test_from_json():
 
     demand = get_node(json_dict["nodes"], "Demand")
     demand_max_flow = get_node_attribute(demand, "max_flow")
-    assert demand_max_flow["Value"] == "demand_max_flow"
+    assert demand_max_flow["value"] == "demand_max_flow - aggregated parameter"

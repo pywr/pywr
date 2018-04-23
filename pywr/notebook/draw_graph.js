@@ -181,13 +181,13 @@ force.start();
         var thead = table.append('thead')
         var tbody = table.append('tbody');
         
-        var columns = ["Attribute", "Type", "Value"]
+        var columns = ["attribute", "value"]
         thead.append('tr')
             .selectAll('th')
             .data(columns).enter()
             .append('th')
             .text(function (column) { return column; });
-        console.log(d)    
+ 
         var rows = tbody.selectAll('tr')
                         .data(d["attributes"])
                         .enter()
