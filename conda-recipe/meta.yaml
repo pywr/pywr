@@ -51,6 +51,7 @@ requirements:
     - lp_solve
     - future
     - packaging
+    - wheel
     {% if OLDGLIBC %}
     - oldglibc
     {% endif %}
