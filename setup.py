@@ -49,9 +49,15 @@ optional = set()
 if '--with-glpk' in sys.argv:
     optional.add('glpk')
     sys.argv.remove('--with-glpk')
+elif os.environ.get('PYWR_BUILD_GLPK', 'false').lower() == 'true':
+    optional.add('glpk')
+
 if '--with-lpsolve' in sys.argv:
     optional.add('lpsolve')
     sys.argv.remove('--with-lpsolve')
+elif os.environ.get('PYWR_BUILD_LPSOLVE', 'false').lower() == 'true':
+    optional.add('lpsolve')
+
 if '--annotate' in sys.argv:
     annotate = True
     sys.argv.remove('--annotate')
