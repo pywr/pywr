@@ -1,5 +1,7 @@
 language: generic
+
 sudo: false
+
 cache:
     directories:
         - ${HOME}/miniconda3
@@ -55,26 +57,6 @@ script:
             doctr deploy . --deploy-repo pywr/pywr-docs --built-docs ${HOME}/pywr/docs/html
         fi
       fi
-
-deploy:
-  # Source distribution for only 3.6
-  - provider: pypi
-    user: jetuk
-    password:
-      secure: B55WPY1N216d3zm/rRmQX3iclnlbYatz1wijH1ZinAFduabBIjcAS+rsMbHpHD4mmHHMB3M/uMwX1vKez4Ga8jJFgUqfSwR/tI9b7gLR4EOU1oSgpwQxWYMF7CZgPJaaB6ZOru/zX3y1grYZxBKY+Y/W0kdSlfgusB2kor8BzO8=
-    on:
-      tags: true
-      distributions: "sdist"
-      condition: $CONDA_PY=36
-  # Wheel distributions for all versions
-  - provider: pypi
-    user: jetuk
-    password:
-      secure: B55WPY1N216d3zm/rRmQX3iclnlbYatz1wijH1ZinAFduabBIjcAS+rsMbHpHD4mmHHMB3M/uMwX1vKez4Ga8jJFgUqfSwR/tI9b7gLR4EOU1oSgpwQxWYMF7CZgPJaaB6ZOru/zX3y1grYZxBKY+Y/W0kdSlfgusB2kor8BzO8=
-    on:
-      tags: true
-      distributions: "bdist_wheel"
-
 
 before_cache:
     - rm -rf ${HOME}/miniconda3/conda-bld/*
