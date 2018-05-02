@@ -24,10 +24,15 @@ with open(os.path.join(os.path.dirname(__file__), "pywr", "__init__.py")) as f:
         if line.startswith("__version__"):
             version = Version(line.split("=")[1].strip().strip("\"'"))
 
+with open('README.rst') as fh:
+    long_description = fh.read()
+
 setup_kwargs = {
     'name': 'pywr',
     'version': str(version),
     'description': 'Python Water Resource model',
+    'long_description': long_description,
+    'long_description_content_type': 'text/x-rst',
     'author': 'Joshua Arnott',
     'author_email': 'josh@snorfalorpagus.net',
     'url': 'http://snorf.net/pywr/',
@@ -141,7 +146,7 @@ setup_kwargs['package_data'] = {
 # store the current git hash in the module
 try:
     git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip().decode("utf-8")
-except FileNotFoundError:
+except subprocess.CalledProcessError:
     pass
 else:
     with open("pywr/GIT_VERSION.txt", "w") as f:

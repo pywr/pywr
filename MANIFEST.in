@@ -1,0 +1,15 @@
+global-exclude *.pyc *.c
+recursive-exclude docs/_build *
+recursive-exclude docs/source/api/generated *
+exclude MANIFEST.in
+exclude *.txt *.py
+recursive-include docs *.rst *.txt *.png *.css *.html *.py
+recursive-include tests *.py *.ini *.xlsx *.ipynb
+recursive-include tests/models *
+recursive-include examples *.py *.json
+recursive-include examples/data *
+recursive-include pywr *.pyx *.pxd *.pxi
+recursive-exclude pywr *.c
+include pywr/GIT_VERSION.txt
+include CHANGELOG.md LICENSE.txt README.rst
+include setup.py Pipfile
