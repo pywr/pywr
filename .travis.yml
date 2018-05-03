@@ -58,6 +58,13 @@ script:
         fi
       fi
 
+# Upload to anaconda & pypi only if master branch and not a PR.
+deploy:
+    provider: script
+    script: bash deploy.sh
+    on:
+        tags: true
+
 before_cache:
     - rm -rf ${HOME}/miniconda3/conda-bld/*
     - rm -rf ${HOME}/miniconda3/envs/*
