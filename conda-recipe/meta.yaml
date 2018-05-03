@@ -52,7 +52,6 @@ requirements:
     - future
     - packaging
     - wheel
-    - twine
     {% if OLDGLIBC %}
     - oldglibc
     {% endif %}

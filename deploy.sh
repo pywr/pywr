@@ -1,5 +1,5 @@
 # Deploy to pypi
-twine upload dist/*
+twine upload ${HOME}/pywr/dist/*
 
 # Deploy to anaconda
 if [ ${TRAVIS_OS_NAME} == "osx" ]; then
