@@ -6,6 +6,11 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 - None yet.
 
+## v0.5.1
+
+- Fixes to the source distribution (sdist) and inclusions of MANIFEST.in
+- Changes to the build systems on travis to enable deploy to Anaconda and Pypi.
+
 ## v0.5
 
 ### New features
