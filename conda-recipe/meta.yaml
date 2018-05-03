@@ -51,6 +51,7 @@ requirements:
     - lp_solve
     - future
     - packaging
+    - wheel
     {% if OLDGLIBC %}
     - oldglibc
     {% endif %}
@@ -89,6 +90,7 @@ test:
 
   source_files:
     - tests/*
+    - dist/*
     {% if BUILD_DOC %}
     - docs/*
     {% endif %}

@@ -9,6 +9,7 @@ cache:
 env:
     global:
         - secure: "bF1Ljix0pDNBBjgewrOxxNHJDEvlWDT5v5KckSq/Wl0v9QMAG5Fiilj0hPHVQrWoGz7F3xPU5KeprjQcfTo2UB7qPGDOVsovafbUTZ+0o6kc2mVLApYsRvlhUPX8tsRCrq6Zo874buMzbDPyAo3nnl3lkkWQ2Dh+gA7b7er9xS0="
+        - secure: "FQZjYwRhHgVf96a+GgZRgEZPuCirsRAjWUE9VLh7JVfLwGXV/ABLUa32/KLv4/R6sT1cXg9Eo4pUxCzjjfXwJQVvaB1ttn9iWg7JX56NhT7ZVs3h5PQPG03CSwU4Tsjt3LNAadZ5inik3X8MFi4O6xg3pqaHn/NmY1+zmDBiUws1ys0hB0QWLrOzEuGyXTxMcC6Hhw2To1d1fcVA6JSY2fw3cA4axxC9XXtLOt/hn9d5wXi+6mVNcMtfKkLrNUz5aXXJM2lli/SsBQTHaZVCT7zHIYaqwaBeklkrbESBrGHNEj+yKJo1+Uu+aNxs4vkCGTGvK1nrXNgG5onqKV/5JdEyM3UVz52lrYpkY/3DuAM+oia3sICkpOSMd8UmGZy6gAC0tWr0kiJMDiESA941bJ90UtXVOsR+Zv21UDGcmjvu8HL5TWYFyCMgsMDEyxd+iVeKSlZC8rHn9siByHG/JC1eerhikmoH9yNFBRdmX8ZKZ9SJ60nwG5coFZzwiaqoezLckYbX3rxNLa7rS6gqqCJrEZzmpHzN+hGeDj3yl21z9yiBy00Oydv5eF6EkLXLDYcYWai2nFHFIiTcIu5cAIk8HRWDFXvlW4op9ETgyCjtFZ3lV+9ExCURV+OfWUDPksPrzrA1YkJuXVfxdw+spWl2CAidOCQYYbkzQ7bOG4Q="
 
 # Travis has limited OSX resources
 # Only do OSX on Python 3.6
@@ -45,7 +46,7 @@ install:
       conda update --yes conda
 
       conda config --set show_channel_urls true
-      conda install --yes --quiet conda-build
+      conda install --yes --quiet conda-build twine
 
 script:
     - |
@@ -57,6 +58,13 @@ script:
             doctr deploy . --deploy-repo pywr/pywr-docs --built-docs ${HOME}/pywr/docs/html
         fi
       fi
+
+# Upload to anaconda & pypi only if master branch and not a PR.
+deploy:
+    provider: script
+    script: bash deploy.sh
+    on:
+        tags: true
 
 before_cache:
     - rm -rf ${HOME}/miniconda3/conda-bld/*

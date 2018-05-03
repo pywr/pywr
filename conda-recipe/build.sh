@@ -19,3 +19,7 @@ if [ "$FEATURE_OLDGLIBC" == "1" ]; then
 fi
 
 $PYTHON setup.py build_ext --with-glpk --with-lpsolve install --single-version-externally-managed --record=record.txt
+
+# Also build the source and wheel distributions for pypi
+$PYTHON setup.py sdist
+$PYTHON setup.py bdist_wheel

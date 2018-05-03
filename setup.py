@@ -24,10 +24,15 @@ with open(os.path.join(os.path.dirname(__file__), "pywr", "__init__.py")) as f:
         if line.startswith("__version__"):
             version = Version(line.split("=")[1].strip().strip("\"'"))
 
+with open('README.rst') as fh:
+    long_description = fh.read()
+
 setup_kwargs = {
     'name': 'pywr',
     'version': str(version),
     'description': 'Python Water Resource model',
+    'long_description': long_description,
+    'long_description_content_type': 'text/x-rst',
     'author': 'Joshua Arnott',
     'author_email': 'josh@snorfalorpagus.net',
     'url': 'http://snorf.net/pywr/',
@@ -44,9 +49,15 @@ optional = set()
 if '--with-glpk' in sys.argv:
     optional.add('glpk')
     sys.argv.remove('--with-glpk')
+elif os.environ.get('PYWR_BUILD_GLPK', 'false').lower() == 'true':
+    optional.add('glpk')
+
 if '--with-lpsolve' in sys.argv:
     optional.add('lpsolve')
     sys.argv.remove('--with-lpsolve')
+elif os.environ.get('PYWR_BUILD_LPSOLVE', 'false').lower() == 'true':
+    optional.add('lpsolve')
+
 if '--annotate' in sys.argv:
     annotate = True
     sys.argv.remove('--annotate')
@@ -141,7 +152,7 @@ setup_kwargs['package_data'] = {
 # store the current git hash in the module
 try:
     git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip().decode("utf-8")
-except FileNotFoundError:
+except subprocess.CalledProcessError:
     pass
 else:
     with open("pywr/GIT_VERSION.txt", "w") as f:
