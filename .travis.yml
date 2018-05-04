@@ -46,7 +46,7 @@ install:
       conda update --yes conda
 
       conda config --set show_channel_urls true
-      conda install --yes --quiet conda-build twine
+      conda install --yes --quiet conda-build twine anaconda-client
 
 script:
     - |
