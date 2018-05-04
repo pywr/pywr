@@ -90,7 +90,6 @@ test:
 
   source_files:
     - tests/*
-    - dist/*
     {% if BUILD_DOC %}
     - docs/*
     {% endif %}
