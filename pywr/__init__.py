@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 
-__version__ = "0.5.1"
+__version__ = "0.6dev"
 
 
 def get_git_hash():
