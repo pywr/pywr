@@ -3,6 +3,8 @@ from pywr._component cimport Component
 from .._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node
 
 cdef class Parameter(Component):
+    cdef public int double_size
+    cdef public int integer_size
     cdef int _size
     cdef public bint is_variable
     cdef AbstractNode _node
@@ -14,6 +16,17 @@ cdef class Parameter(Component):
     cpdef update(self, double[:] values)
     cpdef double[:] lower_bounds(self)
     cpdef double[:] upper_bounds(self)
+
+    # New variable API
+    cpdef set_double_variables(self, double[:] values)
+    cpdef double[:] get_double_variables(self)
+    cpdef double[:] get_double_lower_bounds(self)
+    cpdef double[:] get_double_upper_bounds(self)
+    cpdef set_integer_variables(self, int[:] values)
+    cpdef int[:] get_integer_variables(self)
+    cpdef int[:] get_integer_lower_bounds(self)
+    cpdef int[:] get_integer_upper_bounds(self)
+
 
 
 cdef class ConstantParameter(Parameter):

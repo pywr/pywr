@@ -6,7 +6,15 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 ### New features
 
- - Added additional labeling functionality to notebook graphing functions. (#612)
+- Added additional labeling functionality to notebook graphing functions. (#612)
+- New and improved variable API for Parameters. (#601, #258)
+
+## v0.5.1
+
+### Miscellaneous
+
+- Fixes to the source distribution (sdist) and inclusions of MANIFEST.in
+- Changes to the build systems on travis to enable deploy to Anaconda and Pypi.
 
 ## v0.5
 

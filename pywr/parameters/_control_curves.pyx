@@ -387,7 +387,7 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
                  variable_indices=None, upper_bounds=None, lower_bounds=None, **kwargs):
         super(ControlCurveParameter, self).__init__(model, storage_node, control_curves, **kwargs)
         # Expected number of values is number of control curves plus one.
-        self.size = nvalues = len(self.control_curves) + 1
+        nvalues = len(self.control_curves) + 1
         self.parameters = None
         if values is not None:
             if len(values) != nvalues:
@@ -411,26 +411,26 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
 
         if variable_indices is not None:
             self.variable_indices = variable_indices
-            self.size = len(variable_indices)
+            self.double_size = len(variable_indices)
         else:
-            self.size = 0
+            self.double_size = 0
         # Bounds for use as a variable (i.e. when self.is_variable = True)
         if upper_bounds is not None:
             if self.values is None or variable_indices is None:
                 raise ValueError('Upper bounds can only be specified if `values` and `variable_indices` '
                                  'is not `None`.')
-            if len(upper_bounds) != self.size:
+            if len(upper_bounds) != self.double_size:
                 raise ValueError('Length of upper_bounds should be equal to the length of `variable_indices` '
-                                 '({}).'.format(self.size))
+                                 '({}).'.format(self.double_size))
             self._upper_bounds = np.array(upper_bounds)
 
         if lower_bounds is not None:
             if self.values is None or variable_indices is None:
                 raise ValueError('Lower bounds can only be specified if `values` and `variable_indices` '
                                  'is not `None`.')
-            if len(lower_bounds) != self.size:
+            if len(lower_bounds) != self.double_size:
                 raise ValueError('Length of lower_bounds should be equal to the length of `variable_indices` '
-                                 '({}).'.format(self.size))
+                                 '({}).'.format(self.double_size))
             self._lower_bounds = np.array(lower_bounds)
 
     property values:
@@ -488,17 +488,29 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
         else:
             return self._values[-1]
 
-    cpdef update(self, double[:] values):
+    cpdef set_double_variables(self, double[:] values):
         cdef int i
         cdef double v
-        if self.size != 0:
+
+        if len(values) != len(self.variable_indices):
+            raise ValueError('Number of values must be the same as the number of variable_indices.')
+
+        if self.double_size != 0:
             for i, v in zip(self.variable_indices, values):
                 self._values[i] = v
 
-    cpdef double[:] lower_bounds(self):
+    cpdef double[:] get_double_variables(self):
+        cdef int i, j
+        cdef double v
+        cdef double[:] arry = np.empty((len(self.variable_indices), ))
+        for i, j in enumerate(self.variable_indices):
+            arry[i] = self._values[j]
+        return arry
+
+    cpdef double[:] get_double_lower_bounds(self):
         return self._lower_bounds
 
-    cpdef double[:] upper_bounds(self):
+    cpdef double[:] get_double_upper_bounds(self):
         return self._upper_bounds
 
 ControlCurveParameter.register()
