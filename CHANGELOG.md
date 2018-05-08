@@ -4,7 +4,9 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 ## Master
 
-- None yet.
+### New features
+
+- New and improved variable API for Parameters. (#601, #258)
 
 ## v0.5.1
 
