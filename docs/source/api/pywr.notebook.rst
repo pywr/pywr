@@ -1,5 +1,5 @@
 Notebook Utilities
-==========
+==================
 
 .. currentmodule:: pywr.notebook
 

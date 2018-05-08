@@ -25,7 +25,7 @@ def pywr_model_to_d3_json(model, attributes=False):
     
     Parameters
     ----------
-    model : `pywr.core.Model
+    model : `pywr.core.Model`
     attributes: bool (default=False)
         If True, attribute data for each node is extract
     """

@@ -6,7 +6,7 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 ### New features
 
- - Added additional labeling functionaility to notebook graphing functions.
+ - Added additional labeling functionality to notebook graphing functions. (#612)
 
 ## v0.5
 
