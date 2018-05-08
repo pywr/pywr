@@ -9,4 +9,5 @@ Pywr reference documentation.
    pywr.recorders
    pywr.domains
    pywr.solvers
+   pywr.notebook
 
