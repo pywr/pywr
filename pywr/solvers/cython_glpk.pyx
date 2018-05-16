@@ -328,17 +328,21 @@ cdef class CythonGLPKSolver:
             row = self.idx_row_aggregated_min_max + row
             nodes = agg_node.nodes
 
-            matrix = set()
-            for some_node in nodes:
+            weights = agg_node.flow_weights
+            if weights is None:
+                weights = [1.0]*len(nodes)
+
+            matrix = {}
+            for some_node, w in zip(nodes, weights):
                 for n, route in enumerate(routes):
                     if some_node in route:
-                        matrix.add(n)
+                        matrix[n] = w
             length = len(matrix)
             ind = <int*>malloc(1+length * sizeof(int))
             val = <double*>malloc(1+length * sizeof(double))
             for i, col in enumerate(sorted(matrix)):
                 ind[1+i] = 1+col
-                val[1+i] = 1.0
+                val[1+i] = matrix[col]
             set_mat_row(self.prob, row, length, ind, val)
             set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
             #glp_set_row_name(self.prob, row, b'ag.'+agg_node.fully_qualified_name.encode('utf-8'))

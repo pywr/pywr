@@ -571,6 +571,7 @@ cdef class AggregatedNode(AbstractNode):
         self._allow_isolated = True
         self.virtual = True
         self._factors = None
+        self._flow_weights = None
         self._min_flow = 0.0
         self._max_flow = inf
         self._min_flow_param = None
@@ -588,13 +589,19 @@ cdef class AggregatedNode(AbstractNode):
 
     cpdef after(self, Timestep ts):
         AbstractNode.after(self, ts)
-        cdef int i
+        cdef int i, j
         cdef Node n
+
+        cdef double[:] weights
+        if self._flow_weights is not None:
+            weights = self._flow_weights
+        else:
+            weights = np.ones(len(self._nodes))
 
         for i, si in enumerate(self.model.scenarios.combinations):
             self._flow[i] = 0.0
-            for n in self._nodes:
-                self._flow[i] += n._flow[i]
+            for j, n in enumerate(self._nodes):
+                self._flow[i] += n._flow[i]*weights[j]
 
     property factors:
         def __get__(self):
@@ -607,6 +614,19 @@ cdef class AggregatedNode(AbstractNode):
             if np.any(values < 1e-6):
                 warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
             self._factors = values
+            self.model.dirty = True
+
+    property flow_weights:
+        def __get__(self):
+            if self._flow_weights is None:
+                return None
+            else:
+                return np.asarray(self._flow_weights, np.float64)
+        def __set__(self, values):
+            values = np.array(values, np.float64)
+            if np.any(values < 1e-6):
+                warnings.warn("Very small flow_weights in AggregateNode result in ill-conditioned matrix")
+            self._flow_weights = values
             self.model.dirty = True
 
     property min_flow:
@@ -673,6 +693,9 @@ cdef class AggregatedNode(AbstractNode):
         agg = cls(model, name, nodes)
         try:
             agg.factors = data["factors"]
+        except KeyError: pass
+        try:
+            agg.flow_weights = data["flow_weights"]
         except KeyError: pass
         try:
             agg.min_flow = load_parameter(model, data["min_flow"])
