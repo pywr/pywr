@@ -8,6 +8,7 @@ else
 fi
 jupyter nbconvert --to html --execute --ExecutePreprocessor.kernel_name=python${PY_VER} ${SRC_DIR}/tests/notebook.ipynb
 
+
 if [ "${BUILD_DOC}" == "1" ]; then
     echo "Building documentation!"
     cd ${SRC_DIR}/docs

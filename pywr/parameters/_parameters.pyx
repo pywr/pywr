@@ -22,6 +22,8 @@ cdef class Parameter(Component):
     def __init__(self, *args, is_variable=False, **kwargs):
         super(Parameter, self).__init__(*args, **kwargs)
         self.is_variable = is_variable
+        self.double_size = 0
+        self.integer_size = 0
 
     @classmethod
     def register(cls):
@@ -57,20 +59,54 @@ cdef class Parameter(Component):
         return self.__values
 
     cpdef update(self, double[:] values):
-        raise NotImplementedError()
+        warnings.warn("Use of the `update` method on Parameters has been deprecated."
+                      "Please use either `set_double_variables` or `set_integer_variables` instead.", DeprecationWarning)
+        self.set_double_variables(values)
 
     cpdef double[:] lower_bounds(self):
-        raise NotImplementedError()
+        warnings.warn("Use of the `lower_bounds` method on Parameters has been deprecated."
+                      "Please use either `get_double_lower_bounds` or `get_integer_lower_bounds` instead.", DeprecationWarning)
+        return self.get_double_lower_bounds()
 
     cpdef double[:] upper_bounds(self):
+        warnings.warn("Use of the `upper_bounds` method on Parameters has been deprecated."
+                      "Please use either `get_double_upper_bounds` or `get_integer_upper_bounds` instead.", DeprecationWarning)
+        return self.get_double_lower_bounds()
+
+    cpdef set_double_variables(self, double[:] values):
+        raise NotImplementedError()
+
+    cpdef double[:] get_double_variables(self):
+        raise NotImplementedError()
+
+    cpdef double[:] get_double_lower_bounds(self):
+        raise NotImplementedError()
+
+    cpdef double[:] get_double_upper_bounds(self):
+        raise NotImplementedError()
+
+    cpdef set_integer_variables(self, int[:] values):
+        raise NotImplementedError()
+
+    cpdef int[:] get_integer_variables(self):
+        raise NotImplementedError()
+
+    cpdef int[:] get_integer_lower_bounds(self):
+        raise NotImplementedError()
+
+    cpdef int[:] get_integer_upper_bounds(self):
         raise NotImplementedError()
 
     property size:
         def __get__(self):
-            return self._size
+            warnings.warn("Use of the `size` property on Parameters has been deprecated."
+                          "Please use either `double_size` or `integer_size` instead.", DeprecationWarning)
+            return self.double_size
 
         def __set__(self, value):
-            self._size = value
+            warnings.warn("Use of the `size` property on Parameters has been deprecated."
+                          "Please use either `double_size` or `integer_size` instead.", DeprecationWarning)
+            self.double_size = value
 
     @classmethod
     def load(cls, model, data):
@@ -92,15 +128,17 @@ cdef class Parameter(Component):
             return cls(model, values=values, name=name, comment=None, **data)
 Parameter.register()
 
+
 cdef class ConstantParameter(Parameter):
     def __init__(self, model, value, lower_bounds=0.0, upper_bounds=np.inf, scale=1.0, offset=0.0, **kwargs):
         super(ConstantParameter, self).__init__(model, **kwargs)
         self._value = value
         self.scale = scale
         self.offset = offset
-        self.size = 1
-        self._lower_bounds = np.ones(self.size) * lower_bounds
-        self._upper_bounds = np.ones(self.size) * upper_bounds
+        self.double_size = 1
+        self.integer_size = 0
+        self._lower_bounds = np.ones(self.double_size) * lower_bounds
+        self._upper_bounds = np.ones(self.double_size) * upper_bounds
 
     cdef calc_values(self, Timestep timestep):
         # constant parameter can just set the entire array to one value
@@ -109,13 +147,16 @@ cdef class ConstantParameter(Parameter):
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._value
 
-    cpdef update(self, double[:] values):
+    cpdef set_double_variables(self, double[:] values):
         self._value = values[0]
 
-    cpdef double[:] lower_bounds(self):
+    cpdef double[:] get_double_variables(self):
+        return np.array([self._value, ], dtype=np.float64)
+
+    cpdef double[:] get_double_lower_bounds(self):
         return self._lower_bounds
 
-    cpdef double[:] upper_bounds(self):
+    cpdef double[:] get_double_upper_bounds(self):
         return self._upper_bounds
 
     @classmethod
@@ -537,6 +578,7 @@ cdef inline bint is_leap_year(int year):
     # http://stackoverflow.com/a/11595914/1300519
     return ((year & 3) == 0 and ((year % 25) != 0 or (year & 15) == 0))
 
+
 cdef class DailyProfileParameter(Parameter):
     """ An annual profile consisting of daily values.
 
@@ -597,6 +639,7 @@ cdef class WeeklyProfileParameter(Parameter):
         return self._values[week]
 WeeklyProfileParameter.register()
 
+
 cdef class MonthlyProfileParameter(Parameter):
     """ Parameter which provides a monthly profile
 
@@ -610,23 +653,28 @@ cdef class MonthlyProfileParameter(Parameter):
     """
     def __init__(self, model, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
         super(MonthlyProfileParameter, self).__init__(model, **kwargs)
-        self.size = 12
-        if len(values) != self.size:
+        self.double_size = 12
+        self.integer_size = 0
+        if len(values) != self.double_size:
             raise ValueError("12 values must be given for a monthly profile.")
         self._values = np.array(values)
-        self._lower_bounds = np.ones(self.size)*lower_bounds
-        self._upper_bounds = np.ones(self.size)*upper_bounds
+        self._lower_bounds = np.ones(self.double_size)*lower_bounds
+        self._upper_bounds = np.ones(self.double_size)*upper_bounds
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._values[ts.month-1]
 
-    cpdef update(self, double[:] values):
+    cpdef set_double_variables(self, double[:] values):
         self._values[...] = values
 
-    cpdef double[:] lower_bounds(self):
+    cpdef double[:] get_double_variables(self):
+        # Make sure we return a copy of the data instead of a view.
+        return np.array(self._values).copy()
+
+    cpdef double[:] get_double_lower_bounds(self):
         return self._lower_bounds
 
-    cpdef double[:] upper_bounds(self):
+    cpdef double[:] get_double_upper_bounds(self):
         return self._upper_bounds
 MonthlyProfileParameter.register()
 
@@ -664,8 +712,6 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
 
-    cpdef update(self, double[:] values):
-        self._values[...] = values
 ScenarioMonthlyProfileParameter.register()
 
 
@@ -790,7 +836,6 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         if len(amplitudes) != len(phases):
             raise ValueError("The number  of amplitudes and phases must be the same.")
         n = len(amplitudes)
-        self.size = 1 + 2*n
         self.mean = mean
         self._amplitudes = np.array(amplitudes)
         self._phases = np.array(phases)
@@ -802,6 +847,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         self._phase_lower_bounds = np.ones(n)*kwargs.pop('phase_lower_bounds', 0.0)
         self._phase_upper_bounds = np.ones(n)*kwargs.pop('phase_upper_bounds', np.pi*2)
         super(AnnualHarmonicSeriesParameter, self).__init__(model, *args, **kwargs)
+        # Size must be set after call to super.
+        self.double_size = 1 + 2*n
         self._value_cache = 0.0
         self._ts_index_cache = -1
 
@@ -842,16 +889,19 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
             self._ts_index_cache = ts_index
         return val
 
-    cpdef update(self, double[:] values):
+    cpdef set_double_variables(self, double[:] values):
         n = len(self.amplitudes)
         self.mean = values[0]
         self.amplitudes[...] = values[1:n+1]
         self.phases[...] = values[n+1:]
 
-    cpdef double[:] lower_bounds(self):
+    cpdef double[:] get_double_variables(self):
+        return np.r_[np.array([self.mean, ]), np.array(self.amplitudes), np.array(self.phases)]
+
+    cpdef double[:] get_double_lower_bounds(self):
         return np.r_[self._mean_lower_bounds, self._amplitude_lower_bounds, self._phase_lower_bounds]
 
-    cpdef double[:] upper_bounds(self):
+    cpdef double[:] get_double_upper_bounds(self):
         return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
 AnnualHarmonicSeriesParameter.register()
 

@@ -77,6 +77,7 @@ cdef class Node(AbstractNode):
 cdef class AggregatedNode(AbstractNode):
     cdef list _nodes
     cdef double[:] _factors
+    cdef double[:] _flow_weights
     cdef double _max_flow
     cdef double _min_flow
     cdef Parameter _min_flow_param

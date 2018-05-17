@@ -30,6 +30,7 @@
             "type": "AggregatedNode",
             "nodes": ["A", "B"],
             "factors": [2.0, 4.0],
+            "flow_weights": [1.0, 1.0],
             "max_flow": 30.0,
             "min_flow": 5.0
         }

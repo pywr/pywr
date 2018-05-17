@@ -45,9 +45,9 @@ var posY = d3.scale.linear()
     .range([0, height])
     .domain([100, -100]); // map-style, +ve is up
 
-// set initial node positions
+// set initial node positions 
 for (var i = 0; i < graph.nodes.length; i++) {
-    node = graph.nodes[i];
+    var node = graph.nodes[i];
     if (node.position != undefined) {
         node.x = posX(node.position[0]);
         node.y = posY(node.position[1]);
@@ -106,23 +106,37 @@ function dragstart(d) {
 var drag = force.drag()
     .on("dragstart", dragstart);
 
-var node = svg.selectAll(".node")
-  .data(graph.nodes)
-.enter().append("circle")
-  .attr("class", "node")
-  .attr("r", node_size)
-  .attr("class", function(d) {
-      var clss = "node";
-      for (var i=0; i < d.clss.length; i++) {
-          clss += " node-"+d.clss[i];
-      };
-      return clss;
-  })
-  .on("dblclick", dblclick)
-  .call(drag);
+var nodes = svg.selectAll(".node")
+              .data(graph.nodes)
+              .enter()
+              .append("g")  
+              .on("dblclick", dblclick)
+              .call(drag);
 
-node.append("title")
-  .text(function(d) { return d.name; });
+nodes.append("circle")
+    .attr("class", "node")
+    .attr("r", node_size)
+    .attr("class", function(d) {
+        var clss = "node";
+        for (var i=0; i < d.clss.length; i++) {
+            clss += " node-"+d.clss[i];
+        };
+        return clss;
+    });
+
+{% if labels %}
+nodes.append("text")
+    .attr("dx", 10)
+    .attr("dy", 5)
+    .style("font-weight", 100)
+    .classed("node-text", true)
+    .text(function(d){
+        return d.name
+    });
+{% else %}
+nodes.append("title")
+     .text(function(d) { return d.name; });
+{% endif %}
 
 function tick() {
     if(browser == "ie") {
@@ -149,10 +163,47 @@ function tick() {
         });
     }
 
-    node.attr("transform", function(d) {
+    nodes.attr("transform", function(d) {
         return "translate(" + d.x + "," + d.y + ")";
     });
 }
 force.on("tick", tick);
 
 force.start();
+
+{% if attributes %}
+    nodes.on("mouseover", function(d){
+        
+        var table  = d3.selectAll(element)
+                    .append("table")
+                    .classed("table-tooltip", true);
+
+        var thead = table.append('thead')
+        var tbody = table.append('tbody');
+        
+        var columns = ["attribute", "value"]
+        thead.append('tr')
+            .selectAll('th')
+            .data(columns).enter()
+            .append('th')
+            .text(function (column) { return column; });
+ 
+        var rows = tbody.selectAll('tr')
+                        .data(d["attributes"])
+                        .enter()
+                        .append('tr');
+
+        var cells = rows.selectAll('td')
+                        .data(function (d) {
+                            return columns.map(function (column) {
+                            return {column: column, value: d[column]};
+                            });
+                        })
+                        .enter()
+                        .append('td')
+                        .text(function (d) { return d.value; });
+
+    }).on("mouseout", function(){
+        d3.select(".table-tooltip").remove()
+    });
+{% endif %}
