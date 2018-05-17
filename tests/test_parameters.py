@@ -28,8 +28,8 @@ from numpy.testing import assert_allclose
 TEST_DIR = os.path.dirname(__file__)
 
 @pytest.fixture
-def model(solver):
-    return Model(solver=solver)
+def model():
+    return Model()
 
 
 class TestConstantParameter:
@@ -245,8 +245,8 @@ class TestScenarioMonthlyProfileParameter:
                 si = ScenarioIndex(i, np.array([i], dtype=np.int32))
                 np.testing.assert_allclose(p.value(ts, si), values[i, imth])
 
-    def test_json(self, solver):
-        model = load_model('scenario_monthly_profile.json', solver=solver)
+    def test_json(self):
+        model = load_model('scenario_monthly_profile.json')
 
         # check first day initalised
         assert (model.timestepper.start == datetime.datetime(2015, 1, 1))
@@ -649,7 +649,7 @@ def test_parameter_df_json_load(model, tmpdir):
     p = load_parameter(model, data)
     p.setup()
 
-def test_simple_json_parameter_reference(solver):
+def test_simple_json_parameter_reference():
     # note that parameters in the "parameters" section cannot be literals
     model = load_model("parameter_reference.json")
     max_flow = model.nodes["supply1"].max_flow
@@ -707,11 +707,11 @@ def test_threshold_parameter(simple_linear_model):
     model.run()
 
 
-def test_constant_from_df(solver):
+def test_constant_from_df():
     """
     Test that a dataframe can be used to provide data to ConstantParameter (single values).
     """
-    model = load_model('simple_df.json', solver=solver)
+    model = load_model('simple_df.json')
 
     assert isinstance(model.nodes['demand1'].max_flow, ConstantParameter)
     assert isinstance(model.nodes['demand1'].cost, ConstantParameter)
@@ -723,11 +723,11 @@ def test_constant_from_df(solver):
     np.testing.assert_allclose(model.nodes['demand1'].cost.value(ts, si), -10.0)
 
 
-def test_constant_from_shared_df(solver):
+def test_constant_from_shared_df():
     """
     Test that a shared dataframe can be used to provide data to ConstantParameter (single values).
     """
-    model = load_model('simple_df_shared.json', solver=solver)
+    model = load_model('simple_df_shared.json')
 
     assert isinstance(model.nodes['demand1'].max_flow, ConstantParameter)
     assert isinstance(model.nodes['demand1'].cost, ConstantParameter)
@@ -739,11 +739,11 @@ def test_constant_from_shared_df(solver):
     np.testing.assert_allclose(model.nodes['demand1'].cost.value(ts, si), -10.0)
 
 
-def test_constant_from_multiindex_df(solver):
+def test_constant_from_multiindex_df():
     """
     Test that a dataframe can be used to provide data to ConstantParameter (single values).
     """
-    model = load_model('multiindex_df.json', solver=solver)
+    model = load_model('multiindex_df.json')
 
 
     assert isinstance(model.nodes['demand1'].max_flow, ConstantParameter)
@@ -1172,14 +1172,14 @@ def test_orphaned_components(simple_linear_model):
     with pytest.warns(OrphanedParameterWarning):
         model.check()
 
-def test_deficit_parameter(solver):
+def test_deficit_parameter():
     """Test DeficitParameter
 
     Here we test both uses of the DeficitParameter:
       1) Recording the deficit for a node each timestep
       2) Using yesterday's deficit to control today's flow
     """
-    model = load_model("deficit.json", solver=solver)
+    model = load_model("deficit.json")
 
     model.run()
 

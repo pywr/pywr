@@ -9,7 +9,7 @@ import pytest
 from helpers import assert_model, load_model
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
-def simple_piecewise_model(request, solver):
+def simple_piecewise_model(request):
     """
     Make a simple model with a single Input and Output and PiecewiseLink
 
@@ -19,7 +19,7 @@ def simple_piecewise_model(request, solver):
     in_flow, out_flow, benefit = request.param
     min_flow_req = 5.0
 
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
     inpt = pywr.core.Input(model, name="Input", max_flow=in_flow)
     lnk = pywr.core.PiecewiseLink(model, name="Link", cost=[-1.0, 0.0], max_flow=[min_flow_req, None])
 
@@ -45,9 +45,9 @@ def simple_piecewise_model(request, solver):
 def test_piecewise_model(simple_piecewise_model):
     assert_model(*simple_piecewise_model)
 
-def test_piecewise_json(solver):
+def test_piecewise_json():
     """Test loading of a piecewise link from JSON"""
-    model = load_model("piecewise1.json", solver=solver)
+    model = load_model("piecewise1.json")
     sublinks = model.nodes["link1"].sublinks
     max_flows = [sublink.max_flow for sublink in sublinks]
     costs = [sublink.cost for sublink in sublinks]
