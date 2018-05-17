@@ -27,7 +27,7 @@ def test_run_simple1(solver):
     model = load_model('simple1.json', solver=solver)
 
     # run the model
-    t0 = model.timestepper.start.to_datetime()
+    t0 = model.timestepper.start.to_pydatetime()
     model.step()
 
     # check results
