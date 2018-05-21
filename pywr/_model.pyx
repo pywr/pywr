@@ -30,6 +30,7 @@ from pywr.parameters._parameters import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
+from pywr.schema.nodes import BaseNodeSchema
 
 class OrphanedParameterWarning(Warning):
     pass
@@ -407,12 +408,9 @@ class Model(object):
             # if not, load it now
             node_data = model._nodes_to_load[node_name]
             node_type = node_data['type'].lower()
-            cls = NodeMeta.node_registry[node_type]
-            # Validate the node data with the classes schema
-            # Note that we don't use the marshmallow loaded data here,
-            # we're just using it for validation.
-            cls.Schema().validate(node_data)
-            node = cls.load(node_data, model)
+            schema = BaseNodeSchema.get_schema(node_type, model)
+            node = schema.load(node_data)
+            print(node, type(node))
             del(model._nodes_to_load[node_name])
         return node
 

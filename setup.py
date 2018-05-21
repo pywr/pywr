@@ -36,7 +36,8 @@ setup_kwargs = {
     'author': 'Joshua Arnott',
     'author_email': 'josh@snorfalorpagus.net',
     'url': 'http://snorf.net/pywr/',
-    'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters', 'pywr.recorders', 'pywr.notebook', 'pywr.optimisation'],
+    'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters', 'pywr.recorders', 'pywr.notebook',
+                 'pywr.optimisation', 'pywr.schema'],
     'install_requires': ['pandas', 'networkx', 'scipy', 'tables', 'future', 'xlrd', 'packaging', 'marshmallow']
 }
 
