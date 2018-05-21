@@ -65,7 +65,7 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     remaining -= remaining / (365 - 2)
     assert_allclose(lic.value(m.timestepper._next, si), remaining / (365 - 3))
 
-def test_annual_license_json(solver):
+def test_annual_license_json():
     """
     This test demonstrates how an annual licence can be forceably distributed
     evenly across a year. The licence must build up a surplus before it can

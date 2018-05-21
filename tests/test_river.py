@@ -15,7 +15,7 @@ import pytest
 from helpers import assert_model, load_model
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
-def simple_gauge_model(request, solver):
+def simple_gauge_model(request):
     """
     Make a simple model with a single Input and Output and RiverGauge
 
@@ -25,7 +25,7 @@ def simple_gauge_model(request, solver):
     in_flow, out_flow, benefit = request.param
     min_flow_req = 5.0
 
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
     inpt = river.Catchment(model, name="Catchment", flow=in_flow)
     lnk = river.RiverGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-1.0)
     inpt.connect(lnk)
@@ -47,7 +47,7 @@ def simple_gauge_model(request, solver):
 
 
 @pytest.fixture
-def simple_river_split_gauge_model(solver):
+def simple_river_split_gauge_model():
     """
     Make a simple model with a single Input and Output and RiverGauge
 
@@ -58,7 +58,7 @@ def simple_river_split_gauge_model(solver):
     in_flow = 100.0
     min_flow_req = 40.0
     out_flow = 50.0
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
 
     inpt = river.Catchment(model, name="Catchment", flow=in_flow)
     lnk = river.RiverSplitWithGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-100,
@@ -81,11 +81,11 @@ def simple_river_split_gauge_model(solver):
     return model, expected_node_results
 
 
-def test_river_gauge(solver):
+def test_river_gauge():
     """
     Test loading a model with a RiverGauge from JSON, modifying it, then running it
     """
-    model = load_model("river_mrf1.json", solver=solver)
+    model = load_model("river_mrf1.json")
 
     node = model.nodes["mrf"]
     demand = model.nodes["demand"]
@@ -114,10 +114,10 @@ def test_piecewise_model(simple_gauge_model):
 def test_river_split_gauge(simple_river_split_gauge_model):
     assert_model(*simple_river_split_gauge_model)
 
-def test_river_split_gauge_json(solver):
+def test_river_split_gauge_json():
     """As test_river_split_gauge, but model is defined in JSON"""
 
-    model = load_model("river_split_with_gauge1.json", solver=solver)
+    model = load_model("river_split_with_gauge1.json")
     model.check()
     model.run()
 
@@ -131,7 +131,7 @@ def test_river_split_gauge_json(solver):
     assert_allclose(demand_node.flow, expected_demand_flow)
 
 
-def test_control_curve(solver):
+def test_control_curve():
     """
     Use a simple model of a Reservoir to test that a control curve
     behaves as expected.
@@ -148,7 +148,7 @@ def test_control_curve(solver):
     """
     in_flow = 8
 
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
     catchment = river.Catchment(model, name="Catchment", flow=in_flow)
     lnk = river.River(model, name="River")
     catchment.connect(lnk)
@@ -191,9 +191,9 @@ def test_control_curve(solver):
     assert(reservoir.volume == 10)
     assert(demand.flow == 6)
 
-def test_catchment_many_successors(solver):
+def test_catchment_many_successors():
     """Test if node with fixed flow can have multiple successors. See #225"""
-    model = Model(solver=solver)
+    model = Model()
     catchment = Catchment(model, "catchment", flow=100)
     out1 = Output(model, "out1", max_flow=10, cost=-100)
     out2 = Output(model, "out2", max_flow=15, cost=-50)
