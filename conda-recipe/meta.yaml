@@ -82,6 +82,7 @@ test:
   requires:
     - pytest
     - nbconvert
+    - pygmo
     {% if BUILD_DOC %}
     - sphinx
     - sphinx_rtd_theme
