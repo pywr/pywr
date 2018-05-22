@@ -1,7 +1,3 @@
-
-
-import numpy as np
-import inspyred
 from ..core import Model
 
 
