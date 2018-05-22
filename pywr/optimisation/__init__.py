@@ -99,3 +99,13 @@ class BaseOptimisationWrapper:
 
     def customise_model(self, model):
         pass  # By default there is no customisation.
+
+
+def clear_global_model_cache():
+    """ Clear the module level model cache. """
+    global MODEL, VARIABLES, VARIABLE_MAP, OBJECTIVES, CONSTRAINTS
+    MODEL = None
+    VARIABLES = None
+    VARIABLE_MAP = None
+    OBJECTIVES = None
+    CONSTRAINTS = None

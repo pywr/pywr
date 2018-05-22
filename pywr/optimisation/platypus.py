@@ -1,7 +1,6 @@
 import numpy as np
 import platypus
 from . import cache_constraints, cache_objectives, cache_variable_parameters, BaseOptimisationWrapper
-from ..model import Model
 
 import logging
 logger = logging.getLogger(__name__)
@@ -84,13 +83,3 @@ class PlatypusWrapper(BaseOptimisationWrapper):
             return objectives, constraints
         else:
             return objectives
-
-
-def clear_global_model_cache():
-    """ Clear the module level model cache. """
-    global MODEL, VARIABLES, VARIABLE_MAP, OBJECTIVES, CONSTRAINTS
-    MODEL = None
-    VARIABLES = None
-    VARIABLE_MAP = None
-    OBJECTIVES = None
-    CONSTRAINTS = None
