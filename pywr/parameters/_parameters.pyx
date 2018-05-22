@@ -892,8 +892,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
     cpdef set_double_variables(self, double[:] values):
         n = len(self.amplitudes)
         self.mean = values[0]
-        self.amplitudes[...] = values[1:n+1]
-        self.phases[...] = values[n+1:]
+        self._amplitudes[...] = values[1:n+1]
+        self._phases[...] = values[n+1:]
 
     cpdef double[:] get_double_variables(self):
         return np.r_[np.array([self.mean, ]), np.array(self.amplitudes), np.array(self.phases)]
