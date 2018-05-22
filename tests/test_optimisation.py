@@ -2,6 +2,8 @@ from pywr.recorders import TotalFlowNodeRecorder
 from pywr.parameters import ConstantParameter
 from pywr.optimisation.platypus import PlatypusWrapper, clear_global_model_cache
 from platypus import NSGAII, ProcessPoolEvaluator
+import pygmo as pg
+from pywr.optimisation.pygmo import PygmoWrapper
 import pytest
 import os
 from fixtures import simple_storage_model
@@ -75,3 +77,22 @@ def test_platypus_nsgaii_process_pool(two_reservoir_problem):
         algorithm = NSGAII(two_reservoir_problem.problem, population_size=50, evaluator=evaluator)
         algorithm.run(10)
 
+
+@pytest.fixture()
+def two_reservoir_pygmo_wrapper():
+    """ Two reservoir test optimisation problem in PygmoWrapper. """
+    filename = os.path.join(TEST_FOLDER, 'models', 'two_reservoir.json')
+    yield PygmoWrapper(filename)
+    # Clean up the
+    clear_global_model_cache()
+
+
+def test_pygmo_single_generation(two_reservoir_pygmo_wrapper):
+    """ Simple pygmo wrapper test. """
+    wrapper = two_reservoir_pygmo_wrapper
+    prob = pg.problem(wrapper)
+    algo = pg.algorithm(pg.moead(gen=1))
+
+    pg.mp_island.init_pool(2)
+    isl = pg.island(algo=algo, prob=prob, size=50, udi=pg.mp_island())
+    isl.evolve(1)

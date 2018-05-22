@@ -13,7 +13,9 @@ this --plot can be used to generate an animation and PNG of the pareto frontier.
 import json
 import os
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 
 
 def get_model_data(harmonic=True):
@@ -55,6 +57,74 @@ def platypus_main(harmonic=False):
     plt.grid(True)
     title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
     plt.savefig('{} Example ({}).pdf'.format('platypus', title), format='pdf')
+    plt.show()
+
+
+def pygmo_main(harmonic=False):
+    import pygmo as pg
+    from pywr.optimisation.pygmo import PygmoWrapper
+
+    def update_archive(pop, archive=None):
+        if archive is None:
+            combined_f = pop.get_f()
+        else:
+            combined_f = np.r_[archive, pop.get_f()]
+        indices = pg.select_best_N_mo(combined_f, 50)
+        new_archive = combined_f[indices, :]
+        new_archive = np.unique(new_archive.round(4), axis=0)
+        return new_archive
+
+    wrapper = PygmoWrapper(get_model_data(harmonic=harmonic))
+    prob = pg.problem(wrapper)
+    print(prob)
+    algo = pg.algorithm(pg.moead(gen=1))
+    #algo = pg.algorithm(pg.nsga2(gen=1))
+
+    pg.mp_island.init_pool(2)
+    isl = pg.island(algo=algo, prob=prob, size=50, udi=pg.mp_island())
+
+    ref_point = [216500, 4000]
+    pop = isl.get_population()
+
+    print('Evolving!')
+    archive = update_archive(pop)
+    hv = pg.hypervolume(archive)
+    vol = hv.compute(ref_point)
+    hvs = [vol, ]
+    print('Gen: {:03d}, Hypervolume: {:6.4g}, Archive size: {:d}'.format(0, vol, len(archive)))
+
+    for gen in range(20):
+        isl.evolve(1)
+        isl.wait_check()
+
+        pop = isl.get_population()
+        archive = update_archive(pop, archive)
+
+        hv = pg.hypervolume(archive)
+        vol = hv.compute(ref_point)
+        print('Gen: {:03d}, Hypervolume: {:6.4g}, Archive size: {:d}'.format(gen+1, vol, len(archive)))
+        hvs.append(vol)
+
+    hvs = pd.Series(hvs)
+
+    print('Finished!')
+
+    plt.scatter(archive[:, 0], archive[:, 1])
+
+    objectives = wrapper.model_objectives
+    plt.xlabel(objectives[0].name)
+    plt.ylabel(objectives[1].name)
+    plt.grid(True)
+    title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
+    plt.savefig('{} Example ({}).pdf'.format('pygmo', title), format='pdf')
+
+    fig, ax = plt.subplots()
+    ax.plot(hvs/1e6, marker='o')
+    ax.grid(True)
+    ax.set_ylabel('Hypervolume')
+    ax.set_xlabel('Generation')
+    plt.savefig('{} Example Hypervolume ({}).pdf'.format('pygmo', title), format='pdf')
+
     plt.show()
 
 
@@ -188,7 +258,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--harmonic', action='store_true', help='Use an harmonic control curve.')
     parser.add_argument('--plot', action='store_true', help='Plot the pareto frontier.')
-    parser.add_argument('--library', type=str, choices=['inspyred', 'platypus'])
+    parser.add_argument('--library', type=str, choices=['inspyred', 'platypus', 'pygmo'])
     args = parser.parse_args()
 
     if args.plot:
@@ -203,3 +273,7 @@ if __name__ == '__main__':
             inspyred_main(display=True, harmonic=args.harmonic)
         elif args.library == 'platypus':
             platypus_main(harmonic=args.harmonic)
+        elif args.library == 'pygmo':
+            pygmo_main(harmonic=args.harmonic)
+        else:
+            raise ValueError('Optimisation library "{}" not recognised.'.format(args.library))
