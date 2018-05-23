@@ -371,7 +371,7 @@ class TestAnnualHarmonicSeriesParameter:
         np.testing.assert_allclose(p1.get_double_variables(), new_var)
 
         with pytest.raises(NotImplementedError):
-            p1.set_integer_variables(new_var)
+            p1.set_integer_variables(np.arange(3, dtype=np.int32))
 
         with pytest.raises(NotImplementedError):
             p1.get_integer_variables()

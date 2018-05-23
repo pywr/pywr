@@ -862,11 +862,11 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
     property amplitudes:
         def __get__(self):
-            return np.array(self._amplitudes)
+            return np.asarray(self._amplitudes)
 
     property phases:
         def __get__(self):
-            return np.array(self._phases)
+            return np.asarray(self._phases)
 
     cpdef reset(self):
         Parameter.reset(self)
