@@ -82,6 +82,11 @@ class Model(object):
         # Import this here once everything else is defined.
         # This avoids circular references in the solver classes
         from pywr.solvers import solver_registry
+
+        if solver_name is None:
+            # See if there is a environment variable defining the solver
+            solver_name = os.environ.get('PYWR_SOLVER', None)
+
         if solver_name is not None:
             # use specific solver
             solver = None

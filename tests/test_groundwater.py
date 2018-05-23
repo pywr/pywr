@@ -17,9 +17,8 @@ storativity = [0.05] # %
 levels = [0.0, 1000.0] # m
 area = 50000 * 50000 # m2
 
-def test_keating_aquifer(solver):
+def test_keating_aquifer():
     model = Model(
-        solver=solver,
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-01'),
     )

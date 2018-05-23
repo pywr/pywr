@@ -15,10 +15,6 @@ env:
 matrix:
     include:
       - os: linux
-        env: CONDA_PY=27
-      - os: linux
-        env: CONDA_PY=34
-      - os: linux
         env: CONDA_PY=36 BUILD_DOC=1
       - os: osx
         env: CONDA_PY=36
