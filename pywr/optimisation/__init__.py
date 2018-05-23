@@ -42,7 +42,7 @@ OBJECTIVES = None
 CONSTRAINTS = None
 
 
-class BaseOptimisationWrapper:
+class BaseOptimisationWrapper(object):
     """ A helper class for running pywr optimisations with platypus.
     """
 
