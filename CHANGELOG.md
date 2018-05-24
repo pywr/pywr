@@ -11,6 +11,10 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 - Added additional labeling functionality to notebook graphing functions. (#612)
 - New and improved variable API for Parameters. (#601, #258)
 
+### Bug fixes
+
+- Fix a bug in `AnnualHarmonicSeriesParameter` related to updating the `amplitudes` and `phases` values with `set_double_variables` (#622)
+
 ### Miscellaneous
 
 - Dropped support for Python 2 and <3.6. Pywr is no longer tested against Python versions earlier than 3.6. (#623)
