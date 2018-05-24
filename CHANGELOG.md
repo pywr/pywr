@@ -13,7 +13,11 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 ### Bug fixes
 
-- Fix a bug in `AnnualHarmonicSeriesParameter` related to updating the `amplitude` and `phase` values with `set_double_variables` (#622)
+- Fix a bug in `AnnualHarmonicSeriesParameter` related to updating the `amplitudes` and `phases` values with `set_double_variables` (#622)
+
+### Miscellaneous
+
+- Dropped support for Python 2 and <3.6. Pywr is no longer tested against Python versions earlier than 3.6. (#623)
 
 ## v0.5.1
 

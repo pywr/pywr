@@ -1,7 +1,7 @@
 Installing Pywr
 ===============
 
-Pywr should work on Python 2.7 (or later) and 3.4 (or later) on Windows, Linux or OS X.
+Pywr should work on Python 3.6 (or later) on Windows, Linux or OS X.
 
 Building Pywr from source requires a working C compiler. It has been built successfully with MSVC on Windows, GCC on Linux and clang/LLVM on OS X.
 

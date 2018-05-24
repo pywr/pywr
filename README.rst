@@ -38,7 +38,7 @@ Pywr is a tool for solving network resource allocation problems. It has many sim
 Installation
 ============
 
-Pywr should work on Python 2.7 (or later) and 3.4 (or later) on Windows, Linux or OS X.
+Pywr should work on Python 3.6 (or later) on Windows, Linux or OS X.
 
 See the documentation for `detailed installation instructions <https://pywr.github.io/pywr-docs/install.html>`__.
 
