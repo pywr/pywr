@@ -27,10 +27,7 @@ class PygmoWrapper(BaseOptimisationWrapper):
 
         # Return values to the solution
         logger.info('Evaluation complete!')
-        if len(constraints) > 0:
-            return objectives, constraints
-        else:
-            return objectives
+        return objectives + constraints
 
     def get_bounds(self):
         """ Return the variable bounds. """
@@ -58,3 +55,6 @@ class PygmoWrapper(BaseOptimisationWrapper):
 
     def get_nobj(self):
         return len(self.model_objectives)
+
+    def get_nec(self):
+        return len(self.model_constraints)
