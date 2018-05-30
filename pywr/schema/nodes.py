@@ -8,6 +8,7 @@ class BaseNodeSchema(marshmallow.Schema):
     name = marshmallow.fields.Str()
     type = marshmallow.fields.Str()
     comment = marshmallow.fields.Str()
+    position = marshmallow.fields.Dict()
 
     subclasses = {}
 
@@ -18,12 +19,12 @@ class BaseNodeSchema(marshmallow.Schema):
         cls.subclasses[name] = cls
 
     @classmethod
-    def get_schema(cls, node_type, model, node_to_load_cls=None):
+    def get_schema(cls, node_type, model, node_cls_to_load=None):
         from ..nodes import NodeMeta, Node, Storage
 
         node_cls = NodeMeta.node_registry[node_type]
-        if node_to_load_cls is None:
-            node_to_load_cls = node_cls
+        if node_cls_to_load is None:
+            node_cls_to_load = node_cls
 
         try:
             schema_cls = cls.subclasses[node_type+'schema']
@@ -34,15 +35,15 @@ class BaseNodeSchema(marshmallow.Schema):
                 schema_cls = None
 
         if schema_cls is None:
-            # No schema found try the parents
+            # No schema found. Try the parent's schema instead
             for parent_cls in node_cls.__bases__:
                 if issubclass(parent_cls, (Node, Storage)):
                     return cls.get_schema(parent_cls.__name__.lower(), model,
-                                          node_to_load_cls=node_to_load_cls)
+                                          node_cls_to_load=node_cls_to_load)
             else:
                 raise ValueError('No schema found for node class: "{}"'.format(node_cls))
         else:
-            return schema_cls(context={'model': model, 'cls': node_to_load_cls})
+            return schema_cls(context={'model': model, 'cls': node_cls_to_load})
 
     @marshmallow.validates_schema(pass_original=True)
     def check_unknown_fields(self, data, original_data):
@@ -51,10 +52,10 @@ class BaseNodeSchema(marshmallow.Schema):
             raise marshmallow.ValidationError('Unknown field', unknown)
 
     @marshmallow.post_load
-    def make_user(self, data):
+    def make_node(self, data):
+        # Defers loading of nodes to the load classmethod on each node class.
         klass = self.context['cls']
         model = self.context['model']
-        print(data, model, klass)
         return klass.load(data, model)
 
 

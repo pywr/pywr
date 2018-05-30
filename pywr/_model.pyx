@@ -413,9 +413,11 @@ class Model(object):
             # if not, load it now
             node_data = model._nodes_to_load[node_name]
             node_type = node_data['type'].lower()
+            node_name = node_data.get('name', None)
             schema = BaseNodeSchema.get_schema(node_type, model)
+            logger.debug('Loading node "{}" (type "{}") from schema "{}".'.format(
+                         node_name, node_type, schema))
             node = schema.load(node_data)
-            print(node, type(node))
             del(model._nodes_to_load[node_name])
         return node
 

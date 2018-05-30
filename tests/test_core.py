@@ -12,6 +12,7 @@ from pywr.core import *
 from pywr.domains.river import *
 from pywr.parameters import Parameter, ConstantParameter, DataFrameParameter, AggregatedParameter
 from pywr.recorders import assert_rec, AssertionRecorder
+from marshmallow.exceptions import ValidationError
 
 TEST_FOLDER = os.path.dirname(__file__)
 
@@ -553,6 +554,12 @@ def test_json_invalid_include():
     with pytest.raises(ValueError) as excinfo:
         model = Model.load(filename)
     assert("invalid.json" in str(excinfo.value))
+
+
+def test_schema_invalid():
+    filename = os.path.join(TEST_FOLDER, "models", "invalid_schema.json")
+    with pytest.raises(ValidationError):
+        model = Model.load(filename)
 
 
 def test_variable_load():
