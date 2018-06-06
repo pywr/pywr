@@ -71,7 +71,7 @@ cdef class Parameter(Component):
     cpdef double[:] upper_bounds(self):
         warnings.warn("Use of the `upper_bounds` method on Parameters has been deprecated."
                       "Please use either `get_double_upper_bounds` or `get_integer_upper_bounds` instead.", DeprecationWarning)
-        return self.get_double_lower_bounds()
+        return self.get_double_upper_bounds()
 
     cpdef set_double_variables(self, double[:] values):
         raise NotImplementedError()
