@@ -862,11 +862,11 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
     property amplitudes:
         def __get__(self):
-            return np.array(self._amplitudes)
+            return np.asarray(self._amplitudes)
 
     property phases:
         def __get__(self):
-            return np.array(self._phases)
+            return np.asarray(self._phases)
 
     cpdef reset(self):
         Parameter.reset(self)
@@ -892,8 +892,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
     cpdef set_double_variables(self, double[:] values):
         n = len(self.amplitudes)
         self.mean = values[0]
-        self.amplitudes[...] = values[1:n+1]
-        self.phases[...] = values[n+1:]
+        self._amplitudes[...] = values[1:n+1]
+        self._phases[...] = values[n+1:]
 
     cpdef double[:] get_double_variables(self):
         return np.r_[np.array([self.mean, ]), np.array(self.amplitudes), np.array(self.phases)]

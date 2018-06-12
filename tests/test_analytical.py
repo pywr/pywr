@@ -43,7 +43,7 @@ def test_linear_model(simple_linear_model, in_flow, out_flow, benefit):
     (10.0, 5.0, 5.0, 0.0, 10.0, 2.0),
     (10.0, 5.0, 0.0, 5.0, 10.0, 2.0),
     ])
-def linear_model_with_storage(request, solver):
+def linear_model_with_storage(request):
     """
     Make a simple model with a single Input and Output and an offline Storage Node
 
@@ -56,7 +56,7 @@ def linear_model_with_storage(request, solver):
     max_strg_out = 10.0
     max_volume = 10.0
 
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
     inpt = pywr.core.Input(model, name="Input", min_flow=in_flow, max_flow=in_flow)
     lnk = pywr.core.Link(model, name="Link", cost=0.1)
     inpt.connect(lnk)
@@ -86,7 +86,7 @@ def test_linear_model_with_storage(linear_model_with_storage):
     assert_model(*linear_model_with_storage)
 
 @pytest.fixture
-def two_domain_linear_model(request, solver):
+def two_domain_linear_model(request):
     """
     Make a simple model with two domains, each with a single Input and Output
 
@@ -104,7 +104,7 @@ def two_domain_linear_model(request, solver):
     river_domain = pywr.core.Domain('river')
     grid_domain = pywr.core.Domain('grid')
 
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
     # Create river network
     river_inpt = pywr.core.Input(model, name="Catchment", max_flow=river_flow, domain=river_domain)
     river_lnk = pywr.core.Link(model, name="Reach", domain=river_domain)
@@ -142,7 +142,7 @@ def test_two_domain_linear_model(two_domain_linear_model):
 
 
 @pytest.fixture
-def two_cross_domain_output_single_input(request, solver):
+def two_cross_domain_output_single_input(request):
     """
     Make a simple model with two domains. Thre are two Output nodes
     both connect to an Input node in a different domain.
@@ -160,7 +160,7 @@ def two_cross_domain_output_single_input(request, solver):
     river_flow = 10.0
     expected_node_results = {}
 
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
     # Create grid network
     grid_inpt = pywr.core.Input(model, name="Input", domain='grid',)
     grid_lnk = pywr.core.Link(model, name="Link", cost=1.0, domain='grid')
@@ -201,14 +201,14 @@ def test_two_cross_domain_output_single_input(two_cross_domain_output_single_inp
 
 
 @pytest.fixture()
-def simple_linear_inline_model(request, solver):
+def simple_linear_inline_model(request):
     """
     Make a simple model with a single Input and Output nodes inline of a route.
 
     Input 0 -> Input 1 -> Link -> Output 0 -> Output 1
 
     """
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
     inpt0 = pywr.core.Input(model, name="Input 0")
     inpt1 = pywr.core.Input(model, name="Input 1")
     inpt0.connect(inpt1)
@@ -251,7 +251,7 @@ def test_simple_linear_inline_model(simple_linear_inline_model, in_flow_1, out_f
 
 
 @pytest.fixture()
-def bidirectional_model(request, solver):
+def bidirectional_model(request):
     """
     Make a simple model with a single Input and Output.
 
@@ -261,7 +261,7 @@ def bidirectional_model(request, solver):
     Input 1 -> Link 1 -> Output 1
 
     """
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
     for i in range(2):
         inpt = pywr.core.Input(model, name="Input {}".format(i))
         lnk = pywr.core.Link(model, name="Link {}".format(i))
@@ -301,8 +301,7 @@ def test_bidirectional_model(bidirectional_model):
     assert_model(model, expected_node_results)
 
 
-def make_simple_model(supply_amplitude, demand, frequency,
-                      initial_volume, solver):
+def make_simple_model(supply_amplitude, demand, frequency, initial_volume):
     """
     Make a simlpe model,
         supply -> reservoir -> demand.
@@ -312,7 +311,7 @@ def make_simple_model(supply_amplitude, demand, frequency,
 
     """
 
-    model = pywr.core.Model(solver=solver)
+    model = pywr.core.Model()
 
     S = supply_amplitude
     w = frequency
@@ -337,7 +336,7 @@ def make_simple_model(supply_amplitude, demand, frequency,
 
     return model
 
-def pytest_run_analytical(solver):
+def pytest_run_analytical():
     """
     Run the test model though a year with analytical solution values to
     ensure reservoir just contains sufficient volume.
@@ -348,7 +347,7 @@ def pytest_run_analytical(solver):
     w = 2*np.pi/365 # frequency (annual)
     V0 = S/w  # initial reservoir level
 
-    model = make_simple_model(S, D, w, V0, solver)
+    model = make_simple_model(S, D, w, V0)
 
     model.timestamp = datetime.datetime(2015, 1, 1)
 
