@@ -371,13 +371,23 @@ cdef class TablesArrayParameter(IndexParameter):
         # check the shape of the data is valid
         if self.scenario is not None:
             if node.shape[1] < self.scenario.size:
-                raise IndexError('The length of the second dimension ({:d}) of the tables node "{}" should be the same as the size of the specified Scenario ({:d}).'.format(node.shape[1], node._v_name, self.scenario.size))
+                raise IndexError('The length of the second dimension ({:d}) of the tables node ({}:{}) '
+                                 'should be the same as the size of the specified Scenario ({:d}).'
+                                 .format(node.shape[1], node._v_file.filename, node._v_pathname, self.scenario.size))
             elif node.shape[1] > self.scenario.size:
-                warnings.warn('The length of the second dimension ({:d}) of the tables node "{}" is greater than the size of the specified Scenario ({:d}). Not all data is being used!'.format(node.shape[1], node._v_name, self.scenario.size), UnutilisedDataWarning)
+                warnings.warn('The length of the second dimension ({:d}) of the tables node ({}:{}) '
+                              'is greater than the size of the specified Scenario ({:d}). '
+                              'Not all data is being used!'.format(node.shape[1], node._v_file.filename, node._v_pathname, self.scenario.size),
+                              UnutilisedDataWarning)
         if node.shape[0] < len(self.model.timestepper):
-            raise IndexError('The length of the first dimension ({:d}) of the tables node "{}" should be equal to or greater than the number of timesteps.'.format(node.shape[0], node._v_name, len(self.model.timestepper)))
+            raise IndexError('The length of the first dimension ({:d}) of the tables node ({}:{}) '
+                             'should be equal to or greater than the number of timesteps.'
+                             .format(node.shape[0], node._v_file.filename, node._v_pathname, len(self.model.timestepper)))
         elif node.shape[0] > len(self.model.timestepper):
-            warnings.warn('The length of the first dimension ({:d}) of the tables node "{}" is greater than the number of timesteps. Not all data is being used!'.format(node.shape[0], node._v_name, len(self.model.timestepper)), UnutilisedDataWarning)
+            warnings.warn('The length of the first dimension ({:d}) of the tables node ({}:{}) '
+                          'is greater than the number of timesteps. Not all data is being used!'
+                          .format(node.shape[0], node._v_file.filename, node._v_pathname, len(self.model.timestepper)),
+                          UnutilisedDataWarning)
 
         # detect data type and read into memoryview
         self._values_dbl = None
