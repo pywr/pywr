@@ -694,7 +694,7 @@ class Model(object):
             if ncycles != 0:
                 raise ModelStructureError("Cyclical ({}) dependencies found in the model's components.".format(ncycles))
             # Do not permit self-loops
-            for n in G.nodes_with_selfloops():
+            for n in nx.nodes_with_selfloops(G):
                 raise ModelStructureError('Component "{}" contains a self-loop.'.format(n))
 
             for node in nx.dfs_postorder_nodes(G, ROOT_NODE):
