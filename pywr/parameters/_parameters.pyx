@@ -71,7 +71,7 @@ cdef class Parameter(Component):
     cpdef double[:] upper_bounds(self):
         warnings.warn("Use of the `upper_bounds` method on Parameters has been deprecated."
                       "Please use either `get_double_upper_bounds` or `get_integer_upper_bounds` instead.", DeprecationWarning)
-        return self.get_double_lower_bounds()
+        return self.get_double_upper_bounds()
 
     cpdef set_double_variables(self, double[:] values):
         raise NotImplementedError()
@@ -371,13 +371,23 @@ cdef class TablesArrayParameter(IndexParameter):
         # check the shape of the data is valid
         if self.scenario is not None:
             if node.shape[1] < self.scenario.size:
-                raise RuntimeError("The length of the second dimension of the tables Node should be the same as the size of the specified Scenario.")
+                raise IndexError('The length of the second dimension ({:d}) of the tables node ({}:{}) '
+                                 'should be the same as the size of the specified Scenario ({:d}).'
+                                 .format(node.shape[1], node._v_file.filename, node._v_pathname, self.scenario.size))
             elif node.shape[1] > self.scenario.size:
-                warnings.warn("The length of the second dimension of the tables Node is greater than the size of the specified Scenario. Not all data is being used!", UnutilisedDataWarning)
+                warnings.warn('The length of the second dimension ({:d}) of the tables node ({}:{}) '
+                              'is greater than the size of the specified Scenario ({:d}). '
+                              'Not all data is being used!'.format(node.shape[1], node._v_file.filename, node._v_pathname, self.scenario.size),
+                              UnutilisedDataWarning)
         if node.shape[0] < len(self.model.timestepper):
-            raise IndexError("The length of the first dimension of the tables Node should be equal to or greater than the number of timesteps.")
+            raise IndexError('The length of the first dimension ({:d}) of the tables node ({}:{}) '
+                             'should be equal to or greater than the number of timesteps.'
+                             .format(node.shape[0], node._v_file.filename, node._v_pathname, len(self.model.timestepper)))
         elif node.shape[0] > len(self.model.timestepper):
-            warnings.warn("The length of the first dimension of the tables Node is greater than the number of timesteps. Not all data is being used!", UnutilisedDataWarning)
+            warnings.warn('The length of the first dimension ({:d}) of the tables node ({}:{}) '
+                          'is greater than the number of timesteps. Not all data is being used!'
+                          .format(node.shape[0], node._v_file.filename, node._v_pathname, len(self.model.timestepper)),
+                          UnutilisedDataWarning)
 
         # detect data type and read into memoryview
         self._values_dbl = None

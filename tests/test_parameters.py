@@ -67,6 +67,10 @@ class TestConstantParameter:
 
         np.testing.assert_allclose(p.get_double_lower_bounds(), np.array([np.pi/2]))
         np.testing.assert_allclose(p.get_double_upper_bounds(), np.array([2*np.pi]))
+        # Test deprecated API too.
+        np.testing.assert_allclose(p.lower_bounds(), np.array([np.pi/2]))
+        np.testing.assert_allclose(p.upper_bounds(), np.array([2*np.pi]))
+
         np.testing.assert_allclose(p.get_double_variables(), np.array([np.pi]))
 
         # No test updating the variables
