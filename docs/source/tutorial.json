@@ -1,0 +1,34 @@
+{
+    "metadata": {
+        "title": "tutorial",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply",
+            "type": "Input",
+            "max_flow": 10
+        },
+        {
+            "name": "demand",
+            "type": "Output",
+            "max_flow": 6,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply", "demand"]
+    ],
+    "recorders": {
+        "recorder": {
+            "type": "NumpyArrayNodeRecorder",
+            "node": "supply"
+        }
+    }
+
+}
