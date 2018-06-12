@@ -80,15 +80,15 @@ cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
         The density of water.
     flow_unit_conversion : float (default=1.0)
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of $m^3/day$
+        should convert flow to units of :math:`m^3/day`
     energy_unit_conversion : float (default=1e-6)
-        A factor used to transform the units of total energy. Defaults to 1e-6 to return $MJ$.
+        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MJ`.
 
     Notes
     -----
     The hydropower calculation uses the following equation.
 
-    .. math:: P = \rho * g * \deltaH * q
+    .. math:: P = \\rho * g * \\delta H * q
 
     The flow rate in should be converted to units of :math:`m^3` per day using the `flow_unit_conversion` parameter.
 
@@ -184,15 +184,15 @@ cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
         The density of water.
     flow_unit_conversion : float (default=1.0)
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of $m^3/day$
+        should convert flow to units of :math:`m^3/day`
     energy_unit_conversion : float (default=1e-6)
-        A factor used to transform the units of total energy. Defaults to 1e-6 to return $MJ$.
+        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MJ`.
 
     Notes
     -----
     The hydropower calculation uses the following equation.
 
-    .. math:: P = \rho * g * \deltaH * q
+    .. math:: P = \\rho * g * \\delta H * q
 
     The flow rate in should be converted to units of :math:`m^3` per day using the `flow_unit_conversion` parameter.
 
