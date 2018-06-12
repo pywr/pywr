@@ -377,7 +377,7 @@ cdef class TablesArrayParameter(IndexParameter):
         if node.shape[0] < len(self.model.timestepper):
             raise IndexError('The length of the first dimension ({:d}) of the tables node "{}" should be equal to or greater than the number of timesteps.'.format(node.shape[0], node._v_name, len(self.model.timestepper)))
         elif node.shape[0] > len(self.model.timestepper):
-            warnings.warn('The length of the first dimension ({:d}) of the tables node "{}" is greater than the number of timesteps. Not all data is being used!'.format(node.shape[0], node._v_name, len(self.model.timestepper))), UnutilisedDataWarning)
+            warnings.warn('The length of the first dimension ({:d}) of the tables node "{}" is greater than the number of timesteps. Not all data is being used!'.format(node.shape[0], node._v_name, len(self.model.timestepper)), UnutilisedDataWarning)
 
         # detect data type and read into memoryview
         self._values_dbl = None
