@@ -100,6 +100,7 @@ cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
     See Also
     --------
     TotalHydroEnergyRecorder
+    pywr.parameters.HydroPowerTargetParameter
 
     """
     def __init__(self, model, node, water_elevation_parameter=None, turbine_elevation=0.0, efficiency=1.0, density=1000,
@@ -204,7 +205,7 @@ cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
     See Also
     --------
     HydroPowerRecorder
-
+    pywr.parameters.HydroPowerTargetParameter
 
     """
     def __init__(self, model, node, water_elevation_parameter=None, turbine_elevation=0.0, efficiency=1.0, density=1000,

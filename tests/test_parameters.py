@@ -1220,3 +1220,32 @@ def test_deficit_parameter():
     expected_yesterday = [0]+list(expected[0:-1])
     actual_yesterday = model.recorders["yesterday_recorder"].data
     assert_allclose(expected_yesterday, actual_yesterday[:,0])
+
+
+class TestHydroPowerTargets:
+    def test_target_json(self):
+        """ Test loading a HydroPowerTargetParameter from JSON. """
+        model = load_model("hydropower_target_example.json")
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        # 30 time-steps are run such that the head gets so flow to hit the max_flow
+        # constraint. The first few time-steps are also bound by the min_flow constraint.
+        for i in range(30):
+            model.step()
+
+            rec = model.recorders["turbine1_energy"]
+            param = model.parameters["turbine1_discharge"]
+
+            turbine1 = model.nodes["turbine1"]
+            assert turbine1.flow[0] > 0
+
+            if turbine1.flow[0] <= 500.0:
+                # If flow is bounded by min_flow then more HP is produced.
+                assert rec.data[i, 0] > param.target.get_value(si)
+            elif turbine1.flow[0] >= 1000.0:
+                # If flow is bounded by max_flow then less HP is produced.
+                assert rec.data[i, 0] < param.target.get_value(si)
+            else:
+                # If flow is within the bounds target is met exactly.
+                assert_allclose(rec.data[i, 0], param.target.get_value(si))
+
