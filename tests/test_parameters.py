@@ -1239,10 +1239,10 @@ class TestHydroPowerTargets:
             turbine1 = model.nodes["turbine1"]
             assert turbine1.flow[0] > 0
 
-            if turbine1.flow[0] <= 500.0:
+            if np.allclose(turbine1.flow[0], 500.0):
                 # If flow is bounded by min_flow then more HP is produced.
                 assert rec.data[i, 0] > param.target.get_value(si)
-            elif turbine1.flow[0] >= 1000.0:
+            elif np.allclose(turbine1.flow[0], 1000.0):
                 # If flow is bounded by max_flow then less HP is produced.
                 assert rec.data[i, 0] < param.target.get_value(si)
             else:
