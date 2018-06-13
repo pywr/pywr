@@ -32,27 +32,19 @@ class PlatypusWrapper(BaseOptimisationWrapper):
 
         ix = 0
         for var in variables:
-
-            lower = []
-            upper = []
             if var.double_size > 0:
-                lower.append(var.get_double_lower_bounds())
-                upper.append(var.get_double_upper_bounds())
+                lower = var.get_double_lower_bounds()
+                upper = var.get_double_upper_bounds()
+                for i in range(var.double_size):
+                    self.problem.types[ix] = platypus.Real(lower[i], upper[i])
+                    ix += 1
 
             if var.integer_size > 0:
-                lower.append(var.get_integer_lower_bounds())
-                upper.append(var.get_integer_upper_bounds())
-
-            lower = np.concatenate(lower)
-            upper = np.concatenate(upper)
-
-            if len(lower) != len(upper):
-                raise ValueError('Upper and lower bounds are different lengths. Malformed bound data from Parameter:'
-                                 ' "{}"'.format(var.name))
-
-            for i in range(len(lower)):
-                self.problem.types[ix] = platypus.Real(lower[i], upper[i])
-                ix += 1
+                lower = var.get_integer_lower_bounds()
+                upper = var.get_integer_upper_bounds()
+                for i in range(var.integer_size):
+                    self.problem.types[ix] = platypus.Integer(lower[i], upper[i])
+                    ix += 1
 
     def _make_constraints(self, constraints):
         """ Setup the constraints. """
@@ -64,7 +56,13 @@ class PlatypusWrapper(BaseOptimisationWrapper):
 
         for ivar, var in enumerate(self.model_variables):
             j = slice(self.model_variable_map[ivar], self.model_variable_map[ivar+1])
-            var.update(np.array(solution[j]))
+            x = np.array(solution[j])
+            assert len(x) == var.double_size + var.integer_size
+            if var.double_size > 0:
+                var.set_double_variables(x[:var.double_size])
+
+            if var.integer_size > 0:
+                var.set_double_variables(x[-var.integer_size:])
 
         self.model.reset()
         run_stats = self.model.run()
