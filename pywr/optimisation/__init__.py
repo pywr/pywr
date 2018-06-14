@@ -1,4 +1,6 @@
 from ..core import Model
+import logging
+logger = logging.getLogger(__name__)
 
 
 def cache_variable_parameters(model):

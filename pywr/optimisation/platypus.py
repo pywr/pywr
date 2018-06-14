@@ -20,6 +20,12 @@ class PlatypusWrapper(BaseOptimisationWrapper):
         objectives = cache_objectives(m)
         constraints = cache_constraints(m)
 
+        if len(variables) < 1:
+            raise ValueError('At least one variable must be defined.')
+
+        if len(objectives) < 1:
+            raise ValueError('At least one objective must be defined.')
+
         self.problem = platypus.Problem(variable_map[-1], len(objectives), len(constraints))
         self.problem.function = self.evaluate
 
@@ -62,9 +68,8 @@ class PlatypusWrapper(BaseOptimisationWrapper):
                 var.set_double_variables(x[:var.double_size])
 
             if var.integer_size > 0:
-                var.set_double_variables(x[-var.integer_size:])
+                var.set_integer_variables(np.array(x[-var.integer_size:], dtype=np.int32))
 
-        self.model.reset()
         run_stats = self.model.run()
 
         objectives = []
