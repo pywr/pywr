@@ -59,12 +59,13 @@ cdef class Scenario:
             if self._ensemble_names is None:
                 return list(range(self._size))
             return self._ensemble_names
+
         def __set__(self, names):
             if names is None:
                 self._ensemble_names = None
                 return
             if len(names) != self._size:
-                raise ValueError("The length of ensemble_names ({}) must be equal to the size of the scenario ({})".format(len(names), self.size))
+                raise ValueError("The length of ensemble_names ({}) must be equal to the size of the scenario ({})".format(len(names), self.size))  # noqa
             self._ensemble_names = names
 
 cdef class ScenarioCollection:
@@ -111,10 +112,13 @@ cdef class ScenarioCollection:
             combinations = [ScenarioIndex(0, np.array([0], dtype=np.int32))]
         elif self._user_combinations is not None:
             # use combinations given by user
-            combinations = list([ScenarioIndex(i, self._user_combinations[i, :]) for i in range(self._user_combinations.shape[0])])
+            combinations = list([ScenarioIndex(i, self._user_combinations[i, :])
+                                 for i in range(self._user_combinations.shape[0])])
         else:
             # product of all scenarios, taking into account Scenario.slice
-            iter = itertools.product(*[range(scenario._size)[scenario.slice] if scenario.slice else range(scenario._size) for scenario in self._scenarios])
+            iter = itertools.product(*[range(scenario._size)[scenario.slice]
+                                     if scenario.slice else range(scenario._size)
+                                     for scenario in self._scenarios])
             combinations = list([ScenarioIndex(i, np.array(x, dtype=np.int32)) for i, x in enumerate(iter)])
         if not combinations:
             raise ValueError("No scenarios were selected to be run")
@@ -126,6 +130,7 @@ cdef class ScenarioCollection:
     property user_combinations:
         def __get__(self, ):
             return self._user_combinations
+
         def __set__(self, values):
             if values is None:
                 self._user_combinations = None
@@ -173,7 +178,7 @@ cdef class ScenarioCollection:
     property shape:
         def __get__(self):
             if self._user_combinations is not None:
-                #raise ValueError("ScenarioCollection.shape is undefined if user_combinations is defined.")
+                # raise ValueError("ScenarioCollection.shape is undefined if user_combinations is defined.")
                 return (len(self._user_combinations), )
             if len(self._scenarios) == 0:
                 return (1, )
@@ -183,10 +188,11 @@ cdef class ScenarioCollection:
         def __get__(self):
             cdef Scenario sc
             if len(self._scenarios) == 0:
-                return pd.MultiIndex.from_product([range(1),], names=[''])
+                return pd.MultiIndex.from_product([range(1)], names=[''])
             else:
                 ensemble_names = [scenario.ensemble_names for scenario in self._scenarios]
-                indices = [[ensemble_names[n][i] for n, i in enumerate(scenario_index.indices)] for scenario_index in self.model.scenarios.get_combinations()]
+                indices = [[ensemble_names[n][i] for n, i in enumerate(scenario_index.indices)]
+                           for scenario_index in self.model.scenarios.get_combinations()]
                 names = [sc._name for sc in self._scenarios]
                 return pd.MultiIndex.from_tuples(indices, names=names)
 
@@ -262,13 +268,13 @@ cdef class AbstractNode:
         self._domain = kwargs.pop('domain', None)
         self._recorders = []
 
-        self._flow = np.empty([0,], np.float64)
+        self._flow = np.empty([0], np.float64)
 
         # there shouldn't be any unhandled keyword arguments by this point
         if kwargs:
             raise TypeError("__init__() got an unexpected keyword argument '{}'".format(list(kwargs.items())[0]))
 
-    component_attrs = [] # redefined by subclasses
+    component_attrs = []  # redefined by subclasses
     property components:
         """Generator that returns all of the Components attached to the Node
 
@@ -289,6 +295,7 @@ cdef class AbstractNode:
         """ A property to flag whether this Node can be unconnected in a network. """
         def __get__(self):
             return self._allow_isolated
+
         def __set__(self, value):
             self._allow_isolated = value
 
@@ -309,7 +316,6 @@ cdef class AbstractNode:
             if self._parent is not None:
                 return '{}.{}'.format(self._parent.fully_qualified_name, self.name)
             return self.name
-
 
     property recorders:
         """ Returns a list of `pywr.recorders.Recorder` objects attached to this node.
@@ -609,6 +615,7 @@ cdef class AggregatedNode(AbstractNode):
                 return None
             else:
                 return np.asarray(self._factors, np.float64)
+
         def __set__(self, values):
             values = np.array(values, np.float64)
             if np.any(values < 1e-6):
@@ -622,6 +629,7 @@ cdef class AggregatedNode(AbstractNode):
                 return None
             else:
                 return np.asarray(self._flow_weights, np.float64)
+
         def __set__(self, values):
             values = np.array(values, np.float64)
             if np.any(values < 1e-6):
@@ -693,16 +701,20 @@ cdef class AggregatedNode(AbstractNode):
         agg = cls(model, name, nodes)
         try:
             agg.factors = data["factors"]
-        except KeyError: pass
+        except KeyError:
+            pass
         try:
             agg.flow_weights = data["flow_weights"]
-        except KeyError: pass
+        except KeyError:
+            pass
         try:
             agg.min_flow = load_parameter(model, data["min_flow"])
-        except KeyError: pass
+        except KeyError:
+            pass
         try:
             agg.max_flow = load_parameter(model, data["max_flow"])
-        except KeyError: pass
+        except KeyError:
+            pass
         return agg
 
 cdef class StorageInput(BaseInput):
@@ -916,11 +928,13 @@ cdef class Storage(AbstractStorage):
         # TODO at some point remove this limitation
         # See issue #470 https://github.com/pywr/pywr/issues/470
         if self._max_volume_param is not None:
-            if isinstance(self._max_volume_param, (AggregatedParameter, AggregatedIndexParameter, IndexedArrayParameter)):
+            if isinstance(self._max_volume_param,
+                          (AggregatedParameter, AggregatedIndexParameter, IndexedArrayParameter)):
                 # Some simple aggregated style parameters are accepted so long as they have simple children
                 for p in self._max_volume_param.children:
                     if len(p.children) > 0:
-                        raise RuntimeError('Only children of agregated parameters with no dependencies are supported for max_volume.')
+                        raise RuntimeError(
+                            'Only children of agregated parameters with no dependencies are supported for max_volume.')
                     p.calc_values(self._model.timestepper.current)
 
             elif len(self._max_volume_param.children) > 0:

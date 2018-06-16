@@ -19,8 +19,7 @@ from pywr.nodes import NodeMeta
 from pywr.parameters import load_parameter
 from pywr.recorders import load_recorder
 
-from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
-    StorageOutput, Timestep, ScenarioIndex)
+from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput, StorageOutput, Timestep, ScenarioIndex)
 from pywr._component import ROOT_NODE
 from pywr._component cimport Component
 from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
@@ -31,13 +30,16 @@ from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
 
+
 class OrphanedParameterWarning(Warning):
     pass
 
-class ModelDocumentWarning(Warning): # TODO
+
+class ModelDocumentWarning(Warning):
     pass
 
-class ModelStructureError(Exception): # TODO
+
+class ModelStructureError(Exception):
     pass
 
 
@@ -272,7 +274,8 @@ class Model(object):
             minimum_version = parse_version(minimum_version)
             pywr_version = parse_version(pywr.__version__)
             if pywr_version < minimum_version:
-                warnings.warn("Document requires version {} or newer, but only have {}.".format(minimum_version, pywr_version), RuntimeWarning)
+                warnings.warn("Document requires version {} or newer, but only have {}.".format(
+                    minimum_version, pywr_version), RuntimeWarning)
 
         cls._load_includes(data, path)
 
@@ -443,7 +446,7 @@ class Model(object):
         destination with the same domain has the source.
         """
 
-        nodes = sorted(self.graph.nodes(), key=lambda n:n.name)
+        nodes = sorted(self.graph.nodes(), key=lambda n: n.name)
 
         if inspect.isclass(type1):
             # find all nodes of type1
@@ -732,6 +735,7 @@ class Model(object):
         orphans = all_parameters - visited
         return orphans
 
+
 class NodeIterator(object):
     """Iterator for Nodes in a Model which also supports indexing
 
@@ -808,6 +812,7 @@ class NodeIterator(object):
             return node
         raise StopIteration()
 
+
 class NamedIterator(object):
     def __init__(self, objects=None):
         if objects:
@@ -854,6 +859,7 @@ class NamedIterator(object):
         # TODO: check for name collisions / duplication
         self._objects.append(obj)
 
+
 class ModelResult(object):
     def __init__(self, num_scenarios, timestep, time_taken, time_taken_with_overhead, speed,
                  solver_name, solver_stats, version, git_hash):
@@ -883,7 +889,8 @@ class ModelResult(object):
         return df
 
     def __repr__(self):
-        return "Model executed {:d} scenarios in {:.1f} seconds, running at {:.1f} timesteps per second.".format(self.num_scenarios, self.time_taken_with_overhead, self.speed)
+        return "Model executed {:d} scenarios in {:.1f} seconds, running at {:.1f} timesteps per second.".format(
+            self.num_scenarios, self.time_taken_with_overhead, self.speed)
 
     def _repr_html_(self):
         return self.to_dataframe()._repr_html_()
