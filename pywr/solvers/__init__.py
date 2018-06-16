@@ -7,22 +7,27 @@ allocation problem every time step.
 Currently there are only linear programme based solvers using,
     - GLPK
     - LPSolve55
-
 """
 
 solver_registry = []
 
+
 class Solver(object):
     """Solver base class from which all solvers should inherit"""
     name = 'default'
+
     def __init__(self, *args, **kwargs):
         pass
+
     def setup(self, model):
         raise NotImplementedError('Solver should be subclassed to provide setup()')
+
     def solve(self, model):
         raise NotImplementedError('Solver should be subclassed to provide solve()')
+
     def reset(self):
         raise NotImplementedError('Solver should be subclassed to provide reset()')
+
     @property
     def stats(self):
         return {}
@@ -66,16 +71,20 @@ else:
         def retry_solve():
             def fget(self):
                 return self._cy_solver.retry_solve
+
             def fset(self, value):
                 self._cy_solver.retry_solve = value
+
             return locals()
         retry_solve = property(**retry_solve())
 
         def save_routes_flows():
             def fget(self):
                 return self._cy_solver.save_routes_flows
+
             def fset(self, value):
                 self._cy_solver.save_routes_flows = value
+
             return locals()
         save_routes_flows = property(**save_routes_flows())
 
