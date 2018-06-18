@@ -4,7 +4,6 @@ platypus = pytest.importorskip("platypus")
 from pywr.optimisation.platypus import PlatypusWrapper
 from pywr.optimisation import clear_global_model_cache
 from platypus import NSGAII, ProcessPoolEvaluator
-
 import os
 
 
@@ -22,6 +21,10 @@ def two_reservoir_problem():
     yield TwoReservoirWrapper(filename)
     # Clean up the
     clear_global_model_cache()
+    # We force deallocation the cache here to prevent problems using process pools
+    # with pytest.
+    import gc
+    gc.collect()
 
 
 def test_platypus_init(two_reservoir_problem):
