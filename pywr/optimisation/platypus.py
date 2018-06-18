@@ -49,7 +49,8 @@ class PlatypusWrapper(BaseOptimisationWrapper):
                 lower = var.get_integer_lower_bounds()
                 upper = var.get_integer_upper_bounds()
                 for i in range(var.integer_size):
-                    self.problem.types[ix] = platypus.Integer(lower[i], upper[i])
+                    # Integers are cast to real
+                    self.problem.types[ix] = platypus.Real(lower[i], upper[i])
                     ix += 1
 
     def _make_constraints(self, constraints):
@@ -65,10 +66,11 @@ class PlatypusWrapper(BaseOptimisationWrapper):
             x = np.array(solution[j])
             assert len(x) == var.double_size + var.integer_size
             if var.double_size > 0:
-                var.set_double_variables(x[:var.double_size])
+                var.set_double_variables(np.array(x[:var.double_size]))
 
             if var.integer_size > 0:
-                var.set_integer_variables(np.array(x[-var.integer_size:], dtype=np.int32))
+                ints = np.round(np.array(x[-var.integer_size:])).astype(np.int32)
+                var.set_integer_variables(ints)
 
         run_stats = self.model.run()
 
