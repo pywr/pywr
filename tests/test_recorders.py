@@ -22,6 +22,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
                             EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
                             FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
                             HydropowerRecorder, TotalHydroEnergyRecorder,
+                            TotalParameterRecorder, MeanParameterRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
 
 from pywr.recorders.progress import ProgressRecorder
@@ -302,8 +303,8 @@ def test_parameter_recorder_json():
     assert_allclose(rec_demand.data, 10)
     assert_allclose(rec_supply.data, 15)
 
-
-def test_parameter_mean_recorder(simple_linear_model):
+@pytest.fixture()
+def daily_profile_model(simple_linear_model):
     model = simple_linear_model
     # using leap year simplifies test
     model.timestepper.start = pandas.to_datetime("2016-01-01")
@@ -311,8 +312,13 @@ def test_parameter_mean_recorder(simple_linear_model):
 
     node = model.nodes["Input"]
     values = np.arange(0, 366, dtype=np.float64)
-    node.max_flow = DailyProfileParameter(model, values)
+    node.max_flow = DailyProfileParameter(model, values, name='profile')
+    return model
 
+
+def test_parameter_mean_recorder(daily_profile_model):
+    model = daily_profile_model
+    node = model.nodes["Input"]
     scenario = Scenario(model, "dummy", size=3)
 
     timesteps = 3
@@ -344,6 +350,73 @@ def test_parameter_mean_recorder_json(simple_linear_model):
     }
 
     rec = load_recorder(model, data)
+
+
+class TestTotalParameterRecorder:
+
+    @pytest.mark.parametrize('factor, integrate',
+                             [[1.0, False], [1.0, True], [2.0, False], [0.5, True]])
+    def test_values(self, daily_profile_model, factor, integrate):
+        model = daily_profile_model
+        model.timestepper.delta = 2
+        param = model.parameters['profile']
+        rec = TotalParameterRecorder(model, param, name="total", factor=factor, integrate=integrate)
+        model.run()
+
+        expected = np.arange(0, 366, dtype=np.float64)[::2].sum()*factor
+        if integrate:
+            expected *= 2
+        assert_allclose(rec.values(), expected)
+
+    @pytest.mark.parametrize('integrate', [None, True, False])
+    def test_from_json(self, daily_profile_model, integrate):
+
+        model = daily_profile_model
+
+        data = {
+            "type": "totalparameter",
+            "parameter": "profile",
+            "agg_func": "mean",
+            "factor": 2.0,
+        }
+
+        if integrate is not None:
+            data['integrate'] = integrate
+
+        rec = load_recorder(model, data)
+        assert rec.factor == 2.0
+
+        if integrate is not None:
+            assert rec.integrate == integrate
+        else:
+            assert not rec.integrate
+
+
+class TestMeanParameterRecorder:
+    @pytest.mark.parametrize('factor', [1.0, 2.0, 0.5])
+    def test_values(self, daily_profile_model, factor):
+        model = daily_profile_model
+        model.timestepper.delta = 2
+        param = model.parameters['profile']
+        rec = MeanParameterRecorder(model, param, name="mean", factor=factor)
+        model.run()
+
+        expected = np.arange(0, 366, dtype=np.float64)[::2].mean()*factor
+        assert_allclose(rec.values(), expected)
+
+    def test_from_json(self, daily_profile_model):
+
+        model = daily_profile_model
+
+        data = {
+            "type": "meanparameter",
+            "parameter": "profile",
+            "agg_func": "mean",
+            "factor": 2.0,
+        }
+
+        rec = load_recorder(model, data)
+        assert rec.factor == 2.0
 
 
 def test_concatenated_dataframes(simple_storage_model):

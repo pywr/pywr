@@ -109,3 +109,14 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
 
 cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
     cdef set _months
+
+
+cdef class BaseConstantParameterRecorder(ParameterRecorder):
+    cdef double[:] _values
+
+cdef class TotalParameterRecorder(BaseConstantParameterRecorder):
+    cdef public double factor
+    cdef public bint integrate
+
+cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
+    cdef public double factor

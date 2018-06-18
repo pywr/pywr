@@ -61,6 +61,8 @@ Statistical recorders
 
    MeanFlowNodeRecorder
    TotalFlowNodeRecorder
+   MeanParameterRecorder
+   TotalParameterRecorder
    RollingMeanFlowNodeRecorder
    MinimumVolumeStorageRecorder
    MinimumThresholdVolumeStorageRecorder
