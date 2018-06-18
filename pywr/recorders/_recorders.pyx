@@ -270,6 +270,16 @@ StorageRecorder.register()
 
 
 cdef class ParameterRecorder(Recorder):
+    """Base class for recorders that track `Parameter` values.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.Parameter`
+        The parameter to record.
+    name : str (optional)
+        The name of the recorder
+    """
     def __init__(self, model, Parameter param, name=None, **kwargs):
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
@@ -1222,3 +1232,105 @@ def load_recorder(model, data):
         recorder = cls.load(model, data)
 
     return recorder
+
+
+cdef class BaseConstantParameterRecorder(ParameterRecorder):
+    """Base class for `ParameterRecorder` classes with a single value for each scenario combination
+    """
+    cpdef setup(self):
+        self._values = np.zeros(len(self.model.scenarios.combinations))
+
+    cpdef reset(self):
+        self._values[...] = 0.0
+
+    cpdef after(self):
+        raise NotImplementedError()
+
+    cpdef double[:] values(self):
+        return self._values
+
+
+cdef class TotalParameterRecorder(BaseConstantParameterRecorder):
+    """Record the total value of a `Parameter` during a simulation.
+
+    This recorder can be used to track the sum total of the values returned by a
+    `Parameter` during a models simulation. An optional factor can be provided to
+    apply a linear scaling of the values. If the parameter represents a flux
+    the `integrate` keyword argument can be used to multiply the values by the time-step
+    length in days.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.Parameter`
+        The parameter to record.
+    name : str (optional)
+        The name of the recorder
+    factor : float (default=1.0)
+        Scaling factor for the values of `param`.
+    integrate : bool (default=False)
+        Whether to multiply by the time-step length in days during summation.
+    """
+    def __init__(self, *args, **kwargs):
+        self.factor = kwargs.pop('factor', 1.0)
+        self.integrate = kwargs.pop('integrate', False)
+        super(TotalParameterRecorder, self).__init__(*args, **kwargs)
+
+    cpdef after(self):
+        cdef ScenarioIndex scenario_index
+        cdef int i
+        cdef double[:] values
+        cdef factor = self.factor
+
+        if self.integrate:
+            factor *= self.model.timestepper.current.days
+
+        values = self._param.get_all_values()
+        for scenario_index in self.model.scenarios.combinations:
+            i = scenario_index.global_id
+            self._values[i] += values[i]*factor
+        return 0
+TotalParameterRecorder.register()
+
+
+cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
+    """Record the total value of a `Parameter` during a simulation.
+
+    This recorder can be used to track the sum total of the values returned by a
+    `Parameter` during a models simulation. An optional factor can be provided to
+    apply a linear scaling of the values. If the parameter represents a flux
+    the `integrate` keyword argument can be used to multiply the values by the time-step
+    length in days.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.Parameter`
+        The parameter to record.
+    name : str (optional)
+        The name of the recorder
+    factor : float (default=1.0)
+        Scaling factor for the values of `param`.
+    """
+    def __init__(self, *args, **kwargs):
+        self.factor = kwargs.pop('factor', 1.0)
+        super(MeanParameterRecorder, self).__init__(*args, **kwargs)
+
+    cpdef after(self):
+        cdef ScenarioIndex scenario_index
+        cdef int i
+        cdef double[:] values
+        cdef factor = self.factor
+
+        values = self._param.get_all_values()
+        for scenario_index in self.model.scenarios.combinations:
+            i = scenario_index.global_id
+            self._values[i] += values[i]*factor
+        return 0
+
+    cpdef finish(self):
+        cdef int i
+        cdef int nt = self.model.timestepper.current.index
+        for i in range(self._values.shape[0]):
+            self._values[i] /= nt
+MeanParameterRecorder.register()
