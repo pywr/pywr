@@ -12,7 +12,6 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
-
 from pywr.recorders import Recorder
 from fixtures import simple_linear_model, simple_storage_model
 from helpers import load_model
@@ -1310,3 +1309,12 @@ class TestHydroPowerTargets:
             else:
                 # If flow is within the bounds target is met exactly.
                 assert_allclose(rec.data[i, 0], param.target.get_value(si))
+
+
+class TestRbfParameter:
+
+    def test_json(self):
+
+        model = load_model('rbf_parameter.json')
+
+        model.run()
