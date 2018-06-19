@@ -83,8 +83,8 @@ def test_two_scenarios(simple_linear_model, ):
     assert np.all(index.levels[1] == ['High', 'Low'])
 
     # add numpy recorders to input and output nodes
-    NumpyArrayNodeRecorder(model, model.nodes["Input"], "input")
-    NumpyArrayNodeRecorder(model, model.nodes["Output"], "output")
+    NumpyArrayNodeRecorder(model, model.nodes["Input"], name="input")
+    NumpyArrayNodeRecorder(model, model.nodes["Output"], name="output")
 
     expected_node_results = {
         "Input": [3.0, 5.0, 3.0, 8.0],
