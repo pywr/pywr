@@ -322,10 +322,14 @@ def test_parameter_mean_recorder(daily_profile_model):
     scenario = Scenario(model, "dummy", size=3)
 
     timesteps = 3
-    rec_mean = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "mean", name="rec_mean")
-    rec_sum = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "sum", name="rec_sum")
-    rec_min = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "min", name="rec_min")
-    rec_max = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "max", name="rec_max")
+    rec_mean = RollingWindowParameterRecorder(model, node.max_flow, timesteps,
+                                              temporal_agg_func="mean", name="rec_mean")
+    rec_sum = RollingWindowParameterRecorder(model, node.max_flow, timesteps,
+                                             temporal_agg_func="sum", name="rec_sum")
+    rec_min = RollingWindowParameterRecorder(model, node.max_flow, timesteps,
+                                             temporal_agg_func="min", name="rec_min")
+    rec_max = RollingWindowParameterRecorder(model, node.max_flow, timesteps,
+                                             temporal_agg_func="max", name="rec_max")
 
     model.run()
 
