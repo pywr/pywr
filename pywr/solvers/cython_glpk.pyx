@@ -82,7 +82,6 @@ cdef class CythonGLPKSolver:
 
         glp_term_hook(term_hook, NULL)
 
-
     def __dealloc__(self):
         # free the problem
         glp_delete_prob(self.prob)
@@ -107,7 +106,7 @@ cdef class CythonGLPKSolver:
         cdef cross_domain_row
         cdef int n, num
 
-        self.all_nodes = list(sorted(model.graph.nodes(), key=lambda n:n.fully_qualified_name))
+        self.all_nodes = list(sorted(model.graph.nodes(), key=lambda n: n.fully_qualified_name))
         if not self.all_nodes:
             raise ModelStructureError("Model is empty")
 
@@ -155,7 +154,8 @@ cdef class CythonGLPKSolver:
 
         if self.save_routes_flows:
             # If saving flows this array needs to be 2D (one for each scenario)
-            self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes), itemsize=sizeof(double), format="d")
+            self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes),
+                                           itemsize=sizeof(double), format="d")
         else:
             # Otherwise the array can just be used to store a single solve to save some memory
             self.route_flows_arr = cvarray(shape=(self.num_routes, ), itemsize=sizeof(double), format="d")
@@ -214,7 +214,8 @@ cdef class CythonGLPKSolver:
                 val[1+n] = 1
             set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
             set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
-            #glp_set_row_name(self.prob, self.idx_row_non_storages+row, b'ns.'+some_node.fully_qualified_name.encode('utf-8'))
+            # glp_set_row_name(self.prob, self.idx_row_non_storages+row,
+            #                  b'ns.'+some_node.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -232,7 +233,8 @@ cdef class CythonGLPKSolver:
                     val[1+n+len(cols)] = 1./v
                 set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
                 set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
-                #glp_set_row_name(self.prob, self.idx_row_cross_domain+cross_domain_row, b'cd.'+some_node.fully_qualified_name.encode('utf-8'))
+                # glp_set_row_name(self.prob, self.idx_row_cross_domain+cross_domain_row,
+                #                  b'cd.'+some_node.fully_qualified_name.encode('utf-8'))
                 free(ind)
                 free(val)
                 cross_domain_row += 1
@@ -241,8 +243,10 @@ cdef class CythonGLPKSolver:
         if len(storages):
             self.idx_row_storages = glp_add_rows(self.prob, len(storages))
         for col, storage in enumerate(storages):
-            cols_output = [n for n, route in enumerate(routes) if route[-1] in storage.outputs and route[0] not in storage.inputs]
-            cols_input = [n for n, route in enumerate(routes) if route[0] in storage.inputs and route[-1] not in storage.outputs]
+            cols_output = [n for n, route in enumerate(routes)
+                           if route[-1] in storage.outputs and route[0] not in storage.inputs]
+            cols_input = [n for n, route in enumerate(routes)
+                          if route[0] in storage.inputs and route[-1] not in storage.outputs]
             ind = <int*>malloc((1+len(cols_output)+len(cols_input)) * sizeof(int))
             val = <double*>malloc((1+len(cols_output)+len(cols_input)) * sizeof(double))
             for n, c in enumerate(cols_output):
@@ -252,7 +256,8 @@ cdef class CythonGLPKSolver:
                 ind[1+len(cols_output)+n] = self.idx_col_routes+c
                 val[1+len(cols_output)+n] = -1
             set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
-            #glp_set_row_name(self.prob, self.idx_row_storages+col, b's.'+storage.fully_qualified_name.encode('utf-8'))
+            # glp_set_row_name(self.prob, self.idx_row_storages+col,
+            #                  b's.'+storage.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -281,7 +286,8 @@ cdef class CythonGLPKSolver:
                 val[1+n] = -f
 
             set_mat_row(self.prob, self.idx_row_virtual_storages+col, len(cols), ind, val)
-            #glp_set_row_name(self.prob, self.idx_row_virtual_storages+col, b'vs.'+storage.fully_qualified_name.encode('utf-8'))
+            # glp_set_row_name(self.prob, self.idx_row_virtual_storages+col,
+            #                  b'vs.'+storage.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -319,7 +325,8 @@ cdef class CythonGLPKSolver:
                 free(val)
 
                 set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
-                #glp_set_row_name(self.prob, row+n, 'ag.f{}.{}'.format(n, agg_node.fully_qualified_name).encode('utf-8'))
+                # glp_set_row_name(self.prob, row+n,
+                #                  'ag.f{}.{}'.format(n, agg_node.fully_qualified_name).encode('utf-8'))
 
         # aggregated node min/max flow constraints
         if aggregated:
@@ -345,7 +352,7 @@ cdef class CythonGLPKSolver:
                 val[1+i] = matrix[col]
             set_mat_row(self.prob, row, length, ind, val)
             set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
-            #glp_set_row_name(self.prob, row, b'ag.'+agg_node.fully_qualified_name.encode('utf-8'))
+            # glp_set_row_name(self.prob, row, b'ag.'+agg_node.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
 
@@ -516,7 +523,8 @@ cdef class CythonGLPKSolver:
             max_flow = inf_to_dbl_max(node.get_max_flow(scenario_index))
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
-            set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow), min_flow, max_flow)
+            set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow),
+                         min_flow, max_flow)
 
         for col, agg_node in enumerate(aggregated):
             min_flow = inf_to_dbl_max(agg_node.get_min_flow(scenario_index))
@@ -525,7 +533,8 @@ cdef class CythonGLPKSolver:
             max_flow = inf_to_dbl_max(agg_node.get_max_flow(scenario_index))
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
-            set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow), min_flow, max_flow)
+            set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow),
+                         min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.clock() - t0
         t0 = time.clock()
@@ -606,7 +615,8 @@ cdef class CythonGLPKSolver:
             # Retry solve with debug messages
             simplex_ret = simplex(self.prob, self.smcp)
             status = glp_get_status(self.prob)
-            raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(simplex_status_string[simplex_ret], status_string[status]))
+            raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(
+                simplex_status_string[simplex_ret], status_string[status]))
         # Now save the basis
         self._save_basis(scenario_index.global_id)
 

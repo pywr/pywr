@@ -28,61 +28,61 @@ cdef extern from "lpsolve/lp_lib.h":
 
     lprec* make_lp(int rows, int columns)
     MYBOOL resize_lp(lprec *lp, int rows, int columns)
-    char* get_statustext(lprec *lp, int statuscode);
+    char* get_statustext(lprec *lp, int statuscode)
     MYBOOL get_variables(lprec *lp, REAL *var)
     MYBOOL get_ptr_variables(lprec *lp, REAL **var)
 
-    MYBOOL add_constraint(lprec *lp, REAL *row, int constr_type, REAL rh);
-    MYBOOL add_constraintex(lprec *lp, int count, REAL *row, int *colno, int constr_type, REAL rh);
+    MYBOOL add_constraint(lprec *lp, REAL *row, int constr_type, REAL rh)
+    MYBOOL add_constraintex(lprec *lp, int count, REAL *row, int *colno, int constr_type, REAL rh)
     MYBOOL set_add_rowmode(lprec *lp, MYBOOL turnon)
     void delete_lp(lprec *lp)
     void free_lp(lprec **plp)
     void set_maxim(lprec *lp)
     void set_minim(lprec *lp)
 
-    MYBOOL add_column(lprec *lp, REAL *column);
-    MYBOOL add_columnex(lprec *lp, int count, REAL *column, int *rowno);
+    MYBOOL add_column(lprec *lp, REAL *column)
+    MYBOOL add_columnex(lprec *lp, int count, REAL *column, int *rowno)
 
-    MYBOOL set_obj(lprec *lp, int colnr, REAL value);
-    MYBOOL set_bounds(lprec *lp, int colnr, REAL lower, REAL upper);
+    MYBOOL set_obj(lprec *lp, int colnr, REAL value)
+    MYBOOL set_bounds(lprec *lp, int colnr, REAL lower, REAL upper)
     MYBOOL set_constr_type(lprec *lp, int rownr, int con_type)
     MYBOOL set_bounds(lprec *lp, int colnr, REAL lower, REAL upper)
     MYBOOL set_lowbo(lprec *lp, int colnr, REAL value)
     MYBOOL set_row(lprec *lp, int rownr, REAL *row)
     MYBOOL set_rowex(lprec *lp, int rownr, int count, REAL *row, int *colno)
-    MYBOOL set_rh(lprec *lp, int rownr, REAL value);
-    MYBOOL set_rh_range(lprec *lp, int rownr, REAL deltavalue);
+    MYBOOL set_rh(lprec *lp, int rownr, REAL value)
+    MYBOOL set_rh_range(lprec *lp, int rownr, REAL deltavalue)
     int get_Norig_rows(lprec *lp)
     int get_Nrows(lprec *lp)
     int get_Lrows(lprec *lp)
     int get_nonzeros(lprec *lp)
     int get_Norig_columns(lprec *lp)
     int get_Ncolumns(lprec *lp)
-    int solve(lprec *lp);
-    void print_lp(lprec *lp);
-    void set_verbose(lprec *lp, int verbose);
-    void set_presolve(lprec *lp, int presolvemode, int maxloops);
-    int get_presolve(lprec *lp);
-    int get_presolveloops(lprec *lp);
+    int solve(lprec *lp)
+    void print_lp(lprec *lp)
+    void set_verbose(lprec *lp, int verbose)
+    void set_presolve(lprec *lp, int presolvemode, int maxloops)
+    int get_presolve(lprec *lp)
+    int get_presolveloops(lprec *lp)
 
 cdef inline int set_row_bnds(lprec *prob, int row, double a, double b):
     if a == b:
         set_constr_type(prob, row, EQ)
         set_rh(prob, row, a)
-        #set_rh_range(prob, row, 0.0)
+        # set_rh_range(prob, row, 0.0)
     elif b == DBL_MAX:
         if a == -DBL_MAX:
             set_constr_type(prob, row, FR)
             set_rh(prob, row, 0.0)
-            #set_rh_range(prob, row, 0.0)
+            # set_rh_range(prob, row, 0.0)
         else:
             set_constr_type(prob, row, GE)
             set_rh(prob, row, a)
-            #set_rh_range(prob, row, 0.0)
+            # set_rh_range(prob, row, 0.0)
     elif a == -DBL_MAX:
         set_constr_type(prob, row, LE)
         set_rh(prob, row, b)
-        #set_rh_range(prob, row, 0.0)
+        # set_rh_range(prob, row, 0.0)
     else:
         set_constr_type(prob, row, LE)
         set_rh(prob, row, b)
@@ -144,7 +144,6 @@ cdef class CythonLPSolveSolver:
     def __init__(self, save_routes_flows=False):
         self.stats = None
         self.save_routes_flows = save_routes_flows
-
 
     cpdef object setup(self, model):
         cdef Node supply
@@ -211,7 +210,8 @@ cdef class CythonLPSolveSolver:
 
         if self.save_routes_flows:
             # If saving flows this array needs to be 2D (one for each scenario)
-            self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes), itemsize=sizeof(double), format="d")
+            self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes),
+                                           itemsize=sizeof(double), format="d")
         else:
             # Otherwise the array can just be used to store a single solve to save some memory
             self.route_flows_arr = cvarray(shape=(self.num_routes, ), itemsize=sizeof(double), format="d")
@@ -262,8 +262,8 @@ cdef class CythonLPSolveSolver:
                 val[n] = 1
             ret = add_constraintex(self.prob, len(cols), val, ind, GE, 0.0)
 
-            #set_rowex(self.prob, self.idx_row_supplys+col, len(cols)+1, val, ind)
-            #set_row_bnds(self.prob, self.idx_row_supplys+col, 0.0, 0.0)
+            # set_rowex(self.prob, self.idx_row_supplys+col, len(cols)+1, val, ind)
+            # set_row_bnds(self.prob, self.idx_row_supplys+col, 0.0, 0.0)
 
             free(ind)
             free(val)
@@ -500,13 +500,11 @@ cdef class CythonLPSolveSolver:
         self.stats['bounds_update_routes'] += time.clock() - t0
         t0 = time.clock()
 
-
         # update supply properties
         for col, supply in enumerate(supplys):
             min_flow = inf_to_dbl_max(supply.get_min_flow(scenario_index))
             max_flow = inf_to_dbl_max(supply.get_max_flow(scenario_index))
             set_row_bnds(self.prob, self.idx_row_supplys+col, min_flow, max_flow)
-
 
         # update demand properties
         for col, demand in enumerate(demands):
@@ -543,8 +541,8 @@ cdef class CythonLPSolveSolver:
         t0 = time.clock()
         # attempt to solve the linear programme
 
-        #print_lp(self.prob)
-        #set_presolve(self.prob, PRESOLVE_ROWS | PRESOLVE_COLS, get_presolveloops(self.prob))
+        # print_lp(self.prob)
+        # set_presolve(self.prob, PRESOLVE_ROWS | PRESOLVE_COLS, get_presolveloops(self.prob))
         # attempt to solve the linear programme
         status = solve(self.prob)
 
