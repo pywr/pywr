@@ -60,7 +60,7 @@ cpdef double inverse_hydropower_calculation(double power, double water_elevation
     return flow
 
 
-cdef class HydroPowerTargetParameter(Parameter):
+cdef class HydropowerTargetParameter(Parameter):
     """ A parameter that returns flow from a hydropower generation target.
 
     This parameter calculates the flow required to generate a particular hydropower production target. It
@@ -112,13 +112,13 @@ cdef class HydroPowerTargetParameter(Parameter):
     See Also
     --------
     pywr.recorders.TotalHydroEnergyRecorder
-    pywr.recorders.HydroPowerRecorder
+    pywr.recorders.HydropowerRecorder
 
     """
     def __init__(self, model, target, water_elevation_parameter=None, max_flow=None, min_flow=None,
                  turbine_elevation=0.0, efficiency=1.0, density=1000, min_head=0.0,
                  flow_unit_conversion=1.0, energy_unit_conversion=1e-6, **kwargs):
-        super(HydroPowerTargetParameter, self).__init__(model, **kwargs)
+        super(HydropowerTargetParameter, self).__init__(model, **kwargs)
 
         self.target = target
         self.water_elevation_parameter = water_elevation_parameter
@@ -225,4 +225,4 @@ cdef class HydroPowerTargetParameter(Parameter):
 
         return cls(model, target, water_elevation_parameter=water_elevation_parameter,
                    max_flow=max_flow, min_flow=min_flow, **data)
-HydroPowerTargetParameter.register()
+HydropowerTargetParameter.register()

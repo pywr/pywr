@@ -3,7 +3,7 @@ from ._parameters cimport Parameter, IndexParameter
 
 
 
-cdef class HydroPowerTargetParameter(Parameter):
+cdef class HydropowerTargetParameter(Parameter):
     cdef Parameter _water_elevation_parameter
     cdef Parameter _target
     cdef Parameter _max_flow

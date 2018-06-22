@@ -59,7 +59,7 @@ cpdef double hydropower_calculation(double flow, double water_elevation, double 
     return power * energy_unit_conversion
 
 
-cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
+cdef class HydropowerRecorder(NumpyArrayNodeRecorder):
     """ Calculates the power production using the hydropower equation
 
     This recorder saves an array of the hydrpower production in each timestep. It can be converted to a dataframe
@@ -100,12 +100,12 @@ cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
     See Also
     --------
     TotalHydroEnergyRecorder
-    pywr.parameters.HydroPowerTargetParameter
+    pywr.parameters.HydropowerTargetParameter
 
     """
     def __init__(self, model, node, water_elevation_parameter=None, turbine_elevation=0.0, efficiency=1.0, density=1000,
                  flow_unit_conversion=1.0, energy_unit_conversion=1e-6, **kwargs):
-        super(HydroPowerRecorder, self).__init__(model, node, **kwargs)
+        super(HydropowerRecorder, self).__init__(model, node, **kwargs)
 
         self.water_elevation_parameter = water_elevation_parameter
         self.turbine_elevation = turbine_elevation
@@ -161,7 +161,7 @@ cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
             water_elevation_parameter = None
 
         return cls(model, node, water_elevation_parameter=water_elevation_parameter, **data)
-HydroPowerRecorder.register()
+HydropowerRecorder.register()
 
 
 cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
@@ -204,8 +204,8 @@ cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
 
     See Also
     --------
-    HydroPowerRecorder
-    pywr.parameters.HydroPowerTargetParameter
+    HydropowerRecorder
+    pywr.parameters.HydropowerTargetParameter
 
     """
     def __init__(self, model, node, water_elevation_parameter=None, turbine_elevation=0.0, efficiency=1.0, density=1000,

@@ -91,12 +91,12 @@ Control curve parameters
     control_curves.ControlCurveIndexParameter
 
 Hydro-power parameters
----------------------
+----------------------
 
 .. autosummary::
    :toctree: generated/
 
-   HydroPowerTargetParameter
+   HydropowerTargetParameter
 
 
 Other parameters

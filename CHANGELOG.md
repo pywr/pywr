@@ -6,6 +6,8 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 ### New features
 
+- Added `HydropowerTargetParameter` to specify a flow target from a hydropower target (#631)
+- Renamed `HydroPowerRecorder` to `HydropowerRecorder` (#631)
 - Allow solver to be defined by the environment variable `PYWR_SOLVER`. (#619)
 - Added flow weights to `AggregatedNode`. (#603)
 - Added additional labeling functionality to notebook graphing functions. (#612)

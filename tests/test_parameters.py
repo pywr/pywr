@@ -1224,7 +1224,7 @@ def test_deficit_parameter():
 
 class TestHydroPowerTargets:
     def test_target_json(self):
-        """ Test loading a HydroPowerTargetParameter from JSON. """
+        """ Test loading a HydropowerTargetParameter from JSON. """
         model = load_model("hydropower_target_example.json")
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
