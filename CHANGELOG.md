@@ -6,10 +6,21 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 ### New features
 
+- Better warning/error messages in TablesArrayParameter (#629)
 - Allow solver to be defined by the environment variable `PYWR_SOLVER`. (#619)
 - Added flow weights to `AggregatedNode`. (#603)
 - Added additional labeling functionality to notebook graphing functions. (#612)
-- New and improved variable API for Parameters. (#601, #258)
+- New and improved variable API for Parameters. (#601, #258, #625)
+
+### Bug fixes
+
+- Fix a bug in `AnnualHarmonicSeriesParameter` related to updating the `amplitudes` and `phases` values with `set_double_variables` (#622)
+
+### Miscellaneous
+
+- Dropped support for Python 2 and <3.6. Pywr is no longer tested against Python versions earlier than 3.6. (#623)
+- Use new `networkx.nodes_with_selfloops` function. (#628)
+- Improved documentation. (#616, #627)
 
 ## v0.5.1
 

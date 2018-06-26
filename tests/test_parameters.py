@@ -67,6 +67,10 @@ class TestConstantParameter:
 
         np.testing.assert_allclose(p.get_double_lower_bounds(), np.array([np.pi/2]))
         np.testing.assert_allclose(p.get_double_upper_bounds(), np.array([2*np.pi]))
+        # Test deprecated API too.
+        np.testing.assert_allclose(p.lower_bounds(), np.array([np.pi/2]))
+        np.testing.assert_allclose(p.upper_bounds(), np.array([2*np.pi]))
+
         np.testing.assert_allclose(p.get_double_variables(), np.array([np.pi]))
 
         # No test updating the variables
@@ -358,6 +362,29 @@ class TestAnnualHarmonicSeriesParameter:
         for ts in model.timestepper:
             doy = (ts.datetime.dayofyear - 1) / 365
             np.testing.assert_allclose(p1.value(ts, si), 0.5 + 0.25 * np.cos(doy * 2 * np.pi + np.pi / 4))
+
+    def test_variable(self, model):
+        """ Test that variable updating works. """
+        p1 = AnnualHarmonicSeriesParameter(model, 0.5, [0.25], [np.pi/4], is_variable=True)
+
+        assert p1.double_size == 3
+        assert p1.integer_size == 0
+
+        new_var = np.array([0.6, 0.1, np.pi/2])
+        p1.set_double_variables(new_var)
+        np.testing.assert_allclose(p1.get_double_variables(), new_var)
+
+        with pytest.raises(NotImplementedError):
+            p1.set_integer_variables(np.arange(3, dtype=np.int32))
+
+        with pytest.raises(NotImplementedError):
+            p1.get_integer_variables()
+
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        for ts in model.timestepper:
+            doy = (ts.datetime.dayofyear - 1)/365
+            np.testing.assert_allclose(p1.value(ts, si), 0.6 + 0.1*np.cos(doy*2*np.pi + np.pi/2))
 
 
 class TestAggregatedParameter:

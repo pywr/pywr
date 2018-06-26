@@ -110,15 +110,6 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
     cdef double _value_cache
     cdef int _ts_index_cache
 
-cdef class CachedParameter(IndexParameter):
-    cdef public Parameter parameter
-    cdef Timestep timestep
-    cdef ScenarioIndex scenario_index
-    cdef double cached_value
-    cdef int cached_index
-    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
-    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
-
 cdef class AggregatedParameter(Parameter):
     # This is a list rather than a set due to floating point arithmetic.
     # The order is important for maintaining determinism.

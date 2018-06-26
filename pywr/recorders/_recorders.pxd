@@ -3,13 +3,18 @@ from pywr._core cimport Timestep, AbstractNode, AbstractStorage, ScenarioIndex, 
 from pywr.parameters._parameters cimport Parameter, IndexParameter
 
 
+cdef class Aggregator:
+    cdef object _user_func
+    cdef int _func
+    cpdef double aggregate_1d(self, double[:] data, ignore_nan=*)
+    cpdef double[:] aggregate_2d(self, double[:, :] data, axis=*, ignore_nan=*)
+
 cdef class Recorder(Component):
     cdef int _is_objective
     cdef public bint is_constraint
     cdef public double epsilon
     cdef public bint ignore_nan
-    cdef object _agg_user_func
-    cdef int _agg_func
+    cdef Aggregator _scenario_aggregator
     cpdef double aggregated_value(self) except? -1
     cpdef double[:] values(self)
 
@@ -31,29 +36,30 @@ cdef class IndexParameterRecorder(Recorder):
     cdef readonly IndexParameter _param
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
+    cdef Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
+    cdef Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
+    cdef Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
+    cdef Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
+    cdef Aggregator _temporal_aggregator
     cdef int[:, :] _data
 
 cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
-    cdef object fdc_agg_func
-    cdef int _fdc_agg_func
     cdef double[:] _percentiles
     cdef double[:, :] _fdc
 
 cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
-    cdef object sdc_agg_func
-    cdef int _sdc_agg_func
     cdef double[:] _percentiles
     cdef double[:, :] _sdc
 
@@ -65,6 +71,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     cdef public Scenario scenario
 
 cdef class RollingWindowParameterRecorder(ParameterRecorder):
+    cdef Aggregator _temporal_aggregator
     cdef public int window
     cdef int position
     cdef double[:, :] _memory
@@ -109,3 +116,14 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
 
 cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
     cdef set _months
+
+
+cdef class BaseConstantParameterRecorder(ParameterRecorder):
+    cdef double[:] _values
+
+cdef class TotalParameterRecorder(BaseConstantParameterRecorder):
+    cdef public double factor
+    cdef public bint integrate
+
+cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
+    cdef public double factor
