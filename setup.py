@@ -112,6 +112,9 @@ extensions = [
     Extension('pywr.parameters._control_curves', ['pywr/parameters/_control_curves.pyx'],
               include_dirs=[np.get_include()],
               define_macros=define_macros),
+    Extension('pywr.parameters._hydropower', ['pywr/parameters/_hydropower.pyx'],
+              include_dirs=[np.get_include()],
+              define_macros=define_macros),
 
     # Other modules
     Extension('pywr.recorders._recorders', ['pywr/recorders/_recorders.pyx'],

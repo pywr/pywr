@@ -21,7 +21,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
                             PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
                             EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
                             FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-                            HydroPowerRecorder, TotalHydroEnergyRecorder,
+                            HydropowerRecorder, TotalHydroEnergyRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
 
 from pywr.recorders.progress import ProgressRecorder
@@ -1419,14 +1419,14 @@ def test_progress_recorder(simple_linear_model):
 class TestHydroPowerRecorder:
 
     def test_constant_level(self, simple_storage_model):
-        """ Test HydroPowerRecorder """
+        """ Test HydropowerRecorder """
         m = simple_storage_model
 
         strg = m.nodes['Storage']
         otpt = m.nodes['Output']
 
         elevation = ConstantParameter(m, 100)
-        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec = HydropowerRecorder(m, otpt, elevation)
         rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
 
         m.setup()
@@ -1444,7 +1444,7 @@ class TestHydroPowerRecorder:
         np.testing.assert_allclose(rec_total.values()[0], 2* 1000 * 9.81 * 8 * 100 * 1e-6)
 
     def test_varying_level(self, simple_storage_model):
-        """ Test HydroPowerRecorder with varying level on Storage node """
+        """ Test HydropowerRecorder with varying level on Storage node """
         from pywr.parameters import InterpolatedVolumeParameter
         m = simple_storage_model
 
@@ -1452,7 +1452,7 @@ class TestHydroPowerRecorder:
         otpt = m.nodes['Output']
 
         elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
-        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec = HydropowerRecorder(m, otpt, elevation)
         rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
 
         m.setup()
@@ -1471,7 +1471,7 @@ class TestHydroPowerRecorder:
         np.testing.assert_allclose(rec_total.values()[0], 1000 * 9.81 * 8 * 170 * 1e-6)
 
     def test_varying_level_with_turbine_level(self, simple_storage_model):
-        """ Test HydroPowerRecorder with varying level on Storage and defined level on the recorder """
+        """ Test HydropowerRecorder with varying level on Storage and defined level on the recorder """
         from pywr.parameters import InterpolatedVolumeParameter
         m = simple_storage_model
 
@@ -1479,7 +1479,7 @@ class TestHydroPowerRecorder:
         otpt = m.nodes['Output']
 
         elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
-        rec = HydroPowerRecorder(m, otpt, elevation, turbine_elevation=80)
+        rec = HydropowerRecorder(m, otpt, elevation, turbine_elevation=80)
         rec_total = TotalHydroEnergyRecorder(m, otpt, elevation, turbine_elevation=80)
 
         m.setup()
