@@ -1,4 +1,3 @@
-
 from pywr.nodes import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink
 from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter

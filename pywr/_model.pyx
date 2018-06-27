@@ -29,6 +29,7 @@ from pywr.parameters._parameters import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
+from pywr.schema.nodes import BaseNodeSchema
 
 
 class OrphanedParameterWarning(Warning):
@@ -415,8 +416,11 @@ class Model(object):
             # if not, load it now
             node_data = model._nodes_to_load[node_name]
             node_type = node_data['type'].lower()
-            cls = NodeMeta.node_registry[node_type]
-            node = cls.load(node_data, model)
+            node_name = node_data.get('name', None)
+            schema = BaseNodeSchema.get_schema(node_type, model)
+            logger.debug('Loading node "{}" (type "{}") from schema "{}".'.format(
+                         node_name, node_type, schema))
+            node = schema.load(node_data)
             del(model._nodes_to_load[node_name])
         return node
 

@@ -71,7 +71,7 @@ def pywr_model_to_d3_json(model, attributes=False):
         classes = classes[::-1]
         node_dict["clss"] = [cls.__name__.lower() for cls in classes]
         try:
-            node["position"] = node.position["schematic"]
+            node_dict["position"] = node.position["schematic"]
         except KeyError:
             pass
     

@@ -1,6 +1,6 @@
 from six import with_metaclass
 import numpy as np
-
+from . import schema
 from pywr import _core
 from pywr._core import Node as BaseNode
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
@@ -514,6 +514,8 @@ class AnnualVirtualStorage(VirtualStorage):
     reset_month: int
         The month of the year (0-12) to reset the volume to the initial value.
     """
+
+
     def __init__(self, *args, **kwargs):
         self.reset_day = kwargs.pop('reset_day', 1)
         self.reset_month = kwargs.pop('reset_month', 1)
