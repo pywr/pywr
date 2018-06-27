@@ -90,7 +90,7 @@ Control curve parameters
     control_curves.ControlCurveInterpolatedParameter
     control_curves.ControlCurveIndexParameter
 
-Hydro-power parameters
+Hydropower parameters
 ----------------------
 
 .. autosummary::
