@@ -147,3 +147,10 @@ else:
         def stats(self):
             return self._cy_solver.stats
     solver_registry.append(CythonLPSolveSolver)
+
+try:
+    from .pyomo_solver import PyomoSolver
+except ImportError:
+    pass
+else:
+    solver_registry.append(PyomoSolver)
