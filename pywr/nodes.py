@@ -7,7 +7,7 @@ from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
     StorageOutput, Timestep, ScenarioIndex)
 
 from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values
-
+from .schema import NodeSchema, fields
 from pywr.domains import Domain
 
 class Drawable(object):
@@ -119,19 +119,6 @@ class NodeMeta(type):
         return node
 
 
-class NodeSchema(marshmallow.Schema):
-    """ Default schema for all Pywr nodes. """
-    name = marshmallow.fields.Str()
-    type = marshmallow.fields.Str()
-    comment = marshmallow.fields.Str()
-
-    @marshmallow.validates_schema(pass_original=True)
-    def check_unknown_fields(self, data, original_data):
-        unknown = set(original_data) - set(self.fields)
-        if unknown:
-            raise marshmallow.ValidationError('Unknown field', unknown)
-
-
 class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
     """Base object from which all other nodes inherit
 
@@ -143,9 +130,9 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flow = marshmallow.fields.Raw(allow_none=True)
-        min_flow = marshmallow.fields.Raw(allow_none=True)
-        cost = marshmallow.fields.Raw()
+        max_flow = fields.ParameterField(allow_none=True)
+        min_flow = fields.ParameterField(allow_none=True)
+        cost = fields.ParameterField(allow_none=True)
 
     def __init__(self, model, name, **kwargs):
         """Initialise a new Node object

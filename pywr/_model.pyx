@@ -408,10 +408,9 @@ class Model(object):
             node_data = model._nodes_to_load[node_name]
             node_type = node_data['type'].lower()
             cls = NodeMeta.node_registry[node_type]
-            # Validate the node data with the classes schema
-            # Note that we don't use the marshmallow loaded data here,
-            # we're just using it for validation.
-            cls.Schema().validate(node_data)
+
+            # TODO load the node via the schema here.
+
             node = cls.load(node_data, model)
             del(model._nodes_to_load[node_name])
         return node
