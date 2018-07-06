@@ -699,30 +699,6 @@ cdef class AggregatedNode(AbstractNode):
             return self._max_flow
         return self._max_flow_param.get_value(scenario_index)
 
-    @classmethod
-    def load(cls, data, model):
-        from pywr.parameters import load_parameter
-        name = data["name"]
-        nodes = [model._get_node_from_ref(model, node_name) for node_name in data["nodes"]]
-        agg = cls(model, name, nodes)
-        try:
-            agg.factors = data["factors"]
-        except KeyError:
-            pass
-        try:
-            agg.flow_weights = data["flow_weights"]
-        except KeyError:
-            pass
-        try:
-            agg.min_flow = load_parameter(model, data["min_flow"])
-        except KeyError:
-            pass
-        try:
-            agg.max_flow = load_parameter(model, data["max_flow"])
-        except KeyError:
-            pass
-        return agg
-
 cdef class StorageInput(BaseInput):
     cpdef commit(self, int scenario_index, double volume):
         BaseInput.commit(self, scenario_index, volume)
@@ -1044,13 +1020,6 @@ cdef class AggregatedStorage(AbstractStorage):
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
-
-    @classmethod
-    def load(cls, data, model):
-        name = data["name"]
-        nodes = [model._get_node_from_ref(model, node_name) for node_name in data["storage_nodes"]]
-        agg = cls(model, name, nodes)
-        return agg
 
 
 cdef class VirtualStorage(Storage):

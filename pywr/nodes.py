@@ -172,33 +172,6 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
         """
         pass
 
-    @classmethod
-    def load(cls, data, model):
-        name = data.pop('name')
-
-        cost = data.pop('cost', 0.0)
-        min_flow = data.pop('min_flow', None)
-        max_flow = data.pop('max_flow', None)
-
-        data.pop('type')
-        node = cls(model=model, name=name,
-                   **data)
-
-        cost = load_parameter(model, cost)
-        min_flow = load_parameter(model, min_flow)
-        max_flow = load_parameter(model, max_flow)
-        if cost is None:
-            cost = 0.0
-        if min_flow is None:
-            min_flow = 0.0
-        if max_flow is None:
-            max_flow = np.inf
-        node.cost = cost
-        node.min_flow = min_flow
-        node.max_flow = max_flow
-
-        return node
-
 
 class Input(Node, BaseInput):
     """A general input at any point in the network
@@ -394,61 +367,6 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
     def check(self):
         pass  # TODO
 
-    @classmethod
-    def load(cls, data, model):
-        name = data.pop('name')
-        num_inputs = int(data.pop('inputs', 1))
-        num_outputs = int(data.pop('outputs', 1))
-
-        if 'initial_volume' not in data and 'initial_volume_pc' not in data:
-            raise ValueError('Initial volume must be specified in absolute or relative terms.')
-
-        initial_volume = data.pop('initial_volume', 0.0)
-        initial_volume_pc = data.pop('initial_volume_pc', None)
-        max_volume = data.pop('max_volume')
-        min_volume = data.pop('min_volume', 0.0)
-        level = data.pop('level', None)
-        area = data.pop('area', None)
-        cost = data.pop('cost', 0.0)
-
-        data.pop('type', None)
-        # Create the instance
-        node = cls(model=model, name=name, num_inputs=num_inputs, num_outputs=num_outputs, **data)
-
-        # Load the parameters after the instance has been created to prevent circular
-        # loading errors
-
-        # Try to coerce initial volume to float.
-        try:
-            initial_volume = float(initial_volume)
-        except TypeError:
-            initial_volume = load_parameter_values(model, initial_volume)
-        node.initial_volume = initial_volume
-        node.initial_volume_pc = initial_volume_pc
-
-        max_volume = load_parameter(model, max_volume)
-        if max_volume is not None:
-            node.max_volume = max_volume
-
-        min_volume = load_parameter(model, min_volume)
-        if min_volume is not None:
-            node.min_volume = min_volume
-
-        cost = load_parameter(model, cost)
-        if cost is None:
-            cost = 0.0
-        node.cost = cost
-
-        if level is not None:
-            level = load_parameter(model, level)
-        node.level = level
-
-        if area is not None:
-            area = load_parameter(model, area)
-        node.area = area
-
-        return node
-
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
@@ -523,14 +441,6 @@ class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
         if self.cost not in (0.0, None):
             raise NotImplementedError("VirtualStorage does not currently support a non-zero cost.")
 
-    @classmethod
-    def load(cls, data, model):
-        del(data["type"])
-        nodes = []
-        for node_name in data.pop("nodes"):
-            nodes.append(model._get_node_from_ref(model, node_name))
-        node = cls(model, nodes=nodes, **data)
-        return node
 
 class AnnualVirtualStorage(VirtualStorage):
     """A virtual storage which resets annually, useful for licences
@@ -657,24 +567,6 @@ class PiecewiseLink(Node):
             self.commit_all(lnk.flow)
         # Make sure save is done after setting aggregated flow
         super(PiecewiseLink, self).after(timestep)
-
-    @classmethod
-    def load(cls, data, model):
-        # accept plurals of max_flow and cost
-        try:
-            max_flow = data.pop("max_flows")
-        except KeyError:
-            pass
-        else:
-            data["max_flow"] = [load_parameter(p) for p in max_flow]
-        try:
-            cost = data.pop("costs")
-        except KeyError:
-            pass
-        else:
-            data["cost"] = [load_parameter(p) for p in cost]
-        del(data["type"])
-        return cls(model, **data)
 
 
 class MultiSplitLink(PiecewiseLink):

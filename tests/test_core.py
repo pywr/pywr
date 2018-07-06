@@ -148,13 +148,13 @@ def test_node_position():
 
     data = {
         "name": "output",
-        "type": "output",
         "position": {
             "schematic": (30, 40),
             "geographic": (-1.5, 52.2),
         }
     }
-    node2 = Node.load(data, model)
+    schema = Node.Schema(context={'model': model, 'klass': Node})
+    node2 = schema.load(data)
 
     assert(node1.position["schematic"] == (10, 20))
     assert(node1.position["geographic"] == (-1, 52))

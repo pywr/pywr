@@ -50,15 +50,6 @@ class Catchment(RiverDomainMixin, Input):
             return
         super(Catchment, self).__setattr__(name, value)
 
-    @classmethod
-    def load(cls, data, model):
-        flow = data.pop('flow', 0.0)
-        if flow is not None:
-            flow = load_parameter(model, flow)
-        node = super(Catchment, cls).load(data, model)
-        node.flow = flow
-        return node
-
 
 class Reservoir(RiverDomainMixin, Storage):
     """A reservoir node with control curve.
@@ -221,15 +212,6 @@ class RiverSplitWithGauge(RiverSplit):
         return locals()
     cost = property(**cost())
 
-    @classmethod
-    def load(cls, data, model):
-        cost = load_parameter(model, data.pop('cost', 0.0))
-        mrf_cost = load_parameter(model, data.pop('mrf_cost', 0.0))
-        mrf = load_parameter(model, data.pop('mrf', 0.0))
-        name = data.pop("name")
-        data.pop("type", None)
-        parameter = cls(model, name, mrf=mrf, cost=cost, mrf_cost=mrf_cost, **data)
-        return parameter
 
 class Discharge(Catchment):
     """An inline discharge to the river network
@@ -284,11 +266,3 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         return locals()
     mrf_cost = property(**mrf_cost())
 
-    @classmethod
-    def load(cls, data, model):
-        mrf = load_parameter(model, data.pop("mrf"))
-        mrf_cost = load_parameter(model, data.pop("mrf_cost"))
-        cost = load_parameter(model, data.pop("cost", 0.0))
-        del(data["type"])
-        node = cls(model, mrf=mrf, mrf_cost=mrf_cost, cost=cost, **data)
-        return node
