@@ -90,6 +90,14 @@ Control curve parameters
     control_curves.ControlCurveInterpolatedParameter
     control_curves.ControlCurveIndexParameter
 
+Hydropower parameters
+----------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   HydropowerTargetParameter
+
 
 Other parameters
 ----------------

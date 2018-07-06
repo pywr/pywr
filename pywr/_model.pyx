@@ -19,8 +19,7 @@ from pywr.nodes import NodeMeta
 from pywr.parameters import load_parameter
 from pywr.recorders import load_recorder
 
-from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
-    StorageOutput, Timestep, ScenarioIndex)
+from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput, StorageOutput, Timestep, ScenarioIndex)
 from pywr._component import ROOT_NODE
 from pywr._component cimport Component
 from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
@@ -31,13 +30,16 @@ from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
 
+
 class OrphanedParameterWarning(Warning):
     pass
 
-class ModelDocumentWarning(Warning): # TODO
+
+class ModelDocumentWarning(Warning):
     pass
 
-class ModelStructureError(Exception): # TODO
+
+class ModelStructureError(Exception):
     pass
 
 
@@ -81,6 +83,11 @@ class Model(object):
         # Import this here once everything else is defined.
         # This avoids circular references in the solver classes
         from pywr.solvers import solver_registry
+
+        if solver_name is None:
+            # See if there is a environment variable defining the solver
+            solver_name = os.environ.get('PYWR_SOLVER', None)
+
         if solver_name is not None:
             # use specific solver
             solver = None
@@ -267,7 +274,8 @@ class Model(object):
             minimum_version = parse_version(minimum_version)
             pywr_version = parse_version(pywr.__version__)
             if pywr_version < minimum_version:
-                warnings.warn("Document requires version {} or newer, but only have {}.".format(minimum_version, pywr_version), RuntimeWarning)
+                warnings.warn("Document requires version {} or newer, but only have {}.".format(
+                    minimum_version, pywr_version), RuntimeWarning)
 
         cls._load_includes(data, path)
 
@@ -454,7 +462,7 @@ class Model(object):
         destination with the same domain has the source.
         """
 
-        nodes = sorted(self.graph.nodes(), key=lambda n:n.name)
+        nodes = sorted(self.graph.nodes(), key=lambda n: n.name)
 
         if inspect.isclass(type1):
             # find all nodes of type1
@@ -710,7 +718,7 @@ class Model(object):
             if ncycles != 0:
                 raise ModelStructureError("Cyclical ({}) dependencies found in the model's components.".format(ncycles))
             # Do not permit self-loops
-            for n in G.nodes_with_selfloops():
+            for n in nx.nodes_with_selfloops(G):
                 raise ModelStructureError('Component "{}" contains a self-loop.'.format(n))
 
             for node in nx.dfs_postorder_nodes(G, ROOT_NODE):
@@ -742,6 +750,7 @@ class Model(object):
         # identify unseen parameters
         orphans = all_parameters - visited
         return orphans
+
 
 class NodeIterator(object):
     """Iterator for Nodes in a Model which also supports indexing
@@ -819,6 +828,7 @@ class NodeIterator(object):
             return node
         raise StopIteration()
 
+
 class NamedIterator(object):
     def __init__(self, objects=None):
         if objects:
@@ -865,6 +875,7 @@ class NamedIterator(object):
         # TODO: check for name collisions / duplication
         self._objects.append(obj)
 
+
 class ModelResult(object):
     def __init__(self, num_scenarios, timestep, time_taken, time_taken_with_overhead, speed,
                  solver_name, solver_stats, version, git_hash):
@@ -894,7 +905,8 @@ class ModelResult(object):
         return df
 
     def __repr__(self):
-        return "Model executed {:d} scenarios in {:.1f} seconds, running at {:.1f} timesteps per second.".format(self.num_scenarios, self.time_taken_with_overhead, self.speed)
+        return "Model executed {:d} scenarios in {:.1f} seconds, running at {:.1f} timesteps per second.".format(
+            self.num_scenarios, self.time_taken_with_overhead, self.speed)
 
     def _repr_html_(self):
         return self.to_dataframe()._repr_html_()

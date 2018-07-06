@@ -1,0 +1,105 @@
+{
+    "metadata": {
+        "title": "Hydropower example",
+        "description": "A model with a single reservoir and hydro-power recorder",
+        "minimum_version": "0.6"
+    },
+    "timestepper": {
+        "start": "2100-01-01",
+        "end": "2101-01-01",
+        "timestep": 7
+    },
+    "nodes": [
+        {
+            "name": "catchment1",
+            "type": "catchment",
+            "flow": 0.0
+        },
+        {
+            "name": "reservoir1",
+            "type": "storage",
+            "max_volume": 200000,
+            "initial_volume": 200000
+        },
+        {
+            "name": "release1",
+            "type": "link",
+            "max_flow": 10,
+            "cost": -500
+        },
+        {
+            "name": "turbine1",
+            "type": "link",
+            "max_flow": "turbine1_discharge",
+            "cost": -200
+        },
+        {
+            "name": "spill1",
+            "type": "link",
+            "cost": 1000
+        },
+        {
+            "name": "reach1",
+            "type": "link"
+        },
+        {
+            "name": "end1",
+            "type": "output"
+        }
+    ],
+    "edges": [
+        ["catchment1", "reservoir1"],
+        ["reservoir1", "release1"],
+        ["reservoir1", "turbine1"],
+        ["reservoir1", "spill1"],
+        ["release1", "reach1"],
+        ["turbine1", "reach1"],
+        ["spill1", "reach1"],
+        ["reach1", "end1"]
+    ],
+    "parameters": {
+        "reservoir1_level": {
+          "type": "interpolatedvolume",
+          "node": "reservoir1",
+          "volumes": [0, 25000, 50000, 75000, 100000, 150000, 200000],
+          "values": [0, 29.2, 36.8, 42.2, 46.4, 53.1, 58.5],
+          "kind": "cubic"
+        },
+        "turbine1_discharge": {
+            "type": "HydroPowerTarget",
+            "water_elevation_parameter": "reservoir1_level",
+            "turbine_elevation": 35.0,
+            "efficiency": 0.85,
+            "flow_unit_conversion": 1e3,
+            "target": { "type": "constant", "value": 1e5},
+            "max_flow": { "type": "constant", "value": 1000.0},
+            "min_flow": { "type": "constant", "value": 500.0}
+        }
+    },
+    "recorders": {
+        "turbine1_energy": {
+            "type": "HydroPowerRecorder",
+            "node": "turbine1",
+            "water_elevation_parameter": "reservoir1_level",
+            "turbine_elevation": 35.0,
+            "efficiency": 0.85,
+            "flow_unit_conversion": 1e3
+        },
+        "catchment1_flow": {
+            "type": "numpyarraynoderecorder",
+            "node": "catchment1"
+        },
+        "reservoir1_storage": {
+            "type": "numpyarraystoragerecorder",
+            "node": "reservoir1"
+        },
+        "turbine1_flow": {
+            "type": "numpyarraynoderecorder",
+            "node": "turbine1"
+        },
+        "release1_flow": {
+            "type": "numpyarraynoderecorder",
+            "node": "release1"
+        }
+    }
+}

@@ -59,7 +59,7 @@ cpdef double hydropower_calculation(double flow, double water_elevation, double 
     return power * energy_unit_conversion
 
 
-cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
+cdef class HydropowerRecorder(NumpyArrayNodeRecorder):
     """ Calculates the power production using the hydropower equation
 
     This recorder saves an array of the hydrpower production in each timestep. It can be converted to a dataframe
@@ -80,15 +80,15 @@ cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
         The density of water.
     flow_unit_conversion : float (default=1.0)
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of $m^3/day$
+        should convert flow to units of :math:`m^3/day`
     energy_unit_conversion : float (default=1e-6)
-        A factor used to transform the units of total energy. Defaults to 1e-6 to return $MJ$.
+        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MJ`.
 
     Notes
     -----
     The hydropower calculation uses the following equation.
 
-    .. math:: P = \rho * g * \deltaH * q
+    .. math:: P = \\rho * g * \\delta H * q
 
     The flow rate in should be converted to units of :math:`m^3` per day using the `flow_unit_conversion` parameter.
 
@@ -100,11 +100,12 @@ cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
     See Also
     --------
     TotalHydroEnergyRecorder
+    pywr.parameters.HydropowerTargetParameter
 
     """
     def __init__(self, model, node, water_elevation_parameter=None, turbine_elevation=0.0, efficiency=1.0, density=1000,
                  flow_unit_conversion=1.0, energy_unit_conversion=1e-6, **kwargs):
-        super(HydroPowerRecorder, self).__init__(model, node, **kwargs)
+        super(HydropowerRecorder, self).__init__(model, node, **kwargs)
 
         self.water_elevation_parameter = water_elevation_parameter
         self.turbine_elevation = turbine_elevation
@@ -160,7 +161,7 @@ cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
             water_elevation_parameter = None
 
         return cls(model, node, water_elevation_parameter=water_elevation_parameter, **data)
-HydroPowerRecorder.register()
+HydropowerRecorder.register()
 
 
 cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
@@ -184,15 +185,15 @@ cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
         The density of water.
     flow_unit_conversion : float (default=1.0)
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of $m^3/day$
+        should convert flow to units of :math:`m^3/day`
     energy_unit_conversion : float (default=1e-6)
-        A factor used to transform the units of total energy. Defaults to 1e-6 to return $MJ$.
+        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MJ`.
 
     Notes
     -----
     The hydropower calculation uses the following equation.
 
-    .. math:: P = \rho * g * \deltaH * q
+    .. math:: P = \\rho * g * \\delta H * q
 
     The flow rate in should be converted to units of :math:`m^3` per day using the `flow_unit_conversion` parameter.
 
@@ -203,8 +204,8 @@ cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
 
     See Also
     --------
-    HydroPowerRecorder
-
+    HydropowerRecorder
+    pywr.parameters.HydropowerTargetParameter
 
     """
     def __init__(self, model, node, water_elevation_parameter=None, turbine_elevation=0.0, efficiency=1.0, density=1000,

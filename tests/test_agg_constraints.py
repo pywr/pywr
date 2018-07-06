@@ -9,8 +9,8 @@ from pandas import Timestamp
 from helpers import load_model
 
 @pytest.fixture
-def model(solver):
-    model = Model(solver=solver)
+def model():
+    model = Model()
     model.timestepper.start = Timestamp("2016-01-01")
     model.timestepper.end = Timestamp("2016-01-02")
     return model
@@ -209,8 +209,8 @@ def test_aggregated_node_max_flow_same_route(model):
     assert_allclose(agg.flow, 30.0)
     assert_allclose(A.flow + B.flow, 30.0)
 
-def test_aggregated_constraint_json(solver):
-    model = load_model("aggregated1.json", solver=solver)
+def test_aggregated_constraint_json():
+    model = load_model("aggregated1.json")
 
     agg = model.nodes["agg"]
     assert(agg.nodes == [model.nodes["A"], model.nodes["B"]])

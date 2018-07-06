@@ -3,7 +3,7 @@ from pywr.parameters._parameters cimport Parameter
 from .._core cimport Timestep, Scenario, ScenarioIndex
 
 
-cdef class HydroPowerRecorder(NumpyArrayNodeRecorder):
+cdef class HydropowerRecorder(NumpyArrayNodeRecorder):
     cdef Parameter _water_elevation_parameter
     cdef public double turbine_elevation
     cdef public double flow_unit_conversion

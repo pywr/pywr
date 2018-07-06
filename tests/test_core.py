@@ -15,9 +15,9 @@ from pywr.recorders import assert_rec, AssertionRecorder
 
 TEST_FOLDER = os.path.dirname(__file__)
 
-def test_names(solver):
+def test_names():
     '''Test node names'''
-    model = Model(solver=solver)
+    model = Model()
 
     node1 = Input(model, name='A')
     node2 = Output(model, name='B')
@@ -66,8 +66,8 @@ def test_model_nodes(model):
     assert(all_nodes == [])
 
 
-def test_unexpected_kwarg_node(solver):
-    model = Model(solver=solver)
+def test_unexpected_kwarg_node():
+    model = Model()
 
     with pytest.raises(TypeError):
         node = Node(model, 'test_node', invalid=True)
@@ -80,15 +80,15 @@ def test_unexpected_kwarg_node(solver):
     assert(not model.nodes)
 
 
-def test_unexpected_kwarg_model(solver):
+def test_unexpected_kwarg_model():
     with pytest.raises(TypeError):
-        model = Model(solver=solver, thisisgoingtofail=True)
-    model = Model(solver=solver)
+        model = Model(thisisgoingtofail=True)
+    model = Model()
 
-def test_slots_connect_disconnect(solver):
+def test_slots_connect_disconnect():
     """Test connection and disconnection to storage node slots
     """
-    model = Model(solver=solver)
+    model = Model()
 
     supply1 = Input(model, name='supply1')
     supply2 = Input(model, name='supply2')
@@ -137,8 +137,8 @@ def test_slots_connect_disconnect(solver):
         supply1.disconnect(storage)
 
 
-def test_node_position(solver):
-    model = Model(solver=solver)
+def test_node_position():
+    model = Model()
 
     # node position, from kwargs
 
@@ -214,10 +214,10 @@ def test_timeseries_excel(simple_linear_model, filename):
 
     model.run()
 
-def test_dirty_model(solver):
+def test_dirty_model():
     """Test that the LP is updated when the model structure is redefined"""
     # start dirty
-    model = Model(solver=solver)
+    model = Model()
     assert(model.dirty)
 
     # add some nodes, still dirty
@@ -249,13 +249,12 @@ def test_dirty_model(solver):
     supply2.disconnect()
     assert(model.dirty)
 
-def test_reset_initial_volume(solver):
+def test_reset_initial_volume():
     """
     If the model doesn't reset correctly changing the initial volume and
     re-running will cause an exception.
     """
     model = Model(
-        solver=solver,
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-01')
     )
@@ -272,9 +271,9 @@ def test_reset_initial_volume(solver):
         model.run()
         assert(otpt.flow == initial_volume)
 
-def test_shorthand_property(solver):
+def test_shorthand_property():
     # test shorthand assignment of constant properties
-    model = Model(solver=solver)
+    model = Model()
     node = Node(model, 'node')
     for attr in ('min_flow', 'max_flow', 'cost', 'conversion_factor'):
         # should except int, float or Paramter
@@ -290,9 +289,9 @@ def test_shorthand_property(solver):
             setattr(node, attr, None)
 
 
-def test_shorthand_property_storage(solver):
+def test_shorthand_property_storage():
     # test shorthand assignment of constant properties
-    model = Model(solver=solver)
+    model = Model()
     node = Storage(model, 'node')
     for attr in ('min_volume', 'max_volume', 'cost', 'level'):
         # should except int, float or Paramter
@@ -308,10 +307,10 @@ def test_shorthand_property_storage(solver):
             setattr(node, attr, None)
 
 
-def test_reset_before_run(solver):
+def test_reset_before_run():
     # See issue #82. Previously this would raise:
     #    AttributeError: Memoryview is not initialized
-    model = Model(solver=solver)
+    model = Model()
     node = Node(model, 'node')
     model.reset()
 
@@ -327,13 +326,13 @@ def test_check_isolated_nodes(simple_linear_model):
     with pytest.raises(ModelStructureError):
         model.check()
 
-def test_check_isolated_nodes_storage(solver):
+def test_check_isolated_nodes_storage():
     """Test model structure checker with Storage
 
     The Storage node itself doesn't have any connections, but it's child
     nodes do need to be connected.
     """
-    model = Model(solver=solver)
+    model = Model()
 
     # add a storage, but don't connect it's outflow to anything
     storage = Storage(model, 'storage', inputs=1, outputs=0)
@@ -345,13 +344,12 @@ def test_check_isolated_nodes_storage(solver):
     storage.connect(demand, from_slot=0)
     model.check()
 
-def test_storage_max_volume_zero(solver):
+def test_storage_max_volume_zero():
     """Test a that an max_volume of zero results in a NaN for current_pc and no exception
 
     """
 
     model = Model(
-        solver=solver,
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-01')
     )
@@ -366,13 +364,12 @@ def test_storage_max_volume_zero(solver):
     assert np.isnan(storage.current_pc)
 
 
-def test_storage_max_volume_param(solver):
+def test_storage_max_volume_param():
     """Test a that an max_volume with a Parameter results in the correct current_pc
 
     """
 
     model = Model(
-        solver=solver,
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-01')
     )
@@ -395,11 +392,10 @@ def test_storage_max_volume_param(solver):
     np.testing.assert_allclose(storage.current_pc, 0.25)
 
 
-def test_storage_initial_volume_pc(solver):
+def test_storage_initial_volume_pc():
     """Test that setting initial volume as a percentage works as expected.
     """
     model = Model(
-        solver=solver,
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-01')
     )
@@ -424,14 +420,13 @@ def test_storage_initial_volume_pc(solver):
     np.testing.assert_allclose(storage.volume, 20.0)
 
 
-def test_storage_max_volume_param_raises(solver):
+def test_storage_max_volume_param_raises():
     """Test a that an max_volume with a Parameter that has children.
     
     Only some aggregated style parameters should work here.
     """
 
     model = Model(
-        solver=solver,
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-01')
     )
@@ -449,13 +444,12 @@ def test_storage_max_volume_param_raises(solver):
     np.testing.assert_allclose(storage.current_pc, 0.25)
 
 
-def test_storage_max_volume_param_raises(solver):
+def test_storage_max_volume_param_raises():
     """Test a that an max_volume with a Parameter that has children is an error
 
     """
 
     model = Model(
-        solver=solver,
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-01')
     )
@@ -483,7 +477,7 @@ def test_storage_initial_volume_table():
     np.testing.assert_allclose(model.nodes["supply2"].initial_volume, 35.0)
 
 
-def test_recursive_delete(solver):
+def test_recursive_delete():
     """Test recursive deletion of child nodes for compound nodes"""
     model = Model()
     n1 = Input(model, "n1")
@@ -499,7 +493,7 @@ def test_recursive_delete(solver):
     assert len(model.graph.nodes()) == 1
 
 
-def test_json_include(solver):
+def test_json_include():
     """Test include in JSON document"""
     filename = os.path.join(TEST_FOLDER, "models", "extra1.json")
     model = Model.load(filename)
@@ -508,16 +502,16 @@ def test_json_include(solver):
     supply2 = model.nodes["supply2"]
     assert(isinstance(supply2.max_flow, ConstantParameter))
 
-def test_json_min_version(solver):
+def test_json_min_version():
     """Test warning is raised if document minimum version is more than we have"""
     filename = os.path.join(TEST_FOLDER, "models", "version1.json")
     with pytest.warns(RuntimeWarning):
         model = Model.load(filename)
 
-def test_initial_timestep(solver):
+def test_initial_timestep():
     """Current timestep before model has started is undefined"""
     filename = os.path.join(TEST_FOLDER, "models", "extra1.json")
-    model = Model.load(filename, solver=solver)
+    model = Model.load(filename)
     assert(model.timestepper.current is None)
     model.run()
     assert(isinstance(model.timestepper.current, Timestep))
@@ -526,17 +520,17 @@ def test_timestepper_repr(model):
     timestepper = model.timestepper
     print(timestepper)
 
-def test_timestep_repr(solver):
+def test_timestep_repr():
     filename = os.path.join(TEST_FOLDER, "models", "simple1.json")
-    model = Model.load(filename, solver=solver)
+    model = Model.load(filename)
     model.timestepper.end = "2015-01-05"
     res = model.run()
     assert(isinstance(res.timestep, Timestep))
     assert("2015-01-05" in str(res.timestep))
 
-def test_virtual_storage_cost(solver):
+def test_virtual_storage_cost():
     """VirtualStorage doesn't (currently) implement its cost attribute"""
-    model = Model(solver=solver)
+    model = Model()
     A = Input(model, "A")
     B = Output(model, "B")
     A.connect(B)
@@ -546,25 +540,25 @@ def test_virtual_storage_cost(solver):
     with pytest.raises(NotImplementedError):
         model.check()
 
-def test_json_invalid(solver):
+def test_json_invalid():
     """JSON exceptions should report file name"""
     filename = os.path.join(TEST_FOLDER, "models", "invalid"+".json")
     with pytest.raises(ValueError) as excinfo:
-        model = Model.load(filename, solver=solver)
+        model = Model.load(filename)
     assert("invalid.json" in str(excinfo.value))
 
-def test_json_invalid_include(solver):
+def test_json_invalid_include():
     """JSON exceptions should report file name, even for includes"""
     filename = os.path.join(TEST_FOLDER, "models", "invalid_include"+".json")
     with pytest.raises(ValueError) as excinfo:
-        model = Model.load(filename, solver=solver)
+        model = Model.load(filename)
     assert("invalid.json" in str(excinfo.value))
 
 
-def test_variable_load(solver):
+def test_variable_load():
     """Current timestep before model has started is undefined"""
     filename = os.path.join(TEST_FOLDER, "models", "demand_saving2_with_variables.json")
-    model = Model.load(filename, solver=solver)
+    model = Model.load(filename)
 
     # Test the correct number of each component is loaded
     assert len(model.variables) == 3

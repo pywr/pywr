@@ -15,10 +15,10 @@ from numpy.testing import assert_equal, assert_allclose
 import pytest
 
 
-def test_scenario_collection(solver):
+def test_scenario_collection():
     """ Basic test of Scenario and ScenarioCollection API """
 
-    model = Model(solver=solver)
+    model = Model()
 
     # There is 1 combination when there are no Scenarios
     model.scenarios.setup()
@@ -124,14 +124,14 @@ def test_scenario_two_parameter(simple_linear_model, ):
     assert_model(model, expected_node_results)
 
 
-def test_scenario_storage(solver):
+def test_scenario_storage():
     """Test the behaviour of Storage nodes with multiple scenarios
 
     The model defined has two inflow scenarios: 5 and 10. It is expected that
     the volume in the storage node should increase at different rates in the
     two scenarios.
     """
-    model = Model(solver=solver)
+    model = Model()
 
     i = Input(model, 'input', max_flow=999)
     s = Storage(model, 'storage', inputs=1, outputs=1, max_volume=1000, initial_volume=500)
@@ -152,7 +152,7 @@ def test_scenario_storage(solver):
     assert_allclose(s_rec.data[1], [510, 520])
 
 
-def test_scenarios_from_json(solver):
+def test_scenarios_from_json():
     """
     Test a simple model with two scenarios.
 
@@ -163,7 +163,7 @@ def test_scenarios_from_json(solver):
     the `MultiIndex` on the `DataFrame` from the recorder.
     """
 
-    model = load_model('simple_with_scenario.json', solver=solver)
+    model = load_model('simple_with_scenario.json')
     assert len(model.scenarios) == 2
 
     model.setup()
@@ -186,9 +186,9 @@ def test_scenarios_from_json(solver):
     assert_allclose(d2, [10, 11, 12, 13, 14]+[15]*5)
 
 
-def test_timeseries_with_scenarios(solver):
+def test_timeseries_with_scenarios():
 
-    model = load_model('timeseries2.json', solver=solver)
+    model = load_model('timeseries2.json')
 
     model.setup()
 
@@ -208,9 +208,9 @@ def test_timeseries_with_scenarios(solver):
     model.finish()
 
 
-def test_timeseries_with_scenarios_hdf(solver):
+def test_timeseries_with_scenarios_hdf():
     # this test uses TablesArrayParameter
-    model = load_model('timeseries2_hdf.json', solver=solver)
+    model = load_model('timeseries2_hdf.json')
 
     model.setup()
 
@@ -231,13 +231,13 @@ def test_timeseries_with_scenarios_hdf(solver):
     model.finish()
 
 
-def test_timeseries_with_wrong_hash(solver):
+def test_timeseries_with_wrong_hash():
     with pytest.raises(HashMismatchError):
-        load_model('timeseries2_hdf_wrong_hash.json', solver=solver)
+        load_model('timeseries2_hdf_wrong_hash.json')
 
 
-def test_tablesarrayparameter_scenario_slice(solver):
-    model = load_model('timeseries2_hdf.json', solver=solver)
+def test_tablesarrayparameter_scenario_slice():
+    model = load_model('timeseries2_hdf.json')
     catchment1 = model.nodes['catchment1']
     scenario = model.scenarios["scenario A"]
     scenario.slice = slice(0, 10, 2)
@@ -251,9 +251,9 @@ def test_tablesarrayparameter_scenario_slice(solver):
     assert_allclose(catchment1.flow, step2[::2], atol=1e-1)
     model.finish()
 
-def test_tablesarrayparameter_scenario_user_combinations(solver):
+def test_tablesarrayparameter_scenario_user_combinations():
     """Test TablesArrayParameter with user defined combination of scenarios"""
-    model = load_model('timeseries2_hdf.json', solver=solver)
+    model = load_model('timeseries2_hdf.json')
     catchment1 = model.nodes['catchment1']
     scenario = model.scenarios["scenario A"]
     scenario2 = Scenario(model, "scenario B", size=2)
@@ -270,10 +270,10 @@ def test_tablesarrayparameter_scenario_user_combinations(solver):
     assert_allclose(catchment1.flow, step2[[0, 2, 6, 2]], atol=1e-1)
     model.finish()
 
-def test_tables_array_index_error(solver):
+def test_tables_array_index_error():
     # check an exception is raised (before the model starts) if the length
     # of the data passed to a TablesArrayParameter is not long enough
-    model = load_model('timeseries2_hdf.json', solver=solver)
+    model = load_model('timeseries2_hdf.json')
     model.timestepper.start = "1920-01-01"
     model.timestepper.end = "1980-01-01"
     with pytest.raises(IndexError):
@@ -362,8 +362,8 @@ def test_scenario_user_combinations(simple_linear_model):
     with pytest.raises(ValueError):
         model.scenarios.user_combinations = [[-1, 2], [2, 2]]
 
-def test_scenario_slices_json(solver):
-    model = load_model('scenario_with_slices.json', solver=solver)
+def test_scenario_slices_json():
+    model = load_model('scenario_with_slices.json')
     scenarios = model.scenarios
     assert(len(scenarios) == 2)
     assert(scenarios["scenario A"].slice == slice(0, None, 2))
@@ -371,8 +371,8 @@ def test_scenario_slices_json(solver):
     combinations = model.scenarios.get_combinations()
     assert(len(combinations) == 5)
 
-def test_scenario_slices_json(solver):
-    model = load_model('scenario_with_user_combinations.json', solver=solver)
+def test_scenario_slices_json():
+    model = load_model('scenario_with_user_combinations.json')
     scenarios = model.scenarios
     assert(len(scenarios) == 2)
     combinations = model.scenarios.get_combinations()

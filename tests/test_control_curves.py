@@ -314,10 +314,10 @@ def test_control_curve_interpolated(model):
             model.run()
 
 
-def test_control_curve_interpolated_json(solver):
+def test_control_curve_interpolated_json():
     # this is a little hack-y, as the parameters don't provide access to their
     # data once they've been initalised
-    model = load_model("reservoir_with_cc.json", solver=solver)
+    model = load_model("reservoir_with_cc.json")
     reservoir1 = model.nodes["reservoir1"]
     model.setup()
     path = os.path.join(os.path.dirname(__file__), "models", "control_curve.csv")
@@ -333,10 +333,10 @@ def test_control_curve_interpolated_json(solver):
     model.run()
 
 
-def test_circular_control_curve_interpolated_json(solver):
+def test_circular_control_curve_interpolated_json():
     # this is a little hack-y, as the parameters don't provide access to their
     # data once they've been initalised
-    model = load_model("reservoir_with_circular_cc.json", solver=solver)
+    model = load_model("reservoir_with_circular_cc.json")
     reservoir1 = model.nodes["reservoir1"]
     model.setup()
     path = os.path.join(os.path.dirname(__file__), "models", "control_curve.csv")
@@ -448,9 +448,9 @@ class TestMonthlyProfileControlCurveParameter:
         model.setup()
         self._assert_results(model, s, p, scale=1.5)
 
-    def test_json_load(self, solver):
+    def test_json_load(self):
 
-        model = load_model("demand_saving.json", solver=solver)
+        model = load_model("demand_saving.json")
 
         storage = model.nodes["supply1"]
         demand = model.nodes["demand1"]
@@ -514,7 +514,7 @@ def test_daily_profile_control_curve(simple_linear_model):
         model.run()
 
 
-def test_demand_saving_with_indexed_array(solver):
+def test_demand_saving_with_indexed_array():
     """Test demand saving based on reservoir control curves
 
     This is a relatively complex test to pass due to the large number of
@@ -523,7 +523,7 @@ def test_demand_saving_with_indexed_array(solver):
     on the state of a reservoir.
     """
 
-    model = load_model("demand_saving2.json", solver=solver)
+    model = load_model("demand_saving2.json")
 
     model.timestepper.end = pd.Timestamp("2016-01-31")
 
@@ -552,9 +552,9 @@ def test_demand_saving_with_indexed_array(solver):
     assert_allclose(rec_demand.data[12, 0], demand_baseline * demand_factor * demand_saving)
 
 
-def test_demand_saving_with_indexed_array_from_hdf(solver):
+def test_demand_saving_with_indexed_array_from_hdf():
     """Test demand saving based on a predefined demand saving level in a HDF file."""
-    model = load_model("demand_saving_hdf.json", solver=solver)
+    model = load_model("demand_saving_hdf.json")
 
     model.timestepper.end = pd.Timestamp("2016-01-31")
 

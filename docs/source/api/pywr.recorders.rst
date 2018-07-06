@@ -91,5 +91,5 @@ Hydro-power recorders
 .. autosummary::
    :toctree: generated/
 
-   HydroPowerRecorder
+   HydropowerRecorder
    TotalHydroEnergyRecorder

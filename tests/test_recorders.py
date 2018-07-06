@@ -21,7 +21,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
                             PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
                             EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
                             FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-                            HydroPowerRecorder, TotalHydroEnergyRecorder,
+                            HydropowerRecorder, TotalHydroEnergyRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
 
 from pywr.recorders.progress import ProgressRecorder
@@ -294,8 +294,8 @@ def test_numpy_index_parameter_recorder(simple_storage_model):
     assert_allclose(df.values, np.array([[0, 0, 1, 2, 2]]).T, atol=1e-7)
 
 
-def test_parameter_recorder_json(solver):
-    model = load_model("parameter_recorder.json", solver=solver)
+def test_parameter_recorder_json():
+    model = load_model("parameter_recorder.json")
     rec_demand = model.recorders["demand_max_recorder"]
     rec_supply = model.recorders["supply_max_recorder"]
     model.run()
@@ -437,7 +437,7 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
     fh.close()
 
 
-def test_loading_csv_recorder_from_json(solver, tmpdir):
+def test_loading_csv_recorder_from_json(tmpdir):
     """
     Test the CSV Recorder which is loaded from json
     """
@@ -455,7 +455,7 @@ def test_loading_csv_recorder_from_json(solver, tmpdir):
     url = data['recorders']['model_out']['url']
     data['recorders']['model_out']['url'] = str(tmpdir.join(url))
 
-    model = Model.load(data, path=path, solver=solver)
+    model = Model.load(data, path=path)
 
     csvfile = tmpdir.join('output.csv')
     model.run()
@@ -705,11 +705,11 @@ class TestTablesRecorder:
                 else:
                     np.testing.assert_allclose(ca, 10.0)
 
-    def test_demand_saving_with_indexed_array(self, solver, tmpdir):
+    def test_demand_saving_with_indexed_array(self, tmpdir):
         """Test recording various items from demand saving example
 
         """
-        model = load_model("demand_saving2.json", solver=solver)
+        model = load_model("demand_saving2.json")
 
         model.timestepper.end = "2016-01-31"
 
@@ -752,7 +752,7 @@ class TestTablesRecorder:
             assert (rec_storage[11, 0] < (0.5 * max_volume))
             assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
 
-    def test_demand_saving_with_indexed_array(self, solver, tmpdir):
+    def test_demand_saving_with_indexed_array(self, tmpdir):
         """Test recording various items from demand saving example.
 
         This time the TablesRecorder is defined in JSON.
@@ -769,7 +769,7 @@ class TestTablesRecorder:
         url = data['recorders']['database']['url']
         data['recorders']['database']['url'] = str(tmpdir.join(url))
 
-        model = Model.load(data, path=path, solver=solver)
+        model = Model.load(data, path=path)
 
         model.timestepper.end = "2016-01-31"
         model.check()
@@ -1033,9 +1033,8 @@ class TestAggregatedRecorder:
         assert_allclose(func([20.0, 40.0]), rec.aggregated_value(), atol=1e-7)
 
 
-def test_reset_timestepper_recorder(solver):
+def test_reset_timestepper_recorder():
     model = Model(
-        solver=solver,
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-01')
     )
@@ -1052,8 +1051,8 @@ def test_reset_timestepper_recorder(solver):
 
     model.run()
 
-def test_mean_flow_recorder(solver):
-    model = Model(solver=solver)
+def test_mean_flow_recorder():
+    model = Model()
     model.timestepper.start = pandas.to_datetime("2016-01-01")
     model.timestepper.end = pandas.to_datetime("2016-01-04")
 
@@ -1079,8 +1078,8 @@ def test_mean_flow_recorder(solver):
     for value, expected_value in zip(rec_mean.data[:, 0], expected):
         assert_allclose(value, expected_value)
 
-def test_mean_flow_recorder_days(solver):
-    model = Model(solver=solver)
+def test_mean_flow_recorder_days():
+    model = Model()
     model.timestepper.delta = 7
 
     inpt = Input(model, "input")
@@ -1092,8 +1091,8 @@ def test_mean_flow_recorder_days(solver):
     model.run()
     assert(rec_mean.timesteps == 4)
 
-def test_mean_flow_recorder_json(solver):
-    model = load_model("mean_flow_recorder.json", solver=solver)
+def test_mean_flow_recorder_json():
+    model = load_model("mean_flow_recorder.json")
 
     # TODO: it's not possible to define a FunctionParameter in JSON yet
     supply1 = model.nodes["supply1"]
@@ -1148,8 +1147,8 @@ def test_annual_count_index_parameter_recorder(simple_storage_model):
 #  to compare with the model prediction.
 
 @pytest.fixture
-def timeseries2_model(solver):
-    return load_model('timeseries2.json', solver=solver)
+def timeseries2_model():
+    return load_model('timeseries2.json')
 
 
 @pytest.fixture
@@ -1420,14 +1419,14 @@ def test_progress_recorder(simple_linear_model):
 class TestHydroPowerRecorder:
 
     def test_constant_level(self, simple_storage_model):
-        """ Test HydroPowerRecorder """
+        """ Test HydropowerRecorder """
         m = simple_storage_model
 
         strg = m.nodes['Storage']
         otpt = m.nodes['Output']
 
         elevation = ConstantParameter(m, 100)
-        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec = HydropowerRecorder(m, otpt, elevation)
         rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
 
         m.setup()
@@ -1445,7 +1444,7 @@ class TestHydroPowerRecorder:
         np.testing.assert_allclose(rec_total.values()[0], 2* 1000 * 9.81 * 8 * 100 * 1e-6)
 
     def test_varying_level(self, simple_storage_model):
-        """ Test HydroPowerRecorder with varying level on Storage node """
+        """ Test HydropowerRecorder with varying level on Storage node """
         from pywr.parameters import InterpolatedVolumeParameter
         m = simple_storage_model
 
@@ -1453,7 +1452,7 @@ class TestHydroPowerRecorder:
         otpt = m.nodes['Output']
 
         elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
-        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec = HydropowerRecorder(m, otpt, elevation)
         rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
 
         m.setup()
@@ -1472,7 +1471,7 @@ class TestHydroPowerRecorder:
         np.testing.assert_allclose(rec_total.values()[0], 1000 * 9.81 * 8 * 170 * 1e-6)
 
     def test_varying_level_with_turbine_level(self, simple_storage_model):
-        """ Test HydroPowerRecorder with varying level on Storage and defined level on the recorder """
+        """ Test HydropowerRecorder with varying level on Storage and defined level on the recorder """
         from pywr.parameters import InterpolatedVolumeParameter
         m = simple_storage_model
 
@@ -1480,7 +1479,7 @@ class TestHydroPowerRecorder:
         otpt = m.nodes['Output']
 
         elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
-        rec = HydroPowerRecorder(m, otpt, elevation, turbine_elevation=80)
+        rec = HydropowerRecorder(m, otpt, elevation, turbine_elevation=80)
         rec_total = TotalHydroEnergyRecorder(m, otpt, elevation, turbine_elevation=80)
 
         m.setup()

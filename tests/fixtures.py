@@ -9,19 +9,19 @@ import datetime
 import pytest
 
 @pytest.fixture()
-def model(request, solver):
-    model = Model(solver=solver)
+def model(request):
+    model = Model()
     return model
 
 @pytest.fixture()
-def simple_linear_model(request, solver):
+def simple_linear_model(request):
     """
     Make a simple model with a single Input and Output.
 
     Input -> Link -> Output
 
     """
-    model = Model(solver=solver)
+    model = Model()
     inpt = Input(model, name="Input")
     lnk = Link(model, name="Link", cost=1.0)
     inpt.connect(lnk)
@@ -31,7 +31,7 @@ def simple_linear_model(request, solver):
     return model
 
 @pytest.fixture()
-def simple_storage_model(request, solver):
+def simple_storage_model(request):
     """
     Make a simple model with a single Input, Storage and Output.
     
@@ -42,7 +42,6 @@ def simple_storage_model(request, solver):
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-05'),
         timestep=datetime.timedelta(1),
-        solver=solver
     )
 
     inpt = Input(model, name="Input", max_flow=5.0, cost=-1)
@@ -56,7 +55,7 @@ def simple_storage_model(request, solver):
 
 
 @pytest.fixture()
-def three_storage_model(request, solver):
+def three_storage_model(request):
     """
     Make a simple model with three input, storage and output nodes. Also adds
     an `AggregatedStorage` and `AggregatedNode`.
@@ -72,7 +71,6 @@ def three_storage_model(request, solver):
         start=pandas.to_datetime('2016-01-01'),
         end=pandas.to_datetime('2016-01-05'),
         timestep=datetime.timedelta(1),
-        solver=solver
     )
 
     all_res = []

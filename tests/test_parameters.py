@@ -28,8 +28,8 @@ from numpy.testing import assert_allclose
 TEST_DIR = os.path.dirname(__file__)
 
 @pytest.fixture
-def model(solver):
-    return Model(solver=solver)
+def model():
+    return Model()
 
 
 class TestConstantParameter:
@@ -67,6 +67,10 @@ class TestConstantParameter:
 
         np.testing.assert_allclose(p.get_double_lower_bounds(), np.array([np.pi/2]))
         np.testing.assert_allclose(p.get_double_upper_bounds(), np.array([2*np.pi]))
+        # Test deprecated API too.
+        np.testing.assert_allclose(p.lower_bounds(), np.array([np.pi/2]))
+        np.testing.assert_allclose(p.upper_bounds(), np.array([2*np.pi]))
+
         np.testing.assert_allclose(p.get_double_variables(), np.array([np.pi]))
 
         # No test updating the variables
@@ -245,8 +249,8 @@ class TestScenarioMonthlyProfileParameter:
                 si = ScenarioIndex(i, np.array([i], dtype=np.int32))
                 np.testing.assert_allclose(p.value(ts, si), values[i, imth])
 
-    def test_json(self, solver):
-        model = load_model('scenario_monthly_profile.json', solver=solver)
+    def test_json(self):
+        model = load_model('scenario_monthly_profile.json')
 
         # check first day initalised
         assert (model.timestepper.start == datetime.datetime(2015, 1, 1))
@@ -358,6 +362,29 @@ class TestAnnualHarmonicSeriesParameter:
         for ts in model.timestepper:
             doy = (ts.datetime.dayofyear - 1) / 365
             np.testing.assert_allclose(p1.value(ts, si), 0.5 + 0.25 * np.cos(doy * 2 * np.pi + np.pi / 4))
+
+    def test_variable(self, model):
+        """ Test that variable updating works. """
+        p1 = AnnualHarmonicSeriesParameter(model, 0.5, [0.25], [np.pi/4], is_variable=True)
+
+        assert p1.double_size == 3
+        assert p1.integer_size == 0
+
+        new_var = np.array([0.6, 0.1, np.pi/2])
+        p1.set_double_variables(new_var)
+        np.testing.assert_allclose(p1.get_double_variables(), new_var)
+
+        with pytest.raises(NotImplementedError):
+            p1.set_integer_variables(np.arange(3, dtype=np.int32))
+
+        with pytest.raises(NotImplementedError):
+            p1.get_integer_variables()
+
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        for ts in model.timestepper:
+            doy = (ts.datetime.dayofyear - 1)/365
+            np.testing.assert_allclose(p1.value(ts, si), 0.6 + 0.1*np.cos(doy*2*np.pi + np.pi/2))
 
 
 class TestAggregatedParameter:
@@ -649,7 +676,7 @@ def test_parameter_df_json_load(model, tmpdir):
     p = load_parameter(model, data)
     p.setup()
 
-def test_simple_json_parameter_reference(solver):
+def test_simple_json_parameter_reference():
     # note that parameters in the "parameters" section cannot be literals
     model = load_model("parameter_reference.json")
     max_flow = model.nodes["supply1"].max_flow
@@ -707,11 +734,11 @@ def test_threshold_parameter(simple_linear_model):
     model.run()
 
 
-def test_constant_from_df(solver):
+def test_constant_from_df():
     """
     Test that a dataframe can be used to provide data to ConstantParameter (single values).
     """
-    model = load_model('simple_df.json', solver=solver)
+    model = load_model('simple_df.json')
 
     assert isinstance(model.nodes['demand1'].max_flow, ConstantParameter)
     assert isinstance(model.nodes['demand1'].cost, ConstantParameter)
@@ -723,11 +750,11 @@ def test_constant_from_df(solver):
     np.testing.assert_allclose(model.nodes['demand1'].cost.value(ts, si), -10.0)
 
 
-def test_constant_from_shared_df(solver):
+def test_constant_from_shared_df():
     """
     Test that a shared dataframe can be used to provide data to ConstantParameter (single values).
     """
-    model = load_model('simple_df_shared.json', solver=solver)
+    model = load_model('simple_df_shared.json')
 
     assert isinstance(model.nodes['demand1'].max_flow, ConstantParameter)
     assert isinstance(model.nodes['demand1'].cost, ConstantParameter)
@@ -739,11 +766,11 @@ def test_constant_from_shared_df(solver):
     np.testing.assert_allclose(model.nodes['demand1'].cost.value(ts, si), -10.0)
 
 
-def test_constant_from_multiindex_df(solver):
+def test_constant_from_multiindex_df():
     """
     Test that a dataframe can be used to provide data to ConstantParameter (single values).
     """
-    model = load_model('multiindex_df.json', solver=solver)
+    model = load_model('multiindex_df.json')
 
 
     assert isinstance(model.nodes['demand1'].max_flow, ConstantParameter)
@@ -1172,14 +1199,14 @@ def test_orphaned_components(simple_linear_model):
     with pytest.warns(OrphanedParameterWarning):
         model.check()
 
-def test_deficit_parameter(solver):
+def test_deficit_parameter():
     """Test DeficitParameter
 
     Here we test both uses of the DeficitParameter:
       1) Recording the deficit for a node each timestep
       2) Using yesterday's deficit to control today's flow
     """
-    model = load_model("deficit.json", solver=solver)
+    model = load_model("deficit.json")
 
     model.run()
 
@@ -1193,3 +1220,32 @@ def test_deficit_parameter(solver):
     expected_yesterday = [0]+list(expected[0:-1])
     actual_yesterday = model.recorders["yesterday_recorder"].data
     assert_allclose(expected_yesterday, actual_yesterday[:,0])
+
+
+class TestHydroPowerTargets:
+    def test_target_json(self):
+        """ Test loading a HydropowerTargetParameter from JSON. """
+        model = load_model("hydropower_target_example.json")
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        # 30 time-steps are run such that the head gets so flow to hit the max_flow
+        # constraint. The first few time-steps are also bound by the min_flow constraint.
+        for i in range(30):
+            model.step()
+
+            rec = model.recorders["turbine1_energy"]
+            param = model.parameters["turbine1_discharge"]
+
+            turbine1 = model.nodes["turbine1"]
+            assert turbine1.flow[0] > 0
+
+            if np.allclose(turbine1.flow[0], 500.0):
+                # If flow is bounded by min_flow then more HP is produced.
+                assert rec.data[i, 0] > param.target.get_value(si)
+            elif np.allclose(turbine1.flow[0], 1000.0):
+                # If flow is bounded by max_flow then less HP is produced.
+                assert rec.data[i, 0] < param.target.get_value(si)
+            else:
+                # If flow is within the bounds target is met exactly.
+                assert_allclose(rec.data[i, 0], param.target.get_value(si))
+
