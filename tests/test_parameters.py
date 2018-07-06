@@ -508,7 +508,7 @@ def test_scaled_profile_nested_load(model):
     """ Test `ScaledProfileParameter` loading with `AggregatedParameter` """
     model.timestepper.delta = 15
 
-    s = Storage(model, 'Storage', max_volume=100.0, num_outputs=0)
+    s = Storage(model, 'Storage', max_volume=100.0, outputs=0)
     d = Output(model, 'Link')
     data = {
         'type': 'scaledprofile',

@@ -18,8 +18,8 @@
         {
             "name": "link1",
             "type": "piecewiselink",
-            "cost": [-10.0, 5.0],
-            "max_flow": [20.0, null]
+            "costs": [-10.0, 5.0],
+            "max_flows": [20.0, null]
         },
         {
             "name": "demand1",

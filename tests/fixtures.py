@@ -46,7 +46,7 @@ def simple_storage_model(request, solver):
     )
 
     inpt = Input(model, name="Input", max_flow=5.0, cost=-1)
-    res = Storage(model, name="Storage", num_outputs=1, num_inputs=1, max_volume=20, initial_volume=10)
+    res = Storage(model, name="Storage", outputs=1, inputs=1, max_volume=20, initial_volume=10)
     otpt = Output(model, name="Output", max_flow=8, cost=-999)
     
     inpt.connect(res)
@@ -80,7 +80,7 @@ def three_storage_model(request, solver):
 
     for num in range(3):
         inpt = Input(model, name="Input {}".format(num), max_flow=5.0*num, cost=-1)
-        res = Storage(model, name="Storage {}".format(num), num_outputs=1, num_inputs=1, max_volume=20, initial_volume=10+num)
+        res = Storage(model, name="Storage {}".format(num), outputs=1, inputs=1, max_volume=20, initial_volume=10+num)
         otpt = Output(model, name="Output {}".format(num), max_flow=8+num, cost=-999)
 
         inpt.connect(res)

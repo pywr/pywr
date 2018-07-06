@@ -13,11 +13,7 @@
         {
             "name": "supply1",
             "type": "Input",
-            "max_flow": {
-                "type": "constant",
-                "values": 15,
-                "name": "supply_max"
-            }
+            "max_flow": "supply_max"
         },
         {
             "name": "demand1",
@@ -33,6 +29,11 @@
         "demand_max": {
             "type": "constant",
             "values": 10
+        },
+        "supply_max": {
+            "type": "constant",
+            "values": 15,
+            "name": "supply_max"
         }
     },
     "recorders": {

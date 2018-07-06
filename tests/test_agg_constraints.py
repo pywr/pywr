@@ -132,7 +132,7 @@ def test_aggregated_node_max_flow_with_weights(model, flow_weights, expected_agg
     assert_allclose(B.flow, expected_B_flow)
 
 
-@pytest.mark.skipif(pytest.config.getoption("--solver") != "glpk", reason="only valid for glpk")
+@pytest.mark.skipif(Model().solver.name == "lpsolve", reason="Not supported in lpsolve.")
 def test_aggregated_node_max_flow_parameter(model):
     """Nodes constrained by the max_flow of their AggregatedNode using a Parameter """
     A = Input(model, "A", max_flow=20.0, cost=1)
@@ -171,7 +171,7 @@ def test_aggregated_node_min_flow(model):
     assert_allclose(B.flow, 0.0)
 
 
-@pytest.mark.skipif(pytest.config.getoption("--solver") != "glpk", reason="only valid for glpk")
+@pytest.mark.skipif(Model().solver.name == "lpsolve", reason="Not supported in lpsolve.")
 def test_aggregated_node_min_flow_parameter(model):
     """Nodes constrained by the min_flow of their AggregatedNode"""
     A = Input(model, "A", max_flow=20.0, cost=1)
@@ -235,7 +235,7 @@ def test_piecewise_constraint(model, flow):
                      Bo -->-- Bi --> D
     """
     A = Input(model, "A", min_flow=flow, max_flow=flow)
-    X = PiecewiseLink(model, name="X", cost=[-500.0, 0, 0], max_flow=[40.0, None, None])
+    X = PiecewiseLink(model, name="X", costs=[-500.0, 0, 0], max_flows=[40.0, None, None])
     C = Output(model, "C")
 
     A.connect(X)
@@ -265,7 +265,7 @@ def test_multipiecewise_constraint(model, flow):
      for brevity.
     """
     A = Input(model, "A", min_flow=flow, max_flow=flow)
-    X = MultiSplitLink(model, name="X", cost=[-500.0, 0], max_flow=[40.0, None],
+    X = MultiSplitLink(model, name="X", costs=[-500.0, 0], max_flows=[40.0, None],
                        factors=[3, 1], extra_slots=1, slot_names=['river', 'abstraction'])
     C = Output(model, "C")
     D = Output(model, "D", max_flow=50, cost=-100)

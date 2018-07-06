@@ -610,10 +610,13 @@ cdef class AggregatedNode(AbstractNode):
             else:
                 return np.asarray(self._factors, np.float64)
         def __set__(self, values):
-            values = np.array(values, np.float64)
-            if np.any(values < 1e-6):
-                warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
-            self._factors = values
+            if values is None:
+                self._factors = None
+            else:
+                values = np.array(values, np.float64)
+                if np.any(values < 1e-6):
+                    warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
+                self._factors = values
             self.model.dirty = True
 
     property flow_weights:
@@ -623,10 +626,13 @@ cdef class AggregatedNode(AbstractNode):
             else:
                 return np.asarray(self._flow_weights, np.float64)
         def __set__(self, values):
-            values = np.array(values, np.float64)
-            if np.any(values < 1e-6):
-                warnings.warn("Very small flow_weights in AggregateNode result in ill-conditioned matrix")
-            self._flow_weights = values
+            if values is None:
+                self._flow_weights = None
+            else:
+                values = np.array(values, np.float64)
+                if np.any(values < 1e-6):
+                    warnings.warn("Very small flow_weights in AggregateNode result in ill-conditioned matrix")
+                self._flow_weights = values
             self.model.dirty = True
 
     property min_flow:

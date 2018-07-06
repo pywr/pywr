@@ -2,6 +2,7 @@ import marshmallow
 from pywr.nodes import Node, NodeSchema, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink
 from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter
+from pywr.schema import fields
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
 
@@ -17,10 +18,7 @@ class RiverDomainMixin(object):
 class Catchment(RiverDomainMixin, Input):
     """A hydrological catchment, supplying water to the river network"""
     class Schema(NodeSchema):
-        # The main attributes are not validated (i.e. `Raw`)
-        # They could be many different things.
-        flow = marshmallow.fields.Raw(allow_none=True)
-        cost = marshmallow.fields.Raw()
+        flow = fields.ParameterField(allow_none=True)
 
     def __init__(self, *args, **kwargs):
         """Initialise a new Catchment node.
@@ -134,8 +132,8 @@ class RiverSplit(MultiSplitLink):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flow = marshmallow.fields.List(marshmallow.fields.Number)
-        cost = marshmallow.fields.List(marshmallow.fields.Number)
+        max_flows = marshmallow.fields.List(marshmallow.fields.Number)
+        costs = marshmallow.fields.List(marshmallow.fields.Number)
         factors = marshmallow.fields.List(marshmallow.fields.Number)
         slot_names = marshmallow.fields.List(marshmallow.fields.Str)
 
@@ -153,8 +151,8 @@ class RiverSplit(MultiSplitLink):
         # These are the defaults to pass to the parent class that makes this
         # class a convenience.
         # create keyword arguments for PiecewiseLink
-        kwargs['cost'] = _make_iterable(kwargs.pop('cost', 0.0))
-        kwargs['max_flow'] = _make_iterable(kwargs.pop('max_flow', None))
+        kwargs['costs'] = _make_iterable(kwargs.pop('costs', 0.0))
+        kwargs['max_flows'] = _make_iterable(kwargs.pop('max_flows', None))
         kwargs['extra_slots'] = extra_slots
         kwargs['factors'] = factors
 
@@ -187,17 +185,41 @@ class RiverSplitWithGauge(RiverSplit):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flow = marshmallow.fields.Raw(allow_none=True)
-        mrf = marshmallow.fields.Raw()
-        cost = marshmallow.fields.Raw()
-        mrf_cost = marshmallow.fields.Raw()
+        max_flow = fields.ParameterField(allow_none=True)
+        mrf = fields.ParameterField()
+        cost = fields.ParameterField()
+        mrf_cost = fields.ParameterField()
         factors = marshmallow.fields.List(marshmallow.fields.Number)
         slot_names = marshmallow.fields.List(marshmallow.fields.Str)
 
     def __init__(self, model, name, mrf=0.0, cost=0.0, mrf_cost=0.0, **kwargs):
-        kwargs['cost'] = [mrf_cost, cost]
-        kwargs['max_flow'] = [mrf, None]
+        kwargs['costs'] = [mrf_cost, cost]
+        kwargs['max_flows'] = [mrf, None]
         super(RiverSplitWithGauge, self).__init__(model, name, **kwargs)
+
+    def mrf():
+        def fget(self):
+            return self.sublinks[0].max_flow
+        def fset(self, value):
+            self.sublinks[0].max_flow = value
+        return locals()
+    mrf = property(**mrf())
+
+    def mrf_cost():
+        def fget(self):
+            return self.sublinks[0].cost
+        def fset(self, value):
+            self.sublinks[0].cost = value
+        return locals()
+    mrf_cost = property(**mrf_cost())
+
+    def cost():
+        def fget(self):
+            return self.sublinks[1].cost
+        def fset(self, value):
+            self.sublinks[1].cost = value
+        return locals()
+    cost = property(**cost())
 
     @classmethod
     def load(cls, data, model):
@@ -223,10 +245,10 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flow = marshmallow.fields.Raw(allow_none=True)
-        mrf = marshmallow.fields.Raw()
-        cost = marshmallow.fields.Raw()
-        mrf_cost = marshmallow.fields.Raw()
+        max_flow = fields.ParameterField(allow_none=True)
+        mrf = fields.ParameterField()
+        cost = fields.ParameterField()
+        mrf_cost = fields.ParameterField()
 
     def __init__(self, *args, **kwargs):
         """Initialise a new RiverGauge instance
@@ -242,8 +264,8 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         """
         # create keyword arguments for PiecewiseLink
         cost = kwargs.pop('cost', 0.0)
-        kwargs['cost'] = [kwargs.pop('mrf_cost', 0.0), cost]
-        kwargs['max_flow'] = [kwargs.pop('mrf', 0.0), None]
+        kwargs['costs'] = [kwargs.pop('mrf_cost', 0.0), cost]
+        kwargs['max_flows'] = [kwargs.pop('mrf', 0.0), None]
         super(RiverGauge, self).__init__(*args, **kwargs)
 
     def mrf():

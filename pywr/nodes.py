@@ -298,22 +298,21 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_volume = marshmallow.fields.Raw(required=False)
-        min_volume = marshmallow.fields.Raw(required=False)
-        cost = marshmallow.fields.Raw(required=False)
-        initial_volume = marshmallow.fields.Raw(required=False)
+        max_volume = fields.ParameterField(required=False)
+        min_volume = fields.ParameterField(required=False)
+        cost = fields.ParameterField(required=False)
+        initial_volume = fields.ParameterValuesField(required=False)
         initial_volume_pc = marshmallow.fields.Number(required=False)
-        level = marshmallow.fields.Raw(required=False)
-        area = marshmallow.fields.Raw(required=False)
+        level = fields.ParameterField(required=False)
+        area = fields.ParameterField(required=False)
         inputs = marshmallow.fields.Integer(required=False, default=1)
         outputs = marshmallow.fields.Integer(required=False, default=1)
 
-
-    def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
+    def __init__(self, model, name, outputs=1, inputs=1, *args, **kwargs):
         # cast number of inputs/outputs to integer
         # this is needed if values come in as strings sometimes
-        num_outputs = int(num_outputs)
-        num_inputs = int(num_inputs)
+        outputs = int(outputs)
+        inputs = int(inputs)
 
         min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         if min_volume is None:
@@ -330,11 +329,11 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         super(Storage, self).__init__(model, name, **kwargs)
 
         self.outputs = []
-        for n in range(0, num_outputs):
+        for n in range(0, outputs):
             self.outputs.append(StorageOutput(model, name="[output{}]".format(n), parent=self))
 
         self.inputs = []
-        for n in range(0, num_inputs):
+        for n in range(0, inputs):
             self.inputs.append(StorageInput(model, name="[input{}]".format(n), parent=self))
 
         self.min_volume = min_volume
@@ -484,10 +483,10 @@ class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
         nodes = marshmallow.fields.List(marshmallow.fields.Str, required=True)
-        max_volume = marshmallow.fields.Raw(required=False)
-        min_volume = marshmallow.fields.Raw(required=False)
-        cost = marshmallow.fields.Raw(required=False)
-        initial_volume = marshmallow.fields.Raw(required=False)
+        max_volume = fields.ParameterField(required=False)
+        min_volume = fields.ParameterField(required=False)
+        cost = fields.ParameterField(required=False)
+        initial_volume = fields.ParameterValuesField(required=False)
         factors = marshmallow.fields.List(marshmallow.fields.Number, required=True)
 
     def __init__(self, model, name, nodes, **kwargs):
@@ -548,11 +547,11 @@ class AnnualVirtualStorage(VirtualStorage):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        nodes = marshmallow.fields.List(marshmallow.fields.Str, required=True)
-        max_volume = marshmallow.fields.Raw(required=False)
-        min_volume = marshmallow.fields.Raw(required=False)
-        cost = marshmallow.fields.Raw(required=False)
-        initial_volume = marshmallow.fields.Raw(required=False)
+        nodes = marshmallow.fields.List(fields.NodeField, required=True)
+        max_volume = fields.ParameterField(required=False)
+        min_volume = fields.ParameterField(required=False)
+        cost = fields.ParameterField(required=False)
+        initial_volume = fields.ParameterValuesField(required=False)
         factors = marshmallow.fields.List(marshmallow.fields.Number, required=True)
         reset_day = marshmallow.fields.Integer()
         reset_month = marshmallow.fields.Integer()
@@ -607,16 +606,13 @@ class PiecewiseLink(Node):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flows = marshmallow.fields.List(marshmallow.fields.Raw)
-        max_flow = marshmallow.fields.List(marshmallow.fields.Raw(allow_none=True))
-        costs = marshmallow.fields.List(marshmallow.fields.Raw)
-        cost = marshmallow.fields.List(marshmallow.fields.Number)
+        max_flows = marshmallow.fields.List(fields.ParameterField(allow_none=True))
+        costs = marshmallow.fields.List(fields.ParameterField(allow_none=True))
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model, name, **kwargs):
         self.allow_isolated = True
-        costs = kwargs.pop('cost')
-        max_flows = kwargs.pop('max_flow')
-        super(PiecewiseLink, self).__init__(*args, **kwargs)
+        costs = kwargs.pop('costs')
+        max_flows = kwargs.pop('max_flows')
 
         if len(costs) != len(max_flows):
             raise ValueError("Piecewise max_flow and cost keywords must be the same length.")
@@ -625,18 +621,24 @@ class PiecewiseLink(Node):
         # Input/Output instead of BaseInput/BaseOutput because of a different
         # domain is required on the sub-nodes and they need to be connected
         self.sub_domain = Domain()
-        self.input = Input(self.model, name='{} Input'.format(self.name), parent=self)
-        self.output = Output(self.model, name='{} Output'.format(self.name), parent=self)
+        self.input = Input(model, name='{} Input'.format(name), parent=self)
+        self.output = Output(model, name='{} Output'.format(name), parent=self)
 
-        self.sub_output = Output(self.model, name='{} Sub Output'.format(self.name), parent=self,
-                             domain=self.sub_domain)
+        self.sub_output = Output(model, name='{} Sub Output'.format(name), parent=self, domain=self.sub_domain)
         self.sub_output.connect(self.input)
+
         self.sublinks = []
-        for max_flow, cost in zip(max_flows, costs):
-            self.sublinks.append(Input(self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
-                                      cost=cost, max_flow=max_flow, parent=self, domain=self.sub_domain))
+        for i in range(len(costs)):
+            self.sublinks.append(Input(model, name='{} Sublink {}'.format(name, i),
+                                       parent=self, domain=self.sub_domain))
             self.sublinks[-1].connect(self.sub_output)
             self.output.connect(self.sublinks[-1])
+
+        super(PiecewiseLink, self).__init__(model, name, **kwargs)
+
+        for sublink, max_flow, cost in zip(self.sublinks, max_flows, costs):
+            sublink.max_flow = max_flow
+            sublink.cost = cost
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
@@ -725,8 +727,8 @@ class MultiSplitLink(PiecewiseLink):
     """
     def __init__(self, *args, **kwargs):
         self.allow_isolated = True
-        costs = list(kwargs.pop('cost'))
-        max_flows = list(kwargs.pop('max_flow'))
+        costs = list(kwargs.pop('costs'))
+        max_flows = list(kwargs.pop('max_flows'))
 
         extra_slots = kwargs.pop('extra_slots', 1)
         if extra_slots < 1:
@@ -737,8 +739,8 @@ class MultiSplitLink(PiecewiseLink):
         costs.extend([0.0]*extra_slots)
         max_flows.extend([None]*extra_slots)
         # Edit the kwargs to get the PiecewiseLink to setup as we want.
-        kwargs['cost'] = costs
-        kwargs['max_flow'] = max_flows
+        kwargs['costs'] = costs
+        kwargs['max_flows'] = max_flows
 
         # Default to integer names
         self.slot_names = list(kwargs.pop('slot_names', range(extra_slots+1)))
@@ -841,14 +843,28 @@ class AggregatedNode(with_metaclass(NodeMeta, Drawable, _core.AggregatedNode)):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flow = marshmallow.fields.Raw(required=False)
-        min_flow = marshmallow.fields.Raw(required=False)
-        factors = marshmallow.fields.Raw(required=False)
-        nodes = marshmallow.fields.List(marshmallow.fields.Str())
+        max_flow = fields.ParameterField(required=False)
+        min_flow = fields.ParameterField(required=False)
+        factors = marshmallow.fields.List(marshmallow.fields.Number(), required=False)
+        flow_weights = marshmallow.fields.List(marshmallow.fields.Number(), required=False)
+        nodes = marshmallow.fields.List(fields.NodeField())
 
     def __init__(self, model, name, nodes, **kwargs):
+
+        factors = kwargs.pop("factors", None)
+        flow_weights = kwargs.pop("flow_weights", None)
+        min_flow = kwargs.pop("min_flow", None)
+        max_flow = kwargs.pop("max_flow", None)
+
         super(AggregatedNode, self).__init__(model, name, **kwargs)
         self.nodes = nodes
+        self.flow_weights = flow_weights
+        self.factors = factors
+
+        if min_flow is not None:
+            self.min_flow = min_flow
+        if max_flow is not None:
+            self.max_flow = max_flow
 
 class BreakLink(Node):
     """Compound node used to reduce the number of routes in a model
@@ -881,7 +897,7 @@ class BreakLink(Node):
     """
     allow_isolated = True
 
-    def __init__(self, model, name, min_flow=0.0, max_flow=None, cost=0.0, *args, **kwargs):
+    def __init__(self, model, name, *args, **kwargs):
         storage_name = "{} (storage)".format(name)
         link_name = "{} (link)".format(name)
         assert(storage_name not in model.nodes)
@@ -894,14 +910,7 @@ class BreakLink(Node):
             initial_volume=0,
             cost=0,
         )
-        self.link = Link(
-            model,
-            name=link_name,
-            min_flow=min_flow,
-            max_flow=max_flow,
-            cost=cost,
-        )
-
+        self.link = Link(model, name=link_name)
         self.storage.connect(self.link)
 
         super(BreakLink, self).__init__(model, name, *args, **kwargs)

@@ -339,6 +339,7 @@ class Model(object):
         for node_data in data["nodes"]:
             node_name = node_data["name"]
             nodes_to_load[node_name] = node_data
+            print(node_name, node_data)
         model._nodes_to_load = nodes_to_load
 
         # collect parameters to load
@@ -363,7 +364,13 @@ class Model(object):
                     recorders_to_load[key]["name"] = key
         model._recorders_to_load = recorders_to_load
 
-        # load parameters and recorders
+        # Now being loading data and creating object instances.
+        # First the nodes are loaded via their schemas without parameter instances.
+        for node_name in nodes_to_load.keys():
+            node = cls._get_node_from_ref(model, node_name)
+
+        # All nodes should now exist
+        # Next load the parameters and recorders.
         for name, rdata in model._recorders_to_load.items():
             load_recorder(model, rdata)
         while True:
@@ -375,9 +382,13 @@ class Model(object):
             if not isinstance(parameter, BaseParameter):
                 raise TypeError("Named parameters cannot be literal values. Use type \"constant\" instead.")
 
-        # load the remaining nodes
-        for node_name in list(nodes_to_load.keys()):
-            node = cls._get_node_from_ref(model, node_name)
+        # Now load parameters and assign to the appropriate node attributes.
+        for node_name, node_data in nodes_to_load.items():
+            node = model.nodes[node_name]
+            # By creating this context with "obj" we inform the schema to assign
+            # any parameter fields to the existing object
+            schema = node.__class__.Schema(context={'model': model})
+            schema.load_parameters(node_data, node)
 
         del(model._recorders_to_load)
         del(model._parameters_to_load)
@@ -404,15 +415,17 @@ class Model(object):
             # first check if node has already been loaded
             node = model.nodes[node_name]
         except KeyError:
-            # if not, load it now
             node_data = model._nodes_to_load[node_name]
-            node_type = node_data['type'].lower()
-            cls = NodeMeta.node_registry[node_type]
+            node_type = node_data.pop('type').lower()
+            node_klass = NodeMeta.node_registry[node_type]
+            print('Loading node "{}" with type "{}" using class "{}".'.format(
+                          node_name, node_type, node_klass.__name__))
+            # By creating this context with "klass" we inform the schema to load
+            # the node without loading any parameter data. I.e. it should be initialised
+            # with default values from the `__init__`
+            schema = node_klass.Schema(context={'model': model, 'klass': node_klass})
+            node = schema.load(node_data)
 
-            # TODO load the node via the schema here.
-
-            node = cls.load(node_data, model)
-            del(model._nodes_to_load[node_name])
         return node
 
     def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):

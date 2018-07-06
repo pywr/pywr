@@ -92,7 +92,7 @@ def test_run_reservoir2(solver):
 def test_empty_storage_min_flow(solver):
 
     model = Model(solver=solver)
-    storage = Storage(model, "storage", initial_volume=100, max_volume=100, num_inputs=1, num_outputs=0)
+    storage = Storage(model, "storage", initial_volume=100, max_volume=100, inputs=1, outputs=0)
     otpt = Output(model, "output", min_flow=75)
     storage.connect(otpt)
     model.check()
@@ -232,7 +232,7 @@ def test_new_storage(solver):
 
     supply1 = pywr.core.Input(model, 'supply1')
 
-    splitter = pywr.core.Storage(model, 'splitter', num_outputs=1, num_inputs=2, max_volume=10, initial_volume=5)
+    splitter = pywr.core.Storage(model, 'splitter', outputs=1, inputs=2, max_volume=10, initial_volume=5)
 
     demand1 = pywr.core.Output(model, 'demand1')
     demand2 = pywr.core.Output(model, 'demand2')
@@ -457,8 +457,6 @@ def test_breaklink_node(solver):
     assert_allclose(transfer.storage.volume, 0)
 
 
-@pytest.mark.xfail(reason="Circular dependency in the JSON definition. "
-                          "See GitHub issue #380: https://github.com/pywr/pywr/issues/380")
 def test_reservoir_surface_area(solver):
     from pywr.parameters import InterpolatedVolumeParameter
     model = load_model('reservoir_evaporation.json', solver=solver)
@@ -476,6 +474,14 @@ def test_reservoir_surface_area_without_area_property(solver):
     model.timestepper.end = "1920-01-02"
     res = model.run()
     assert_allclose(model.nodes["evaporation"].flow, 2.46875)
+
+
+def test_circular_node_parameter_references(solver):
+    """ Temporary test while the above test is not working. """
+    model = load_model('two_reservoir_with_circular_cc.json', solver=solver)
+    model.timestepper.start = "1920-01-01"
+    model.timestepper.end = "1920-01-02"
+    res = model.run()
 
 
 def test_run_empty(solver):
@@ -517,7 +523,7 @@ def test_solver_unrecognised():
     with pytest.raises(KeyError):
         model = load_model(data=data)
 
-@pytest.mark.skipif(pytest.config.getoption("--solver") != "glpk", reason="only valid for glpk")
+@pytest.mark.skipif(Model().solver.name != "glpk", reason="only valid for glpk")
 @pytest.mark.parametrize("use_presolve", ["true", "false"])
 def test_select_glpk_presolve(use_presolve):
     """Test specifying the solver in JSON"""
