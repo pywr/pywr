@@ -14,8 +14,6 @@ cdef enum AggFuncs:
     MEDIAN = 4
     PRODUCT = 5
     CUSTOM = 6
-    ANY = 7
-    ALL = 8
 _agg_func_lookup = {
     "sum": AggFuncs.SUM,
     "min": AggFuncs.MIN,
@@ -24,8 +22,6 @@ _agg_func_lookup = {
     "median": AggFuncs.MEDIAN,
     "product": AggFuncs.PRODUCT,
     "custom": AggFuncs.CUSTOM,
-    "any": AggFuncs.ANY,
-    "all": AggFuncs.ALL,
 }
 
 cdef enum ObjDirection:
@@ -58,8 +54,8 @@ cdef class Aggregator:
                 raise ValueError("Unrecognised aggregation function: \"{}\".".format(func))
             self._func = func
 
-    cpdef double aggregate_1d(self, double[:] data, ignore_nan=False):
-        """Compuate an aggreagted value across 1D array. 
+    cpdef double aggregate_1d(self, double[:] data, ignore_nan=False) except *:
+        """Compuate an aggreagted value across 1D array.
         """
         cdef double[:] values = data
 
@@ -78,10 +74,12 @@ cdef class Aggregator:
             return np.mean(values)
         elif self._func == AggFuncs.MEDIAN:
             return np.median(values)
-        else:
+        elif self._func == AggFuncs.CUSTOM:
             return self._user_func(np.array(values))
+        else:
+            raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
 
-    cpdef double[:] aggregate_2d(self, double[:, :] data, axis=0, ignore_nan=False):
+    cpdef double[:] aggregate_2d(self, double[:, :] data, axis=0, ignore_nan=False) except *:
         """Compute an aggregated value along an axis of a 2D array.
         """
         cdef double[:, :] values = data
@@ -101,8 +99,10 @@ cdef class Aggregator:
             return np.mean(values, axis=axis)
         elif self._func == AggFuncs.MEDIAN:
             return np.median(values, axis=axis)
+        elif self._func == AggFuncs.CUSTOM:
+            return self._user_func(np.array(values), axis=axis)
         else:
-            return self._user_func(np.array(values), axis=0)
+            raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
 
 
 cdef class Recorder(Component):

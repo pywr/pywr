@@ -6,8 +6,8 @@ from pywr.parameters._parameters cimport Parameter, IndexParameter
 cdef class Aggregator:
     cdef object _user_func
     cdef int _func
-    cpdef double aggregate_1d(self, double[:] data, ignore_nan=*)
-    cpdef double[:] aggregate_2d(self, double[:, :] data, axis=*, ignore_nan=*)
+    cpdef double aggregate_1d(self, double[:] data, ignore_nan=*) except *
+    cpdef double[:] aggregate_2d(self, double[:, :] data, axis=*, ignore_nan=*) except *
 
 cdef class Recorder(Component):
     cdef int _is_objective
