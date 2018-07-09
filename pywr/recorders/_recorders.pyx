@@ -417,7 +417,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     Parameters
     ----------
     model : `pywr.core.Model`
-    node : `pyre.core.Node`
+    node : `pywr.core.Node`
         Node instance to record.
     temporal_agg_func : str or callable (default="mean")
         Aggregation function used over time when computing a value per scenario. This can be used
@@ -695,7 +695,22 @@ FlowDurationCurveDeviationRecorder.register()
 
 
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
+    """Recorder for timeseries information from a `Storage` node.
 
+    This class stores volume from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
     def __init__(self, model, AbstractStorage node, **kwargs):
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
@@ -832,6 +847,22 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
 NumpyArrayLevelRecorder.register()
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
+    """Recorder for timeseries information from a `Parameter`.
+
+    This class stores the value from a specific `Parameter` for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.Parameter`
+        Parameter instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
     def __init__(self, model, Parameter param, **kwargs):
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
@@ -881,6 +912,22 @@ NumpyArrayParameterRecorder.register()
 
 
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
+    """Recorder for timeseries information from an `IndexParameter`.
+
+    This class stores the value from a specific `IndexParameter` for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.IndexParameter`
+        Parameter instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
     def __init__(self, model, IndexParameter param, **kwargs):
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
@@ -1160,8 +1207,7 @@ MeanFlowNodeRecorder.register()
 
 
 cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
-    """
-    Recorder to total the difference between modelled flow and max_flow for a Node
+    """Recorder to return the frequency of timesteps with a failure to meet max_flow.
     """
     cpdef after(self):
         cdef double max_flow
@@ -1199,7 +1245,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
 BaseConstantStorageRecorder.register()
 
 cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
-
+    """Record the minimum volume in a `Storage` node during a simulation."""
     cpdef reset(self):
         self._values[...] = np.inf
 
@@ -1211,7 +1257,11 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 MinimumVolumeStorageRecorder.register()
 
 cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
+    """Record whether a `Storage` node falls below a particular volume threshold during a simulation.
 
+    This recorder will return a value of `1.0` for scenarios where the volume `Storage` is less
+    than or equal to the threshold at any time-step during the simulation. Otherwise it will return zero.
+    """
     def __init__(self, model, node, threshold, *args, **kwargs):
         self.threshold = threshold
         super(MinimumThresholdVolumeStorageRecorder, self).__init__(model, node, *args, **kwargs)
@@ -1395,7 +1445,7 @@ TotalParameterRecorder.register()
 
 
 cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
-    """Record the total value of a `Parameter` during a simulation.
+    """Record the mean value of a `Parameter` during a simulation.
 
     This recorder can be used to track the sum total of the values returned by a
     `Parameter` during a models simulation. An optional factor can be provided to
