@@ -5,9 +5,8 @@ Two types of control curve are possible. The first is a monthly control curve co
 month. The second is a harmonic control curve with cosine terms around a mean. Both Parameter objects
 are part of pywr.parameters.
 
-Inspyred is used in this example to perform a multi-objective optimisation using the NSGA-II algorithm. The
-script should be run twice (once with --harmonic) to generate results for both types of control curve. Following
-this --plot can be used to generate an animation and PNG of the pareto frontier.
+The example demonstrates the use of three different optimisation libraries: inspyred, pygmo and platypus. The
+choice of library can be made with a command line argument.
 
 """
 import json
@@ -15,7 +14,6 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
 
 
 def get_model_data(harmonic=True):
@@ -191,89 +189,20 @@ def inspyred_main(prng=None, display=False, harmonic=False):
     return ea
 
 
-def load_individuals(filename):
-    """ Read an inspyred individuals file in to two pandas.DataFrame objects.
-
-    There is one DataFrame for the objectives and another for the variables.
-    """
-    import ast
-
-    index = []
-    all_objs = []
-    all_vars = []
-    with open(filename, 'r') as f:
-        for row in f.readlines():
-            gen, pop_id, objs, vars = ast.literal_eval(row.strip())
-            index.append((gen, pop_id))
-            all_objs.append(objs)
-            all_vars.append(vars)
-
-    index = pd.MultiIndex.from_tuples(index, names=['generation', 'individual'])
-    return pd.DataFrame(all_objs, index=index), pd.DataFrame(all_vars, index=index)
-
-
-def animate_generations(objective_data, colors):
-    """
-    Animate the pareto frontier plot over the saved generations.
-    """
-    import matplotlib.animation as animation
-
-    def update_line(gen, dfs, ax, xmax, ymax):
-        ax.cla()
-        artists = []
-        for i in range(gen+1):
-            for c, key in zip(colors, sorted(dfs.keys())):
-                df = dfs[key]
-
-                scat = ax.scatter(df.loc[i][0], df.loc[i][1], alpha=0.8**(gen-i), color=c,
-                              label=key if i == gen else None, clip_on=True, zorder=100)
-                artists.append(scat)
-
-        ax.set_title('Generation: {:d}'.format(gen))
-        ax.set_xlabel('Total demand deficit [Ml/d]')
-        ax.set_ylabel('Total Transferred volume [Ml/d]')
-        ax.set_xlim(0, xmax)
-        ax.set_ylim(0, ymax)
-        ax.legend()
-        ax.grid()
-        return artists
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-    last_gen = list(objective_data.values())[0].index[-1][0]
-    last_gen = int(last_gen)
-
-    xmax = max(df.loc[last_gen][0].max() for df in objective_data.values())
-    ymax = max(df.loc[last_gen][1].max() for df in objective_data.values())
-
-    line_ani = animation.FuncAnimation(fig, update_line, last_gen+1,
-                                       fargs=(objective_data, ax, xmax, ymax), interval=400, repeat=False)
-
-    line_ani.save('generations.mp4', bitrate=1024,)
-    fig.savefig('generations.png')
-
 
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--harmonic', action='store_true', help='Use an harmonic control curve.')
-    parser.add_argument('--plot', action='store_true', help='Plot the pareto frontier.')
     parser.add_argument('--library', type=str, choices=['inspyred', 'platypus', 'pygmo'])
     args = parser.parse_args()
 
-    if args.plot:
-        objs, vars = {}, {}
-        for cctype in ('monthly', 'harmonic'):
-            objs[cctype], vars[cctype] = load_individuals('two_reservoir_moea-{}-individuals-file.csv'.format(cctype))
-
-        animate_generations(objs, ('b', 'r'))
-        plt.show()
+    if args.library == 'inspyred':
+        inspyred_main(display=True, harmonic=args.harmonic)
+    elif args.library == 'platypus':
+        platypus_main(harmonic=args.harmonic)
+    elif args.library == 'pygmo':
+        pygmo_main(harmonic=args.harmonic)
     else:
-        if args.library == 'inspyred':
-            inspyred_main(display=True, harmonic=args.harmonic)
-        elif args.library == 'platypus':
-            platypus_main(harmonic=args.harmonic)
-        elif args.library == 'pygmo':
-            pygmo_main(harmonic=args.harmonic)
-        else:
-            raise ValueError('Optimisation library "{}" not recognised.'.format(args.library))
+        raise ValueError('Optimisation library "{}" not recognised.'.format(args.library))
