@@ -4,7 +4,7 @@ from . import BaseOptimisationWrapper
 
 
 class InspyredOptimisationWrapper(BaseOptimisationWrapper):
-    """ A pywr.core.Model subclass to enable optimisation using inspyred.
+    """ A wrapper to enable optimisation using inspyred.
 
     A generator, bounder and evaluator method are provided to use with the inspyred algorithms.
     """
@@ -36,7 +36,7 @@ class InspyredOptimisationWrapper(BaseOptimisationWrapper):
 
     def evaluator(self, candidates, args):
         fitness = []
-        for i, candidate in enumerate(candidates):
+        for candidate in candidates:
             for ivar, var in enumerate(self.model_variables):
                 l, u = self.model_variable_map[ivar], self.model_variable_map[ivar+1]
                 if var.double_size > 0:
