@@ -1,4 +1,5 @@
 from ..core import Model
+import uuid
 import logging
 logger = logging.getLogger(__name__)
 
@@ -34,14 +35,16 @@ def cache_objectives(model):
     return objectives
 
 
-# Global variables for individual process to cache the model and some of its data.
-# TODO make this a registry using a unique id for each model. This way multiple
-# models can be cached.
-MODEL = None
-VARIABLES = None
-VARIABLE_MAP = None
-OBJECTIVES = None
-CONSTRAINTS = None
+# Global variables for individual processes to cache the model and some of its data.
+# The cache is keyed by a UID for each `BaseOptimisationWrapper`
+class ModelCache:
+    def __init__(self):
+        self.model = None
+        self.variables = None
+        self.variable_map = None
+        self.objectives = None
+        self.constraints = None
+MODEL_CACHE = {}
 
 
 class BaseOptimisationWrapper(object):
@@ -51,43 +54,46 @@ class BaseOptimisationWrapper(object):
     def __init__(self, pywr_model_json, *args, **kwargs):
         super(BaseOptimisationWrapper, self).__init__(*args, **kwargs)
         self.pywr_model_json = pywr_model_json
+        self.uid = uuid.uuid4()  # Create a unique ID for caching.
 
     # The following properties enable attribute caching when repeat execution of the same model is undertaken.
     @property
+    def _cached(self):
+        global MODEL_CACHE
+        try:
+            cache = MODEL_CACHE[self.uid]
+        except KeyError:
+            model = self.make_model()
+            model.setup()
+
+            cache = ModelCache()
+            cache.model = model
+            cache.variables, cache.variable_map = cache_variable_parameters(model)
+            cache.objectives = cache_objectives(model)
+            cache.constraints = cache_constraints(model)
+            MODEL_CACHE[self.uid] = cache
+        finally:
+            return cache
+
+    @property
     def model(self):
-        global MODEL
-        if MODEL is None:
-            MODEL = self.make_model()
-            MODEL.setup()
-        return MODEL
+        return self._cached.model
 
     @property
     def model_variables(self):
-        global VARIABLES, VARIABLE_MAP
-        if VARIABLES is None:
-            VARIABLES, VARIABLE_MAP = cache_variable_parameters(self.model)
-        return VARIABLES
+        return self._cached.variables
 
     @property
     def model_variable_map(self):
-        global VARIABLES, VARIABLE_MAP
-        if VARIABLES is None:
-            VARIABLES, VARIABLE_MAP = cache_variable_parameters(self.model)
-        return VARIABLE_MAP
+        return self._cached.variable_map
 
     @property
     def model_objectives(self):
-        global OBJECTIVES
-        if OBJECTIVES is None:
-            OBJECTIVES = cache_objectives(self.model)
-        return OBJECTIVES
+        return self._cached.objectives
 
     @property
     def model_constraints(self):
-        global CONSTRAINTS
-        if CONSTRAINTS is None:
-            CONSTRAINTS = cache_constraints(self.model)
-        return CONSTRAINTS
+        return self._cached.constraints
 
     def make_model(self):
         m = Model.load(self.pywr_model_json)
@@ -101,9 +107,5 @@ class BaseOptimisationWrapper(object):
 
 def clear_global_model_cache():
     """ Clear the module level model cache. """
-    global MODEL, VARIABLES, VARIABLE_MAP, OBJECTIVES, CONSTRAINTS
-    MODEL = None
-    VARIABLES = None
-    VARIABLE_MAP = None
-    OBJECTIVES = None
-    CONSTRAINTS = None
+    global MODEL_CACHE
+    MODEL_CACHE = {}
