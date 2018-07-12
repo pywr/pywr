@@ -535,7 +535,7 @@ def test_scaled_profile_nested_load(model):
     """ Test `ScaledProfileParameter` loading with `AggregatedParameter` """
     model.timestepper.delta = 15
 
-    s = Storage(model, 'Storage', max_volume=100.0, outputs=0)
+    s = Storage(model, 'Storage', max_volume=100.0, initial_volume=50.0, outputs=0)
     d = Output(model, 'Link')
     data = {
         'type': 'scaledprofile',
@@ -549,10 +549,8 @@ def test_scaled_profile_nested_load(model):
                     'values': [0.5]*12
                 },
                 {
-                    'type': 'monthlyprofilecontrolcurve',
-                    'control_curves': [0.8, 0.6],
-                    'values': [[1.0]*12, [0.7]*np.arange(12), [0.3]*12],
-                    'storage_node': 'Storage'
+                    'type': 'constant',
+                    'value': 1.5,
                 }
             ]
         }
@@ -564,16 +562,9 @@ def test_scaled_profile_nested_load(model):
 
     @assert_rec(model, p)
     def expected_func(timestep, scenario_index):
-        if s.initial_volume == 90:
-            return 50.0*0.5*1.0
-        elif s.initial_volume == 70:
-            return 50.0 * 0.5 * 0.7 * (timestep.month - 1)
-        else:
-            return 50.0 * 0.5 * 0.3
+        return 50.0 * 0.5 * 1.5
 
-    for initial_volume in (90, 70, 30):
-        s.initial_volume = initial_volume
-        model.run()
+    model.run()
 
 
 def test_parameter_df_upsampling(model):
@@ -1248,4 +1239,3 @@ class TestHydroPowerTargets:
             else:
                 # If flow is within the bounds target is met exactly.
                 assert_allclose(rec.data[i, 0], param.target.get_value(si))
-
