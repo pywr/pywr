@@ -28,6 +28,9 @@ build:
     - BUILD_DOC
 
   features:
+    - vc9  # [win and py27]
+    - vc10  # [win and py34]
+    - vc14  # [win and (py35 or py36)]
   {% if OLDGLIBC %}
     - oldglibc
   {% endif %}
@@ -35,12 +38,14 @@ build:
 
 requirements:
   build:
-    - {{ compiler('c') }}
-    - {{ compiler('cxx') }}
-  host:
     - python
+    - vc 9  # [win and py27]
+    - vc 10  # [win and py34]
+    - vc 14  # [win and (py35 or py36)]
     - setuptools
-    - numpy
+    - numpy 1.8.*  # [not (win and (py35 or py36))]
+    - numpy 1.9.*  # [win and py35]
+    - numpy 1.11.*  # [win and py36]
     - cython
     - glpk
     - lp_solve
@@ -52,7 +57,12 @@ requirements:
     {% endif %}
   run:
     - python
-    - {{ pin_compatible('numpy') }}
+    - vc 9  # [win and py27]
+    - vc 10  # [win and py34]
+    - vc 14  # [win and (py35 or py36)]
+    - numpy >=1.8  # [not (win and (py35 or py36))]
+    - numpy >=1.9  # [win and py35]
+    - numpy >=1.11  # [win and py36]
     - pandas
     - networkx
     - glpk
