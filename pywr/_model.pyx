@@ -426,7 +426,7 @@ class Model(object):
             node_data = model._nodes_to_load[node_name]
             node_type = node_data.pop('type').lower()
             node_klass = NodeMeta.node_registry[node_type]
-            print('Loading node "{}" with type "{}" using class "{}".'.format(
+            logger.debug('Loading node "{}" with type "{}" using class "{}".'.format(
                           node_name, node_type, node_klass.__name__))
             # By creating this context with "klass" we inform the schema to load
             # the node without loading any parameter data. I.e. it should be initialised

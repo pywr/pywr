@@ -1,6 +1,5 @@
 import marshmallow
-from .fields import ParameterField
-from pywr.parameters import load_parameter
+from .fields import ParameterReferenceField
 
 
 class NodeSchema(marshmallow.Schema):
@@ -34,7 +33,7 @@ class NodeSchema(marshmallow.Schema):
 
         # Separate the data values in to parameter and non-parameter
         for name, value in data.items():
-            if isinstance(self.fields[name], ParameterField):
+            if isinstance(self.fields[name], ParameterReferenceField):
                 param_data[name] = data[name]
             else:
                 non_param_data[name] = data[name]
@@ -48,7 +47,7 @@ class NodeSchema(marshmallow.Schema):
         model = self.context['model']
         # Load and assign parameters to an existing node instance.
         for field_name, field in self.fields.items():
-            if not isinstance(field, ParameterField):
+            if not isinstance(field, ParameterReferenceField):
                 continue
 
             try:
@@ -58,13 +57,98 @@ class NodeSchema(marshmallow.Schema):
                     raise marshmallow.ValidationError('Missing field.')
                 else:
                     continue
+            from pywr.parameters import load_parameter
             param = load_parameter(model, field_data)
             setattr(obj, field.name, param)
         return obj
 
 
+# TODO organise these two classes better they have similar fields.
+class ExternalDataSchemaMixin(marshmallow.Schema):
+    __values_arg_name__ = 'values'
+    values = marshmallow.fields.List(marshmallow.fields.Float())
+    url = marshmallow.fields.String()
+    table = marshmallow.fields.String()
+    #  TODO add validator for these fields. Could be str or int.
+    index_col = marshmallow.fields.Raw()
+    index = marshmallow.fields.Raw()
+    column = marshmallow.fields.Raw()
+    key = marshmallow.fields.Raw()
+    checksum = marshmallow.fields.Dict()
+    parse_dates = marshmallow.fields.Boolean()
+    dayfirst = marshmallow.fields.Boolean()
+    sheetname = marshmallow.fields.String()
 
 
+class DataFrameSchemaMixin(marshmallow.Schema):
+    __values_arg_name__ = 'dataframe'
+    url = marshmallow.fields.String()
+    #  TODO add validator for these fields. Could be str or int.
+    index_col = marshmallow.fields.Raw()
+    index = marshmallow.fields.Raw()
+    column = marshmallow.fields.Raw()
+    key = marshmallow.fields.Raw()
+    checksum = marshmallow.fields.Dict()
+    parse_dates = marshmallow.fields.Boolean()
+    dayfirst = marshmallow.fields.Boolean()
+    sheetname = marshmallow.fields.String()
+
+
+class ComponentSchema(marshmallow.Schema):
+    name = marshmallow.fields.Str()
+    comment = marshmallow.fields.Str()
+
+    # TODO move this to a common base class for Nodes and Component schemas
+    @marshmallow.validates_schema(pass_original=True)
+    def check_unknown_fields(self, data, original_data):
+        unknown = set(original_data) - set(self.fields)
+        if unknown:
+            raise marshmallow.ValidationError('Unknown field', unknown)
+
+    @marshmallow.post_load
+    def make_component(self, data):
+        """ Create or append data to a node object. """
+        model = self.context['model']
+        klass = self.context['klass']
+
+        # TODO this if block could be similar it is copy/paste hell atm.
+        if isinstance(self, ExternalDataSchemaMixin):
+            from pywr.parameters import load_parameter_values
+
+            # This seems a bit dodgy.
+            external_data = {}
+            non_external_data = {}
+            for name, value in data.items():
+                if name in ExternalDataSchemaMixin().fields:
+                    external_data[name] = data[name]
+                else:
+                    non_external_data[name] = data[name]
+
+            if len(external_data) > 0 and self.__values_arg_name__ not in non_external_data:
+                values = load_parameter_values(model, external_data)
+                non_external_data[self.__values_arg_name__] = values
+
+            return klass(model, **non_external_data)
+        elif isinstance(self, DataFrameSchemaMixin):
+            from pywr.parameters import load_dataframe
+
+            # This seems a bit dodgy.
+            external_data = {}
+            non_external_data = {}
+            for name, value in data.items():
+                if name in DataFrameSchemaMixin().fields:
+                    external_data[name] = data[name]
+                else:
+                    non_external_data[name] = data[name]
+
+            if len(external_data) > 0 and self.__values_arg_name__ not in non_external_data:
+                values = load_dataframe(model, external_data)
+                non_external_data[self.__values_arg_name__] = values
+
+            return klass(model, **non_external_data)
+
+        else:
+            return klass(model, **data)
 
 
 

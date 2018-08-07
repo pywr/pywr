@@ -16,7 +16,7 @@
             "max_flow": "supply_max_flow",
             "cost": {
                 "type": "constant",
-                "values": 0.0
+                "value": 0.0
             }
         },
         {
@@ -25,7 +25,7 @@
             "max_flow": {
                 "name": "link_max_flow",
                 "type": "constant",
-                "values": 9999
+                "value": 9999
             }
         },
         {
@@ -38,11 +38,11 @@
     "parameters": {
         "supply_max_flow": {
             "type": "constant",
-            "values": 125.0
+            "value": 125.0
         },
         "demand_cost": {
             "type": "constant",
-            "values": -10
+            "value": -10
         }
     },
     "edges": [

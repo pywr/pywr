@@ -18,7 +18,7 @@ class RiverDomainMixin(object):
 class Catchment(RiverDomainMixin, Input):
     """A hydrological catchment, supplying water to the river network"""
     class Schema(NodeSchema):
-        flow = fields.ParameterField(allow_none=True)
+        flow = fields.ParameterReferenceField(allow_none=True)
 
     def __init__(self, *args, **kwargs):
         """Initialise a new Catchment node.
@@ -176,10 +176,10 @@ class RiverSplitWithGauge(RiverSplit):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flow = fields.ParameterField(allow_none=True)
-        mrf = fields.ParameterField()
-        cost = fields.ParameterField()
-        mrf_cost = fields.ParameterField()
+        max_flow = fields.ParameterReferenceField(allow_none=True)
+        mrf = fields.ParameterReferenceField()
+        cost = fields.ParameterReferenceField()
+        mrf_cost = fields.ParameterReferenceField()
         factors = marshmallow.fields.List(marshmallow.fields.Number)
         slot_names = marshmallow.fields.List(marshmallow.fields.Str)
 
@@ -227,10 +227,10 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flow = fields.ParameterField(allow_none=True)
-        mrf = fields.ParameterField()
-        cost = fields.ParameterField()
-        mrf_cost = fields.ParameterField()
+        max_flow = fields.ParameterReferenceField(allow_none=True)
+        mrf = fields.ParameterReferenceField()
+        cost = fields.ParameterReferenceField()
+        mrf_cost = fields.ParameterReferenceField()
 
     def __init__(self, *args, **kwargs):
         """Initialise a new RiverGauge instance

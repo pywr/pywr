@@ -130,9 +130,9 @@ class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flow = fields.ParameterField(allow_none=True)
-        min_flow = fields.ParameterField(allow_none=True)
-        cost = fields.ParameterField(allow_none=True)
+        max_flow = fields.ParameterReferenceField(allow_none=True)
+        min_flow = fields.ParameterReferenceField(allow_none=True)
+        cost = fields.ParameterReferenceField(allow_none=True)
 
     def __init__(self, model, name, **kwargs):
         """Initialise a new Node object
@@ -271,13 +271,13 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_volume = fields.ParameterField(required=False)
-        min_volume = fields.ParameterField(required=False)
-        cost = fields.ParameterField(required=False)
+        max_volume = fields.ParameterReferenceField(required=False)
+        min_volume = fields.ParameterReferenceField(required=False)
+        cost = fields.ParameterReferenceField(required=False)
         initial_volume = fields.ParameterValuesField(required=False)
         initial_volume_pc = marshmallow.fields.Number(required=False)
-        level = fields.ParameterField(required=False)
-        area = fields.ParameterField(required=False)
+        level = fields.ParameterReferenceField(required=False)
+        area = fields.ParameterReferenceField(required=False)
         inputs = marshmallow.fields.Integer(required=False, default=1)
         outputs = marshmallow.fields.Integer(required=False, default=1)
 
@@ -401,9 +401,9 @@ class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
         nodes = marshmallow.fields.List(marshmallow.fields.Str, required=True)
-        max_volume = fields.ParameterField(required=False)
-        min_volume = fields.ParameterField(required=False)
-        cost = fields.ParameterField(required=False)
+        max_volume = fields.ParameterReferenceField(required=False)
+        min_volume = fields.ParameterReferenceField(required=False)
+        cost = fields.ParameterReferenceField(required=False)
         initial_volume = fields.ParameterValuesField(required=False)
         factors = marshmallow.fields.List(marshmallow.fields.Number, required=True)
 
@@ -458,9 +458,9 @@ class AnnualVirtualStorage(VirtualStorage):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
         nodes = marshmallow.fields.List(fields.NodeField, required=True)
-        max_volume = fields.ParameterField(required=False)
-        min_volume = fields.ParameterField(required=False)
-        cost = fields.ParameterField(required=False)
+        max_volume = fields.ParameterReferenceField(required=False)
+        min_volume = fields.ParameterReferenceField(required=False)
+        cost = fields.ParameterReferenceField(required=False)
         initial_volume = fields.ParameterValuesField(required=False)
         factors = marshmallow.fields.List(marshmallow.fields.Number, required=True)
         reset_day = marshmallow.fields.Integer()
@@ -516,8 +516,8 @@ class PiecewiseLink(Node):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flows = marshmallow.fields.List(fields.ParameterField(allow_none=True))
-        costs = marshmallow.fields.List(fields.ParameterField(allow_none=True))
+        max_flows = marshmallow.fields.List(fields.ParameterReferenceField(allow_none=True))
+        costs = marshmallow.fields.List(fields.ParameterReferenceField(allow_none=True))
 
     def __init__(self, model, name, **kwargs):
         self.allow_isolated = True
@@ -735,8 +735,8 @@ class AggregatedNode(with_metaclass(NodeMeta, Drawable, _core.AggregatedNode)):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flow = fields.ParameterField(required=False)
-        min_flow = fields.ParameterField(required=False)
+        max_flow = fields.ParameterReferenceField(required=False)
+        min_flow = fields.ParameterReferenceField(required=False)
         factors = marshmallow.fields.List(marshmallow.fields.Number(), required=False)
         flow_weights = marshmallow.fields.List(marshmallow.fields.Number(), required=False)
         nodes = marshmallow.fields.List(fields.NodeField())

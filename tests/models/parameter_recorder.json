@@ -28,11 +28,11 @@
     "parameters": {
         "demand_max": {
             "type": "constant",
-            "values": 10
+            "value": 10
         },
         "supply_max": {
             "type": "constant",
-            "values": 15,
+            "value": 15,
             "name": "supply_max"
         }
     },

@@ -7,15 +7,29 @@ from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
 from pywr.h5tools import H5Store
 from pywr.hashes import check_hash
+from pywr.schema import ComponentSchema, ExternalDataSchemaMixin, DataFrameSchemaMixin, fields
+import marshmallow
 import warnings
 
 
 parameter_registry = {}
+parameter_schema_registry = {}
 
 
 class UnutilisedDataWarning(Warning):
     """ Simple warning to indicate that not all data has been used. """
     pass
+
+
+class ParameterSchema(ComponentSchema):
+    is_variable = marshmallow.fields.Boolean()
+
+
+class classproperty(object):
+    def __init__(self, fget):
+        self.fget = fget
+    def __get__(self, owner_self, owner_cls):
+        return self.fget(owner_cls)
 
 
 cdef class Parameter(Component):
@@ -26,12 +40,24 @@ cdef class Parameter(Component):
         self.integer_size = 0
 
     @classmethod
-    def register(cls):
+    def register(cls, schema=None):
         parameter_registry[cls.__name__.lower()] = cls
+        if schema is not None:
+            parameter_schema_registry[cls.__name__.lower()] = schema
 
     @classmethod
     def unregister(cls):
         del(parameter_registry[cls.__name__.lower()])
+
+    # This is a bit hacky. It's emulating a class attribute via the combination of a classmethod
+    # and a custom decorator that passes the type rather than instance.
+    @classproperty
+    @classmethod
+    def Schema(cls):
+        try:
+            return parameter_schema_registry[cls.__name__.lower()]
+        except KeyError:
+            return None
 
     cpdef setup(self):
         super(Parameter, self).setup()
@@ -126,7 +152,20 @@ cdef class Parameter(Component):
             return cls(model, scenario=scenario, values=values, name=name, comment=None, **data)
         else:
             return cls(model, values=values, name=name, comment=None, **data)
-Parameter.register()
+Parameter.register(ParameterSchema)
+
+
+class ConstantParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
+    __values_arg_name__ = 'value'
+    # Core fields
+    value = marshmallow.fields.Float()
+    scale = marshmallow.fields.Float()
+    offset = marshmallow.fields.Float()
+
+    # Bounds
+    is_variable = marshmallow.fields.Boolean(default=False)
+    lower_bounds = marshmallow.fields.Float(default=0.0)
+    upper_bounds = marshmallow.fields.Float(default=np.inf)
 
 
 cdef class ConstantParameter(Parameter):
@@ -168,7 +207,7 @@ cdef class ConstantParameter(Parameter):
         parameter = cls(model, value, **data)
         return parameter
 
-ConstantParameter.register()
+ConstantParameter.register(ConstantParameterSchema)
 
 
 def align_and_resample_dataframe(df, datetime_index):
@@ -209,6 +248,10 @@ def align_and_resample_dataframe(df, datetime_index):
         raise NotImplementedError('Upsampling DataFrame not implemented.')
 
     return df
+
+
+class DataFrameParameterSchema(ParameterSchema, DataFrameSchemaMixin):
+    scenario = fields.ScenarioReferenceField(allow_none=True)
 
 
 cdef class DataFrameParameter(Parameter):
@@ -261,7 +304,12 @@ cdef class DataFrameParameter(Parameter):
         df = load_dataframe(model, data)
         return cls(model, df, scenario=scenario, **data)
 
-DataFrameParameter.register()
+DataFrameParameter.register(DataFrameParameterSchema)
+
+
+class ArrayIndecedParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
+    pass
+
 
 cdef class ArrayIndexedParameter(Parameter):
     """Time varying parameter using an array and Timestep._index
@@ -280,7 +328,7 @@ cdef class ArrayIndexedParameter(Parameter):
         """Returns the value of the parameter at a given timestep
         """
         return self.values[ts._index]
-ArrayIndexedParameter.register()
+ArrayIndexedParameter.register(ArrayIndecedParameterSchema)
 
 
 cdef class ArrayIndexedScenarioParameter(Parameter):
@@ -650,6 +698,13 @@ cdef class WeeklyProfileParameter(Parameter):
 WeeklyProfileParameter.register()
 
 
+class MonthlyProfileParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
+    # Bounds
+    is_variable = marshmallow.fields.Boolean(default=False)
+    lower_bounds = marshmallow.fields.Float(default=0.0)
+    upper_bounds = marshmallow.fields.Float(default=np.inf)
+
+
 cdef class MonthlyProfileParameter(Parameter):
     """ Parameter which provides a monthly profile
 
@@ -686,7 +741,11 @@ cdef class MonthlyProfileParameter(Parameter):
 
     cpdef double[:] get_double_upper_bounds(self):
         return self._upper_bounds
-MonthlyProfileParameter.register()
+MonthlyProfileParameter.register(MonthlyProfileParameterSchema)
+
+
+class ScenarioMonthlyProfileParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
+    scenario = fields.ScenarioReferenceField()
 
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
@@ -722,7 +781,7 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
 
-ScenarioMonthlyProfileParameter.register()
+ScenarioMonthlyProfileParameter.register(ScenarioMonthlyProfileParameterSchema)
 
 
 cdef class IndexParameter(Parameter):
@@ -820,6 +879,21 @@ cdef class IndexedArrayParameter(Parameter):
 IndexedArrayParameter.register()
 
 
+class AnnualHarmonicSeriesParameterSchema(ParameterSchema):
+    mean = marshmallow.fields.Float(required=True)
+    amplitudes = marshmallow.fields.List(marshmallow.fields.Float)
+    phases = marshmallow.fields.List(marshmallow.fields.Float)
+
+    # Bounds
+    is_variable = marshmallow.fields.Boolean(default=False)
+    mean_lower_bounds = marshmallow.fields.Float(default=0.0)
+    mean_upper_bounds = marshmallow.fields.Float(default=np.inf)
+    amplitude_lower_bounds = marshmallow.fields.Float(default=0.0)
+    amplitude_upper_bounds = marshmallow.fields.Float(default=np.inf)
+    phase_lower_bounds = marshmallow.fields.Float(default=0.0)
+    phase_upper_bounds = marshmallow.fields.Float(default=np.pi*2)
+
+
 cdef class AnnualHarmonicSeriesParameter(Parameter):
     """ A `Parameter` which returns the value from an annual harmonic series
 
@@ -913,7 +987,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
     cpdef double[:] get_double_upper_bounds(self):
         return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
-AnnualHarmonicSeriesParameter.register()
+AnnualHarmonicSeriesParameter.register(AnnualHarmonicSeriesParameterSchema)
 
 cdef enum AggFuncs:
     SUM = 0
@@ -941,6 +1015,11 @@ def wrap_const(model, value):
     if isinstance(value, (int, float)):
         value = ConstantParameter(model, value)
     return value
+
+
+class AggregatedParameterSchema(ParameterSchema):
+    parameters = marshmallow.fields.List(fields.ParameterField(wrap_constants=True))
+    agg_func = marshmallow.fields.String(validate=marshmallow.validate.OneOf(_agg_func_lookup.keys()))
 
 
 cdef class AggregatedParameter(Parameter):
@@ -1057,7 +1136,7 @@ cdef class AggregatedParameter(Parameter):
                 accum[i] = self._agg_user_func([parameter.get_value(scenario_index) for parameter in self.parameters])
         else:
             raise ValueError("Unsupported aggregation function.")
-AggregatedParameter.register()
+AggregatedParameter.register(AggregatedParameterSchema)
 
 cdef class AggregatedIndexParameter(IndexParameter):
     """A collection of IndexParameters
@@ -1396,7 +1475,15 @@ def load_parameter(model, data, parameter_name=None):
         del(kwargs["type"])
         if "name" in kwargs:
             del(kwargs["name"])
-        parameter = cls.load(model, kwargs)
+
+        schema_cls = cls.Schema
+        if schema_cls is not None:
+            schema = schema_cls(context={'model': model, 'klass': cls})
+            parameter = schema.load(kwargs)
+        else:
+            warnings.warn('Parameter of type "{}" with name "{}" has no schema.'
+                          'Falling back to deprecated .load method.'.format(cls, parameter_name), DeprecationWarning)
+            parameter = cls.load(model, kwargs)
 
     if parameter_name is not None:
         # TODO FIXME: memory leak if parameter is subsequently removed from the model
