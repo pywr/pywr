@@ -82,6 +82,8 @@ test:
   requires:
     - pytest
     - nbconvert
+    - pygmo
+    - platypus-opt
     {% if BUILD_DOC %}
     - sphinx
     - sphinx_rtd_theme
