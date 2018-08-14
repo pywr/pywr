@@ -55,7 +55,7 @@ cdef class Aggregator:
             self._func = func
 
     cpdef double aggregate_1d(self, double[:] data, ignore_nan=False) except *:
-        """Compuate an aggreagted value across 1D array.
+        """Compute an aggregated value across 1D array.
         """
         cdef double[:] values = data
 
