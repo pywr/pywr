@@ -195,28 +195,27 @@ cdef class AggregatedRecorder(Recorder):
     This Recorder is used to aggregate across multiple other Recorder objects.
 
     The class provides a method to produce a complex aggregated recorder by taking
-     the results of other records. The value() method first collects unaggregated values
-     from the provided recorders. These are then aggregated on a per scenario basis before
-     aggregation across the scenarios to a single value (assuming aggregate=True).
+    the results of other records. The `.values()` method first collects unaggregated values
+    from the provided recorders. These are then aggregated on a per scenario basis and returned
+    by this classes `.values()` method. This method allows `AggregatedRecorder` to be used as
+    a recorder for in other `AggregatedRecorder` instances.
 
     By default the same `agg_func` function is used for both steps, but an optional
-     `recorder_agg_func` can undertake a different aggregation across scenarios. For
-      example summing recorders per scenario, and then taking a mean of the sum totals.
+    `recorder_agg_func` can undertake a different aggregation across scenarios. For
+    example summing recorders per scenario, and then taking a mean of the sum totals.
 
-    This method allows `AggregatedRecorder` to be used as a recorder for in other
-     `AggregatedRecorder` instances.
+    Parameters
+    ==========
+    model : `pywr.core.Model`
+    recorders: iterable of `Recorder` objects.
+        The other `Recorder` instances to perform aggregation over.
+    agg_func : str or callable, optional
+        Scenario aggregation function to use when `aggregated_value` is called (default="mean").
+    recorder_agg_func : str or callable, optional
+        Recorder aggregation function to use when `aggregated_value` is called (default=`agg_func`).
     """
     def __init__(self, model, recorders, **kwargs):
-        """
-
-        :param model: pywr.core.Model instance
-        :param recorders: iterable of `Recorder` objects to aggregate
-        :keyword agg_func: function used for aggregating across the recorders.
-            Numpy style functions that support an axis argument are supported.
-        :keyword recorder_agg_func: optional different function for aggregating
-            across scenarios.
-        """
-        # Opitional different method for aggregating across self.recorders scenarios
+        # Optional different method for aggregating across self.recorders scenarios
         agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func'))
 
         if isinstance(agg_func, basestring):
