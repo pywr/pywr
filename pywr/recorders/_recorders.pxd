@@ -14,7 +14,7 @@ cdef class Recorder(Component):
     cdef public bint is_constraint
     cdef public double epsilon
     cdef public bint ignore_nan
-    cdef Aggregator _scenario_aggregator
+    cdef public Aggregator _scenario_aggregator
     cpdef double aggregated_value(self) except? -1
     cpdef double[:] values(self)
 
@@ -40,19 +40,19 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     cdef double[:, :] _data
 
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
-    cdef Aggregator _temporal_aggregator
+    cdef public Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):
-    cdef Aggregator _temporal_aggregator
+    cdef public Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
-    cdef Aggregator _temporal_aggregator
+    cdef public Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
-    cdef Aggregator _temporal_aggregator
+    cdef public Aggregator _temporal_aggregator
     cdef int[:, :] _data
 
 cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
@@ -71,7 +71,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     cdef public Scenario scenario
 
 cdef class RollingWindowParameterRecorder(ParameterRecorder):
-    cdef Aggregator _temporal_aggregator
+    cdef public Aggregator _temporal_aggregator
     cdef public int window
     cdef int position
     cdef double[:, :] _memory
