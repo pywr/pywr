@@ -895,7 +895,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     cpdef double[:] values(self):
         """Compute a value for each scenario using `temporal_agg_func`.
         """
-        return self._temporal_aggregator.aggregate_2d(self._fdc, axis=0, ignore_nan=self.ignore_nan)
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
         """ Return a `pandas.DataFrame` of the recorder data
