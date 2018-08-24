@@ -41,6 +41,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
 
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
     cdef public Aggregator _temporal_aggregator
+    cdef public bint proportional
     cdef double[:, :] _data
 
 cdef class NumpyArrayLevelRecorder(StorageRecorder):

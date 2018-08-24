@@ -705,6 +705,8 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
     model : `pywr.core.Model`
     node : `pywr.core.Node`
         Node instance to record.
+    proportional : bool
+        Whether to record proportional [0, 1.0] or absolute storage volumes (default=False).
     temporal_agg_func : str or callable (default="mean")
         Aggregation function used over time when computing a value per scenario. This can be used
         to return, for example, the median flow over a simulation. For aggregation over scenarios
@@ -712,6 +714,7 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
     """
     def __init__(self, model, AbstractStorage node, **kwargs):
         # Optional different method for aggregating across time.
+        self.proportional = kwargs.pop('proportional', False)
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
         super(NumpyArrayStorageRecorder, self).__init__(model, node, **kwargs)
 
@@ -733,7 +736,10 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
         cdef int i
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
-            self._data[ts._index,i] = self._node._volume[i]
+            if self.proportional:
+                self._data[ts._index,i] = self._node._current_pc[i]
+            else:
+                self._data[ts._index,i] = self._node._volume[i]
         return 0
 
     property data:

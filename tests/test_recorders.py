@@ -212,7 +212,8 @@ def test_sdc_recorder():
     assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
 
-def test_numpy_storage_recorder(simple_storage_model):
+@pytest.mark.parametrize('proportional', [True, False])
+def test_numpy_storage_recorder(simple_storage_model, proportional):
     """
     Test the NumpyArrayStorageRecorder
     """
@@ -220,17 +221,20 @@ def test_numpy_storage_recorder(simple_storage_model):
 
     res = model.nodes['Storage']
 
-    rec = NumpyArrayStorageRecorder(model, res)
+    rec = NumpyArrayStorageRecorder(model, res, proportional=proportional)
 
     model.run()
 
-    assert(rec.data.shape == (5, 1))
-    assert_allclose(rec.data, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
+    expected = np.array([[7, 4, 1, 0, 0]]).T
+    if proportional:
+        expected = expected / 20
 
+    assert(rec.data.shape == (5, 1))
+    assert_allclose(rec.data, expected, atol=1e-7)
 
     df = rec.to_dataframe()
     assert df.shape == (5, 1)
-    assert_allclose(df.values, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
+    assert_allclose(df.values, expected, atol=1e-7)
 
 
 def test_numpy_parameter_recorder(simple_linear_model):
