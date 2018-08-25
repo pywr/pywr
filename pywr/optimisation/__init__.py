@@ -72,8 +72,7 @@ class BaseOptimisationWrapper(object):
             cache.objectives = cache_objectives(model)
             cache.constraints = cache_constraints(model)
             MODEL_CACHE[self.uid] = cache
-        finally:
-            return cache
+        return cache
 
     @property
     def model(self):
