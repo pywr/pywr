@@ -1,6 +1,7 @@
 import numpy as np
 cimport numpy as np
 import pandas as pd
+import warnings
 from past.builtins import basestring
 
 recorder_registry = {}
@@ -13,8 +14,6 @@ cdef enum AggFuncs:
     MEDIAN = 4
     PRODUCT = 5
     CUSTOM = 6
-    ANY = 7
-    ALL = 8
 _agg_func_lookup = {
     "sum": AggFuncs.SUM,
     "min": AggFuncs.MIN,
@@ -23,8 +22,6 @@ _agg_func_lookup = {
     "median": AggFuncs.MEDIAN,
     "product": AggFuncs.PRODUCT,
     "custom": AggFuncs.CUSTOM,
-    "any": AggFuncs.ANY,
-    "all": AggFuncs.ALL,
 }
 
 cdef enum ObjDirection:
@@ -40,29 +37,113 @@ _obj_direction_lookup = {
     "min": ObjDirection.MINIMISE,
 }
 
+cdef class Aggregator:
+    """Utility class for computing aggregate values."""
+    def __init__(self, func):
+        self.func = func
+
+    property func:
+        def __set__(self, func):
+            self._user_func = None
+            if isinstance(func, basestring):
+                func = _agg_func_lookup[func.lower()]
+            elif callable(func):
+                self._user_func = func
+                func = AggFuncs.CUSTOM
+            else:
+                raise ValueError("Unrecognised aggregation function: \"{}\".".format(func))
+            self._func = func
+
+    cpdef double aggregate_1d(self, double[:] data, ignore_nan=False) except *:
+        """Compute an aggregated value across 1D array.
+        """
+        cdef double[:] values = data
+
+        if ignore_nan:
+            values = np.array(values)[~np.isnan(values)]
+
+        if self._func == AggFuncs.PRODUCT:
+            return np.product(values)
+        elif self._func == AggFuncs.SUM:
+            return np.sum(values)
+        elif self._func == AggFuncs.MAX:
+            return np.max(values)
+        elif self._func == AggFuncs.MIN:
+            return np.min(values)
+        elif self._func == AggFuncs.MEAN:
+            return np.mean(values)
+        elif self._func == AggFuncs.MEDIAN:
+            return np.median(values)
+        elif self._func == AggFuncs.CUSTOM:
+            return self._user_func(np.array(values))
+        else:
+            raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
+
+    cpdef double[:] aggregate_2d(self, double[:, :] data, axis=0, ignore_nan=False) except *:
+        """Compute an aggregated value along an axis of a 2D array.
+        """
+        cdef double[:, :] values = data
+
+        if ignore_nan:
+            values = np.array(values)[~np.isnan(values)]
+
+        if self._func == AggFuncs.PRODUCT:
+            return np.product(values, axis=axis)
+        elif self._func == AggFuncs.SUM:
+            return np.sum(values, axis=axis)
+        elif self._func == AggFuncs.MAX:
+            return np.max(values, axis=axis)
+        elif self._func == AggFuncs.MIN:
+            return np.min(values, axis=axis)
+        elif self._func == AggFuncs.MEAN:
+            return np.mean(values, axis=axis)
+        elif self._func == AggFuncs.MEDIAN:
+            return np.median(values, axis=axis)
+        elif self._func == AggFuncs.CUSTOM:
+            return self._user_func(np.array(values), axis=axis)
+        else:
+            raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
+
+
 cdef class Recorder(Component):
+    """Base class for recording information from a `pywr.model.Model`.
+
+    Recorder components are used to calculate, aggregate and save data from a simulation. This
+    base class provides the basic functionality for all recorders.
+
+    Parameters
+    ==========
+    model : `pywr.core.Model`
+    agg_func : str or callable (default="mean")
+        Scenario aggregation function to use when `aggregated_value` is called.
+    name : str (default=None)
+        Name of the recorder.
+    comment : str (default=None)
+        Comment or description of the recorder.
+    ignore_nan : bool (default=False)
+        Flag to ignore NaN values when calling `aggregated_value`.
+    is_objective : {None, 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min'}
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    is_constraint : bool (default=False)
+        Flag to denote whether this recorder is to be used as a constraint during optimisation.
+    epsilon : float (default=1.0)
+        Epsilon distance used by some optimisation algorithms.
+    """
     def __init__(self, model, agg_func="mean", ignore_nan=False, is_objective=None, epsilon=1.0,
                  is_constraint=False, name=None, **kwargs):
         if name is None:
             name = self.__class__.__name__.lower()
         super(Recorder, self).__init__(model, name=name, **kwargs)
-        self.agg_func = agg_func
         self.ignore_nan = ignore_nan
         self.is_objective = is_objective
         self.is_constraint = is_constraint
         self.epsilon = epsilon
+        # Create the aggregator for scenarios
+        self._scenario_aggregator = Aggregator(agg_func)
 
     property agg_func:
         def __set__(self, agg_func):
-            self._agg_user_func = None
-            if isinstance(agg_func, basestring):
-                agg_func = _agg_func_lookup[agg_func.lower()]
-            elif callable(agg_func):
-                self._agg_user_func = agg_func
-                agg_func = AggFuncs.CUSTOM
-            else:
-                raise ValueError("Unrecognised aggregation function: \"{}\".".format(agg_func))
-            self._agg_func = agg_func
+            self._scenario_aggregator.func = agg_func
 
     property is_objective:
         def __set__(self, value):
@@ -86,24 +167,7 @@ cdef class Recorder(Component):
 
     cpdef double aggregated_value(self) except? -1:
         cdef double[:] values = self.values()
-
-        if self.ignore_nan:
-            values = np.array(values)[~np.isnan(values)]
-
-        if self._agg_func == AggFuncs.PRODUCT:
-            return np.product(values)
-        elif self._agg_func == AggFuncs.SUM:
-            return np.sum(values)
-        elif self._agg_func == AggFuncs.MAX:
-            return np.max(values)
-        elif self._agg_func == AggFuncs.MIN:
-            return np.min(values)
-        elif self._agg_func == AggFuncs.MEAN:
-            return np.mean(values)
-        elif self._agg_func == AggFuncs.MEDIAN:
-            return np.median(values)
-        else:
-            return self._agg_user_func(np.array(values))
+        return self._scenario_aggregator.aggregate_1d(values)
 
     cpdef double[:] values(self):
         raise NotImplementedError()
@@ -131,28 +195,27 @@ cdef class AggregatedRecorder(Recorder):
     This Recorder is used to aggregate across multiple other Recorder objects.
 
     The class provides a method to produce a complex aggregated recorder by taking
-     the results of other records. The value() method first collects unaggregated values
-     from the provided recorders. These are then aggregated on a per scenario basis before
-     aggregation across the scenarios to a single value (assuming aggregate=True).
+    the results of other records. The `.values()` method first collects unaggregated values
+    from the provided recorders. These are then aggregated on a per scenario basis and returned
+    by this classes `.values()` method. This method allows `AggregatedRecorder` to be used as
+    a recorder for in other `AggregatedRecorder` instances.
 
     By default the same `agg_func` function is used for both steps, but an optional
-     `recorder_agg_func` can undertake a different aggregation across scenarios. For
-      example summing recorders per scenario, and then taking a mean of the sum totals.
+    `recorder_agg_func` can undertake a different aggregation across scenarios. For
+    example summing recorders per scenario, and then taking a mean of the sum totals.
 
-    This method allows `AggregatedRecorder` to be used as a recorder for in other
-     `AggregatedRecorder` instances.
+    Parameters
+    ==========
+    model : `pywr.core.Model`
+    recorders: iterable of `Recorder` objects.
+        The other `Recorder` instances to perform aggregation over.
+    agg_func : str or callable, optional
+        Scenario aggregation function to use when `aggregated_value` is called (default="mean").
+    recorder_agg_func : str or callable, optional
+        Recorder aggregation function to use when `aggregated_value` is called (default=`agg_func`).
     """
     def __init__(self, model, recorders, **kwargs):
-        """
-
-        :param model: pywr.core.Model instance
-        :param recorders: iterable of `Recorder` objects to aggregate
-        :keyword agg_func: function used for aggregating across the recorders.
-            Numpy style functions that support an axis argument are supported.
-        :keyword recorder_agg_func: optional different function for aggregating
-            across scenarios.
-        """
-        # Opitional different method for aggregating across self.recorders scenarios
+        # Optional different method for aggregating across self.recorders scenarios
         agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func'))
 
         if isinstance(agg_func, basestring):
@@ -270,6 +333,16 @@ StorageRecorder.register()
 
 
 cdef class ParameterRecorder(Recorder):
+    """Base class for recorders that track `Parameter` values.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.Parameter`
+        The parameter to record.
+    name : str (optional)
+        The name of the recorder
+    """
     def __init__(self, model, Parameter param, name=None, **kwargs):
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), param.name)
@@ -334,6 +407,32 @@ IndexParameterRecorder.register()
 
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
+    """Recorder for timeseries information from a `Node`.
+
+    This class stores flow from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    def __init__(self, model, AbstractNode node, **kwargs):
+        # Optional different method for aggregating across time.
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
+        super(NumpyArrayNodeRecorder, self).__init__(model, node, **kwargs)
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
+
     cpdef setup(self):
         cdef int ncomb = len(self.model.scenarios.combinations)
         cdef int nts = len(self.model.timestepper)
@@ -352,6 +451,11 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
+        
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
         """ Return a `pandas.DataFrame` of the recorder data
@@ -387,24 +491,21 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
     fdc_agg_func: str, optional
         optional different function for aggregating across scenarios.
     """
-
     def __init__(self, model, AbstractNode node, percentiles, **kwargs):
 
         # Optional different method for aggregating across percentiles
-        agg_func = kwargs.pop('fdc_agg_func', kwargs.get('agg_func', 'mean'))
+        if 'fdc_agg_func' in kwargs:
+            # Support previous behaviour
+            warnings.warn('The "fdc_agg_func" key is deprecated for defining the temporal '
+                          'aggregation in {}. Please "temporal_agg_func" instead.'
+                          .format(self.__class__.__name__))
+            if "temporal_agg_func" in kwargs:
+                raise ValueError('Both "fdc_agg_func" and "temporal_agg_func" keywords given.'
+                                 'This is ambiguous. Please use "temporal_agg_func" only.')
+            kwargs["temporal_agg_func"] = kwargs.pop("fdc_agg_func")
+
         super(FlowDurationCurveRecorder, self).__init__(model, node, **kwargs)
-
-        if isinstance(agg_func, basestring):
-            agg_func = _agg_func_lookup[agg_func.lower()]
-        elif callable(agg_func):
-            self.agg_user_func = agg_func
-            agg_func = AggFuncs.CUSTOM
-        else:
-            raise ValueError("Unrecognised recorder aggregation function: \"{}\".".format(agg_func))
-        self._fdc_agg_func = agg_func
-
         self._percentiles = np.asarray(percentiles, dtype=np.float64)
-
 
     cpdef finish(self):
         self._fdc = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
@@ -414,21 +515,9 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
             return np.array(self._fdc)
 
     cpdef double[:] values(self):
-
-        if self._fdc_agg_func == AggFuncs.PRODUCT:
-            return np.product(self._fdc, axis=0)
-        elif self._fdc_agg_func == AggFuncs.SUM:
-            return np.sum(self._fdc, axis=0)
-        elif self._fdc_agg_func == AggFuncs.MAX:
-            return np.max(self._fdc, axis=0)
-        elif self._fdc_agg_func == AggFuncs.MIN:
-            return np.min(self._fdc, axis=0)
-        elif self._fdc_agg_func == AggFuncs.MEAN:
-            return np.mean(self._fdc, axis=0)
-        elif self._fdc_agg_func == AggFuncs.MEDIAN:
-            return np.median(self._fdc, axis=0)
-        else:
-            return self._agg_user_func(np.array(self._fdc), axis=0)
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._fdc, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
         """ Return a `pandas.DataFrame` of the recorder data
@@ -547,7 +636,6 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         cdef double[:] utrgt_fdc, ltrgt_fdc
         cdef double udev, ldev
 
-
         # We have to do this the slow way by iterating through all scenario combinations
         sc_index = self.model.scenarios.get_scenario_index(self.scenario)
         self._fdc_deviations = np.empty((self._lower_target_fdc.shape[0], len(self.model.scenarios.combinations)), dtype=np.float64)
@@ -578,22 +666,11 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         def __get__(self, ):
             return np.array(self._fdc_deviations)
 
-    cpdef double[:] values(self):
 
-        if self._fdc_agg_func == AggFuncs.PRODUCT:
-            return np.nanprod(self._fdc_deviations, axis=0)
-        elif self._fdc_agg_func == AggFuncs.SUM:
-            return np.nansum(self._fdc_deviations, axis=0)
-        elif self._fdc_agg_func == AggFuncs.MAX:
-            return np.nanmax(self._fdc_deviations, axis=0)
-        elif self._fdc_agg_func == AggFuncs.MIN:
-            return np.nanmin(self._fdc_deviations, axis=0)
-        elif self._fdc_agg_func == AggFuncs.MEAN:
-            return np.nanmean(self._fdc_deviations, axis=0)
-        elif self._fdc_agg_func == AggFuncs.MEDIAN:
-            return np.nanmedian(self._fdc_deviations, axis=0)
-        else:
-            return self._agg_user_func(np.array(self._fdc_deviations), axis=0)
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._fdc_deviations, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self, return_fdc=False):
         """ Return a `pandas.DataFrame` of the deviations from the target FDCs
@@ -617,6 +694,36 @@ FlowDurationCurveDeviationRecorder.register()
 
 
 cdef class NumpyArrayStorageRecorder(StorageRecorder):
+    """Recorder for timeseries information from a `Storage` node.
+
+    This class stores volume from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    proportional : bool
+        Whether to record proportional [0, 1.0] or absolute storage volumes (default=False).
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    def __init__(self, model, AbstractStorage node, **kwargs):
+        # Optional different method for aggregating across time.
+        self.proportional = kwargs.pop('proportional', False)
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
+        super(NumpyArrayStorageRecorder, self).__init__(model, node, **kwargs)
+
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
+
     cpdef setup(self):
         cdef int ncomb = len(self.model.scenarios.combinations)
         cdef int nts = len(self.model.timestepper)
@@ -629,12 +736,20 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
         cdef int i
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
-            self._data[ts._index,i] = self._node._volume[i]
+            if self.proportional:
+                self._data[ts._index,i] = self._node._current_pc[i]
+            else:
+                self._data[ts._index,i] = self._node._volume[i]
         return 0
 
     property data:
         def __get__(self, ):
             return np.array(self._data)
+
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
         """ Return a `pandas.DataFrame` of the recorder data
@@ -673,19 +788,17 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
 
     def __init__(self, model, AbstractStorage node, percentiles, **kwargs):
 
-        # Optional different method for aggregating across percentiles
-        agg_func = kwargs.pop('sdc_agg_func', kwargs.get('agg_func', 'mean'))
+        if "sdc_agg_func" in kwargs:
+            # Support previous behaviour
+            warnings.warn('The "sdc_agg_func" key is deprecated for defining the temporal '
+                          'aggregation in {}. Please "temporal_agg_func" instead.'
+                          .format(self.__class__.__name__))
+            if "temporal_agg_func" in kwargs:
+                raise ValueError('Both "sdc_agg_func" and "temporal_agg_func" keywords given.'
+                                 'This is ambiguous. Please use "temporal_agg_func" only.')
+            kwargs["temporal_agg_func"] = kwargs.pop("sdc_agg_func")
+
         super(StorageDurationCurveRecorder, self).__init__(model, node, **kwargs)
-
-        if isinstance(agg_func, basestring):
-            agg_func = _agg_func_lookup[agg_func.lower()]
-        elif callable(agg_func):
-            self.agg_user_func = agg_func
-            agg_func = AggFuncs.CUSTOM
-        else:
-            raise ValueError("Unrecognised recorder aggregation function: \"{}\".".format(agg_func))
-        self._sdc_agg_func = agg_func
-
         self._percentiles = np.asarray(percentiles, dtype=np.float64)
 
 
@@ -697,21 +810,9 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
             return np.array(self._sdc)
 
     cpdef double[:] values(self):
-
-        if self._sdc_agg_func == AggFuncs.PRODUCT:
-            return np.product(self._sdc, axis=0)
-        elif self._sdc_agg_func == AggFuncs.SUM:
-            return np.sum(self._sdc, axis=0)
-        elif self._sdc_agg_func == AggFuncs.MAX:
-            return np.max(self._sdc, axis=0)
-        elif self._sdc_agg_func == AggFuncs.MIN:
-            return np.min(self._sdc, axis=0)
-        elif self._sdc_agg_func == AggFuncs.MEAN:
-            return np.mean(self._sdc, axis=0)
-        elif self._sdc_agg_func == AggFuncs.MEDIAN:
-            return np.median(self._sdc, axis=0)
-        else:
-            return self._agg_user_func(np.array(self._sdc), axis=0)
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._sdc, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
         """ Return a `pandas.DataFrame` of the recorder data
@@ -751,6 +852,33 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
 NumpyArrayLevelRecorder.register()
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
+    """Recorder for timeseries information from a `Parameter`.
+
+    This class stores the value from a specific `Parameter` for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.Parameter`
+        Parameter instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    def __init__(self, model, Parameter param, **kwargs):
+        # Optional different method for aggregating across time.
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
+        super(NumpyArrayParameterRecorder, self).__init__(model, param, **kwargs)
+
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
+
     cpdef setup(self):
         cdef int ncomb = len(self.model.scenarios.combinations)
         cdef int nts = len(self.model.timestepper)
@@ -770,6 +898,11 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
+
     def to_dataframe(self):
         """ Return a `pandas.DataFrame` of the recorder data
         This DataFrame contains a MultiIndex for the columns with the recorder name
@@ -782,7 +915,35 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 NumpyArrayParameterRecorder.register()
 
+
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
+    """Recorder for timeseries information from an `IndexParameter`.
+
+    This class stores the value from a specific `IndexParameter` for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.IndexParameter`
+        Parameter instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    def __init__(self, model, IndexParameter param, **kwargs):
+        # Optional different method for aggregating across time.
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
+        super(NumpyArrayIndexParameterRecorder, self).__init__(model, param, **kwargs)
+
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
+
     cpdef setup(self):
         cdef int ncomb = len(self.model.scenarios.combinations)
         cdef int nts = len(self.model.timestepper)
@@ -814,16 +975,28 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 NumpyArrayIndexParameterRecorder.register()
 
+
 cdef class RollingWindowParameterRecorder(ParameterRecorder):
-    """Records the mean value of a Parameter for the last N timesteps"""
-    def __init__(self, model, Parameter param, int window, agg_func, *args, **kwargs):
+    """Records the mean value of a Parameter for the last N timesteps.
+    """
+    def __init__(self, model, Parameter param, int window, *args, **kwargs):
+
+        if "agg_func" in kwargs and "temporal_agg_func" not in kwargs:
+            # Support previous behaviour
+            warnings.warn('The "agg_func" key is deprecated for defining the temporal '
+                          'aggregation in {}. Please "temporal_agg_func" instead.'
+                          .format(self.__class__.__name__))
+            temporal_agg_func = kwargs.get("agg_func")
+        else:
+            temporal_agg_func = kwargs.pop("temporal_agg_func", "mean")
+
         super(RollingWindowParameterRecorder, self).__init__(model, param, *args, **kwargs)
         self.window = window
-        self.agg_func = agg_func
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
 
-        valid_funcs = (AggFuncs.MEAN, AggFuncs.SUM, AggFuncs.MAX, AggFuncs.MIN)
-        if self._agg_func not in valid_funcs:
-            raise ValueError("Aggregation function for {} must be MIN/MAX/SUM/MEAN.".format(self.__class__.__name__))
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
         cdef int ncomb = len(self.model.scenarios.combinations)
@@ -845,22 +1018,13 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
             self._memory[self.position, i] = self._param.get_value(scenario_index)
 
-        if timestep.index < self.window:
-            n = timestep.index + 1
+        if timestep._index < self.window:
+            n = timestep._index + 1
         else:
             n = self.window
 
-        if self._agg_func == AggFuncs.MEAN:
-            value = np.mean(self._memory[0:n, :], axis=0)
-        elif self._agg_func == AggFuncs.SUM:
-            value = np.sum(self._memory[0:n, :], axis=0)
-        elif self._agg_func == AggFuncs.MIN:
-            value = np.min(self._memory[0:n, :], axis=0)
-        elif self._agg_func == AggFuncs.MAX:
-            value = np.max(self._memory[0:n, :], axis=0)
-        else:
-            raise NotImplementedError("Aggregation function for {} must be MIN/MAX/SUM/MEAN.".format(self.__class__.__name__))
-        self._data[<int>(timestep.index), :] = value
+        value = self._temporal_aggregator.aggregate_2d(self._memory[0:n, :], axis=0)
+        self._data[timestep._index, :] = value
 
         self.position += 1
         if self.position >= self.window:
@@ -880,8 +1044,7 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
         from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
         window = int(data.pop("window"))
-        agg_func = data.pop("agg_func")
-        return cls(model, parameter, window, agg_func, **data)
+        return cls(model, parameter, window, **data)
 
 RollingWindowParameterRecorder.register()
 
@@ -1049,8 +1212,7 @@ MeanFlowNodeRecorder.register()
 
 
 cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
-    """
-    Recorder to total the difference between modelled flow and max_flow for a Node
+    """Recorder to return the frequency of timesteps with a failure to meet max_flow.
     """
     cpdef after(self):
         cdef double max_flow
@@ -1088,7 +1250,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
 BaseConstantStorageRecorder.register()
 
 cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
-
+    """Record the minimum volume in a `Storage` node during a simulation."""
     cpdef reset(self):
         self._values[...] = np.inf
 
@@ -1100,7 +1262,11 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 MinimumVolumeStorageRecorder.register()
 
 cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
+    """Record whether a `Storage` node falls below a particular volume threshold during a simulation.
 
+    This recorder will return a value of `1.0` for scenarios where the volume `Storage` is less
+    than or equal to the threshold at any time-step during the simulation. Otherwise it will return zero.
+    """
     def __init__(self, model, node, threshold, *args, **kwargs):
         self.threshold = threshold
         super(MinimumThresholdVolumeStorageRecorder, self).__init__(model, node, *args, **kwargs)
@@ -1222,3 +1388,105 @@ def load_recorder(model, data):
         recorder = cls.load(model, data)
 
     return recorder
+
+
+cdef class BaseConstantParameterRecorder(ParameterRecorder):
+    """Base class for `ParameterRecorder` classes with a single value for each scenario combination
+    """
+    cpdef setup(self):
+        self._values = np.zeros(len(self.model.scenarios.combinations))
+
+    cpdef reset(self):
+        self._values[...] = 0.0
+
+    cpdef after(self):
+        raise NotImplementedError()
+
+    cpdef double[:] values(self):
+        return self._values
+
+
+cdef class TotalParameterRecorder(BaseConstantParameterRecorder):
+    """Record the total value of a `Parameter` during a simulation.
+
+    This recorder can be used to track the sum total of the values returned by a
+    `Parameter` during a models simulation. An optional factor can be provided to
+    apply a linear scaling of the values. If the parameter represents a flux
+    the `integrate` keyword argument can be used to multiply the values by the time-step
+    length in days.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.Parameter`
+        The parameter to record.
+    name : str (optional)
+        The name of the recorder
+    factor : float (default=1.0)
+        Scaling factor for the values of `param`.
+    integrate : bool (default=False)
+        Whether to multiply by the time-step length in days during summation.
+    """
+    def __init__(self, *args, **kwargs):
+        self.factor = kwargs.pop('factor', 1.0)
+        self.integrate = kwargs.pop('integrate', False)
+        super(TotalParameterRecorder, self).__init__(*args, **kwargs)
+
+    cpdef after(self):
+        cdef ScenarioIndex scenario_index
+        cdef int i
+        cdef double[:] values
+        cdef factor = self.factor
+
+        if self.integrate:
+            factor *= self.model.timestepper.current.days
+
+        values = self._param.get_all_values()
+        for scenario_index in self.model.scenarios.combinations:
+            i = scenario_index.global_id
+            self._values[i] += values[i]*factor
+        return 0
+TotalParameterRecorder.register()
+
+
+cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
+    """Record the mean value of a `Parameter` during a simulation.
+
+    This recorder can be used to track the sum total of the values returned by a
+    `Parameter` during a models simulation. An optional factor can be provided to
+    apply a linear scaling of the values. If the parameter represents a flux
+    the `integrate` keyword argument can be used to multiply the values by the time-step
+    length in days.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.Parameter`
+        The parameter to record.
+    name : str (optional)
+        The name of the recorder
+    factor : float (default=1.0)
+        Scaling factor for the values of `param`.
+    """
+    def __init__(self, *args, **kwargs):
+        self.factor = kwargs.pop('factor', 1.0)
+        super(MeanParameterRecorder, self).__init__(*args, **kwargs)
+
+    cpdef after(self):
+        cdef ScenarioIndex scenario_index
+        cdef int i
+        cdef double[:] values
+        cdef factor = self.factor
+
+        values = self._param.get_all_values()
+        for scenario_index in self.model.scenarios.combinations:
+            i = scenario_index.global_id
+            self._values[i] += values[i]*factor
+        return 0
+
+    cpdef finish(self):
+        cdef int i
+        cdef int nt = self.model.timestepper.current.index
+        for i in range(self._values.shape[0]):
+            self._values[i] /= nt
+MeanParameterRecorder.register()
