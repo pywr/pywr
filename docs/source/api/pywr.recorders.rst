@@ -59,8 +59,11 @@ Statistical recorders
 .. autosummary::
    :toctree: generated/
 
+   AggregatedRecorder
    MeanFlowNodeRecorder
    TotalFlowNodeRecorder
+   MeanParameterRecorder
+   TotalParameterRecorder
    RollingMeanFlowNodeRecorder
    MinimumVolumeStorageRecorder
    MinimumThresholdVolumeStorageRecorder
