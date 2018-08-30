@@ -50,11 +50,15 @@ MODEL_CACHE = {}
 class BaseOptimisationWrapper(object):
     """ A helper class for running pywr optimisations with platypus.
     """
-
     def __init__(self, pywr_model_json, *args, **kwargs):
+        uid = kwargs.pop('uid', None)
         super(BaseOptimisationWrapper, self).__init__(*args, **kwargs)
         self.pywr_model_json = pywr_model_json
-        self.uid = uuid.uuid4()  # Create a unique ID for caching.
+
+        if uid is None:
+            uid = uuid.uuid4().hex  # Create a unique ID for caching.
+        self.uid = uid
+        self.run_stats = None
 
     # The following properties enable attribute caching when repeat execution of the same model is undertaken.
     @property
