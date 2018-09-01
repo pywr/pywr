@@ -1,16 +1,7 @@
-Extending Pywr
---------------
+.. _extending-pywr-nodes:
 
-Pywr is a Python library and as such is designed in an object oriented fashion. These objects (or classes) form
-the basic structure of Pywr, but much of the functionality in Pywr is provided via specific sub-classes designed
-to do specific instances. For example, there exist many specialised `Parameter` classes to provide specific types
-of input data. One of the benefits of being a Python library is that users can extend the base functionality in their
-own projects to provide custom functionality. In this section of the documentation there are some examples and guidance
-for extending Pywr in your projects.
-
-
-Extending Nodes
-===============
+Extending Pywr with custom Nodes
+--------------------------------
 
 Nodes and subclasses thereof provide the basic network structure in Pywr. There are several different types
 of node available. Two major categories exist: flow nodes and storage nodes. Flow nodes are the typical nodes
@@ -22,11 +13,7 @@ The most common way to make new node types in Pywr is to create a subclass which
 existing nodes. In this way the subclass acts as a helper for managing more complex or common arrangements of the
 basic node types.
 
-
 Let's look at an example to create a new node type that represents a leaky pipe.
-
-
-
 
 .. code-block:: python
 
@@ -68,15 +55,3 @@ Let's look at an example to create a new node type that represents a leaky pipe.
         parameters=[baseline, profile],
         agg_func="product"
     )
-
-
-
-Extending Parameters
-====================
-
-
-
-
-Extending Recorders
-===================
-

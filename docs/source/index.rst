@@ -17,5 +17,6 @@ Contents:
    formulation.rst
    json.rst
    Cookbook <cookbook/cookbook.rst>
+   Extending Pywr <extending_pywr/index.rst>
    Python API reference <api/pywr.rst>
    license.rst
