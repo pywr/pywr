@@ -85,6 +85,11 @@ cdef class IndexParameter(Parameter):
     cpdef int get_index(self, ScenarioIndex scenario_index)
     cpdef int[:] get_all_indices(self)
 
+cdef class ConstantScenarioIndexParameter(IndexParameter):
+    cdef Scenario _scenario
+    cdef int[:] _values
+    cdef int _scenario_index
+
 cdef class TablesArrayParameter(IndexParameter):
     cdef double[:, :] _values_dbl
     cdef int[:, :] _values_int

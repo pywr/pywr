@@ -24,6 +24,7 @@ Simple parameters
 
    ConstantParameter
    ConstantScenarioParameter
+   ConstantScenarioIndexParameter
 
 
 Combining multiple parameters

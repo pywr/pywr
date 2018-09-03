@@ -764,8 +764,42 @@ cdef class IndexParameter(Parameter):
 
     cpdef int[:] get_all_indices(self):
         return self.__indices
-
 IndexParameter.register()
+
+
+cdef class ConstantScenarioIndexParameter(IndexParameter):
+    """A Scenario varying IndexParameter
+
+    The values in this parameter are constant in time, but vary within a single Scenario.
+    """
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        """
+        values should be an iterable that is the same length as scenario.size
+        """
+        super(ConstantScenarioIndexParameter, self).__init__(model, *args, **kwargs)
+        cdef int i
+        if scenario._size != len(values):
+            raise ValueError("The number of values must equal the size of the scenario.")
+        self._values = np.empty(scenario._size, dtype=np.int32)
+        for i in range(scenario._size):
+            self._values[i] = values[i]
+        self._scenario = scenario
+
+    cpdef setup(self):
+        super(ConstantScenarioIndexParameter, self).setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        # This is a bit confusing.
+        # scenario_indices contains the current scenario number for all
+        # the Scenario objects in the model run. We have cached the
+        # position of self._scenario in self._scenario_index to lookup the
+        # correct number to use in this instance.
+        return self._values[scenario_index._indices[self._scenario_index]]
+ConstantScenarioIndexParameter.register()
+
 
 cdef class IndexedArrayParameter(Parameter):
     """Parameter which uses an IndexParameter to index an array of Parameters
