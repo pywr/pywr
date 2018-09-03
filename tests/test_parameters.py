@@ -5,7 +5,7 @@ from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output
 from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
-    DataFrameParameter, AggregatedParameter, ConstantParameter,
+    DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     InterpolatedParameter, WeeklyProfileParameter,
@@ -150,6 +150,25 @@ def test_parameter_constant_scenario(simple_linear_model):
     for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
         si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
         np.testing.assert_allclose(p.value(ts, si), float(b))
+
+
+def test_parameter_constant_scenario(simple_linear_model):
+    """
+    Test ConstantScenarioIndexParameter
+
+    """
+    model = simple_linear_model
+    # Add two scenarios
+    scA = Scenario(model, 'Scenario A', size=2)
+    scB = Scenario(model, 'Scenario B', size=5)
+
+    p = ConstantScenarioIndexParameter(model, scB, np.arange(scB.size, dtype=np.int32))
+    model.setup()
+    ts = model.timestepper.current
+    # Now ensure the appropriate value is returned for the Scenario B indices.
+    for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
+        si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
+        np.testing.assert_allclose(p.index(ts, si), b)
 
 
 def test_parameter_array_indexed_scenario_monthly_factors(simple_linear_model):
