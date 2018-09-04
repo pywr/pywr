@@ -3,7 +3,7 @@ import datetime
 from ..parameter_property import parameter_property
 from ._parameters import (
     Parameter, parameter_registry, UnutilisedDataWarning, ConstantParameter,
-    ConstantScenarioParameter, AnnualHarmonicSeriesParameter,
+    ConstantScenarioParameter, ConstantScenarioIndexParameter, AnnualHarmonicSeriesParameter,
     ArrayIndexedParameter, ConstantScenarioParameter, IndexedArrayParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
@@ -15,6 +15,7 @@ from ._parameters import (
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
+from ._hydropower import HydropowerTargetParameter
 from past.builtins import basestring
 import numpy as np
 from scipy.interpolate import interp1d

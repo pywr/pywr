@@ -68,6 +68,8 @@ requirements:
     - glpk
     - lp_solve
     - pytables
+    # Fix pytables on windows. See https://github.com/conda-forge/pytables-feedstock/issues/31#issuecomment-410695814
+    - snappy  # [win]
     - xlrd
     - scipy
     - future
@@ -82,6 +84,8 @@ test:
   requires:
     - pytest
     - nbconvert
+    - pygmo
+    - platypus-opt
     {% if BUILD_DOC %}
     - sphinx
     - sphinx_rtd_theme

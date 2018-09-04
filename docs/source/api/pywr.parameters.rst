@@ -24,6 +24,7 @@ Simple parameters
 
    ConstantParameter
    ConstantScenarioParameter
+   ConstantScenarioIndexParameter
 
 
 Combining multiple parameters
@@ -89,6 +90,14 @@ Control curve parameters
     control_curves.BaseControlCurveParameter
     control_curves.ControlCurveInterpolatedParameter
     control_curves.ControlCurveIndexParameter
+
+Hydropower parameters
+----------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   HydropowerTargetParameter
 
 
 Other parameters

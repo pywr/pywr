@@ -59,8 +59,11 @@ Statistical recorders
 .. autosummary::
    :toctree: generated/
 
+   AggregatedRecorder
    MeanFlowNodeRecorder
    TotalFlowNodeRecorder
+   MeanParameterRecorder
+   TotalParameterRecorder
    RollingMeanFlowNodeRecorder
    MinimumVolumeStorageRecorder
    MinimumThresholdVolumeStorageRecorder
@@ -91,5 +94,5 @@ Hydro-power recorders
 .. autosummary::
    :toctree: generated/
 
-   HydroPowerRecorder
+   HydropowerRecorder
    TotalHydroEnergyRecorder

@@ -21,7 +21,8 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
                             PercentBiasNodeRecorder, RMSEStandardDeviationRatioNodeRecorder, NashSutcliffeEfficiencyNodeRecorder,
                             EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
                             FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
-                            HydroPowerRecorder, TotalHydroEnergyRecorder,
+                            HydropowerRecorder, TotalHydroEnergyRecorder,
+                            TotalParameterRecorder, MeanParameterRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
 
 from pywr.recorders.progress import ProgressRecorder
@@ -211,7 +212,8 @@ def test_sdc_recorder():
     assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
 
-def test_numpy_storage_recorder(simple_storage_model):
+@pytest.mark.parametrize('proportional', [True, False])
+def test_numpy_storage_recorder(simple_storage_model, proportional):
     """
     Test the NumpyArrayStorageRecorder
     """
@@ -219,17 +221,20 @@ def test_numpy_storage_recorder(simple_storage_model):
 
     res = model.nodes['Storage']
 
-    rec = NumpyArrayStorageRecorder(model, res)
+    rec = NumpyArrayStorageRecorder(model, res, proportional=proportional)
 
     model.run()
 
-    assert(rec.data.shape == (5, 1))
-    assert_allclose(rec.data, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
+    expected = np.array([[7, 4, 1, 0, 0]]).T
+    if proportional:
+        expected = expected / 20
 
+    assert(rec.data.shape == (5, 1))
+    assert_allclose(rec.data, expected, atol=1e-7)
 
     df = rec.to_dataframe()
     assert df.shape == (5, 1)
-    assert_allclose(df.values, np.array([[7, 4, 1, 0, 0]]).T, atol=1e-7)
+    assert_allclose(df.values, expected, atol=1e-7)
 
 
 def test_numpy_parameter_recorder(simple_linear_model):
@@ -302,8 +307,8 @@ def test_parameter_recorder_json():
     assert_allclose(rec_demand.data, 10)
     assert_allclose(rec_supply.data, 15)
 
-
-def test_parameter_mean_recorder(simple_linear_model):
+@pytest.fixture()
+def daily_profile_model(simple_linear_model):
     model = simple_linear_model
     # using leap year simplifies test
     model.timestepper.start = pandas.to_datetime("2016-01-01")
@@ -311,15 +316,24 @@ def test_parameter_mean_recorder(simple_linear_model):
 
     node = model.nodes["Input"]
     values = np.arange(0, 366, dtype=np.float64)
-    node.max_flow = DailyProfileParameter(model, values)
+    node.max_flow = DailyProfileParameter(model, values, name='profile')
+    return model
 
+
+def test_parameter_mean_recorder(daily_profile_model):
+    model = daily_profile_model
+    node = model.nodes["Input"]
     scenario = Scenario(model, "dummy", size=3)
 
     timesteps = 3
-    rec_mean = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "mean", name="rec_mean")
-    rec_sum = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "sum", name="rec_sum")
-    rec_min = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "min", name="rec_min")
-    rec_max = RollingWindowParameterRecorder(model, node.max_flow, timesteps, "max", name="rec_max")
+    rec_mean = RollingWindowParameterRecorder(model, node.max_flow, timesteps,
+                                              temporal_agg_func="mean", name="rec_mean")
+    rec_sum = RollingWindowParameterRecorder(model, node.max_flow, timesteps,
+                                             temporal_agg_func="sum", name="rec_sum")
+    rec_min = RollingWindowParameterRecorder(model, node.max_flow, timesteps,
+                                             temporal_agg_func="min", name="rec_min")
+    rec_max = RollingWindowParameterRecorder(model, node.max_flow, timesteps,
+                                             temporal_agg_func="max", name="rec_max")
 
     model.run()
 
@@ -344,6 +358,73 @@ def test_parameter_mean_recorder_json(simple_linear_model):
     }
 
     rec = load_recorder(model, data)
+
+
+class TestTotalParameterRecorder:
+
+    @pytest.mark.parametrize('factor, integrate',
+                             [[1.0, False], [1.0, True], [2.0, False], [0.5, True]])
+    def test_values(self, daily_profile_model, factor, integrate):
+        model = daily_profile_model
+        model.timestepper.delta = 2
+        param = model.parameters['profile']
+        rec = TotalParameterRecorder(model, param, name="total", factor=factor, integrate=integrate)
+        model.run()
+
+        expected = np.arange(0, 366, dtype=np.float64)[::2].sum()*factor
+        if integrate:
+            expected *= 2
+        assert_allclose(rec.values(), expected)
+
+    @pytest.mark.parametrize('integrate', [None, True, False])
+    def test_from_json(self, daily_profile_model, integrate):
+
+        model = daily_profile_model
+
+        data = {
+            "type": "totalparameter",
+            "parameter": "profile",
+            "agg_func": "mean",
+            "factor": 2.0,
+        }
+
+        if integrate is not None:
+            data['integrate'] = integrate
+
+        rec = load_recorder(model, data)
+        assert rec.factor == 2.0
+
+        if integrate is not None:
+            assert rec.integrate == integrate
+        else:
+            assert not rec.integrate
+
+
+class TestMeanParameterRecorder:
+    @pytest.mark.parametrize('factor', [1.0, 2.0, 0.5])
+    def test_values(self, daily_profile_model, factor):
+        model = daily_profile_model
+        model.timestepper.delta = 2
+        param = model.parameters['profile']
+        rec = MeanParameterRecorder(model, param, name="mean", factor=factor)
+        model.run()
+
+        expected = np.arange(0, 366, dtype=np.float64)[::2].mean()*factor
+        assert_allclose(rec.values(), expected)
+
+    def test_from_json(self, daily_profile_model):
+
+        model = daily_profile_model
+
+        data = {
+            "type": "meanparameter",
+            "parameter": "profile",
+            "agg_func": "mean",
+            "factor": 2.0,
+        }
+
+        rec = load_recorder(model, data)
+        assert rec.factor == 2.0
 
 
 def test_concatenated_dataframes(simple_storage_model):
@@ -1419,14 +1500,14 @@ def test_progress_recorder(simple_linear_model):
 class TestHydroPowerRecorder:
 
     def test_constant_level(self, simple_storage_model):
-        """ Test HydroPowerRecorder """
+        """ Test HydropowerRecorder """
         m = simple_storage_model
 
         strg = m.nodes['Storage']
         otpt = m.nodes['Output']
 
         elevation = ConstantParameter(m, 100)
-        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec = HydropowerRecorder(m, otpt, elevation)
         rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
 
         m.setup()
@@ -1444,7 +1525,7 @@ class TestHydroPowerRecorder:
         np.testing.assert_allclose(rec_total.values()[0], 2* 1000 * 9.81 * 8 * 100 * 1e-6)
 
     def test_varying_level(self, simple_storage_model):
-        """ Test HydroPowerRecorder with varying level on Storage node """
+        """ Test HydropowerRecorder with varying level on Storage node """
         from pywr.parameters import InterpolatedVolumeParameter
         m = simple_storage_model
 
@@ -1452,7 +1533,7 @@ class TestHydroPowerRecorder:
         otpt = m.nodes['Output']
 
         elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
-        rec = HydroPowerRecorder(m, otpt, elevation)
+        rec = HydropowerRecorder(m, otpt, elevation)
         rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
 
         m.setup()
@@ -1471,7 +1552,7 @@ class TestHydroPowerRecorder:
         np.testing.assert_allclose(rec_total.values()[0], 1000 * 9.81 * 8 * 170 * 1e-6)
 
     def test_varying_level_with_turbine_level(self, simple_storage_model):
-        """ Test HydroPowerRecorder with varying level on Storage and defined level on the recorder """
+        """ Test HydropowerRecorder with varying level on Storage and defined level on the recorder """
         from pywr.parameters import InterpolatedVolumeParameter
         m = simple_storage_model
 
@@ -1479,7 +1560,7 @@ class TestHydroPowerRecorder:
         otpt = m.nodes['Output']
 
         elevation = InterpolatedVolumeParameter(m, strg, [0, 10, 20], [0, 100, 200])
-        rec = HydroPowerRecorder(m, otpt, elevation, turbine_elevation=80)
+        rec = HydropowerRecorder(m, otpt, elevation, turbine_elevation=80)
         rec_total = TotalHydroEnergyRecorder(m, otpt, elevation, turbine_elevation=80)
 
         m.setup()

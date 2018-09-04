@@ -5,7 +5,7 @@ from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output
 from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
-    DataFrameParameter, AggregatedParameter, ConstantParameter,
+    DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     InterpolatedParameter, WeeklyProfileParameter,
@@ -150,6 +150,25 @@ def test_parameter_constant_scenario(simple_linear_model):
     for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
         si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
         np.testing.assert_allclose(p.value(ts, si), float(b))
+
+
+def test_parameter_constant_scenario(simple_linear_model):
+    """
+    Test ConstantScenarioIndexParameter
+
+    """
+    model = simple_linear_model
+    # Add two scenarios
+    scA = Scenario(model, 'Scenario A', size=2)
+    scB = Scenario(model, 'Scenario B', size=5)
+
+    p = ConstantScenarioIndexParameter(model, scB, np.arange(scB.size, dtype=np.int32))
+    model.setup()
+    ts = model.timestepper.current
+    # Now ensure the appropriate value is returned for the Scenario B indices.
+    for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
+        si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
+        np.testing.assert_allclose(p.index(ts, si), b)
 
 
 def test_parameter_array_indexed_scenario_monthly_factors(simple_linear_model):
@@ -535,7 +554,7 @@ def test_scaled_profile_nested_load(model):
     """ Test `ScaledProfileParameter` loading with `AggregatedParameter` """
     model.timestepper.delta = 15
 
-    s = Storage(model, 'Storage', max_volume=100.0, num_outputs=0)
+    s = Storage(model, 'Storage', max_volume=100.0, initial_volume=50.0, num_outputs=0)
     d = Output(model, 'Link')
     data = {
         'type': 'scaledprofile',
@@ -549,10 +568,8 @@ def test_scaled_profile_nested_load(model):
                     'values': [0.5]*12
                 },
                 {
-                    'type': 'monthlyprofilecontrolcurve',
-                    'control_curves': [0.8, 0.6],
-                    'values': [[1.0]*12, [0.7]*np.arange(12), [0.3]*12],
-                    'storage_node': 'Storage'
+                    'type': 'constant',
+                    'value': 1.5,
                 }
             ]
         }
@@ -564,16 +581,9 @@ def test_scaled_profile_nested_load(model):
 
     @assert_rec(model, p)
     def expected_func(timestep, scenario_index):
-        if s.initial_volume == 90:
-            return 50.0*0.5*1.0
-        elif s.initial_volume == 70:
-            return 50.0 * 0.5 * 0.7 * (timestep.month - 1)
-        else:
-            return 50.0 * 0.5 * 0.3
+        return 50.0 * 0.5 * 1.5
 
-    for initial_volume in (90, 70, 30):
-        s.initial_volume = initial_volume
-        model.run()
+    model.run()
 
 
 def test_parameter_df_upsampling(model):
@@ -1220,3 +1230,31 @@ def test_deficit_parameter():
     expected_yesterday = [0]+list(expected[0:-1])
     actual_yesterday = model.recorders["yesterday_recorder"].data
     assert_allclose(expected_yesterday, actual_yesterday[:,0])
+
+
+class TestHydroPowerTargets:
+    def test_target_json(self):
+        """ Test loading a HydropowerTargetParameter from JSON. """
+        model = load_model("hydropower_target_example.json")
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        # 30 time-steps are run such that the head gets so flow to hit the max_flow
+        # constraint. The first few time-steps are also bound by the min_flow constraint.
+        for i in range(30):
+            model.step()
+
+            rec = model.recorders["turbine1_energy"]
+            param = model.parameters["turbine1_discharge"]
+
+            turbine1 = model.nodes["turbine1"]
+            assert turbine1.flow[0] > 0
+
+            if np.allclose(turbine1.flow[0], 500.0):
+                # If flow is bounded by min_flow then more HP is produced.
+                assert rec.data[i, 0] > param.target.get_value(si)
+            elif np.allclose(turbine1.flow[0], 1000.0):
+                # If flow is bounded by max_flow then less HP is produced.
+                assert rec.data[i, 0] < param.target.get_value(si)
+            else:
+                # If flow is within the bounds target is met exactly.
+                assert_allclose(rec.data[i, 0], param.target.get_value(si))

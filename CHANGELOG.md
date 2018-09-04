@@ -6,7 +6,9 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 ### New features
 
-- Better warning/error messages in TablesArrayParameter (#629)
+- Added `HydropowerTargetParameter` to specify a flow target from a hydropower target (#631)
+- Renamed `HydroPowerRecorder` to `HydropowerRecorder` (#631)
+- Better warning/error messages in `TablesArrayParameter` (#629)
 - Allow solver to be defined by the environment variable `PYWR_SOLVER`. (#619)
 - Added flow weights to `AggregatedNode`. (#603)
 - Added additional labeling functionality to notebook graphing functions. (#612)
@@ -20,6 +22,7 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 - Dropped support for Python 2 and <3.6. Pywr is no longer tested against Python versions earlier than 3.6. (#623)
 - Use new `networkx.nodes_with_selfloops` function. (#628)
+- `AbstractProfileControlCurveParameter`, `MonthlyProfileControlCurveParameter` and `DailyProfileControlCurveParameter` have been removed after deprecation. (#231, #640)
 - Improved documentation. (#616, #627)
 
 ## v0.5.1
