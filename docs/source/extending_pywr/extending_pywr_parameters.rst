@@ -38,7 +38,7 @@ from JSON.
         def load(cls, model, data):
             # called when the parameter is loaded from a JSON document
             value = data.pop("value")
-            return cls(model, value)
+            return cls(model, value, **data)
 
     MyParameter.register()  # register the name so it can be loaded from JSON
 
@@ -76,7 +76,7 @@ created using the following:
         @dataclass
         def load(cls, model, data):
             profile = data.pop(profile)
-            return cls(model, profile)
+            return cls(model, profile, **data)
 
 Tracking state with setup, reset, before and after
 ==================================================
@@ -157,7 +157,7 @@ As an example, see a simplified version of ``AggregatedParameter`` that returns 
         def load(self, model, data):
             parameters = [load_parameter(parameter_data)
                           for parameter_data in data.pop("parameters")]
-            return cls(model, parameters)
+            return cls(model, parameters, **data)
 
 
 Improving performance with Cython
@@ -195,8 +195,8 @@ from ``libm``). There are a few differences from the Python equivalent:
     cdef class SquaredParameter(Parameter):
         cdef double _value
 
-        def __init__(self, model, value):
-            super().__init__(model)
+        def __init__(self, model, value, **kwargs):
+            super().__init__(model, **kwargs)
             self._value = value
 
         cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
@@ -206,7 +206,7 @@ from ``libm``). There are a few differences from the Python equivalent:
         def load(cls, model, data):
             # called when the parameter is loaded from a JSON document
             value = data.pop("value")
-            return cls(model, value)
+            return cls(model, value, **data)
 
     SquaredParameter.register()
 

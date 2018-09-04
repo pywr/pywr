@@ -10,9 +10,9 @@ different strategies for implementing dynamic behaviour and control curves in Py
 Basic concept
 =============
 
-It is very common for resource allocation models to have include rules and behaviours that are dependent on the
+It is very common for resource allocation models to include rules and behaviours that are dependent on the
 current state of the model. The most common example of state in Pywr models is the current volume in ``Storage``
-node(s). During a simulation this state will be updated each time-step. Resource allocation rules and constraints
+node(s). During a simulation this state will be updated each timestep. Resource allocation rules and constraints
 can be made dependent on this state.
 
 In Pywr this behaviour is implemented through ``Parameters``. Some ``Parameters``, as discussed below, use information
@@ -27,19 +27,18 @@ Storage dependent control curves
 
 Pywr provides a few different ways to implement dynamic state dependent behaviour. The most common approach compares
 current volume in a ``Storage`` node against one or more curves. These are typically referred to as a *curves*
-because they are defined as a profile which varies through the year. More complex systems will often contain
+because they are often defined as a profile which varies through the year. More complex systems will often contain
 multiple ordered control curves that define progressively changing behaviour.
-
-
-
-
-
-
 
 
 Other control curves
 ====================
 
+TODO
 
 Custom control curves
 =====================
+
+TODO
+
+See also :ref:`extending-pywr-parameters`.
