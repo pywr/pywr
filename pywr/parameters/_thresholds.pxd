@@ -8,7 +8,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
     cdef double[:] values
     cdef int predicate
     cdef public bint ratchet
-    cdef bint _triggered
+    cdef int[:] _triggered
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
 
 cdef class StorageThresholdParameter(AbstractThresholdParameter):

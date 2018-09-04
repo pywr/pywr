@@ -58,10 +58,15 @@ cdef class AbstractThresholdParameter(IndexParameter):
             predicate = _predicate_lookup[predicate.upper()]
         self.predicate = predicate
         self.ratchet = ratchet
-        self._triggered = False
+
+    cpdef setup(self):
+        super(AbstractThresholdParameter, self).setup()
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        self._triggered = np.empty(ncomb, dtype=np.int32)
 
     cpdef reset(self):
-        self._triggered = False
+        super(AbstractThresholdParameter, self).reset()
+        self._triggered[...] = 0
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         raise NotImplementedError()
@@ -79,11 +84,13 @@ cdef class AbstractThresholdParameter(IndexParameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns 1 if the predicate evalutes True, else 0"""
         cdef double x
-        cdef bint ind
+        cdef bint ind, triggered
+
+        triggered = self._triggered[scenario_index.global_id]
 
         # Return triggered state if ratchet is enabled.
-        if self.ratchet and self._triggered:
-            return self._triggered
+        if self.ratchet and triggered:
+            return triggered
 
         x = self._value_to_compare(timestep, scenario_index)
 
@@ -104,7 +111,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
         else:
             ind = x == threshold
 
-        self._triggered = max(ind, self._triggered)
+        self._triggered[scenario_index.global_id] = max(ind, triggered)
         return ind
 
     property threshold:
