@@ -62,7 +62,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
     cpdef setup(self):
         super(AbstractThresholdParameter, self).setup()
         cdef int ncomb = len(self.model.scenarios.combinations)
-        self._triggered = np.empty(ncomb, dtype=np.int32)
+        self._triggered = np.empty(ncomb, dtype=np.uint8)
 
     cpdef reset(self):
         super(AbstractThresholdParameter, self).reset()
