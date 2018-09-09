@@ -323,6 +323,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         self.cost = cost
         self.position = position
         self.level = level
+        self.area = area
 
         # TODO FIXME!
         # StorageOutput and StorageInput are Cython classes, which do not have
