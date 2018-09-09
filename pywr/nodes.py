@@ -302,7 +302,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         initial_volume_pc = kwargs.pop('initial_volume_pc', None)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
         level = pop_kwarg_parameter(kwargs, 'level', None)
-        self.area = pop_kwarg_parameter(kwargs, 'area', None)
+        area = pop_kwarg_parameter(kwargs, 'area', None)
 
         position = kwargs.pop("position", {})
 
@@ -323,6 +323,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         self.cost = cost
         self.position = position
         self.level = level
+        self.area = area
 
         # TODO FIXME!
         # StorageOutput and StorageInput are Cython classes, which do not have
