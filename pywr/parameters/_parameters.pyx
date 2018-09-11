@@ -307,7 +307,7 @@ cdef class DataFrameParameter(Parameter):
 DataFrameParameter.register(DataFrameParameterSchema)
 
 
-class ArrayIndecedParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
+class ArrayIndexedParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
     pass
 
 
@@ -328,7 +328,7 @@ cdef class ArrayIndexedParameter(Parameter):
         """Returns the value of the parameter at a given timestep
         """
         return self.values[ts._index]
-ArrayIndexedParameter.register(ArrayIndecedParameterSchema)
+ArrayIndexedParameter.register(ArrayIndexedParameterSchema)
 
 
 cdef class ArrayIndexedScenarioParameter(Parameter):
