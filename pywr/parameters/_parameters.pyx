@@ -156,11 +156,11 @@ cdef class ConstantParameter(Parameter):
 ConstantParameter.register()
 
 
-def align_and_resample_dataframe(df, datetime_index):
+def align_and_resample_dataframe(df, period_index):
     from pandas.tseries.offsets import DateOffset, Week, Day
     # Must resample and align the DataFrame to the model.
-    start = datetime_index[0]
-    end = datetime_index[-1]
+    start = period_index[0].start_time
+    end = period_index[-1].start_time
 
     df_index = df.index
     df_freq = df.index.freq
@@ -181,18 +181,12 @@ def align_and_resample_dataframe(df, datetime_index):
     elif df_index[-1] > end:
         warnings.warn("Model ends before the end of the DataFrame. Some data is not used.", UnutilisedDataWarning)
 
-    # Downsampling (i.e. from high freq to lower model freq)
-    if datetime_index.freq >= df_freq:
-        # Slice to required dates
-        df = df[start:end]
-        if df.index[0] != start:
-            raise ValueError('Start date of DataFrame can not be aligned with the desired index start date.')
-        # Take mean at the model's frequency
-        df = df.resample(datetime_index.freq).mean()
-        df.index.freq = datetime_index.freq
-    else:
-        raise NotImplementedError('Upsampling DataFrame not implemented.')
-
+    df = df.resample(period_index.freq).mean()
+    df.index = df.index.to_period(period_index.freq)
+    # TODO apply forward? filling
+    df = df[period_index[0]:period_index[-1]]
+    assert len(df) == len(period_index)
+    df.index = period_index
     return df
 
 
@@ -249,7 +243,7 @@ cdef class DataFrameParameter(Parameter):
 DataFrameParameter.register()
 
 cdef class ArrayIndexedParameter(Parameter):
-    """Time varying parameter using an array and Timestep._index
+    """Time varying parameter using an array and Timestep.index
 
     The values in this parameter are constant across all scenarios.
     """
@@ -259,12 +253,12 @@ cdef class ArrayIndexedParameter(Parameter):
 
     cdef calc_values(self, Timestep ts):
         # constant parameter can just set the entire array to one value
-        self.__values[...] = self.values[ts._index]
+        self.__values[...] = self.values[ts.index]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the parameter at a given timestep
         """
-        return self.values[ts._index]
+        return self.values[ts.index]
 ArrayIndexedParameter.register()
 
 
@@ -299,7 +293,7 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         # the Scenario objects in the model run. We have cached the
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
-        return self.values[ts._index, scenario_index._indices[self._scenario_index]]
+        return self.values[ts.index, scenario_index._indices[self._scenario_index]]
 
 
 cdef class TablesArrayParameter(IndexParameter):
@@ -418,7 +412,7 @@ cdef class TablesArrayParameter(IndexParameter):
                 self._values_int = node.read().astype(np.int32)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef Py_ssize_t i = ts._index
+        cdef Py_ssize_t i = ts.index
         cdef Py_ssize_t j
         if self._values_dbl is None:
             return float(self.index(ts, scenario_index))
@@ -432,7 +426,7 @@ cdef class TablesArrayParameter(IndexParameter):
             return self._values_dbl[i, j]
 
     cpdef int index(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef Py_ssize_t i = ts._index
+        cdef Py_ssize_t i = ts.index
         cdef Py_ssize_t j
         if self._values_int is None:
             return int(self.value(ts, scenario_index))
@@ -504,7 +498,7 @@ ConstantScenarioParameter.register()
 
 
 cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
-    """Time varying parameter using an array and Timestep._index with
+    """Time varying parameter using an array and Timestep.index with
     multiplicative factors per Scenario
     """
     def __init__(self, model, Scenario scenario, values, factors, *args, **kwargs):
@@ -542,7 +536,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         # correct number to use in this instance.
         cdef int imth = ts.month-1
         cdef int i = scenario_index._indices[self._scenario_index]
-        return self._values[ts._index]*self._factors[i, imth]
+        return self._values[ts.index]*self._factors[i, imth]
 
     @classmethod
     def load(cls, model, data):
@@ -597,7 +591,7 @@ cdef class DailyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts._datetime.year)):
+        if not is_leap_year(<int>(ts.datetime.year)):
             if i > 58: # 28th Feb
                 i += 1
         return self._values[i]
@@ -622,7 +616,7 @@ cdef class WeeklyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts._datetime.year)):
+        if not is_leap_year(<int>(ts.datetime.year)):
             if i > 58: # 28th Feb
                 i += 1
         cdef Py_ssize_t week
@@ -903,8 +897,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         self._ts_index_cache = -1
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        cdef int ts_index = timestep._index
-        cdef int doy = timestep._datetime.dayofyear - 1
+        cdef int ts_index = timestep.index
+        cdef int doy = timestep.dayofyear - 1
         cdef int n = self._amplitudes.shape[0]
         cdef int i
         cdef double val

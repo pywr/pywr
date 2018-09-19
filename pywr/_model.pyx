@@ -113,8 +113,6 @@ class Model(object):
             key = list(kwargs.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
 
-        self.reset()
-
     @property
     def components(self):
         return NamedIterator(n for n in self.component_graph.nodes() if n != ROOT_NODE)
@@ -297,7 +295,7 @@ class Model(object):
         else:
             start = pandas.to_datetime(timestepper_data['start'])
             end = pandas.to_datetime(timestepper_data['end'])
-            timestep = int(timestepper_data['timestep'])
+            timestep = timestepper_data['timestep']
 
         if model is None:
             model = cls(
@@ -536,7 +534,7 @@ class Model(object):
 
 
         """
-        if self.dirty:
+        if self.dirty or self.timestepper.dirty:
             self.setup()
         self.timestep = next(self.timestepper)
         return self._step()
@@ -559,9 +557,8 @@ class Model(object):
         t0 = time.time()
         timestep = None
         try:
-            if self.dirty:
+            if self.dirty or self.timestepper.dirty:
                 self.setup()
-                self.timestepper.reset()
             else:
                 self.reset()
             t1 = time.time()
@@ -602,6 +599,7 @@ class Model(object):
         """Setup the model for the first time or if it has changed since
         last run."""
         logger.info('Setting up model ...')
+        self.timestepper.setup()
         self.scenarios.setup()
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():

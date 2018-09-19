@@ -218,32 +218,28 @@ cdef class ScenarioIndex:
 
 
 cdef class Timestep:
-    def __init__(self, datetime, int index, double days):
-        self._datetime = pd.Timestamp(datetime)
-        self._index = index
-        self._days = days
-        tt = self.datetime.timetuple()
-        self.dayofyear = tt.tm_yday
-        self.day = tt.tm_mday
-        self.month = tt.tm_mon
-        self.year = tt.tm_year
+    def __init__(self, period, int index):
+        self.period = period
+        self.index = index
+        delta = period.end_time - period.start_time
+        # if days < 1:
+        #     raise ValueError('Timestep only supports periods with a duration of at least 1 day.')
+
+        days = delta.days + delta.seconds / (3600 * 24)
+
+        self.days = days
+        self.dayofyear = self.datetime.dayofyear
+        self.day = self.datetime.day
+        self.month = self.datetime.month
+        self.year = self.datetime.year
 
     property datetime:
         """Timestep representation as a `datetime.datetime` object"""
         def __get__(self, ):
-            return self._datetime
-
-    property index:
-        """The index of the timestep for use in arrays"""
-        def __get__(self, ):
-            return self._index
-
-    property days:
-        def __get__(self, ):
-            return self._days
+            return self.period.to_timestamp()
 
     def __repr__(self):
-        return "<Timestep date=\"{}\">".format(self._datetime.strftime("%Y-%m-%d"))
+        return "<Timestep date=\"{}\">".format(self.period.strftime("%Y-%m-%d"))
 
 cdef class Domain:
     """ Domain class which all Node objects must have. """
@@ -966,7 +962,7 @@ cdef class Storage(AbstractStorage):
         cdef ScenarioIndex si
 
         for i, si in enumerate(self.model.scenarios.combinations):
-            self._volume[i] += self._flow[i]*ts._days
+            self._volume[i] += self._flow[i]*ts.days
             # Ensure variable maximum volume is taken in to account
 
             mxv = self.get_max_volume(si)
@@ -1031,7 +1027,7 @@ cdef class AggregatedStorage(AbstractStorage):
             for s in self._storage_nodes:
                 self._flow[i] += s._flow[i]
                 mxv += s.get_max_volume(si)
-            self._volume[i] += self._flow[i]*ts._days
+            self._volume[i] += self._flow[i]*ts.days
 
             # Ensure variable maximum volume is taken in to account
             try:

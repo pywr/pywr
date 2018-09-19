@@ -230,7 +230,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         # TODO Make this a more general API on Recorder
-        return self.recorder.data[timestep._index - 1, scenario_index.global_id]
+        return self.recorder.data[timestep.index - 1, scenario_index.global_id]
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns 1 if the predicate evalutes True, else 0"""
