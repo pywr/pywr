@@ -1151,11 +1151,12 @@ class TestThresholdParameters:
 
         model.run()
 
-    @pytest.mark.parametrize("threshold", [
-        5.0,
-        {"type": "constant", "value": 5.0},
-    ], ids=["double", "parameter"])
-    def test_parameter_threshold_parameter(self, simple_linear_model, threshold):
+    @pytest.mark.parametrize("threshold, ratchet", [
+        [5.0, False],
+        [{"type": "constant", "value": 5.0}, False],
+        [{"type": "constant", "value": 5.0}, True],
+    ], ids=["double", "parameter", "parameter-ratchet"])
+    def test_parameter_threshold_parameter(self, simple_linear_model, threshold, ratchet):
         """ Test ParameterThresholdParameter """
         m = simple_linear_model
         m.nodes['Input'].max_flow = 10.0
@@ -1168,20 +1169,27 @@ class TestThresholdParameters:
                 "value": 3.0
             },
             "threshold": threshold,
-            "predicate": "<"
+            "predicate": "<",
+            "ratchet": ratchet
         }
 
         p1 = load_parameter(m, data)
 
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
+        # Triggered initial 3 < 5
         m.setup()
         m.step()
-        # value < 5
         assert p1.index(m.timestepper.current, si) == 1
 
-        p1.param.update(np.array([8.0,]))
-        m.setup()
+        # Update parameter, now 8 > 5; not triggered.
+        p1.param.set_double_variables(np.array([8.0,]))
+        m.step()
+        # If using a ratchet the trigger remains on.
+        assert p1.index(m.timestepper.current, si) == (1 if ratchet else 0)
+
+        # Resetting the model resets the ratchet too.
+        m.reset()
         m.step()
         # flow < 5
         assert p1.index(m.timestepper.current, si) == 0
