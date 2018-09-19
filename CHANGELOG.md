@@ -2,7 +2,7 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
-## Master
+## v1.0.0
 
 ### New features
 
