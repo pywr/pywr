@@ -52,6 +52,7 @@ requirements:
     - future
     - packaging
     - wheel
+    - setuptools_scm
     {% if OLDGLIBC %}
     - oldglibc
     {% endif %}
@@ -76,6 +77,7 @@ requirements:
     - packaging
     - jupyter
     - matplotlib
+    - setuptools_scm
     {% if OLDGLIBC %}
     - oldglibc
     {% endif %}
