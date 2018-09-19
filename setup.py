@@ -18,18 +18,11 @@ import os
 from packaging.version import Version
 import subprocess
 
-# get version string from __init__.py
-with open(os.path.join(os.path.dirname(__file__), "pywr", "__init__.py")) as f:
-    for line in f:
-        if line.startswith("__version__"):
-            version = Version(line.split("=")[1].strip().strip("\"'"))
-
 with open('README.rst') as fh:
     long_description = fh.read()
 
 setup_kwargs = {
     'name': 'pywr',
-    'version': str(version),
     'description': 'Python Water Resource model',
     'long_description': long_description,
     'long_description_content_type': 'text/x-rst',
@@ -37,6 +30,8 @@ setup_kwargs = {
     'author_email': 'josh@snorfalorpagus.net',
     'url': 'http://snorf.net/pywr/',
     'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters', 'pywr.recorders', 'pywr.notebook', 'pywr.optimisation'],
+    'use_scm_version': True,
+    'setup_requires': ['setuptools_scm'],
     'install_requires': ['pandas', 'networkx', 'scipy', 'tables', 'future', 'xlrd', 'packaging']
 }
 
