@@ -90,8 +90,17 @@ an example:
             return cls(model, leakage, leakage_cost, **data)
 
 
-The custom node does not need to be "registered" manually (unlike parameters, which do). They will work in JSON as
-long as the class has been imported before the JSON is loaded.
+The custom node does not need to be "registered", unlike ``Parameters``, as this is done automatically using
+metaclasses. The new node type can be referenced from a JSON model provided that the class has been imported before
+the JSON is loaded:
+
+.. code-block:: python
+
+    from pywr.model import Model
+    import leakypipe
+    
+    model = Model.load("leaky_pipe_model.sjon")
+
 
 .. code-block:: yaml
 
