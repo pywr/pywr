@@ -55,7 +55,7 @@ an example:
 
             super(LeakyPipe, self).__init__(*args, **kwargs)
 
-            # Define the internal nodes
+            # Define the internal nodes. The parent of the nodes is defined to identify them as sub-nodes.
             self.inflow = Link(self.model, name='{} In'.format(self.name), parent=self)
             self.outflow = Link(self.model, name='{} Out'.format(self.name), parent=self)
             self.leak = Output(self.model, name='{} Leak'.format(self.name), parent=self)
