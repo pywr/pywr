@@ -28,7 +28,7 @@ setup_kwargs = {
     'long_description_content_type': 'text/x-rst',
     'author': 'Joshua Arnott',
     'author_email': 'josh@snorfalorpagus.net',
-    'url': 'http://snorf.net/pywr/',
+    'url': 'https://github.com/pywr/pywr',
     'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters', 'pywr.recorders', 'pywr.notebook', 'pywr.optimisation'],
     'use_scm_version': True,
     'setup_requires': ['setuptools_scm'],
