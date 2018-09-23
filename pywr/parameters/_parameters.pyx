@@ -1382,6 +1382,22 @@ cdef class DeficitParameter(Parameter):
 DeficitParameter.register()
 
 
+def get_parameter_from_registry(parameter_type):
+    key = parameter_type.lower()
+    try:
+        return parameter_registry[key]
+    except KeyError:
+        pass
+    if key.endswith("parameter"):
+        key.replace("parameter", "")
+    else:
+        key = key + "parameter"
+    try:
+        return parameter_registry[key]
+    except KeyError:
+        raise TypeError('Unknown parameter type: "{}"'.format(parameter_type))
+
+
 def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""
     if isinstance(data, basestring):
@@ -1413,18 +1429,7 @@ def load_parameter(model, data, parameter_name=None):
         except:
             pass
 
-        name = parameter_type.lower()
-        try:
-            cls = parameter_registry[name]
-        except KeyError:
-            if name.endswith("parameter"):
-                name = name.replace("parameter", "")
-            else:
-                name += "parameter"
-            try:
-                cls = parameter_registry[name]
-            except KeyError:
-                raise TypeError('Unknown parameter type: "{}"'.format(parameter_type))
+        cls = get_parameter_from_registry(parameter_type)
 
         kwargs = dict([(k,v) for k,v in data.items()])
         del(kwargs["type"])

@@ -9,6 +9,7 @@ from pywr.core import Model, Input, Output, Link, Storage, StorageInput, Storage
 from pywr.nodes import NodeMeta
 from pywr._component import Component
 import pywr.domains
+from pywr.parameters._parameters import get_parameter_from_registry
 
 from .figures import *
 
@@ -22,7 +23,7 @@ with open(os.path.join(folder, "graph.css"), "r") as f:
 def pywr_model_to_d3_json(model, attributes=False):
     """
     Convert a Pywr graph to a structure d3 can display
-    
+
     Parameters
     ----------
     model : `pywr.core.Model`
@@ -74,10 +75,10 @@ def pywr_model_to_d3_json(model, attributes=False):
             node["position"] = node.position["schematic"]
         except KeyError:
             pass
-    
+
         if attributes:
             node_dict["attributes"] = get_node_attr(node)
-        
+
         json_nodes.append(node_dict)
 
     graph = {
@@ -93,30 +94,30 @@ def get_node_attr(node):
 
     Parameters
     ----------
-    node : a pywr node object 
+    node : a pywr node object
     """
     attrs = inspect.getmembers(node, lambda a:not(inspect.isroutine(a)))
     attribute_data = []
     for att in attrs:
-        
+
         attr_name, attr_val = att
         if attr_name.startswith("_"):
             continue
-        attr_type = type(attr_val).__name__ 
-        
+        attr_type = type(attr_val).__name__
+
         attrs_to_skip = ["component_attrs", "components", "color", "model",  "input", "output",
                          "inputs", "outputs", "sub_domain", "sub_output", "sublinks", "visible",
                          "fully_qualified_name", "allow_isolated"]
         if not attr_val or attr_name.lower() in attrs_to_skip:
-            continue    
-        
-        if isinstance(attr_val, Component): 
+            continue
+
+        if isinstance(attr_val, Component):
             attr_val = attr_val.name
             if not attr_val:
                 attr_val = attr_type
             else:
                 attr_val = attr_val + " - " + attr_type
-     
+
         if isinstance(attr_val, list):
             new_vals = []
             for val in attr_val:
@@ -131,6 +132,7 @@ def get_node_attr(node):
 
     return attribute_data
 
+
 def pywr_json_to_d3_json(model, attributes=False):
     """
     Converts a JSON file or a JSON-derived dict into structure that d3js can use.
@@ -138,9 +140,9 @@ def pywr_json_to_d3_json(model, attributes=False):
     Parameters
     ----------
     model : dict or str
-        str inputs should be a path to a json file containing the model. 
+        str inputs should be a path to a json file containing the model.
     """
-   
+
     if isinstance(model, str):
         with open(model) as d:
             model = json.load(d)
@@ -169,19 +171,19 @@ def pywr_json_to_d3_json(model, attributes=False):
 
                 if name == "type":
                     continue
-                
+
                 attr_val = val
 
                 if isinstance(val, dict):
                     try:
-                        attr_val = val["type"] + " parameter"
+                        attr_val = get_parameter_from_registry(val["type"]).__name__
                     except KeyError:
                         pass
                 elif val in model["parameters"].keys():
                     param = model["parameters"][val]
-                    attr_type = param["type"] + " parameter"
+                    attr_type = get_parameter_from_registry(param["type"]).__name__
                     attr_val = attr_val + " - " + attr_type
-  
+
                 attr_dict = {"attribute": name, "value": attr_val}
                 json_node["attributes"].append(attr_dict)
 
@@ -227,7 +229,7 @@ def draw_graph(model, width=500, height=400, labels=False, attributes=False, css
         If True, each graph node is labelled with its name. If false, the node names are displayed
         during mouseover events
     attributes : bool
-        If True, a table of node attributes is displayed during mouseover events 
+        If True, a table of node attributes is displayed during mouseover events
     css : string
         Stylesheet data to use instead of default
     """
@@ -256,4 +258,4 @@ def _draw_graph(model, width=500, height=400, labels=False, attributes=False, cs
         ),
         lib="http://d3js.org/d3.v3.min.js",
     )
-    return js 
+    return js
