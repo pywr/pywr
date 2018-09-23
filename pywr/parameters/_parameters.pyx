@@ -1151,10 +1151,11 @@ cdef class AggregatedIndexParameter(IndexParameter):
 
     cpdef setup(self):
         super(AggregatedIndexParameter, self).setup()
-        assert(len(self.parameters))
+        assert len(self.parameters)
+        assert all([isinstance(parameter, IndexParameter) for parameter in self.parameters])
 
     cdef calc_values(self, Timestep timestep):
-        cdef Parameter parameter
+        cdef IndexParameter parameter
         cdef int[:] accum = self.__indices  # View of the underlying location for the data
         cdef int[:] values
         cdef int i
