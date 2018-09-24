@@ -1,8 +1,25 @@
 import marshmallow
 from .fields import ParameterReferenceField
+import logging
+logger = logging.getLogger(__name__)
 
 
-class NodeSchema(marshmallow.Schema):
+class PywrSchema(marshmallow.Schema):
+    """ Base class for all Pywr marshmallow schemas. """
+    def handle_error(self, exc, data):
+        """Log and raise our custom exception when (de)serialization fails."""
+        klass = self.context['klass']
+
+        msg = 'Error(s) occurred with the data for class {}: {}\n' \
+              '  Validation error messages: \n'.format(klass, data)
+        for k, msgs in exc.messages.items():
+            msg += '    {}: {}\n'.format(k, msgs)
+
+        logging.error(msg)
+        raise marshmallow.exceptions.ValidationError(msg)
+
+
+class NodeSchema(PywrSchema):
     """ Default Schema for all Pywr nodes.
 
     This Schema is used for loading Nodes. The `make_node` method is
@@ -94,7 +111,7 @@ class DataFrameSchemaMixin(marshmallow.Schema):
     sheetname = marshmallow.fields.String()
 
 
-class ComponentSchema(marshmallow.Schema):
+class ComponentSchema(PywrSchema):
     name = marshmallow.fields.Str()
     comment = marshmallow.fields.Str()
 
@@ -149,6 +166,3 @@ class ComponentSchema(marshmallow.Schema):
 
         else:
             return klass(model, **data)
-
-
-
