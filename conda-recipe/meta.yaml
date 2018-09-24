@@ -77,7 +77,6 @@ requirements:
     - packaging
     - jupyter
     - matplotlib
-    - setuptools_scm
     {% if OLDGLIBC %}
     - oldglibc
     {% endif %}
