@@ -5,7 +5,7 @@ from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output
 from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
-    DataFrameParameter, AggregatedParameter, ConstantParameter,
+    DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     InterpolatedParameter, WeeklyProfileParameter,
@@ -150,6 +150,25 @@ def test_parameter_constant_scenario(simple_linear_model):
     for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
         si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
         np.testing.assert_allclose(p.value(ts, si), float(b))
+
+
+def test_parameter_constant_scenario(simple_linear_model):
+    """
+    Test ConstantScenarioIndexParameter
+
+    """
+    model = simple_linear_model
+    # Add two scenarios
+    scA = Scenario(model, 'Scenario A', size=2)
+    scB = Scenario(model, 'Scenario B', size=5)
+
+    p = ConstantScenarioIndexParameter(model, scB, np.arange(scB.size, dtype=np.int32))
+    model.setup()
+    ts = model.timestepper.current
+    # Now ensure the appropriate value is returned for the Scenario B indices.
+    for i, (a, b) in enumerate(itertools.product(range(scA.size), range(scB.size))):
+        si = ScenarioIndex(i, np.array([a, b], dtype=np.int32))
+        np.testing.assert_allclose(p.index(ts, si), b)
 
 
 def test_parameter_array_indexed_scenario_monthly_factors(simple_linear_model):
@@ -1132,11 +1151,12 @@ class TestThresholdParameters:
 
         model.run()
 
-    @pytest.mark.parametrize("threshold", [
-        5.0,
-        {"type": "constant", "value": 5.0},
-    ], ids=["double", "parameter"])
-    def test_parameter_threshold_parameter(self, simple_linear_model, threshold):
+    @pytest.mark.parametrize("threshold, ratchet", [
+        [5.0, False],
+        [{"type": "constant", "value": 5.0}, False],
+        [{"type": "constant", "value": 5.0}, True],
+    ], ids=["double", "parameter", "parameter-ratchet"])
+    def test_parameter_threshold_parameter(self, simple_linear_model, threshold, ratchet):
         """ Test ParameterThresholdParameter """
         m = simple_linear_model
         m.nodes['Input'].max_flow = 10.0
@@ -1149,20 +1169,27 @@ class TestThresholdParameters:
                 "value": 3.0
             },
             "threshold": threshold,
-            "predicate": "<"
+            "predicate": "<",
+            "ratchet": ratchet
         }
 
         p1 = load_parameter(m, data)
 
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
+        # Triggered initial 3 < 5
         m.setup()
         m.step()
-        # value < 5
         assert p1.index(m.timestepper.current, si) == 1
 
-        p1.param.update(np.array([8.0,]))
-        m.setup()
+        # Update parameter, now 8 > 5; not triggered.
+        p1.param.set_double_variables(np.array([8.0,]))
+        m.step()
+        # If using a ratchet the trigger remains on.
+        assert p1.index(m.timestepper.current, si) == (1 if ratchet else 0)
+
+        # Resetting the model resets the ratchet too.
+        m.reset()
         m.step()
         # flow < 5
         assert p1.index(m.timestepper.current, si) == 0

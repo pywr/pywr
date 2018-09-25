@@ -1,5 +1,5 @@
 {% set name = "pywr" %}
-{% set version = "0.6dev" %}
+{% set version = "1.0.0" %}
 
 {% if os.environ.get("FEATURE_OLDGLIBC", "0") == "1" %}
 {% set OLDGLIBC = 1 %}
@@ -52,6 +52,7 @@ requirements:
     - future
     - packaging
     - wheel
+    - setuptools_scm
     {% if OLDGLIBC %}
     - oldglibc
     {% endif %}

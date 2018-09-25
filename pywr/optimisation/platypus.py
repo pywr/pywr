@@ -28,6 +28,7 @@ class PlatypusWrapper(BaseOptimisationWrapper):
 
         self.problem = platypus.Problem(variable_map[-1], len(objectives), len(constraints))
         self.problem.function = self.evaluate
+        self.problem.wrapper = self
 
         # Setup the problem; subclasses can change this behaviour
         self._make_variables(variables)
