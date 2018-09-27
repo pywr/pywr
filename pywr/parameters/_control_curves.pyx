@@ -331,9 +331,9 @@ cdef class ControlCurveIndexParameter(IndexParameter):
 
     @classmethod
     def load(cls, model, data):
-        storage_node = model._get_node_from_ref(model, data["storage_node"])
-        control_curves = [load_parameter(model, data) for data in data["control_curves"]]
-        return cls(model, storage_node, control_curves)
+        storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
+        control_curves = [load_parameter(model, d) for d in data.pop("control_curves")]
+        return cls(model, storage_node, control_curves, **data)
 ControlCurveIndexParameter.register()
 
 

@@ -18,25 +18,20 @@ import os
 from packaging.version import Version
 import subprocess
 
-# get version string from __init__.py
-with open(os.path.join(os.path.dirname(__file__), "pywr", "__init__.py")) as f:
-    for line in f:
-        if line.startswith("__version__"):
-            version = Version(line.split("=")[1].strip().strip("\"'"))
-
 with open('README.rst') as fh:
     long_description = fh.read()
 
 setup_kwargs = {
     'name': 'pywr',
-    'version': str(version),
     'description': 'Python Water Resource model',
     'long_description': long_description,
     'long_description_content_type': 'text/x-rst',
     'author': 'Joshua Arnott',
     'author_email': 'josh@snorfalorpagus.net',
-    'url': 'http://snorf.net/pywr/',
+    'url': 'https://github.com/pywr/pywr',
     'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters', 'pywr.recorders', 'pywr.notebook', 'pywr.optimisation'],
+    'use_scm_version': True,
+    'setup_requires': ['setuptools_scm'],
     'install_requires': ['pandas', 'networkx', 'scipy', 'tables', 'future', 'xlrd', 'packaging']
 }
 
@@ -77,6 +72,7 @@ if '--enable-trace' in sys.argv:
     print('Tracing is enabled.')
     compiler_directives['linetrace'] = True
     define_macros.append(('CYTHON_TRACE', '1'))
+    define_macros.append(('CYTHON_TRACE_NOGIL', '1'))
     sys.argv.remove('--enable-trace')
 
 compile_time_env = {}
@@ -85,6 +81,11 @@ if '--enable-debug' in sys.argv:
     sys.argv.remove('--enable-debug')
 else:
     compile_time_env['SOLVER_DEBUG'] = False
+
+# See the following documentation for a description of these directives
+#  https://cython.readthedocs.io/en/latest/src/reference/compilation.html#compiler-directives
+compiler_directives['language_level'] = 3
+compiler_directives['embedsignature'] = True
 
 
 extensions = [

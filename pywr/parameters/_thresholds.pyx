@@ -28,6 +28,9 @@ cdef class AbstractThresholdParameter(IndexParameter):
         otherwise the first value is returned.
     predicate : string
         One of {"LT", "GT", "EQ", "LE", "GE"}.
+    ratchet : bool
+        If true the parameter behaves like a ratchet. Once it is triggered first
+        it stays in the triggered position (default=False).
 
     Methods
     -------
@@ -42,7 +45,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
     the previous day. In this case the predicate evaluates to True.
 
     """
-    def __init__(self, model, threshold, *args, values=None, predicate=None, **kwargs):
+    def __init__(self, model, threshold, *args, values=None, predicate=None, ratchet=False, **kwargs):
         super(AbstractThresholdParameter, self).__init__(model, *args, **kwargs)
         self.threshold = threshold
         if values is None:
@@ -54,6 +57,16 @@ cdef class AbstractThresholdParameter(IndexParameter):
         elif isinstance(predicate, basestring):
             predicate = _predicate_lookup[predicate.upper()]
         self.predicate = predicate
+        self.ratchet = ratchet
+
+    cpdef setup(self):
+        super(AbstractThresholdParameter, self).setup()
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        self._triggered = np.empty(ncomb, dtype=np.uint8)
+
+    cpdef reset(self):
+        super(AbstractThresholdParameter, self).reset()
+        self._triggered[...] = 0
 
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         raise NotImplementedError()
@@ -71,6 +84,14 @@ cdef class AbstractThresholdParameter(IndexParameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns 1 if the predicate evalutes True, else 0"""
         cdef double x
+        cdef bint ind, triggered
+
+        triggered = self._triggered[scenario_index.global_id]
+
+        # Return triggered state if ratchet is enabled.
+        if self.ratchet and triggered:
+            return triggered
+
         x = self._value_to_compare(timestep, scenario_index)
 
         cdef double threshold
@@ -89,6 +110,8 @@ cdef class AbstractThresholdParameter(IndexParameter):
             ind = x >= threshold
         else:
             ind = x == threshold
+
+        self._triggered[scenario_index.global_id] = max(ind, triggered)
         return ind
 
     property threshold:
