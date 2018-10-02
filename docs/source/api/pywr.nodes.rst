@@ -19,4 +19,18 @@ Nodes that are instantiable by the user
    BreakLink
    PiecewiseLink
 
+.. currentmodule:: pywr.domains.river
+
+River domain nodes 
+
+.. autosummary::
+   :toctree: generated/
+   
+   Catchment
+   Reservoir
+   River
+   RiverSplit
+   RiverSplitWithGauge
+   RiverGauge
+
 
