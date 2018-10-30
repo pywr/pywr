@@ -888,6 +888,7 @@ class TestTablesRecorder:
             assert (rec_storage[11, 0] < (0.5 * max_volume))
             assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
 
+    @pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
     def test_routes(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder
@@ -941,6 +942,7 @@ class TestTablesRecorder:
             time = h5f.get_node('/time')
             assert len(time) == len(model.timestepper)
 
+    @pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
     def test_routes_multiple_scenarios(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder
@@ -969,6 +971,7 @@ class TestTablesRecorder:
             assert flows.shape == (365, 1, 4, 2)
             np.testing.assert_allclose(flows[0, 0], [[10, 10], [20, 20], [20, 30], [20, 40]])
 
+    @pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
     def test_routes_user_scenarios(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder with user defined scenario subset

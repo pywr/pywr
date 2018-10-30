@@ -102,6 +102,61 @@ else:
     solver_registry.append(CythonGLPKSolver)
 
 
+
+# Attempt to import solvers. These will only be successful if they are built correctly.
+try:
+    from .cython_glpk_edge import CythonGLPKEdgeSolver as cy_CythonGLPKEdgeSolver
+except ImportError:
+    pass
+else:
+    pass
+
+from .cython_glpk_edge import CythonGLPKEdgeSolver as cy_CythonGLPKEdgeSolver
+class CythonGLPKEdgeSolver(Solver):
+    """Python wrapper of Cython GLPK solver.
+
+    This is required to subclass Solver and get the metaclass magic.
+    """
+    name = 'glpk-edge'
+
+    def __init__(self, *args, **kwargs):
+        super(CythonGLPKEdgeSolver, self).__init__(*args, **kwargs)
+        self._cy_solver = cy_CythonGLPKEdgeSolver(**kwargs)
+
+    def setup(self, model):
+        return self._cy_solver.setup(model)
+
+    def solve(self, model):
+        return self._cy_solver.solve(model)
+
+    def reset(self):
+        return self._cy_solver.reset()
+
+    def dump_mps(self, filename):
+        return self._cy_solver.dump_mps(filename)
+
+    def dump_lp(self, filename):
+        return self._cy_solver.dump_lp(filename)
+
+    def dump_glpk(self, filename):
+        return self._cy_solver.dump_glpk(filename)
+
+    def retry_solve():
+        def fget(self):
+            return self._cy_solver.retry_solve
+
+        def fset(self, value):
+            self._cy_solver.retry_solve = value
+
+        return locals()
+    retry_solve = property(**retry_solve())
+
+    @property
+    def stats(self):
+        return self._cy_solver.stats
+solver_registry.append(CythonGLPKEdgeSolver)
+
+
 try:
     from .cython_lpsolve import CythonLPSolveSolver as cy_CythonLPSolveSolver
 except ImportError:
@@ -147,3 +202,5 @@ else:
         def stats(self):
             return self._cy_solver.stats
     solver_registry.append(CythonLPSolveSolver)
+
+
