@@ -190,10 +190,11 @@ def test_aggregated_node_min_flow_parameter(model):
     assert_allclose(A.flow, 15.0)
     assert_allclose(B.flow, 0.0)
 
+@pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
 def test_aggregated_node_max_flow_same_route(model):
     """Unusual case where the aggregated nodes are in the same route"""
     A = Input(model, "A", max_flow=20.0, cost=1)
-    B = Link(model, "B", max_flow=20.0, cost=2)
+    B = Input(model, "B", max_flow=20.0, cost=2)
     C = Input(model, "C", max_flow=50.0, cost=0)
     Z = Output(model, "Z", max_flow=100, cost=-10)
 
