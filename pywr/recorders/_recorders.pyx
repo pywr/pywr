@@ -637,7 +637,8 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         cdef double udev, ldev
 
         # We have to do this the slow way by iterating through all scenario combinations
-        sc_index = self.model.scenarios.get_scenario_index(self.scenario)
+        if self.scenario is not None:
+            sc_index = self.model.scenarios.get_scenario_index(self.scenario)
         self._fdc_deviations = np.empty((self._lower_target_fdc.shape[0], len(self.model.scenarios.combinations)), dtype=np.float64)
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
 
