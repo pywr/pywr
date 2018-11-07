@@ -24,15 +24,19 @@
             "type": "Output",
             "max_flow": {
                 "type": "constant",
-                "table": "simple_data",
-                "column": "max_flow",
-                "index": "demand1"
+                "value": {
+                    "table": "simple_data",
+                    "column": "max_flow",
+                    "index": "demand1"
+                }
             },
             "cost": {
                 "type": "constant",
-                "table": "simple_data",
-                "column": "cost",
-                "index": "demand1"
+                "value": {
+                    "table": "simple_data",
+                    "column": "cost",
+                    "index": "demand1"
+                }
             }
         }
     ],

@@ -678,9 +678,11 @@ def test_parameter_df_json_load(model, tmpdir):
 
     data = {
         'type': 'dataframe',
-        'url': str(df_path),
-        'index_col': 'date',
-        'parse_dates': True,
+        'dataframe': {
+            'url': str(df_path),
+            'index_col': 'date',
+            'parse_dates': True,
+        }
     }
 
     p = load_parameter(model, data)

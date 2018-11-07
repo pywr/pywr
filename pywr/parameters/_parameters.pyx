@@ -155,10 +155,10 @@ cdef class Parameter(Component):
 Parameter.register(ParameterSchema)
 
 
-class ConstantParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
+class ConstantParameterSchema(ParameterSchema):
     __values_arg_name__ = 'value'
     # Core fields
-    value = marshmallow.fields.Float()
+    value = fields.PywrFloatField()
     scale = marshmallow.fields.Float()
     offset = marshmallow.fields.Float()
 
@@ -250,8 +250,9 @@ def align_and_resample_dataframe(df, datetime_index):
     return df
 
 
-class DataFrameParameterSchema(ParameterSchema, DataFrameSchemaMixin):
+class DataFrameParameterSchema(ParameterSchema):
     scenario = fields.ScenarioReferenceField(allow_none=True)
+    dataframe = fields.DataFrameField()
 
 
 cdef class DataFrameParameter(Parameter):
@@ -295,15 +296,6 @@ cdef class DataFrameParameter(Parameter):
         else:
             value = self._values[<int>(timestep.index), 0]
         return value
-
-    @classmethod
-    def load(cls, model, data):
-        scenario = data.pop('scenario', None)
-        if scenario is not None:
-            scenario = model.scenarios[scenario]
-        df = load_dataframe(model, data)
-        return cls(model, df, scenario=scenario, **data)
-
 DataFrameParameter.register(DataFrameParameterSchema)
 
 
@@ -329,6 +321,10 @@ cdef class ArrayIndexedParameter(Parameter):
         """
         return self.values[ts._index]
 ArrayIndexedParameter.register(ArrayIndexedParameterSchema)
+
+
+class ArratIndexedScenarioParameterSchema(ParameterSchema):
+    pass
 
 
 cdef class ArrayIndexedScenarioParameter(Parameter):
