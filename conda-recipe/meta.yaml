@@ -76,6 +76,7 @@ requirements:
     - future
     - packaging
     - jupyter
+    - jupyter_console < 6.0  # Broken on appveyor not sure why.
     - matplotlib
     {% if OLDGLIBC %}
     - oldglibc
