@@ -2,6 +2,13 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## Master
+
+### New features
+
+- Improved `FlowDurationDeviationRecorder` with JSON support and bug fixes when no scenario is given. (#677)
+
+
 ## v1.0.0
 
 ### New features

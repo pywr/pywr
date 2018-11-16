@@ -603,10 +603,19 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         Optional different function for aggregating across scenarios.
 
     """
-    def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc, upper_target_fdc, scenario=None, name=None, **kwargs):
-        super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
-        self._lower_target_fdc = np.asarray(lower_target_fdc, dtype=np.float64)
-        self._upper_target_fdc = np.asarray(upper_target_fdc, dtype=np.float64)
+    def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc, upper_target_fdc, scenario=None, **kwargs):
+        super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, **kwargs)
+
+        lower_target = np.array(lower_target_fdc, dtype=np.float64)
+        if lower_target.ndim < 2:
+            lower_target = lower_target[:, np.newaxis]
+
+        upper_target = np.array(upper_target_fdc, dtype=np.float64)
+        if upper_target.ndim < 2:
+            upper_target = upper_target[:, np.newaxis]
+
+        self._lower_target_fdc = lower_target
+        self._upper_target_fdc = upper_target
         self.scenario = scenario
         if len(self._percentiles) != self._lower_target_fdc.shape[0]:
             raise ValueError("The lengths of the lower target FDC and the percentiles list do not match")
@@ -623,21 +632,25 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             if self._upper_target_fdc.shape[1] != self.scenario.size:
                 raise ValueError('The number of upper target FDCs does not match the size ({}) of scenario "{}"'.format(self.scenario.size, self.scenario.name))
         else:
-            if self._lower_target_fdc.shape[1] != len(self.model.scenarios.combinations):
+            if self._lower_target_fdc.shape[1] > 1 and \
+                    self._lower_target_fdc.shape[1] != len(self.model.scenarios.combinations):
                 raise ValueError("The number of lower target FDCs does not match the number of scenarios")
-            if self._upper_target_fdc.shape[1] != len(self.model.scenarios.combinations):
+            if self._upper_target_fdc.shape[1] > 1 and \
+                    self._upper_target_fdc.shape[1] != len(self.model.scenarios.combinations):
                 raise ValueError("The number of upper target FDCs does not match the number of scenarios")
 
     cpdef finish(self):
         super(FlowDurationCurveDeviationRecorder, self).finish()
 
-        cdef int i, j, k, sc_index
+        cdef int i, j, jl, ju, k, sc_index
         cdef ScenarioIndex scenario_index
         cdef double[:] utrgt_fdc, ltrgt_fdc
         cdef double udev, ldev
 
         # We have to do this the slow way by iterating through all scenario combinations
-        sc_index = self.model.scenarios.get_scenario_index(self.scenario)
+        if self.scenario is not None:
+            sc_index = self.model.scenarios.get_scenario_index(self.scenario)
+
         self._fdc_deviations = np.empty((self._lower_target_fdc.shape[0], len(self.model.scenarios.combinations)), dtype=np.float64)
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
 
@@ -646,9 +659,20 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
                 j = scenario_index._indices[sc_index]
             else:
                 j = scenario_index.global_id
+
+            if self._lower_target_fdc.shape[1] == 1:
+                jl = 0
+            else:
+                jl = j
+
+            if self._upper_target_fdc.shape[1] == 1:
+                ju = 0
+            else:
+                ju = j
+
             # Cache the target FDC to use in this combination
-            ltrgt_fdc = self._lower_target_fdc[:, j]
-            utrgt_fdc = self._upper_target_fdc[:, j]
+            ltrgt_fdc = self._lower_target_fdc[:, jl]
+            utrgt_fdc = self._upper_target_fdc[:, ju]
             # Finally calculate deviation
             for k in range(ltrgt_fdc.shape[0]):
                 try:
