@@ -487,7 +487,7 @@ cdef class CythonLPSolveSolver:
         storages = self.storages
         virtual_storages = self.virtual_storages
 
-        t0 = time.clock()
+        t0 = time.perf_counter()
 
         # update route properties
         for col, route in enumerate(routes):
@@ -497,8 +497,8 @@ cdef class CythonLPSolveSolver:
                     cost += node.get_cost(scenario_index)
             set_obj(self.prob, self.idx_col_routes+col, cost)
 
-        self.stats['bounds_update_routes'] += time.clock() - t0
-        t0 = time.clock()
+        self.stats['bounds_update_routes'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
 
         # update supply properties
         for col, supply in enumerate(supplys):
@@ -514,8 +514,8 @@ cdef class CythonLPSolveSolver:
             set_bounds(self.prob, self.idx_col_demands+col, min_flow, max_flow)
             set_obj(self.prob, self.idx_col_demands+col, cost)
 
-        self.stats['bounds_update_nonstorage'] += time.clock() - t0
-        t0 = time.clock()
+        self.stats['bounds_update_nonstorage'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
 
         # update storage node constraint
         for col, storage in enumerate(storages):
@@ -537,8 +537,8 @@ cdef class CythonLPSolveSolver:
             ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
             set_row_bnds(self.prob, self.idx_row_virtual_storages+col, lb, ub)
 
-        self.stats['bounds_update_storage'] += time.clock() - t0
-        t0 = time.clock()
+        self.stats['bounds_update_storage'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
         # attempt to solve the linear programme
 
         # print_lp(self.prob)
@@ -549,8 +549,8 @@ cdef class CythonLPSolveSolver:
         if status != OPTIMAL:
             raise RuntimeError(get_statustext(self.prob, status))
 
-        self.stats['lp_solve'] += time.clock() - t0
-        t0 = time.clock()
+        self.stats['lp_solve'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
 
         get_ptr_variables(self.prob, &ptr_var)
 
@@ -576,6 +576,6 @@ cdef class CythonLPSolveSolver:
                 if isinstance(node, BaseLink):
                     node.commit(scenario_index.global_id, flow)
 
-        self.stats['result_update'] += time.clock() - t0
+        self.stats['result_update'] += time.perf_counter() - t0
 
         return route_flows, change_in_storage
