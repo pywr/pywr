@@ -347,7 +347,6 @@ class Model(object):
         for node_data in data["nodes"]:
             node_name = node_data["name"]
             nodes_to_load[node_name] = node_data
-            print(node_name, node_data)
         model._nodes_to_load = nodes_to_load
 
         # collect parameters to load
