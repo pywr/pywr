@@ -187,9 +187,6 @@ cdef class CythonGLPKEdgeSolver:
             else:
                 cross_domain_cols[output] = input_cols
 
-        print(cross_domain_cols)
-
-
         # explicitly set bounds on route and demand columns
         for col, edge in enumerate(edges):
             set_col_bnds(self.prob, self.idx_col_edges+col, GLP_LO, 0.0, DBL_MAX)
@@ -216,7 +213,6 @@ cdef class CythonGLPKEdgeSolver:
                 # Other nodes apply their flow constraints to all routes passing through them
                 cols = some_node.__data.out_edges
 
-            # print(some_node, self.idx_row_non_storages+row, cols)
             ind = <int*>malloc((1+len(cols)) * sizeof(int))
             val = <double*>malloc((1+len(cols)) * sizeof(double))
             for n, c in enumerate(cols):
@@ -232,7 +228,6 @@ cdef class CythonGLPKEdgeSolver:
             # i.e. those from a demand to a supply
             if some_node in cross_domain_cols:
                 col_vals = cross_domain_cols[some_node]
-                print(some_node, cols, col_vals)
                 ind = <int*>malloc((1+len(col_vals)+len(cols)) * sizeof(int))
                 val = <double*>malloc((1+len(col_vals)+len(cols)) * sizeof(double))
                 for n, c in enumerate(cols):
@@ -256,7 +251,6 @@ cdef class CythonGLPKEdgeSolver:
 
             in_cols = some_node.__data.in_edges
             out_cols = some_node.__data.out_edges
-            # print(some_node, row, in_cols, out_cols)
             ind = <int*>malloc((1+len(in_cols)+len(out_cols)) * sizeof(int))
             val = <double*>malloc((1+len(in_cols)+len(out_cols)) * sizeof(double))
             for n, c in enumerate(in_cols):
@@ -282,7 +276,6 @@ cdef class CythonGLPKEdgeSolver:
             cols_input = []
             for input in storage.inputs:
                 cols_input.extend(input.__data.out_edges)
-            # print(storage, self.idx_row_storages+col, cols_input, cols_output, self.idx_col_edges)
 
             ind = <int*>malloc((1+len(cols_output)+len(cols_input)) * sizeof(int))
             val = <double*>malloc((1+len(cols_output)+len(cols_input)) * sizeof(double))
@@ -555,7 +548,6 @@ cdef class CythonGLPKEdgeSolver:
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
 
-            # print(node, col, min_flow, max_flow)
             set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
 
@@ -576,7 +568,6 @@ cdef class CythonGLPKEdgeSolver:
         for col, storage in enumerate(storages):
             max_volume = storage.get_max_volume(scenario_index)
             min_volume = storage.get_min_volume(scenario_index)
-            # print(storage, col, min_volume, max_volume)
 
             if max_volume == min_volume:
                 set_row_bnds(self.prob, self.idx_row_storages+col, GLP_FX, 0.0, 0.0)
