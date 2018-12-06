@@ -336,7 +336,7 @@ cdef class CythonGLPKEdgeSolver:
             cols = []
             for node in nodes:
                 if isinstance(node, BaseOutput):
-                    cols.append([c for c in node.__data.out_edges])
+                    cols.append([c for c in node.__data.in_edges])
                 else:
                     cols.append([c for c in node.__data.out_edges])
 
