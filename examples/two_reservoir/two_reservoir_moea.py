@@ -44,7 +44,7 @@ def platypus_main(harmonic=False):
 
     with platypus.ProcessPoolEvaluator() as evaluator:
         algorithm = platypus.NSGAIII(wrapper.problem, population_size=50, evaluator=evaluator, divisions_outer=12)
-        algorithm.run(1000)
+        algorithm.run(10000)
 
     objectives = pd.DataFrame(data=np.array([s.objectives for s in algorithm.result]),
                               columns=[o.name for o in wrapper.model_objectives])
@@ -184,9 +184,17 @@ def inspyred_main(prng=None, display=False, harmonic=False):
     return ea
 
 
-
 if __name__ == '__main__':
     import argparse
+
+    # Setup logging
+    import logging
+    logger = logging.getLogger('pywr')
+    logger.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--harmonic', action='store_true', help='Use an harmonic control curve.')
