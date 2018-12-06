@@ -443,13 +443,13 @@ cdef class CythonGLPKSolver:
         self.is_first_solve = True
 
     cpdef object solve(self, model):
-        t0 = time.clock()
+        t0 = time.perf_counter()
         cdef int[:] scenario_combination
         cdef int scenario_id
         cdef ScenarioIndex scenario_index
         for scenario_index in model.scenarios.combinations:
             self._solve_scenario(model, scenario_index)
-        self.stats['total'] += time.clock() - t0
+        self.stats['total'] += time.perf_counter() - t0
         # After solving this is always false
         self.is_first_solve = False
 
@@ -493,7 +493,7 @@ cdef class CythonGLPKSolver:
 
         # update route cost
 
-        t0 = time.clock()
+        t0 = time.perf_counter()
 
         # update the cost of each node in the model
         cdef double[:] node_costs = self.node_costs_arr
@@ -512,8 +512,8 @@ cdef class CythonGLPKSolver:
                 cost = 0.0
             set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
-        self.stats['objective_update'] += time.clock() - t0
-        t0 = time.clock()
+        self.stats['objective_update'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
 
         # update non-storage properties
         for col, node in enumerate(non_storages):
@@ -536,8 +536,8 @@ cdef class CythonGLPKSolver:
             set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
 
-        self.stats['bounds_update_nonstorage'] += time.clock() - t0
-        t0 = time.clock()
+        self.stats['bounds_update_nonstorage'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
 
         # update storage node constraint
         for col, storage in enumerate(storages):
@@ -579,9 +579,9 @@ cdef class CythonGLPKSolver:
                     ub = 0.0
                 set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
 
-        self.stats['bounds_update_storage'] += time.clock() - t0
+        self.stats['bounds_update_storage'] += time.perf_counter() - t0
 
-        t0 = time.clock()
+        t0 = time.perf_counter()
 
         # Apply presolve if required
         if self.use_presolve and not self.has_presolved:
@@ -620,8 +620,8 @@ cdef class CythonGLPKSolver:
         # Now save the basis
         self._save_basis(scenario_index.global_id)
 
-        self.stats['lp_solve'] += time.clock() - t0
-        t0 = time.clock()
+        self.stats['lp_solve'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
 
         cdef double[:] route_flows
         if self.save_routes_flows:
@@ -654,7 +654,7 @@ cdef class CythonGLPKSolver:
             _node = self.all_nodes[n]
             _node.commit(scenario_index.global_id, node_flows[n])
 
-        self.stats['result_update'] += time.clock() - t0
+        self.stats['result_update'] += time.perf_counter() - t0
 
         return route_flows, change_in_storage
 
