@@ -48,6 +48,10 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
     cdef public Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
+cdef class NumpyArrayAreaRecorder(StorageRecorder):
+    cdef public Aggregator _temporal_aggregator
+    cdef double[:, :] _data
+
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     cdef public Aggregator _temporal_aggregator
     cdef double[:, :] _data

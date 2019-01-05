@@ -872,8 +872,31 @@ cdef class NumpyArrayLevelRecorder(StorageRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
-
 NumpyArrayLevelRecorder.register()
+
+cdef class NumpyArrayAreaRecorder(StorageRecorder):
+
+    cpdef setup(self):
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        cdef int nts = len(self.model.timestepper)
+        self._data = np.zeros((nts, ncomb))
+
+    cpdef reset(self):
+        self._data[:, :] = 0.0
+
+    cpdef after(self):
+        cdef int i
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        for i, scenario_index in enumerate(self.model.scenarios.combinations):
+            self._data[ts._index,i] = self._node.get_area(scenario_index)
+        return 0
+
+    property data:
+        def __get__(self, ):
+            return np.array(self._data)
+
+NumpyArrayAreaRecorder.register()
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     """Recorder for timeseries information from a `Parameter`.
