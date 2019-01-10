@@ -298,7 +298,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         if min_volume is None:
             min_volume = 0.0
         max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        initial_volume = kwargs.pop('initial_volume', 0.0)
+        initial_volume = kwargs.pop('initial_volume', None)
         initial_volume_pc = kwargs.pop('initial_volume_pc', None)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
         level = pop_kwarg_parameter(kwargs, 'level', None)
@@ -380,11 +380,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         name = data.pop('name')
         num_inputs = int(data.pop('inputs', 1))
         num_outputs = int(data.pop('outputs', 1))
-
-        if 'initial_volume' not in data and 'initial_volume_pc' not in data:
-            raise ValueError('Initial volume must be specified in absolute or relative terms.')
-
-        initial_volume = data.pop('initial_volume', 0.0)
+        initial_volume = data.pop('initial_volume', None)
         initial_volume_pc = data.pop('initial_volume_pc', None)
         max_volume = data.pop('max_volume')
         min_volume = data.pop('min_volume', 0.0)
@@ -400,10 +396,11 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         # loading errors
 
         # Try to coerce initial volume to float.
-        try:
-            initial_volume = float(initial_volume)
-        except TypeError:
-            initial_volume = load_parameter_values(model, initial_volume)
+        if initial_volume is not None:
+            try:
+                initial_volume = float(initial_volume)
+            except TypeError:
+                initial_volume = load_parameter_values(model, initial_volume)
         node.initial_volume = initial_volume
         node.initial_volume_pc = initial_volume_pc
 
