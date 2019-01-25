@@ -49,7 +49,6 @@ cdef class CythonGLPKEdgeSolver:
     cdef cvarray edge_flows_arr
     cdef cvarray node_flows_arr
     cdef public cvarray route_flows_arr
-    cdef cvarray change_in_storage_arr
     cdef public object stats
 
     # Internal representation of the basis for each scenario
@@ -78,7 +77,7 @@ cdef class CythonGLPKEdgeSolver:
         glp_init_smcp(&self.smcp)
         self.smcp.msg_lev = message_levels[message_level]
         if time_limit is not None:
-            self.smcp.tm_lim = time_limit  # 5 second limit
+            self.smcp.tm_lim = time_limit
         if iteration_limit is not None:
             self.smcp.it_lim = iteration_limit
 
@@ -113,16 +112,15 @@ cdef class CythonGLPKEdgeSolver:
         if not self.all_nodes or not self.all_edges:
             raise ModelStructureError("Model is empty")
 
-        n = 0
-        for _node in self.all_nodes:
+        for n, _node in enumerate(self.all_nodes):
             _node.__data = AbstractNodeData()
             _node.__data.id = n
             _node.__data.in_edges = []
             _node.__data.out_edges = []
             if isinstance(_node, BaseLink):
                 _node.__data.is_link = True
-            n += 1
-        self.num_nodes = n
+
+        self.num_nodes = len(self.all_nodes)
 
         self.edge_cost_arr = cvarray(shape=(len(self.all_edges),), itemsize=sizeof(double), format="d")
         self.edge_flows_arr = cvarray(shape=(len(self.all_edges),), itemsize=sizeof(double), format="d")
@@ -166,11 +164,11 @@ cdef class CythonGLPKEdgeSolver:
         self.idx_col_edges = glp_add_cols(self.prob, self.num_edges)
 
         # create a lookup for edges associated with each node (ignoring cross domain edges)
-        for col, (start_node, end_node) in enumerate(self.all_edges):
+        for row, (start_node, end_node) in enumerate(self.all_edges):
             if start_node.domain != end_node.domain:
                 continue
-            start_node.__data.out_edges.append(col)
-            end_node.__data.in_edges.append(col)
+            start_node.__data.out_edges.append(row)
+            end_node.__data.in_edges.append(row)
 
         # create a lookup for the cross-domain routes.
         cross_domain_cols = {}
@@ -188,8 +186,8 @@ cdef class CythonGLPKEdgeSolver:
                 cross_domain_cols[output] = input_cols
 
         # explicitly set bounds on route and demand columns
-        for col, edge in enumerate(edges):
-            set_col_bnds(self.prob, self.idx_col_edges+col, GLP_LO, 0.0, DBL_MAX)
+        for row, edge in enumerate(edges):
+            set_col_bnds(self.prob, self.idx_col_edges+row, GLP_LO, 0.0, DBL_MAX)
 
         # Apply nodal flow constraints
         self.idx_row_non_storages = glp_add_rows(self.prob, len(non_storages))
@@ -268,7 +266,7 @@ cdef class CythonGLPKEdgeSolver:
         # storage
         if len(storages):
             self.idx_row_storages = glp_add_rows(self.prob, len(storages))
-        for col, storage in enumerate(storages):
+        for row, storage in enumerate(storages):
 
             cols_output = []
             for output in storage.outputs:
@@ -286,8 +284,8 @@ cdef class CythonGLPKEdgeSolver:
                 ind[1+len(cols_output)+n] = self.idx_col_edges+c
                 val[1+len(cols_output)+n] = -1
 
-            set_mat_row(self.prob, self.idx_row_storages+col, len(cols_output)+len(cols_input), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_storages+col,
+            set_mat_row(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
+            # glp_set_row_name(self.prob, self.idx_row_storages+row,
             #                  b's.'+storage.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
@@ -295,7 +293,7 @@ cdef class CythonGLPKEdgeSolver:
         # virtual storage
         if len(virtual_storages):
             self.idx_row_virtual_storages = glp_add_rows(self.prob, len(virtual_storages))
-        for col, storage in enumerate(virtual_storages):
+        for row, storage in enumerate(virtual_storages):
             # We need to handle the same route appearing twice here.
             cols = {}
 
@@ -317,8 +315,8 @@ cdef class CythonGLPKEdgeSolver:
                 ind[1+n] = self.idx_col_edges+c
                 val[1+n] = -f
 
-            set_mat_row(self.prob, self.idx_row_virtual_storages+col, len(cols), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_virtual_storages+col,
+            set_mat_row(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
+            # glp_set_row_name(self.prob, self.idx_row_virtual_storages+row,
             #                  b'vs.'+storage.fully_qualified_name.encode('utf-8'))
             free(ind)
             free(val)
@@ -488,7 +486,7 @@ cdef class CythonGLPKEdgeSolver:
         cdef double min_volume
         cdef double avail_volume
         cdef double t0
-        cdef int col, col2
+        cdef int col, row
         cdef int* ind
         cdef double* val
         cdef double lb
@@ -504,7 +502,7 @@ cdef class CythonGLPKEdgeSolver:
 
         timestep = model.timestep
         cdef list edges = self.all_edges
-        nedges = len(edges)
+        nedges = self.num_edges
         cdef list non_storages = self.non_storages
         cdef list storages = self.storages
         cdef list virtual_storages = self.virtual_storages
@@ -524,6 +522,9 @@ cdef class CythonGLPKEdgeSolver:
             cost = _node.get_cost(scenario_index)
             data = _node.__data
 
+            # Link nodes have edges connected upstream & downstream. We apply
+            # half the cost assigned to the node to all the connected edges.
+            # The edge costs are then the mean of the node costs at either end.
             if data.is_link:
                 cost /= 2
 
@@ -540,7 +541,7 @@ cdef class CythonGLPKEdgeSolver:
         t0 = time.perf_counter()
 
         # update non-storage properties
-        for col, node in enumerate(non_storages):
+        for row, node in enumerate(non_storages):
             min_flow = inf_to_dbl_max(node.get_min_flow(scenario_index))
             if abs(min_flow) < 1e-8:
                 min_flow = 0.0
@@ -548,29 +549,29 @@ cdef class CythonGLPKEdgeSolver:
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
 
-            set_row_bnds(self.prob, self.idx_row_non_storages+col, constraint_type(min_flow, max_flow),
+            set_row_bnds(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
 
-        for col, agg_node in enumerate(aggregated):
+        for row, agg_node in enumerate(aggregated):
             min_flow = inf_to_dbl_max(agg_node.get_min_flow(scenario_index))
             if abs(min_flow) < 1e-8:
                 min_flow = 0.0
             max_flow = inf_to_dbl_max(agg_node.get_max_flow(scenario_index))
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
-            set_row_bnds(self.prob, self.idx_row_aggregated_min_max + col, constraint_type(min_flow, max_flow),
+            set_row_bnds(self.prob, self.idx_row_aggregated_min_max + row, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.perf_counter() - t0
         t0 = time.perf_counter()
 
         # update storage node constraint
-        for col, storage in enumerate(storages):
+        for row, storage in enumerate(storages):
             max_volume = storage.get_max_volume(scenario_index)
             min_volume = storage.get_min_volume(scenario_index)
 
             if max_volume == min_volume:
-                set_row_bnds(self.prob, self.idx_row_storages+col, GLP_FX, 0.0, 0.0)
+                set_row_bnds(self.prob, self.idx_row_storages+row, GLP_FX, 0.0, 0.0)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
@@ -582,15 +583,15 @@ cdef class CythonGLPKEdgeSolver:
                     lb = 0.0
                 if abs(ub) < 1e-8:
                     ub = 0.0
-                set_row_bnds(self.prob, self.idx_row_storages+col, constraint_type(lb, ub), lb, ub)
+                set_row_bnds(self.prob, self.idx_row_storages+row, constraint_type(lb, ub), lb, ub)
 
         # update virtual storage node constraint
-        for col, storage in enumerate(virtual_storages):
+        for row, storage in enumerate(virtual_storages):
             max_volume = storage.get_max_volume(scenario_index)
             min_volume = storage.get_min_volume(scenario_index)
 
             if max_volume == min_volume:
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+col, GLP_FX, 0.0, 0.0)
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
@@ -602,7 +603,7 @@ cdef class CythonGLPKEdgeSolver:
                     lb = 0.0
                 if abs(ub) < 1e-8:
                     ub = 0.0
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+col, constraint_type(lb, ub), lb, ub)
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update_storage'] += time.perf_counter() - t0
 
@@ -653,10 +654,6 @@ cdef class CythonGLPKEdgeSolver:
         for col in range(self.num_edges):
             edge_flows[col] = glp_get_col_prim(self.prob, col+1)
 
-        cdef double[:] change_in_storage = self.change_in_storage_arr
-        # for col in range(0, self.num_storages):
-        #     change_in_storage[col] = glp_get_row_prim(self.prob, self.idx_row_storages+col)
-
         # collect the total flow via each node
         cdef double[:] node_flows = self.node_flows_arr
         node_flows[:] = 0.0
@@ -668,6 +665,8 @@ cdef class CythonGLPKEdgeSolver:
             for _node in edge:
                 data = _node.__data
                 if data.is_link:
+                    # Link nodes are connected upstream & downstream so
+                    # we take half of flow from each edge.
                     node_flows[data.id] += flow / 2
                 else:
                     node_flows[data.id] += flow
@@ -678,8 +677,6 @@ cdef class CythonGLPKEdgeSolver:
             _node.commit(scenario_index.global_id, node_flows[n])
 
         self.stats['result_update'] += time.perf_counter() - t0
-
-        return edge_flows, change_in_storage
 
     cpdef dump_mps(self, filename):
         glp_write_mps(self.prob, GLP_MPS_FILE, NULL, filename)
