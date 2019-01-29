@@ -64,11 +64,11 @@ if not optional:
     optional.add('lpsolve')
 
 compiler_directives = {}
-if '--enable-profiling' in sys.argv:
+if '--enable-profiling' in sys.argv or os.environ.get('PYWR_BUILD_PROFILING').lower() == 'true':
      compiler_directives['profile'] = True
      sys.argv.remove('--enable-profiling')
 
-if '--enable-trace' in sys.argv:
+if '--enable-trace' in sys.argv or os.environ.get('PYWR_BUILD_TRACE').lower() == 'true':
     print('Tracing is enabled.')
     compiler_directives['linetrace'] = True
     define_macros.append(('CYTHON_TRACE', '1'))
@@ -76,7 +76,7 @@ if '--enable-trace' in sys.argv:
     sys.argv.remove('--enable-trace')
 
 compile_time_env = {}
-if '--enable-debug' in sys.argv:
+if '--enable-debug' in sys.argv or os.environ.get('PYWR_BUILD_DEBUG').lower() == 'true':
     compile_time_env['SOLVER_DEBUG'] = True
     sys.argv.remove('--enable-debug')
 else:
