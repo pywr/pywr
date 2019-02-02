@@ -115,13 +115,17 @@ parameter which has a finite volume.
         def after(self):
             # update the state
             timestep = self.model.timestepper.current  # get current timestep
-            flow_during_timestep = self._node.flow * timestep.days  # array of flows
+            flow_during_timestep = self._node.flow * timestep.days  # see explanation below
             self._remaining -= flow_during_timestep
             self._remaining[self._remaining < 0] = 0  # volume remaining cannot be less than zero
 
         def load(self, model, data):
             total_volume = data.pop("total_volume")
             return cls(model, total_volume, **data)
+
+The example above uses the `_node` attribute of the parameter, which is automatically set when the parameter is attached
+to a node. The `flow` attribute of the node represents the flow (per day) via that node. To get the total flow for the
+timestep it must be multipled by the number of days in the timestep, available as `timestep.days`.
 
 .. [*] The model is said to be "dirty" if nodes or edges are added or removed, resulting in a change to the structure
        of the linear programme used to solve the model. This usually requires Parameters which track state to
