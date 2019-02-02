@@ -119,6 +119,10 @@ parameter which has a finite volume.
             self._remaining -= flow_during_timestep
             self._remaining[self._remaining < 0] = 0  # volume remaining cannot be less than zero
 
+        def load(self, model, data):
+            total_volume = data.pop("total_volume")
+            return cls(model, total_volume, **data)
+
 .. [*] The model is said to be "dirty" if nodes or edges are added or removed, resulting in a change to the structure
        of the linear programme used to solve the model. This usually requires Parameters which track state to
        reallocate memory, instead of just resetting values.
