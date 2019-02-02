@@ -127,10 +127,11 @@ Dependency on other parameters
 ==============================
 
 The value of each parameter is calculated at the start of every timestep. A dependency tree is used to ensure that
-parameters are evaluated in the correct order. For example, the ``AggregatedParameter`` returns the aggregated value
-of a set of parameters using a user-defined function. In the terminology of the dependency tree the
-``AggregatedParameter`` is the parent of the other parameters, which are it's children. When writing a parameter these
-dependencies need to be defined explicitly by modifying the ``Parameter.parents`` or ``Parameter.children`` attributes.
+parameters are evaluated in the correct order and that there are no circular dependencies [*]_. For example, the
+``AggregatedParameter`` returns the aggregated value of a set of parameters using a user-defined function. In the
+terminology of the dependency tree the ``AggregatedParameter`` is the parent of the other parameters, which are it's
+children. When writing a parameter these dependencies need to be defined explicitly by modifying the
+``Parameter.parents`` or ``Parameter.children`` attributes.
 
 To get the value of a child parameter use the ``Parameter.get_value`` method, or for the index use
 ``Parameter.get_index``. These methods return the value/index for the current timestep and scenario. To access the
@@ -159,6 +160,9 @@ As an example, see a simplified version of ``AggregatedParameter`` that returns 
                           for parameter_data in data.pop("parameters")]
             return cls(model, parameters, **data)
 
+.. [*] A circular dependency is when two (or more) parameters depend on each other. This can be direct (e.g A depends
+       on B, B depends on A) or indirect (e.g. A depends on B, B depends on C, C depends on A). Pywr is unable to resolve the
+       order in which to calculate these parameters and will raise an error at runtime.
 
 Improving performance with Cython
 =================================
