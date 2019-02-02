@@ -175,7 +175,7 @@ A full tutorial in Cython is beyond the scope of this documentation - see the
 `Cython Documentation <https://cython.readthedocs.io/en/latest/>`_.
 
 The easiest way to compile and run custom parameters written in Cython is using the ``pyximport`` command, which
-compiles pyx modules at runtime. If you parameter is linking to a foreign library you may need to compile using a
+compiles pyx modules at runtime. If the parameter is linking to a foreign library you may need to compile using a
 ``setup.py`` in order to pass linker arguments.
 
 The example below demonstrates a custom parameter which uses a function from a foreign library (the ``pow`` function
