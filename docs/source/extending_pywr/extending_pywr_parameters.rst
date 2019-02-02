@@ -25,9 +25,9 @@ from JSON.
     from pywr.parameters import Parameter
 
     class MyParameter(Parameter):
-        def __init__(self, model, value):
+        def __init__(self, model, value, **kwargs):
             # called once when the parameter is created
-            super().__init__(model)
+            super().__init__(model, **kwargs)
             self._value = value
 
         def value(self, timestep, scenario_index):
@@ -65,8 +65,8 @@ created using the following:
 .. code-block:: python
 
     class MonthlyProfileParameter(Parameter):
-        def __init__(self, model, profile):
-            super().__init__(model)
+        def __init__(self, model, profile, **kwargs):
+            super().__init__(model, **kwargs)
             self.profile = profile  # a 12-element list of floats
 
         def value(self, timestep, scenario_index):
@@ -95,8 +95,8 @@ parameter which has a finite volume.
 .. code-block:: python
 
     class LicenceParameter(Parameter):
-        def __init__(self, model, total_volume):
-            super().__init__(self, model)
+        def __init__(self, model, total_volume, **kwargs):
+            super().__init__(self, model, **kwargs)
             self.total_volume = total_volume
 
         def setup(self):
@@ -145,7 +145,8 @@ As an example, see a simplified version of ``AggregatedParameter`` that returns 
 .. code-block:: python
 
     class SumParameter(Parameter):
-        def __init__(self, model, parameters):
+        def __init__(self, model, parameters, **kwargs):
+            super().__init__(model, **kwargs)
             self.parameters = parameters
             for parameter in self.parameters:
                 self.children.add(parameter)
