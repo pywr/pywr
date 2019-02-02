@@ -151,7 +151,7 @@ As an example, see a simplified version of ``AggregatedParameter`` that returns 
                 self.children.add(parameter)
 
         def value(self, timestep, scenario_index):
-            total_value = sum([parameter.get_value() for parameter in parameters])
+            total_value = sum([parameter.get_value(scenario_index) for parameter in parameters])
             return total_value
 
         @classmethod
