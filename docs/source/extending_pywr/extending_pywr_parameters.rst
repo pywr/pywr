@@ -184,8 +184,6 @@ from ``libm``). There are a few differences from the Python equivalent:
 * Use of the ``cimport`` statement
 * Inherit from ``pywr.parameters._parameters.Parameter``
 * The ``value`` method is defined as a cpdef function. This signature must match exactly.
-* There is no benefit to using cdef/cpdef for the ``__init__`` and ``load`` methods as they are only called once and
-  are not performance critical.
 
 .. code-block:: cython
     :caption: custom_parameters.pyx
