@@ -4,8 +4,8 @@ environment:
 
   global:
     BUILD_HOME: "C:\\build"
-    GLPK_HOME: "C:\\glpk"
     GLPK_VER: "4.65"
+    GLPK_HOME: "C:\\glpk-%GLPK_VER%"
     GLPK_LIB: "glpk_4_65.dll"
     GLPK_URL: "https://sourceforge.net/projects/winglpk/files/build-winglpk/build-winglpk-%GLPK_VER%/build-winglpk-%GLPK_VER%.tar.gz/download"
     PYTHON_ARCH: "64"
@@ -37,7 +37,9 @@ install:
     - ps: mkdir %LPSOLVE_HOME% | out-null
 
     - curl -L %GLPK_URL% --output glpk.tar.gz
-    - 7z x glpk.tar.gz -oC:\glpk
+    - 7z x glpk.tar.gz -oC:\
+
+    - "SET PACKAGE_DATA=1"
 
     - cd C:\projects\pywr
     # Upgrade to the latest version of pip to avoid it displaying warnings
@@ -57,7 +59,7 @@ build_script:
   - cmd: echo %PYTHONPATH%
 
   # Copy GLPK libraries to package
-  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_LIB% pywr\.libs\
+  - cmd: xcopy %GLPK_HOME%\w64 pywr\.libs\
   - cmd: xcopy %GLPK_HOME%\COPYING pywr\.libs\licenses\
 
   # build fiona and create a wheel

@@ -171,4 +171,10 @@ else:
 setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional,
                                         compiler_directives=compiler_directives, annotate=annotate,
                                         compile_time_env=compile_time_env)
+
+if os.environ.get('PACKAGE_DATA'):
+    pkg_data = setup_kwargs["package_data"].get("pywr", [])
+    pkg_data.extend(['.libs/*', '.libs/licenses/*'])
+    setup_kwargs["package_data"]["pywr"] = pkg_data
+
 setup(**setup_kwargs)
