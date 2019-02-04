@@ -78,3 +78,5 @@ test_script:
   - "SET PYWR_SOLVER=glpk"
   - "python -m pytest"
 
+  - "SET PYWR_SOLVER=glpk-edge"
+  - "python -m pytest"
