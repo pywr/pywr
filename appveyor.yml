@@ -69,7 +69,7 @@ build_script:
   - cmd: xcopy %GLPK_HOME%\COPYING pywr\.libs\licenses\
 
   # build fiona and create a wheel
-  - "python setup.py build_ext -I%GLPK_HOME%\\include --with-glpk bdist_wheel"
+  - "python setup.py build_ext -I%GLPK_HOME%\\src --with-glpk bdist_wheel"
 
   # install the wheel
   # - ps: python -m pip install --upgrade pip
