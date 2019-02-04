@@ -40,7 +40,7 @@ install:
     - ps: mkdir %LPSOLVE_HOME% | out-null
 
     - curl -L %GLPK_URL% --output glpk.zip
-    - 7z e glpk.zip -o%GLPK_HOME%
+    - 7z x glpk.zip -o%GLPK_HOME%
     - cmd: echo "Installed GLPK:"
     - ps: "ls \"C:/\""
     - ps: ls %GLPK_HOME%
