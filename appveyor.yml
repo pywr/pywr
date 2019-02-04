@@ -42,7 +42,7 @@ install:
     - curl -L %GLPK_URL% --output glpk.zip
     - 7z e glpk.zip -oC:\
     - cmd: echo "Installed GLPK:"
-    - ps: "ls \"C:/\""-
+    - ps: "ls \"C:/\""
     - ps: ls %GLPK_HOME%
 
     - "SET PACKAGE_DATA=1"
