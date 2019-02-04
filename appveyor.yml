@@ -1,15 +1,27 @@
-# This build script is adapted from conda-smithy, see:
-# https://github.com/conda-forge/conda-smithy-feedstock
+# Based on appveyor.yml from https://github.com/Toblerity/Fiona
 
 environment:
 
+  global:
+    # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
+    # /E:ON and /V:ON options are not enabled in the batch script intepreter
+    # See: http://stackoverflow.com/a/13751649/163740
+    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
+    BUILD_HOME: "C:\\build"
+    GLPK_HOME: "C:\\glpk"
+    GLPK_VER: "4.65"
+    GLPK_LIB: "glpk_4_65.dll"
+    GLPK_URL: "https://sourceforge.net/projects/winglpk/files/build-winglpk/build-winglpk-%GLPK_VER%/build-winglpk-%GLPK_VER%.tar.gz/download"
+    PYTHON_ARCH: "64"
+
   matrix:
-    - TARGET_ARCH: x64
-      CONDA_PY: 36
-      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
-    - TARGET_ARCH: x64
-      CONDA_PY: 37
-      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
+    # Python 3.6
+    - PYTHON: "C:\\Python36-x64"
+
+    # Python 3.7
+    - PYTHON: "C:\\Python37-x64"
+
+
 
 # We always use a 64-bit machine, but can build x86 distributions
 # with the TARGET_ARCH variable.
@@ -17,27 +29,54 @@ platform:
     - x64
 
 install:
-    # Cywing's git breaks conda-build. (See https://github.com/conda-forge/conda-smithy-feedstock/pull/2.)
-    - cmd: rmdir C:\cygwin /s /q
+    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - "SET PYTHONPATH=%PYTHON%\\Lib\\site-packages;%PYTHONPATH%"
 
-    # Add path and activate `conda`
-    - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
-    - cmd: set PYTHONUNBUFFERED=1
+    - "python --version"
+    - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-    # Update conda
-    - cmd: conda update --yes --quiet conda
+    # Create working directories
+    - ps: mkdir %BUILD_HOME% | out-null
+    - ps: mkdir %GLPK_HOME% | out-null
+    - ps: mkdir %LPSOLVE_HOME% | out-null
 
-    # Add our channels
-    - cmd: conda config --set show_channel_urls true
-    - cmd: conda config --add channels conda-forge
+    - curl %GLPK_URL% --output glpk.tar.gz
+    - 7z x glpk.tar.gz -oC:\glpk
 
+    - cd C:\projects\pywr
+    # Upgrade to the latest version of pip to avoid it displaying warnings
+    # about it being out of date.
+    - cmd: python -m pip install --disable-pip-version-check --user --upgrade pip
 
-    # Configure the VM.
-    - cmd: conda.exe install -n root --quiet --yes conda-forge-ci-setup
-    - cmd: run_conda_forge_build_setup
+    - cmd: pip --version
+    # Install the build dependencies of the project. If some dependencies contain
+    # compiled extensions and are not provided as pre-built wheel packages,
+    # pip will build them from source using the MSVC compiler matching the
+    # target Python version and architecture
+    - "%CMD_IN_ENV% pip install cython packaging numpy pytest"
 
-# Skip .NET project specific build phase.
-build: off
+build_script:
+  # Build the compiled extension
+  - cmd: echo %PATH%
+  - cmd: echo %PYTHONPATH%
+
+  # Copy GLPK libraries to package
+  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_LIB% pywr\.libs\
+  - cmd: xcopy %GLPK_HOME%\COPYING pywr\.libs\licenses\
+
+  # build fiona and create a wheel
+  - "%CMD_IN_ENV% python setup.py build_ext -I%GLPK_HOME$\\include --with-glpk bdist_wheel"
+
+  # install the wheel
+  # - ps: python -m pip install --upgrade pip
+  - cmd: FOR %%i in (dist\*.whl) DO pip install --force-reinstall --ignore-installed %%i
+  - cmd: move pywr pywr.build
 
 test_script:
-    - "%CMD_IN_ENV% conda build conda-recipe --quiet"
+  # Run the project tests
+  - cmd: SET
+
+  - ps: python -c "import pywr"
+  - ps: python -c "from pywr.solvers import cython_glpk"
+
+  - "%CMD_IN_ENV% python -m pytest"
