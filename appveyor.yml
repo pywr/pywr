@@ -59,7 +59,7 @@ build_script:
   - cmd: echo %PYTHONPATH%
 
   # Copy GLPK libraries to package
-  - cmd: xcopy %GLPK_HOME%\w64 pywr\.libs\
+  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_LIB% pywr\.libs\
   - cmd: xcopy %GLPK_HOME%\COPYING pywr\.libs\licenses\
 
   # build fiona and create a wheel
