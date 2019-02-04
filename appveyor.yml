@@ -25,6 +25,9 @@ platform:
     - x64
 
 install:
+    - ECHO "Filesystem root:"
+    - ps: "ls \"C:/\""
+
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
     - "SET PYTHONPATH=%PYTHON%\\Lib\\site-packages;%PYTHONPATH%"
 
@@ -37,9 +40,8 @@ install:
     - ps: mkdir %LPSOLVE_HOME% | out-null
 
     - curl -L %GLPK_URL% --output glpk.tar.gz
-    - 7z x glpk.tar.gz -oC:\
+    - 7z e glpk.tar.gz && 7z x glpk.tar -oC:\
     - cmd: echo "Installed GLPK:"
-    - ps: "ls \"C:/\""
     - ps: ls %GLPK_HOME%
 
     - "SET PACKAGE_DATA=1"
