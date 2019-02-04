@@ -7,7 +7,7 @@ environment:
     GLPK_VER: "4.65"
     GLPK_HOME: "C:\\glpk-%GLPK_VER%"
     GLPK_LIB: "glpk_4_65.dll"
-    GLPK_URL: "https://sourceforge.net/projects/winglpk/files/build-winglpk/build-winglpk-%GLPK_VER%/build-winglpk-%GLPK_VER%.tar.gz/download"
+    GLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-%GLPK_VER%/winglpk-%GLPK_VER%.zip/download"
     PYTHON_ARCH: "64"
 
   matrix:
@@ -39,9 +39,10 @@ install:
     - ps: mkdir %GLPK_HOME% | out-null
     - ps: mkdir %LPSOLVE_HOME% | out-null
 
-    - curl -L %GLPK_URL% --output glpk.tar.gz
-    - 7z e glpk.tar.gz && 7z x glpk.tar -oC:\
+    - curl -L %GLPK_URL% --output glpk.zip
+    - 7z e glpk.zip -oC:\
     - cmd: echo "Installed GLPK:"
+    - ps: "ls \"C:/\""-
     - ps: ls %GLPK_HOME%
 
     - "SET PACKAGE_DATA=1"
