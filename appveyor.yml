@@ -6,7 +6,10 @@ environment:
     BUILD_HOME: "C:\\build"
     GLPK_VER: "4.65"
     GLPK_HOME: "C:\\glpk-%GLPK_VER%"
-    GLPK_LIB: "glpk_4_65.dll"
+    GLPK_PKG_LIB: "glpk_4_65.lib"
+    GLPK_LIB: "glpk.lib"
+    GLPK_PKG_DLL: "glpk_4_65.dll"
+    GLPK_DLL: "glpk.dll"
     GLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-%GLPK_VER%/winglpk-%GLPK_VER%.zip/download"
     PYTHON_ARCH: "64"
 
@@ -64,8 +67,11 @@ build_script:
   - cmd: echo %PATH%
   - cmd: echo %PYTHONPATH%
 
+  # Rename (remove version number) the packaged library files for linking
+  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_PKG_LIB% %GLPK_HOME%\w64\%GLPK_LIB%
+  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_PKG_DLL% %GLPK_HOME%\w64\%GLPK_DLL%
   # Copy GLPK libraries to package
-  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_LIB% pywr\.libs\
+  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_DLL% pywr\.libs\
   - cmd: xcopy %GLPK_HOME%\COPYING pywr\.libs\licenses\
 
   # build fiona and create a wheel
