@@ -68,11 +68,11 @@ build_script:
   - cmd: echo %PYTHONPATH%
 
   # Rename (remove version number) the packaged library files for linking
-  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_PKG_LIB% %GLPK_HOME%\w64\%GLPK_LIB%
-  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_PKG_DLL% %GLPK_HOME%\w64\%GLPK_DLL%
+  - cmd: copy %GLPK_HOME%\w64\%GLPK_PKG_LIB% %GLPK_HOME%\w64\%GLPK_LIB%
+  - cmd: copy %GLPK_HOME%\w64\%GLPK_PKG_DLL% %GLPK_HOME%\w64\%GLPK_DLL%
   # Copy GLPK libraries to package
-  - cmd: xcopy %GLPK_HOME%\w64\%GLPK_DLL% pywr\.libs\
-  - cmd: xcopy %GLPK_HOME%\COPYING pywr\.libs\licenses\
+  - cmd: copy %GLPK_HOME%\w64\%GLPK_DLL% pywr\.libs\%GLPK_DLL%
+  - cmd: copy %GLPK_HOME%\COPYING pywr\.libs\licenses\COPYING
 
   # build fiona and create a wheel
   - "python setup.py build_ext -I%GLPK_HOME%\\src -L%GLPK_HOME%\\w64 --with-glpk bdist_wheel"
