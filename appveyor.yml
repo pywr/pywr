@@ -96,3 +96,7 @@ test_script:
 
   - "SET PYWR_SOLVER=glpk-edge"
   - "python -m pytest"
+
+artifacts:
+  - path: dist\*.whl
+    name: wheel
