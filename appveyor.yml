@@ -63,7 +63,7 @@ install:
     - "pip install cython packaging numpy jupyter pytest wheel"
 
     # Install optional dependencies for tests
-    - "pip install platypus-opt pygmo inspyred
+    - "pip install platypus-opt pygmo inspyred"
 
 build_script:
   # Build the compiled extension
