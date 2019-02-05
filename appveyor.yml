@@ -71,6 +71,7 @@ build_script:
   - cmd: copy %GLPK_HOME%\w64\%GLPK_PKG_LIB% %GLPK_HOME%\w64\%GLPK_LIB%
   - cmd: copy %GLPK_HOME%\w64\%GLPK_PKG_DLL% %GLPK_HOME%\w64\%GLPK_DLL%
   # Copy GLPK libraries to package
+  - ps: mkdir pywr\.libs
   - cmd: copy %GLPK_HOME%\w64\%GLPK_DLL% pywr\.libs\%GLPK_DLL%
   - cmd: copy %GLPK_HOME%\COPYING pywr\.libs\licenses\COPYING
 
