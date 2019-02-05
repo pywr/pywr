@@ -100,7 +100,7 @@ test_script:
   - "SET PYWR_SOLVER=glpk-edge"
   - "python -m pytest"
 
-  - "jupyter nbconvert --to html --execute tests\notebook.ipynb"
+  - "jupyter nbconvert --to html --execute tests\\notebook.ipynb"
 
 artifacts:
   - path: dist\*.whl
