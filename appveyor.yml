@@ -63,7 +63,8 @@ install:
     - "pip install cython packaging numpy jupyter pytest wheel"
 
     # Install optional dependencies for tests
-    - "pip install platypus-opt pygmo inspyred"
+    # pygmo is not install because Win32 wheels are not supported.
+    - "pip install platypus-opt inspyred"
 
 build_script:
   # Build the compiled extension
