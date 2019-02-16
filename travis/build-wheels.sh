@@ -4,6 +4,7 @@
 set -e -x
 
 yum install -y glpk glpk-devel
+ln -sf /usr/include/glpk/glpk.h /usr/include/glpk.h
 
 # Support binaries
 PYBINS=( /opt/python/cp36-cp36m/bin /opt/python/cp37-cp37m/bin )
