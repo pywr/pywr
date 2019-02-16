@@ -15,7 +15,7 @@ for PYBIN in "${PYBINS[@]}"; do
     # pip will build them from source using the MSVC compiler matching the
     # target Python version and architecture
     "${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel
-    PYWR_BUILD_GLPK="true" "${PYBIN}/python" setup.py build_ext bdist_wheel -w /io/wheelhouse/
+    PYWR_BUILD_GLPK="true" "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 done
 
 # Bundle external shared libraries into the wheels
