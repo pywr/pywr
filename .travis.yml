@@ -6,7 +6,7 @@ matrix:
     - sudo: required
       services:
         - docker
-      env: DOCKER_IMAGE=pywr/manylinux1_x86_64-glpk
+      env: DOCKER_IMAGE=pywr/manylinux2010_x86_64-glpk
 
 
 install:
