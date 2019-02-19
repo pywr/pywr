@@ -4,19 +4,14 @@ notifications:
 services:
   - docker
 
-env:
-  - DOCKER_IMAGE=pywr/manylinux1_x86_64-glpk
-
 sudo: required
 
-matrix:
-  include:
-    - env:
-        - PYBIN=/opt/python/cp36-cp36m/bin
-    - env:
-        - PYBIN=/opt/python/cp37-cp37m/bin
-
-
+env:
+  global:
+    - DOCKER_IMAGE=pywr/manylinux1_x86_64-glpk
+  matrix:
+    - PYBIN=/opt/python/cp36-cp36m/bin
+    - PYBIN=/opt/python/cp37-cp37m/bin
 
 install:
   - docker pull $DOCKER_IMAGE
