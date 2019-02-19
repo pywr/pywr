@@ -13,12 +13,11 @@ set -e -x
 PYWR_BUILD_GLPK="true" "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 
 # Bundle external shared libraries into the wheels
-for whl in ${WORKDIR}/wheelhouse/pywr*.whl; do
+for whl in wheelhouse/*.whl; do
     auditwheel repair "$whl" -w /io/wheelhouse/
 done
-
 # Install packages and test
 
 "${PYBIN}/pip" install pywr --no-index -f /io/wheelhouse
 "pip install platypus-opt inspyred pygmo"
-"${PYBIN}/pytest" ${WORKDIR}/pywr/tests
+(cd "$HOME"; "${PYBIN}/pytest" pywr/tests)
