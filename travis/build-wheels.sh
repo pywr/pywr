@@ -9,7 +9,7 @@ set -e -x
 # compiled extensions and are not provided as pre-built wheel packages,
 # pip will build them from source using the MSVC compiler matching the
 # target Python version and architecture
-"${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel
+"${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel networkx future
 PYWR_BUILD_GLPK="true" "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 
 # Bundle external shared libraries into the wheels
