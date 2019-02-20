@@ -4,7 +4,9 @@
 set -e -x
 
 # Compile wheels
-cd "io"
+ls "-la"
+cd "/io"
+ls "-la"
 # Install the build dependencies of the project. If some dependencies contain
 # compiled extensions and are not provided as pre-built wheel packages,
 # pip will build them from source using the MSVC compiler matching the
