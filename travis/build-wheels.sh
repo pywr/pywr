@@ -12,7 +12,7 @@ ls "-la"
 # pip will build them from source using the MSVC compiler matching the
 # target Python version and architecture
 "${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel future
-PYWR_BUILD_GLPK="true" "${PYBIN}/python" setup.py build_ext bdist_wheel -w wheelhouse/
+PYWR_BUILD_GLPK="true" "${PYBIN}/python" setup.py build_ext bdist_wheel -d wheelhouse/
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/pywr*.whl; do
