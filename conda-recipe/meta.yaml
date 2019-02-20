@@ -1,5 +1,5 @@
 {% set name = "pywr" %}
-{% set version = "1.0.0" %}
+{% set version = "1.1.0" %}
 
 {% if os.environ.get("FEATURE_OLDGLIBC", "0") == "1" %}
 {% set OLDGLIBC = 1 %}
