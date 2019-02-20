@@ -19,10 +19,10 @@ for whl in wheelhouse/pywr*.whl; do
     auditwheel repair "$whl" -w wheelhouse/
 done
 # Install packages and test
-"pip install platypus-opt inspyred pygmo"
+"${PYBIN}/pip" install platypus-opt inspyred pygmo
 
 # Move the source package to prevent import conflicts when running the tests
-"mv pywr pywr.build"
+mv pywr pywr.build
 
 for whl in wheelhouse/pywr*.whl; do
     "${PYBIN}/pip" install --force-reinstall --ignore-installed -w wheelhouse/ "$whl"
