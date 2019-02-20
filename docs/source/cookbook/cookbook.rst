@@ -7,3 +7,4 @@ Pywr cookbook examples
    Demand restrictions <demand_saving.rst>
    External data <dataframes.rst>
    Aggregated parameters <aggregated_parameter.rst>
+   Control curves <control_curves.rst>
