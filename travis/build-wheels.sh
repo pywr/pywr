@@ -11,7 +11,7 @@ ls "-la"
 # compiled extensions and are not provided as pre-built wheel packages,
 # pip will build them from source using the MSVC compiler matching the
 # target Python version and architecture
-"${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel future
+"${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel future setuptools_scm
 PYWR_BUILD_GLPK="true" "${PYBIN}/python" setup.py build_ext bdist_wheel -d wheelhouse/
 
 # Bundle external shared libraries into the wheels
