@@ -80,7 +80,7 @@ build_script:
   - cmd: copy %GLPK_HOME%\w64\%GLPK_PKG_DLL% pywr\.libs\%GLPK_PKG_DLL%
   - cmd: copy %GLPK_HOME%\COPYING pywr\.libs\licenses\COPYING
 
-  # build fiona and create a wheel
+  # build pywr and create a wheel
   - "python setup.py build_ext -I%GLPK_HOME%\\src -L%GLPK_HOME%\\w64 --with-glpk bdist_wheel"
 
   # install the wheel
