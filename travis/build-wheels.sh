@@ -25,7 +25,7 @@ done
 mv pywr pywr.build
 
 for whl in wheelhouse/pywr*.whl; do
-    "${PYBIN}/pip" install --force-reinstall --ignore-installed -w wheelhouse/ "$whl"
+    "${PYBIN}/pip" install --force-reinstall --ignore-installed "$whl"
     PYWR_SOLVER=glpk "${PYBIN}/python" -m pytest
     PYWR_SOLVER=glpk-edge "${PYBIN}/python" -m pytest
 done
