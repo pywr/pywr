@@ -9,15 +9,22 @@ set -e -x
 # compiled extensions and are not provided as pre-built wheel packages,
 # pip will build them from source using the MSVC compiler matching the
 # target Python version and architecture
-"${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel networkx future
-PYWR_BUILD_GLPK="true" "${PYBIN}/pip" wheel /io/ -w wheelhouse/
+"${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel future
+
+PYWR_BUILD_GLPK="true" "${PYBIN}/python" setup.py build_ext bdist_wheel -w wheelhouse/
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/pywr*.whl; do
     auditwheel repair "$whl" -w /io/wheelhouse/
 done
 # Install packages and test
-
-"${PYBIN}/pip" install pywr --no-index -f /io/wheelhouse
 "pip install platypus-opt inspyred pygmo"
-(cd "$HOME"; "${PYBIN}/pytest" pywr/tests)
+
+# Move the source package to prevent import conflicts when running the tests
+"mv pywr pywr.build"
+
+for whl in wheelhouse/pywr*.whl; do
+    "${PYBIN}/pip" install --force-reinstall --ignore-installed -w /io/wheelhouse/ "$whl"
+    PYWR_SOLVER=glpk "${PYBIN}/python" -m pytest
+    PYWR_SOLVER=glpk-edge "${PYBIN}/python" -m pytest
+done
