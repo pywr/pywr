@@ -1,4 +1,5 @@
 PYWR_SOLVER=glpk py.test -v ${SRC_DIR}/tests
+PYWR_SOLVER=glpk-edge py.test -v ${SRC_DIR}/tests
 PYWR_SOLVER=lpsolve py.test -v ${SRC_DIR}/tests
 
 if [ "${PY3K}" == "1" ]; then

@@ -18,33 +18,35 @@ inf = float('inf')
 cdef class AbstractNodeData:
     cdef public int id
     cdef public bint is_link
+    cdef public list in_edges, out_edges
 
-cdef class CythonGLPKSolver:
+cdef class CythonGLPKEdgeSolver:
     cdef glp_prob* prob
     cdef glp_smcp smcp
-    cdef int idx_col_routes
+
+    cdef int idx_col_edges
     cdef int idx_row_non_storages
+    cdef int idx_row_link_mass_bal
     cdef int idx_row_cross_domain
     cdef int idx_row_storages
     cdef int idx_row_virtual_storages
     cdef int idx_row_aggregated
     cdef int idx_row_aggregated_min_max
 
-    cdef public list routes
     cdef list non_storages
     cdef list storages
     cdef list virtual_storages
     cdef list aggregated
 
-    cdef int[:] routes_cost
-    cdef int[:] routes_cost_indptr
-
     cdef list all_nodes
+    cdef list all_edges
+
     cdef int num_nodes
-    cdef int num_routes
+    cdef int num_edges
     cdef int num_storages
     cdef int num_scenarios
-    cdef cvarray node_costs_arr
+    cdef cvarray edge_cost_arr
+    cdef cvarray edge_flows_arr
     cdef cvarray node_flows_arr
     cdef public cvarray route_flows_arr
     cdef public object stats
@@ -106,24 +108,28 @@ cdef class CythonGLPKSolver:
         cdef int n, num
 
         self.all_nodes = list(sorted(model.graph.nodes(), key=lambda n: n.fully_qualified_name))
-        if not self.all_nodes:
+        self.all_edges = edges = list(model.graph.edges())
+        if not self.all_nodes or not self.all_edges:
             raise ModelStructureError("Model is empty")
 
         for n, _node in enumerate(self.all_nodes):
             _node.__data = AbstractNodeData()
             _node.__data.id = n
+            _node.__data.in_edges = []
+            _node.__data.out_edges = []
             if isinstance(_node, BaseLink):
                 _node.__data.is_link = True
 
         self.num_nodes = len(self.all_nodes)
 
-        self.node_costs_arr = cvarray(shape=(self.num_nodes,), itemsize=sizeof(double), format="d")
+        self.edge_cost_arr = cvarray(shape=(len(self.all_edges),), itemsize=sizeof(double), format="d")
+        self.edge_flows_arr = cvarray(shape=(len(self.all_edges),), itemsize=sizeof(double), format="d")
         self.node_flows_arr = cvarray(shape=(self.num_nodes,), itemsize=sizeof(double), format="d")
 
-        routes = model.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
         # Find cross-domain routes
         cross_domain_routes = model.find_all_routes(BaseOutput, BaseInput, max_length=2, domain_match='different')
 
+        link_nodes = []
         non_storages = []
         storages = []
         virtual_storages = []
@@ -133,6 +139,8 @@ cdef class CythonGLPKSolver:
         for some_node in self.all_nodes:
             if isinstance(some_node, (BaseInput, BaseLink, BaseOutput)):
                 non_storages.append(some_node)
+                if isinstance(some_node, BaseLink):
+                    link_nodes.append(some_node)
             elif isinstance(some_node, VirtualStorage):
                 virtual_storages.append(some_node)
             elif isinstance(some_node, Storage):
@@ -142,27 +150,25 @@ cdef class CythonGLPKSolver:
                     aggregated_with_factors.append(some_node)
                 aggregated.append(some_node)
 
-        if len(routes) == 0:
-            raise ModelStructureError("Model has no valid routes")
         if len(non_storages) == 0:
             raise ModelStructureError("Model has no non-storage nodes")
 
-        self.num_routes = len(routes)
+        self.num_edges = len(edges)
         self.num_scenarios = len(model.scenarios.combinations)
-
-        if self.save_routes_flows:
-            # If saving flows this array needs to be 2D (one for each scenario)
-            self.route_flows_arr = cvarray(shape=(self.num_scenarios, self.num_routes),
-                                           itemsize=sizeof(double), format="d")
-        else:
-            # Otherwise the array can just be used to store a single solve to save some memory
-            self.route_flows_arr = cvarray(shape=(self.num_routes, ), itemsize=sizeof(double), format="d")
+        self.num_storages = len(storages)
 
         # clear the previous problem
         glp_erase_prob(self.prob)
         glp_set_obj_dir(self.prob, GLP_MIN)
-        # add a column for each route
-        self.idx_col_routes = glp_add_cols(self.prob, <int>(len(routes)))
+        # add a column for each edge
+        self.idx_col_edges = glp_add_cols(self.prob, self.num_edges)
+
+        # create a lookup for edges associated with each node (ignoring cross domain edges)
+        for row, (start_node, end_node) in enumerate(self.all_edges):
+            if start_node.domain != end_node.domain:
+                continue
+            start_node.__data.out_edges.append(row)
+            end_node.__data.in_edges.append(row)
 
         # create a lookup for the cross-domain routes.
         cross_domain_cols = {}
@@ -171,7 +177,7 @@ cdef class CythonGLPKSolver:
             output, input = cross_domain_route
             # note that the conversion factor is not time varying
             conv_factor = input.get_conversion_factor()
-            input_cols = [(n, conv_factor) for n, route in enumerate(routes) if route[0] is input]
+            input_cols = [(n, conv_factor) for n in input.__data.out_edges]
             # create easy lookup for the route columns this output might
             # provide cross-domain connection to
             if output in cross_domain_cols:
@@ -180,27 +186,31 @@ cdef class CythonGLPKSolver:
                 cross_domain_cols[output] = input_cols
 
         # explicitly set bounds on route and demand columns
-        for col, route in enumerate(routes):
-            set_col_bnds(self.prob, self.idx_col_routes+col, GLP_LO, 0.0, DBL_MAX)
+        for row, edge in enumerate(edges):
+            set_col_bnds(self.prob, self.idx_col_edges+row, GLP_LO, 0.0, DBL_MAX)
 
-        # constrain supply minimum and maximum flow
+        # Apply nodal flow constraints
         self.idx_row_non_storages = glp_add_rows(self.prob, len(non_storages))
-        # Add rows for the cross-domain routes.
+        # # Add rows for the cross-domain routes.
         if len(cross_domain_cols) > 0:
             self.idx_row_cross_domain = glp_add_rows(self.prob, len(cross_domain_cols))
 
         cross_domain_row = 0
         for row, some_node in enumerate(non_storages):
             # Differentiate betwen the node type.
-            # Input & Output only apply their flow constraints when they
-            # are the first and last node on the route respectively.
+            # Input and other nodes use the outgoing edge flows to apply the flow constraint on
+            # This requires the mass balance constraints to ensure the inflow and outflow are equal
+            # The Output nodes, in contrast, apply the constraint to the incoming flow (because there is no out going flow)
             if isinstance(some_node, BaseInput):
-                cols = [n for n, route in enumerate(routes) if route[0] is some_node]
+                cols = some_node.__data.out_edges
+                assert len(some_node.__data.in_edges) == 0
             elif isinstance(some_node, BaseOutput):
-                cols = [n for n, route in enumerate(routes) if route[-1] is some_node]
+                cols = some_node.__data.in_edges
+                assert len(some_node.__data.out_edges) == 0
             else:
                 # Other nodes apply their flow constraints to all routes passing through them
-                cols = [n for n, route in enumerate(routes) if some_node in route]
+                cols = some_node.__data.out_edges
+
             ind = <int*>malloc((1+len(cols)) * sizeof(int))
             val = <double*>malloc((1+len(cols)) * sizeof(double))
             for n, c in enumerate(cols):
@@ -208,8 +218,7 @@ cdef class CythonGLPKSolver:
                 val[1+n] = 1
             set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
             set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
-            # glp_set_row_name(self.prob, self.idx_row_non_storages+row,
-            #                  b'ns.'+some_node.fully_qualified_name.encode('utf-8'))
+
             free(ind)
             free(val)
 
@@ -233,22 +242,48 @@ cdef class CythonGLPKSolver:
                 free(val)
                 cross_domain_row += 1
 
+        # Add mass balance constraints
+        if len(link_nodes) > 0:
+            self.idx_row_link_mass_bal = glp_add_rows(self.prob, len(link_nodes))
+        for row, some_node in enumerate(link_nodes):
+
+            in_cols = some_node.__data.in_edges
+            out_cols = some_node.__data.out_edges
+            ind = <int*>malloc((1+len(in_cols)+len(out_cols)) * sizeof(int))
+            val = <double*>malloc((1+len(in_cols)+len(out_cols)) * sizeof(double))
+            for n, c in enumerate(in_cols):
+                ind[1+n] = 1+c
+                val[1+n] = 1
+            for n, c in enumerate(out_cols):
+                ind[1+len(in_cols)+n] = 1+c
+                val[1+len(in_cols)+n] = -1
+            set_mat_row(self.prob, self.idx_row_link_mass_bal+row, len(in_cols)+len(out_cols), ind, val)
+            set_row_bnds(self.prob, self.idx_row_link_mass_bal+row, GLP_FX, 0.0, 0.0)
+
+            free(ind)
+            free(val)
+
         # storage
         if len(storages):
             self.idx_row_storages = glp_add_rows(self.prob, len(storages))
         for row, storage in enumerate(storages):
-            cols_output = [n for n, route in enumerate(routes)
-                           if route[-1] in storage.outputs and route[0] not in storage.inputs]
-            cols_input = [n for n, route in enumerate(routes)
-                          if route[0] in storage.inputs and route[-1] not in storage.outputs]
+
+            cols_output = []
+            for output in storage.outputs:
+                cols_output.extend(output.__data.in_edges)
+            cols_input = []
+            for input in storage.inputs:
+                cols_input.extend(input.__data.out_edges)
+
             ind = <int*>malloc((1+len(cols_output)+len(cols_input)) * sizeof(int))
             val = <double*>malloc((1+len(cols_output)+len(cols_input)) * sizeof(double))
             for n, c in enumerate(cols_output):
-                ind[1+n] = self.idx_col_routes+c
+                ind[1+n] = self.idx_col_edges+c
                 val[1+n] = 1
             for n, c in enumerate(cols_input):
-                ind[1+len(cols_output)+n] = self.idx_col_routes+c
+                ind[1+len(cols_output)+n] = self.idx_col_edges+c
                 val[1+len(cols_output)+n] = -1
+
             set_mat_row(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
             # glp_set_row_name(self.prob, self.idx_row_storages+row,
             #                  b's.'+storage.fully_qualified_name.encode('utf-8'))
@@ -261,22 +296,23 @@ cdef class CythonGLPKSolver:
         for row, storage in enumerate(virtual_storages):
             # We need to handle the same route appearing twice here.
             cols = {}
-            for n, route in enumerate(routes):
-                for some_node in route:
+
+            for i, some_node in enumerate(storage.nodes):
+                if isinstance(some_node, BaseOutput):
+                    node_cols = some_node.__data.in_edges
+                else:
+                    node_cols = some_node.__data.out_edges
+
+                for n in node_cols:
                     try:
-                        i = storage.nodes.index(some_node)
-                    except ValueError:
-                        pass
-                    else:
-                        try:
-                            cols[n] += storage.factors[i]
-                        except KeyError:
-                            cols[n] = storage.factors[i]
+                        cols[n] += storage.factors[i]
+                    except KeyError:
+                        cols[n] = storage.factors[i]
 
             ind = <int*>malloc((1+len(cols)) * sizeof(int))
             val = <double*>malloc((1+len(cols)) * sizeof(double))
             for n, (c, f) in enumerate(cols.items()):
-                ind[1+n] = self.idx_col_routes+c
+                ind[1+n] = self.idx_col_edges+c
                 val[1+n] = -f
 
             set_mat_row(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
@@ -297,7 +333,10 @@ cdef class CythonGLPKSolver:
 
             cols = []
             for node in nodes:
-                cols.append([n for n, route in enumerate(routes) if node in route])
+                if isinstance(node, BaseOutput):
+                    cols.append([c for c in node.__data.in_edges])
+                else:
+                    cols.append([c for c in node.__data.out_edges])
 
             # normalise factors
             f0 = factors[0]
@@ -335,9 +374,14 @@ cdef class CythonGLPKSolver:
 
             matrix = {}
             for some_node, w in zip(nodes, weights):
-                for n, route in enumerate(routes):
-                    if some_node in route:
-                        matrix[n] = w
+                if isinstance(some_node, BaseOutput):
+                    node_cols = some_node.__data.in_edges
+                else:
+                    node_cols = some_node.__data.out_edges
+
+                for n in node_cols:
+                    matrix[n] = w
+
             length = len(matrix)
             ind = <int*>malloc(1+length * sizeof(int))
             val = <double*>malloc(1+length * sizeof(double))
@@ -350,25 +394,6 @@ cdef class CythonGLPKSolver:
             free(ind)
             free(val)
 
-        # update route properties
-        routes_cost = []
-        routes_cost_indptr = [0, ]
-        for col, route in enumerate(routes):
-            route_cost = []
-            route_cost.append(route[0].__data.id)
-            for some_node in route[1:-1]:
-                if isinstance(some_node, BaseLink):
-                    route_cost.append(some_node.__data.id)
-            route_cost.append(route[-1].__data.id)
-            routes_cost.extend(route_cost)
-            routes_cost_indptr.append(len(routes_cost))
-
-        assert(len(routes_cost_indptr) == len(routes) + 1)
-
-        self.routes_cost_indptr = np.array(routes_cost_indptr, dtype=np.int32)
-        self.routes_cost = np.array(routes_cost, dtype=np.int32)
-
-        self.routes = routes
         self.non_storages = non_storages
         self.storages = storages
         self.virtual_storages = virtual_storages
@@ -385,13 +410,11 @@ cdef class CythonGLPKSolver:
             'result_update': 0.0,
             'bounds_update_nonstorage': 0.0,
             'bounds_update_storage': 0.0,
-            'bounds_update_nonstorage': 0.0,
-            'bounds_update_storage': 0.0,
             'objective_update': 0.0,
             'number_of_rows': glp_get_num_rows(self.prob),
             'number_of_cols': glp_get_num_cols(self.prob),
             'number_of_nonzero': glp_get_num_nz(self.prob),
-            'number_of_routes': len(routes),
+            'number_of_edges': len(self.all_edges),
             'number_of_nodes': len(self.all_nodes)
         }
 
@@ -472,14 +495,14 @@ cdef class CythonGLPKSolver:
         cdef int status, simplex_ret
         cdef cross_domain_col
         cdef list route
-        cdef int node_id, indptr, nroutes
+        cdef int node_id, indptr, nedges
         cdef double flow
         cdef int n, m
         cdef Py_ssize_t length
 
         timestep = model.timestep
-        cdef list routes = self.routes
-        nroutes = len(routes)
+        cdef list edges = self.all_edges
+        nedges = self.num_edges
         cdef list non_storages = self.non_storages
         cdef list storages = self.storages
         cdef list virtual_storages = self.virtual_storages
@@ -489,22 +512,30 @@ cdef class CythonGLPKSolver:
 
         t0 = time.perf_counter()
 
+        # Initialise the cost on each edge to zero
+        cdef double[:] edge_costs = self.edge_cost_arr
+        for col in range(nedges):
+            edge_costs[col] = 0.0
+
         # update the cost of each node in the model
-        cdef double[:] node_costs = self.node_costs_arr
         for _node in self.all_nodes:
+            cost = _node.get_cost(scenario_index)
             data = _node.__data
-            node_costs[data.id] = _node.get_cost(scenario_index)
+
+            # Link nodes have edges connected upstream & downstream. We apply
+            # half the cost assigned to the node to all the connected edges.
+            # The edge costs are then the mean of the node costs at either end.
+            if data.is_link:
+                cost /= 2
+
+            for col in data.in_edges:
+                edge_costs[col] += cost
+            for col in data.out_edges:
+                edge_costs[col] += cost
 
         # calculate the total cost of each route
-        for col in range(nroutes):
-            cost = 0.0
-            for indptr in range(self.routes_cost_indptr[col], self.routes_cost_indptr[col+1]):
-                node_id = self.routes_cost[indptr]
-                cost += node_costs[node_id]
-
-            if abs(cost) < 1e-8:
-                cost = 0.0
-            set_obj_coef(self.prob, self.idx_col_routes+col, cost)
+        for col in range(nedges):
+            set_obj_coef(self.prob, self.idx_col_edges+col, edge_costs[col])
 
         self.stats['objective_update'] += time.perf_counter() - t0
         t0 = time.perf_counter()
@@ -517,6 +548,7 @@ cdef class CythonGLPKSolver:
             max_flow = inf_to_dbl_max(node.get_max_flow(scenario_index))
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
+
             set_row_bnds(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
 
@@ -617,26 +649,26 @@ cdef class CythonGLPKSolver:
         self.stats['lp_solve'] += time.perf_counter() - t0
         t0 = time.perf_counter()
 
-        cdef double[:] route_flows
-        if self.save_routes_flows:
-            route_flows = self.route_flows_arr[scenario_index.global_id, :]
-        else:
-            route_flows = self.route_flows_arr
+        cdef double[:] edge_flows = self.edge_flows_arr
 
-        for col in range(0, self.num_routes):
-            route_flows[col] = glp_get_col_prim(self.prob, col+1)
+        for col in range(self.num_edges):
+            edge_flows[col] = glp_get_col_prim(self.prob, col+1)
 
         # collect the total flow via each node
         cdef double[:] node_flows = self.node_flows_arr
         node_flows[:] = 0.0
-        for n, route in enumerate(routes):
-            flow = route_flows[n]
+        for n, edge in enumerate(edges):
+            flow = edge_flows[n]
             if flow == 0:
                 continue
-            length = len(route)
-            for m, _node in enumerate(route):
+
+            for _node in edge:
                 data = _node.__data
-                if (m == 0) or (m == length-1) or data.is_link:
+                if data.is_link:
+                    # Link nodes are connected upstream & downstream so
+                    # we take half of flow from each edge.
+                    node_flows[data.id] += flow / 2
+                else:
                     node_flows[data.id] += flow
 
         # commit the total flows

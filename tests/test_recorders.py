@@ -129,8 +129,9 @@ class TestFlowDurationCurveRecorders:
         rec = model.recorders["seasonal_fdc"]
         assert_allclose(rec.fdc, summer_fdc)
 
-    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum"])
-    def test_fdc_dev_recorder(self, agg_func):
+    @pytest.mark.parametrize("agg_func, aggregate", [
+        ("min", False), ("max", False), ("mean", False), ("mean", True), ("sum", False)])
+    def test_fdc_dev_recorder(self, agg_func, aggregate):
         """
         Test the FlowDurationCurveDeviationRecorder
         """
@@ -145,15 +146,19 @@ class TestFlowDurationCurveRecorders:
 
         natural_fdc = np.percentile(natural_flow, percentiles, axis=0)
 
-
         # Lower target is 20% below natural
         lower_input_fdc = natural_fdc * 0.8
         # Upper is 10% above
         upper_input_fdc = natural_fdc * 1.1
 
+        if aggregate:
+            # Setup only a single target for all scenarios.
+            lower_input_fdc = lower_input_fdc.mean(axis=1)
+            upper_input_fdc = upper_input_fdc.mean(axis=1)
+            scenarioA = None
+
         rec = FlowDurationCurveDeviationRecorder(model, term, percentiles, lower_input_fdc, upper_input_fdc,
-                                                 fdc_agg_func=agg_func,
-                                                 agg_func="mean", scenario=scenarioA)
+                                                 temporal_agg_func=agg_func, agg_func="mean", scenario=scenarioA)
 
         # test retrieval of recorder
         assert model.recorders['flowdurationcurvedeviationrecorder.term1'] == rec
@@ -166,6 +171,11 @@ class TestFlowDurationCurveRecorders:
         model.run()
 
         actual_fdc = np.maximum(natural_fdc - 23, 0.0)
+
+        if aggregate:
+            lower_input_fdc = lower_input_fdc[:, np.newaxis]
+            upper_input_fdc = upper_input_fdc[:, np.newaxis]
+
         # Compute deviation
         lower_deviation = (lower_input_fdc - actual_fdc) / lower_input_fdc
         upper_deviation = (actual_fdc - upper_input_fdc) / upper_input_fdc
@@ -180,6 +190,19 @@ class TestFlowDurationCurveRecorders:
         assert rec.fdc_deviations.shape == (len(percentiles), len(model.scenarios.combinations))
         df = rec.to_dataframe()
         assert df.shape == (len(percentiles), len(model.scenarios.combinations))
+
+    def test_fdc_dev_from_json(self):
+
+        model = load_model("timeseries2_with_fdc.json")
+        model.run()
+
+        rec = model.recorders['fdc_dev1']
+        df = rec.to_dataframe()
+        assert df.shape == (5, len(model.scenarios.combinations))
+
+        rec = model.recorders['fdc_dev2']
+        df = rec.to_dataframe()
+        assert df.shape == (5, len(model.scenarios.combinations))
 
 
 def test_sdc_recorder():
@@ -888,6 +911,7 @@ class TestTablesRecorder:
             assert (rec_storage[11, 0] < (0.5 * max_volume))
             assert_allclose(rec_demand[12, 0], demand_baseline * demand_factor * demand_saving)
 
+    @pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
     def test_routes(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder
@@ -941,6 +965,7 @@ class TestTablesRecorder:
             time = h5f.get_node('/time')
             assert len(time) == len(model.timestepper)
 
+    @pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
     def test_routes_multiple_scenarios(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder
@@ -969,6 +994,7 @@ class TestTablesRecorder:
             assert flows.shape == (365, 1, 4, 2)
             np.testing.assert_allclose(flows[0, 0], [[10, 10], [20, 20], [20, 30], [20, 40]])
 
+    @pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
     def test_routes_user_scenarios(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder with user defined scenario subset

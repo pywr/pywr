@@ -7,6 +7,9 @@ environment:
     - TARGET_ARCH: x64
       CONDA_PY: 36
       CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
+    - TARGET_ARCH: x64
+      CONDA_PY: 37
+      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
 
 # We always use a 64-bit machine, but can build x86 distributions
 # with the TARGET_ARCH variable.
@@ -30,7 +33,7 @@ install:
 
 
     # Configure the VM.
-    - cmd: conda.exe install -n root --quiet --yes conda-forge-build-setup
+    - cmd: conda.exe install -n root --quiet --yes conda-forge-ci-setup
     - cmd: run_conda_forge_build_setup
 
 # Skip .NET project specific build phase.
