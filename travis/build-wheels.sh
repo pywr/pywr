@@ -25,7 +25,7 @@ done
 mv pywr pywr.build
 
 # List the built wheels
-ls "-la wheelhouse"
+ls -l wheelhouse
 
 for whl in wheelhouse/pywr*.whl; do
     "${PYBIN}/pip" install --force-reinstall --ignore-installed "$whl"
