@@ -12,7 +12,7 @@ ls "-la"
 # pip will build them from source using the MSVC compiler matching the
 # target Python version and architecture
 "${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel future setuptools_scm
-PYWR_BUILD_GLPK="true" "${PYBIN}/python" setup.py build_ext bdist_wheel -d wheelhouse/
+PYWR_BUILD_GLPK="true" PYWR_BUILD_LPSOLVE="true" "${PYBIN}/python" setup.py build_ext bdist_wheel -d wheelhouse/
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/pywr*.whl; do
@@ -28,4 +28,5 @@ for whl in wheelhouse/pywr*.whl; do
     "${PYBIN}/pip" install --force-reinstall --ignore-installed "$whl"
     PYWR_SOLVER=glpk "${PYBIN}/python" -m pytest
     PYWR_SOLVER=glpk-edge "${PYBIN}/python" -m pytest
+    PYWR_SOLVER=lpsolve "${PYBIN}/python" -m pytest
 done
