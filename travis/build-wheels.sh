@@ -24,6 +24,9 @@ done
 # Move the source package to prevent import conflicts when running the tests
 mv pywr pywr.build
 
+# List the built wheels
+ls "-la wheelhouse"
+
 for whl in wheelhouse/pywr*.whl; do
     "${PYBIN}/pip" install --force-reinstall --ignore-installed "$whl"
     PYWR_SOLVER=glpk "${PYBIN}/python" -m pytest
