@@ -40,7 +40,7 @@ if [[ "${BUILD_DOC}" -eq "1" ]]; then
   cd docs
   make html
   mkdir -p /io/pywr-docs
-  cp -r build/html /io/pywr/docs/
+  cp -r build/html /io/pywr-docs/
   cd -
 
   if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
