@@ -11,7 +11,8 @@ env:
     - DOCKER_IMAGE=pywr/manylinux1_x86_64-glpk
   matrix:
     - PYBIN=/opt/python/cp36-cp36m/bin
-    - PYBIN=/opt/python/cp37-cp37m/bin
+    #  Disable Python 3.7 for Linux due pytables build problems.
+    # - PYBIN=/opt/python/cp37-cp37m/bin
 
 install:
   - docker pull $DOCKER_IMAGE
