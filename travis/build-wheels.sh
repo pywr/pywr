@@ -30,3 +30,18 @@ for whl in wheelhouse/pywr*.whl; do
     PYWR_SOLVER=glpk-edge "${PYBIN}/python" -m pytest
     PYWR_SOLVER=lpsolve "${PYBIN}/python" -m pytest
 done
+
+if [[ "${BUILD_DOC}" -eq "1" ]]; then
+  echo "Building documentation!"
+  "${PYBIN}/pip" install sphinx sphinx_rtd_theme numpydoc
+  cd docs
+  make html
+  mkdir -p /io/pywr-docs
+  cp -r build/html /io/pywr/docs/
+  cd -
+
+  if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
+      "${PYBIN}/pip" install doctr
+      doctr deploy . --deploy-repo pywr/pywr-docs --built-docs /io/pywr-docs/html
+  fi
+fi
