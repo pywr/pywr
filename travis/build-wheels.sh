@@ -3,23 +3,22 @@
 # Note this script does not build the wheels with lpsolve support.
 set -e -x
 
-# Compile wheels
-ls "-la"
-cd "/io"
-ls "-la"
+# Setup path to use PYBIN's binary folder
+export PATH=${PYBIN}:${PATH}
+
 # Install the build dependencies of the project. If some dependencies contain
 # compiled extensions and are not provided as pre-built wheel packages,
 # pip will build them from source using the MSVC compiler matching the
 # target Python version and architecture
-"${PYBIN}/pip" install cython packaging numpy jupyter pytest wheel future setuptools_scm
-PYWR_BUILD_GLPK="true" PYWR_BUILD_LPSOLVE="true" "${PYBIN}/python" setup.py build_ext bdist_wheel -d wheelhouse/
+pip install cython packaging numpy jupyter pytest wheel future setuptools_scm
+PYWR_BUILD_GLPK="true" PYWR_BUILD_LPSOLVE="true" python setup.py build_ext bdist_wheel -d wheelhouse/
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/pywr*.whl; do
     auditwheel repair "$whl" -w wheelhouse/
 done
 # Install packages and test
-"${PYBIN}/pip" install platypus-opt inspyred pygmo
+pip install platypus-opt inspyred pygmo
 
 # Move the source package to prevent import conflicts when running the tests
 mv pywr pywr.build
@@ -28,15 +27,15 @@ mv pywr pywr.build
 ls -l wheelhouse
 
 for whl in wheelhouse/pywr*.whl; do
-    "${PYBIN}/pip" install --force-reinstall --ignore-installed "$whl"
-    PYWR_SOLVER=glpk "${PYBIN}/python" -m pytest
-    PYWR_SOLVER=glpk-edge "${PYBIN}/python" -m pytest
-    PYWR_SOLVER=lpsolve "${PYBIN}/python" -m pytest
+    pip install --force-reinstall --ignore-installed "$whl"
+    PYWR_SOLVER=glpk pytest tests
+    PYWR_SOLVER=glpk-edge pytest tests
+    PYWR_SOLVER=lpsolve pytest tests
 done
 
 if [[ "${BUILD_DOC}" -eq "1" ]]; then
   echo "Building documentation!"
-  "${PYBIN}/pip" install sphinx sphinx_rtd_theme numpydoc
+  pip install sphinx sphinx_rtd_theme numpydoc
   cd docs
   make html
   mkdir -p /io/pywr-docs
@@ -44,7 +43,7 @@ if [[ "${BUILD_DOC}" -eq "1" ]]; then
   cd -
 
   if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
-      "${PYBIN}/pip" install doctr
+      pip install doctr
       doctr deploy . --deploy-repo pywr/pywr-docs --built-docs /io/pywr-docs/html
   fi
 fi
