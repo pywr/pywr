@@ -3,6 +3,7 @@
 # Note this script does not build the wheels with lpsolve support.
 set -e -x
 
+cd /io
 # Setup path to use PYBIN's binary folder
 export PATH=${PYBIN}:${PATH}
 
