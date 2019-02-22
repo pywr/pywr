@@ -12,24 +12,24 @@ def test_aggregated_storage(three_storage_model):
     agg_stg = m.nodes['Total Storage']
     stgs = [m.nodes['Storage {}'.format(num)] for num in range(3)]
     # Check initial volume is aggregated correclty
-    np.testing.assert_allclose(agg_stg.initial_volume, np.sum(s.initial_volume for s in stgs))
+    np.testing.assert_allclose(agg_stg.initial_volume, sum(s.initial_volume for s in stgs))
 
     m.setup()
     m.step()
 
     # Finally check volume is summed correctly
-    np.testing.assert_allclose(agg_stg.volume, np.sum(s.volume for s in stgs))
-    current_pc = np.sum(s.volume for s in stgs) / (np.sum(s.max_volume for s in stgs))
+    np.testing.assert_allclose(agg_stg.volume, sum(s.volume for s in stgs))
+    current_pc = sum(s.volume for s in stgs) / (sum(s.max_volume for s in stgs))
     np.testing.assert_allclose(agg_stg.current_pc, current_pc)
-    np.testing.assert_allclose(agg_stg.flow, np.sum(s.flow for s in stgs))
+    np.testing.assert_allclose(agg_stg.flow, sum(s.flow for s in stgs))
 
     m.step()
 
     # Finally check volume is summed correctly
-    np.testing.assert_allclose(agg_stg.volume, np.sum(s.volume for s in stgs))
-    current_pc = np.sum(s.volume for s in stgs) / (np.sum(s.max_volume for s in stgs))
+    np.testing.assert_allclose(agg_stg.volume, sum(s.volume for s in stgs))
+    current_pc = sum(s.volume for s in stgs) / (sum(s.max_volume for s in stgs))
     np.testing.assert_allclose(agg_stg.current_pc, current_pc)
-    np.testing.assert_allclose(agg_stg.flow, np.sum(s.flow for s in stgs))
+    np.testing.assert_allclose(agg_stg.flow, sum(s.flow for s in stgs))
 
 
 def test_aggregated_storage_scenarios(three_storage_model):
@@ -48,18 +48,18 @@ def test_aggregated_storage_scenarios(three_storage_model):
     m.step()
 
     # Finally check volume is summed correctly
-    np.testing.assert_allclose(agg_stg.volume, np.sum(s.volume for s in stgs))
-    current_pc = np.sum(s.volume for s in stgs) / (np.sum(s.max_volume for s in stgs))
+    np.testing.assert_allclose(agg_stg.volume, sum(s.volume for s in stgs))
+    current_pc = sum(s.volume for s in stgs) / (sum(s.max_volume for s in stgs))
     np.testing.assert_allclose(agg_stg.current_pc, current_pc)
-    np.testing.assert_allclose(agg_stg.flow, np.sum(s.flow for s in stgs))
+    np.testing.assert_allclose(agg_stg.flow, sum(s.flow for s in stgs))
 
     m.step()
 
     # Finally check volume is summed correctly
-    np.testing.assert_allclose(agg_stg.volume, np.sum(s.volume for s in stgs))
-    current_pc = np.sum(s.volume for s in stgs) / (np.sum(s.max_volume for s in stgs))
+    np.testing.assert_allclose(agg_stg.volume, sum(s.volume for s in stgs))
+    current_pc = sum(s.volume for s in stgs) / (sum(s.max_volume for s in stgs))
     np.testing.assert_allclose(agg_stg.current_pc, current_pc)
-    np.testing.assert_allclose(agg_stg.flow, np.sum(s.flow for s in stgs))
+    np.testing.assert_allclose(agg_stg.flow, sum(s.flow for s in stgs))
 
 
 def test_aggregated_storage_connectivity(three_storage_model):
@@ -132,12 +132,12 @@ def test_aggregated_node(three_storage_model):
     m.step()
 
     # Finally check volume is summed correctly
-    np.testing.assert_allclose(agg_otpt.flow, np.sum(o.flow for o in otpts))
+    np.testing.assert_allclose(agg_otpt.flow, sum(o.flow for o in otpts))
 
     m.step()
 
     # Finally check volume is summed correctly
-    np.testing.assert_allclose(agg_otpt.flow, np.sum(o.flow for o in otpts))
+    np.testing.assert_allclose(agg_otpt.flow, sum(o.flow for o in otpts))
 
 
 def test_aggregated_node_scenarios(three_storage_model):
@@ -156,12 +156,12 @@ def test_aggregated_node_scenarios(three_storage_model):
     m.step()
 
     # Finally check volume is summed correctly
-    np.testing.assert_allclose(agg_otpt.flow, np.sum(o.flow for o in otpts))
+    np.testing.assert_allclose(agg_otpt.flow, sum(o.flow for o in otpts))
 
     m.step()
 
     # Finally check volume is summed correctly
-    np.testing.assert_allclose(agg_otpt.flow, np.sum(o.flow for o in otpts))
+    np.testing.assert_allclose(agg_otpt.flow, sum(o.flow for o in otpts))
 
 
 def test_aggregated_node_connectivity(three_storage_model):
