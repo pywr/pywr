@@ -27,7 +27,8 @@ mv pywr pywr.build
 # List the built wheels
 ls -l wheelhouse
 
-for whl in wheelhouse/pywr*.whl; do
+# Only test the manylinux wheels
+for whl in wheelhouse/pywr*manylinux*.whl; do
     pip install --force-reinstall --ignore-installed "$whl"
     PYWR_SOLVER=glpk pytest tests
     PYWR_SOLVER=glpk-edge pytest tests
