@@ -1,3 +1,7 @@
+language: minimal
+python:
+  - "3.6"
+
 notifications:
   email: false
 
@@ -24,15 +28,17 @@ script:
       -e BUILD_DOC=$BUILD_DOC \
       $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
   - |
-    if [[ -z "$TRAVIS_TAG" ]]; then
-      DEPLOY_DIR=master;
-    else
-      DEPLOY_DIR="v-$TRAVIS_TAG";
-    fi
     if [ "$BUILD_DOC" -eq "1" ]; then
       if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
-          pip install doctr
-          doctr deploy --deploy-repo pywr/pywr-docs --built-docs pywr-docs/html $DEPLOY_DIR
+        if [[ -z "$TRAVIS_TAG" ]]; then
+          DEPLOY_DIR=master;
+        else
+          DEPLOY_DIR="v-$TRAVIS_TAG";
+        fi
+
+        pip install doctr
+        doctr deploy --deploy-repo pywr/pywr-docs \
+          --build-tags --built-docs pywr-docs/html $DEPLOY_DIR
       fi
     fi
 
