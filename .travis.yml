@@ -36,7 +36,7 @@ script:
           DEPLOY_DIR="v-$TRAVIS_TAG";
         fi
 
-        pip install doctr
+        pip3 install doctr
         doctr deploy --deploy-repo pywr/pywr-docs \
           --build-tags --built-docs pywr-docs/html $DEPLOY_DIR
       fi
