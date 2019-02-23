@@ -30,6 +30,7 @@ script:
   - |
     if [ "$BUILD_DOC" -eq "1" ]; then
       if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
+      if [[ "${TRAVIS_PULL_REQUEST}" == "false" ]]; then
         if [[ -z "$TRAVIS_TAG" ]]; then
           DEPLOY_DIR=master;
         else
@@ -39,6 +40,7 @@ script:
         pip install doctr
         doctr deploy --deploy-repo pywr/pywr-docs \
           --build-tags --built-docs pywr-docs/html $DEPLOY_DIR
+      fi
       fi
     fi
 
