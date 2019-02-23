@@ -42,9 +42,4 @@ if [[ "${BUILD_DOC}" -eq "1" ]]; then
   mkdir -p /io/pywr-docs
   cp -r build/html /io/pywr-docs/
   cd -
-
-  if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
-      pip install doctr
-      doctr deploy . --deploy-repo pywr/pywr-docs --built-docs /io/pywr-docs/html
-  fi
 fi
