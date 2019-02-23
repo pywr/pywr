@@ -2,12 +2,28 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
-## Master
+## v1.1.0
 
 ### New features
 
+- New "edge based" GLPK solver. (#672)
 - Improved `FlowDurationDeviationRecorder` with JSON support and bug fixes when no scenario is given. (#677)
 
+### Bug fixes
+
+- Replace deprecated calls time time.clock with time.perf_counter. (#683)
+- Type optimisation in AggregatedIndexParameter. (#662)
+
+### Documentation 
+
+- Updated documentation: control curves, extending Pywr. (#652)
+
+### Miscellaneous
+
+- Variable renames and clean up for GLPK path solver. (#672)
+- Spport for Python 3.7. (#662)
+- Updated url in setup.py metadata to GitHub project (#661)
+- Additional cython compiler directives (#645)
 
 ## v1.0.0
 
