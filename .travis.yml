@@ -1,6 +1,6 @@
 language: minimal
-python:
-  - "3.6"
+dist: xenial
+python: 3.6
 
 notifications:
   email: false
