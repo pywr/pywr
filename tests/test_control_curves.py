@@ -308,7 +308,7 @@ def test_control_curve_interpolated(model):
         return expected
 
     for control_curve in (0.0, 0.8, 1.0):
-        cc.update(np.array([control_curve,]))
+        cc.set_double_variables(np.array([control_curve,]))
         for initial_volume in (0.0, 10.0, 50.0, 80.0, 90.0, 100.0):
             s.initial_volume = initial_volume
             model.run()
