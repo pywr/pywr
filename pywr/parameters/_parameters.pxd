@@ -13,9 +13,6 @@ cdef class Parameter(Component):
     cdef calc_values(self, Timestep ts)
     cpdef double get_value(self, ScenarioIndex scenario_index)
     cpdef double[:] get_all_values(self)
-    cpdef update(self, double[:] values)
-    cpdef double[:] lower_bounds(self)
-    cpdef double[:] upper_bounds(self)
 
     # New variable API
     cpdef set_double_variables(self, double[:] values)
