@@ -58,21 +58,6 @@ cdef class Parameter(Component):
     cpdef double[:] get_all_values(self):
         return self.__values
 
-    cpdef update(self, double[:] values):
-        warnings.warn("Use of the `update` method on Parameters has been deprecated."
-                      "Please use either `set_double_variables` or `set_integer_variables` instead.", DeprecationWarning)
-        self.set_double_variables(values)
-
-    cpdef double[:] lower_bounds(self):
-        warnings.warn("Use of the `lower_bounds` method on Parameters has been deprecated."
-                      "Please use either `get_double_lower_bounds` or `get_integer_lower_bounds` instead.", DeprecationWarning)
-        return self.get_double_lower_bounds()
-
-    cpdef double[:] upper_bounds(self):
-        warnings.warn("Use of the `upper_bounds` method on Parameters has been deprecated."
-                      "Please use either `get_double_upper_bounds` or `get_integer_upper_bounds` instead.", DeprecationWarning)
-        return self.get_double_upper_bounds()
-
     cpdef set_double_variables(self, double[:] values):
         raise NotImplementedError()
 
