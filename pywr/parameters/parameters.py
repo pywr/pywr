@@ -119,6 +119,12 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
         return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
 InterpolatedVolumeParameter.register()
 
+class CostCurveIntegrationParameter(InterpolatedParameter):    
+    def value(self, ts, scenario_index):
+        WAFU = self._value_to_interpolate(ts, scenario_index)
+        cost, err  =quad(self.interp, 0, WAFU)
+        return cost
+CostCurveIntegrationParameter.register()    
 
 def pop_kwarg_parameter(kwargs, key, default):
     """Pop a parameter from the keyword arguments dictionary
@@ -149,3 +155,4 @@ class PropertiesDict(dict):
         if not isinstance(value, Property):
             value = ConstantParameter(value)
         dict.__setitem__(self, key, value)
+
