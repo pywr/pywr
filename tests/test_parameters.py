@@ -16,7 +16,7 @@ from pywr.model import OrphanedParameterWarning
 from pywr.recorders import Recorder
 from fixtures import simple_linear_model, simple_storage_model
 from helpers import load_model
-
+import json
 import os
 import datetime
 import numpy as np
@@ -67,9 +67,6 @@ class TestConstantParameter:
 
         np.testing.assert_allclose(p.get_double_lower_bounds(), np.array([np.pi/2]))
         np.testing.assert_allclose(p.get_double_upper_bounds(), np.array([2*np.pi]))
-        # Test deprecated API too.
-        np.testing.assert_allclose(p.lower_bounds(), np.array([np.pi/2]))
-        np.testing.assert_allclose(p.upper_bounds(), np.array([2*np.pi]))
 
         np.testing.assert_allclose(p.get_double_variables(), np.array([np.pi]))
 
@@ -687,6 +684,29 @@ def test_parameter_df_json_load(model, tmpdir):
 
     p = load_parameter(model, data)
     p.setup()
+
+
+def test_parameter_df_embed_load(model):
+
+    # Daily time-step
+    index = pd.date_range('2015-01-01', periods=365, freq='D', name='date')
+    df = pd.DataFrame(np.random.rand(365), index=index, columns=['data'])
+
+    # Save to JSON and load. This is the format we support loading as embedded data
+    df_data = df.to_json(date_format="iso")
+    # Removing the time information from the dataset for testing purposes
+    df_data = df_data.replace('T00:00:00.000Z', '')
+    df_data = json.loads(df_data)
+
+    data = {
+        'type': 'dataframe',
+        'data': df_data,
+        'parse_dates': True,
+    }
+
+    p = load_parameter(model, data)
+    p.setup()
+
 
 def test_simple_json_parameter_reference():
     # note that parameters in the "parameters" section cannot be literals

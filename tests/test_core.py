@@ -387,7 +387,7 @@ def test_storage_max_volume_param():
 
     model.run()
 
-    p.update(np.asarray([40.0, ]))
+    p.set_double_variables(np.asarray([40.0, ]))
     model.reset()
     np.testing.assert_allclose(storage.current_pc, 0.25)
 
@@ -414,7 +414,7 @@ def test_storage_initial_volume_pc():
 
     model.run()
 
-    p.update(np.asarray([40.0, ]))
+    p.set_double_variables(np.asarray([40.0, ]))
     model.reset()
     np.testing.assert_allclose(storage.current_pc, 0.5)
     np.testing.assert_allclose(storage.volume, 20.0)

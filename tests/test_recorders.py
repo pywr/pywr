@@ -88,7 +88,7 @@ class TestFlowDurationCurveRecorders:
         input = model.nodes['catchment1']
 
         percentiles = np.linspace(20., 100., 5)
-        rec = FlowDurationCurveRecorder(model, input, percentiles, fdc_agg_func=agg_func, agg_func="min")
+        rec = FlowDurationCurveRecorder(model, input, percentiles, temporal_agg_func=agg_func, agg_func="min")
 
         # test retrieval of recorder
         assert model.recorders['flowdurationcurverecorder.catchment1'] == rec
@@ -215,7 +215,7 @@ def test_sdc_recorder():
 
     percentiles = np.linspace(20., 100., 5)
     flow_rec = NumpyArrayNodeRecorder(model, inpt)
-    rec = StorageDurationCurveRecorder(model, strg, percentiles, sdc_agg_func="max", agg_func="min")
+    rec = StorageDurationCurveRecorder(model, strg, percentiles, temporal_agg_func="max", agg_func="min")
 
     # test retrieval of recorder
     assert model.recorders['storagedurationcurverecorder.reservoir1'] == rec
@@ -377,7 +377,7 @@ def test_parameter_mean_recorder_json(simple_linear_model):
         "type": "rollingwindowparameter",
         "parameter": "input_max_flow",
         "window": 3,
-        "agg_func": "mean",
+        "temporal_agg_func": "mean",
     }
 
     rec = load_recorder(model, data)
