@@ -1549,12 +1549,12 @@ def read_dataframe(model, data):
     if url is None and df_data is None:
         raise ValueError('No data specified. Provide a "url" or "data" key.')
 
-    # Check hashes if given before reading the data
-    checksums = data.pop('checksum', {})
-    for algo, hash in checksums.items():
-        check_hash(url, hash, algorithm=algo)
-
     if url is not None:
+        # Check hashes if given before reading the data
+        checksums = data.pop('checksum', {})
+        for algo, hash in checksums.items():
+            check_hash(url, hash, algorithm=algo)
+        
         try:
             filetype = data.pop('filetype')
         except KeyError:
@@ -1568,6 +1568,11 @@ def read_dataframe(model, data):
             else:
                 raise NotImplementedError('Unknown file extension: "{}"'.format(url))
     else:
+        if 'filetype' in data:
+            raise ValueError('"filetype" is only valid when loading data from a URL.')
+        if 'checksum' in data:
+            raise ValueError('"checksum" is only valid when loading data from a URL.')
+        
         filetype = "dict"
 
     if filetype == "csv":
