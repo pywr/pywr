@@ -48,7 +48,7 @@ install:
     - ps: "ls \"C:/\""
     - ps: "ls %GLPK_HOME%"
 
-    - "SET PACKAGE_DATA=1"
+    - "SET PACKAGE_DATA=true"
 
     - cd C:\projects\pywr
     # Upgrade to the latest version of pip to avoid it displaying warnings
