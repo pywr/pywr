@@ -98,9 +98,11 @@
         "inflow": {
             "type": "dataframe",
             "url": "data/thames_stochastic_flow.gz",
-            "index_col": "Date",
             "column": "flow",
-            "parse_dates": true
+            "pandas_kwargs": {
+                "index_col": "Date",
+                "parse_dates": true
+            }
         },
         "control_curve": {
             "type": "monthlyprofile",

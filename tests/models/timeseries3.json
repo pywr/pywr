@@ -23,9 +23,11 @@
                 "type": "dataframe",
                 "url" : "timeseries2.csv",
                 "scenario": "scenario A",
-                "parse_dates": true,
-                "dayfirst": true,
-                "index_col": 0
+                "pandas_kwargs": {
+                    "parse_dates": true,
+                    "dayfirst": true,
+                    "index_col": 0
+                }
             }
         },
         {

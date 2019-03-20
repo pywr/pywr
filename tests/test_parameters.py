@@ -118,8 +118,10 @@ def test_parameter_array_indexed_json_load(simple_linear_model, tmpdir):
     data = {
         'type': 'arrayindexed',
         'url': str(df_path),
-        'index_col': 'date',
-        'parse_dates': True,
+        'pandas_kwargs': {
+            'index_col': 'date',
+            'parse_dates': True,
+        },
         'column': 'data',
     }
 
@@ -211,12 +213,12 @@ def test_parameter_array_indexed_scenario_monthly_factors_json(model):
         "scenario": "Scenario B",
         "values": {
             "url": "timeseries1.csv",
-            "index_col": "Timestamp",
+            "pandas_kwargs": {"index_col": "Timestamp"},
             "column": "Data",
         },
         "factors": {
             "url": "monthly_profiles.csv",
-            "index_col": "scenario",
+            "pandas_kwargs": {"index_col": "scenario"},
         },
     })
 
@@ -675,8 +677,8 @@ def test_parameter_df_json_load(model, tmpdir):
 
     data = {
         'type': 'dataframe',
-        'dataframe': {
-            'url': str(df_path),
+        'url': str(df_path),
+        'pandas_kwargs': {
             'index_col': 'date',
             'parse_dates': True,
         }
@@ -701,7 +703,9 @@ def test_parameter_df_embed_load(model):
     data = {
         'type': 'dataframe',
         'data': df_data,
-        'parse_dates': True,
+        'pandas_kwargs': {
+            'parse_dates': True,
+        }
     }
 
     p = load_parameter(model, data)

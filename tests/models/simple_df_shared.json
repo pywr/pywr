@@ -47,7 +47,9 @@
     "tables": {
         "simple_data": {
             "url": "simple_data.csv",
-            "index_col": "node"
+            "pandas_kwargs": {
+                "index_col": "node"
+            }
         }
     }
 }

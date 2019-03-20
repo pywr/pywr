@@ -51,8 +51,10 @@
     "tables": {
         "initial_volumes": {
             "url": "initial_volumes.csv",
-            "index_col": 0,
-            "header": 0
+            "pandas_kwargs": {
+                "index_col": 0,
+                "header": 0
+            }
         }
     }
 }

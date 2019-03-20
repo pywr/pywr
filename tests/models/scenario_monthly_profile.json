@@ -25,8 +25,8 @@
                 "parameters": [
                     {
                         "type": "dataframe",
-                        "dataframe": {
-                            "url": "timeseries1.csv",
+                        "url": "timeseries1.csv",
+                        "pandas_kwargs": {
                             "parse_dates": true,
                             "dayfirst": true,
                             "index_col": 0
@@ -36,7 +36,9 @@
                         "type": "scenariomonthlyprofile",
                         "url": "monthly_profiles.csv",
                         "scenario": "scenario A",
-                        "index_col": 0
+                        "pandas_kwargs": {
+                            "index_col": 0
+                        }
                     }
 
                 ]

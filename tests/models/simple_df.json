@@ -28,7 +28,9 @@
                     "url": "simple_data.csv",
                     "column": "max_flow",
                     "index": "demand1",
-                    "index_col": "node"
+                    "pandas_kwargs": {
+                        "index_col": "node"
+                    }
                 }
             },
             "cost": {
@@ -37,7 +39,9 @@
                     "url": "simple_data.csv",
                     "column": "cost",
                     "index": "demand1",
-                    "index_col": "node"
+                    "pandas_kwargs": {
+                        "index_col": "node"
+                    }
                 }
             }
         }

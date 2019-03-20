@@ -21,8 +21,10 @@
                 "control_curve": {
                     "type": "dailyprofile",
                     "url": "control_curve.csv",
-                    "parse_dates": false,
-                    "column": "Control Curve"
+                    "column": "Control Curve",
+                    "pandas_kwargs": {
+                        "parse_dates": false
+                    }
                 },
                 "storage_node": "reservoir1",
                 "values": [-8, -6, -4]

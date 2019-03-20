@@ -7,7 +7,7 @@ from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
 from pywr.h5tools import H5Store
 from pywr.hashes import check_hash
-from pywr.schema import ComponentSchema, ExternalDataSchemaMixin, DataFrameSchemaMixin, fields
+from pywr.schema import ParameterSchema, DataFrameSchema, ExternalDataSchema, fields
 import marshmallow
 import warnings
 
@@ -19,10 +19,6 @@ parameter_schema_registry = {}
 class UnutilisedDataWarning(Warning):
     """ Simple warning to indicate that not all data has been used. """
     pass
-
-
-class ParameterSchema(ComponentSchema):
-    is_variable = marshmallow.fields.Boolean()
 
 
 class classproperty(object):
@@ -235,9 +231,9 @@ def align_and_resample_dataframe(df, datetime_index):
     return df
 
 
-class DataFrameParameterSchema(ParameterSchema):
+class DataFrameParameterSchema(DataFrameSchema, ParameterSchema):
     scenario = fields.ScenarioReferenceField(allow_none=True)
-    dataframe = fields.DataFrameField()
+
 
 
 cdef class DataFrameParameter(Parameter):
@@ -284,7 +280,7 @@ cdef class DataFrameParameter(Parameter):
 DataFrameParameter.register(DataFrameParameterSchema)
 
 
-class ArrayIndexedParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
+class ArrayIndexedParameterSchema(ExternalDataSchema):
     pass
 
 
@@ -308,8 +304,8 @@ cdef class ArrayIndexedParameter(Parameter):
 ArrayIndexedParameter.register(ArrayIndexedParameterSchema)
 
 
-class ArratIndexedScenarioParameterSchema(ParameterSchema):
-    pass
+class ArrayIndexedScenarioParameterSchema(ExternalDataSchema):
+    scenario = fields.ScenarioReferenceField(allow_none=True)
 
 
 cdef class ArrayIndexedScenarioParameter(Parameter):
@@ -679,7 +675,7 @@ cdef class WeeklyProfileParameter(Parameter):
 WeeklyProfileParameter.register()
 
 
-class MonthlyProfileParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
+class MonthlyProfileParameterSchema(ExternalDataSchema):
     # Bounds
     is_variable = marshmallow.fields.Boolean(default=False)
     lower_bounds = marshmallow.fields.Float(default=0.0)
@@ -725,8 +721,8 @@ cdef class MonthlyProfileParameter(Parameter):
 MonthlyProfileParameter.register(MonthlyProfileParameterSchema)
 
 
-class ScenarioMonthlyProfileParameterSchema(ParameterSchema, ExternalDataSchemaMixin):
-    scenario = fields.ScenarioReferenceField()
+class ScenarioMonthlyProfileParameterSchema(ExternalDataSchema):
+    scenario = fields.ScenarioReferenceField(required=True)
 
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
@@ -1643,29 +1639,25 @@ def read_dataframe(model, data):
         
         filetype = "dict"
 
+    pandas_kwargs = data.pop('pandas_kwargs', {})
+
     if filetype == "csv":
-        if hasattr(data, "index_col"):
-            data["parse_dates"] = True
-            if "dayfirst" not in data.keys():
-                data["dayfirst"] = True # we're bias towards non-American dates here
-        df = pandas.read_csv(url, **data) # automatically decompressed gzipped data!
+        if hasattr(pandas_kwargs, "index_col"):
+            pandas_kwargs["parse_dates"] = True
+            if "dayfirst" not in pandas_kwargs.keys():
+                pandas_kwargs["dayfirst"] = True # we're bias towards non-American dates here
+        df = pandas.read_csv(url, **pandas_kwargs) # automatically decompressed gzipped data!
     elif filetype == "excel":
-        df = pandas.read_excel(url, **data)
+        df = pandas.read_excel(url, **pandas_kwargs)
     elif filetype == "hdf":
-        key = data.pop("key", None)
-        df = pandas.read_hdf(url, key=key, **data)
+        df = pandas.read_hdf(url, **pandas_kwargs)
     elif filetype == "dict":
-        parse_dates = data.pop('parse_dates', False)
-        df = pandas.DataFrame.from_dict(df_data, **data)
+        parse_dates = pandas_kwargs.pop('parse_dates', False)
+        df = pandas.DataFrame.from_dict(df_data, **pandas_kwargs)
         if parse_dates:
             df.index = pandas.DatetimeIndex(df.index)
 
-    if df.index.dtype.name == "object" and data.get("parse_dates", False):
+    if df.index.dtype.name == "object" and pandas_kwargs.get("parse_dates", False):
         # catch dates that haven't been parsed yet
         raise TypeError("Invalid DataFrame index type \"{}\" in \"{}\".".format(df.index.dtype.name, url))
-
-    # clean up
-    # Assume all keywords are consumed by pandas.read_* functions
-    data.clear()
-
     return df

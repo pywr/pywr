@@ -16,8 +16,10 @@
             "max_flow": {
                 "type": "dataframe",
                 "url" : "test_data1.xlsx",
-                "sheetname": "timeseries",
-                "index_col": 0
+                "pandas_kwargs": {
+                    "sheetname": "timeseries",
+                    "index_col": 0
+                }
             }
         },
         {

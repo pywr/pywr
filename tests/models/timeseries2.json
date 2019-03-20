@@ -27,9 +27,11 @@
                     "sha256": "0f75b3cee325d37112687d3d10596f44e0add374f4e40a1b6687912c05e65366"
                 },
                 "scenario": "scenario A",
-                "parse_dates": true,
-                "dayfirst": true,
-                "index_col": 0
+                "pandas_kwargs": {
+                    "parse_dates": true,
+                    "dayfirst": true,
+                    "index_col": 0
+                }
             }
         },
         {

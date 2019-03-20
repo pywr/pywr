@@ -196,10 +196,17 @@ def test_timeseries_excel(simple_linear_model, filename):
 
     # create DataFrameParameter from external data
     filename = os.path.join(TEST_FOLDER, filename)
-    data = {"url": filename, "column": "Data", "index_col": "Timestamp"}
+    data = {
+        "type": "dataframe",
+        "url": filename,
+        "column": "Data",
+        "pandas_kwargs": {
+            "index_col": "Timestamp"
+        }
+    }
     if filename.endswith(".csv"):
-        data.update({"parse_dates": True, "dayfirst":True})
-    ts = DataFrameParameter.load(model, data)
+        data['pandas_kwargs'].update({"parse_dates": True, "dayfirst":True})
+    ts = load_parameter(model, data)
 
     # model (intentionally not aligned)
     model.timestepper.start = ts.dataframe.index[0] + 5

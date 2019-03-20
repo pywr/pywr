@@ -80,37 +80,6 @@ class NodeSchema(PywrSchema):
         return obj
 
 
-# TODO organise these two classes better they have similar fields.
-class ExternalDataSchemaMixin(marshmallow.Schema):
-    __values_arg_name__ = 'values'
-    values = marshmallow.fields.List(marshmallow.fields.Float())
-    url = marshmallow.fields.String()
-    table = marshmallow.fields.String()
-    #  TODO add validator for these fields. Could be str or int.
-    index_col = marshmallow.fields.Raw()
-    index = marshmallow.fields.Raw()
-    column = marshmallow.fields.Raw()
-    key = marshmallow.fields.Raw()
-    checksum = marshmallow.fields.Dict()
-    parse_dates = marshmallow.fields.Boolean()
-    dayfirst = marshmallow.fields.Boolean()
-    sheetname = marshmallow.fields.String()
-
-
-class DataFrameSchemaMixin(marshmallow.Schema):
-    __values_arg_name__ = 'dataframe'
-    url = marshmallow.fields.String()
-    #  TODO add validator for these fields. Could be str or int.
-    index_col = marshmallow.fields.Raw()
-    index = marshmallow.fields.Raw()
-    column = marshmallow.fields.Raw()
-    key = marshmallow.fields.Raw()
-    checksum = marshmallow.fields.Dict()
-    parse_dates = marshmallow.fields.Boolean()
-    dayfirst = marshmallow.fields.Boolean()
-    sheetname = marshmallow.fields.String()
-
-
 class ComponentSchema(PywrSchema):
     name = marshmallow.fields.Str()
     comment = marshmallow.fields.Str()
@@ -127,42 +96,61 @@ class ComponentSchema(PywrSchema):
         """ Create or append data to a node object. """
         model = self.context['model']
         klass = self.context['klass']
+        return klass(model, **data)
 
-        # TODO this if block could be similar it is copy/paste hell atm.
-        if isinstance(self, ExternalDataSchemaMixin):
-            from pywr.parameters import load_parameter_values
 
-            # This seems a bit dodgy.
-            external_data = {}
-            non_external_data = {}
-            for name, value in data.items():
-                if name in ExternalDataSchemaMixin().fields:
-                    external_data[name] = data[name]
-                else:
-                    non_external_data[name] = data[name]
+class ParameterSchema(ComponentSchema):
+    pass
 
-            if len(external_data) > 0 and self.__values_arg_name__ not in non_external_data:
-                values = load_parameter_values(model, external_data)
-                non_external_data[self.__values_arg_name__] = values
 
-            return klass(model, **non_external_data)
-        elif isinstance(self, DataFrameSchemaMixin):
-            from pywr.parameters import load_dataframe
+class DataFrameSchema(ParameterSchema):
+    __mutually_exclusive_fields__ = ('data', 'url', 'table')
+    data = marshmallow.fields.Dict(required=False)
+    url = marshmallow.fields.String(required=False)
+    table = marshmallow.fields.String(required=False)
+    pandas_kwargs = marshmallow.fields.Dict()
+    #  TODO add validator for these fields. Could be str or int.
+    index = marshmallow.fields.Raw()
+    column = marshmallow.fields.Raw()
+    key = marshmallow.fields.Raw()
+    checksum = marshmallow.fields.Dict()
 
-            # This seems a bit dodgy.
-            external_data = {}
-            non_external_data = {}
-            for name, value in data.items():
-                if name in DataFrameSchemaMixin().fields:
-                    external_data[name] = data[name]
-                else:
-                    non_external_data[name] = data[name]
+    @marshmallow.validates_schema()
+    def validate_input_type(self, data):
+        count = 0
+        for input_field in self.__mutually_exclusive_fields__:
+            if input_field in data:
+                count += 1
 
-            if len(external_data) > 0 and self.__values_arg_name__ not in non_external_data:
-                values = load_dataframe(model, external_data)
-                non_external_data[self.__values_arg_name__] = values
+        if count > 1:
+            raise marshmallow.ValidationError('Only one of "data", "url" or "table" fields '
+                                              'should be given.')
+        elif count < 0:
+            raise marshmallow.ValidationError('One of "data", "url" or "table" fields '
+                                              'must be given.')
 
-            return klass(model, **non_external_data)
+    @marshmallow.post_load
+    def make_component(self, data):
+        """ Create or append data to a node object. """
+        from pywr.parameters import load_dataframe
+        model = self.context['model']
+        klass = self.context['klass']
+        df = load_dataframe(model, data)
+        return klass(model, dataframe=df, **data)
 
-        else:
-            return klass(model, **data)
+
+class ExternalDataSchema(DataFrameSchema):
+    __mutually_exclusive_fields__ = ('data', 'url', 'table', 'values')
+    values = marshmallow.fields.List(marshmallow.fields.Float())
+
+    @marshmallow.post_load
+    def make_component(self, data):
+        """ Create or append data to a node object. """
+        print(data)
+        from pywr.parameters import load_parameter_values
+        model = self.context['model']
+        klass = self.context['klass']
+        values = load_parameter_values(model, data)
+        print(self, data)
+        return klass(model, values=values, **data)
+

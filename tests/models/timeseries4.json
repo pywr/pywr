@@ -16,9 +16,11 @@
             "flow": {
                 "type": "dataframe",
                 "url" : "timeseries3.csv",
-                "parse_dates": true,
-                "dayfirst": true,
-                "index_col": 0
+                "pandas_kwargs": {
+                    "parse_dates": true,
+                    "dayfirst": true,
+                    "index_col": 0
+                }
             }
         },
         {
