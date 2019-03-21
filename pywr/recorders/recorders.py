@@ -1,4 +1,5 @@
 import sys
+import pandas
 import numpy as np
 from functools import wraps
 from pywr._core import AbstractNode, AbstractStorage
@@ -524,5 +525,17 @@ class TablesRecorder(Recorder):
         self.h5store = None
         self._arrays = {}
         self._routes_flow_array = None
+
+    @staticmethod
+    def generate_dataframes(h5file, time='/time', scenarios='/scenarios'):
+
+        store = H5Store(h5file, mode='r')
+
+        time_table = store.file.get_node(time)
+        datetimes = pandas.to_datetime({k: time_table.col(k) for k in ('year', 'month', 'day')})
+
+        for node in store.file.walk_nodes('/', 'CArray'):
+            df = pandas.DataFrame(node.read(), index=datetimes)
+            yield node._v_name, df
 
 TablesRecorder.register()
