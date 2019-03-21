@@ -303,7 +303,7 @@ def test_bidirectional_model(bidirectional_model):
 
 def make_simple_model(supply_amplitude, demand, frequency, initial_volume):
     """
-    Make a simlpe model,
+    Make a simple model,
         supply -> reservoir -> demand.
 
     supply is a annual cosine function with amplitude supply_amplitude and
@@ -316,15 +316,18 @@ def make_simple_model(supply_amplitude, demand, frequency, initial_volume):
     S = supply_amplitude
     w = frequency
 
-    def supply_func(parent, index):
-        t = parent.model.timestamp.timetuple().tm_yday
-        return S*np.cos(t*w)+S
+    class SupplyFunc(pywr.parameters.Parameter):
+        def value(self, ts, si):
+            # Take the mean flow of the day (i.e. offset by half a day)
+            t = ts.dayofyear - 0.5
+            v = S*np.cos(t*w)+S
+            return v
 
-    supply = pywr.core.Supply(model, name='supply', max_flow=supply_func)
-    demand = pywr.core.Demand(model, name='demand', demand=demand)
-    res = pywr.core.Reservoir(model, name='reservoir')
-    res.properties['max_volume'] = pywr.parameters.ParameterConstant(1e6)
-    res.properties['current_volume'] = pywr.core.Variable(initial_volume)
+    max_flow = SupplyFunc(model)
+    supply = pywr.core.Input(model, name='supply', max_flow=max_flow, min_flow=max_flow)
+    demand = pywr.core.Output(model, name='demand', max_flow=demand, cost=-10)
+    res = pywr.core.Storage(model, name='reservoir', max_volume=1e6,
+                            initial_volume=initial_volume)
 
     supply_res_link = pywr.core.Link(model, name='link1')
     res_demand_link = pywr.core.Link(model, name='link2')
@@ -336,31 +339,28 @@ def make_simple_model(supply_amplitude, demand, frequency, initial_volume):
 
     return model
 
-def pytest_run_analytical():
+
+def test_analytical():
     """
     Run the test model though a year with analytical solution values to
     ensure reservoir just contains sufficient volume.
     """
 
-    S = 100.0 # supply amplitude
-    D = S # demand
-    w = 2*np.pi/365 # frequency (annual)
+    S = 100.0  # supply amplitude
+    D = S  # demand
+    w = 2*np.pi/365  # frequency (annual)
     V0 = S/w  # initial reservoir level
 
     model = make_simple_model(S, D, w, V0)
 
-    model.timestamp = datetime.datetime(2015, 1, 1)
-
-    # TODO include first timestep
-    T = np.arange(1,365)
+    T = np.arange(1, 365)
     V_anal = S*(np.sin(w*T)/w+T) - D*T + V0
     V_model = np.empty(T.shape)
 
-    for i,t in enumerate(T):
+    for i, t in enumerate(T):
         model.step()
-        for node in model.nodes():
-            if 'current_volume' in node.properties:
-                V_model[i] = node.properties['current_volume'].value()
+        V_model[i] = model.nodes['reservoir'].volume[0]
 
-
-    return T, V_model, V_anal
+    # Relative error from initial volume
+    error = np.abs(V_model - V_anal) / V0
+    assert np.all(error < 1e-4)
