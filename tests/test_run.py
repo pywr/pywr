@@ -195,6 +195,7 @@ def test_run_bottleneck():
     d2 = model.nodes['demand2']
     assert_allclose(d1.flow+d2.flow, 15.0, atol=1e-7)
 
+@pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
 def test_run_discharge_upstream():
     '''Test river with inline discharge (upstream)
 
@@ -208,6 +209,7 @@ def test_run_discharge_upstream():
     assert_allclose(demand.flow, 8.0, atol=1e-7)
     assert_allclose(term.flow, 0.0, atol=1e-7)
 
+@pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
 def test_run_discharge_downstream():
     '''Test river with inline discharge (downstream)
 

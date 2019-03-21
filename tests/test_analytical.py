@@ -222,6 +222,7 @@ def simple_linear_inline_model(request):
     return model
 
 
+@pytest.mark.skipif(pywr.core.Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
 @pytest.mark.parametrize("in_flow_1, out_flow_0, link_flow",
                          [(10.0, 10.0, 15.0),
                           (0.0, 0.0, 10.0)])
