@@ -10,7 +10,7 @@ export PATH=${PYBIN}:${PATH}
 # Install the build dependencies of the project. If some dependencies contain
 # compiled extensions and are not provided as pre-built wheel packages,
 # pip will build them from source matching the target Python version and architecture
-pip install cython packaging numpy jupyter pytest wheel future setuptools_scm
+pip install cython packaging numpy jupyter pytest pytest-cov wheel future setuptools_scm
 PYWR_BUILD_GLPK="true" PYWR_BUILD_LPSOLVE="true" python setup.py build_ext bdist_wheel -d wheelhouse/
 
 # Bundle external shared libraries into the wheels
@@ -29,7 +29,14 @@ ls -l wheelhouse
 # Only test the manylinux wheels
 for whl in wheelhouse/pywr*manylinux*.whl; do
     pip install --force-reinstall --ignore-installed "$whl"
-    PYWR_SOLVER=glpk pytest tests
+    if [[ "${PYWR_BUILD_TRACE}" -eq "true" ]]; then
+        PYWR_SOLVER=glpk pytest tests --cov=pywr --cov-report=term
+        # coveralls needs this to be named as such
+        # https://github.com/pytest-dev/pytest-cov/issues/146#issuecomment-272971136
+        mv .coverage .coverage.docker
+    else
+        PYWR_SOLVER=glpk pytest tests
+    fi
     PYWR_SOLVER=glpk-edge pytest tests
     PYWR_SOLVER=lpsolve pytest tests
 done

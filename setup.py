@@ -78,12 +78,18 @@ if '--enable-profiling' in sys.argv:
      compiler_directives['profile'] = True
      sys.argv.remove('--enable-profiling')
 
+build_trace = False
 if '--enable-trace' in sys.argv:
+    sys.argv.remove('--enable-trace')
+    build_trace = True
+elif os.environ.get('PYWR_BUILD_TRACE', 'false').lower() == 'true':
+    build_trace = True
+
+if build_trace:
     print('Tracing is enabled.')
     compiler_directives['linetrace'] = True
     define_macros.append(('CYTHON_TRACE', '1'))
     define_macros.append(('CYTHON_TRACE_NOGIL', '1'))
-    sys.argv.remove('--enable-trace')
 
 compile_time_env = {}
 if '--enable-debug' in sys.argv:
