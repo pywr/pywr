@@ -35,8 +35,9 @@ for whl in wheelhouse/pywr*manylinux*.whl; do
         PYWR_SOLVER=glpk pytest tests --cov=pywr --cov-report=term --cov-append
         PYWR_SOLVER=glpk-edge pytest tests --cov=pywr --cov-report=term --cov-append
         PYWR_SOLVER=lpsolve pytest tests --cov=pywr --cov-report=term  --cov-append
+        ls -la
         mv .coverage .coverage.docker
-        ls -l
+        ls -la
     else
         PYWR_SOLVER=glpk pytest tests
         PYWR_SOLVER=glpk-edge pytest tests
