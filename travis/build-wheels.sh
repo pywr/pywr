@@ -36,9 +36,9 @@ for whl in wheelhouse/pywr*manylinux*.whl; do
         mv .coverage .coverage.docker
     else
         PYWR_SOLVER=glpk pytest tests
+        PYWR_SOLVER=glpk-edge pytest tests
+        PYWR_SOLVER=lpsolve pytest tests
     fi
-    PYWR_SOLVER=glpk-edge pytest tests
-    PYWR_SOLVER=lpsolve pytest tests
 done
 
 if [[ "${BUILD_DOC}" -eq "1" ]]; then
