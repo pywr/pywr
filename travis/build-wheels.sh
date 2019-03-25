@@ -45,6 +45,9 @@ for whl in wheelhouse/pywr*manylinux*.whl; do
     fi
 done
 
+# Move src directory back
+mv pywr.build pywr
+
 if [[ "${BUILD_DOC}" -eq "1" ]]; then
   echo "Building documentation!"
   pip install sphinx sphinx_rtd_theme numpydoc
