@@ -5,5 +5,5 @@ omit =
 
 [paths]
 source =
-    /io
     .
+    /io
