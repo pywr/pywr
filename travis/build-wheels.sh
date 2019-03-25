@@ -32,14 +32,11 @@ for whl in wheelhouse/pywr*manylinux*.whl; do
     if [[ "${PYWR_BUILD_TRACE}" -eq "true" ]]; then
         # coveralls needs this to be named as such
         # https://github.com/pytest-dev/pytest-cov/issues/146#issuecomment-272971136
-        PYWR_SOLVER=glpk pytest tests --cov=pywr --cov-report=term
-        mv .coverage .coverage.docker.glpk
-
-        PYWR_SOLVER=glpk-edge pytest tests --cov=pywr --cov-report=term
-        mv .coverage .coverage.docker.glpk_edge
-
-        PYWR_SOLVER=lpsolve pytest tests --cov=pywr --cov-report=term
-        mv .coverage .coverage.docker.lpsolve
+        PYWR_SOLVER=glpk pytest tests --cov=pywr --cov-report=term --cov-append
+        PYWR_SOLVER=glpk-edge pytest tests --cov=pywr --cov-report=term --cov-append
+        PYWR_SOLVER=lpsolve pytest tests --cov=pywr --cov-report=term  --cov-append
+        mv .coverage .coverage.docker
+        ls -l
     else
         PYWR_SOLVER=glpk pytest tests
         PYWR_SOLVER=glpk-edge pytest tests

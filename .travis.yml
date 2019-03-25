@@ -51,5 +51,7 @@ script:
     fi
 
 after_success:
+  - coverage report
   - coverage combine
+  - coverage report
   - coveralls
