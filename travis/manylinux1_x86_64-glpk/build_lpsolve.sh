@@ -20,10 +20,3 @@ sh ccc
 cp ${BUILD_DIR}/bin/ux64/* /usr/lib64/
 mkdir /usr/include/lpsolve
 cp ${SRC_DIR}/*.h /usr/include/lpsolve/
-
-# # see https://github.com/PADrend/ThirdParty
-# mkdir ${BUILD_DIR}
-# cp CMakeLists.txt lpsolveConfig.cmake.in ${BUILD_DIR}
-# cd ${BUILD_DIR}
-# cmake -DCMAKE_INSTALL_LIBDIR=lib
-# make install
