@@ -2,8 +2,6 @@
 plugins = Cython.Coverage
 omit =
  *.pxd
- pywr/solvers/cython_glpk_edge.pyx
- pywr/solvers/cython_lpsolve.pyx
 
 [paths]
 source =

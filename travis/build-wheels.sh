@@ -30,10 +30,16 @@ ls -l wheelhouse
 for whl in wheelhouse/pywr*manylinux*.whl; do
     pip install --force-reinstall --ignore-installed "$whl"
     if [[ "${PYWR_BUILD_TRACE}" -eq "true" ]]; then
-        PYWR_SOLVER=glpk pytest tests --cov=pywr --cov-report=term
         # coveralls needs this to be named as such
         # https://github.com/pytest-dev/pytest-cov/issues/146#issuecomment-272971136
-        mv .coverage .coverage.docker
+        PYWR_SOLVER=glpk pytest tests --cov=pywr --cov-report=term
+        mv .coverage .coverage.docker.glpk
+
+        PYWR_SOLVER=glpk-edge pytest tests --cov=pywr --cov-report=term
+        mv .coverage .coverage.docker.glpk_edge
+
+        PYWR_SOLVER=lpsolve pytest tests --cov=pywr --cov-report=term
+        mv .coverage .coverage.docker.lpsolve
     else
         PYWR_SOLVER=glpk pytest tests
         PYWR_SOLVER=glpk-edge pytest tests
