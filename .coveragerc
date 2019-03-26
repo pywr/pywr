@@ -7,4 +7,3 @@ omit =
 source =
     .
     /io
-    /opt/_internal/cpython-3.6.6/lib/python3.6/site-packages
