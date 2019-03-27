@@ -23,7 +23,7 @@ install:
   - |
     if [[ "${PYWR_BUILD_TRACE}" == "true" ]]; then
       # Cython is needed for the coverage plugin.
-      pip install python-coveralls cython 'coverage>=4.4'
+      pip install codecov cython 'coverage>=4.4'
     fi
 
 script:
@@ -51,7 +51,6 @@ script:
     fi
 
 after_success:
-  - coverage report
   - coverage combine
   - coverage report
-  - coveralls
+  - codecov
