@@ -1,6 +1,6 @@
-from quay.io/pypa/manylinux1_x86_64
+FROM quay.io/pypa/manylinux1_x86_64
 
-MAINTAINER tomo.bbe@gmail.com
+LABEL maintainer="tomo.bbe@gmail.com"
 
 COPY . /app
 WORKDIR /app
