@@ -15,15 +15,22 @@ env:
     - DOCKER_IMAGE=pywr/manylinux1_x86_64-glpk
   matrix:
     - PYBIN=/opt/python/cp36-cp36m/bin BUILD_DOC=1
+    - PYBIN=/opt/python/cp36-cp36m/bin PYWR_BUILD_TRACE=true
     - PYBIN=/opt/python/cp37-cp37m/bin
 
 install:
   - docker pull $DOCKER_IMAGE
+  - |
+    if [[ "${PYWR_BUILD_TRACE}" == "true" ]]; then
+      # Cython is needed for the coverage plugin.
+      pip install codecov cython 'coverage>=4.4'
+    fi
 
 script:
   - |
     docker run --rm -v `pwd`:/io \
       -e PYBIN=$PYBIN \
+      -e PYWR_BUILD_TRACE=$PYWR_BUILD_TRACE \
       -e BUILD_DOC=$BUILD_DOC \
       $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
   - |
@@ -43,3 +50,7 @@ script:
       fi
     fi
 
+after_success:
+  - coverage combine
+  - coverage report
+  - codecov
