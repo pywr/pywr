@@ -51,6 +51,10 @@ script:
     fi
 
 after_success:
-  - coverage combine
-  - coverage report
-  - codecov
+  - |
+    if [[ "${PYWR_BUILD_TRACE}" == "true" ]]; then
+      coverage combine
+      coverage report
+      codecov
+    fi
+
