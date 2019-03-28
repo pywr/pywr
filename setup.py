@@ -32,7 +32,17 @@ setup_kwargs = {
     'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters', 'pywr.recorders', 'pywr.notebook', 'pywr.optimisation'],
     'use_scm_version': True,
     'setup_requires': ['setuptools_scm'],
-    'install_requires': ['pandas', 'networkx', 'scipy', 'tables', 'future', 'xlrd', 'packaging']
+    'install_requires': [
+        'pandas',
+        'networkx',
+        'scipy',
+        'tables',
+        'future',
+        'xlrd',
+        'packaging',
+        'matplotlib',
+        'jinja2'
+    ]
 }
 
 
@@ -171,4 +181,10 @@ else:
 setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional,
                                         compiler_directives=compiler_directives, annotate=annotate,
                                         compile_time_env=compile_time_env)
+
+if os.environ.get('PACKAGE_DATA', 'false').lower() == 'true':
+    pkg_data = setup_kwargs["package_data"].get("pywr", [])
+    pkg_data.extend(['.libs/*', '.libs/licenses/*'])
+    setup_kwargs["package_data"]["pywr"] = pkg_data
+
 setup(**setup_kwargs)
