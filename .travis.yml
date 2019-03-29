@@ -28,7 +28,7 @@ script:
       -e BUILD_DOC=$BUILD_DOC \
       $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
   # Fix permissions of files created in docker    
-  - sudo chown -R travis:travis    
+  - sudo chown -R travis:travis .    
   - |
     if [ "$BUILD_DOC" -eq "1" ]; then
       if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
