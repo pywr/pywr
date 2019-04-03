@@ -25,7 +25,7 @@ def run():
     model = Model.load(MODEL_FILENAME)
 
     # Add a storage recorder
-    TablesRecorder(model, 'thames_output.h5')
+    TablesRecorder(model, 'thames_output.h5', parameters=[p for p in model.parameters])
 
     # Run the model
     stats = model.run()
@@ -141,6 +141,89 @@ def figures(ext, show):
         plt.show()
 
 
+@cli.command('plot-res')
+@click.option('--ext', default='png')
+@click.option('--show/--no-show', default=False)
+def plot_res(ext, show):
+
+    end_year = '2105'
+
+    data = {}
+    for name, df in TablesRecorder.generate_dataframes('thames_output.h5'):
+        df.columns = ['Very low', 'Low', 'Central', 'High', 'Very high']
+        data[name] = df
+
+    fig1, ax1 = plt.subplots(figsize=(16, 5), dpi=300)
+    data['reservoir1'].loc[:end_year, 'Central'].plot(ax=ax1)
+    ax1.set_ylabel('Volume [$Mm^3$]')
+    plt.tight_layout()
+
+    fig2, ax2 = plt.subplots(figsize=(16, 5), dpi=300)
+    data['demand_saving_level'].loc[:end_year, 'Central'].plot(ax=ax2)
+    ax2.set_ylabel('Demand saving level')
+    plt.tight_layout()
+
+    fig3, ax3 = plt.subplots(figsize=(16, 5), dpi=300)
+    data['demand_max_flow'].loc[:end_year, 'Central'].plot(ax=ax3)
+    ax3.set_ylabel('Demand [$Mm^3/day$]')
+    plt.tight_layout()
+
+    for ax in (ax1, ax2, ax3):
+        ax.grid(True)
+
+    if ext is not None:
+        fig1.savefig(f'Reservoir.{ext}', dpi=300)
+        fig2.savefig(f'Demand saving level.{ext}', dpi=300)
+        fig3.savefig(f'Demand.{ext}', dpi=300)
+
+    if show:
+        plt.show()
+
+
+@cli.command('plot-res2')
+@click.option('--ext', default='png')
+@click.option('--show/--no-show', default=False)
+def plot_res2(ext, show):
+
+    end_year = '2105'
+
+    data = {}
+    for name, df in TablesRecorder.generate_dataframes('thames_output.h5'):
+        df.columns = ['Very low', 'Low', 'Central', 'High', 'Very high']
+        data[name] = df
+
+    fig1, ax1 = plt.subplots(figsize=(16, 5), dpi=300)
+    data['reservoir1'].loc[:end_year].plot(ax=ax1)
+    ax1.set_ylabel('Volume [$Mm^3$]')
+    plt.legend()
+    plt.tight_layout()
+
+    fig2, ax2 = plt.subplots(figsize=(16, 5), dpi=300)
+    data['reservoir1'].quantile(np.linspace(0, 1)).plot(ax=ax2)
+    ax2.set_ylabel('Volume [$Mm^3$]')
+    ax2.set_xlabel('Quantile')
+    plt.tight_layout()
+
+    fig3, ax3 = plt.subplots(figsize=(16, 5), dpi=300)
+    df = data['demand_saving_level'].apply(pandas.Series.value_counts)
+    df /= df.sum(axis=0)
+    df.plot.bar(ax=ax3)
+    ax3.set_ylabel('Proportion of time.')
+    ax3.set_xlabel('Demand saving level')
+    plt.tight_layout()
+
+    for ax in (ax1, ax2, ax3):
+        ax.grid(True)
+
+    if ext is not None:
+        fig1.savefig(f'Reservoir (scenarios).{ext}', dpi=300)
+        fig2.savefig(f'Reservoir SDC (scenarios).{ext}', dpi=300)
+        fig3.savefig(f'Demand saving level count (scenarios).{ext}', dpi=300)
+
+    if show:
+        plt.show()
+
+
 @cli.command('plot-cc')
 @click.option('--ext', default='png')
 @click.option('--show/--no-show', default=False)
@@ -170,11 +253,54 @@ def plot_control_curves(ext, show):
     plt.grid(True)
     plt.ylim([0.0, 1.0])
     plt.xlim(1, 365)
-    plt.legend(["Level 0", "Level 1", "Level 2"], loc="lower right")
+    plt.legend(["Level 0", "Level 1", "Level 2"], loc="upper right")
+    ax.plot(x, L1_values, color='k', label=None)
+    ax.plot(x, L2_values, color='k', label=None)
     plt.tight_layout()
 
     if ext is not None:
         fig.savefig(f'Control curve zones.{ext}', dpi=300)
+
+    if show:
+        plt.show()
+
+
+@cli.command('plot-dsf')
+@click.option('--ext', default='png')
+@click.option('--show/--no-show', default=False)
+def plot_demand_saving_factor(ext, show):
+
+    with open(MODEL_FILENAME) as fh:
+        data = json.load(fh)
+
+    parameters = data['parameters']
+
+    fig, ax = plt.subplots(figsize=(8, 5), dpi=300)
+
+    dates = pandas.date_range("2015-01-01", "2015-12-31")
+
+    L0_values = np.array([parameters['level0_factor']['values'] for d in dates])
+    L1_values = np.array([parameters['level1_factor']['values'][d.month-1] for d in dates])
+    L2_values = np.array([parameters['level2_factor']['values'][d.month-1] for d in dates])
+
+    x = np.arange(0, len(dates)) + 1
+
+    ax.plot(x, L0_values, label='Level 0')
+    ax.plot(x, L1_values, label='Level 0')
+    ax.plot(x, L2_values, label='Level 0')
+
+    plt.xlabel("Day of year")
+    plt.ylabel("Demand restriction factor")
+
+    plt.grid(True)
+    plt.ylim(0.6, 1.2)
+    plt.xlim(1, 365)
+    plt.legend(["Level 0", "Level 1", "Level 2"], loc="upper right")
+
+    plt.tight_layout()
+
+    if ext is not None:
+        fig.savefig(f'Demand restriction factors.{ext}', dpi=300)
 
     if show:
         plt.show()

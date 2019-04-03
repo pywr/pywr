@@ -6,8 +6,8 @@
     },
     "timestepper": {
         "start": "2100-01-01",
-        "end": "2200-01-01",
-        "timestep": 7
+        "end": "2199-01-01",
+        "timestep": 1
     },
     "scenarios": [
         {
@@ -118,19 +118,22 @@
             "type": "indexedarray",
             "index_parameter": "demand_saving_level",
             "params": [
-                {
-                    "type": "constant",
-                    "values": 1.0
-                },
-                {
-                    "type": "monthlyprofile",
-                    "values": [0.95, 0.95, 0.95, 0.95, 0.90, 0.90, 0.90, 0.90, 0.95, 0.95, 0.95, 0.95]
-                },
-                {
-                    "type": "monthlyprofile",
-                    "values": [0.8, 0.8, 0.8, 0.8, 0.75, 0.75, 0.75, 0.75, 0.8, 0.8, 0.8, 0.8]
-                }
+                "level0_factor",
+                "level1_factor",
+                "level2_factor"
             ]
+        },
+        "level0_factor": {
+            "type": "constant",
+            "values": 1.0
+        },
+        "level1_factor": {
+            "type": "monthlyprofile",
+            "values": [0.95, 0.95, 0.95, 0.95, 0.90, 0.90, 0.90, 0.90, 0.95, 0.95, 0.95, 0.95]
+        },
+        "level2_factor": {
+            "type": "monthlyprofile",
+            "values": [0.8, 0.8, 0.8, 0.8, 0.75, 0.75, 0.75, 0.75, 0.8, 0.8, 0.8, 0.8]
         },
         "demand_growth_factor": {
             "type": "constantscenario",
