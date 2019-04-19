@@ -13,7 +13,7 @@ sudo: required
 env:
   global:
     - secure: "bF1Ljix0pDNBBjgewrOxxNHJDEvlWDT5v5KckSq/Wl0v9QMAG5Fiilj0hPHVQrWoGz7F3xPU5KeprjQcfTo2UB7qPGDOVsovafbUTZ+0o6kc2mVLApYsRvlhUPX8tsRCrq6Zo874buMzbDPyAo3nnl3lkkWQ2Dh+gA7b7er9xS0="
-    - DOCKER_IMAGE=pywr/manylinux1_x86_64-glpk
+    - DOCKER_IMAGE=pywr/manylinux2010_x86_64-glpk
   matrix:
     - PYBIN=/opt/python/cp36-cp36m/bin BUILD_DOC=1
     - PYBIN=/opt/python/cp36-cp36m/bin PYWR_BUILD_TRACE=true
