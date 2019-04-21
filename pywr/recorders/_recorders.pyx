@@ -717,30 +717,11 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
 FlowDurationCurveDeviationRecorder.register()
 
 
-cdef class NumpyArrayStorageRecorder(StorageRecorder):
-    """Recorder for timeseries information from a `Storage` node.
-
-    This class stores volume from a specific node for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
-
-    Parameters
-    ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        Node instance to record.
-    proportional : bool
-        Whether to record proportional [0, 1.0] or absolute storage volumes (default=False).
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
-    """
+cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
     def __init__(self, model, AbstractStorage node, **kwargs):
         # Optional different method for aggregating across time.
-        self.proportional = kwargs.pop('proportional', False)
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
-        super(NumpyArrayStorageRecorder, self).__init__(model, node, **kwargs)
+        super().__init__(model, node, **kwargs)
 
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
@@ -757,14 +738,7 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
         self._data[:, :] = 0.0
 
     cpdef after(self):
-        cdef int i
-        cdef Timestep ts = self.model.timestepper.current
-        for i in range(self._data.shape[1]):
-            if self.proportional:
-                self._data[ts._index,i] = self._node._current_pc[i]
-            else:
-                self._data[ts._index,i] = self._node._volume[i]
-        return 0
+        raise NotImplementedError()
 
     property data:
         def __get__(self, ):
@@ -787,6 +761,40 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 
+
+cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
+    """Recorder for timeseries information from a `Storage` node.
+
+    This class stores volume from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    proportional : bool
+        Whether to record proportional [0, 1.0] or absolute storage volumes (default=False).
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    def __init__(self, *args, **kwargs):
+        # Optional different method for aggregating across time.
+        self.proportional = kwargs.pop('proportional', False)
+        super().__init__(*args, **kwargs)
+
+    cpdef after(self):
+        cdef int i
+        cdef Timestep ts = self.model.timestepper.current
+        for i in range(self._data.shape[1]):
+            if self.proportional:
+                self._data[ts._index,i] = self._node._current_pc[i]
+            else:
+                self._data[ts._index,i] = self._node._volume[i]
+        return 0
 NumpyArrayStorageRecorder.register()
 
 
@@ -852,51 +860,61 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
 
 StorageDurationCurveRecorder.register()
 
-cdef class NumpyArrayLevelRecorder(StorageRecorder):
-    cpdef setup(self):
-        cdef int ncomb = len(self.model.scenarios.combinations)
-        cdef int nts = len(self.model.timestepper)
-        self._data = np.zeros((nts, ncomb))
+cdef class NumpyArrayLevelRecorder(NumpyArrayAbstractStorageRecorder):
+    """Recorder for level timeseries from a `Storage` node.
 
-    cpdef reset(self):
-        self._data[:, :] = 0.0
+    This class stores level from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
 
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
     cpdef after(self):
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
+        cdef Storage node = self._node
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
-            self._data[ts._index,i] = self._node.get_level(scenario_index)
+            self._data[ts._index,i] = node.get_level(scenario_index)
         return 0
-
-    property data:
-        def __get__(self, ):
-            return np.array(self._data)
 NumpyArrayLevelRecorder.register()
 
-cdef class NumpyArrayAreaRecorder(StorageRecorder):
 
-    cpdef setup(self):
-        cdef int ncomb = len(self.model.scenarios.combinations)
-        cdef int nts = len(self.model.timestepper)
-        self._data = np.zeros((nts, ncomb))
+cdef class NumpyArrayAreaRecorder(NumpyArrayAbstractStorageRecorder):
+    """Recorder for area timeseries from a `Storage` node.
 
-    cpdef reset(self):
-        self._data[:, :] = 0.0
+    This class stores area from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
 
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
     cpdef after(self):
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
+        cdef Storage node = self._node
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
-            self._data[ts._index,i] = self._node.get_area(scenario_index)
+            self._data[ts._index,i] = node.get_area(scenario_index)
         return 0
-
-    property data:
-        def __get__(self, ):
-            return np.array(self._data)
-
 NumpyArrayAreaRecorder.register()
+
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     """Recorder for timeseries information from a `Parameter`.
