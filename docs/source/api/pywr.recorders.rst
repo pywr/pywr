@@ -30,6 +30,7 @@ accessed following a model run before the model instances is destroyed.
    NumpyArrayNodeRecorder
    NumpyArrayStorageRecorder
    NumpyArrayLevelRecorder
+   NumpyArrayAreaRecorder
    NumpyArrayParameterRecorder
    NumpyArrayIndexParameterRecorder
 

@@ -13,7 +13,7 @@ import tables
 import json
 from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
-from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
+from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayAreaRecorder, NumpyArrayLevelRecorder,
                             AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
                             TotalFlowNodeRecorder, RollingMeanFlowNodeRecorder, MeanFlowNodeRecorder, NumpyArrayParameterRecorder,
                             NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
@@ -27,7 +27,8 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
 
 from pywr.recorders.progress import ProgressRecorder
 
-from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter
+from pywr.parameters import (DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter,
+                             InterpolatedVolumeParameter)
 from helpers import load_model
 import os
 import sys
@@ -258,6 +259,47 @@ def test_numpy_storage_recorder(simple_storage_model, proportional):
     df = rec.to_dataframe()
     assert df.shape == (5, 1)
     assert_allclose(df.values, expected, atol=1e-7)
+
+
+def test_numpy_array_level_recorder(simple_storage_model):
+    model = simple_storage_model
+
+    storage = model.nodes["Storage"]
+    level_param = InterpolatedVolumeParameter(model, storage, [0, 20], [0, 100])
+    storage.level = level_param
+    level_rec = NumpyArrayLevelRecorder(model, storage, temporal_agg_func='min')
+
+    model.run()
+
+    expected = np.array([[50, 35, 20, 5, 0]]).T
+    assert_allclose(level_rec.data, expected, atol=1e-7)
+
+    df = level_rec.to_dataframe()
+    assert df.shape == (5, 1)
+    assert_allclose(df.values, expected, atol=1e-7)
+
+    assert_allclose(level_rec.aggregated_value(), np.min(expected))
+
+
+def test_numpy_array_area_recorder(simple_storage_model):
+
+    model = simple_storage_model
+
+    storage = model.nodes["Storage"]
+    area_param = InterpolatedVolumeParameter(model, storage, [0, 20], [0, 100])
+    storage.area = area_param
+    area_rec = NumpyArrayAreaRecorder(model, storage, temporal_agg_func='min')
+    
+    model.run()
+
+    expected = np.array([[50, 35, 20, 5, 0]]).T
+    assert_allclose(area_rec.data, expected, atol=1e-7)
+
+    df = area_rec.to_dataframe()
+    assert df.shape == (5, 1)
+    assert_allclose(df.values, expected, atol=1e-7)
+
+    assert_allclose(area_rec.aggregated_value(), np.min(expected))
 
 
 def test_numpy_parameter_recorder(simple_linear_model):
