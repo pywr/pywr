@@ -61,19 +61,27 @@ To install Pywr in-place in developer mode, use the ``develop`` command instead 
 
   python setup.py develop --with-glpk --with-lpsolve
 
+Installing binary wheels with pip
+---------------------------------
+
+Binary wheel distributions of Pywr are hosted on `Pypi <https://pypi.org/project/pywr/>`_ for Windows and Linux.
+
+.. code-block:: shell
+
+  pip install pywr
+
 Installing binary packages with Anaconda
 ----------------------------------------
 
-A binary distribution of Pywr is provided for 3.4 (64-bit) on Windows, Linux and OS X for the `Anaconda Python distribution <https://www.continuum.io/downloads>`_. Note that this release may lag behind the development version.
+A binary distribution of Pywr is provided for 3.6+ (64-bit) on Windows, Linux and OS X for the `Anaconda Python distribution <https://www.continuum.io/downloads>`_. Note that this release may lag behind the development version.
 
 You will need to install and configure Anaconda before proceeding. The `conda 30-minute test drive <http://conda.pydata.org/docs/test-drive.html>`_ is a good place to start.
 
-The following commands add the "channel" the binary is hosted on, then install Pywr including all dependencies. The conda-forge channel is also recommended to satisfy some of the dependencies.
+Pywr is hosted on the conda-forge channel.
 
 .. code-block:: shell
 
   conda config --add channels conda-forge
-  conda config --add channels pywr
   conda install pywr
 
 Installing from source with Anaconda
