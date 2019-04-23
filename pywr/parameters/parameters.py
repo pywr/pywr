@@ -19,6 +19,7 @@ from ._hydropower import HydropowerTargetParameter
 from past.builtins import basestring
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.integrate import quad
 import pandas
 
 
@@ -86,7 +87,7 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
     >>> x = [0, 5, 10, 20]
     >>> y = [0, 10, 30, -5]
     >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
-    >>> p2 = InterpolatedParameter(model, x, y, interp_kwargs={"kind": "linear"})
+    >>> p2 = InterpolatedParameter(model, p1, x, y, interp_kwargs={"kind": "linear"})
     """
     def __init__(self, model, parameter, x, y, interp_kwargs=None, **kwargs):
         super(InterpolatedParameter, self).__init__(model, x, y, interp_kwargs, **kwargs)
@@ -119,12 +120,24 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
         return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
 InterpolatedVolumeParameter.register()
 
-class CostCurveIntegrationParameter(InterpolatedParameter):    
+
+class InterpolatedQuadratureParameter(InterpolatedParameter):
+    """
+    Parameter value is equal to the quadrature of the interpolation of another parameter
+
+    Example
+    -------
+    >>> x = [0, 5, 10, 20]
+    >>> y = [0, 10, 30, -5]
+    >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
+    >>> p2 = InterpolatedQuadratureParameter(model, p1, x, y, interp_kwargs={"kind": "linear"})
+    """
     def value(self, ts, scenario_index):
-        WAFU = self._value_to_interpolate(ts, scenario_index)
-        cost, err  =quad(self.interp, 0, WAFU)
+        x = self._value_to_interpolate(ts, scenario_index)
+        cost, err = quad(self.interp, 0, x)
         return cost
-CostCurveIntegrationParameter.register()    
+InterpolatedQuadratureParameter.register()
+
 
 def pop_kwarg_parameter(kwargs, key, default):
     """Pop a parameter from the keyword arguments dictionary

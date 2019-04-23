@@ -8,7 +8,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
-    InterpolatedParameter, WeeklyProfileParameter,
+    InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
@@ -950,6 +950,31 @@ def test_interpolated_parameter(simple_linear_model):
         values = [0, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 2]
         return values[timestep.index]
     model.run()
+
+
+def test_interpolated_quadrature_parameter(simple_linear_model):
+    model = simple_linear_model
+    model.timestepper.start = "1920-01-01"
+    model.timestepper.end = "1920-01-12"
+
+    p1 = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+    p2 = InterpolatedQuadratureParameter(model, p1, [0, 5, 10, 11], [0, 5 * 2, 10 * 3, 2])
+
+    @assert_rec(model, p2)
+    def expected_func(timestep, scenario_index):
+        values = [0, 1.0, 2.0, 3.0, 4.0, 5.0, 5.0+10+4, 18, 22, 26, 30, 2]
+        i = timestep.index
+        if i < 6:
+            value = 2*i**2 / 2
+        elif i < 11:
+            value = 25 + 4*(i - 5)**2 / 2 + (i - 5) * 10
+        else:
+            value = 25 + 50 + 50 + 28 / 2 + 2
+        return value
+
+    model.run()
+
+
 
 class Test2DStoragePolynomialParameter:
 
