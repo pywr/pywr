@@ -963,7 +963,6 @@ def test_interpolated_quadrature_parameter(simple_linear_model):
 
     @assert_rec(model, p2)
     def expected_func(timestep, scenario_index):
-        values = [0, 1.0, 2.0, 3.0, 4.0, 5.0, 5.0+10+4, 18, 22, 26, 30, 2]
         i = timestep.index
         if i < 6:
             value = 2*i**2 / 2
