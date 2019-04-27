@@ -937,6 +937,7 @@ class Test1DPolynomialParameter:
             return 0.5 + 2.5*xscaled
         model.run()
 
+
 def test_interpolated_parameter(simple_linear_model):
     model = simple_linear_model
     model.timestepper.start = "1920-01-01"
@@ -973,7 +974,6 @@ def test_interpolated_quadrature_parameter(simple_linear_model):
         return value
 
     model.run()
-
 
 
 class Test2DStoragePolynomialParameter:
