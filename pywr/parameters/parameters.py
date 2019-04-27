@@ -99,6 +99,15 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
     def _value_to_interpolate(self, ts, scenario_index):
         return self._parameter.get_value(scenario_index)
 
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        x = np.array(data.pop("x"))
+        y = np.array(data.pop("y"))
+        kind = data.pop("kind", "linear")
+        return cls(model, parameter, x, y, interp_kwargs={'kind': kind})
+InterpolatedParameter.register()
+
 
 class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
     """
