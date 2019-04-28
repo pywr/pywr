@@ -32,6 +32,15 @@ def agg_func(request):
     return agg_func_name, npy_func
 
 
+def test_get_set_aggregator(agg_func):
+    """Test getter and setter for Aggregator.func"""
+    agg_func_name, _ = agg_func
+    agg = Aggregator(agg_func_name)
+    assert agg.func == agg_func_name
+    agg.func = "sum"
+    assert agg.func == "sum"
+
+
 def test_aggregator_1d(agg_func):
     """ Test Aggregator.aggregate_1d function. """
     agg_func_name, npy_func = agg_func

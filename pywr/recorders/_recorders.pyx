@@ -23,6 +23,7 @@ _agg_func_lookup = {
     "product": AggFuncs.PRODUCT,
     "custom": AggFuncs.CUSTOM,
 }
+_agg_func_lookup_reverse = {v: k for k, v in _agg_func_lookup.items()}
 
 cdef enum ObjDirection:
     NONE = 0
@@ -43,6 +44,10 @@ cdef class Aggregator:
         self.func = func
 
     property func:
+        def __get__(self):
+            if self._func == AggFuncs.CUSTOM:
+                return self._user_func
+            return _agg_func_lookup_reverse[self._func]
         def __set__(self, func):
             self._user_func = None
             if isinstance(func, basestring):
@@ -142,6 +147,8 @@ cdef class Recorder(Component):
         self._scenario_aggregator = Aggregator(agg_func)
 
     property agg_func:
+        def __get__(self):
+            return self._scenario_aggregator.func
         def __set__(self, agg_func):
             self._scenario_aggregator.func = agg_func
 
