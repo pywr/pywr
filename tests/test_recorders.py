@@ -1154,6 +1154,10 @@ def test_mean_flow_node_recorder(simple_linear_model):
     assert_allclose(10.0, rec.aggregated_value(), atol=1e-7)
 
 
+def custom_test_func(array, axis=None):
+    return np.sum(array**2, axis=axis)
+
+
 class TestAggregatedRecorder:
     """Tests for AggregatedRecorder"""
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
@@ -1180,6 +1184,17 @@ class TestAggregatedRecorder:
 
         model.step()
         assert_allclose(func([20.0, 40.0]), rec.aggregated_value(), atol=1e-7)
+
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum", "custom"])
+    def test_agg_func_get_set(self, simple_linear_model, agg_func):
+        """Test getter and setter for AggregatedRecorder.agg_func"""
+        if agg_func == "custom":
+            agg_func = custom_test_func
+        model = simple_linear_model
+        rec = AggregatedRecorder(model, [], agg_func=agg_func)
+        assert rec.agg_func == agg_func
+        rec.agg_func = "product"
+        assert rec.agg_func == "product"
 
 
 def test_reset_timestepper_recorder():

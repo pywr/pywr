@@ -955,6 +955,7 @@ _agg_func_lookup = {
     "all": AggFuncs.ALL,
     "median": AggFuncs.MEDIAN,
 }
+_agg_func_lookup_reverse = {v: k for k, v in _agg_func_lookup.items()}
 
 def wrap_const(model, value):
     if isinstance(value, (int, float)):
@@ -996,6 +997,10 @@ cdef class AggregatedParameter(Parameter):
         return cls(model, parameters=parameters, agg_func=agg_func, **data)
 
     property agg_func:
+        def __get__(self):
+            if self._agg_func == AggFuncs.CUSTOM:
+                return self._agg_user_func
+            return _agg_func_lookup_reverse[self._agg_func]
         def __set__(self, agg_func):
             self._agg_user_func = None
             if isinstance(agg_func, basestring):
@@ -1112,6 +1117,10 @@ cdef class AggregatedIndexParameter(IndexParameter):
         return cls(model, parameters=parameters, agg_func=agg_func, **data)
 
     property agg_func:
+        def __get__(self):
+            if self._agg_func == AggFuncs.CUSTOM:
+               return self._agg_user_func
+            return _agg_func_lookup_reverse[self._agg_func]
         def __set__(self, agg_func):
             self._agg_user_func = None
             if isinstance(agg_func, basestring):
