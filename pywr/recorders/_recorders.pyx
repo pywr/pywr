@@ -1406,13 +1406,11 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
 AnnualCountIndexParameterRecorder.register()
 
 
-def load_recorder(model, data):
+def load_recorder(model, data, recorder_name=None):
     recorder = None
 
     if isinstance(data, basestring):
         recorder_name = data
-    else:
-        recorder_name = None
 
     # check if recorder has already been loaded
     for rec in model.recorders:
@@ -1426,7 +1424,7 @@ def load_recorder(model, data):
             # we're still in the process of loading data from JSON and
             # the parameter requested hasn't been loaded yet - do it now
             try:
-                data = model._recorders_to_load[recorder_name]
+                data = model._recorders_to_load.pop(recorder_name)
             except KeyError:
                 raise KeyError("Unknown recorder: '{}'".format(data))
             recorder = load_recorder(model, data)
