@@ -403,6 +403,10 @@ class TestAnnualHarmonicSeriesParameter:
             np.testing.assert_allclose(p1.value(ts, si), 0.6 + 0.1*np.cos(doy*2*np.pi + np.pi/2))
 
 
+def custom_test_func(array, axis=None):
+    return np.sum(array**2, axis=axis)
+
+
 class TestAggregatedParameter:
     """Tests for AggregatedParameter"""
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "median": np.median, "sum": np.sum}
@@ -455,6 +459,16 @@ class TestAggregatedParameter:
             return (timestep.month - 1) * 0.8
 
         model.run()
+
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum", "custom"])
+    def test_agg_func_get_set(self, model, agg_func):
+        if agg_func == "custom":
+            agg_func = custom_test_func
+        p = AggregatedParameter(model, [], agg_func=agg_func)
+        assert p.agg_func == agg_func
+        p.agg_func = "product"
+        assert p.agg_func == "product"
+
 
 class DummyIndexParameter(IndexParameter):
     """A simple IndexParameter which returns a constant value"""
@@ -523,6 +537,16 @@ class TestAggregatedIndexParameter:
                 r = AssertionRecorder(model, p, expected_data=e, name="assertion {}-{}".format(n, agg_func))
 
         model.run()
+
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum", "custom"])
+    def test_agg_func_get_set(self, model, agg_func):
+        if agg_func == "custom":
+            agg_func = custom_test_func
+        p = AggregatedIndexParameter(model, [], agg_func=agg_func)
+        assert p.agg_func == agg_func
+        p.agg_func = "product"
+        assert p.agg_func == "product"
+
 
 def test_parameter_child_variables(model):
 
