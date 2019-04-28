@@ -1,64 +1,63 @@
-language: generic
-
-sudo: false
-
-cache:
-    directories:
-        - ${HOME}/miniconda3
-
-env:
-    global:
-        - secure: "bF1Ljix0pDNBBjgewrOxxNHJDEvlWDT5v5KckSq/Wl0v9QMAG5Fiilj0hPHVQrWoGz7F3xPU5KeprjQcfTo2UB7qPGDOVsovafbUTZ+0o6kc2mVLApYsRvlhUPX8tsRCrq6Zo874buMzbDPyAo3nnl3lkkWQ2Dh+gA7b7er9xS0="
-
-# Travis has limited OSX resources
-# Only do OSX on Python 3.6
-matrix:
-    include:
-      - os: linux
-        env: CONDA_PY=36 BUILD_DOC=1
-      - os: linux
-        env: CONDA_PY=37
-      - os: osx
-        env: CONDA_PY=36
-             MACOSX_DEPLOYMENT_TARGET=10.9
-
-install:
-    - |
-      if [ ! -f ${HOME}/miniconda3/bin/conda ] ; then
-          echo "Fresh miniconda install..."
-          MINICONDA_URL="https://repo.continuum.io/miniconda"
-          if [ `uname` == "Darwin" ]; then
-              MINICONDA_FILE="Miniconda3-latest-MacOSX-x86_64.sh"
-          else
-              MINICONDA_FILE="Miniconda3-latest-Linux-x86_64.sh"
-          fi
-          wget ${MINICONDA_URL}/${MINICONDA_FILE}
-          rm -rf ${HOME}/miniconda3
-          bash ${MINICONDA_FILE} -b -p ${HOME}/miniconda3
-      fi
-      export PATH=${HOME}/miniconda3/bin:$PATH
-
-      conda config --add channels conda-forge
-      
-      conda update --yes conda
-
-      conda config --set show_channel_urls true
-      conda install --yes --quiet conda-build
-
-script:
-    - |
-      set -e
-      conda build conda-recipe
-      if [ "$BUILD_DOC" -eq "1" ]; then
-        if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
-            pip install doctr
-            doctr deploy . --deploy-repo pywr/pywr-docs --built-docs ${HOME}/pywr/docs/html
-        fi
-      fi
-
-before_cache:
-    - rm -rf ${HOME}/miniconda3/conda-bld/*
-    - rm -rf ${HOME}/miniconda3/envs/*
+language: python
+dist: xenial
+python: 3.6
 
 notifications:
-    email: false
+  email: false
+
+services:
+  - docker
+
+sudo: required
+
+env:
+  global:
+    - secure: "bF1Ljix0pDNBBjgewrOxxNHJDEvlWDT5v5KckSq/Wl0v9QMAG5Fiilj0hPHVQrWoGz7F3xPU5KeprjQcfTo2UB7qPGDOVsovafbUTZ+0o6kc2mVLApYsRvlhUPX8tsRCrq6Zo874buMzbDPyAo3nnl3lkkWQ2Dh+gA7b7er9xS0="
+    - DOCKER_IMAGE=pywr/manylinux2010_x86_64-glpk
+  matrix:
+    - PYBIN=/opt/python/cp36-cp36m/bin BUILD_DOC=1
+    - PYBIN=/opt/python/cp36-cp36m/bin PYWR_BUILD_TRACE=true
+    - PYBIN=/opt/python/cp37-cp37m/bin
+
+install:
+  - docker pull $DOCKER_IMAGE
+  - |
+    if [[ "${PYWR_BUILD_TRACE}" == "true" ]]; then
+      # Cython is needed for the coverage plugin.
+      pip install codecov cython 'coverage>=4.4'
+    fi
+
+script:
+  - |
+    docker run --rm -v `pwd`:/io \
+      -e PYBIN=$PYBIN \
+      -e PYWR_BUILD_TRACE=$PYWR_BUILD_TRACE \
+      -e BUILD_DOC=$BUILD_DOC \
+      $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
+  # Fix permissions of files created in docker    
+  - sudo chown -R travis:travis .    
+  - |
+    if [ "$BUILD_DOC" -eq "1" ]; then
+      if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
+      if [[ "${TRAVIS_PULL_REQUEST}" == "false" ]]; then
+        if [[ -z "$TRAVIS_TAG" ]]; then
+          DEPLOY_DIR=master;
+        else
+          DEPLOY_DIR="v-$TRAVIS_TAG";
+        fi
+
+        pip install doctr
+        doctr deploy --deploy-repo pywr/pywr-docs \
+          --build-tags --built-docs pywr-docs/html $DEPLOY_DIR
+      fi
+      fi
+    fi
+
+after_success:
+  - |
+    if [[ "${PYWR_BUILD_TRACE}" == "true" ]]; then
+      coverage combine
+      coverage report
+      codecov
+    fi
+
