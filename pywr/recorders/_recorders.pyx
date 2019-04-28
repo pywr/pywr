@@ -282,9 +282,8 @@ cdef class AggregatedRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        recorder_names = data["recorders"]
-        recorders = [model.recorders[name] for name in recorder_names]
-        del(data["recorders"])
+        recorder_names = data.pop("recorders")
+        recorders = [load_recorder(model, name) for name in recorder_names]
         rec = cls(model, recorders, **data)
 
 AggregatedRecorder.register()
