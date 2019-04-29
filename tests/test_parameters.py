@@ -1072,6 +1072,42 @@ class Test2DStoragePolynomialParameter:
         model.setup()
         model.step()
 
+
+class TestDivisionParameter:
+
+    def test_divsion(self, simple_linear_model):
+        model = simple_linear_model
+        model.timestepper.start = "2017-01-01"
+        model.timestepper.end = "2017-01-15"
+
+        profile = list(range(1, 367))
+
+        data = {
+            "type": "division",
+            "numerator": {
+                "name": "raw",
+                "type": "dailyprofile",
+                "values": profile,
+            },
+            "denominator": {
+                "type": "constant",
+                "value": 123.456
+            }
+        }
+
+        model.nodes["Input"].max_flow = parameter = load_parameter(model, data)
+        model.nodes["Output"].max_flow = 9999
+        model.nodes["Output"].cost = -100
+
+        daily_profile = model.parameters["raw"]
+
+        @assert_rec(model, parameter)
+        def expected(timestep, scenario_index):
+            value = daily_profile.get_value(scenario_index)
+            return value / 123.456
+        model.run()
+
+
 class TestMinMaxNegativeParameter:
     @pytest.mark.parametrize("ptype,profile", [
         ("max", list(range(-10, 356))),
