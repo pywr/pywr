@@ -1,5 +1,5 @@
 from pywr._component cimport Component
-from pywr._core cimport Timestep, AbstractNode, AbstractStorage, ScenarioIndex, Scenario
+from pywr._core cimport Timestep, AbstractNode, AbstractStorage, Storage, ScenarioIndex, Scenario
 from pywr.parameters._parameters cimport Parameter, IndexParameter
 
 
@@ -39,14 +39,18 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     cdef Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
-cdef class NumpyArrayStorageRecorder(StorageRecorder):
+cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
     cdef public Aggregator _temporal_aggregator
-    cdef public bint proportional
     cdef double[:, :] _data
 
-cdef class NumpyArrayLevelRecorder(StorageRecorder):
-    cdef public Aggregator _temporal_aggregator
-    cdef double[:, :] _data
+cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
+    cdef public bint proportional
+
+cdef class NumpyArrayLevelRecorder(NumpyArrayAbstractStorageRecorder):
+    pass
+
+cdef class NumpyArrayAreaRecorder(NumpyArrayAbstractStorageRecorder):
+    pass
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     cdef public Aggregator _temporal_aggregator

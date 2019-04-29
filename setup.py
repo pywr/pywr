@@ -33,7 +33,18 @@ setup_kwargs = {
                  'pywr.notebook', 'pywr.optimisation', 'pywr.schema'],
     'use_scm_version': True,
     'setup_requires': ['setuptools_scm'],
-    'install_requires': ['pandas', 'networkx', 'scipy', 'tables', 'future', 'xlrd', 'packaging', 'marshmallow'],
+    'install_requires': [
+        'pandas',
+        'networkx',
+        'scipy',
+        'tables',
+        'future',
+        'xlrd',
+        'packaging',
+        'matplotlib',
+        'jinja2',
+        'marshmallow'
+    ]
 }
 
 define_macros = []
@@ -68,12 +79,18 @@ if '--enable-profiling' in sys.argv:
      compiler_directives['profile'] = True
      sys.argv.remove('--enable-profiling')
 
+build_trace = False
 if '--enable-trace' in sys.argv:
+    sys.argv.remove('--enable-trace')
+    build_trace = True
+elif os.environ.get('PYWR_BUILD_TRACE', 'false').lower() == 'true':
+    build_trace = True
+
+if build_trace:
     print('Tracing is enabled.')
     compiler_directives['linetrace'] = True
     define_macros.append(('CYTHON_TRACE', '1'))
     define_macros.append(('CYTHON_TRACE_NOGIL', '1'))
-    sys.argv.remove('--enable-trace')
 
 compile_time_env = {}
 if '--enable-debug' in sys.argv:
@@ -171,4 +188,10 @@ else:
 setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional,
                                         compiler_directives=compiler_directives, annotate=annotate,
                                         compile_time_env=compile_time_env)
+
+if os.environ.get('PACKAGE_DATA', 'false').lower() == 'true':
+    pkg_data = setup_kwargs["package_data"].get("pywr", [])
+    pkg_data.extend(['.libs/*', '.libs/licenses/*'])
+    setup_kwargs["package_data"]["pywr"] = pkg_data
+
 setup(**setup_kwargs)

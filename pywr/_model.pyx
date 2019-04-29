@@ -8,6 +8,7 @@ from packaging.version import parse as parse_version
 import warnings
 import inspect
 import time
+from functools import wraps
 import logging
 logger = logging.getLogger(__name__)
 
@@ -349,45 +350,34 @@ class Model(object):
             nodes_to_load[node_name] = node_data
         model._nodes_to_load = nodes_to_load
 
-        # collect parameters to load
-        try:
-            parameters_to_load = data["parameters"]
-        except KeyError:
-            parameters_to_load = {}
-        else:
-            for key, value in parameters_to_load.items():
-                if isinstance(value, dict):
-                    parameters_to_load[key]["name"] = key
-        model._parameters_to_load = parameters_to_load
+        def collect_components(data, key):
+            components_data = data.get(key, {})
+            for name, component_data in components_data.items():
+                component_data["name"] = name
+            return components_data
 
-        # collect recorders to load
-        try:
-            recorders_to_load = data["recorders"]
-        except KeyError:
-            recorders_to_load = {}
-        else:
-            for key, value in recorders_to_load.items():
-                if isinstance(value, dict):
-                    recorders_to_load[key]["name"] = key
-        model._recorders_to_load = recorders_to_load
+        model._parameters_to_load = collect_components(data, "parameters")
+        model._recorders_to_load = collect_components(data, "recorders")
 
-        # Now being loading data and creating object instances.
+        # Now begin loading data and creating object instances.
         # First the nodes are loaded via their schemas without parameter instances.
         for node_name in nodes_to_load.keys():
             node = cls._get_node_from_ref(model, node_name)
 
-        # All nodes should now exist
-        # Next load the parameters and recorders.
-        for name, rdata in model._recorders_to_load.items():
-            load_recorder(model, rdata)
-        while True:
-            try:
-                name, pdata = model._parameters_to_load.popitem()
-            except KeyError:
-                break
-            parameter = load_parameter(model, pdata, name)
+        @listify
+        def load_components(components_to_load, load_component):
+            while True:
+                try:
+                    name, component_data = components_to_load.popitem()
+                except KeyError:
+                    break
+                component = load_component(model, component_data, name)
+                yield component
+
+        load_components(model._recorders_to_load, load_recorder)
+        for parameter in load_components(model._parameters_to_load, load_parameter):
             if not isinstance(parameter, BaseParameter):
-                raise TypeError("Named parameters cannot be literal values. Use type \"constant\" instead.")
+                raise TypeError("Named parameters cannot be literal values. Use type `constant` instead.")
 
         # Now load parameters and assign to the appropriate node attributes.
         for node_name, node_data in nodes_to_load.items():
@@ -909,3 +899,10 @@ class ModelResult(object):
 
     def _repr_html_(self):
         return self.to_dataframe()._repr_html_()
+
+
+def listify(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        return list(f(*args, **kwargs))
+    return wrapper
