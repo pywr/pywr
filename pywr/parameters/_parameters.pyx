@@ -1377,6 +1377,56 @@ cdef class DeficitParameter(Parameter):
 DeficitParameter.register()
 
 
+cdef class FlowParameter(Parameter):
+    """Parameter that provides the flow from a node from the previous time-step.
+
+    Parameters
+    ----------
+    model : pywr.model.Model
+    node : Node
+      The node that will have its flow tracked
+
+    Notes
+    -----
+    This parameter keeps track of the previous time step's flow on the given node. These
+    values can be used in calculations for the current timestep as though this was any
+    other parameter.
+    """
+    def __init__(self, model, node, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        self.node = node
+
+    cpdef setup(self):
+        super(FlowParameter, self).setup()
+        cdef int num_comb
+        if self.model.scenarios.combinations:
+            num_comb = len(self.model.scenarios.combinations)
+        else:
+            num_comb = 1
+        self.__next_values = np.empty([num_comb], np.float64)
+
+    cpdef reset(self):
+        self.__values[...] = 0.0
+
+    cdef calc_values(self, Timestep timestep):
+        cdef int i
+        for i in range(self.__values.shape[0]):
+            print(i, self.__next_values[i], timestep)
+            self.__values[i] = self.__next_values[i]
+
+    cpdef after(self):
+        cdef int i
+        for i in range(self.node._flow.shape[0]):
+            print(i, self.node._flow[i])
+            self.__next_values[i] = self.node._flow[i]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        return cls(model, node=node, **data)
+FlowParameter.register()
+
+
 def get_parameter_from_registry(parameter_type):
     key = parameter_type.lower()
     try:
