@@ -1318,3 +1318,6 @@ class TestRbfParameter:
         model = load_model('rbf_parameter.json')
 
         model.run()
+
+        rec = model.recorders['rbf_recorder']
+        print(rec.to_dataframe())

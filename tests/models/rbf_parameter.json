@@ -1,0 +1,58 @@
+{
+    "metadata": {
+        "title": "Reservoir 1",
+        "description": "A model with a reservoir.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Storage",
+            "max_volume": 350,
+            "initial_volume": 350,
+            "outputs": 0
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 1,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "constant": {
+            "type": "constant",
+            "value": 2
+        },
+        "rbf": {
+            "type": "rbf",
+            "y": [1, 2, 3],
+            "nodes": {
+                "supply1": [1, 0.5, 0]
+            },
+            "parameters": {
+                "constant": [2, 4, 6]
+            },
+            "days_of_year": [1, 100, 200]
+        }
+    },
+    "recorders": {
+        "rbf_recorder": {
+            "type": "numpyarrayparameterrecorder",
+            "parameter":  "rbf"
+        }
+    }
+}
