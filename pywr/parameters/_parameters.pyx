@@ -1411,13 +1411,11 @@ cdef class FlowParameter(Parameter):
     cdef calc_values(self, Timestep timestep):
         cdef int i
         for i in range(self.__values.shape[0]):
-            print(i, self.__next_values[i], timestep)
             self.__values[i] = self.__next_values[i]
 
     cpdef after(self):
         cdef int i
         for i in range(self.node._flow.shape[0]):
-            print(i, self.node._flow[i])
             self.__next_values[i] = self.node._flow[i]
 
     @classmethod
