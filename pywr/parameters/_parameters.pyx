@@ -1393,6 +1393,7 @@ cdef class FlowParameter(Parameter):
     other parameter.
     """
     def __init__(self, model, node, *args, **kwargs):
+        self.initial_value = kwargs.pop('initial_value', 0)
         super().__init__(model, *args, **kwargs)
         self.node = node
 
@@ -1406,6 +1407,7 @@ cdef class FlowParameter(Parameter):
         self.__next_values = np.empty([num_comb], np.float64)
 
     cpdef reset(self):
+        self.__next_values[...] = self.initial_value
         self.__values[...] = 0.0
 
     cdef calc_values(self, Timestep timestep):

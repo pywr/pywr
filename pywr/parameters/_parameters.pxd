@@ -155,3 +155,4 @@ cdef class DeficitParameter(Parameter):
 cdef class FlowParameter(Parameter):
     cdef public Node node
     cdef double[:] __next_values
+    cdef public double initial_value

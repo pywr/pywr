@@ -43,7 +43,8 @@
     "parameters": {
         "flow": {
             "type": "flow",
-            "node": "demand1"
+            "node": "demand1",
+            "initial_value": 3.1415
         }
     },
     "recorders": {

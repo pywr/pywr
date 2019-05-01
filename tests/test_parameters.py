@@ -1299,7 +1299,7 @@ def test_flow_parameter():
     actual = model.recorders["flow_recorder"].data
     assert_allclose(supplied, actual[:,0])
 
-    expected_yesterday = [0]+list(supplied[0:-1])
+    expected_yesterday = [3.1415]+list(supplied[0:-1])
     actual_yesterday = model.recorders["yesterday_flow_recorder"].data
     assert_allclose(expected_yesterday, actual_yesterday[:,0])
 
