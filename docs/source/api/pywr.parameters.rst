@@ -35,6 +35,7 @@ Combining multiple parameters
 
    AggregatedParameter
    AggregatedIndexParameter
+   DivisionParameter
    NegativeParameter
    MaxParameter
    NegativeMaxParameter

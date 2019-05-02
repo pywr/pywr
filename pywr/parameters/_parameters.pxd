@@ -132,6 +132,12 @@ cdef class AggregatedIndexParameter(IndexParameter):
     cpdef add(self, Parameter parameter)
     cpdef remove(self, Parameter parameter)
 
+
+cdef class DivisionParameter(Parameter):
+    cdef Parameter _numerator
+    cdef Parameter _denominator
+
+
 cdef class NegativeParameter(Parameter):
     cdef public Parameter parameter
 
