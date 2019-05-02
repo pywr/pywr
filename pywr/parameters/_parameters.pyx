@@ -1213,7 +1213,7 @@ AggregatedIndexParameter.register()
 
 
 cdef class DivisionParameter(Parameter):
-    """ Paramter that divides one `Parameter` by another.
+    """ Parameter that divides one `Parameter` by another.
 
     Parameters
     ----------
@@ -1233,8 +1233,7 @@ cdef class DivisionParameter(Parameter):
         def __get__(self):
             return self._numerator
         def __set__(self, parameter):
-
-            # remove any existing parameter 
+            # remove any existing parameter
             if self._numerator is not None:
                 self._numerator.parents.remove(self)
 
@@ -1245,8 +1244,7 @@ cdef class DivisionParameter(Parameter):
         def __get__(self):
             return self._denominator
         def __set__(self, parameter):
-
-            # remove any existing parameter 
+            # remove any existing parameter
             if self._denominator is not None:
                 self._denominator.parents.remove(self)
 
