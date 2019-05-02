@@ -372,6 +372,18 @@ def test_parameter_recorder_json():
     assert_allclose(rec_demand.data, 10)
     assert_allclose(rec_supply.data, 15)
 
+
+def test_nested_recorder_json():
+    model = load_model("agg_recorder_nesting.json")
+    rec_demand = model.recorders["demand_max_recorder"]
+    rec_supply = model.recorders["supply_max_recorder"]
+    rec_total = model.recorders["max_recorder"]
+    model.run()
+    assert_allclose(rec_demand.aggregated_value(), 10)
+    assert_allclose(rec_supply.aggregated_value(), 15)
+    assert_allclose(rec_total.aggregated_value(), 25)
+
+
 @pytest.fixture()
 def daily_profile_model(simple_linear_model):
     model = simple_linear_model
