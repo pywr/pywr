@@ -1283,6 +1283,60 @@ cdef class AggregatedIndexParameter(IndexParameter):
 AggregatedIndexParameter.register()
 
 
+cdef class DivisionParameter(Parameter):
+    """ Parameter that divides one `Parameter` by another.
+
+    Parameters
+    ----------
+    denominator : `Parameter`
+        The parameter to use as the denominator (or divisor).
+    numerator : `Parameter`
+        The parameter to use as the numerator (or dividend).
+    """
+    def __init__(self, model, numerator, denominator, **kwargs):
+        super().__init__(model, **kwargs)
+        self._numerator = None
+        self._denominator = None
+        self.numerator = numerator
+        self.denominator = denominator
+
+    property numerator:
+        def __get__(self):
+            return self._numerator
+        def __set__(self, parameter):
+            # remove any existing parameter
+            if self._numerator is not None:
+                self._numerator.parents.remove(self)
+
+            self._numerator = parameter
+            self.children.add(parameter)
+            
+    property denominator:
+        def __get__(self):
+            return self._denominator
+        def __set__(self, parameter):
+            # remove any existing parameter
+            if self._denominator is not None:
+                self._denominator.parents.remove(self)
+
+            self._denominator = parameter
+            self.children.add(parameter)            
+
+    cdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = self._numerator.__values[i] / self._denominator.__values[i]
+
+    @classmethod
+    def load(cls, model, data):
+        numerator = load_parameter(model, data.pop("numerator"))
+        denominator = load_parameter(model, data.pop("denominator"))
+        return cls(model, numerator, denominator, **data)
+DivisionParameter.register()
+
+
 cdef class NegativeParameter(Parameter):
     """ Parameter that takes negative of another `Parameter`
 
