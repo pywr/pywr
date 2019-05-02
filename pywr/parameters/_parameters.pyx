@@ -1385,6 +1385,8 @@ cdef class FlowParameter(Parameter):
     model : pywr.model.Model
     node : Node
       The node that will have its flow tracked
+    initial_value : float (default=0.0)
+      The value to return on the first  time-step before the node has any past flow.
 
     Notes
     -----
