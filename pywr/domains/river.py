@@ -1,6 +1,8 @@
 
-from pywr.nodes import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink
-from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter
+from pywr.nodes import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink, \
+    VirtualStorage, AggregatedNode
+from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter, \
+    LinearRoutingParameter, FlowParameter
 from pywr.parameters.control_curves import ControlCurveParameter
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
@@ -238,3 +240,37 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         del(data["type"])
         node = cls(model, mrf=mrf, mrf_cost=mrf_cost, cost=cost, **data)
         return node
+
+
+class RoutedRiver(River):
+    def __init__(self, model, name, X, K, **kwargs):
+        super().__init__(model, name, **kwargs)
+
+        self.output_node = Output(model, name=f'{name} Output', parent=self)
+        self.input_node = Input(model, name=f'{name} Input', parent=self)
+        self.agg_node = AggregatedNode(model, name=f'{name} AggregatedNode', nodes=[self.output_node, self.input_node], parent=self)
+
+        print(X, K, 1/K)
+        dt = self.model.timestepper.delta.days
+        c0 = (K*X - 0.5 * dt)/ (K - K * X + 0.5 * dt)
+        param = LinearRoutingParameter(model, FlowParameter(model, self.output_node), FlowParameter(model, self.input_node),
+                                       X, K)
+
+        print(c0)
+        self.agg_node.flow_weights = [c0, 1]
+        self.agg_node.min_flow = param
+        self.agg_node.max_flow = param
+
+    def iter_slots(self, slot_name=None, is_connector=True):
+        if is_connector:
+            yield self.input_node
+        else:
+            yield self.output_node
+
+    def after(self, timestep):
+        """
+        Set total flow on this link as sum of sublinks
+        """
+        self.commit_all(self.input_node.flow)
+        # Make sure save is done after setting aggregated flow
+        super().after(timestep)

@@ -1,0 +1,46 @@
+{
+    "metadata": {
+        "title": "Simple routing",
+        "description": "A very simple routing example.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "catchment",
+            "type": "input",
+            "max_flow": {
+                "type": "annualharmonicseries",
+                "mean": 10,
+                "amplitudes": [5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0],
+                "phases": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            },
+            "cost": -10
+        },
+        {
+            "name": "reach1",
+            "type": "RoutedRiver",
+            "X": 0.1,
+            "K": 2
+        },
+        {
+            "name": "reach2",
+            "type": "RoutedRiver",
+            "X": 0.1,
+            "K": 5
+        },
+        {
+            "name": "estuary",
+            "type": "Output"
+        }
+    ],
+    "edges": [
+        ["catchment", "reach1"],
+        ["reach1", "reach2"],
+        ["reach2", "estuary"]
+    ]
+}

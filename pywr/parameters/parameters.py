@@ -8,7 +8,7 @@ from ._parameters import (
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
-    align_and_resample_dataframe, DataFrameParameter,
+    align_and_resample_dataframe, DataFrameParameter, FlowParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter,
     NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
     DeficitParameter, load_parameter, load_parameter_values, load_dataframe)
@@ -118,6 +118,36 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
         kind = data.pop("kind", "linear")
         return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
 InterpolatedVolumeParameter.register()
+
+
+class LinearRoutingParameter(Parameter):
+    def __init__(self, model, inflow_parameter, outflow_parameter, X, K, **kwargs):
+        super().__init__(model, **kwargs)
+
+        self.inflow_parameter = inflow_parameter
+        self.children.add(inflow_parameter)
+        self.outflow_parameter = outflow_parameter
+        self.children.add(outflow_parameter)
+        self.X = X
+        self.K = K
+
+    @property
+    def c1(self):
+        dt = self.model.timestepper.delta.days
+        return (self.K * self.X + 0.5 * dt) / (self.K - self.K * self.X + 0.5 * dt)
+
+    @property
+    def c2(self):
+        dt = self.model.timestepper.delta.days
+        return (self.K - self.K * self.X - 0.5 * dt) / (self.K - self.K * self.X + 0.5 * dt)
+
+    def value(self, ts, si):
+
+        c1 = self.c1
+        c2 = self.c2
+        I = self.inflow_parameter.get_value(si)
+        O = self.outflow_parameter.get_value(si)
+        return c1*I + c2*O
 
 
 def pop_kwarg_parameter(kwargs, key, default):
