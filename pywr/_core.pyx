@@ -632,7 +632,7 @@ cdef class AggregatedNode(AbstractNode):
 
         def __set__(self, values):
             values = np.array(values, np.float64)
-            if np.any(values < 1e-6):
+            if np.any(np.abs(values) < 1e-6):
                 warnings.warn("Very small flow_weights in AggregateNode result in ill-conditioned matrix")
             self._flow_weights = values
             self.model.dirty = True
