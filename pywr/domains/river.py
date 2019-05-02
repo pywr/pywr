@@ -250,14 +250,11 @@ class RoutedRiver(River):
         self.input_node = Input(model, name=f'{name} Input', parent=self)
         self.agg_node = AggregatedNode(model, name=f'{name} AggregatedNode', nodes=[self.output_node, self.input_node], parent=self)
 
-        print(X, K, 1/K)
         dt = self.model.timestepper.delta.days
-        c0 = (K*X - 0.5 * dt)/ (K - K * X + 0.5 * dt)
-        param = LinearRoutingParameter(model, FlowParameter(model, self.output_node), FlowParameter(model, self.input_node),
-                                       X, K)
-
-        print(c0)
-        self.agg_node.flow_weights = [c0, 1]
+        c0 = (dt - 2 * K * X) / (2 * K * (1 - X) + dt)
+        param = LinearRoutingParameter(model, self.output_node, self.input_node,
+                                       ConstantParameter(model, X), ConstantParameter(model, K))
+        self.agg_node.flow_weights = [-c0, 1]
         self.agg_node.min_flow = param
         self.agg_node.max_flow = param
 

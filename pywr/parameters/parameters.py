@@ -120,34 +120,41 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
 InterpolatedVolumeParameter.register()
 
 
+
 class LinearRoutingParameter(Parameter):
-    def __init__(self, model, inflow_parameter, outflow_parameter, X, K, **kwargs):
+    def __init__(self, model, inflow_node, outflow_node, weighting, time_of_travel, **kwargs):
         super().__init__(model, **kwargs)
 
-        self.inflow_parameter = inflow_parameter
-        self.children.add(inflow_parameter)
-        self.outflow_parameter = outflow_parameter
-        self.children.add(outflow_parameter)
-        self.X = X
-        self.K = K
+        self.inflow_node = inflow_node
+        self.inflow_parameter = FlowParameter(model, inflow_node)
+        self.children.add(self.inflow_parameter)
+        self.outflow_node = outflow_node
+        self.outflow_parameter = FlowParameter(model, outflow_node)
+        self.children.add(self.outflow_parameter)
+        self.weighting = weighting
+        self.children.add(weighting)
+        self.time_of_travel = time_of_travel
+        self.children.add(time_of_travel)
 
-    @property
-    def c1(self):
+    def c1(self, scenario_index):
         dt = self.model.timestepper.delta.days
-        return (self.K * self.X + 0.5 * dt) / (self.K - self.K * self.X + 0.5 * dt)
+        X = self.weighting.get_value(scenario_index)
+        K = self.time_of_travel.get_value(scenario_index)
+        return (dt - 2 * X * K) / (2 * K * (1 - X) + dt)
 
-    @property
-    def c2(self):
+    def c2(self, scenario_index):
         dt = self.model.timestepper.delta.days
-        return (self.K - self.K * self.X - 0.5 * dt) / (self.K - self.K * self.X + 0.5 * dt)
+        X = self.weighting.get_value(scenario_index)
+        K = self.time_of_travel.get_value(scenario_index)
+        return (dt + 2 * X * K) / (2 * K * (1 - X) + dt)
 
     def value(self, ts, si):
 
-        c1 = self.c1
-        c2 = self.c2
+        c1 = self.c1(si)
+        c2 = self.c2(si)
         I = self.inflow_parameter.get_value(si)
         O = self.outflow_parameter.get_value(si)
-        return c1*I + c2*O
+        return c2*I + (1 - c1 - c2)*O
 
 
 def pop_kwarg_parameter(kwargs, key, default):
