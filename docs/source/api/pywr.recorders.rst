@@ -51,6 +51,9 @@ Deficit recorders
 .. autosummary::
    :toctree: generated/
 
+   NumpyArrayNodeDeficitRecorder
+   NumpyArrayNodeSuppliedRatioRecorder
+   NumpyArrayNodeCurtailmentRatioRecorder
    TotalDeficitNodeRecorder
    DeficitFrequencyNodeRecorder
 

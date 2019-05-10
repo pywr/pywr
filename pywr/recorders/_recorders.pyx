@@ -479,6 +479,88 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
 NumpyArrayNodeRecorder.register()
 
 
+cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
+    """Recorder for timeseries of deficit from a `Node`.
+
+    This class stores deficit from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    cpdef after(self):
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef Node node = self._node
+        for scenario_index in self.model.scenarios.combinations:
+            max_flow = node.get_max_flow(scenario_index)
+            self._data[ts._index,scenario_index.global_id] = max_flow - node._flow[scenario_index.global_id]
+        return 0
+
+
+cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
+    """Recorder for timeseries of ratio of supplied flow from a `Node`.
+
+    This class stores deficit from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    cpdef after(self):
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef Node node = self._node
+        for scenario_index in self.model.scenarios.combinations:
+            max_flow = node.get_max_flow(scenario_index)
+            self._data[ts._index,scenario_index.global_id] = node._flow[scenario_index.global_id] / max_flow
+        return 0
+
+
+cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
+    """Recorder for timeseries of curtailment ratio from a `Node`.
+
+    This class stores deficit from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    cpdef after(self):
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef Node node = self._node
+        for scenario_index in self.model.scenarios.combinations:
+            max_flow = node.get_max_flow(scenario_index)
+            self._data[ts._index,scenario_index.global_id] = 1 - node._flow[scenario_index.global_id] / max_flow
+
 
 cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
     """
