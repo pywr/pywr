@@ -1320,6 +1320,26 @@ def test_deficit_parameter():
     assert_allclose(expected_yesterday, actual_yesterday[:,0])
 
 
+def test_flow_parameter():
+    """test FlowParameter
+
+    """
+    model = load_model("flow_parameter.json")
+
+    model.run()
+
+    max_flow = np.array([5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8])
+    demand = 10.0
+    supplied = np.minimum(max_flow, demand)
+
+    actual = model.recorders["flow_recorder"].data
+    assert_allclose(supplied, actual[:,0])
+
+    expected_yesterday = [3.1415]+list(supplied[0:-1])
+    actual_yesterday = model.recorders["yesterday_flow_recorder"].data
+    assert_allclose(expected_yesterday, actual_yesterday[:,0])
+
+
 class TestHydroPowerTargets:
     def test_target_json(self):
         """ Test loading a HydropowerTargetParameter from JSON. """

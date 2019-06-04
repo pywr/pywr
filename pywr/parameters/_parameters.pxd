@@ -157,3 +157,8 @@ cdef class NegativeMinParameter(MinParameter):
 
 cdef class DeficitParameter(Parameter):
     cdef public Node node
+
+cdef class FlowParameter(Parameter):
+    cdef public Node node
+    cdef double[:] __next_values
+    cdef public double initial_value
