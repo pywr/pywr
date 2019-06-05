@@ -120,21 +120,40 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
 InterpolatedVolumeParameter.register()
 
 
-
 class LinearRoutingParameter(Parameter):
     def __init__(self, model, inflow_node, outflow_node, weighting, time_of_travel, **kwargs):
         super().__init__(model, **kwargs)
 
         self.inflow_node = inflow_node
+        self._inflow_parameter = None
         self.inflow_parameter = FlowParameter(model, inflow_node)
-        self.children.add(self.inflow_parameter)
+
         self.outflow_node = outflow_node
+        self._outflow_parameter = None
         self.outflow_parameter = FlowParameter(model, outflow_node)
-        self.children.add(self.outflow_parameter)
+
+        self._weighting = None
         self.weighting = weighting
-        self.children.add(weighting)
+
+        self._time_of_travel = None
         self.time_of_travel = time_of_travel
-        self.children.add(time_of_travel)
+
+    inflow_parameter = parameter_property("_inflow_parameter")
+    outflow_parameter = parameter_property("_outflow_parameter")
+    weighting = parameter_property("_weighting", wrap_constants=True)
+    time_of_travel = parameter_property("_time_of_travel", wrap_constants=True)
+
+    def c0(self):
+        # This only works for constant parameters. It would require Parameter support
+        # in the LP solvers to function with generic parameters
+        assert isinstance(self.time_of_travel, ConstantParameter)
+        K = self.time_of_travel.get_double_variables()[0]
+        assert isinstance(self.weighting, ConstantParameter)
+        X = self.weighting.get_double_variables()[0]
+
+        dt = self.model.timestepper.delta.days
+        c0 = (dt - 2 * K * X) / (2 * K * (1 - X) + dt)
+        return c0
 
     def c1(self, scenario_index):
         dt = self.model.timestepper.delta.days

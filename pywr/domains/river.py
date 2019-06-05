@@ -243,20 +243,41 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
 
 
 class RoutedRiver(River):
-    def __init__(self, model, name, X, K, **kwargs):
+    def __init__(self, model, name, weighting, time_of_travel, **kwargs):
         super().__init__(model, name, **kwargs)
 
         self.output_node = Output(model, name=f'{name} Output', parent=self)
         self.input_node = Input(model, name=f'{name} Input', parent=self)
         self.agg_node = AggregatedNode(model, name=f'{name} AggregatedNode', nodes=[self.output_node, self.input_node], parent=self)
 
-        dt = self.model.timestepper.delta.days
-        c0 = (dt - 2 * K * X) / (2 * K * (1 - X) + dt)
-        param = LinearRoutingParameter(model, self.output_node, self.input_node,
-                                       ConstantParameter(model, X), ConstantParameter(model, K))
-        self.agg_node.flow_weights = [-c0, 1]
+        param = LinearRoutingParameter(model, self.output_node, self.input_node, weighting, time_of_travel)
         self.agg_node.min_flow = param
         self.agg_node.max_flow = param
+        self.routing_parameter = param
+        self._calc_flow_weights()
+
+    def _calc_flow_weights(self):
+        """Update the aggregated parameter's flow weights for routing."""
+        c0 = self.routing_parameter.c0()
+        self.agg_node.flow_weights = [-c0, 1]
+
+    def time_of_travel():
+        def fget(self):
+            return self.routing_parameter.time_of_travel
+        def fset(self, value):
+            self.routing_parameter.time_of_travel = value
+            self._calc_flow_weights()
+        return locals()
+    time_of_travel = property(**time_of_travel())
+
+    def weighting():
+        def fget(self):
+            return self.routing_parameter.weighting
+        def fset(self, value):
+            self.routing_parameter.weighting = value
+            self._calc_flow_weights()
+        return locals()
+    weighting = property(**weighting())
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:

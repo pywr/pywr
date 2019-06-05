@@ -24,14 +24,14 @@
         {
             "name": "reach1",
             "type": "RoutedRiver",
-            "X": 0.1,
-            "K": 2
+            "weighting": 0.1,
+            "time_of_travel": 2
         },
         {
             "name": "reach2",
             "type": "RoutedRiver",
-            "X": 0.1,
-            "K": 5
+            "weighting": 0.1,
+            "time_of_travel": 5
         },
         {
             "name": "estuary",
