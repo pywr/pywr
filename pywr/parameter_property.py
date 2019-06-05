@@ -1,6 +1,6 @@
 
 
-def parameter_property(private_name):
+def parameter_property(private_name, wrap_constants=False):
     """Factory for parameter properties
 
     This property handles adding/removing parameters from the tree.
@@ -18,6 +18,9 @@ def parameter_property(private_name):
             old_parameter = getattr(self, private_name)
             if old_parameter:
                 self.children.remove(old_parameter)
+            if wrap_constants and isinstance(parameter, (float, int)):
+                from pywr.parameters import ConstantParameter
+                parameter = ConstantParameter(self.model, value=parameter)
             self.children.add(parameter)
             setattr(self, private_name, parameter)
         return {"fget": fget, "fset": fset}
