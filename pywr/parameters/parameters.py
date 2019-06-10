@@ -120,17 +120,9 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
 InterpolatedVolumeParameter.register()
 
 
-class LinearRoutingParameter(Parameter):
-    def __init__(self, model, inflow_node, outflow_node, weighting, time_of_travel, **kwargs):
+class AbstractLinearRoutingParameter(Parameter):
+    def __init__(self, model, weighting, time_of_travel, **kwargs):
         super().__init__(model, **kwargs)
-
-        self.inflow_node = inflow_node
-        self._inflow_parameter = None
-        self.inflow_parameter = FlowParameter(model, inflow_node)
-
-        self.outflow_node = outflow_node
-        self._outflow_parameter = None
-        self.outflow_parameter = FlowParameter(model, outflow_node)
 
         self._weighting = None
         self.weighting = weighting
@@ -138,8 +130,6 @@ class LinearRoutingParameter(Parameter):
         self._time_of_travel = None
         self.time_of_travel = time_of_travel
 
-    inflow_parameter = parameter_property("_inflow_parameter")
-    outflow_parameter = parameter_property("_outflow_parameter")
     weighting = parameter_property("_weighting", wrap_constants=True)
     time_of_travel = parameter_property("_time_of_travel", wrap_constants=True)
 
@@ -167,13 +157,79 @@ class LinearRoutingParameter(Parameter):
         K = self.time_of_travel.get_value(scenario_index)
         return (dt + 2 * X * K) / (2 * K * (1 - X) + dt)
 
-    def value(self, ts, si):
 
+class LinearRoutingParameter(AbstractLinearRoutingParameter):
+    def __init__(self, model, inflow_node, outflow_node, weighting, time_of_travel, **kwargs):
+        super().__init__(model, weighting, time_of_travel, **kwargs)
+
+        self.inflow_node = inflow_node
+        self._inflow_parameter = None
+        self.inflow_parameter = FlowParameter(model, inflow_node, initial_value=1000)
+
+        self.outflow_node = outflow_node
+        self._outflow_parameter = None
+        self.outflow_parameter = FlowParameter(model, outflow_node, initial_value=1000)
+
+    inflow_parameter = parameter_property("_inflow_parameter")
+    outflow_parameter = parameter_property("_outflow_parameter")
+
+    def value(self, ts, si):
         c1 = self.c1(si)
         c2 = self.c2(si)
         I = self.inflow_parameter.get_value(si)
         O = self.outflow_parameter.get_value(si)
         return c2*I + (1 - c1 - c2)*O
+
+
+class RoutedIncrementalFlowParameter(AbstractLinearRoutingParameter):
+    def __init__(self, model, upstream_flow_parameters, total_flow_parameter, weighting, time_of_travel, **kwargs):
+        super().__init__(model, weighting, time_of_travel, **kwargs)
+
+        self.upstream_flow_parameters = []
+        for param in upstream_flow_parameters:
+            self.children.add(param)
+            self.upstream_flow_parameters.append(param)
+
+        self._total_flow_parameter = None
+        self.total_flow_parameter = total_flow_parameter
+        self._prev_total_upstream_flow = None
+        self._prev_routed_upstream_flow = None
+
+    total_flow_parameter = parameter_property("_total_flow_parameter")
+
+    def reset(self):
+        super().reset()
+        num_comb = len(self.model.scenarios.combinations)
+        self._prev_total_upstream_flow = np.zeros(num_comb)
+        self._prev_routed_upstream_flow = np.zeros(num_comb)
+
+    def value(self, ts, si):
+
+        total_upstream_flow = 0
+        for param in self.upstream_flow_parameters:
+            total_upstream_flow += param.get_value(si)
+
+        total_local_flow = self.total_flow_parameter.get_value(si)
+
+        c0 = self.c0()
+        c1 = self.c1(si)
+        c2 = self.c2(si)
+
+        routed_upstream_flow = c2*self._prev_total_upstream_flow[si.global_id]
+        routed_upstream_flow += (1 - c1 - c2)*self._prev_routed_upstream_flow[si.global_id]
+        routed_upstream_flow += c0 * total_upstream_flow
+
+        incremental_flow = total_local_flow - routed_upstream_flow
+
+        # Save upstream & routed flows for next time-step
+        self._prev_total_upstream_flow[si.global_id] = total_upstream_flow
+        self._prev_routed_upstream_flow[si.global_id] = routed_upstream_flow
+
+        # TODO do we assert > 0 or just use max?
+        assert incremental_flow > 0
+        incremental_flow = max(incremental_flow, 0)
+
+        return incremental_flow
 
 
 def pop_kwarg_parameter(kwargs, key, default):

@@ -2,7 +2,7 @@
 from pywr.nodes import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink, \
     VirtualStorage, AggregatedNode
 from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter, \
-    LinearRoutingParameter, FlowParameter
+    LinearRoutingParameter, RoutedIncrementalFlowParameter
 from pywr.parameters.control_curves import ControlCurveParameter
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
@@ -292,3 +292,42 @@ class RoutedRiver(River):
         self.commit_all(self.input_node.flow)
         # Make sure save is done after setting aggregated flow
         super().after(timestep)
+
+
+class RoutedRiverWithIncrementalCatchment(RoutedRiver):
+    def __init__(self, model, name, upstream_flow_parameters, total_flow_parameter, weighting, time_of_travel, **kwargs):
+        super().__init__(model, name, weighting, time_of_travel, **kwargs)
+
+        self.total_flow = total_flow_parameter
+
+        param = RoutedIncrementalFlowParameter(model, upstream_flow_parameters, total_flow_parameter,
+                                               weighting, time_of_travel)
+
+        self.catchment_node = Catchment(model, name=f'{name} Catchment', parent=self)
+        self.catchment_node.flow = param
+        self.link_node = Link(model, name=f'{name} Link', parent=self)
+        self.catchment_node.connect(self.link_node)
+        self.input_node.connect(self.link_node)
+
+    def iter_slots(self, slot_name=None, is_connector=True):
+        if is_connector:
+            yield self.link_node
+        else:
+            yield self.output_node
+
+    def after(self, timestep):
+        """
+        Set total flow on this link as sum of sublinks
+        """
+        self.commit_all(self.catchment_node.flow)
+        # Make sure save is done after setting aggregated flow
+        super().after(timestep)
+
+    @classmethod
+    def load(cls, data, model):
+        total_flow_parameter = load_parameter(model, data.pop("total_flow_parameter"))
+        upstream_flow_parameters = [load_parameter(model, d) for d in data.pop("upstream_flow_parameters")]
+        data.pop("type", None)
+        node = cls(model, total_flow_parameter=total_flow_parameter,
+                   upstream_flow_parameters=upstream_flow_parameters, **data)
+        return node

@@ -1,0 +1,75 @@
+{
+    "metadata": {
+        "title": "Incremental routing",
+        "description": "A very simple routing example.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "1980-01-01",
+        "end": "2013-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "catchment",
+            "type": "catchment",
+            "flow": "total_upstream_flow"
+        },
+        {
+            "name": "reservoir1",
+            "type": "storage",
+            "max_volume": 4e6,
+            "initial_volume_pc": 0.5
+
+        },
+        {
+            "name": "release1",
+            "type": "link",
+            "cost": -1,
+            "max_flow": 4e3
+        },
+        {
+            "name": "spill1",
+            "type": "link",
+            "cost": 9
+        },
+        {
+            "name": "reach1",
+            "type": "RoutedRiverWithIncrementalCatchment",
+            "weighting": 0.45,
+            "time_of_travel": 40,
+            "total_flow_parameter": "total_downstream_flow",
+            "upstream_flow_parameters": ["total_upstream_flow"]
+        },
+        {
+            "name": "estuary",
+            "type": "Output"
+        }
+    ],
+    "edges": [
+        ["catchment", "reservoir1"],
+        ["reservoir1", "spill1"],
+        ["reservoir1", "release1"],
+        ["spill1", "reach1"],
+        ["release1", "reach1"],
+        ["reach1", "estuary"]
+    ],
+    "parameters": {
+        "total_upstream_flow": {
+            "type": "dataframe",
+            "url": "blue_nile_example_streamflows.xlsx",
+            "sheet_name": "Total - daily",
+            "index_col": 0,
+            "parse_dates": true,
+            "column": "reservoir_catchment"
+        },
+        "total_downstream_flow": {
+            "type": "dataframe",
+            "url": "blue_nile_example_streamflows.xlsx",
+            "sheet_name": "Total - daily",
+            "index_col": 0,
+            "parse_dates": true,
+            "column": "downstream_catchment"
+        }
+    }
+}
