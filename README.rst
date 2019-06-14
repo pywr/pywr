@@ -56,7 +56,7 @@ For most users it will be easier to install the `binary packages made available 
 License
 =======
 
-Copyright (C) 2014-17 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
 
 
 This program is free software; you can redistribute it and/or modify
