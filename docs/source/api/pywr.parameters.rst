@@ -82,6 +82,17 @@ Array based parameters
    IndexedArrayParameter
 
 
+Interpolation parameters
+------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    InterpolatedParameter
+    InterpolatedVolumeParameter
+    InterpolatedQuadratureParameter
+
+
 Control curve parameters
 ------------------------
 

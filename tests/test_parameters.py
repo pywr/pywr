@@ -8,7 +8,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
-    InterpolatedParameter, WeeklyProfileParameter,
+    InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
@@ -981,6 +981,7 @@ class Test1DPolynomialParameter:
             return 0.5 + 2.5*xscaled
         model.run()
 
+
 def test_interpolated_parameter(simple_linear_model):
     model = simple_linear_model
     model.timestepper.start = "1920-01-01"
@@ -994,6 +995,74 @@ def test_interpolated_parameter(simple_linear_model):
         values = [0, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 2]
         return values[timestep.index]
     model.run()
+
+
+class TestInterpolatedQuadratureParameter:
+
+    @pytest.mark.parametrize("lower_interval", [None, 0, 1])
+    def test_calc(self, simple_linear_model, lower_interval):
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        b = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        a = None
+        if lower_interval is not None:
+            a = ConstantParameter(model, lower_interval)
+
+        p2 = InterpolatedQuadratureParameter(model, b, [-5, 0, 5, 10, 11], [0, 0, 5 * 2, 10 * 3, 2],
+                                             lower_parameter=a)
+
+        def area(i):
+            if i < 0:
+                value = 0
+            elif i < 6:
+                value = 2*i**2 / 2
+            elif i < 11:
+                value = 25 + 4*(i - 5)**2 / 2 + (i - 5) * 10
+            else:
+                value = 25 + 50 + 50 + 28 / 2 + 2
+            return value
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            value = area(i)
+            if lower_interval is not None:
+                value -= area(lower_interval)
+            return value
+
+        model.run()
+
+    def test_load(self, simple_linear_model):
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        p1 = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name='p1')
+
+        p2 = {
+            'type': 'interpolatedquadrature',
+            'upper_parameter': 'p1',
+            'x': [0, 5, 10, 11],
+            'y': [0, 5 * 2, 10 * 3, 2]
+        }
+
+        p2 = load_parameter(model, p2)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            if i < 6:
+                value = 2 * i ** 2 / 2
+            elif i < 11:
+                value = 25 + 4 * (i - 5) ** 2 / 2 + (i - 5) * 10
+            else:
+                value = 25 + 50 + 50 + 28 / 2 + 2
+            return value
+
+        model.run()
+
 
 class Test2DStoragePolynomialParameter:
 
