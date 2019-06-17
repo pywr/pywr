@@ -54,7 +54,7 @@ cpdef double hydropower_calculation(double flow, double water_elevation, double 
     # Convert flow to correct units (typically to m3/day)
     q = flow * flow_unit_conversion
     # Power
-    power = density * q * 9.81 * head
+    power = density * q * 9.81 * head * efficiency
 
     return power * energy_unit_conversion
 

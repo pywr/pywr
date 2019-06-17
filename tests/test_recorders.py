@@ -1594,7 +1594,8 @@ def test_progress_recorder(simple_linear_model):
 
 class TestHydroPowerRecorder:
 
-    def test_constant_level(self, simple_storage_model):
+    @pytest.mark.parametrize('efficiency', [1.0, 0.85])
+    def test_constant_level(self, simple_storage_model, efficiency):
         """ Test HydropowerRecorder """
         m = simple_storage_model
 
@@ -1602,8 +1603,8 @@ class TestHydroPowerRecorder:
         otpt = m.nodes['Output']
 
         elevation = ConstantParameter(m, 100)
-        rec = HydropowerRecorder(m, otpt, elevation)
-        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
+        rec = HydropowerRecorder(m, otpt, elevation, efficiency=efficiency)
+        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation, efficiency=efficiency)
 
         m.setup()
         m.step()
@@ -1613,11 +1614,11 @@ class TestHydroPowerRecorder:
         # Flow: 8 m3/day
         # Power: 1000 * 9.81 * 8 * 100
         # Energy: power * 1 day = power
-        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6 * efficiency)
         # Second step has the same answer in this model
         m.step()
-        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
-        np.testing.assert_allclose(rec_total.values()[0], 2* 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6 * efficiency)
+        np.testing.assert_allclose(rec_total.values()[0], 2 * 1000 * 9.81 * 8 * 100 * 1e-6 * efficiency)
 
     def test_varying_level(self, simple_storage_model):
         """ Test HydropowerRecorder with varying level on Storage node """
