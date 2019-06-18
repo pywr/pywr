@@ -12,6 +12,10 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 - Add `DivisionParameter` and tests (#722)
 - Add `FlowParameter` for tracking yesterday's flow (#724)
 - Add `InterpolatedQuadratureParameter` (#714)
+- Add new array deficit recorders (#729):
+  - `NumpyArrayNodeDeficitRecorder` - timeseries of deficit.
+  - `NumpyArrayNodeSuppliedRatioRecorder` - timeseries of supply / demand
+  - `NumpyArrayNodeCurtailmentRatioRecorder` - timeseries of 1 - supply / demand
 
 ### Bug fixes
 
