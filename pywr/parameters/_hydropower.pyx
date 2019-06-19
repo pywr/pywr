@@ -53,7 +53,7 @@ cpdef double inverse_hydropower_calculation(double power, double water_elevation
 
     # Power
     try:
-        flow = power / (energy_unit_conversion * density * 9.81 * head * flow_unit_conversion)
+        flow = power / (energy_unit_conversion * density * 9.81 * head * efficiency * flow_unit_conversion)
     except ZeroDivisionError:
         flow = float('inf')
 
