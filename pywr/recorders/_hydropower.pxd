@@ -19,3 +19,12 @@ cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
     cdef public double energy_unit_conversion
     cdef public double density
     cdef public double efficiency
+
+
+    cdef class HydropowerRecorderWithVaribaleTailwater(NumpyArrayNodeRecorder):
+    cdef Parameter _water_elevation_parameter
+    cdef public Parameter _turbine_elevation_parameter
+    cdef public double flow_unit_conversion
+    cdef public double energy_unit_conversion
+    cdef public double density
+    cdef public double efficiency
