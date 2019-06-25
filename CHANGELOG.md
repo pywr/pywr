@@ -19,6 +19,7 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 ### Bug fixes
 
+- Fix a bug with hydropower parameters & recorders not applying efficiency factor (#737)
 - Refactor of the code used to load named parameters and recorders to use shared functions (as they are both components) (#720)
 - Fix a bug with AggregatedRecorder not returning the instance on load (#723)
 - Use `flow` instead of `max_flow` in two_reservoirs test and example (#721)
