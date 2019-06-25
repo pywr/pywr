@@ -23,11 +23,11 @@ cpdef double hydropower_calculation(double flow, double water_elevation, double 
         An efficiency scaling factor for the power output of the turbine.
     flow_unit_conversion : double (default=1.0)
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of $m^3/day$
+        should convert flow to units of $m^3/second$
     energy_unit_conversion : double (default=1e-6)
-        A factor used to transform the units of power. Defaults to 1e-6 to return $MJ$/day. 
+        A factor used to transform the units of power. Defaults to 1e-6 to return $MW$. 
     density : double (default=1000)
-        Density of water in $kgm^{-3}$.
+        Density of water in $kg/m^{-3}$.
         
     Returns
     -------
@@ -40,7 +40,7 @@ cpdef double hydropower_calculation(double flow, double water_elevation, double 
     
     .. math:: P = \rho * g * \deltaH * q
     
-    The flow rate in should be converted to units of :math:`m^3` per day using the `flow_unit_conversion` parameter.    
+    The flow rate in should be converted to units of :math:`m^3` per second using the `flow_unit_conversion` parameter.    
     
     """
     cdef double head
@@ -80,9 +80,9 @@ cdef class HydropowerRecorder(NumpyArrayNodeRecorder):
         The density of water.
     flow_unit_conversion : float (default=1.0)
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of :math:`m^3/day`
+        should convert flow to units of :math:`m^3/second`
     energy_unit_conversion : float (default=1e-6)
-        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MJ`.
+        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MW`.
 
     Notes
     -----
@@ -90,7 +90,7 @@ cdef class HydropowerRecorder(NumpyArrayNodeRecorder):
 
     .. math:: P = \\rho * g * \\delta H * q
 
-    The flow rate in should be converted to units of :math:`m^3` per day using the `flow_unit_conversion` parameter.
+    The flow rate in should be converted to units of :math:`m^3` per second using the `flow_unit_conversion` parameter.
 
     Head is calculated from the given `water_elevation_parameter` and `turbine_elevation` value. If water elevation
     is given then head is the difference in elevation between the water and the turbine. If water elevation parameter
@@ -178,7 +178,7 @@ cdef class HydropowerRecorderWithVaribaleTailwater(NumpyArrayNodeRecorder):
         the working head of the turbine.
     turbine_elevation_parameter : Parameter instance (default=None)
         Elevation of the turbine itself. The difference between the `water_elevation` and this value gives
-        the working head of the turbine.
+        the working head of the turbine. It is recommended to use 'InterpolatedLevelParameter'.
     efficiency : float (default=1.0)
         The efficiency of the turbine.
     density : float (default=1000.0)
@@ -195,7 +195,7 @@ cdef class HydropowerRecorderWithVaribaleTailwater(NumpyArrayNodeRecorder):
 
     .. math:: P = \\rho * g * \\delta H * q
 
-    The flow rate in should be converted to units of :math:`m^3` per day using the `flow_unit_conversion` parameter.
+    The flow rate in should be converted to units of :math:`m^3` per second using the `flow_unit_conversion` parameter.
 
     Head is calculated from the given `water_elevation_parameter` and `turbine_elevation` value. If water elevation
     is given then head is the difference in elevation between the water and the turbine. If water elevation parameter
