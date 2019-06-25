@@ -14,3 +14,16 @@ cdef class HydropowerTargetParameter(Parameter):
     cdef public double energy_unit_conversion
     cdef public double density
     cdef public double efficiency
+
+
+cdef class HydropowerTargetParameterWithVaribaleTailwater(Parameter):
+    cdef Parameter _water_elevation_parameter
+    cdef Parameter _target
+    cdef Parameter _max_flow
+    cdef Parameter _min_flow
+    cdef public double min_head
+    cdef Parameter _turbine_elevation_parameter
+    cdef public double flow_unit_conversion
+    cdef public double energy_unit_conversion
+    cdef public double density
+    cdef public double efficiency
