@@ -12,7 +12,7 @@ cpdef double inverse_hydropower_calculation(double power, double water_elevation
     Parameters
     ----------
     power: double
-        Hydropower requirement in rate in units of energy per day.
+        Hydropower requirement in rate in MW.
     water_elevation : double
         Elevation of water entering the turbine. The difference of this value with the `turbine_elevation` gives
         the working head of the turbine.
@@ -23,17 +23,17 @@ cpdef double inverse_hydropower_calculation(double power, double water_elevation
         An efficiency scaling factor for the power output of the turbine.
     flow_unit_conversion : double (default=1.0)
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of $m^3/day$
+        should convert flow to units of $m^3/second$
     energy_unit_conversion : double (default=1e-6)
-        A factor used to transform the units of power. Defaults to 1e-6 to assuming input of $MJ$/day. 
+        A factor used to transform the units of power. Defaults to 1e-6 to assuming input of $MW$. 
     density : double (default=1000)
-        Density of water in $kgm^{-3}$.
+        Density of water in $kg/m^{-3}$.
         
     Returns
     -------
     flow : double 
         Required flow rate of water through the turbine. Converted using `flow_unit_conversion` to 
-        units of $m^3£ per day (not per second).
+        units of $m^3£ per second (not per second).
     
     Notes
     -----
@@ -71,7 +71,7 @@ cdef class HydropowerTargetParameter(Parameter):
     ----------
 
     target : Parameter instance
-        Hydropower production target. Units should be in units of energy per day.
+        Hydropower production target. Units should be in MW.
     water_elevation_parameter : Parameter instance (default=None)
         Elevation of water entering the turbine. The difference of this value with the `turbine_elevation` gives
         the working head of the turbine.
@@ -92,9 +92,9 @@ cdef class HydropowerTargetParameter(Parameter):
         The density of water.
     flow_unit_conversion : float (default=1.0)
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of :math:`m^3/day`
+        should convert flow to units of :math:`m^3/second`
     energy_unit_conversion : float (default=1e-6)
-        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MJ`.
+        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MW`.
 
     Notes
     -----
@@ -102,8 +102,8 @@ cdef class HydropowerTargetParameter(Parameter):
 
     .. math:: q = \\frac{P}{\\rho * g * \\delta H}
 
-    The energy rate in should be converted to units of energy per day. The returned flow rate in should is
-    converted from units of :math:`m^3` per day to those used by the model using the `flow_unit_conversion` parameter.
+    The energy rate in should be converted to units of MW. The returned flow rate in should is
+    converted from units of :math:`m^3` per second to those used by the model using the `flow_unit_conversion` parameter.
 
     Head is calculated from the given `water_elevation_parameter` and `turbine_elevation` value. If water elevation
     is given then head is the difference in elevation between the water and the turbine. If water elevation parameter
@@ -253,16 +253,16 @@ cdef class HydropowerTargetParameterWithVaribaleTailwater(Parameter):
         Minimum head for flow to occur. If actual head is less than this value zero flow is returned.
     turbine_elevation_parameter : Parameter instance (default=None)
         Elevation of the turbine itself. The difference between the `water_elevation` and this value gives
-        the working head of the turbine.
+        the working head of the turbine. It is recommended to use 'InterpolatedLevelParameter'.
     efficiency : float (default=1.0)
         The efficiency of the turbine.
     density : float (default=1000.0)
         The density of water.
     flow_unit_conversion : float (default=1.0)
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of :math:`m^3/day`
+        should convert flow to units of :math:`m^3/second`
     energy_unit_conversion : float (default=1e-6)
-        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MJ`.
+        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MW`.
 
     Notes
     -----
@@ -270,10 +270,10 @@ cdef class HydropowerTargetParameterWithVaribaleTailwater(Parameter):
 
     .. math:: q = \\frac{P}{\\rho * g * \\delta H}
 
-    The energy rate in should be converted to units of energy per day. The returned flow rate in should is
-    converted from units of :math:`m^3` per day to those used by the model using the `flow_unit_conversion` parameter.
+    The energy rate in should be converted to units of MW. The returned flow rate in should is
+    converted from units of :math:`m^3` per second to those used by the model using the `flow_unit_conversion` parameter.
 
-    Head is calculated from the given `water_elevation_parameter` and `turbine_elevation` value. If water elevation
+    Head is calculated from the given `water_elevation_parameter` and `turbine_elevation_parameter` value. If water elevation
     is given then head is the difference in elevation between the water and the turbine. If water elevation parameter
     is `None` then the head is simply the turbine elevation.
 
