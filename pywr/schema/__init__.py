@@ -34,13 +34,13 @@ class NodeSchema(PywrSchema):
     position = marshmallow.fields.Dict()
 
     @marshmallow.validates_schema(pass_original=True)
-    def check_unknown_fields(self, data, original_data):
+    def check_unknown_fields(self, data, original_data, **kwargs):
         unknown = set(original_data) - set(self.fields)
         if unknown:
             raise marshmallow.ValidationError('Unknown field', unknown)
 
     @marshmallow.post_load
-    def make_node(self, data):
+    def make_node(self, data, **kwargs):
         """ Create or append data to a node object. """
         model = self.context['model']
         klass = self.context['klass']
@@ -86,13 +86,13 @@ class ComponentSchema(PywrSchema):
 
     # TODO move this to a common base class for Nodes and Component schemas
     @marshmallow.validates_schema(pass_original=True)
-    def check_unknown_fields(self, data, original_data):
+    def check_unknown_fields(self, data, original_data, **kwargs):
         unknown = set(original_data) - set(self.fields)
         if unknown:
             raise marshmallow.ValidationError('Unknown field', unknown)
 
     @marshmallow.post_load
-    def make_component(self, data):
+    def make_component(self, data, **kwargs):
         """ Create or append data to a node object. """
         model = self.context['model']
         klass = self.context['klass']
@@ -116,7 +116,7 @@ class DataFrameSchema(ParameterSchema):
     checksum = marshmallow.fields.Dict()
 
     @marshmallow.validates_schema()
-    def validate_input_type(self, data):
+    def validate_input_type(self, data, **kwargs):
         count = 0
         for input_field in self.__mutually_exclusive_fields__:
             if input_field in data:
@@ -130,7 +130,7 @@ class DataFrameSchema(ParameterSchema):
                                               'must be given.')
 
     @marshmallow.post_load
-    def make_component(self, data):
+    def make_component(self, data, **kwargs):
         """ Create or append data to a node object. """
         from pywr.parameters import load_dataframe
         model = self.context['model']
@@ -144,7 +144,7 @@ class ExternalDataSchema(DataFrameSchema):
     values = marshmallow.fields.List(marshmallow.fields.Float())
 
     @marshmallow.post_load
-    def make_component(self, data):
+    def make_component(self, data, **kwargs):
         """ Create or append data to a node object. """
         print(data)
         from pywr.parameters import load_parameter_values

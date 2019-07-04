@@ -5,10 +5,10 @@ from marshmallow import fields, ValidationError
 class ParameterReferenceField(fields.Field):
     """ Marshmallow field representing a Parameter. """
 
-    def _serialize(self, value, attr, obj):
+    def _serialize(self, value, attr, obj, **kwargs):
         raise NotImplementedError('Serializing Parameters is not yet supported.')
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
         return value
 
 
@@ -19,10 +19,10 @@ class ParameterField(fields.Field):
         self.wrap_constants = kwargs.pop('wrap_constants', False)
         super().__init__(*args, **kwargs)
 
-    def _serialize(self, value, attr, obj):
+    def _serialize(self, value, attr, obj, **kwargs):
         raise NotImplementedError('Serializing Parameters is not yet supported.')
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
         model = self.context['model']
         from pywr.parameters import load_parameter, ConstantParameter
         param = load_parameter(model, value)
@@ -35,10 +35,10 @@ class ParameterField(fields.Field):
 class ParameterValuesField(fields.Field):
     """ Marshmallow field representing a ParameterValues. """
 
-    def _serialize(self, value, attr, obj):
+    def _serialize(self, value, attr, obj, **kwargs):
         raise NotImplementedError('Serializing Parameters is not yet supported.')
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
         model = self.context['model']
         klass = self.context.get('klass', None)
         obj = self.context.get('obj', None)
@@ -52,10 +52,10 @@ class ParameterValuesField(fields.Field):
 
 class NodeField(fields.Field):
     """ Marshmallow field representing a node. """
-    def _serialize(self, value, attr, obj):
+    def _serialize(self, value, attr, obj, **kwargs):
         raise NotImplementedError('Serializing Nodes is not yet supported.')
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
         model = self.context['model']
         klass = self.context.get('klass', None)
         obj = self.context.get('obj', None)
@@ -65,10 +65,10 @@ class NodeField(fields.Field):
 
 class ScenarioReferenceField(fields.Field):
 
-    def _serialize(self, value, attr, obj):
+    def _serialize(self, value, attr, obj, **kwargs):
         raise NotImplementedError('Serializing Scenario references is not yet supported.')
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
         model = self.context['model']
         klass = self.context.get('klass', None)
         obj = self.context.get('obj', None)
@@ -78,10 +78,10 @@ class ScenarioReferenceField(fields.Field):
 
 class PywrFloatField(fields.Float):
 
-    def _serialize(self, value, attr, obj):
+    def _serialize(self, value, attr, obj, **kwargs):
         raise NotADirectoryError('Serializing PywrFloatField is not yet supported.')
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
 
         try:
             ret = super()._deserialize(value, attr, data)
@@ -97,7 +97,7 @@ class PywrFloatField(fields.Float):
 
 class DataFrameField(fields.Field):
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(self, value, attr, data, **kwargs):
 
         from pywr.parameters import load_dataframe
         model = self.context['model']
