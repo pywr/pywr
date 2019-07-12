@@ -7,6 +7,7 @@ from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
 from pywr.h5tools import H5Store
 from pywr.hashes import check_hash
+from ..dataframe_tools import align_and_resample_dataframe
 import warnings
 
 
@@ -154,40 +155,6 @@ cdef class ConstantParameter(Parameter):
         return parameter
 
 ConstantParameter.register()
-
-
-def align_and_resample_dataframe(df, period_index):
-    from pandas.tseries.offsets import DateOffset, Week, Day
-    # Must resample and align the DataFrame to the model.
-    start = period_index[0].start_time
-    end = period_index[-1].start_time
-
-    df_index = df.index
-    df_freq = df.index.freq
-    if df_freq is None:
-        raise ValueError('DataFrame index has no frequency.')
-
-    # Special case of a weekly frequency that can be treated as 7D
-    if isinstance(df_freq, Week):
-        df_freq = Day(n=7)
-
-    if df_index[0] > start:
-        raise ValueError('DataFrame data begins after the index start date.')
-    elif df_index[0] < start:
-        warnings.warn("Model starts after the beginning of the DataFrame. Some data is not used.", UnutilisedDataWarning)
-
-    if df_index[-1] < end:
-        raise ValueError('DataFrame data ends before the index end date.')
-    elif df_index[-1] > end:
-        warnings.warn("Model ends before the end of the DataFrame. Some data is not used.", UnutilisedDataWarning)
-
-    df = df.resample(period_index.freq).mean()
-    df.index = df.index.to_period(period_index.freq)
-    # TODO apply forward? filling
-    df = df[period_index[0]:period_index[-1]]
-    assert len(df) == len(period_index)
-    df.index = period_index
-    return df
 
 
 cdef class DataFrameParameter(Parameter):

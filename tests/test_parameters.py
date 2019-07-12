@@ -12,7 +12,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
-
+from pywr.dataframe_tools import ResamplingError
 from pywr.recorders import Recorder
 from fixtures import simple_linear_model, simple_storage_model
 from helpers import load_model
@@ -620,7 +620,7 @@ def test_parameter_df_upsampling(model):
     model.timestepper.setup()
 
     # Daily time-step
-    index = pd.date_range('2015-01-01', periods=365, freq='D')
+    index = pd.period_range('2015-01-01', periods=365, freq='D')
     series = pd.Series(np.arange(365), index=index)
 
     p = DataFrameParameter(model, series)
@@ -649,7 +649,7 @@ def test_parameter_df_upsampling(model):
     series = pd.Series(np.arange(365), index=index)
 
     p = DataFrameParameter(model, series)
-    with pytest.raises(ValueError):
+    with pytest.raises(ResamplingError):
         p.setup()
 
     model.reset()
@@ -658,7 +658,7 @@ def test_parameter_df_upsampling(model):
     series = pd.Series(np.arange(365), index=index)
 
     p = DataFrameParameter(model, series)
-    with pytest.raises(ValueError):
+    with pytest.raises(ResamplingError):
         p.setup()
 
 
