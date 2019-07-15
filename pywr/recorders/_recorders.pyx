@@ -928,9 +928,9 @@ cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
             if self.proportional:
-                self._data[ts._index,i] = self._node._current_pc[i]
+                self._data[ts.index, i] = self._node._current_pc[i]
             else:
-                self._data[ts._index,i] = self._node._volume[i]
+                self._data[ts.index, i] = self._node._volume[i]
         return 0
 NumpyArrayStorageRecorder.register()
 
@@ -1048,7 +1048,7 @@ cdef class NumpyArrayAreaRecorder(NumpyArrayAbstractStorageRecorder):
         cdef Timestep ts = self.model.timestepper.current
         cdef Storage node = self._node
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
-            self._data[ts._index,i] = node.get_area(scenario_index)
+            self._data[ts.index, i] = node.get_area(scenario_index)
         return 0
 NumpyArrayAreaRecorder.register()
 
