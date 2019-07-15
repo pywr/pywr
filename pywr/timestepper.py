@@ -1,6 +1,8 @@
 import pandas
+import numpy as np
 import datetime
 from pywr import _core
+
 
 class Timestepper(object):
     def __init__(self, start="2015-01-01", end="2015-12-31", delta=1):
@@ -9,6 +11,9 @@ class Timestepper(object):
         self.delta = delta
         self._last_length = None
         self._periods = None
+        self._deltas = None
+        self._current = None
+        self._next = None
         self.setup()
         self.reset()
         self._dirty = True
@@ -24,7 +29,16 @@ class Timestepper(object):
         return self._dirty
 
     def setup(self):
-        self._periods = self.datetime_index
+        periods = self.datetime_index
+
+        # Compute length of each period
+        deltas = periods.to_timestamp(how='e') - periods.to_timestamp(how='s')
+        # Round to nearest second
+        deltas = np.round(deltas.total_seconds())
+        # Convert to days
+        deltas = deltas / 3600 / 24
+        self._periods = periods
+        self._deltas = deltas
         self.reset()
         self._dirty = False
 
@@ -48,11 +62,7 @@ class Timestepper(object):
             else:
                 raise ValueError('New starting position is outside the range of the model timesteps.')
 
-        period = self.start_period
-        for _ in range(current_index):
-            period += self.offset
-        self._next = _core.Timestep(period, current_index)
-
+        self._next = _core.Timestep(self._periods[current_index], current_index, self._deltas[current_index])
         length_changed = self._last_length != current_length
         self._last_length = current_length
         return length_changed
@@ -63,31 +73,24 @@ class Timestepper(object):
     def next(self, ):
         self._current = current = self._next
 
-        if current.period > self.end_period:
+        if current.index >= len(self._periods):
             raise StopIteration()
 
         # Increment to next timestep
-        self._next = _core.Timestep(current.period + self.offset, current.index + 1)
+        next_index = current.index + 1
+        if next_index >= len(self._periods):
+            # The final time-step is one offset beyond the end of the model.
+            # Here we compute its delta and create the object. 
+            final_period = current.period + self.offset
+            delta = final_period.end_time - final_period.start_time
+            delta = np.round(delta.total_seconds())
+            delta = delta / 3600 / 24
+            self._next = _core.Timestep(final_period, current.index + 1, delta)
+        else:
+            self._next = _core.Timestep(self._periods[next_index], next_index, self._deltas[next_index])
 
         # Return this timestep
         return current
-    #
-    # def next(self, ):
-    #     if self._next is None:
-    #         raise StopIteration()
-    #
-    #     self._current = current = self._next
-    #     # Increment to next timestep
-    #     self._current_index += 1
-    #     try:
-    #         period = self._periods[self._current_index]
-    #     except IndexError:
-    #         self._next = None
-    #     else:
-    #         self._next = _core.Timestep(period, self._current_index)
-    #
-    #     # Return this timestep
-    #     return current
 
     def start():
         def fget(self):

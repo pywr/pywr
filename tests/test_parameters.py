@@ -101,7 +101,7 @@ def test_parameter_array_indexed(simple_linear_model):
         np.testing.assert_allclose(p.value(ts, si), v)
 
     # Now check that IndexError is raised if an out of bounds Timestep is given.
-    ts = Timestep(pd.Period('2016-01-01', freq='1D'), 366)
+    ts = Timestep(pd.Period('2016-01-01', freq='1D'), 366, 1)
     with pytest.raises(IndexError):
         p.value(ts, si)
 
