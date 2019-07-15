@@ -25,7 +25,14 @@ def align_and_resample_dataframe(df, datetime_index, resample_func='mean'):
     end = datetime_index[-1]
 
     if not isinstance(df.index, pandas.PeriodIndex):
-        df = df.to_period(df.index.freq.freqstr)
+        # Converting to period is sometimes unreliable. E.g. with freq='7D'
+        # If the target frequency is passed explicitly this can help, but
+        # not all Timestamp frequencies convert to Period frequencies. Therefore,
+        # this can not be the default.
+        try:
+            df = df.to_period()
+        except AttributeError:
+            df = df.to_period(df.index.freq.freqstr)
 
     if not isinstance(datetime_index, pandas.PeriodIndex):
         raise ValueError('Period index expected.')
