@@ -1,6 +1,7 @@
 
 from __future__ import print_function
 import pywr.core
+from pywr.parameters import ConstantParameter
 import datetime
 import numpy as np
 from numpy.testing import assert_allclose
@@ -54,4 +55,19 @@ def test_piecewise_json():
     assert_allclose(max_flows, [20, np.inf])
     assert_allclose(costs, [-10, 5])
     model.run()
+    assert_allclose(model.nodes["demand1"].flow, 20)
+
+
+def test_piecewise_with_parameters_json():
+    """Test using parameters with piecewise link."""
+    model = load_model("piecewise1_with_parameters.json")
+    sublinks = model.nodes["link1"].sublinks
+
+    assert isinstance(sublinks[0].max_flow, ConstantParameter)
+    assert np.isinf(sublinks[1].max_flow)
+    assert isinstance(sublinks[0].cost, ConstantParameter)
+    assert isinstance(sublinks[1].cost, ConstantParameter)
+
+    model.run()
+
     assert_allclose(model.nodes["demand1"].flow, 20)
