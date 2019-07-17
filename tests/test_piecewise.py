@@ -1,13 +1,10 @@
-
-from __future__ import print_function
 import pywr.core
 from pywr.parameters import ConstantParameter
-import datetime
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
-
 from helpers import assert_model, load_model
+
 
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
 def simple_piecewise_model(request):
@@ -28,9 +25,6 @@ def simple_piecewise_model(request):
     otpt = pywr.core.Output(model, name="Output", min_flow=out_flow, cost=-benefit)
     lnk.connect(otpt)
 
-    default = inpt.domain
-
-
     expected_sent = in_flow if benefit > 1.0 else out_flow
 
     expected_node_results = {
@@ -45,6 +39,7 @@ def simple_piecewise_model(request):
 
 def test_piecewise_model(simple_piecewise_model):
     assert_model(*simple_piecewise_model)
+
 
 def test_piecewise_json():
     """Test loading of a piecewise link from JSON"""
