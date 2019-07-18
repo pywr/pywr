@@ -237,20 +237,19 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             self._values = np.array(values)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = scenario_index.global_id
         cdef int j
         cdef Parameter cc_param, value_param
         cdef double cc, cc_prev
         cdef Storage node = self._storage_node
         # return the interpolated value for the current level.
-        cdef double current_pc = node._current_pc[i]
+        cdef double current_pc = node._current_pc[scenario_index.global_id]
         cdef double weight
         cdef double[:] values
 
         if self.parameters is not None:
             values = np.empty(len(self.parameters))
-            for i, value_param in enumerate(self.parameters):
-                values[i] = value_param.get_value(scenario_index)
+            for j, value_param in enumerate(self.parameters):
+                values[j] = value_param.get_value(scenario_index)
         else:
             # This makes a reference rather than a copy.
             values = self._values
