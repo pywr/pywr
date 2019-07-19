@@ -220,17 +220,13 @@ cdef class ScenarioIndex:
 cdef class Timestep:
     def __init__(self, period, int index, double days):
         self.period = period
+        self.datetime = dt = self.period.to_timestamp()
         self.index = index
         self.days = days
-        self.dayofyear = self.datetime.dayofyear
-        self.day = self.datetime.day
-        self.month = self.datetime.month
-        self.year = self.datetime.year
-
-    property datetime:
-        """Timestep representation as a `datetime.datetime` object"""
-        def __get__(self, ):
-            return self.period.to_timestamp()
+        self.dayofyear = dt.dayofyear
+        self.day = dt.day
+        self.month = dt.month
+        self.year = dt.year
 
     def __repr__(self):
         return "<Timestep date=\"{}\">".format(self.period.strftime("%Y-%m-%d"))
