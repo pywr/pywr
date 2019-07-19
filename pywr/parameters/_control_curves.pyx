@@ -246,19 +246,23 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         # return the interpolated value for the current level.
         cdef double current_pc = node._current_pc[scenario_index.global_id]
         cdef double weight
-        cdef double[:] values
+        cdef double[:] values  # y values to interpolate between in this time-step
 
         if self.parameters is not None:
+            # If there are parameter use them to gather the interpolation values
             values = np.empty(len(self.parameters))
             for j, value_param in enumerate(self.parameters):
                 values[j] = value_param.get_value(scenario_index)
         else:
+            # Otherwise use the given array of floats.
             # This makes a reference rather than a copy.
             values = self._values
 
+        # Bounds check the current pc storage.
+        # Always return the first value if storage above 100% or NaN
         if current_pc > 1.0 or npy_isnan(current_pc):
             return values[0]
-
+        # Always return last value is storage less than 0%
         if current_pc < 0.0:
             return values[-1]
 
