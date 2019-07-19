@@ -225,6 +225,8 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
                 raise ValueError('Length of parameters should be two more than the number of '
                                  'control curves ({}).'.format(nvalues))
             self.parameters = list(parameters)
+            # Make sure these parameters depend on this parameter to ensure they are evaluated
+            # in the correct order.
             for p in self.parameters:
                 p.parents.add(self)
         else:
@@ -427,6 +429,8 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
                 raise ValueError('Length of parameters should be one more than the number of '
                                  'control curves ({}).'.format(nvalues))
             self.parameters = list(parameters)
+            # Make sure these parameters depend on this parameter to ensure they are evaluated
+            # in the correct order.
             for p in self.parameters:
                 p.parents.add(self)
         else:
