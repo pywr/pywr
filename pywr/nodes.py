@@ -612,21 +612,12 @@ class PiecewiseLink(Node):
 
     @classmethod
     def load(cls, data, model):
-        # accept plurals of max_flow and cost
-        try:
-            max_flow = data.pop("max_flows")
-        except KeyError:
-            pass
-        else:
-            data["max_flow"] = [load_parameter(p) for p in max_flow]
-        try:
-            cost = data.pop("costs")
-        except KeyError:
-            pass
-        else:
-            data["cost"] = [load_parameter(p) for p in cost]
+        # max_flow and cost should be lists of parameter definitions
+        max_flow = [load_parameter(model, p) for p in data.pop('max_flow')]
+        cost = [load_parameter(model, p) for p in data.pop('cost')]
+
         del(data["type"])
-        return cls(model, **data)
+        return cls(model, max_flow=max_flow, cost=cost, **data)
 
 
 class MultiSplitLink(PiecewiseLink):

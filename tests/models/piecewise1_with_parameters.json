@@ -1,0 +1,49 @@
+{
+    "metadata": {
+        "title": "Piecewise link with parameters",
+        "description": "Example of a piecewise link that uses parameters",
+        "minimum_version": "1.2.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 100
+        },
+        {
+            "name": "link1",
+            "type": "piecewiselink",
+            "cost": ["cost1", "cost2"],
+            "max_flow": ["max_flow1", null]
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 50,
+            "cost": 0.0
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "cost1": {
+            "type": "constant",
+            "value": -10.0
+        },
+        "cost2": {
+            "type": "constant",
+            "value": 5.0
+        },
+        "max_flow1": {
+            "type": "constant",
+            "value": 20.0
+        }
+    }
+}
