@@ -285,6 +285,11 @@ class RbfParameter(Parameter):
             parameter = load_parameter(model, param_name)
             parameters[parameter] = RbfData(**param_data)
 
+        if 'is_variable' in data:
+            raise ValueError('The RbfParameter does not support specifying the `is_variable` key '
+                             'at the root level of its definition. Instead specify individual items '
+                             '(e.g. nodes or parameters) to be variables instead.')
+
         return cls(model, y, nodes=nodes, parameters=parameters, days_of_year=days_of_year, **data)
 
 RbfParameter.register()
