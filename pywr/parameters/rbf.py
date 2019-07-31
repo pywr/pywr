@@ -7,6 +7,27 @@ from .parameters import Parameter, load_parameter
 from ..nodes import Storage
 
 
+class RbfData:
+    def __init__(self, values, is_variable=False, upper_bounds=None, lower_bounds=None):
+        self.values = values
+        self.is_variable = is_variable
+        self.upper_bounds = upper_bounds
+        self.lower_bounds = lower_bounds
+
+    def __len__(self):
+        return len(self.values)
+
+    def get_upper_bounds_array(self):
+        if self.upper_bounds is None:
+            return None
+        return np.array([self.upper_bounds]*len(self.values))
+
+    def get_lower_bounds_array(self):
+        if self.lower_bounds is None:
+            return None
+        return np.array([self.lower_bounds]*len(self.values))
+
+
 class RbfParameter(Parameter):
     """ A general Rbf parameter.
 
@@ -64,7 +85,7 @@ class RbfParameter(Parameter):
             if len(x) != len(y):
                 raise ValueError('The length of the exogenous variables for node "{}"'
                                  ' must be the same as length of "y".'.format(node.name))
-            args.append(x)
+            args.append(x.values)
             node_order.append(node)
 
         parameter_order = []
@@ -72,17 +93,17 @@ class RbfParameter(Parameter):
             if len(x) != len(y):
                 raise ValueError('The length of the exogenous variables for parameter "{}"'
                                  ' must be the same as the length of "y".'.format(parameter.name))
-            args.append(x)
+            args.append(x.values)
             parameter_order.append(parameter)
 
         if days_of_year is not None:
             # Normalise DoY using cosine & sine harmonics
-            x = [2 * np.pi * (doy - 1) / 365 for doy in self.days_of_year]
+            x = [2 * np.pi * (doy - 1) / 365 for doy in self.days_of_year.values]
             args.append(np.sin(x))
             args.append(np.cos(x))
 
         # Finally append the known y values
-        args.append(y)
+        args.append(y.values)
 
         # Convention here is that DoY is the first independent variable.
         self._rbf_func = Rbf(*args, **self.rbf_kwargs)
@@ -126,19 +147,22 @@ class RbfParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        y = data.pop('y')
+        y = RbfData(**data.pop('y'))
+        days_of_year = data.pop('days_of_year', None)
+        if days_of_year is not None:
+            days_of_year = RbfData(**days_of_year)
 
         nodes = {}
-        for node_name, x in data.pop('nodes', {}).items():
+        for node_name, node_data in data.pop('nodes', {}).items():
             node = model._get_node_from_ref(model, node_name)
-            nodes[node] = x
+            nodes[node] = RbfData(**node_data)
 
         parameters = {}
         for param_name, x in data.pop('parameters', {}).items():
             parameter = load_parameter(model, param_name)
-            parameters[parameter] = x
+            parameters[parameter] = RbfData(**node_data)
 
-        return cls(model, y, nodes=nodes, parameters=parameters, **data)
+        return cls(model, y, nodes=nodes, parameters=parameters, days_of_year=days_of_year, **data)
 
 RbfParameter.register()
 
