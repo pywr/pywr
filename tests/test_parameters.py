@@ -1476,22 +1476,41 @@ class TestRbfParameter:
 
         model = load_model('rbf_parameter_as_variable.json')
 
-        # TODO modify this parameter using variable API
-        # TODO check is_variable = True
         rbf_param = model.parameters['rbf']
 
+        variables = np.array([
+            [0.9, 0.5, 0.2],  # Node data
+            [3, 5, 7],  # Parameter data
+            [2, 101, 201],  # Day of the year
+            [0.5, 1.0, 1.5]  # y
+        ])
+        rbf_param.set_double_variables(variables.flatten())
+
         from scipy.interpolate import Rbf
-        x = [2 * np.pi * (doy - 1) / 365 for doy in [1, 100, 200]]
+        x = [2 * np.pi * (doy - 1) / 365 for doy in variables[2, :]]
 
         func = Rbf(
-            [1.0, 0.5, 0.0],  # Node data,
-            [2, 4, 6],  # Parameter data
+            variables[0, :],  # Node data,
+            variables[1, :],  # Parameter data
             np.sin(x),  # Day of year
             np.cos(x),  # Day of year
-            [1, 2, 3]   # y
+            variables[3, :]   # y
         )
 
         model.setup()
+
+        assert rbf_param.is_variable is True
+        assert rbf_param.double_size == 4 * 3
+        assert rbf_param.integer_size == 0
+        np.testing.assert_allclose(rbf_param.get_double_variables(), variables.flatten())
+
+        np.testing.assert_allclose(rbf_param.get_double_upper_bounds(), np.array(
+            [[1]*3, [6]*3, [365]*3, [10]*3]
+        ).flatten())
+
+        np.testing.assert_allclose(rbf_param.get_double_lower_bounds(), np.array(
+            [[0]*3, [0]*3, [1]*3, [0]*3]
+        ).flatten())
 
         # Get initial current_pc (which is used in the first time-step)
         current_pc = model.nodes['supply1'].current_pc[0]

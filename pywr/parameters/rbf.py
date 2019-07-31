@@ -8,6 +8,14 @@ from ..nodes import Storage
 
 
 class RbfData:
+    """Container for Rbf interpolation data.
+
+    This object is intended to be used with `RbfParameter` where one set of data
+    is required for each item to be used as an exogenous variable. This object
+    contains the interpolation values and data specifying whether this particular
+    item is to be considered a variable.
+
+    """
     def __init__(self, values, is_variable=False, upper_bounds=None, lower_bounds=None):
         self.values = values
         self.is_variable = is_variable
@@ -17,15 +25,15 @@ class RbfData:
     def __len__(self):
         return len(self.values)
 
-    def get_upper_bounds_array(self):
+    def get_upper_bounds(self):
         if self.upper_bounds is None:
             return None
-        return np.array([self.upper_bounds]*len(self.values))
+        return [self.upper_bounds]*len(self.values)
 
-    def get_lower_bounds_array(self):
+    def get_lower_bounds(self):
         if self.lower_bounds is None:
             return None
-        return np.array([self.lower_bounds]*len(self.values))
+        return [self.lower_bounds]*len(self.values)
 
 
 class RbfParameter(Parameter):
@@ -62,6 +70,31 @@ class RbfParameter(Parameter):
         self._rbf_func = None
         self._node_order = None
         self._parameter_order = None
+
+    def setup(self):
+        super().setup()
+        double_size = 0
+
+        for node, x in self.nodes.items():
+            if x.is_variable:
+                double_size += len(x)
+
+        for parameter, x in self.parameters.items():
+            if x.is_variable:
+                double_size += len(x)
+
+        if self.days_of_year is not None:
+            if self.days_of_year.is_variable:
+                double_size += len(self.days_of_year)
+
+        if self.y.is_variable:
+            double_size += len(self.y)
+
+        self.double_size = double_size
+        if self.double_size > 0:
+            self.is_variable = True
+        else:
+            self.is_variable = False
 
     def reset(self):
         # Create the Rbf object here.
@@ -112,8 +145,99 @@ class RbfParameter(Parameter):
         self._node_order = node_order
         self._parameter_order = parameter_order
 
-    def value(self, ts, scenario_index):
+    def set_double_variables(self, values):
+        """Assign an array of variables to the interpolation data."""
+        N = len(self.y)
 
+        values = np.reshape(values, (-1, N))
+        item = 0
+        for node, x in self.nodes.items():
+            if x.is_variable:
+                x.values = values[item, :]
+                item += 1
+
+        for parameter, x in self.parameters.items():
+            if x.is_variable:
+                x.values = values[item, :]
+                item += 1
+
+        if self.days_of_year is not None:
+            if self.days_of_year.is_variable:
+                self.days_of_year.values = values[item, :]
+                item += 1
+
+        if self.y.is_variable:
+            self.y.values = values[item, :]
+            item += 1
+
+        # Make sure all variables have been used.
+        assert item == values.shape[0]
+
+    def get_double_variables(self):
+        """Get the current values of variable interpolation data."""
+        values = []
+
+        for node, x in self.nodes.items():
+            if x.is_variable:
+                values.extend(x.values)
+
+        for parameter, x in self.parameters.items():
+            if x.is_variable:
+                values.extend(x.values)
+
+        if self.days_of_year is not None:
+            if self.days_of_year.is_variable:
+                values.extend(self.days_of_year.values)
+
+        if self.y.is_variable:
+            values.extend(self.y.values)
+
+        return np.array(values)
+
+    def get_double_upper_bounds(self):
+        """Returns an array of the upper bounds of the variables."""
+        values = []
+
+        for node, x in self.nodes.items():
+            if x.is_variable:
+                values.extend(x.get_upper_bounds())
+
+        for parameter, x in self.parameters.items():
+            if x.is_variable:
+                values.extend(x.get_upper_bounds())
+
+        if self.days_of_year is not None:
+            if self.days_of_year.is_variable:
+                values.extend(self.days_of_year.get_upper_bounds())
+
+        if self.y.is_variable:
+            values.extend(self.y.get_upper_bounds())
+
+        return np.array(values)
+    
+    def get_double_lower_bounds(self):
+        """Returns an array of the lower bounds of the variables."""
+        values = []
+
+        for node, x in self.nodes.items():
+            if x.is_variable:
+                values.extend(x.get_lower_bounds())
+
+        for parameter, x in self.parameters.items():
+            if x.is_variable:
+                values.extend(x.get_lower_bounds())
+
+        if self.days_of_year is not None:
+            if self.days_of_year.is_variable:
+                values.extend(self.days_of_year.get_lower_bounds())
+
+        if self.y.is_variable:
+            values.extend(self.y.get_lower_bounds())
+
+        return np.array(values)
+
+    def value(self, ts, scenario_index):
+        """Calculate the interpolate Rbf value from the current state."""
         # Use the cached node and parameter orders so that the exogenous inputs
         # are in the correct order.
         nodes = self._node_order
@@ -142,7 +266,6 @@ class RbfParameter(Parameter):
             args.append(np.cos(x))
 
         # Perform interpolation.
-        print(args)
         return self._rbf_func(*args)
 
     @classmethod
@@ -158,13 +281,14 @@ class RbfParameter(Parameter):
             nodes[node] = RbfData(**node_data)
 
         parameters = {}
-        for param_name, x in data.pop('parameters', {}).items():
+        for param_name, param_data in data.pop('parameters', {}).items():
             parameter = load_parameter(model, param_name)
-            parameters[parameter] = RbfData(**node_data)
+            parameters[parameter] = RbfData(**param_data)
 
         return cls(model, y, nodes=nodes, parameters=parameters, days_of_year=days_of_year, **data)
 
 RbfParameter.register()
+
 
 # TODO write a test for this. Perhaps abstract common elements from this with above class
 class RbfVolumeParameter(Parameter):
