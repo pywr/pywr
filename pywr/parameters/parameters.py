@@ -19,6 +19,7 @@ from ._hydropower import HydropowerTargetParameter
 from past.builtins import basestring
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.integrate import quad
 import pandas
 
 
@@ -86,7 +87,7 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
     >>> x = [0, 5, 10, 20]
     >>> y = [0, 10, 30, -5]
     >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
-    >>> p2 = InterpolatedParameter(model, x, y, interp_kwargs={"kind": "linear"})
+    >>> p2 = InterpolatedParameter(model, p1, x, y, interp_kwargs={"kind": "linear"})
     """
     def __init__(self, model, parameter, x, y, interp_kwargs=None, **kwargs):
         super(InterpolatedParameter, self).__init__(model, x, y, interp_kwargs, **kwargs)
@@ -97,6 +98,15 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
 
     def _value_to_interpolate(self, ts, scenario_index):
         return self._parameter.get_value(scenario_index)
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        x = np.array(data.pop("x"))
+        y = np.array(data.pop("y"))
+        kind = data.pop("kind", "linear")
+        return cls(model, parameter, x, y, interp_kwargs={'kind': kind})
+InterpolatedParameter.register()
 
 
 class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
@@ -118,6 +128,65 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
         kind = data.pop("kind", "linear")
         return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
 InterpolatedVolumeParameter.register()
+
+
+class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
+    """Parameter value is equal to the quadrature of the interpolation of another parameter
+
+    Parameters
+    ----------
+    upper_parameter : Parameter
+        Upper value of the interpolated interval to integrate over.
+    x : array_like
+        x coordinates of the data points for interpolation.
+    y : array_like
+        y coordinates of the data points for interpolation.
+    lower_parameter : Parameter or None
+        Lower value of the interpolated interval to integrate over. Can be `None` in which
+        case the lower value of interval is zero.
+    interp_kwargs : dict
+        Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
+        for interpolation.
+
+    Example
+    -------
+    >>> x = [0, 5, 10, 20]
+    >>> y = [0, 10, 30, -5]
+    >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
+    >>> p2 = InterpolatedQuadratureParameter(model, p1, x, y, interp_kwargs={"kind": "linear"})
+    """
+    def __init__(self, model, upper_parameter, x, y, lower_parameter=None, interp_kwargs=None, **kwargs):
+        super().__init__(model, x, y, interp_kwargs, **kwargs)
+        self._upper_parameter = None
+        self.upper_parameter = upper_parameter
+        self._lower_parameter = None
+        self.lower_parameter = lower_parameter
+
+    upper_parameter = parameter_property("_upper_parameter")
+    lower_parameter = parameter_property("_lower_parameter")
+
+    def _value_to_interpolate(self, ts, scenario_index):
+        return self._upper_parameter.get_value(scenario_index)
+
+    def value(self, ts, scenario_index):
+        a = 0
+        if self._lower_parameter is not None:
+            a = self._lower_parameter.get_value(scenario_index)
+        b = self._value_to_interpolate(ts, scenario_index)
+
+        cost, err = quad(self.interp, a, b)
+        return cost
+
+    @classmethod
+    def load(cls, model, data):
+        upper_parameter = load_parameter(model, data.pop("upper_parameter"))
+        lower_parameter = load_parameter(model, data.pop("lower_parameter", None))
+        x = np.array(data.pop("x"))
+        y = np.array(data.pop("y"))
+        kind = data.pop("kind", "linear")
+        return cls(model, upper_parameter, x, y, lower_parameter=lower_parameter,
+                   interp_kwargs={'kind': kind})
+InterpolatedQuadratureParameter.register()
 
 
 def pop_kwarg_parameter(kwargs, key, default):
@@ -149,3 +218,4 @@ class PropertiesDict(dict):
         if not isinstance(value, Property):
             value = ConstantParameter(value)
         dict.__setitem__(self, key, value)
+

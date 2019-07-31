@@ -35,6 +35,7 @@ Combining multiple parameters
 
    AggregatedParameter
    AggregatedIndexParameter
+   DivisionParameter
    NegativeParameter
    MaxParameter
    NegativeMaxParameter
@@ -79,6 +80,17 @@ Array based parameters
    ArrayIndexedParameter
    ArrayIndexedScenarioParameter
    IndexedArrayParameter
+
+
+Interpolation parameters
+------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    InterpolatedParameter
+    InterpolatedVolumeParameter
+    InterpolatedQuadratureParameter
 
 
 Control curve parameters

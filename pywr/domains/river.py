@@ -146,6 +146,14 @@ class RiverSplit(MultiSplitLink):
 
         super(RiverSplit, self).__init__(*args, **kwargs)
 
+    @classmethod
+    def load(cls, data, model):
+        max_flow = load_parameter(model, data.pop('max_flow', None))
+        cost = load_parameter(model, data.pop('cost', 0.0))
+
+        del(data["type"])
+        return cls(model, max_flow=max_flow, cost=cost, **data)
+
 
 class RiverSplitWithGauge(RiverSplit):
     """A split in the river network with a minimum residual flow

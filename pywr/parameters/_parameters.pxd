@@ -132,6 +132,12 @@ cdef class AggregatedIndexParameter(IndexParameter):
     cpdef add(self, Parameter parameter)
     cpdef remove(self, Parameter parameter)
 
+
+cdef class DivisionParameter(Parameter):
+    cdef Parameter _numerator
+    cdef Parameter _denominator
+
+
 cdef class NegativeParameter(Parameter):
     cdef public Parameter parameter
 
@@ -151,3 +157,8 @@ cdef class NegativeMinParameter(MinParameter):
 
 cdef class DeficitParameter(Parameter):
     cdef public Node node
+
+cdef class FlowParameter(Parameter):
+    cdef public Node node
+    cdef double[:] __next_values
+    cdef public double initial_value

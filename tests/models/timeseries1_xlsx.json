@@ -16,7 +16,7 @@
             "max_flow": {
                 "type": "dataframe",
                 "url" : "test_data1.xlsx",
-                "sheetname": "timeseries",
+                "sheet_name": "timeseries",
                 "index_col": 0
             }
         },
