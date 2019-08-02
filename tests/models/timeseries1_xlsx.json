@@ -17,7 +17,7 @@
                 "type": "dataframe",
                 "url" : "test_data1.xlsx",
                 "pandas_kwargs": {
-                    "sheetname": "timeseries",
+                    "sheet_name": "timeseries",
                     "index_col": 0
                 }
             }

@@ -23,6 +23,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, N
                             FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
                             HydropowerRecorder, TotalHydroEnergyRecorder,
                             TotalParameterRecorder, MeanParameterRecorder,
+                            NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
 
 from pywr.recorders.progress import ProgressRecorder
@@ -1112,23 +1113,106 @@ class TestTablesRecorder:
         np.testing.assert_allclose(link['value'], 40.0)
 
 
-def test_total_deficit_node_recorder(simple_linear_model):
-    """
-    Test TotalDeficitNodeRecorder
-    """
-    model = simple_linear_model
-    model.timestepper.delta = 5
-    otpt = model.nodes['Output']
-    otpt.max_flow = 30.0
-    model.nodes['Input'].max_flow = 10.0
-    otpt.cost = -2.0
-    rec = TotalDeficitNodeRecorder(model, otpt)
+class TestDeficitRecorders:
 
-    model.step()
-    assert_allclose(20.0*5, rec.aggregated_value(), atol=1e-7)
+    def test_total_deficit_node_recorder(self, simple_linear_model):
+        """
+        Test TotalDeficitNodeRecorder
+        """
+        model = simple_linear_model
+        model.timestepper.delta = 5
+        otpt = model.nodes['Output']
+        otpt.max_flow = 30.0
+        model.nodes['Input'].max_flow = 10.0
+        otpt.cost = -2.0
+        rec = TotalDeficitNodeRecorder(model, otpt)
 
-    model.step()
-    assert_allclose(40.0*5, rec.aggregated_value(), atol=1e-7)
+        model.step()
+        assert_allclose(20.0*5, rec.aggregated_value(), atol=1e-7)
+
+        model.step()
+        assert_allclose(40.0*5, rec.aggregated_value(), atol=1e-7)
+
+    def test_array_deficit_recoder(self, simple_linear_model):
+        """Test `NumpyArrayNodeDeficitRecorder` """
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        otpt = model.nodes['Output']
+
+        inflow = np.arange(365) * 0.1
+        demand = np.ones_like(inflow) * 30.0
+
+        model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
+        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.cost = -2.0
+
+        expected_supply = np.minimum(inflow, demand)
+        expected_deficit = demand - expected_supply
+
+        rec = NumpyArrayNodeDeficitRecorder(model, otpt)
+
+        model.run()
+
+        assert rec.data.shape == (365, 1)
+        np.testing.assert_allclose(expected_deficit[:, np.newaxis], rec.data)
+
+        df = rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(expected_deficit[:, np.newaxis], df.values)
+
+    def test_array_supplied_ratio_recoder(self, simple_linear_model):
+        """Test `NumpyArrayNodeSuppliedRatioRecorder` """
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        otpt = model.nodes['Output']
+
+        inflow = np.arange(365) * 0.1
+        demand = np.ones_like(inflow) * 30.0
+
+        model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
+        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.cost = -2.0
+
+        expected_supply = np.minimum(inflow, demand)
+        expected_ratio = expected_supply / demand
+
+        rec = NumpyArrayNodeSuppliedRatioRecorder(model, otpt)
+
+        model.run()
+
+        assert rec.data.shape == (365, 1)
+        np.testing.assert_allclose(expected_ratio[:, np.newaxis], rec.data)
+
+        df = rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(expected_ratio[:, np.newaxis], df.values)
+
+    def test_array_curtailment_ratio_recoder(self, simple_linear_model):
+        """Test `NumpyArrayNodeCurtailmentRatioRecorder` """
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        otpt = model.nodes['Output']
+
+        inflow = np.arange(365) * 0.1
+        demand = np.ones_like(inflow) * 30.0
+
+        model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
+        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.cost = -2.0
+
+        expected_supply = np.minimum(inflow, demand)
+        expected_curtailment_ratio = 1 - expected_supply / demand
+
+        rec = NumpyArrayNodeCurtailmentRatioRecorder(model, otpt)
+
+        model.run()
+
+        assert rec.data.shape == (365, 1)
+        np.testing.assert_allclose(expected_curtailment_ratio[:, np.newaxis], rec.data)
+
+        df = rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(expected_curtailment_ratio[:, np.newaxis], df.values)
 
 
 def test_total_flow_node_recorder(simple_linear_model):
@@ -1594,7 +1678,8 @@ def test_progress_recorder(simple_linear_model):
 
 class TestHydroPowerRecorder:
 
-    def test_constant_level(self, simple_storage_model):
+    @pytest.mark.parametrize('efficiency', [1.0, 0.85])
+    def test_constant_level(self, simple_storage_model, efficiency):
         """ Test HydropowerRecorder """
         m = simple_storage_model
 
@@ -1602,8 +1687,8 @@ class TestHydroPowerRecorder:
         otpt = m.nodes['Output']
 
         elevation = ConstantParameter(m, 100)
-        rec = HydropowerRecorder(m, otpt, elevation)
-        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
+        rec = HydropowerRecorder(m, otpt, elevation, efficiency=efficiency)
+        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation, efficiency=efficiency)
 
         m.setup()
         m.step()
@@ -1613,11 +1698,11 @@ class TestHydroPowerRecorder:
         # Flow: 8 m3/day
         # Power: 1000 * 9.81 * 8 * 100
         # Energy: power * 1 day = power
-        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6 * efficiency)
         # Second step has the same answer in this model
         m.step()
-        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
-        np.testing.assert_allclose(rec_total.values()[0], 2* 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6 * efficiency)
+        np.testing.assert_allclose(rec_total.values()[0], 2 * 1000 * 9.81 * 8 * 100 * 1e-6 * efficiency)
 
     def test_varying_level(self, simple_storage_model):
         """ Test HydropowerRecorder with varying level on Storage node """

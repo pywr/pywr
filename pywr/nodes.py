@@ -1,4 +1,3 @@
-from six import with_metaclass
 import numpy as np
 import marshmallow
 from pywr import _core
@@ -119,7 +118,7 @@ class NodeMeta(type):
         return node
 
 
-class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
+class Node(Drawable, Connectable, BaseNode, metaclass=NodeMeta):
     """Base object from which all other nodes inherit
 
     This BaseNode is not connectable by default, and the Node class should
@@ -246,7 +245,7 @@ class Blender(Link):
         self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
 
 
-class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
+class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
     """A generic storage Node
 
     In terms of connections in the network the Storage node behaves like any
@@ -372,7 +371,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
 
-class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
+class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
     """A virtual storage unit
 
     Parameters
@@ -522,8 +521,8 @@ class PiecewiseLink(Node):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        max_flows = marshmallow.fields.List(fields.ParameterReferenceField(allow_none=True))
-        costs = marshmallow.fields.List(fields.ParameterReferenceField(allow_none=True))
+        max_flows = marshmallow.fields.List(fields.ParameterField(allow_none=True))
+        costs = marshmallow.fields.List(fields.ParameterField(allow_none=True))
 
     def __init__(self, model, name, **kwargs):
         self.allow_isolated = True
@@ -692,7 +691,7 @@ class MultiSplitLink(PiecewiseLink):
             yield self.output
 
 
-class AggregatedStorage(with_metaclass(NodeMeta, Drawable, _core.AggregatedStorage)):
+class AggregatedStorage( Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
     """ An aggregated sum of other `Storage` nodes
 
     This object should behave like `Storage` by returning current `flow`, `volume` and `current_pc`.
@@ -720,7 +719,7 @@ class AggregatedStorage(with_metaclass(NodeMeta, Drawable, _core.AggregatedStora
         self.storage_nodes = storage_nodes
 
 
-class AggregatedNode(with_metaclass(NodeMeta, Drawable, _core.AggregatedNode)):
+class AggregatedNode(Drawable, _core.AggregatedNode, metaclass=NodeMeta):
     """ An aggregated sum of other `Node` nodes
 
     This object should behave like `Node` by returning current `flow`.
