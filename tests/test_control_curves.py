@@ -46,7 +46,7 @@ class TestPiecewiseLinearControlCurve:
         
         model.timestepper.start = "1920-01-01"
         model.timestepper.delta = 1
-        model.timestepper.end = model.timestepper.start + model.timestepper.delta*100
+        model.timestepper.end = model.timestepper.start + model.timestepper.offset*100
         
         @assert_rec(model, parameter)
         def expected_func(timestep, scenario_index):
