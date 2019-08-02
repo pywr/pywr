@@ -8,6 +8,8 @@
 import pandas
 from pandas.tseries.offsets import Tick, DateOffset
 from  pandas._libs.tslibs.period import IncompatibleFrequency
+import os
+from .hashes import check_hash
 
 
 class ResamplingError(Exception):
@@ -132,3 +134,118 @@ def _up_sample_tick_to_tick(df, target_index):
 
     new_df = df.resample(target_index.freq).ffill()
     return new_df
+
+
+def load_dataframe(model, data):
+    column = data.pop("column", None)
+    if isinstance(column, list):
+        # Cast multiindex to a tuple to ensure .loc works correctly
+        column = tuple(column)
+
+    index = data.pop("index", None)
+    if isinstance(index, list):
+        # Cast multiindex to a tuple to ensure .loc works correctly
+        index = tuple(index)
+
+    table_ref = data.pop('table', None)
+    if table_ref is not None:
+        name = table_ref
+        df = model.tables[table_ref]
+    else:
+        name = data.get('url', None)
+        df = read_dataframe(model, data)
+
+    # if column is not specified, use the whole dataframe
+    if column is not None:
+        try:
+            df = df[column]
+        except KeyError:
+            raise KeyError('Column "{}" not found in dataset "{}"'.format(column, name))
+
+    if index is not None:
+        try:
+            df = df.loc[index]
+        except KeyError:
+            raise KeyError('Index "{}" not found in dataset "{}"'.format(index, name))
+
+    try:
+        if isinstance(df.index, pandas.DatetimeIndex):
+            # Only infer freq if one isn't already found.
+            # E.g. HDF stores the saved freq, but CSV tends to have None, but infer to Weekly for example
+            if df.index.freq is None:
+                freq = pandas.infer_freq(df.index)
+                if freq is None:
+                    raise IndexError("Failed to identify frequency of dataset \"{}\"".format(name))
+                df = df.asfreq(freq)
+    except AttributeError:
+        # Probably wasn't a pandas dataframe at this point.
+        pass
+
+    return df
+
+
+def read_dataframe(model, data):
+    # values reference data in an external file
+    url = data.pop('url', None)
+    if url is not None:
+        if not os.path.isabs(url) and model.path is not None:
+            url = os.path.join(model.path, url)
+    else:
+        # Must be an embedded dataframe
+        df_data = data.pop('data', None)
+
+    if url is None and df_data is None:
+        raise ValueError('No data specified. Provide a "url" or "data" key.')
+
+    if url is not None:
+        # Check hashes if given before reading the data
+        checksums = data.pop('checksum', {})
+        for algo, hash in checksums.items():
+            check_hash(url, hash, algorithm=algo)
+
+        try:
+            filetype = data.pop('filetype')
+        except KeyError:
+            # guess file type based on extension
+            if url.endswith(('.xls', '.xlsx')):
+                filetype = "excel"
+            elif url.endswith(('.csv', '.gz')):
+                filetype = "csv"
+            elif url.endswith(('.hdf', '.hdf5', '.h5')):
+                filetype = "hdf"
+            else:
+                raise NotImplementedError('Unknown file extension: "{}"'.format(url))
+    else:
+        if 'filetype' in data:
+            raise ValueError('"filetype" is only valid when loading data from a URL.')
+        if 'checksum' in data:
+            raise ValueError('"checksum" is only valid when loading data from a URL.')
+
+        filetype = "dict"
+
+    if filetype == "csv":
+        if hasattr(data, "index_col"):
+            data["parse_dates"] = True
+            if "dayfirst" not in data.keys():
+                data["dayfirst"] = True  # we're bias towards non-American dates here
+        df = pandas.read_csv(url, **data)  # automatically decompressed gzipped data!
+    elif filetype == "excel":
+        df = pandas.read_excel(url, **data)
+    elif filetype == "hdf":
+        key = data.pop("key", None)
+        df = pandas.read_hdf(url, key=key, **data)
+    elif filetype == "dict":
+        parse_dates = data.pop('parse_dates', False)
+        df = pandas.DataFrame.from_dict(df_data, **data)
+        if parse_dates:
+            df.index = pandas.DatetimeIndex(df.index)
+
+    if df.index.dtype.name == "object" and data.get("parse_dates", False):
+        # catch dates that haven't been parsed yet
+        raise TypeError("Invalid DataFrame index type \"{}\" in \"{}\".".format(df.index.dtype.name, url))
+
+    # clean up
+    # Assume all keywords are consumed by pandas.read_* functions
+    data.clear()
+
+    return df
