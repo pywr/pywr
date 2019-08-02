@@ -85,7 +85,7 @@ class Timestepper(object):
             delta = final_period.end_time - final_period.start_time
             delta = np.round(delta.total_seconds())
             delta = delta / 3600 / 24
-            self._next = _core.Timestep(final_period, current.index + 1, delta)
+            self._next = _core.Timestep(final_period, next_index, delta)
         else:
             self._next = _core.Timestep(self._periods[next_index], next_index, self._deltas[next_index])
 
