@@ -15,7 +15,7 @@ class ResamplingError(Exception):
         super().__init__(message)
 
 
-def align_and_resample_dataframe(df, target_index, resample_func='mean'):
+def align_and_resample_dataframe(df, target_index, down_sample_func='mean'):
     """Align and resample a DataFrame to the provided index.
 
     This function attempts to align an input dataframe to a target index. The
@@ -24,7 +24,7 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
      on the relative frequencies of the two indexes. The exact method depends
      also on the type of frequencies (offsets) involved (e.g. `Tick` or
      `DataOffset`). Up-sampling uses forward filling. Whereas down-sampling
-     uses the provided `resample_func`.
+     uses the provided `down_sample_func`.
 
     Parameters
     ==========
@@ -33,8 +33,8 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
         The input data that needs to be aligned and/or resampled.
     target_index : `pandas.PeriodIndex`
         The target index that the input should be aligned and resampled to match.
-    resample_func : str, func
-        Function to be used when downsampling from high frequency data to lower
+    down_sample_func : str, func
+        Function to be used when down-sampling from high frequency data to lower
         frequency.
      
     """
@@ -66,25 +66,25 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
             # Dataframe is also tick based
             if model_freq >= df_freq:
                 # Down sampling (i.e. from high freq to lower model freq)
-                df = _down_sample_tick_to_tick(df, target_index)
+                df = _down_sample_tick_to_tick(df, target_index, down_sample_func)
             else:
                 df = _up_sample_tick_to_tick(df, target_index)
         else:
             # Dataframe must be offset based
             # Generally this is going to be up sampling to a higher model freq
-            df = _resample_date_offset_to_tick(df, target_index)
+            df = _resample_date_offset_to_tick(df, target_index, down_sample_func)
 
     elif isinstance(model_freq, DateOffset):
         # Model is based on date offsets.
         if isinstance(df_freq, Tick):
             # Dataframe is tick based
             # Generally this is going to be down sampling to a lower model freq
-            df = _down_sample_tick_to_date_offset(df, target_index)
+            df = _down_sample_tick_to_date_offset(df, target_index, down_sample_func)
         else:
             # Dataframe must be offset based
             # Down sampling (i.e. from high freq to lower model freq)
             try:
-                df = _resample_date_offset_to_date_offset(df, target_index, resample_func=resample_func)
+                df = _resample_date_offset_to_date_offset(df, target_index, down_sample_func)
             except IncompatibleFrequency:
                 raise ResamplingError(df, target_index)
 
@@ -99,32 +99,32 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
     return df
 
 
-def _resample_date_offset_to_date_offset(df, target_index, resample_func):
+def _resample_date_offset_to_date_offset(df, target_index, down_sample_func):
     """Down sample a date offset data to a target index with date offset."""
-    new_df = df.resample(target_index.freq).agg(resample_func)
+    new_df = df.resample(target_index.freq).agg(down_sample_func)
     new_df = new_df[target_index[0]:target_index[-1]]
     return new_df
 
 
-def _down_sample_tick_to_date_offset(df, target_index):
+def _down_sample_tick_to_date_offset(df, target_index, down_sample_func):
     """Down sampling tick data to a target index with date offset."""
-    new_df = df.resample(target_index.freq).mean()
+    new_df = df.resample(target_index.freq).agg(down_sample_func)
     new_df = new_df[target_index[0]:target_index[-1]]
     return new_df
 
 
-def _down_sample_tick_to_tick(df, target_index):
+def _down_sample_tick_to_tick(df, target_index, down_sample_func):
     """Down sampling tick data to a tick based target index."""
     # First we try to align the higher frequency data to lower the frequency
     start = target_index[0].asfreq(df.index.freq, how='start')
     end = target_index[-1].asfreq(df.index.freq, how='end')
     new_df = df[start:end]
     # Second we re-sample the aligned data
-    new_df = new_df.resample(target_index.freq).mean()
+    new_df = new_df.resample(target_index.freq).agg(down_sample_func)
     return new_df
 
 
-def _resample_date_offset_to_tick(df, target_index):
+def _resample_date_offset_to_tick(df, target_index, down_sample_func):
     """Re-sample a date offset to tick based index."""
 
     target_tick = target_index.freq
@@ -142,7 +142,7 @@ def _resample_date_offset_to_tick(df, target_index):
 
     # If the target is multi-frequency
     if target_tick.n > 1:
-        new_df = new_df.resample(target_tick).mean()
+        new_df = new_df.resample(target_tick).agg(down_sample_func)
     return new_df
 
 
