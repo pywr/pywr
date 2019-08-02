@@ -26,7 +26,7 @@ from pywr._component cimport Component
 from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
 from pywr._core import ScenarioCollection, Scenario
 from pywr._core cimport AbstractNode
-from pywr.parameters._parameters import load_dataframe
+from .dataframe_tools import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
