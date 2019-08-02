@@ -172,10 +172,7 @@ if 'lpsolve' in optional:
 
 setup_kwargs['package_data'] = {
     'pywr.notebook': ['*.js', '*.css'],
-    'pywr': ['*.pxd'],
-    'pywr.parameters': ['*.pxd'],
-    'pywr.recorders': ['*.pxd'],
-    'pywr.solvers': ['*.pxd'],
+    '': ['*.pxd'],
 }
 
 # store the current git hash in the module
