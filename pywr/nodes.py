@@ -400,7 +400,7 @@ class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
         # They could be many different things.
-        nodes = marshmallow.fields.List(marshmallow.fields.Str, required=True)
+        nodes = marshmallow.fields.List(fields.NodeField, required=True)
         max_volume = fields.ParameterReferenceField(required=False)
         min_volume = fields.ParameterReferenceField(required=False)
         cost = fields.ParameterReferenceField(required=False)

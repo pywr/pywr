@@ -535,3 +535,10 @@ def test_select_glpk_presolve(use_presolve):
         model = load_model(data=data)
         assert(model.solver.name.lower() == solver_name)
         assert(model.solver._cy_solver.use_presolve == (use_presolve == "true"))
+
+
+def test_issue_711():
+    """ Test circular loading of area property & VirtualStorage
+    """
+    model = load_model('issue_711.json')
+    model.run()
