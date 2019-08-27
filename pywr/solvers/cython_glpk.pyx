@@ -1,5 +1,6 @@
 from libc.stdlib cimport malloc, free
 from libc.math cimport abs
+from libc.setjmp cimport setjmp, jmp_buf
 from cython.view cimport array as cvarray
 import numpy as np
 cimport numpy as np
@@ -104,6 +105,13 @@ cdef class CythonGLPKSolver:
         cdef int status
         cdef cross_domain_row
         cdef int n, num
+        cdef jmp_buf env_buffer
+        cdef int jmpval
+
+        glp_error_hook(error_hook, &env_buffer)
+        jmpval = setjmp(env_buffer)
+        if jmpval != 0:
+            raise GLPKError("An unexpected error was raised by GLPK")
 
         self.all_nodes = list(sorted(model.graph.nodes(), key=lambda n: n.fully_qualified_name))
         if not self.all_nodes:
@@ -587,7 +595,10 @@ cdef class CythonGLPKSolver:
         # Set the basis for this scenario
         self._set_basis(scenario_index.global_id)
         # attempt to solve the linear programme
+
         simplex_ret = simplex(self.prob, self.smcp)
+
+
         status = glp_get_status(self.prob)
         if (status != GLP_OPT or simplex_ret != 0) and self.retry_solve:
             # try creating a new basis and resolving

@@ -1,4 +1,5 @@
 from libc.float cimport DBL_MAX
+from libc.setjmp cimport longjmp, jmp_buf
 
 status_string = [
     None,
@@ -44,6 +45,14 @@ cdef int term_hook(void *info, const char *s):
     else:
         print(message)
     return 1
+
+
+class GLPKError(Exception):
+    pass
+
+
+cdef void error_hook(void *info):
+    longjmp((<jmp_buf*>info)[0], <int>1)
 
 
 cdef inline int constraint_type(double a, double b):
@@ -153,6 +162,7 @@ cdef extern from "glpk.h":
     int glp_get_status(glp_prob *P)
     int glp_term_out(int flag)
     void glp_term_hook(int (*func)(void *info, const char *s), void *info)
+    void glp_error_hook(void (*func)(void *info), void *info)
 
     double glp_get_row_prim(glp_prob *P, int i)
     double glp_get_col_prim(glp_prob *P, int j)
