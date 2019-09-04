@@ -190,8 +190,7 @@ InterpolatedQuadratureParameter.register()
 
 
 class ScenarioWrapperParameter(Parameter):
-    def __init__(self, model, scenario, parameters, **kwargs):
-        """Parameter that utilises a different child parameter in each scenario ensemble.
+    """Parameter that utilises a different child parameter in each scenario ensemble.
 
     This parameter is used to switch between different child parameters based on different
     ensembles in a given `Scenario`. It can be used to vary data in a non-scenario aware
@@ -208,6 +207,7 @@ class ScenarioWrapperParameter(Parameter):
         of parameters must equal the size of the given scenario.
 
     """
+    def __init__(self, model, scenario, parameters, **kwargs):
         super().__init__(model, **kwargs)
         if scenario.size != len(parameters):
             raise ValueError("The number of parameters must equal the size of the scenario.")
