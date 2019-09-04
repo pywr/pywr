@@ -248,23 +248,6 @@ class Link(Node, BaseLink):
         super(Link, self).__init__(*args, **kwargs)
 
 
-class Blender(Link):
-    """Blender node to maintain a constant ratio between two supply routes"""
-    def __init__(self, *args, **kwargs):
-        """Initialise a new Blender node
-
-        Parameters
-        ----------
-        ratio : float (optional)
-            The ratio to constraint the two routes by (0.0-0.1). If no value is
-            given a default value of 0.5 is used.
-        """
-        Link.__init__(self, *args, **kwargs)
-        self.slots = {1: None, 2: None}
-
-        self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
-
-
 class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
     """A generic storage Node
 
@@ -612,21 +595,12 @@ class PiecewiseLink(Node):
 
     @classmethod
     def load(cls, data, model):
-        # accept plurals of max_flow and cost
-        try:
-            max_flow = data.pop("max_flows")
-        except KeyError:
-            pass
-        else:
-            data["max_flow"] = [load_parameter(p) for p in max_flow]
-        try:
-            cost = data.pop("costs")
-        except KeyError:
-            pass
-        else:
-            data["cost"] = [load_parameter(p) for p in cost]
+        # max_flow and cost should be lists of parameter definitions
+        max_flow = [load_parameter(model, p) for p in data.pop('max_flow')]
+        cost = [load_parameter(model, p) for p in data.pop('cost')]
+
         del(data["type"])
-        return cls(model, **data)
+        return cls(model, max_flow=max_flow, cost=cost, **data)
 
 
 class MultiSplitLink(PiecewiseLink):
