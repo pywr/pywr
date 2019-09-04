@@ -49,7 +49,6 @@ def test_model_results():
     assert (isinstance(res, ModelResult))
     assert (res.timesteps == 365)
     assert (res.version == pywr.__version__)
-    assert (res.git_hash == pywr.__git_hash__)
     assert res.solver_stats['number_of_cols']
     assert res.solver_stats['number_of_rows']
     assert res.solver_name == model.solver.name

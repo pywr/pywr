@@ -189,6 +189,60 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
 InterpolatedQuadratureParameter.register()
 
 
+class ScenarioWrapperParameter(Parameter):
+    """Parameter that utilises a different child parameter in each scenario ensemble.
+
+    This parameter is used to switch between different child parameters based on different
+    ensembles in a given `Scenario`. It can be used to vary data in a non-scenario aware
+    parameter type across multiple scenario ensembles. For example, many of control curve or
+    interpolation parameters do not explicitly support scenarios. This parameter can be used
+    to test multiple control curve definitions as part of a single simulation.
+
+    Parameters
+    ----------
+    scenario : Scenario
+        The scenario instance which is used to select the parameters.
+    parameters : iterable of Parameter instances
+        The child parameters that are used in each of `scenario`'s ensembles. The number
+        of parameters must equal the size of the given scenario.
+
+    """
+    def __init__(self, model, scenario, parameters, **kwargs):
+        super().__init__(model, **kwargs)
+        if scenario.size != len(parameters):
+            raise ValueError("The number of parameters must equal the size of the scenario.")
+        self.scenario = scenario
+        self.parameters = []
+        for p in parameters:
+            self.children.add(p)
+            self.parameters.append(p)
+        # Initialise internal attributes
+        self._scenario_index = None
+
+    def setup(self):
+        super().setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
+
+    def value(self, ts, scenario_index):
+        # This is a bit confusing.
+        # scenario_indices contains the current scenario number for all
+        # the Scenario objects in the model run. We have cached the
+        # position of self._scenario in self._scenario_index to lookup the
+        # correct number to use in this instance.
+        parameter = self.parameters[scenario_index.indices[self._scenario_index]]
+        return parameter.get_value(scenario_index)
+
+    @classmethod
+    def load(cls, model, data):
+        scenario = model.scenarios[data.pop('scenario')]
+
+        parameters = [load_parameter(model, p) for p in data.pop('parameters')]
+        return cls(model, scenario, parameters, **data)
+ScenarioWrapperParameter.register()
+
+
 def pop_kwarg_parameter(kwargs, key, default):
     """Pop a parameter from the keyword arguments dictionary
 

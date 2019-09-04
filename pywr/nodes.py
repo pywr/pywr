@@ -228,23 +228,6 @@ class Link(Node, BaseLink):
         super(Link, self).__init__(*args, **kwargs)
 
 
-class Blender(Link):
-    """Blender node to maintain a constant ratio between two supply routes"""
-    def __init__(self, *args, **kwargs):
-        """Initialise a new Blender node
-
-        Parameters
-        ----------
-        ratio : float (optional)
-            The ratio to constraint the two routes by (0.0-0.1). If no value is
-            given a default value of 0.5 is used.
-        """
-        Link.__init__(self, *args, **kwargs)
-        self.slots = {1: None, 2: None}
-
-        self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
-
-
 class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
     """A generic storage Node
 
