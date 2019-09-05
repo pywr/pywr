@@ -502,6 +502,15 @@ def test_json_include():
     supply2 = model.nodes["supply2"]
     assert(isinstance(supply2.max_flow, ConstantParameter))
 
+
+def test_py_include():
+    """Test include in Python document"""
+    filename = os.path.join(TEST_FOLDER, "models", "python_include.json")
+    model = Model.load(filename)
+
+    model.run()
+
+
 def test_json_min_version():
     """Test warning is raised if document minimum version is more than we have"""
     filename = os.path.join(TEST_FOLDER, "models", "version1.json")
