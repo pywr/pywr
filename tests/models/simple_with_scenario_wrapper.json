@@ -1,0 +1,73 @@
+{
+    "metadata": {
+        "title": "Simple 1",
+        "description": "A very simple example.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "scenarios": [
+        {
+            "name": "scenario A",
+            "size": 10
+        },
+        {
+            "name": "scenario B",
+            "size": 2,
+            "ensemble_names": ["First", "Second"]
+        }
+    ],
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": "supply1_max_flow"
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": {
+                "type": "constantscenario",
+                "scenario": "scenario B",
+                "values": [10, 15]
+            },
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "supply1_max_flow": {
+            "type": "scenariowrapper",
+            "scenario": "scenario A",
+            "parameters": [
+                {"type": "constant", "value": 10},
+                {"type": "constant", "value": 11},
+                {"type": "constant", "value": 12},
+                {"type": "constant", "value": 13},
+                {"type": "constant", "value": 14},
+                {"type": "constant", "value": 15},
+                {"type": "constant", "value": 16},
+                {"type": "constant", "value": 17},
+                {"type": "constant", "value": 18},
+                {"type": "constant", "value": 19}
+            ]
+        }
+    },
+    "recorders": {
+        "demand1": {
+            "comment": "Actual flow to demand1",
+            "type": "NumpyArrayNode",
+            "node": "demand1"
+        }
+    }
+}

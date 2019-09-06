@@ -120,5 +120,6 @@ Other parameters
 
    AnnualHarmonicSeriesParameter
    DeficitParameter
+   ScenarioWrapperParameter
 
 
