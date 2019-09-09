@@ -555,23 +555,15 @@ def test_csv_recorder(simple_storage_model, tmpdir, complib):
     model.run()
 
     import csv
-
-    if sys.version_info.major >= 3:
-        kwargs = {"encoding": "utf-8"}
-        mode = "rt"
-    else:
-        kwargs = {}
-        mode = "r"
+    kwargs = {"encoding": "utf-8"}
+    mode = "rt"
 
     if complib == "gzip":
         import gzip
         fh = gzip.open(str(csvfile), mode, **kwargs)
     elif complib in ("bz2", "bzip2"):
         import bz2
-        if sys.version_info.major >= 3:
-            fh = bz2.open(str(csvfile), mode, **kwargs)
-        else:
-            fh = bz2.BZ2File(str(csvfile), mode)
+        fh = bz2.open(str(csvfile), mode, **kwargs)
     else:
         fh = open(str(csvfile), mode, **kwargs)
 

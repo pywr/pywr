@@ -140,25 +140,15 @@ class CSVRecorder(Recorder):
 
     def reset(self):
         import csv
+        kwargs = {"newline": "", "encoding": "utf-8"}
+        mode = "wt"
 
-        if sys.version_info.major >= 3:
-            kwargs = {"newline": "", "encoding": "utf-8"}
-        else:
-            kwargs = {}
-        if sys.version_info.major >= 3:
-            mode = "wt"
-        else:
-            mode = "w"
         if self.complib == "gzip":
             import gzip
             self._fh = gzip.open(self.csvfile, mode, self.complevel, **kwargs)
         elif self.complib in ("bz2", "bzip2"):
             import bz2
-            # Different API between Python 2 and 3 unfortunately.
-            if sys.version_info.major >= 3:
-                self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
-            else:
-                self._fh = bz2.BZ2File(self.csvfile, mode, self.complevel)
+            self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
         elif self.complib is None:
             self._fh = open(self.csvfile, mode, **kwargs)
         else:
