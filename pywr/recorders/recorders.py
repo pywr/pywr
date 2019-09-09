@@ -175,10 +175,10 @@ class CSVRecorder(Recorder):
         values = [self.model.timestepper.current.datetime.isoformat()]
         for node_name in self._node_names:
             node = self.model.nodes[node_name]
-            if isinstance(node, AbstractNode):
-                values.append(node.flow[self.scenario_index])
-            elif isinstance(node, AbstractStorage):
+            if isinstance(node, AbstractStorage):
                 values.append(node.volume[self.scenario_index])
+            elif isinstance(node, AbstractNode):
+                values.append(node.flow[self.scenario_index])
             else:
                 raise ValueError("Unrecognised Node type '{}' for CSV writer".format(type(node)))
 
