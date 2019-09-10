@@ -539,13 +539,8 @@ def test_csv_recorder(simple_storage_model, tmpdir, complib):
     otpt.cost = -2.0
 
     # Rename output to a unicode character to check encoding to files
-    if sys.version_info.major >= 3:
-        # This only works with Python 3.
-        # There are some limitations with encoding with the CSV writers in Python 2
-        otpt.name = u"\u03A9"
-        expected_header = ['Datetime', 'Input', 'Storage', u"\u03A9"]
-    else:
-        expected_header = ['Datetime', 'Input', 'Storage', 'Output']
+    otpt.name = u"\u03A9"
+    expected_header = ['Datetime', 'Input', 'Storage', u"\u03A9"]
 
     csvfile = tmpdir.join('output.csv')
     # By default the CSVRecorder saves all nodes in alphabetical order
