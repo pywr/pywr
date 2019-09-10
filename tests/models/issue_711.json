@@ -1,0 +1,71 @@
+{
+    "metadata": {
+        "title": "Issue 711",
+        "description": "https://github.com/pywr/pywr/issues/711",
+        "minimum_version": "1.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+		{
+			"name": "total_don_pedro_inflow",
+			"type": "input"
+		},
+        {
+			"name": "don_pedro_reservoir",
+			"type": "storage",
+			"max_volume": 2030000,
+			"initial_volume": 1690000,
+			"area": "don_pedro_area",
+			"cost": -2
+		},
+		{
+			"name": "evap_don_pedro",
+			"type": "output",
+			"max_flow": "don_pedro_lake_evaporation",
+			"cost": -1000
+		},
+        {
+			"name": "water_bank_reservoir",
+			"type": "virtualstorage",
+			"initial_volume": 570000,
+			"max_volume": 570000,
+			"nodes": [
+				"total_don_pedro_inflow",
+				"evap_don_pedro"
+			],
+			"factors": [
+				-1.0,
+				1.0
+			]
+		}
+    ],
+    "edges": [
+        ["total_don_pedro_inflow", "don_pedro_reservoir"],
+        ["don_pedro_reservoir", "evap_don_pedro"]
+    ],
+    "parameters": {
+          "evaporation_don_pedro_ts": {
+              "type": "constant",
+              "value": 0
+          },
+          "don_pedro_lake_evaporation": {
+              "type": "aggregated",
+              "agg_func": "product",
+              "parameters": [
+                  "don_pedro_area",
+                  "evaporation_don_pedro_ts"
+              ]
+          },
+		  "don_pedro_area":	{
+				"type": "interpolatedvolume",
+				"node": "don_pedro_reservoir",
+				"volumes":[0, 35, 120, 229, 383, 617, 916, 1280, 1759, 2401, 3268, 4481, 6283, 8906, 12393, 16706, 21899, 28101, 35404, 44037, 54237, 66110, 79744, 95337, 113313, 134591, 158731, 184827, 212870, 242866, 274760, 308960, 345310, 384060, 425510, 469910, 517450, 568150, 621950, 678950, 738950, 802500, 869700, 940700, 1015700, 1094900, 1178300, 1266400, 1359200, 1457100, 1560300, 1669000, 1783300, 1903600, 2030000],
+				"values": [0, 7, 10, 12, 19, 28, 32, 41, 55, 74, 100, 144, 219, 308, 391, 473, 567, 675, 787, 942, 1100, 1250, 1480, 1640, 1960, 2300, 2530, 2690, 2920, 3080, 3300, 3520, 3750, 4000, 4290, 4590, 4920, 5220, 5540, 5840, 6180, 6530, 6900, 7300, 7710, 8130, 8570, 9030, 9530, 10050, 10590, 11150, 11720, 12330, 12960],
+				"kind": "cubic"
+			}
+    }
+}

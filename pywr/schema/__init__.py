@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 class PywrSchema(marshmallow.Schema):
     """ Base class for all Pywr marshmallow schemas. """
-    def handle_error(self, exc, data):
+    def handle_error(self, exc, data, **kwargs):
         """Log and raise our custom exception when (de)serialization fails."""
         klass = self.context['klass']
 

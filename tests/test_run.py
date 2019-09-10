@@ -49,7 +49,6 @@ def test_model_results():
     assert (isinstance(res, ModelResult))
     assert (res.timesteps == 365)
     assert (res.version == pywr.__version__)
-    assert (res.git_hash == pywr.__git_hash__)
     assert res.solver_stats['number_of_cols']
     assert res.solver_stats['number_of_rows']
     assert res.solver_name == model.solver.name
@@ -545,3 +544,10 @@ def test_select_glpk_presolve(use_presolve):
         model = load_model(data=data)
         assert(model.solver.name.lower() == solver_name)
         assert(model.solver._cy_solver.use_presolve == (use_presolve == "true"))
+
+
+def test_issue_711():
+    """ Test circular loading of area property & VirtualStorage
+    """
+    model = load_model('issue_711.json')
+    model.run()
