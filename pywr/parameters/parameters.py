@@ -135,7 +135,7 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
     Generic interpolation parameter for a non-storage node. It interpolates a value based on node flow at previous timestep
     """
     def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
-        super(InterpolatedFlowParameter, self).__init__(model, x, y, interp_kwargs, **kwargs)
+        super().__init__(model, x, y, interp_kwargs, **kwargs)
         self._node = node
 
     def _value_to_interpolate(self, ts, scenario_index):       
