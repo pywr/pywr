@@ -222,6 +222,8 @@ cdef class Timestep:
         self.period = period
         self.datetime = dt = self.period.to_timestamp()
         self.index = index
+        if days <= 0:
+            raise ValueError("The days argument must be > 0.")
         self.days = days
         self.dayofyear = dt.dayofyear
         self.day = dt.day
