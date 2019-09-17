@@ -92,46 +92,46 @@ class Timestepper(object):
         # Return this timestep
         return current
 
-    def start():
-        def fget(self):
-            return self._start
-        def fset(self, value):
-            if isinstance(value, pandas.Timestamp):
-                self._start = value
-            else:
-                self._start = pandas.to_datetime(value)
-            self._dirty = True
-        return locals()
-    start = property(**start())
+    @property
+    def start(self):
+        return self._start
+
+    @start.setter
+    def start(self, value):
+        if isinstance(value, pandas.Timestamp):
+            self._start = value
+        else:
+            self._start = pandas.to_datetime(value)
+        self._dirty = True
 
     @property
     def start_period(self):
         return pandas.Period(self.start, freq=self.freq)
 
-    def end():
-        def fget(self):
-            return self._end
-        def fset(self, value):
-            if isinstance(value, pandas.Timestamp):
-                self._end = value
-            else:
-                self._end = pandas.to_datetime(value)
-            self._dirty = True
-        return locals()
-    end = property(**end())
+    @property
+    def end(self):
+        return self._end
+
+    @end.setter
+    def end(self, value):
+        if isinstance(value, pandas.Timestamp):
+            self._end = value
+        else:
+            self._end = pandas.to_datetime(value)
+        self._dirty = True
 
     @property
     def end_period(self):
         return pandas.Period(self.end, freq=self.freq)
 
-    def delta():
-        def fget(self):
-            return self._delta
-        def fset(self, value):
-            self._delta = value
-            self._dirty = True
-        return locals()
-    delta = property(**delta())
+    @property
+    def delta(self):
+        return self._delta
+
+    @delta.setter
+    def delta(self, value):
+        self._delta = value
+        self._dirty = True
 
     @property
     def freq(self):
