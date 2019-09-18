@@ -1,7 +1,7 @@
 {
     "metadata": {
         "title": "Simple 1",
-        "description": "A very simple example.",
+        "description": "Example of monthly period timestep.",
         "minimum_version": "0.1"
     },
     "timestepper": {
