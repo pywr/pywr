@@ -140,25 +140,15 @@ class CSVRecorder(Recorder):
 
     def reset(self):
         import csv
+        kwargs = {"newline": "", "encoding": "utf-8"}
+        mode = "wt"
 
-        if sys.version_info.major >= 3:
-            kwargs = {"newline": "", "encoding": "utf-8"}
-        else:
-            kwargs = {}
-        if sys.version_info.major >= 3:
-            mode = "wt"
-        else:
-            mode = "w"
         if self.complib == "gzip":
             import gzip
             self._fh = gzip.open(self.csvfile, mode, self.complevel, **kwargs)
         elif self.complib in ("bz2", "bzip2"):
             import bz2
-            # Different API between Python 2 and 3 unfortunately.
-            if sys.version_info.major >= 3:
-                self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
-            else:
-                self._fh = bz2.BZ2File(self.csvfile, mode, self.complevel)
+            self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
         elif self.complib is None:
             self._fh = open(self.csvfile, mode, **kwargs)
         else:
@@ -175,10 +165,10 @@ class CSVRecorder(Recorder):
         values = [self.model.timestepper.current.datetime.isoformat()]
         for node_name in self._node_names:
             node = self.model.nodes[node_name]
-            if isinstance(node, AbstractNode):
-                values.append(node.flow[self.scenario_index])
-            elif isinstance(node, AbstractStorage):
+            if isinstance(node, AbstractStorage):
                 values.append(node.volume[self.scenario_index])
+            elif isinstance(node, AbstractNode):
+                values.append(node.flow[self.scenario_index])
             else:
                 raise ValueError("Unrecognised Node type '{}' for CSV writer".format(type(node)))
 
@@ -490,13 +480,12 @@ class TablesRecorder(Recorder):
         scenario_shape = list(self.model.scenarios.shape)
         ts = self.model.timestepper.current
         idx = ts.index
-        dt = ts.datetime
 
         if self._time_table is not None:
             entry = self._time_table.row
-            entry['year'] = dt.year
-            entry['month'] = dt.month
-            entry['day'] = dt.day
+            entry['year'] = ts.year
+            entry['month'] = ts.month
+            entry['day'] = ts.day
             entry['index'] = idx
             entry.append()
 

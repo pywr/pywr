@@ -531,24 +531,16 @@ def test_concatenated_dataframes(simple_storage_model):
 
 
 @pytest.mark.parametrize("complib", [None, "gzip", "bz2"])
-def test_csv_recorder(simple_linear_model, tmpdir, complib):
+def test_csv_recorder(simple_storage_model, tmpdir, complib):
+    """Test the CSV Recorder
     """
-    Test the CSV Recorder
-
-    """
-    model = simple_linear_model
+    model = simple_storage_model
     otpt = model.nodes['Output']
-    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
 
     # Rename output to a unicode character to check encoding to files
-    if sys.version_info.major >= 3:
-        # This only works with Python 3.
-        # There are some limitations with encoding with the CSV writers in Python 2
-        otpt.name = u"\u03A9"
-        expected_header = ['Datetime', 'Input', 'Link', u"\u03A9"]
-    else:
-        expected_header = ['Datetime', 'Input', 'Link', 'Output']
+    otpt.name = u"\u03A9"
+    expected_header = ['Datetime', 'Input', 'Storage', u"\u03A9"]
 
     csvfile = tmpdir.join('output.csv')
     # By default the CSVRecorder saves all nodes in alphabetical order
@@ -558,41 +550,40 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
     model.run()
 
     import csv
-
-    if sys.version_info.major >= 3:
-        kwargs = {"encoding": "utf-8"}
-        mode = "rt"
-    else:
-        kwargs = {}
-        mode = "r"
+    kwargs = {"encoding": "utf-8"}
+    mode = "rt"
 
     if complib == "gzip":
         import gzip
         fh = gzip.open(str(csvfile), mode, **kwargs)
     elif complib in ("bz2", "bzip2"):
         import bz2
-        if sys.version_info.major >= 3:
-            fh = bz2.open(str(csvfile), mode, **kwargs)
-        else:
-            fh = bz2.BZ2File(str(csvfile), mode)
+        fh = bz2.open(str(csvfile), mode, **kwargs)
     else:
         fh = open(str(csvfile), mode, **kwargs)
-    
+
+    expected = [
+        expected_header,
+        ['2016-01-01T00:00:00', 5.0, 7.0, 8.0],
+        ['2016-01-02T00:00:00', 5.0, 4.0, 8.0],
+        ['2016-01-03T00:00:00', 5.0, 1.0, 8.0],
+        ['2016-01-04T00:00:00', 5.0, 0.0, 6.0],
+        ['2016-01-05T00:00:00', 5.0, 0.0, 5.0],
+    ]
+
     data = fh.read(1024)
     dialect = csv.Sniffer().sniff(data)
     fh.seek(0)
     reader = csv.reader(fh, dialect)
+
     for irow, row in enumerate(reader):
+        expected_row = expected[irow]
         if irow == 0:
-            expected = expected_header
-            actual = row
+            assert expected_row == row
         else:
-            dt = model.timestepper.start+(irow-1)*model.timestepper.delta
-            expected = [dt.isoformat()]
-            actual = [row[0]]
-            assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
-        assert expected == actual
-        
+            assert expected_row[0] == row[0]  # Check datetime
+            # Check values
+            np.testing.assert_allclose([float(v) for v in row[1:]], expected_row[1:])
     fh.close()
 
 
@@ -618,6 +609,9 @@ def test_loading_csv_recorder_from_json(tmpdir):
 
     csvfile = tmpdir.join('output.csv')
     model.run()
+
+    periods = model.timestepper.datetime_index
+
     import csv
     with open(str(csvfile), 'r') as fh:
         dialect = csv.Sniffer().sniff(fh.read(1024))
@@ -628,7 +622,7 @@ def test_loading_csv_recorder_from_json(tmpdir):
                 expected = ['Datetime', 'inpt', 'otpt']
                 actual = row
             else:
-                dt = model.timestepper.start+(irow-1)*model.timestepper.delta
+                dt = periods[irow-1].to_timestamp()
                 expected = [dt.isoformat()]
                 actual = [row[0]]
                 assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
@@ -1519,7 +1513,7 @@ class TestEventRecorder:
             td = evt.end.datetime - evt.start.datetime
             assert evt.duration == td.days
 
-        # Test that the volumes in the Storage node during the event periods match
+        #   Test that the volumes in the Storage node during the event periods match
         assert_equal(triggered, arry.data <= 4)
 
         df = evt_rec.to_dataframe()
