@@ -558,7 +558,7 @@ cdef class DailyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts.datetime.year)):
+        if not is_leap_year(<int>(ts.year)):
             if i > 58: # 28th Feb
                 i += 1
         return self._values[i]

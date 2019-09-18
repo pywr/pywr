@@ -220,15 +220,19 @@ cdef class ScenarioIndex:
 cdef class Timestep:
     def __init__(self, period, int index, double days):
         self.period = period
-        self.datetime = dt = self.period.to_timestamp()
         self.index = index
         if days <= 0:
             raise ValueError("The days argument must be > 0.")
         self.days = days
-        self.dayofyear = dt.dayofyear
-        self.day = dt.day
-        self.month = dt.month
-        self.year = dt.year
+        self.dayofyear = period.dayofyear
+        self.day = period.day
+        self.month = period.month
+        self.year = period.year
+
+    property datetime:
+        """Timestep representation as a `datetime.datetime` object"""
+        def __get__(self, ):
+            return self.period.to_timestamp()
 
     def __repr__(self):
         return "<Timestep date=\"{}\">".format(self.period.strftime("%Y-%m-%d"))

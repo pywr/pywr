@@ -508,13 +508,13 @@ class AnnualVirtualStorage(VirtualStorage):
         super(AnnualVirtualStorage, self).before(ts)
 
         # Reset the storage volume if necessary
-        if ts.datetime.year != self._last_reset_year:
+        if ts.year != self._last_reset_year:
             # I.e. we're in a new year and ...
             # ... we're at or past the reset month/day
-            if ts.datetime.month > self.reset_month or \
-                    (ts.datetime.month == self.reset_month and ts.datetime.day >= self.reset_day):
+            if ts.month > self.reset_month or \
+                    (ts.month == self.reset_month and ts.day >= self.reset_day):
                 self._reset_storage_only()
-                self._last_reset_year = ts.datetime.year
+                self._last_reset_year = ts.year
 
 
 class PiecewiseLink(Node):
