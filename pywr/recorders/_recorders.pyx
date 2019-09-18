@@ -458,7 +458,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         cdef int i
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
-            self._data[ts._index,i] = self._node._flow[i]
+            self._data[ts.index, i] = self._node._flow[i]
         return 0
 
     property data:
@@ -522,7 +522,7 @@ cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
         cdef Node node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
-            self._data[ts._index,scenario_index.global_id] = max_flow - node._flow[scenario_index.global_id]
+            self._data[ts.index,scenario_index.global_id] = max_flow - node._flow[scenario_index.global_id]
         return 0
 NumpyArrayNodeDeficitRecorder.register()
 
@@ -564,7 +564,7 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
         cdef Node node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
-            self._data[ts._index,scenario_index.global_id] = node._flow[scenario_index.global_id] / max_flow
+            self._data[ts.index,scenario_index.global_id] = node._flow[scenario_index.global_id] / max_flow
         return 0
 NumpyArrayNodeSuppliedRatioRecorder.register()
 
@@ -606,7 +606,7 @@ cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
         cdef Node node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
-            self._data[ts._index,scenario_index.global_id] = 1 - node._flow[scenario_index.global_id] / max_flow
+            self._data[ts.index,scenario_index.global_id] = 1 - node._flow[scenario_index.global_id] / max_flow
 NumpyArrayNodeCurtailmentRatioRecorder.register()
 
 
@@ -928,9 +928,9 @@ cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
             if self.proportional:
-                self._data[ts._index,i] = self._node._current_pc[i]
+                self._data[ts.index, i] = self._node._current_pc[i]
             else:
-                self._data[ts._index,i] = self._node._volume[i]
+                self._data[ts.index, i] = self._node._volume[i]
         return 0
 NumpyArrayStorageRecorder.register()
 
@@ -1020,7 +1020,7 @@ cdef class NumpyArrayLevelRecorder(NumpyArrayAbstractStorageRecorder):
         cdef Timestep ts = self.model.timestepper.current
         cdef Storage node = self._node
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
-            self._data[ts._index,i] = node.get_level(scenario_index)
+            self._data[ts.index, i] = node.get_level(scenario_index)
         return 0
 NumpyArrayLevelRecorder.register()
 
@@ -1048,7 +1048,7 @@ cdef class NumpyArrayAreaRecorder(NumpyArrayAbstractStorageRecorder):
         cdef Timestep ts = self.model.timestepper.current
         cdef Storage node = self._node
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
-            self._data[ts._index,i] = node.get_area(scenario_index)
+            self._data[ts.index, i] = node.get_area(scenario_index)
         return 0
 NumpyArrayAreaRecorder.register()
 
@@ -1093,7 +1093,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
-        self._data[ts._index, :] = self._param.get_all_values()
+        self._data[ts.index, :] = self._param.get_all_values()
         return 0
 
     property data:
@@ -1158,7 +1158,7 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
-        self._data[ts._index, :] = self._param.get_all_indices()
+        self._data[ts.index, :] = self._param.get_all_indices()
         return 0
 
     property data:
@@ -1220,13 +1220,13 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
             self._memory[self.position, i] = self._param.get_value(scenario_index)
 
-        if timestep._index < self.window:
-            n = timestep._index + 1
+        if timestep.index < self.window:
+            n = timestep.index + 1
         else:
             n = self.window
 
         value = self._temporal_aggregator.aggregate_2d(self._memory[0:n, :], axis=0)
-        self._data[timestep._index, :] = value
+        self._data[timestep.index, :] = value
 
         self.position += 1
         if self.position >= self.window:
@@ -1283,8 +1283,11 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
         super(RollingMeanFlowNodeRecorder, self).setup()
         self.position = 0
         self._data = np.empty([len(self.model.timestepper), len(self.model.scenarios.combinations)])
-        if self.days:
-            self.timesteps = self.days // self.model.timestepper.delta.days
+        if self.days > 0:
+            try:
+                self.timesteps = self.days // self.model.timestepper.delta
+            except TypeError:
+                raise TypeError('A rolling window defined as a number of days is only valid with daily time-steps.')
         if self.timesteps == 0:
             raise ValueError("Timesteps property of MeanFlowRecorder is less than 1.")
         self._memory = np.zeros([len(self.model.scenarios.combinations), self.timesteps])
@@ -1356,7 +1359,7 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
-        cdef int days = self.model.timestepper.current.days
+        cdef double days = self.model.timestepper.current.days
         cdef AbstractNode node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
@@ -1379,7 +1382,7 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
     cpdef after(self):
         cdef ScenarioIndex scenario_index
         cdef int i
-        cdef int days = self.model.timestepper.current.days
+        cdef double days = self.model.timestepper.current.days
         for scenario_index in self.model.scenarios.combinations:
             i = scenario_index.global_id
             self._values[i] += self._node._flow[i]*self.factor*days

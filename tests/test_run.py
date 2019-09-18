@@ -503,6 +503,16 @@ def test_run():
     assert(result.timestep.index == 364)
 
 
+def test_run_monthly():
+    model = load_model('simple1_monthly.json')
+
+    result = model.run()
+    assert result.timestep.index == 11
+
+    result = model.run()
+    assert result.timestep.index == 11
+
+
 def test_select_solver():
     """Test specifying the solver in JSON"""
     solver_names = [solver.name for solver in pywr.solvers.solver_registry]

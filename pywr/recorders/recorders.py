@@ -480,13 +480,12 @@ class TablesRecorder(Recorder):
         scenario_shape = list(self.model.scenarios.shape)
         ts = self.model.timestepper.current
         idx = ts.index
-        dt = ts.datetime
 
         if self._time_table is not None:
             entry = self._time_table.row
-            entry['year'] = dt.year
-            entry['month'] = dt.month
-            entry['day'] = dt.day
+            entry['year'] = ts.year
+            entry['month'] = ts.month
+            entry['day'] = ts.day
             entry['index'] = idx
             entry.append()
 
