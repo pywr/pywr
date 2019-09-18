@@ -3,6 +3,9 @@ import numpy as np
 import datetime
 from pywr import _core
 
+# Constants
+SECONDS_IN_DAY = 3600 * 24
+
 
 class Timestepper(object):
     def __init__(self, start="2015-01-01", end="2015-12-31", delta=1):
@@ -36,7 +39,7 @@ class Timestepper(object):
         # Round to nearest second
         deltas = np.round(deltas.total_seconds())
         # Convert to days
-        deltas = deltas / 3600 / 24
+        deltas = deltas / SECONDS_IN_DAY
         self._periods = periods
         self._deltas = deltas
         self.reset()
@@ -84,7 +87,7 @@ class Timestepper(object):
             final_period = current.period + self.offset
             delta = final_period.end_time - final_period.start_time
             delta = np.round(delta.total_seconds())
-            delta = delta / 3600 / 24
+            delta = delta / SECONDS_IN_DAY
             self._next = _core.Timestep(final_period, next_index, delta)
         else:
             self._next = _core.Timestep(self._periods[next_index], next_index, self._deltas[next_index])
