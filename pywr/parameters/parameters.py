@@ -11,7 +11,7 @@ from ._parameters import (
     align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter,
     NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
-    DeficitParameter, load_parameter, load_parameter_values, load_dataframe)
+    DeficitParameter, DivisionParameter, load_parameter, load_parameter_values, load_dataframe)
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
