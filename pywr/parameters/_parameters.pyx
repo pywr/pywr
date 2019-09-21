@@ -7,6 +7,7 @@ from libc.limits cimport INT_MIN, INT_MAX
 from past.builtins import basestring
 from pywr.h5tools import H5Store
 from pywr.hashes import check_hash
+from ..dataframe_tools import align_and_resample_dataframe, load_dataframe, read_dataframe
 import warnings
 
 
@@ -156,46 +157,6 @@ cdef class ConstantParameter(Parameter):
 ConstantParameter.register()
 
 
-def align_and_resample_dataframe(df, datetime_index):
-    from pandas.tseries.offsets import DateOffset, Week, Day
-    # Must resample and align the DataFrame to the model.
-    start = datetime_index[0]
-    end = datetime_index[-1]
-
-    df_index = df.index
-    df_freq = df.index.freq
-    if df_freq is None:
-        raise ValueError('DataFrame index has no frequency.')
-
-    # Special case of a weekly frequency that can be treated as 7D
-    if isinstance(df_freq, Week):
-        df_freq = Day(n=7)
-
-    if df_index[0] > start:
-        raise ValueError('DataFrame data begins after the index start date.')
-    elif df_index[0] < start:
-        warnings.warn("Model starts after the beginning of the DataFrame. Some data is not used.", UnutilisedDataWarning)
-
-    if df_index[-1] < end:
-        raise ValueError('DataFrame data ends before the index end date.')
-    elif df_index[-1] > end:
-        warnings.warn("Model ends before the end of the DataFrame. Some data is not used.", UnutilisedDataWarning)
-
-    # Downsampling (i.e. from high freq to lower model freq)
-    if datetime_index.freq >= df_freq:
-        # Slice to required dates
-        df = df[start:end]
-        if df.index[0] != start:
-            raise ValueError('Start date of DataFrame can not be aligned with the desired index start date.')
-        # Take mean at the model's frequency
-        df = df.resample(datetime_index.freq).mean()
-        df.index.freq = datetime_index.freq
-    else:
-        raise NotImplementedError('Upsampling DataFrame not implemented.')
-
-    return df
-
-
 cdef class DataFrameParameter(Parameter):
     """Timeseries parameter with automatic alignment and resampling
 
@@ -249,7 +210,7 @@ cdef class DataFrameParameter(Parameter):
 DataFrameParameter.register()
 
 cdef class ArrayIndexedParameter(Parameter):
-    """Time varying parameter using an array and Timestep._index
+    """Time varying parameter using an array and Timestep.index
 
     The values in this parameter are constant across all scenarios.
     """
@@ -259,12 +220,12 @@ cdef class ArrayIndexedParameter(Parameter):
 
     cdef calc_values(self, Timestep ts):
         # constant parameter can just set the entire array to one value
-        self.__values[...] = self.values[ts._index]
+        self.__values[...] = self.values[ts.index]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the parameter at a given timestep
         """
-        return self.values[ts._index]
+        return self.values[ts.index]
 ArrayIndexedParameter.register()
 
 
@@ -299,7 +260,7 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         # the Scenario objects in the model run. We have cached the
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
-        return self.values[ts._index, scenario_index._indices[self._scenario_index]]
+        return self.values[ts.index, scenario_index._indices[self._scenario_index]]
 
 
 cdef class TablesArrayParameter(IndexParameter):
@@ -418,7 +379,7 @@ cdef class TablesArrayParameter(IndexParameter):
                 self._values_int = node.read().astype(np.int32)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef Py_ssize_t i = ts._index
+        cdef Py_ssize_t i = ts.index
         cdef Py_ssize_t j
         if self._values_dbl is None:
             return float(self.index(ts, scenario_index))
@@ -432,7 +393,7 @@ cdef class TablesArrayParameter(IndexParameter):
             return self._values_dbl[i, j]
 
     cpdef int index(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef Py_ssize_t i = ts._index
+        cdef Py_ssize_t i = ts.index
         cdef Py_ssize_t j
         if self._values_int is None:
             return int(self.value(ts, scenario_index))
@@ -504,7 +465,7 @@ ConstantScenarioParameter.register()
 
 
 cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
-    """Time varying parameter using an array and Timestep._index with
+    """Time varying parameter using an array and Timestep.index with
     multiplicative factors per Scenario
     """
     def __init__(self, model, Scenario scenario, values, factors, *args, **kwargs):
@@ -542,7 +503,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         # correct number to use in this instance.
         cdef int imth = ts.month-1
         cdef int i = scenario_index._indices[self._scenario_index]
-        return self._values[ts._index]*self._factors[i, imth]
+        return self._values[ts.index]*self._factors[i, imth]
 
     @classmethod
     def load(cls, model, data):
@@ -597,7 +558,7 @@ cdef class DailyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts._datetime.year)):
+        if not is_leap_year(<int>(ts.year)):
             if i > 58: # 28th Feb
                 i += 1
         return self._values[i]
@@ -622,7 +583,7 @@ cdef class WeeklyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts._datetime.year)):
+        if not is_leap_year(<int>(ts.datetime.year)):
             if i > 58: # 28th Feb
                 i += 1
         cdef Py_ssize_t week
@@ -903,8 +864,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         self._ts_index_cache = -1
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        cdef int ts_index = timestep._index
-        cdef int doy = timestep._datetime.dayofyear - 1
+        cdef int ts_index = timestep.index
+        cdef int doy = timestep.dayofyear - 1
         cdef int n = self._amplitudes.shape[0]
         cdef int i
         cdef double val
@@ -1584,120 +1545,4 @@ def load_parameter_values(model, data, values_key='values', url_key='url',
     return values
 
 
-def load_dataframe(model, data):
 
-
-    column = data.pop("column", None)
-    if isinstance(column, list):
-        # Cast multiindex to a tuple to ensure .loc works correctly
-        column = tuple(column)
-
-    index = data.pop("index", None)
-    if isinstance(index, list):
-        # Cast multiindex to a tuple to ensure .loc works correctly
-        index = tuple(index)
-
-
-    table_ref = data.pop('table', None)
-    if table_ref is not None:
-        name = table_ref
-        df = model.tables[table_ref]
-    else:
-        name = data.get('url', None)
-        df = read_dataframe(model, data)
-
-    # if column is not specified, use the whole dataframe
-    if column is not None:
-        try:
-            df = df[column]
-        except KeyError:
-            raise KeyError('Column "{}" not found in dataset "{}"'.format(column, name))
-
-    if index is not None:
-        try:
-            df = df.loc[index]
-        except KeyError:
-            raise KeyError('Index "{}" not found in dataset "{}"'.format(index, name))
-
-    try:
-        if isinstance(df.index, pandas.DatetimeIndex):
-            # Only infer freq if one isn't already found.
-            # E.g. HDF stores the saved freq, but CSV tends to have None, but infer to Weekly for example
-            if df.index.freq is None:
-                freq = pandas.infer_freq(df.index)
-                if freq is None:
-                    raise IndexError("Failed to identify frequency of dataset \"{}\"".format(name))
-                df = df.asfreq(freq)
-    except AttributeError:
-        # Probably wasn't a pandas dataframe at this point.
-        pass
-
-    return df
-
-
-def read_dataframe(model, data):
-
-    # values reference data in an external file
-    url = data.pop('url', None)
-    if url is not None:
-        if not os.path.isabs(url) and model.path is not None:
-            url = os.path.join(model.path, url)
-    else:
-        # Must be an embedded dataframe
-        df_data = data.pop('data', None)
-
-    if url is None and df_data is None:
-        raise ValueError('No data specified. Provide a "url" or "data" key.')
-
-    if url is not None:
-        # Check hashes if given before reading the data
-        checksums = data.pop('checksum', {})
-        for algo, hash in checksums.items():
-            check_hash(url, hash, algorithm=algo)
-        
-        try:
-            filetype = data.pop('filetype')
-        except KeyError:
-            # guess file type based on extension
-            if url.endswith(('.xls', '.xlsx')):
-                filetype = "excel"
-            elif url.endswith(('.csv', '.gz')):
-                filetype = "csv"
-            elif url.endswith(('.hdf', '.hdf5', '.h5')):
-                filetype = "hdf"
-            else:
-                raise NotImplementedError('Unknown file extension: "{}"'.format(url))
-    else:
-        if 'filetype' in data:
-            raise ValueError('"filetype" is only valid when loading data from a URL.')
-        if 'checksum' in data:
-            raise ValueError('"checksum" is only valid when loading data from a URL.')
-        
-        filetype = "dict"
-
-    if filetype == "csv":
-        if hasattr(data, "index_col"):
-            data["parse_dates"] = True
-            if "dayfirst" not in data.keys():
-                data["dayfirst"] = True # we're bias towards non-American dates here
-        df = pandas.read_csv(url, **data) # automatically decompressed gzipped data!
-    elif filetype == "excel":
-        df = pandas.read_excel(url, **data)
-    elif filetype == "hdf":
-        key = data.pop("key", None)
-        df = pandas.read_hdf(url, key=key, **data)
-    elif filetype == "dict":
-        parse_dates = data.pop('parse_dates', False)
-        df = pandas.DataFrame.from_dict(df_data, **data)
-        if parse_dates:
-            df.index = pandas.DatetimeIndex(df.index)
-
-    if df.index.dtype.name == "object" and data.get("parse_dates", False):
-        # catch dates that haven't been parsed yet
-        raise TypeError("Invalid DataFrame index type \"{}\" in \"{}\".".format(df.index.dtype.name, url))
-
-    # clean up
-    # Assume all keywords are consumed by pandas.read_* functions
-    data.clear()
-
-    return df

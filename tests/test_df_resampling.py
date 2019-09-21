@@ -1,4 +1,4 @@
-from pywr.parameters import align_and_resample_dataframe
+from pywr.dataframe_tools import align_and_resample_dataframe, ResamplingError
 import numpy as np
 import pandas as pd
 import pytest
@@ -6,104 +6,208 @@ import pytest
 
 def make_df(freq, start='2015-01-01', end='2015-12-31'):
     # Daily time-step
-    index = pd.date_range(start, end, freq=freq)
-    series = pd.Series(np.arange(len(index), dtype=np.float64), index=index)
+    index = pd.period_range(start, end, freq=freq)
+    series = pd.DataFrame(np.arange(len(index), dtype=np.float64), index=index)
     return series
 
 
-def test_upsampling_D_7D():
-    """Test aligning and resampling daily data to 7-day data.
-    """
-    # Example daily data
-    df1D = make_df('D')
-
-    # Date range we want to end up with
-    index = pd.date_range('2015-01-01', '2015-12-31', freq='7D')
-
-    df7D = align_and_resample_dataframe(df1D, index)
-
-    assert df7D.index[0] == index[0]
-    assert df7D.index[-1] == index[-1]
-    assert df7D.index.freq == index.freq
-    assert df7D[0] == 3.0
-    assert df7D[1] == 10.0
-    assert df7D[2] == 17.0
-
-    # Required range now one day after start of our data
-    index = pd.date_range('2015-01-02', '2015-12-31', freq='7D')
-
-    df7D = align_and_resample_dataframe(df1D, index)
-
-    assert df7D.index[0] == index[0]
-    assert df7D.index[-1] == index[-1]
-    assert df7D.index.freq == index.freq
-    assert df7D[0] == 4.0
-    assert df7D[1] == 11.0
-    assert df7D[2] == 18.0
-
-    # Required range now one day before start of our data
-    index = pd.date_range('2014-12-31', '2015-12-31', freq='7D')
-
-    with pytest.raises(ValueError):
-        df7D = align_and_resample_dataframe(df1D, index)
-
-    # Required range now after end of our data
-    index = pd.date_range('2015-01-01', '2016-01-31', freq='7D')
-
-    with pytest.raises(ValueError):
-        df7D = align_and_resample_dataframe(df1D, index)
+def make_model_index(freq, start='2015-01-01', end='2015-12-31'):
+    return pd.period_range(start, end, freq=freq)
 
 
-def test_upsampling_2D_7D():
-    """Test aligning and resampling bi-daily data to 7-day data.
-    """
+class TestDownSampling:
+    """Test for down-sampling a dataframe to lower frequency model time-step."""
 
-    # Example bi-daily data
-    df2D = make_df('2D')
+    @pytest.mark.parametrize('resample_func', ['mean', 'max'])
+    def test_daily_to_monthly(self, resample_func):
+        """Test daily data to monthly model time-step."""
+        input_df = make_df('D')
+        model_index = make_model_index('M')
 
-    # Date range we want to end up with
-    index = pd.date_range('2015-01-01', '2015-12-31', freq='7D')
+        input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func=resample_func)
 
-    df7D = align_and_resample_dataframe(df2D, index)
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, input_resampled.resample('M').agg(resample_func))
 
-    assert df7D.index.freq == index.freq
-    assert df7D[0] == 1.5
-    assert df7D[1] == 5.0
-    assert df7D[2] == 8.5
+    @pytest.mark.parametrize('resample_func', ['mean', 'max'])
+    def test_daily_to_weekly(self, resample_func):
+        """Test daily to weekly model time-step."""
+        input_df = make_df('D')
+        model_index = make_model_index('W')
 
-    assert df7D.index[0] == index[0]
-    assert df7D.index[-1] == index[-1]
+        input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func=resample_func)
 
-    # Required range now one day after start of our data
-    index = pd.date_range('2015-01-02', '2015-12-31', freq='7D')
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, input_resampled.resample('W').agg(resample_func))
 
-    # This should raise an error because the resulting index
-    # won't align with the desired on.
-    with pytest.raises(ValueError):
-        df7D = align_and_resample_dataframe(df2D, index)
+    @pytest.mark.parametrize('resample_func', ['mean', 'max'])
+    def test_daily_to_7daily(self, resample_func):
+        """Test daily to 7-day model time-step."""
+        input_df = make_df('D')
+        model_index = make_model_index('7D')
 
-    # Required range now two days after start of our data
-    index = pd.date_range('2015-01-03', '2015-12-31', freq='7D')
+        input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func=resample_func)
 
-    df7D = align_and_resample_dataframe(df2D, index)
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, input_resampled.resample('7D').agg(resample_func))
 
-    assert df7D.index[0] == index[0]
-    # The end does not necessarily align
-    # assert df7D.index[-1] == index[-1]
+    @pytest.mark.parametrize('resample_func', ['mean', 'max'])
+    def test_misaligned_daily_to_7daily(self, resample_func):
+        """Test daily to 7-day model time-step."""
+        input_df = make_df('D', start='2014-12-20')
+        model_index = make_model_index('7D')
 
-    assert df7D.index.freq == index.freq
-    assert df7D[0] == 2.5
-    assert df7D[1] == 6.0
-    assert df7D[2] == 9.5
+        input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func=resample_func)
 
-    # Required range now one day before start of our data
-    index = pd.date_range('2014-12-31', '2015-12-31', freq='7D')
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, input_resampled.resample('7D').agg(resample_func))
 
-    with pytest.raises(ValueError):
-        df7D = align_and_resample_dataframe(df2D, index)
+    @pytest.mark.parametrize('resample_func', ['mean', 'max'])
+    def test_weekly_to_monthly(self, resample_func):
+        """Test weekly to monthly model time-step."""
+        input_df = make_df('W')
+        model_index = make_model_index('M')
 
-    # Required range now after end of our data
-    index = pd.date_range('2015-01-01', '2016-01-31', freq='7D')
+        with pytest.raises(ResamplingError):
+            input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func=resample_func)
 
-    with pytest.raises(ValueError):
-        df7D = align_and_resample_dataframe(df2D, index)
+    @pytest.mark.parametrize('resample_func', ['mean', 'max'])
+    def test_weekly_to_two_weekly(self, resample_func):
+        """Test weekly to two-weekly model time-step."""
+        input_df = make_df('W')
+        model_index = make_model_index('2W')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func=resample_func)
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, input_resampled.resample('2W').agg(resample_func))
+
+
+class TestUpSampling:
+    """Test for up-sampling a dataframe to higher frequency model time-step."""
+
+    def test_monthly_to_daily(self):
+        """Test monthly data to daily model time-step."""
+        input_df = make_df('M')
+        model_index = make_model_index('D')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index)
+
+        expected_df = input_df.resample('D').ffill()
+        expected_df = expected_df['2015-01-01':'2015-12-31']
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, expected_df)
+
+    def test_weekly_to_daily(self):
+        """Test weekly aligned to daily model time-step."""
+        # Note that we have to choose a week starting on Wednesday because 2015-01-01 is a Wednesday.
+        input_df = make_df('W-WED')
+        model_index = make_model_index('D')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index)
+
+        expected_df = input_df.resample('D').ffill()
+        expected_df = expected_df['2015-01-01':'2015-12-31']
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, expected_df)
+
+    def test_7daily_to_daily(self):
+        """Test weekly aligned to daily model time-step."""
+        # Note that we have to choose a week starting on Wednesday because 2015-01-01 is a Wednesday.
+        input_df = make_df('7D')
+        model_index = make_model_index('D')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index)
+
+        expected_df = input_df.resample('D').ffill()
+        expected_df = expected_df['2015-01-01':'2015-12-31']
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, expected_df)
+
+    def test_nonaligned_weekly_to_daily(self):
+        """Test weekly non-aligned data to daily model time-step."""
+        input_df = make_df('W')
+        model_index = make_model_index('D')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index)
+
+        expected_df = input_df.resample('D').ffill()
+        expected_df = expected_df['2015-01-01':'2015-12-31']
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, expected_df)
+
+    @pytest.mark.parametrize('resample_func', ['mean', 'max'])
+    def test_weekly_to_7daily(self, resample_func):
+        """Test weekly to 7-day model time-step."""
+        # Note that we have to choose a week starting on Wednesday because 2015-01-01 is a Wednesday.
+        input_df = make_df('W-WED')
+        model_index = make_model_index('7D')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func=resample_func)
+
+        expected_df = input_df.resample('D').ffill()
+        expected_df = expected_df['2015-01-01':'2015-12-31']
+        expected_df = expected_df.resample('7D').agg(resample_func)
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, expected_df)
+
+    @pytest.mark.parametrize('resample_func', ['mean', 'max'])
+    def test_nonaligned_weekly_to_7daily(self, resample_func):
+        """Test invalid weekly data to 7-day model time-step."""
+        # Because the weeks do not align with the 7-day time-step it is not possible to align this data.
+        input_df = make_df('W')
+        model_index = make_model_index('7D')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func=resample_func)
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+
+        expected_df = input_df.resample('D').ffill()
+        expected_df = expected_df['2015-01-01':'2015-12-31']
+        expected_df = expected_df.resample('7D').agg(resample_func)
+
+        pd.testing.assert_frame_equal(input_resampled, expected_df)
+
+    def test_annual_to_daily(self):
+
+        input_df = make_df('A', '2010-01-01', '2020-01-01')
+        model_index = make_model_index('D', '2010-01-01', '2020-01-01')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index)
+
+        expected_df = input_df.resample('D').ffill()
+        expected_df = expected_df['2010-01-01':'2020-01-01']
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, expected_df)
+
+    def test_annual_to_monthly(self):
+
+        input_df = make_df('A', '2010-01-01', '2020-01-01')
+        model_index = make_model_index('M', '2010-01-01', '2020-01-01')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func='ffill')
+
+        expected_df = input_df.resample('M').ffill()
+        expected_df = expected_df['2010-01-01':'2020-01-01']
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, expected_df)
+
+    def test_two_weekly_to_weekly(self):
+        """Test weekly to two-weekly model time-step."""
+        input_df = make_df('2W')
+        model_index = make_model_index('W')
+
+        input_resampled = align_and_resample_dataframe(input_df, model_index, resample_func='ffill')
+
+        expected_df = input_df.resample('W').ffill()
+        expected_df = expected_df['2015-01-01':'2015-12-31']
+
+        pd.testing.assert_index_equal(input_resampled.index, model_index)
+        pd.testing.assert_frame_equal(input_resampled, expected_df)

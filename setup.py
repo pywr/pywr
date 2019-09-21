@@ -173,16 +173,6 @@ setup_kwargs['package_data'] = {
     'pywr.notebook': ['*.js', '*.css']
 }
 
-# store the current git hash in the module
-try:
-    git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip().decode("utf-8")
-except subprocess.CalledProcessError:
-    pass
-else:
-    with open("pywr/GIT_VERSION.txt", "w") as f:
-        f.write(git_hash + "\n")
-    setup_kwargs["package_data"]["pywr"] = ["GIT_VERSION.txt"]
-
 # build the core extension(s)
 setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional,
                                         compiler_directives=compiler_directives, annotate=annotate,

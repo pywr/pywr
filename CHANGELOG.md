@@ -2,6 +2,61 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+
+## v1.3.0
+
+### New Features
+
+- Allow use of parameters as values in `ControlCurveInterpolatedParameter` (#750)
+- Added `ScenarioWrapper` parameter (#763)
+
+### Bug fixes
+
+- Fix loading PiecewiseLink with parameters from JSON (#749)
+- Fixed a bug with `CSVRecorder` not saving volumes correctly (#767)
+
+### Miscellaneous
+
+- Removed `six` as dependency (#745)
+- Removed `pywr.__git_hash__` (#752)
+- Removed `Blender` node (#757)
+
+## v1.2.0
+
+### New Features
+
+- Support for embedding dataframe data directly in to JSON (#700)
+- Added `NumpyArrayAreaRecorder` and refactored storage recorders (#684)
+- Added getter for Recorder.agg_func (#719)
+- Add `DivisionParameter` and tests (#722)
+- Add `FlowParameter` for tracking yesterday's flow (#724)
+- Add `InterpolatedQuadratureParameter` (#714)
+- Add new array deficit recorders (#729):
+  - `NumpyArrayNodeDeficitRecorder` - timeseries of deficit.
+  - `NumpyArrayNodeSuppliedRatioRecorder` - timeseries of supply / demand
+  - `NumpyArrayNodeCurtailmentRatioRecorder` - timeseries of 1 - supply / demand
+
+### Bug fixes
+
+- Fix a bug with hydropower parameters & recorders not applying efficiency factor (#737)
+- Refactor of the code used to load named parameters and recorders to use shared functions (as they are both components) (#720)
+- Fix a bug with AggregatedRecorder not returning the instance on load (#723)
+- Use `flow` instead of `max_flow` in two_reservoirs test and example (#721)
+
+### Documentation
+
+- Added API documentation for nodes (#668)
+- Fix `PiecewiseLink` docstring's ASCII diagram (#668)
+
+### Miscellaneous
+
+- Clean-up various warnings in tests (#695)
+- Removed conda-recipe (Pywr is now in conda-forge) (#692)
+- Added codecov based coverage reporting (#705)
+- Updated test builds to use manylinux2010 to build wheels (#710)
+- Updated installation instructions to reflect wheels in Pypi and conda-forge installation.
+
+
 ## v1.1.0
 
 ### New features

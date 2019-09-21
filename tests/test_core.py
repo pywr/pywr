@@ -7,7 +7,7 @@ import pytest
 from fixtures import *
 from helpers import *
 from pywr._core import Timestep, ScenarioIndex
-
+import pandas
 from pywr.core import *
 from pywr.domains.river import *
 from pywr.parameters import Parameter, ConstantParameter, DataFrameParameter, AggregatedParameter
@@ -570,3 +570,19 @@ def test_variable_load():
     assert sorted([c.is_objective for c in model.objectives]) == ["minimise", ]
     assert sorted([c.name for c in model.constraints]) == ["min_volume", ]
 
+
+def test_delta_greater_than_zero_days(simple_linear_model):
+    """Test trying to use zero length timestep raises an error."""
+    model = simple_linear_model
+    model.timestepper.delta = 0
+
+    with pytest.raises(ValueError):
+        model.run()
+
+
+def test_timestep_greater_than_zero_days():
+    """Test trying to create zero length Timestep."""
+
+    with pytest.raises(ValueError):
+        # Test setting days <= 0 raises an error
+        Timestep(pandas.Period('2019-01-01', freq='D'), 0, 0)

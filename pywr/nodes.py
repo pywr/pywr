@@ -1,4 +1,3 @@
-from six import with_metaclass
 import numpy as np
 
 from pywr import _core
@@ -119,7 +118,7 @@ class NodeMeta(type):
         return node
 
 
-class Node(with_metaclass(NodeMeta, Drawable, Connectable, BaseNode)):
+class Node(Drawable, Connectable, BaseNode, metaclass=NodeMeta):
     """Base object from which all other nodes inherit
 
     This BaseNode is not connectable by default, and the Node class should
@@ -249,24 +248,7 @@ class Link(Node, BaseLink):
         super(Link, self).__init__(*args, **kwargs)
 
 
-class Blender(Link):
-    """Blender node to maintain a constant ratio between two supply routes"""
-    def __init__(self, *args, **kwargs):
-        """Initialise a new Blender node
-
-        Parameters
-        ----------
-        ratio : float (optional)
-            The ratio to constraint the two routes by (0.0-0.1). If no value is
-            given a default value of 0.5 is used.
-        """
-        Link.__init__(self, *args, **kwargs)
-        self.slots = {1: None, 2: None}
-
-        self.properties['ratio'] = pop_kwarg_parameter(kwargs, 'ratio', 0.5)
-
-
-class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
+class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
     """A generic storage Node
 
     In terms of connections in the network the Storage node behaves like any
@@ -434,7 +416,7 @@ class Storage(with_metaclass(NodeMeta, Drawable, Connectable, _core.Storage)):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
 
-class VirtualStorage(with_metaclass(NodeMeta, Drawable, _core.VirtualStorage)):
+class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
     """A virtual storage unit
 
     Parameters
@@ -526,13 +508,13 @@ class AnnualVirtualStorage(VirtualStorage):
         super(AnnualVirtualStorage, self).before(ts)
 
         # Reset the storage volume if necessary
-        if ts.datetime.year != self._last_reset_year:
+        if ts.year != self._last_reset_year:
             # I.e. we're in a new year and ...
             # ... we're at or past the reset month/day
-            if ts.datetime.month > self.reset_month or \
-                    (ts.datetime.month == self.reset_month and ts.datetime.day >= self.reset_day):
+            if ts.month > self.reset_month or \
+                    (ts.month == self.reset_month and ts.day >= self.reset_day):
                 self._reset_storage_only()
-                self._last_reset_year = ts.datetime.year
+                self._last_reset_year = ts.year
 
 
 class PiecewiseLink(Node):
@@ -613,21 +595,12 @@ class PiecewiseLink(Node):
 
     @classmethod
     def load(cls, data, model):
-        # accept plurals of max_flow and cost
-        try:
-            max_flow = data.pop("max_flows")
-        except KeyError:
-            pass
-        else:
-            data["max_flow"] = [load_parameter(p) for p in max_flow]
-        try:
-            cost = data.pop("costs")
-        except KeyError:
-            pass
-        else:
-            data["cost"] = [load_parameter(p) for p in cost]
+        # max_flow and cost should be lists of parameter definitions
+        max_flow = [load_parameter(model, p) for p in data.pop('max_flow')]
+        cost = [load_parameter(model, p) for p in data.pop('cost')]
+
         del(data["type"])
-        return cls(model, **data)
+        return cls(model, max_flow=max_flow, cost=cost, **data)
 
 
 class MultiSplitLink(PiecewiseLink):
@@ -747,7 +720,7 @@ class MultiSplitLink(PiecewiseLink):
             yield self.output
 
 
-class AggregatedStorage(with_metaclass(NodeMeta, Drawable, _core.AggregatedStorage)):
+class AggregatedStorage( Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
     """ An aggregated sum of other `Storage` nodes
 
     This object should behave like `Storage` by returning current `flow`, `volume` and `current_pc`.
@@ -770,7 +743,7 @@ class AggregatedStorage(with_metaclass(NodeMeta, Drawable, _core.AggregatedStora
         self.storage_nodes = storage_nodes
 
 
-class AggregatedNode(with_metaclass(NodeMeta, Drawable, _core.AggregatedNode)):
+class AggregatedNode(Drawable, _core.AggregatedNode, metaclass=NodeMeta):
     """ An aggregated sum of other `Node` nodes
 
     This object should behave like `Node` by returning current `flow`.

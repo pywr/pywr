@@ -49,7 +49,6 @@ def test_model_results():
     assert (isinstance(res, ModelResult))
     assert (res.timesteps == 365)
     assert (res.version == pywr.__version__)
-    assert (res.git_hash == pywr.__git_hash__)
     assert res.solver_stats['number_of_cols']
     assert res.solver_stats['number_of_rows']
     assert res.solver_name == model.solver.name
@@ -502,6 +501,16 @@ def test_run():
     model.reset(start=pandas.to_datetime('2015-12-01'))
     result = model.run()
     assert(result.timestep.index == 364)
+
+
+def test_run_monthly():
+    model = load_model('simple1_monthly.json')
+
+    result = model.run()
+    assert result.timestep.index == 11
+
+    result = model.run()
+    assert result.timestep.index == 11
 
 
 def test_select_solver():

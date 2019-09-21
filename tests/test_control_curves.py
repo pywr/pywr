@@ -46,7 +46,7 @@ class TestPiecewiseLinearControlCurve:
         
         model.timestepper.start = "1920-01-01"
         model.timestepper.delta = 1
-        model.timestepper.end = model.timestepper.start + model.timestepper.delta*100
+        model.timestepper.end = model.timestepper.start + model.timestepper.offset*100
         
         @assert_rec(model, parameter)
         def expected_func(timestep, scenario_index):
@@ -283,7 +283,8 @@ class TestPiecewiseControlCurveParameter:
             m.run()
 
 
-def test_control_curve_interpolated(model):
+@pytest.mark.parametrize("use_parameters", [False, True])
+def test_control_curve_interpolated(model, use_parameters):
     m = model
     m.timestepper.delta = 200
 
@@ -293,7 +294,14 @@ def test_control_curve_interpolated(model):
 
     cc = ConstantParameter(model, 0.8)
     values = [20.0, 5.0, 0.0]
-    s.cost = p = ControlCurveInterpolatedParameter(model, s, cc, values)
+
+    if use_parameters:
+        # Create the parameter using parameters for the values
+        parameters = [ConstantParameter(model, v) for v in values]
+        s.cost = p = ControlCurveInterpolatedParameter(model, s, cc, parameters=parameters)
+    else:
+        # Create the parameter using a list of values
+        s.cost = p = ControlCurveInterpolatedParameter(model, s, cc, values)
 
     @assert_rec(model, p)
     def expected_func(timestep, scenario_index):
@@ -314,10 +322,14 @@ def test_control_curve_interpolated(model):
             model.run()
 
 
-def test_control_curve_interpolated_json():
+@pytest.mark.parametrize("use_parameters", [False, True])
+def test_control_curve_interpolated_json(use_parameters):
     # this is a little hack-y, as the parameters don't provide access to their
     # data once they've been initalised
-    model = load_model("reservoir_with_cc.json")
+    if use_parameters:
+        model = load_model("reservoir_with_cc_param_values.json")
+    else:
+        model = load_model("reservoir_with_cc.json")
     reservoir1 = model.nodes["reservoir1"]
     model.setup()
     path = os.path.join(os.path.dirname(__file__), "models", "control_curve.csv")

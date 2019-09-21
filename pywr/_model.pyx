@@ -26,7 +26,7 @@ from pywr._component cimport Component
 from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
 from pywr._core import ScenarioCollection, Scenario
 from pywr._core cimport AbstractNode
-from pywr.parameters._parameters import load_dataframe
+from .dataframe_tools import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
@@ -112,8 +112,6 @@ class Model(object):
         if kwargs:
             key = list(kwargs.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
-
-        self.reset()
 
     @property
     def components(self):
@@ -297,7 +295,7 @@ class Model(object):
         else:
             start = pandas.to_datetime(timestepper_data['start'])
             end = pandas.to_datetime(timestepper_data['end'])
-            timestep = int(timestepper_data['timestep'])
+            timestep = timestepper_data['timestep']
 
         if model is None:
             model = cls(
@@ -536,7 +534,7 @@ class Model(object):
 
 
         """
-        if self.dirty:
+        if self.dirty or self.timestepper.dirty:
             self.setup()
         self.timestep = next(self.timestepper)
         return self._step()
@@ -559,9 +557,8 @@ class Model(object):
         t0 = time.time()
         timestep = None
         try:
-            if self.dirty:
+            if self.dirty or self.timestepper.dirty:
                 self.setup()
-                self.timestepper.reset()
             else:
                 self.reset()
             t1 = time.time()
@@ -593,7 +590,6 @@ class Model(object):
             solver_name=self.solver.name,
             solver_stats=self.solver.stats,
             version=pywr.__version__,
-            git_hash=pywr.__git_hash__,
         )
         logger.info('Model run complete!')
         return result
@@ -602,6 +598,7 @@ class Model(object):
         """Setup the model for the first time or if it has changed since
         last run."""
         logger.info('Setting up model ...')
+        self.timestepper.setup()
         self.scenarios.setup()
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
@@ -853,7 +850,7 @@ class NamedIterator(object):
 
 class ModelResult(object):
     def __init__(self, num_scenarios, timestep, time_taken, time_taken_with_overhead, speed,
-                 solver_name, solver_stats, version, git_hash):
+                 solver_name, solver_stats, version):
         self.timestep = timestep
         self.timesteps = timestep.index + 1
         self.time_taken = time_taken
@@ -863,7 +860,6 @@ class ModelResult(object):
         self.solver_name = solver_name
         self.solver_stats = solver_stats
         self.version = version
-        self.git_hash = git_hash
 
     def to_dict(self):
         return {attr: value for attr, value in self.__dict__.items()}
