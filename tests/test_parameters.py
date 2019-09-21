@@ -12,7 +12,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
-
+from pywr.dataframe_tools import ResamplingError
 from pywr.recorders import Recorder
 from fixtures import simple_linear_model, simple_storage_model
 from helpers import load_model
@@ -101,7 +101,7 @@ def test_parameter_array_indexed(simple_linear_model):
         np.testing.assert_allclose(p.value(ts, si), v)
 
     # Now check that IndexError is raised if an out of bounds Timestep is given.
-    ts = Timestep(datetime.datetime(2016, 1, 1), 366, 1.0)
+    ts = Timestep(pd.Period('2016-01-01', freq='1D'), 366, 1)
     with pytest.raises(IndexError):
         p.value(ts, si)
 
@@ -617,9 +617,10 @@ def test_parameter_df_upsampling(model):
     model.timestepper.delta = datetime.timedelta(7)
     model.timestepper.start = pd.to_datetime('2015-01-01')
     model.timestepper.end = pd.to_datetime('2015-12-31')
+    model.timestepper.setup()
 
     # Daily time-step
-    index = pd.date_range('2015-01-01', periods=365, freq='D')
+    index = pd.period_range('2015-01-01', periods=365, freq='D')
     series = pd.Series(np.arange(365), index=index)
 
     p = DataFrameParameter(model, series)
@@ -648,7 +649,7 @@ def test_parameter_df_upsampling(model):
     series = pd.Series(np.arange(365), index=index)
 
     p = DataFrameParameter(model, series)
-    with pytest.raises(ValueError):
+    with pytest.raises(ResamplingError):
         p.setup()
 
     model.reset()
@@ -657,7 +658,7 @@ def test_parameter_df_upsampling(model):
     series = pd.Series(np.arange(365), index=index)
 
     p = DataFrameParameter(model, series)
-    with pytest.raises(ValueError):
+    with pytest.raises(ResamplingError):
         p.setup()
 
 
@@ -672,6 +673,7 @@ def test_parameter_df_upsampling_multiple_columns(model):
     model.timestepper.delta = datetime.timedelta(7)
     model.timestepper.start = pd.to_datetime('2015-01-01')
     model.timestepper.end = pd.to_datetime('2015-12-31')
+    model.timestepper.setup()
 
     # Daily time-step
     index = pd.date_range('2015-01-01', periods=365, freq='D')

@@ -576,8 +576,8 @@ cdef class CythonGLPKEdgeSolver:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
                 # result in maximum volume being exceeded
-                lb = -avail_volume/timestep._days
-                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep._days
+                lb = -avail_volume/timestep.days
+                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep.days
 
                 if abs(lb) < 1e-8:
                     lb = 0.0
@@ -596,8 +596,8 @@ cdef class CythonGLPKEdgeSolver:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
                 # result in maximum volume being exceeded
-                lb = -avail_volume/timestep._days
-                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep._days
+                lb = -avail_volume/timestep.days
+                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep.days
 
                 if abs(lb) < 1e-8:
                     lb = 0.0
@@ -633,7 +633,7 @@ cdef class CythonGLPKEdgeSolver:
             print("Simplex solve returned: {} ({})".format(simplex_status_string[simplex_ret], simplex_ret))
             print("Simplex status: {} ({})".format(status_string[status], status))
             print("Scenario ID: {}".format(scenario_index.global_id))
-            print("Timestep index: {}".format(timestep._index))
+            print("Timestep index: {}".format(timestep.index))
             self.dump_mps(b'pywr_glpk_debug.mps')
             self.dump_lp(b'pywr_glpk_debug.lp')
 
