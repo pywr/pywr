@@ -17,7 +17,7 @@ pip install cython packaging numpy jupyter pytest pytest-cov wheel future setupt
 # Install run-time packages
 pip install platypus-opt inspyred pygmo
 
-if [[ "${PYWR_BUILD_TRACE}" -eq "true" ]]; then
+if [[ "${PYWR_BUILD_TRACE}" == "true" ]]; then
     # For tracing we need to build in-place
     python setup.py build_ext -i develop
 
