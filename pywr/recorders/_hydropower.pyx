@@ -468,7 +468,7 @@ cdef class TotalHydroEnergyRecorderWithVaribaleTailwater(BaseConstantNodeRecorde
         cdef int i
         cdef double q, head, power
         cdef Timestep ts = self.model.timestepper.current
-        cdef int days = ts.days
+        cdef double days = ts.days
         cdef ScenarioIndex scenario_index
         flow = self.node.flow
 
