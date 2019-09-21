@@ -1,0 +1,52 @@
+{
+    "metadata": {
+        "title": "Two_node_system",
+        "description": "A model to test InterpolatedFlowParameter",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": "M"
+    },
+    
+
+    "nodes": [
+        {
+            "name": "Inflow",
+            "type": "catchment",
+            "flow": 7.5
+        },
+
+        {
+            "name": "Ouflow_test", 
+            "type": "Output", 
+            "max_flow": 30, 
+            "cost": -10
+        }
+
+        ],
+  
+    "edges": [
+        ["Inflow", "Ouflow_test"] 
+    ],
+
+    "parameters":  {
+    "Water_level": {
+        "type": "InterpolatedFlowParameter",
+          "node": "Ouflow_test",
+          "flows": [0,5,10],
+          "values": [3,6,8],
+          "kind": "linear"
+        }
+    },
+
+    "recorders": {
+        "Water_level_value": {
+            "type": "NumpyArrayParameterRecorder",
+            "parameter": "Water_level"
+        }
+    }
+  
+  }
+  
