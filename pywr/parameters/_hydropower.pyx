@@ -27,7 +27,7 @@ cpdef double inverse_hydropower_calculation(double power, double water_elevation
     energy_unit_conversion : double (default=1e-6)
         A factor used to transform the units of power. Defaults to 1e-6 to assuming input of $MW$. 
     density : double (default=1000)
-        Density of water in $kg/m^{-3}$.
+        Density of water in $kg/m^{3}$.
         
     Returns
     -------

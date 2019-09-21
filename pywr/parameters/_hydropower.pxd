@@ -27,3 +27,4 @@ cdef class HydropowerTargetParameterWithVaribaleTailwater(Parameter):
     cdef public double energy_unit_conversion
     cdef public double density
     cdef public double efficiency
+    
