@@ -9,7 +9,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter,
-    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
+    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
 from pywr.dataframe_tools import ResamplingError
@@ -1437,3 +1437,18 @@ class TestHydroPowerTargets:
             else:
                 # If flow is within the bounds target is met exactly.
                 assert_allclose(rec.data[i, 0], param.target.get_value(si))
+
+
+class TestFlowInterpolation:
+
+    def test_flow_interpolation_parameter(self):
+        """The test includes interpolation of river water level based on flow"""
+
+        model = load_model("flow_interpolation.json")
+
+        model.run()
+
+        water_levels1 = np.array([3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7])
+
+        modelled_levels = model.recorders["water_level_value"].data
+        assert_allclose(water_levels1, modelled_levels[:, 0])

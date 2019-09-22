@@ -130,6 +130,28 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
 InterpolatedVolumeParameter.register()
 
 
+class InterpolatedFlowParameter(AbstractInterpolatedParameter):
+    """
+    Generic interpolation parameter that uses a node's  flow at the previous time-step for interpolation.
+
+    """
+    def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
+        super().__init__(model, x, y, interp_kwargs, **kwargs)
+        self._node = node
+
+    def _value_to_interpolate(self, ts, scenario_index):       
+        return self._node.prev_flow[scenario_index.global_id]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        volumes = np.array(data.pop("flows"))
+        values = np.array(data.pop("values"))
+        kind = data.pop("kind", "linear")
+        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+InterpolatedFlowParameter.register()
+
+
 class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
     """Parameter value is equal to the quadrature of the interpolation of another parameter
 
