@@ -1438,7 +1438,8 @@ class TestHydroPowerTargets:
                 # If flow is within the bounds target is met exactly.
                 assert_allclose(rec.data[i, 0], param.target.get_value(si))
 
-class Test_flow_interpolation:
+
+class TestFlowInterpolation:
 
     def test_flow_interpolation_parameter(self):
         """The test includes interpolation of river water level based on flow"""
@@ -1449,5 +1450,5 @@ class Test_flow_interpolation:
 
         water_levels1 = np.array([3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7])
 
-        modelled_levels = model.recorders["Water_level_value"].data
-        assert_allclose(water_levels1, modelled_levels[:,0])              
+        modelled_levels = model.recorders["water_level_value"].data
+        assert_allclose(water_levels1, modelled_levels[:, 0])

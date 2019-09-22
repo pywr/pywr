@@ -9,42 +9,37 @@
         "end": "2015-12-31",
         "timestep": "M"
     },
-    
-
     "nodes": [
         {
-            "name": "Inflow",
+            "name": "inflow",
             "type": "catchment",
             "flow": 7.5
         },
 
         {
-            "name": "Ouflow_test", 
+            "name": "outflow",
             "type": "Output", 
             "max_flow": 30, 
             "cost": -10
         }
 
         ],
-  
     "edges": [
-        ["Inflow", "Ouflow_test"] 
+        ["inflow", "outflow"]
     ],
-
     "parameters":  {
-    "Water_level": {
+    "water_level": {
         "type": "InterpolatedFlowParameter",
-          "node": "Ouflow_test",
+          "node": "outflow",
           "flows": [0,5,10],
           "values": [3,6,8],
           "kind": "linear"
         }
     },
-
     "recorders": {
-        "Water_level_value": {
+        "water_level_value": {
             "type": "NumpyArrayParameterRecorder",
-            "parameter": "Water_level"
+            "parameter": "water_level"
         }
     }
   

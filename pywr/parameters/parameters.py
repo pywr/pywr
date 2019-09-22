@@ -132,7 +132,8 @@ InterpolatedVolumeParameter.register()
 
 class InterpolatedFlowParameter(AbstractInterpolatedParameter):
     """
-    Generic interpolation parameter for a non-storage node. It interpolates a value based on node flow at previous timestep
+    Generic interpolation parameter that uses a node's  flow at the previous time-step for interpolation.
+
     """
     def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
         super().__init__(model, x, y, interp_kwargs, **kwargs)
