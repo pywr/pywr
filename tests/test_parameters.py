@@ -8,7 +8,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
-    InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter,
+    InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter, PiecewiseIntegralParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
@@ -1062,6 +1062,65 @@ class TestInterpolatedQuadratureParameter:
             else:
                 value = 25 + 50 + 50 + 28 / 2 + 2
             return value
+
+        model.run()
+
+
+class TestPiecewiseIntegralParameter:
+    X = [3, 8, 11]
+    Y = [5, 10, 2]
+
+    @staticmethod
+    def area(i):
+        if i < 0:
+            value = 0
+        elif i <= 3:
+            value = 5 * i
+        elif i <= 8:
+            value = 5 * 3 + 10 * (i - 3)
+        else:
+            value = 5 * 3 + 10 * (8 - 3) + 2 * (i - 8)
+        return value
+
+    def test_calc(self, simple_linear_model):
+        """Test the piecewise integral calculaiton."""
+        model = simple_linear_model
+
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        x = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        p2 = PiecewiseIntegralParameter(model, x, self.X, self.Y)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            return self.area(i)
+
+        model.run()
+
+    def test_load(self, simple_linear_model):
+        """Test loading from JSON."""
+        model = simple_linear_model
+
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        x = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name='x')
+
+        p2 = {
+            'type': 'piecewiseintegralparameter',
+            'parameter': 'x',
+            'x': self.X,
+            'y': self.Y,
+        }
+
+        p2 = load_parameter(model, p2)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            return self.area(i)
 
         model.run()
 

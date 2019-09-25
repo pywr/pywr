@@ -9,7 +9,7 @@ from ._parameters import (
     DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
     align_and_resample_dataframe, DataFrameParameter,
-    IndexParameter, AggregatedParameter, AggregatedIndexParameter,
+    IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
     NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
     DeficitParameter, load_parameter, load_parameter_values, load_dataframe)
 from . import licenses
