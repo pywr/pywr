@@ -56,6 +56,9 @@ Deficit recorders
    NumpyArrayNodeCurtailmentRatioRecorder
    TotalDeficitNodeRecorder
    DeficitFrequencyNodeRecorder
+   AnnualDeficitRecorder
+   AnnualSuppliedRatioRecorder
+   AnnualCurtailmentRatioRecorder
 
 Statistical recorders
 ---------------------
