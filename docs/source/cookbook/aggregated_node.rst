@@ -1,16 +1,16 @@
 Aggregated nodes
 ----------------
 
-The `AggregatedNode` is a special node that allows constraints to be added to a model that apply to a group of (possibly disconnected) nodes, enforcing either a fixed ratio or fixed maximum.
+The `AggregatedNode` is a special node that allows constraints to be added to a model that apply to a group of (possibly disconnected) nodes, enforcing either a fixed ratio of flow and/or a total minimum or maximum flow.
 
 Constraining flow using a ratio
 ===============================
 
 Aggregated nodes allows a constraint to be added that ensures the flow via two or more nodes conforms to a specific ratio. This is useful, for example, when modelling a blending constraint between multiple sources of water.
 
-In the example below the aggregated node "D" constrains the flow in nodes "A" and "B" to be equal (0.5 + 0.5 == 1). Due to the constraint the solution is flow from A = 40, B = 40, despite C demanding 100.
+In the example below the aggregated node "D" constrains the flow in nodes "A" and "B" to be equal (0.5 + 0.5 == 1). Due to the constraint the solution is flow from A = 40, B = 40, despite C demanding 100. There is no requirement that the factors sum to 1.0 this example would work with factors of 50 and 50 (or any two equal numbers) instead.
 
-Note that the aggregated node "D" is not connected to any nodes via an edge. The constraint is applied regardless.
+Note that the aggregated node "D" is not connected to any nodes via an edge. The constraint is applied regardless. The factors must also remain a constant throughout a simulation (i.e. they can not be `Parameter` definitions references). This limitation could be resolved in a future version of Pywr.
 
 .. code-block:: javascript
 
@@ -58,7 +58,7 @@ Constraining flow using a maximum value
 
 The aggregated node can also be used to constrain the total flow via a group of nodes. This is useful, for example, in abstraction schemes where the combined license for a group of sources is less than the sum of their individual licences.
 
-In the example below, the aggregated node "D" ensures the total flow from A and B combined does not exceed 60.
+In the example below, the aggregated node "D" ensures the total flow from A and B combined does not exceed 60. The `max_flow` attribute on the node "D" could also be a `Parameter` definition or reference.
 
 .. code-block:: javascript
 
@@ -84,6 +84,6 @@ In the example below, the aggregated node "D" ensures the total flow from A and 
 Additional information
 ======================
 
-The `factors` and `max_flow` parameters can both be specified for a single aggregated node to constrain both the ratio and maximum flow via a group of nodes.
+The `factors`, `min_flow` and `max_flow` attributes can all be specified for a single aggregated node to constrain both the ratio, minimum and maximum flow via a group of nodes.
 
 Note that the constraint enforced by aggregated nodes is a "hard" constraint; it must be satisfied. This can result in complex and sometimes unintended behaviours.
