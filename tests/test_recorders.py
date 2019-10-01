@@ -1156,21 +1156,24 @@ class TestDeficitRecorders:
         assert df.shape == (365, 1)
         np.testing.assert_allclose(expected_deficit[:, np.newaxis], df.values)
 
-    def test_array_supplied_ratio_recoder(self, simple_linear_model):
+    @pytest.mark.parametrize('demand', [30.0, 0.0])
+    def test_array_supplied_ratio_recoder(self, simple_linear_model, demand):
         """Test `NumpyArrayNodeSuppliedRatioRecorder` """
         model = simple_linear_model
         model.timestepper.delta = 1
         otpt = model.nodes['Output']
 
         inflow = np.arange(365) * 0.1
-        demand = np.ones_like(inflow) * 30.0
 
         model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
-        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.max_flow = ConstantParameter(model, demand)
         otpt.cost = -2.0
 
         expected_supply = np.minimum(inflow, demand)
-        expected_ratio = expected_supply / demand
+        if demand > 1e-6:
+            expected_ratio = expected_supply / demand
+        else:
+            expected_ratio = np.ones_like(expected_supply)
 
         rec = NumpyArrayNodeSuppliedRatioRecorder(model, otpt)
 
@@ -1183,21 +1186,24 @@ class TestDeficitRecorders:
         assert df.shape == (365, 1)
         np.testing.assert_allclose(expected_ratio[:, np.newaxis], df.values)
 
-    def test_array_curtailment_ratio_recoder(self, simple_linear_model):
+    @pytest.mark.parametrize('demand', [30.0, 0.0])
+    def test_array_curtailment_ratio_recoder(self, simple_linear_model, demand):
         """Test `NumpyArrayNodeCurtailmentRatioRecorder` """
         model = simple_linear_model
         model.timestepper.delta = 1
         otpt = model.nodes['Output']
 
         inflow = np.arange(365) * 0.1
-        demand = np.ones_like(inflow) * 30.0
 
         model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
-        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.max_flow = ConstantParameter(model, demand)
         otpt.cost = -2.0
 
         expected_supply = np.minimum(inflow, demand)
-        expected_curtailment_ratio = 1 - expected_supply / demand
+        if demand > 1e-6:
+            expected_curtailment_ratio = 1 - expected_supply / demand
+        else:
+            expected_curtailment_ratio = np.zeros_like(expected_supply)
 
         rec = NumpyArrayNodeCurtailmentRatioRecorder(model, otpt)
 

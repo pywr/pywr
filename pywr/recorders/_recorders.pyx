@@ -565,7 +565,10 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
         cdef Node node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
-            self._data[ts.index,scenario_index.global_id] = node._flow[scenario_index.global_id] / max_flow
+            try:
+                self._data[ts.index,scenario_index.global_id] = node._flow[scenario_index.global_id] / max_flow
+            except ZeroDivisionError:
+                self._data[ts.index,scenario_index.global_id] = 1.0
         return 0
 NumpyArrayNodeSuppliedRatioRecorder.register()
 
@@ -607,7 +610,10 @@ cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
         cdef Node node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
-            self._data[ts.index,scenario_index.global_id] = 1 - node._flow[scenario_index.global_id] / max_flow
+            try:
+                self._data[ts.index,scenario_index.global_id] = 1 - node._flow[scenario_index.global_id] / max_flow
+            except ZeroDivisionError:
+                self._data[ts.index,scenario_index.global_id] = 0.0
 NumpyArrayNodeCurtailmentRatioRecorder.register()
 
 
