@@ -7,7 +7,6 @@ from ._thresholds import *
 from ._hydropower import *
 from .events import *
 from .calibration import *
-from past.builtins import basestring
 from pywr.h5tools import H5Store
 from ..parameter_property import parameter_property
 import warnings
@@ -131,7 +130,7 @@ class CSVRecorder(Recorder):
             node_names = []
             for node_ in self.nodes:
                 # test if the node name is provided
-                if isinstance(node_, basestring):
+                if isinstance(node_, str):
                     # lookup node by name
                     node_names.append(node_)
                 else:
@@ -271,7 +270,7 @@ class TablesRecorder(Recorder):
         except (TypeError, ValueError):
             where = None
             param = parameter
-        if isinstance(param, basestring):
+        if isinstance(param, str):
             from ..parameters import load_parameter
             param = load_parameter(self.model, param)
         if not param.name:
@@ -289,7 +288,7 @@ class TablesRecorder(Recorder):
         self.parameters.append((where, param))
 
     def _remove_parameter(self, parameter):
-        if isinstance(parameter, basestring):
+        if isinstance(parameter, str):
             parameter = self.model.parameters[parameter]
         index = None
         for n, (where, param) in enumerate(self.parameters):
@@ -340,7 +339,7 @@ class TablesRecorder(Recorder):
                     where = self.where + "/" + node
 
                 # Accept a str, and lookup node by name instead.
-                if isinstance(node, basestring):
+                if isinstance(node, str):
                     node = self.model.nodes[node]
                 # Otherwise assume it is a node object anyway
 
