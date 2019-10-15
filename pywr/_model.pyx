@@ -205,29 +205,45 @@ class Model(object):
         """
         if "includes" in data:
             for filename in data["includes"]:
+                _, ext = os.path.splitext(filename)
                 if path is not None:
                     filename = os.path.join(os.path.dirname(path), filename)
-                with open(filename, "r") as f:
-                    try:
-                        include_data = json.loads(f.read())
-                    except ValueError as e:
-                        message = e.args[0]
-                        if path:
-                            e.args = ("{} [{}]".format(e.args[0], os.path.basename(filename)),)
-                        raise(e)
-                for key, value in include_data.items():
-                    if isinstance(value, list):
-                        try:
-                            data[key].extend(value)
-                        except KeyError:
-                            data[key] = value
-                    elif isinstance(value, dict):
-                        try:
-                            data[key].update(value)
-                        except KeyError:
-                            data[key] = value
-                    else:
-                        raise TypeError("Invalid type for key \"{}\" in include \"{}\".".format(key, path))
+
+                ext = ext.lower()
+                if ext == '.json':
+                    cls._load_json_include(data, filename)
+                elif ext == '.py':
+                    cls._load_py_include(filename)
+                else:
+                    raise NotImplementedError(f'Include file type "{ext}" not supported.')
+
+    @classmethod
+    def _load_py_include(cls, filename):
+        import runpy
+        runpy.run_path(filename)
+
+    @classmethod
+    def _load_json_include(cls, data, filename):
+        with open(filename, "r") as f:
+            try:
+                include_data = json.loads(f.read())
+            except ValueError as e:
+                message = e.args[0]
+                e.args = ("{} [{}]".format(e.args[0], os.path.basename(filename)),)
+                raise(e)
+        for key, value in include_data.items():
+            if isinstance(value, list):
+                try:
+                    data[key].extend(value)
+                except KeyError:
+                    data[key] = value
+            elif isinstance(value, dict):
+                try:
+                    data[key].update(value)
+                except KeyError:
+                    data[key] = value
+            else:
+                raise TypeError("Invalid type for key \"{}\" in include \"{}\".".format(key, filename))
         return None  # data modified in-place
 
     @classmethod
