@@ -162,3 +162,8 @@ cdef class FlowParameter(Parameter):
     cdef public Node node
     cdef double[:] __next_values
     cdef public double initial_value
+
+cdef class PiecewiseIntegralParameter(Parameter):
+    cdef public double[:] x
+    cdef public double[:] y
+    cdef public Parameter parameter

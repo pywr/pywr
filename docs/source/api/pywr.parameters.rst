@@ -121,5 +121,6 @@ Other parameters
    AnnualHarmonicSeriesParameter
    DeficitParameter
    ScenarioWrapperParameter
+   PiecewiseIntegralParameter
 
 

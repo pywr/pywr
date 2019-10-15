@@ -1444,6 +1444,65 @@ cdef class FlowParameter(Parameter):
 FlowParameter.register()
 
 
+cdef class PiecewiseIntegralParameter(Parameter):
+    """Parameter that integrates a piecewise function.
+
+    This parameter calculates the integral of a piecewise function. The
+    piecewise function is given as two arrays (`x` and `y`) and is assumed to
+    start from (0, 0). The values of `x` should be monotonically increasing
+    and greater than zero.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter the defines the right hand bounds of the integration.
+    x : iterable of doubles
+    y : iterable of doubles
+
+    """
+    def __init__(self, model, parameter, x, y, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.x = np.array(x, dtype=float)
+        self.y = np.array(y, dtype=float)
+
+    cpdef setup(self):
+        super(PiecewiseIntegralParameter, self).setup()
+
+        if len(self.x) != len(self.y):
+            raise ValueError('The length of `x` and `y` should be the same.')
+
+        if np.any(np.diff(self.x) < 0):
+            raise ValueError('The array `x` should be monotonically increasing.')
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef double integral = 0.0
+        cdef double x = self.parameter.get_value(scenario_index)
+        cdef int i
+        cdef double dx, prev_x
+
+        prev_x = 0
+        for i in range(self.x.shape[0]):
+            if x < self.x[i]:
+                dx = x - prev_x
+            else:
+                dx = self.x[i] - prev_x
+
+            if dx < 0.0:
+                break
+            else:
+                integral += dx * self.y[i]
+            prev_x = self.x[i]
+        return integral
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop('parameter'))
+        return cls(model, parameter, **data)
+PiecewiseIntegralParameter.register()
+
+
 def get_parameter_from_registry(parameter_type):
     key = parameter_type.lower()
     try:
