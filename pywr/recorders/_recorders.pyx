@@ -1522,6 +1522,43 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
 MinimumThresholdVolumeStorageRecorder.register()
 
 
+cdef class AnnualTotalFlowRecorder(Recorder):
+    """
+    For each scenarios, record the total flow in each year.
+    Shape: (years, scenario combinations)
+    """
+    def __init__(self, model, str name, list nodes, *args, **kwargs):
+        super(AnnualTotalFlowRecorder, self).__init__(model, name, *args, **kwargs)
+        self.nodes = nodes
+
+    cpdef setup(self):
+        super(AnnualTotalFlowRecorder, self).setup()
+        cdef Timestep timestepper = self.model.timestepper
+        self._num_years = timestepper.end.year - timestepper.start.year + 1
+        self._ncomb = len(self.model.scenarios.combinations)
+        self._data = np.empty([self._num_years, self._ncomb])
+
+    cpdef reset(self):
+        self._data[...] = 0
+        self._current_year = -1
+        self._start_year = self.model.timestepper.start.year
+
+    cpdef after(self):
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int idx = ts.year - self._start_year
+
+        cdef double flow = 0
+        for node in self.nodes:
+            flow += node.flow
+
+        self._data[<int>(idx), :] = node.flow
+
+    property data:
+        def __get__(self):
+            return np.array(self._data, dtype=np.float64)
+AnnualTotalFlowRecorder.register()
+
+
 cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
     """ Record the number of years where an IndexParameter is greater than or equal to a threshold """
     def __init__(self, model, IndexParameter param, int threshold, *args, **kwargs):
