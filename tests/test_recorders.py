@@ -1156,21 +1156,24 @@ class TestDeficitRecorders:
         assert df.shape == (365, 1)
         np.testing.assert_allclose(expected_deficit[:, np.newaxis], df.values)
 
-    def test_array_supplied_ratio_recoder(self, simple_linear_model):
+    @pytest.mark.parametrize('demand', [30.0, 0.0])
+    def test_array_supplied_ratio_recoder(self, simple_linear_model, demand):
         """Test `NumpyArrayNodeSuppliedRatioRecorder` """
         model = simple_linear_model
         model.timestepper.delta = 1
         otpt = model.nodes['Output']
 
         inflow = np.arange(365) * 0.1
-        demand = np.ones_like(inflow) * 30.0
 
         model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
-        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.max_flow = ConstantParameter(model, demand)
         otpt.cost = -2.0
 
         expected_supply = np.minimum(inflow, demand)
-        expected_ratio = expected_supply / demand
+        if demand > 1e-6:
+            expected_ratio = expected_supply / demand
+        else:
+            expected_ratio = np.ones_like(expected_supply)
 
         rec = NumpyArrayNodeSuppliedRatioRecorder(model, otpt)
 
@@ -1183,21 +1186,24 @@ class TestDeficitRecorders:
         assert df.shape == (365, 1)
         np.testing.assert_allclose(expected_ratio[:, np.newaxis], df.values)
 
-    def test_array_curtailment_ratio_recoder(self, simple_linear_model):
+    @pytest.mark.parametrize('demand', [30.0, 0.0])
+    def test_array_curtailment_ratio_recoder(self, simple_linear_model, demand):
         """Test `NumpyArrayNodeCurtailmentRatioRecorder` """
         model = simple_linear_model
         model.timestepper.delta = 1
         otpt = model.nodes['Output']
 
         inflow = np.arange(365) * 0.1
-        demand = np.ones_like(inflow) * 30.0
 
         model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
-        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.max_flow = ConstantParameter(model, demand)
         otpt.cost = -2.0
 
         expected_supply = np.minimum(inflow, demand)
-        expected_curtailment_ratio = 1 - expected_supply / demand
+        if demand > 1e-6:
+            expected_curtailment_ratio = 1 - expected_supply / demand
+        else:
+            expected_curtailment_ratio = np.zeros_like(expected_supply)
 
         rec = NumpyArrayNodeCurtailmentRatioRecorder(model, otpt)
 
@@ -1210,8 +1216,8 @@ class TestDeficitRecorders:
         assert df.shape == (365, 1)
         np.testing.assert_allclose(expected_curtailment_ratio[:, np.newaxis], df.values)
 
-    @pytest.mark.parametrize(['reset_day', 'reset_month'], [[1, 1], [15, 6]])
-    def test_annual_deficit_recorders(self, simple_linear_model, reset_day, reset_month):
+    @pytest.mark.parametrize(['reset_day', 'reset_month', 'demand'], [[1, 1, 0.5], [15, 6, 0.5], [1, 1, 0.0]])
+    def test_annual_deficit_recorders(self, simple_linear_model, reset_day, reset_month, demand):
         """Test annual deficit recorders. """
 
         model = simple_linear_model
@@ -1223,11 +1229,9 @@ class TestDeficitRecorders:
         otpt = model.nodes['Output']
 
         inflow = np.random.random_sample(365*5 + 2)
-        # inflow = np.zeros(365*5 + 2)
-        demand = np.ones_like(inflow) * 0.5
 
         model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
-        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.max_flow = demand
         otpt.cost = -2.0
 
         deficit_rec = AnnualDeficitRecorder(model, [otpt], reset_day=reset_day, reset_month=reset_month)
@@ -1243,20 +1247,28 @@ class TestDeficitRecorders:
         else:
             reset_offset += 0
 
-        deficit = np.maximum(0.5 - inflow[:reset_offset], 0)
+        deficit = np.maximum(demand - inflow[:reset_offset], 0)
         supplied = np.minimum(inflow[:reset_offset], 0.5)
 
         np.testing.assert_allclose(deficit_rec.data[0, 0], deficit.sum())
-        np.testing.assert_allclose(ratio_rec.data[0, 0], supplied.mean()/0.5)
-        np.testing.assert_allclose(curtailment_rec.data[0, 0], 1 - supplied.mean()/0.5)
+        if demand > 1e-6:
+            np.testing.assert_allclose(ratio_rec.data[0, 0], supplied.mean()/demand)
+            np.testing.assert_allclose(curtailment_rec.data[0, 0], 1 - supplied.mean()/demand)
+        else:
+            np.testing.assert_allclose(ratio_rec.data[0, 0], 1.0)
+            np.testing.assert_allclose(curtailment_rec.data[0, 0], 0.0)
 
         # Now test the second period
-        deficit = np.maximum(0.5 - inflow[reset_offset:reset_offset+365], 0)
+        deficit = np.maximum(demand - inflow[reset_offset:reset_offset+365], 0)
         supplied = np.minimum(inflow[reset_offset:reset_offset+365], 0.5)
 
         np.testing.assert_allclose(deficit_rec.data[1, 0], deficit.sum())
-        np.testing.assert_allclose(ratio_rec.data[1, 0], supplied.mean()/0.5)
-        np.testing.assert_allclose(curtailment_rec.data[1, 0], 1 - supplied.mean()/0.5)
+        if demand > 1e-6:
+            np.testing.assert_allclose(ratio_rec.data[1, 0], supplied.mean()/demand)
+            np.testing.assert_allclose(curtailment_rec.data[1, 0], 1 - supplied.mean()/demand)
+        else:
+            np.testing.assert_allclose(ratio_rec.data[1, 0], 1.0)
+            np.testing.assert_allclose(curtailment_rec.data[1, 0], 0.0)
 
     @pytest.mark.parametrize(['reset_day', 'reset_month'], [[32, 1], [1, 13], [2, 29]])
     def test_annual_recorders_invalid_reset_days(self, simple_linear_model, reset_day, reset_month):
