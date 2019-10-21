@@ -124,6 +124,20 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
     cdef public double threshold
 
+cdef class DailyCountIndexParameterRecorder(IndexParameterRecorder):
+    cdef public int threshold
+    cdef int[:] _count
+
+cdef class AnnualCountIndexThresholdRecorder(Recorder):
+    cdef public list parameters
+    cdef public int threshold
+    cdef int _num_years
+    cdef int _ncomb
+    cdef double[:, :] _data
+    cdef double[:, :] _data_this_year
+    cdef int _current_year
+    cdef int _start_year
+
 cdef class AnnualTotalFlowRecorder(Recorder):
     cdef public list nodes
     cdef int _num_years

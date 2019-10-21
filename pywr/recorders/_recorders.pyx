@@ -1522,19 +1522,108 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
 MinimumThresholdVolumeStorageRecorder.register()
 
 
+cdef class DailyCountIndexParameterRecorder(IndexParameterRecorder):
+    def __init__(self, model, IndexParameter parameter, int threshold, *args, **kwargs):
+        super(DailyCountIndexParameterRecorder, self).__init__(model, parameter, *args, **kwargs)
+        self.threshold = threshold
+
+    cpdef setup(self):
+        self._count = np.zeros(len(self.model.scenarios.combinations), np.int32)
+
+    cpdef reset(self):
+        self._count[...] = 0
+
+    cpdef after(self):
+        cdef Timestep ts = self.model.timestepper.current
+
+        for scenario_index in self.model.scenarios.combinations:
+            value = self._param.index(ts, scenario_index)
+            if value >= self.threshold:
+                # threshold achieved, increment count
+                self._count[scenario_index.global_id] += 1
+
+    cpdef double[:] values(self):
+        return np.asarray(self._count).astype(np.float64)
+DailyCountIndexParameterRecorder.register()
+
+
+cdef class AnnualCountIndexThresholdRecorder(Recorder):
+    """
+    For each scenario, count the number of times a parameter exceeds a threshold in each year.
+    Shape: (years, scenario combinations)
+    """
+    def __init__(self, model, str name, list parameters, int threshold, *args, **kwargs):
+        super(AnnualCountIndexThresholdRecorder, self).__init__(model, name=name, *args, **kwargs)
+        self.parameters = parameters
+        self.threshold = threshold
+        for parameter in self.parameters:
+            self.children.add(parameter)
+
+    cpdef setup(self):
+        super(AnnualCountIndexThresholdRecorder, self).setup()
+        self._num_years = self.model.timestepper.end.year - self.model.timestepper.start.year + 1
+        self._ncomb = len(self.model.scenarios.combinations)
+        self._data = np.empty([self._num_years, self._ncomb])
+        self._data_this_year = np.zeros([len(self.parameters), self._ncomb])
+
+    cpdef reset(self):
+        self._data[...] = 0
+        self._current_year = -1
+        self._start_year = self.model.timestepper.start.year
+
+    cpdef after(self):
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int idx = ts.year - self._start_year
+
+        if ts.year != self._current_year:
+            # A new year
+            if self._current_year != -1:
+                # As long as at least one year has been run
+                # then save data for previous year
+                self._data[<int>(idx), :] = np.asarray(self._data_this_year).sum(axis=0)
+
+            self._data_this_year[...] = 0
+            self._current_year = ts.year
+
+        for scenario_index in self.model.scenarios.combinations:
+            for p, parameter in enumerate(self.parameters):
+                value = parameter.index(ts, scenario_index)
+                if value >= self.threshold:
+                    self._data_this_year[p, scenario_index.global_id] = 1
+                    break  # if multiple parameters exceed, only count once
+
+    cpdef finish(self):
+        cdef int idx = self._current_year - self._start_year
+        self._data[<int>(idx), :] = np.asarray(self._data_this_year).sum(axis=0)
+
+    property data:
+        def __get__(self):
+            return np.array(self._data, dtype=np.int16)
+
+    @classmethod
+    def load(cls, model, data):
+        from pywr.parameters import load_parameter
+        name = data.get("name")
+        threshold = data.get("threshold")
+        cdef list parameters = []
+        for parameter_name in data["parameters"]:
+            parameters.append(load_parameter(model, parameter_name))
+        return cls(model, parameters=parameters, name=name, threshold=threshold)
+AnnualCountIndexThresholdRecorder.register()
+
+
 cdef class AnnualTotalFlowRecorder(Recorder):
     """
     For each scenarios, record the total flow in each year.
     Shape: (years, scenario combinations)
     """
     def __init__(self, model, str name, list nodes, *args, **kwargs):
-        super(AnnualTotalFlowRecorder, self).__init__(model, name, *args, **kwargs)
+        super(AnnualTotalFlowRecorder, self).__init__(model, name=name, *args, **kwargs)
         self.nodes = nodes
 
     cpdef setup(self):
         super(AnnualTotalFlowRecorder, self).setup()
-        cdef Timestep timestepper = self.model.timestepper
-        self._num_years = timestepper.end.year - timestepper.start.year + 1
+        self._num_years = self.model.timestepper.end.year - self.model.timestepper.start.year + 1
         self._ncomb = len(self.model.scenarios.combinations)
         self._data = np.empty([self._num_years, self._ncomb])
 
@@ -1547,15 +1636,23 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = ts.year - self._start_year
 
-        cdef double flow = 0
+        cdef double[:] flow = np.zeros(self._ncomb, np.float64)
         for node in self.nodes:
             flow += node.flow
 
-        self._data[<int>(idx), :] = node.flow
+        self._data[<int>(idx), :] = flow
 
     property data:
         def __get__(self):
             return np.array(self._data, dtype=np.float64)
+
+    @classmethod
+    def load(cls, model, data):
+        name = data.get("name")
+        cdef list nodes = []
+        for node_name in data["nodes"]:
+            nodes.append(model._get_node_from_ref(model, node_name))
+        return cls(model, nodes=nodes, name=name)
 AnnualTotalFlowRecorder.register()
 
 
