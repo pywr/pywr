@@ -239,6 +239,8 @@ def read_dataframe(model, data):
 
         filetype = "dict"
 
+    data.pop("comment", None) # remove kwargs from data before passing to Pandas
+        
     if filetype == "csv":
         if hasattr(data, "index_col"):
             data["parse_dates"] = True
