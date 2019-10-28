@@ -15,7 +15,7 @@ import warnings
 class ParameterNameWarning(UserWarning):
     pass
 
-def assert_rec(model, parameter, name=None):
+def assert_rec(model, parameter, name=None, get_index=False):
     """Decorator for creating AssertionRecorder objects
 
     Example
@@ -25,13 +25,13 @@ def assert_rec(model, parameter, name=None):
         return timestep.dayofyear * 2.0
     """
     def assert_rec_(f):
-        rec = AssertionRecorder(model, parameter, expected_func=f, name=name)
+        rec = AssertionRecorder(model, parameter, expected_func=f, name=name, get_index=get_index)
         return f
     return assert_rec_
 
 class AssertionRecorder(Recorder):
     """A recorder that asserts the value of a parameter for testing purposes"""
-    def __init__(self, model, parameter, expected_data=None, expected_func=None, **kwargs):
+    def __init__(self, model, parameter, expected_data=None, expected_func=None, get_index=False, **kwargs):
         """
         Parameters
         ----------
@@ -39,6 +39,7 @@ class AssertionRecorder(Recorder):
         parameter : pywr.parameters.Parameter
         expected_data : np.ndarray[timestep, scenario] (optional)
         expected_func : function
+        get_index : bool
 
         See also
         --------
@@ -49,6 +50,7 @@ class AssertionRecorder(Recorder):
         self.parameter = parameter
         self.expected_data = expected_data
         self.expected_func = expected_func
+        self.get_index = get_index
 
     parameter = parameter_property("_parameter")
 
@@ -64,7 +66,10 @@ class AssertionRecorder(Recorder):
                 expected_value = self.expected_func(timestep, scenario_index)
             elif self.expected_data is not None:
                 expected_value = self.expected_data[timestep.index, scenario_index.global_id]
-            value = self._parameter.get_value(scenario_index)
+            if self.get_index:
+                value = self._parameter.get_index(scenario_index)
+            else:
+                value = self._parameter.get_value(scenario_index)
             try:
                 np.testing.assert_allclose(value, expected_value)
             except AssertionError:
