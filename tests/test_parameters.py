@@ -1404,6 +1404,55 @@ class TestThresholdParameters:
         # flow < 5
         assert p1.index(m.timestepper.current, si) == 0
 
+    def test_current_year_threshold_parameter(self, simple_linear_model):
+        """Test CurrentYearThresholdParameter"""
+        m = simple_linear_model
+
+        m.timestepper.start = '2020-01-01'
+        m.timestepper.end = '2030-01-01'
+
+        data = {
+            'type': 'currentyearthreshold',
+            'threshold': 2025,
+            "predicate": ">=",
+        }
+
+        p = load_parameter(m, data)
+
+        @assert_rec(m, p, get_index=True)
+        def expected_func(timestep, scenario_index):
+            current_year = timestep.year
+            value = 1 if current_year >= 2025 else 0
+            return value
+
+        m.run()
+
+    def test_current_ordinal_threshold_parameter(self, simple_linear_model):
+        """Test CurrentYearThresholdParameter"""
+        m = simple_linear_model
+
+        m.timestepper.start = '2020-01-01'
+        m.timestepper.end = '2030-01-01'
+
+        threshold = datetime.date(2025, 6, 15).toordinal()
+
+        data = {
+            'type': 'currentordinaldaythreshold',
+            'threshold': threshold,
+            "predicate": ">=",
+        }
+
+        p = load_parameter(m, data)
+
+        @assert_rec(m, p, get_index=True)
+        def expected_func(timestep, scenario_index):
+            o = timestep.datetime.toordinal()
+            value = 1 if o >= threshold else 0
+            return value
+
+        m.run()
+
+
 def test_orphaned_components(simple_linear_model):
     model = simple_linear_model
     model.nodes["Input"].max_flow = ConstantParameter(model, 10.0)
