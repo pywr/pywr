@@ -54,7 +54,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
             self.values = np.array(values, np.float64)
         if predicate is None:
             predicate = Predicates.LT
-        elif isinstance(predicate, basestring):
+        elif isinstance(predicate, str):
             predicate = _predicate_lookup[predicate.upper()]
         self.predicate = predicate
         self.ratchet = ratchet
