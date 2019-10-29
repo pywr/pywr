@@ -36,7 +36,7 @@ setup_kwargs = {
         'pandas',
         'networkx',
         'scipy',
-        'tables',
+        'tables<3.6.1',
         'future',
         'xlrd',
         'packaging',
