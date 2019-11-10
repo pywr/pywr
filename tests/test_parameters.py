@@ -9,7 +9,8 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
     Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter, PiecewiseIntegralParameter,
-    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter)
+    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter,
+    ScenarioDailyProfileParameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
 from pywr.dataframe_tools import ResamplingError
@@ -323,6 +324,47 @@ def test_daily_profile_leap_day(model):
     model.timestepper.end = pd.to_datetime("2016-12-31")
     model.run()
     assert_allclose(inpt.flow, 365)
+
+def test_scenario_daily_profile(simple_linear_model):
+
+    model = simple_linear_model
+    scenario = Scenario(model, 'A', 2)
+    values =  np.array([np.arange(366, dtype=np.float64), np.arange(366, dtype=np.float64)])
+
+    p = ScenarioDailyProfileParameter(model, scenario, values)
+
+    model.setup()
+    # Iterate in time
+    for ts in model.timestepper:
+        month = ts.datetime.month
+        day = ts.datetime.day
+        iday = int((datetime.datetime(2016, month, day) - datetime.datetime(2016, 1, 1)).days)
+        for i in range(scenario.size):
+            si = ScenarioIndex(i, np.array([i], dtype=np.int32))
+            np.testing.assert_allclose(p.value(ts, si), values[i, iday])
+
+def test_scenario_daily_profile_leap_day(model):
+    """Test behaviour of daily profile parameter for leap years
+    """
+    inpt = Input(model, "input")
+    otpt = Output(model, "otpt", max_flow=None, cost=-999)
+    inpt.connect(otpt)
+
+    scenario = Scenario(model, 'A', 2)
+    values = np.array([np.arange(366, dtype=np.float64), np.arange(366, dtype=np.float64)])
+    inpt.max_flow = ScenarioDailyProfileParameter(model, scenario, values)
+
+    # non-leap year
+    model.timestepper.start = pd.to_datetime("2015-01-01")
+    model.timestepper.end = pd.to_datetime("2015-12-31")
+    model.run()
+    assert_allclose(inpt.flow, [365, 365]) # NOT 364
+
+    # leap year
+    model.timestepper.start = pd.to_datetime("2016-01-01")
+    model.timestepper.end = pd.to_datetime("2016-12-31")
+    model.run()
+    assert_allclose(inpt.flow, [365, 365])
 
 def test_weekly_profile(simple_linear_model):
     model = simple_linear_model

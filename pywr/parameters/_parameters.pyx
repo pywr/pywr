@@ -670,6 +670,45 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
 
 ScenarioMonthlyProfileParameter.register()
 
+cdef class ScenarioDailyProfileParameter(Parameter):
+    """ An annual profile consisting of daily values that varys by scenario.
+
+    This parameter provides a repeating annual profile with a daily resolution. A total of 366 values
+    must be provided. These values are coerced to a `numpy.array` internally.
+
+    Parameters
+    ----------
+    values : iterable, array
+        The 366 values that represent the daily profile.
+
+    """
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        super(ScenarioDailyProfileParameter, self).__init__(model, *args, **kwargs)
+        #v = np.squeeze(np.array(values))
+        if values.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+        if scenario._size != values.shape[0]:
+            raise ValueError("First dimension of factors must be the same size as scenario.")
+        if values.shape[1] != 366:
+            raise ValueError("366 values must be given for a daily profile.")
+        self._values = values
+        self._scenario = scenario
+
+    cpdef setup(self):
+        super(ScenarioDailyProfileParameter, self).setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(<int>(ts.year)):
+            if i > 58: # 28th Feb
+                i += 1
+        return self._values[scenario_index._indices[self._scenario_index], i]
+
+ScenarioDailyProfileParameter.register()
+
 
 cdef class IndexParameter(Parameter):
     """Base parameter providing an `index` method
