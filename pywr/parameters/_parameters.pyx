@@ -4,7 +4,6 @@ cimport numpy as np
 import pandas
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
-from past.builtins import basestring
 from pywr.h5tools import H5Store
 from pywr.hashes import check_hash
 from ..dataframe_tools import align_and_resample_dataframe, load_dataframe, read_dataframe
@@ -964,7 +963,7 @@ cdef class AggregatedParameter(Parameter):
             return _agg_func_lookup_reverse[self._agg_func]
         def __set__(self, agg_func):
             self._agg_user_func = None
-            if isinstance(agg_func, basestring):
+            if isinstance(agg_func, str):
                 agg_func = _agg_func_lookup[agg_func.lower()]
             elif callable(agg_func):
                 self._agg_user_func = agg_func
@@ -1084,7 +1083,7 @@ cdef class AggregatedIndexParameter(IndexParameter):
             return _agg_func_lookup_reverse[self._agg_func]
         def __set__(self, agg_func):
             self._agg_user_func = None
-            if isinstance(agg_func, basestring):
+            if isinstance(agg_func, str):
                 agg_func = _agg_func_lookup[agg_func.lower()]
             elif callable(agg_func):
                 self._agg_user_func = agg_func
@@ -1521,7 +1520,7 @@ def get_parameter_from_registry(parameter_type):
 
 def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         # parameter is a reference
         try:
             parameter = model.parameters[data]

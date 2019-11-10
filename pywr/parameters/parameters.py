@@ -16,7 +16,6 @@ from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
 from ._hydropower import HydropowerTargetParameter
-from past.builtins import basestring
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad

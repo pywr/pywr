@@ -1,7 +1,6 @@
 """
 Test for individual Parameter classes
 """
-from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output
 from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,

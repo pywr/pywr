@@ -3,7 +3,6 @@
 Test the Recorder object API
 
 """
-from __future__ import print_function
 import pywr.core
 from pywr.core import Model, Input, Output, Scenario, AggregatedNode
 import numpy as np
@@ -290,7 +289,7 @@ def test_numpy_array_area_recorder(simple_storage_model):
     area_param = InterpolatedVolumeParameter(model, storage, [0, 20], [0, 100])
     storage.area = area_param
     area_rec = NumpyArrayAreaRecorder(model, storage, temporal_agg_func='min')
-    
+
     model.run()
 
     expected = np.array([[50, 35, 20, 5, 0]]).T
@@ -627,7 +626,7 @@ def test_loading_csv_recorder_from_json(tmpdir):
                 actual = [row[0]]
                 assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
             assert expected == actual
-       
+
 class TestTablesRecorder:
 
     def test_create_directory(self, simple_linear_model, tmpdir):

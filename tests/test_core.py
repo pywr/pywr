@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
 import datetime
 import pytest
 from fixtures import *
@@ -422,7 +421,7 @@ def test_storage_initial_volume_pc():
 
 def test_storage_max_volume_param_raises():
     """Test a that an max_volume with a Parameter that has children.
-    
+
     Only some aggregated style parameters should work here.
     """
 
