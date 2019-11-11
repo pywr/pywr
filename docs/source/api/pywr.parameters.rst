@@ -91,6 +91,7 @@ Interpolation parameters
     InterpolatedParameter
     InterpolatedVolumeParameter
     InterpolatedQuadratureParameter
+    InterpolatedFlowParameter
 
 
 Control curve parameters
