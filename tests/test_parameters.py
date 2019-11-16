@@ -7,7 +7,7 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
-    Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
+    ScenarioWeeklyProfileParameter, Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter, PiecewiseIntegralParameter,
     FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter,
     ScenarioDailyProfileParameter)
@@ -342,6 +342,31 @@ def test_scenario_daily_profile(simple_linear_model):
         for i in range(scenario.size):
             si = ScenarioIndex(i, np.array([i], dtype=np.int32))
             np.testing.assert_allclose(p.value(ts, si), values[i, iday])
+
+def test_scenario_weekly_profile(simple_linear_model):
+
+    model = simple_linear_model
+    scenario = Scenario(model, 'A', 2)
+
+    v = np.arange(52, dtype=np.float64)
+    values = np.array([v, v])
+    r = np.array([v for _ in range(0, 7)]).T.flatten()
+    results = np.array([r, r])
+
+    param = ScenarioWeeklyProfileParameter(model, scenario, values)
+
+    model.setup()
+    # Iterate in time
+    for ts in model.timestepper:
+        day = ts.dayofyear - 1
+        if day > 58: # 28th Feb
+            day += 1
+        if day >= 364: # longer final week
+            day = 363
+        for i in range(scenario.size):
+            si = ScenarioIndex(i, np.array([i], dtype=np.int32))
+            #import pdb; pdb.set_trace()
+            np.testing.assert_allclose(param.value(ts, si), results[i, day])
 
 def test_scenario_daily_profile_leap_day(model):
     """Test behaviour of daily profile parameter for leap years
