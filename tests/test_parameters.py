@@ -325,48 +325,66 @@ def test_daily_profile_leap_day(model):
     model.run()
     assert_allclose(inpt.flow, 365)
 
-def test_scenario_daily_profile(simple_linear_model):
+class TestScenarioDailyProfileParameter:
 
-    model = simple_linear_model
-    scenario = Scenario(model, 'A', 2)
-    values =  np.array([np.arange(366, dtype=np.float64), np.arange(366, dtype=np.float64)])
+    def test_scenario_daily_profile(self, simple_linear_model):
 
-    p = ScenarioDailyProfileParameter(model, scenario, values)
+        model = simple_linear_model
+        scenario = Scenario(model, 'A', 2)
+        values = np.array([np.arange(366, dtype=np.float64), np.arange(366, 0, -1, dtype=np.float64)])
 
-    model.setup()
-    # Iterate in time
-    for ts in model.timestepper:
-        month = ts.datetime.month
-        day = ts.datetime.day
-        iday = int((datetime.datetime(2016, month, day) - datetime.datetime(2016, 1, 1)).days)
-        for i in range(scenario.size):
-            si = ScenarioIndex(i, np.array([i], dtype=np.int32))
-            np.testing.assert_allclose(p.value(ts, si), values[i, iday])
+        # Remove values for 29th feb as not testing leap year in this func
+        expected_values = np.delete(values.T, 59, 0)
+
+        p = ScenarioDailyProfileParameter.load(model, {"scenario": "A", "values": values})
+
+        AssertionRecorder(model, p, expected_data=expected_values)
+
+        model.setup()
+        model.run()
+
+    def test_scenario_daily_profile_leap_day(self, simple_linear_model):
+        """Test behaviour of daily profile parameter for leap years
+        """
+
+        model = simple_linear_model
+        model.timestepper.start = pd.to_datetime("2016-01-01")
+        model.timestepper.end = pd.to_datetime("2016-12-31")
+
+        scenario = Scenario(model, 'A', 2)
+        values = np.array([np.arange(366, dtype=np.float64), np.arange(366, 0, -1, dtype=np.float64)])
+
+        expected_values = values.T
+
+        p = ScenarioDailyProfileParameter(model, scenario, values)
+        AssertionRecorder(model, p, expected_data=expected_values)
+
+        model.setup()
+        model.run()
 
 def test_scenario_weekly_profile(simple_linear_model):
 
     model = simple_linear_model
     scenario = Scenario(model, 'A', 2)
 
-    v = np.arange(52, dtype=np.float64)
-    values = np.array([v, v])
-    r = np.array([v for _ in range(0, 7)]).T.flatten()
-    results = np.array([r, r])
+    v = np.arange(1, 53, dtype=np.float64)
+    values = np.array([v, v * 2])
 
-    param = ScenarioWeeklyProfileParameter(model, scenario, values)
+    p = ScenarioWeeklyProfileParameter(model, scenario, values)
+
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        day = timestep.dayofyear - 1
+        if day > 58:  # 28th Feb
+            day += 1
+        week = min(day // 7, 51)
+        value = week + 1
+        if scenario_index.global_id == 1:
+            value *= 2
+        return value
 
     model.setup()
-    # Iterate in time
-    for ts in model.timestepper:
-        day = ts.dayofyear - 1
-        if day > 58: # 28th Feb
-            day += 1
-        if day >= 364: # longer final week
-            day = 363
-        for i in range(scenario.size):
-            si = ScenarioIndex(i, np.array([i], dtype=np.int32))
-            #import pdb; pdb.set_trace()
-            np.testing.assert_allclose(param.value(ts, si), results[i, day])
+    model.run()
 
 def test_scenario_daily_profile_leap_day(model):
     """Test behaviour of daily profile parameter for leap years

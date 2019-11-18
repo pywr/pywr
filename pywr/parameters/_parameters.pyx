@@ -636,7 +636,7 @@ MonthlyProfileParameter.register()
 
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
-    """ Parameter which provides a monthly profile per scenario
+    """ Parameter that provides a monthly profile per scenario
 
     Behaviour is the same as `MonthlyProfileParameter` except a different
     profile is returned for each ensemble in a given scenario.
@@ -671,7 +671,8 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
 ScenarioMonthlyProfileParameter.register()
 
 cdef class ScenarioWeeklyProfileParameter(Parameter):
-    """
+    """Parameter that provides a weekly profile per scenario
+
     This parameter provides a repeating annual profile with a weekly resolution. A
     different profile is returned for each member of a given scenario
     
@@ -680,12 +681,13 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
     scenario: Scenario
         Scenario object over which different profiles should be provided.
     values : iterable, array
-        length of 1st dimension should equal the number of members in the scenario object 
+        Length of 1st dimension should equal the number of members in the scenario object 
         and the length of the second dimension should be 52
 
     """
     def __init__(self, model, Scenario scenario, values, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
+        values = np.array(values)
         if values.ndim != 2:
             raise ValueError("Factors must be two dimensional.")
         if scenario._size != values.shape[0]:
@@ -703,7 +705,7 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts.datetime.year)):
+        if not is_leap_year(ts.year):
             if i > 58: # 28th Feb
                 i += 1
         cdef Py_ssize_t week
@@ -717,7 +719,8 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
 ScenarioWeeklyProfileParameter.register()
 
 cdef class ScenarioDailyProfileParameter(Parameter):
-    """
+    """Parameter which provides a daily profile per scenario
+
     This parameter provides a repeating annual profile wiatth a daily resolution. A
     different profile is returned for each member of a given scenario
 
@@ -726,12 +729,13 @@ cdef class ScenarioDailyProfileParameter(Parameter):
     scenario: Scenario
         Scenario object over which different profiles should be provided
     values : iterable, array
-        length of 1st dimension should equal the number of members in the scenario object 
+        Length of 1st dimension should equal the number of members in the scenario object 
         and the length of the second dimension should be 366
 
     """
     def __init__(self, model, Scenario scenario, values, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
+        values = np.array(values)
         if values.ndim != 2:
             raise ValueError("Factors must be two dimensional.")
         if scenario._size != values.shape[0]:
@@ -749,7 +753,7 @@ cdef class ScenarioDailyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts.year)):
+        if not is_leap_year(ts.year):
             if i > 58: # 28th Feb
                 i += 1
         return self._values[scenario_index._indices[self._scenario_index], i]
