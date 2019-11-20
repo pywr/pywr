@@ -1522,9 +1522,22 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
 MinimumThresholdVolumeStorageRecorder.register()
 
 
-cdef class DailyCountIndexParameterRecorder(IndexParameterRecorder):
+cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
+    """Record the number of times an index parameter exceeds a threshold for each scenario.
+
+    This recorder will count the number of timesteps so will be a daily count when running on a
+    daily timestep.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    parameter : `pywr.core.IndexParameter`
+        The parameter to record
+    threshold : int
+        The threshold to compare the parameter to
+    """
     def __init__(self, model, IndexParameter parameter, int threshold, *args, **kwargs):
-        super(DailyCountIndexParameterRecorder, self).__init__(model, parameter, *args, **kwargs)
+        super().__init__(model, parameter, *args, **kwargs)
         self.threshold = threshold
 
     cpdef setup(self):
@@ -1544,16 +1557,28 @@ cdef class DailyCountIndexParameterRecorder(IndexParameterRecorder):
 
     cpdef double[:] values(self):
         return np.asarray(self._count).astype(np.float64)
-DailyCountIndexParameterRecorder.register()
+TimestepCountIndexParameterRecorder.register()
 
 
 cdef class AnnualCountIndexThresholdRecorder(Recorder):
     """
-    For each scenario, count the number of times a parameter exceeds a threshold in each year.
+    For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
+    If multiple parameters exceed in one timestep then it is only counted once.
+
     Shape: (years, scenario combinations)
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    parameters : list
+        List of `pywr.core.IndexParameter` to record against
+    name : str
+        The name of the recorder
+    threshold : int
+        Threshold to compare parameters against
     """
-    def __init__(self, model, str name, list parameters, int threshold, *args, **kwargs):
-        super(AnnualCountIndexThresholdRecorder, self).__init__(model, name=name, *args, **kwargs)
+    def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
+        super().__init__(model, name=name, *args, **kwargs)
         self.parameters = parameters
         self.threshold = threshold
         for parameter in self.parameters:
@@ -1574,27 +1599,31 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
     cpdef after(self):
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = ts.year - self._start_year
+        cdef int p
+        cdef double value
+        cdef ScenarioIndex scenario_index
+        cdef IndexParameter parameter
 
         if ts.year != self._current_year:
             # A new year
             if self._current_year != -1:
                 # As long as at least one year has been run
                 # then save data for previous year
-                self._data[<int>(idx), :] = np.asarray(self._data_this_year).sum(axis=0)
+                self._data[idx, :] = np.asarray(self._data_this_year).sum(axis=0)
 
             self._data_this_year[...] = 0
             self._current_year = ts.year
 
         for scenario_index in self.model.scenarios.combinations:
             for p, parameter in enumerate(self.parameters):
-                value = parameter.index(ts, scenario_index)
+                value = parameter.get_index(scenario_index)
                 if value >= self.threshold:
                     self._data_this_year[p, scenario_index.global_id] = 1
                     break  # if multiple parameters exceed, only count once
 
     cpdef finish(self):
         cdef int idx = self._current_year - self._start_year
-        self._data[<int>(idx), :] = np.asarray(self._data_this_year).sum(axis=0)
+        self._data[idx, :] = np.asarray(self._data_this_year).sum(axis=0)
 
     property data:
         def __get__(self):
@@ -1614,11 +1643,19 @@ AnnualCountIndexThresholdRecorder.register()
 
 cdef class AnnualTotalFlowRecorder(Recorder):
     """
-    For each scenarios, record the total flow in each year.
+    For each scenario, record the total flow in each year.
     Shape: (years, scenario combinations)
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    name : str
+        The name of the recorder
+    nodes : list
+        List of `pywr.core.Node` instances to record
     """
     def __init__(self, model, str name, list nodes, *args, **kwargs):
-        super(AnnualTotalFlowRecorder, self).__init__(model, name=name, *args, **kwargs)
+        super().__init__(model, name=name, *args, **kwargs)
         self.nodes = nodes
 
     cpdef setup(self):
@@ -1635,8 +1672,9 @@ cdef class AnnualTotalFlowRecorder(Recorder):
     cpdef after(self):
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = ts.year - self._start_year
-
+        cdef AbstractNode node
         cdef double[:] flow = np.zeros(self._ncomb, np.float64)
+
         for node in self.nodes:
             flow += node.flow
 

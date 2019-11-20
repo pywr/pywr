@@ -124,7 +124,7 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
     cdef public double threshold
 
-cdef class DailyCountIndexParameterRecorder(IndexParameterRecorder):
+cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
     cdef public int threshold
     cdef int[:] _count
 
