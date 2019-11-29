@@ -784,17 +784,10 @@ cdef class AnnualSuppliedRatioRecorder(AbstractAnnualRecorder):
 
         for scenario_index in self.model.scenarios.combinations:
             j = scenario_index.global_id
-<<<<<<< HEAD
-            if self._max_flow[i, j] <= 0.0000000000001:
-                1
-            if self._max_flow[i, j] > 0.0000000000001:
-                self._data[i, j] = self._actual_flow[i, j] / self._max_flow[i, j]
-=======
             try:
                 self._data[i, j] = self._actual_flow[i, j] / self._max_flow[i, j]
             except ZeroDivisionError:
                 self._data[i, j] = 1.0
->>>>>>> b7a0af282d6ec2b26c05bfdfdf74a0199b98d871
         return 0
 AnnualSuppliedRatioRecorder.register()
 
@@ -826,17 +819,10 @@ cdef class AnnualCurtailmentRatioRecorder(AbstractAnnualRecorder):
 
         for scenario_index in self.model.scenarios.combinations:
             j = scenario_index.global_id
-<<<<<<< HEAD
-            if self._max_flow[i, j] <= 0.0000000000001:
-                1
-            if self._max_flow[i, j] > 0.0000000000001:
-                self._data[i, j] = 1 - self._actual_flow[i, j] / self._max_flow[i, j]
-=======
             try:
                 self._data[i, j] = 1 - self._actual_flow[i, j] / self._max_flow[i, j]
             except ZeroDivisionError:
                 self._data[i, j] = 0.0
->>>>>>> b7a0af282d6ec2b26c05bfdfdf74a0199b98d871
         return 0
 AnnualCurtailmentRatioRecorder.register()
 
