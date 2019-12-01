@@ -1239,9 +1239,9 @@ def test_timestep_count_index_parameter_recorder(simple_storage_model):
     model.run()
 
     assert_allclose([0, 183 + 365 + 365], rec.values(), atol=1e-7)
-    
 
-@pytest.mark.parametrize("params", [1, 1])
+
+@pytest.mark.parametrize("params", [1, 2])
 def test_annual_count_index_threshold_recorder(simple_storage_model, params):
     """
     The test sets uses a simple reservoir model with different inputs that
