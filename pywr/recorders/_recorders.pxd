@@ -137,6 +137,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
     cdef double[:, :] _data_this_year
     cdef int _current_year
     cdef int _start_year
+    cdef Aggregator _temporal_aggregator
 
 cdef class AnnualTotalFlowRecorder(Recorder):
     cdef public list nodes

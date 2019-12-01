@@ -1548,9 +1548,10 @@ cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
 
     cpdef after(self):
         cdef Timestep ts = self.model.timestepper.current
+        cdef ScenarioIndex scenario_index
 
         for scenario_index in self.model.scenarios.combinations:
-            value = self._param.index(ts, scenario_index)
+            value = self._param.get_index(scenario_index)
             if value >= self.threshold:
                 # threshold achieved, increment count
                 self._count[scenario_index.global_id] += 1
@@ -1565,7 +1566,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
     For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
     If multiple parameters exceed in one timestep then it is only counted once.
 
-    Shape: (years, scenario combinations)
+    Output from data property has shape: (years, scenario combinations)
 
     Parameters
     ----------
@@ -1578,11 +1579,18 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         Threshold to compare parameters against
     """
     def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
+        # Optional different method for aggregating across time.
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
         super().__init__(model, name=name, *args, **kwargs)
         self.parameters = parameters
         self.threshold = threshold
         for parameter in self.parameters:
             self.children.add(parameter)
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
         super(AnnualCountIndexThresholdRecorder, self).setup()
@@ -1598,7 +1606,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
 
     cpdef after(self):
         cdef Timestep ts = self.model.timestepper.current
-        cdef int idx = ts.year - self._start_year
+        cdef int idx = self._current_year - self._start_year
         cdef int p
         cdef double value
         cdef ScenarioIndex scenario_index
@@ -1609,7 +1617,8 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
             if self._current_year != -1:
                 # As long as at least one year has been run
                 # then save data for previous year
-                self._data[idx, :] = np.asarray(self._data_this_year).sum(axis=0)
+                for i in range(self._ncomb):
+                    self._data[idx, i] = np.sum(self._data_this_year[:, i])
 
             self._data_this_year[...] = 0
             self._current_year = ts.year
@@ -1618,12 +1627,18 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
             for p, parameter in enumerate(self.parameters):
                 value = parameter.get_index(scenario_index)
                 if value >= self.threshold:
-                    self._data_this_year[p, scenario_index.global_id] = 1
+                    self._data_this_year[p, scenario_index.global_id] += 1
                     break  # if multiple parameters exceed, only count once
 
     cpdef finish(self):
         cdef int idx = self._current_year - self._start_year
-        self._data[idx, :] = np.asarray(self._data_this_year).sum(axis=0)
+        for i in range(self._ncomb):
+            self._data[idx, i] = np.sum(self._data_this_year[:, i])
+
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     property data:
         def __get__(self):
@@ -1643,8 +1658,8 @@ AnnualCountIndexThresholdRecorder.register()
 
 cdef class AnnualTotalFlowRecorder(Recorder):
     """
-    For each scenario, record the total flow in each year.
-    Shape: (years, scenario combinations)
+    For each scenario, record the total flow in each year across a list of nodes.
+    Output from data property has shape: (years, scenario combinations)
 
     Parameters
     ----------
@@ -1675,10 +1690,11 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         cdef AbstractNode node
         cdef double[:] flow = np.zeros(self._ncomb, np.float64)
 
-        for node in self.nodes:
-            flow += node.flow
-
-        self._data[<int>(idx), :] = flow
+        for i in range(self._ncomb):
+            for node in self.nodes:
+                self._data[idx, i] += node.flow[i]
+                #flow[i] += node.flow[i]
+        #self._data[idx, :] += flow
 
     property data:
         def __get__(self):
