@@ -498,7 +498,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
-        
+
     cpdef double[:] values(self):
         """Compute a value for each scenario using `temporal_agg_func`.
         """
@@ -724,19 +724,19 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
     fdc_agg_func: str, optional
         optional different function for aggregating across scenarios.
     months: array
-        The numeric values of the months the flow duration curve should be calculated for. 
+        The numeric values of the months the flow duration curve should be calculated for.
     """
 
     def __init__(self, model, AbstractNode node, percentiles, months, **kwargs):
         super(SeasonalFlowDurationCurveRecorder, self).__init__(model, node, percentiles, **kwargs)
         self._months = set(months)
-    
+
     cpdef finish(self):
-        # this is a def method rather than cpdef because closures inside cpdef functions are not supported yet.        
+        # this is a def method rather than cpdef because closures inside cpdef functions are not supported yet.
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
 
-        df = pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)        
+        df = pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
         mask = np.asarray(df.index.map(self.is_season))
         self._fdc = np.percentile(df.loc[mask, :], np.asarray(self._percentiles), axis=0)
 
@@ -751,10 +751,10 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     calculates their deviation from upper and lower target FDCs. The 2nd dimension of the target
     duration curves and percentiles list must be of the same length and have the same
     order (high to low values or low to high values).
-    
+
     Deviation is calculated as positive if actual FDC is above the upper target or below the lower
-    target. If actual FDC falls between the upper and lower targets zero deviation is returned.    
-    
+    target. If actual FDC falls between the upper and lower targets zero deviation is returned.
+
     Parameters
     ----------
     model : `pywr.core.Model`
@@ -766,7 +766,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     lower_target_fdc : array
         The lower FDC against which the scenario FDCs are compared
     upper_target_fdc : array
-        The upper FDC against which the scenario FDCs are compared        
+        The upper FDC against which the scenario FDCs are compared
     agg_func: str, optional
         Function used for aggregating the FDC deviations across percentiles.
         Numpy style functions that support an axis argument are supported.
@@ -869,7 +869,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
 
     def to_dataframe(self, return_fdc=False):
         """ Return a `pandas.DataFrame` of the deviations from the target FDCs
-                
+
         Parameters
         ----------
         return_fdc : bool (default=False)
@@ -1548,6 +1548,7 @@ cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
 
     cpdef after(self):
         cdef Timestep ts = self.model.timestepper.current
+        cdef int value
         cdef ScenarioIndex scenario_index
 
         for scenario_index in self.model.scenarios.combinations:
@@ -1608,6 +1609,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = self._current_year - self._start_year
         cdef int p
+        cdef Py_ssize_t i
         cdef double value
         cdef ScenarioIndex scenario_index
         cdef IndexParameter parameter
@@ -1632,6 +1634,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
 
     cpdef finish(self):
         cdef int idx = self._current_year - self._start_year
+        cdef Py_ssize_t i
         for i in range(self._ncomb):
             self._data[idx, i] = np.sum(self._data_this_year[:, i])
 
@@ -1647,12 +1650,8 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
     @classmethod
     def load(cls, model, data):
         from pywr.parameters import load_parameter
-        name = data.get("name")
-        threshold = data.get("threshold")
-        cdef list parameters = []
-        for parameter_name in data["parameters"]:
-            parameters.append(load_parameter(model, parameter_name))
-        return cls(model, parameters=parameters, name=name, threshold=threshold)
+        parameters = [load_parameter(model, p) for p in data.pop("parameters")]
+        return cls(model, parameters=parameters, **data)
 AnnualCountIndexThresholdRecorder.register()
 
 
@@ -1670,8 +1669,14 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         List of `pywr.core.Node` instances to record
     """
     def __init__(self, model, str name, list nodes, *args, **kwargs):
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
         super().__init__(model, name=name, *args, **kwargs)
         self.nodes = nodes
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
         super(AnnualTotalFlowRecorder, self).setup()
@@ -1692,9 +1697,12 @@ cdef class AnnualTotalFlowRecorder(Recorder):
 
         for i in range(self._ncomb):
             for node in self.nodes:
-                self._data[idx, i] += node.flow[i]
-                #flow[i] += node.flow[i]
-        #self._data[idx, :] += flow
+                self._data[idx, i] += node._flow[i]
+
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     property data:
         def __get__(self):
@@ -1702,11 +1710,8 @@ cdef class AnnualTotalFlowRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        name = data.get("name")
-        cdef list nodes = []
-        for node_name in data["nodes"]:
-            nodes.append(model._get_node_from_ref(model, node_name))
-        return cls(model, nodes=nodes, name=name)
+        nodes = [model._get_node_from_ref(model, n) for n in data.pop("nodes")]
+        return cls(model, nodes=nodes, **data)
 AnnualTotalFlowRecorder.register()
 
 
