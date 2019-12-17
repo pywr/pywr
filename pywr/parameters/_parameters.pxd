@@ -67,9 +67,11 @@ cdef class WeeklyProfileParameter(Parameter):
 
 cdef class MonthlyProfileParameter(Parameter):
     cdef double[:] _values
+    cdef double[:] _interp_values
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
-
+    cdef public object interp_day
+    cpdef _interpolate(self)
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
     cdef double[:, :] _values
