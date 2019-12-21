@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import itertools
+import calendar
 from numpy.testing import assert_allclose
 
 TEST_DIR = os.path.dirname(__file__)
@@ -230,21 +231,57 @@ def test_parameter_array_indexed_scenario_monthly_factors_json(model):
     model.run()
 
 
-def test_parameter_monthly_profile(simple_linear_model):
-    """
-    Test MonthlyProfileParameter
+class TestMonthlyProfileParameter:
 
-    """
-    model = simple_linear_model
-    values = np.arange(12, dtype=np.float64)
-    p = MonthlyProfileParameter(model, values)
-    model.setup()
+    def test_no_interpolation(self, simple_linear_model):
+        """Test no-interpolation. """
+        model = simple_linear_model
+        values = np.arange(12, dtype=np.float64)
+        p = MonthlyProfileParameter(model, values)
+        model.setup()
 
-    # Iterate in time
-    for ts in model.timestepper:
-        imth = ts.datetime.month - 1
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        np.testing.assert_allclose(p.value(ts, si), values[imth])
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            imth = timestep.month - 1
+            return values[imth]
+
+        model.run()
+
+    def test_interpolation_month_start(self, simple_linear_model):
+        """Test interpolating monthly values from first day of the month."""
+        model = simple_linear_model
+        values = np.arange(12, dtype=np.float64)
+        p = MonthlyProfileParameter(model, values, interp_day='first')
+        model.setup()
+
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            imth = timestep.month - 1
+            days_in_month = calendar.monthrange(timestep.year, timestep.month)[1]
+            day = timestep.day
+
+            # Perform linear interpolation
+            x = (day - 1) / (days_in_month - 1)
+            return values[imth] * (1 - x) + values[(imth+1) % 12] * x
+        model.run()
+
+    def test_interpolation_month_end(self, simple_linear_model):
+        """Test interpolating monthly values from last day of the month."""
+        model = simple_linear_model
+        values = np.arange(12, dtype=np.float64)
+        p = MonthlyProfileParameter(model, values, interp_day='last')
+        model.setup()
+
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            imth = timestep.month - 1
+            days_in_month = calendar.monthrange(timestep.year, timestep.month)[1]
+            day = timestep.day
+
+            # Perform linear interpolation
+            x = day / days_in_month
+            return values[(imth - 1) % 12] * (1 - x) + values[imth] * x
+        model.run()
 
 
 class TestScenarioMonthlyProfileParameter:

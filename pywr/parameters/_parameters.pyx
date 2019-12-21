@@ -2,6 +2,7 @@ import os
 import numpy as np
 cimport numpy as np
 import pandas
+import calendar
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from pywr.h5tools import H5Store
@@ -596,28 +597,100 @@ WeeklyProfileParameter.register()
 
 
 cdef class MonthlyProfileParameter(Parameter):
-    """ Parameter which provides a monthly profile
+    """Parameter which provides a monthly profile.
 
-    A monthly profile is a static profile that returns a different
-    value based on the current time-step.
+    The monthly profile returns a different value based on the month of the current
+    time-step. By default this creates a piecewise profile with a step change at the
+    beginning of each month. An optional `interp_day` keyword can instead create a
+    linearly interpolated daily profile assuming the given values correspond to either
+    the first or last day of the month.
+
+    Parameters
+    ----------
+    values : iterable, array
+        The 12 values that represent the monthly profile.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the monthly profile values when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the monthly profile values when used during optimisation.
+    inter_day : str or None (default=None)
+        If `interp_day` is None then no interpolation is undertaken, and the parameter
+         returns values representing a piecewise monthly profile. Otherwise `interp_day`
+         must be a string of either "first" or "last" representing which day of the month
+         each of the 12 values represents. The parameter then returns linearly
+         interpolated values between the given day of the month.
+
 
     See also
     --------
     ScenarioMonthlyProfileParameter
     ArrayIndexedScenarioMonthlyFactorsParameter
     """
-    def __init__(self, model, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+    def __init__(self, model, values, lower_bounds=0.0, upper_bounds=np.inf, interp_day=None, **kwargs):
         super(MonthlyProfileParameter, self).__init__(model, **kwargs)
         self.double_size = 12
         self.integer_size = 0
         if len(values) != self.double_size:
             raise ValueError("12 values must be given for a monthly profile.")
         self._values = np.array(values)
+        self.interp_day = interp_day
         self._lower_bounds = np.ones(self.double_size)*lower_bounds
         self._upper_bounds = np.ones(self.double_size)*upper_bounds
 
+    cpdef reset(self):
+        Parameter.reset(self)
+        # The interpolated profile is recalculated during reset so that
+        # it will update when the _values array is updated via `set_double_variables`
+        # and the model is rerun. I.e. during optimisation (where setup is not redone).
+        if self.interp_day is not None:
+            self._interpolate()
+
+    cpdef _interpolate(self):
+
+        # Create an array to save the daily profile in.
+        self._interp_values = np.zeros(366)
+        cdef int i = 0
+        cdef int mth
+
+        # Create interpolation knots depending on values
+        if self.interp_day == 'first':
+            x = [1]  # First month
+            y = []
+            for mth in range(1, 13):
+                x.append(x[-1] + calendar.monthrange(2015, mth)[1])
+                y.append(self._values[mth-1])
+            y.append(self._values[0])
+        elif self.interp_day == 'last':
+            x = [0]  # End of previous year
+            y = [self._values[11]]  # Use value from December
+            for mth in range(1, 13):
+                x.append(x[-1] + calendar.monthrange(2015, mth)[1])
+                y.append(self._values[mth-1])
+        else:
+            raise ValueError(f'Interpolation day "{self.interp_day}" not supported.')
+
+        # Do the interpolation
+        values = np.interp(np.arange(365) + 1, x, y)
+        # Make the daily profile of 366 values repeating the same value for 28th & 29th Feb.
+        for i in range(365):
+            if i < 58:
+                self._interp_values[i] = values[i]
+            elif i == 58:
+                self._interp_values[i] = values[i]
+                self._interp_values[i+1] = values[i]
+            elif i > 58:
+                self._interp_values[i+1] = values[i]
+
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return self._values[ts.month-1]
+        cdef int i
+        if self.interp_day is None:
+            return self._values[ts.month-1]
+        else:
+            i = ts.dayofyear - 1
+            if not is_leap_year(ts.year):
+                if i > 58: # 28th Feb
+                    i += 1
+            return self._interp_values[i]
 
     cpdef set_double_variables(self, double[:] values):
         self._values[...] = values
@@ -1199,7 +1272,7 @@ cdef class DivisionParameter(Parameter):
 
             self._numerator = parameter
             self.children.add(parameter)
-            
+
     property denominator:
         def __get__(self):
             return self._denominator
@@ -1209,7 +1282,7 @@ cdef class DivisionParameter(Parameter):
                 self._denominator.parents.remove(self)
 
             self._denominator = parameter
-            self.children.add(parameter)            
+            self.children.add(parameter)
 
     cdef calc_values(self, Timestep timestep):
         cdef int i
