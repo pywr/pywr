@@ -212,6 +212,7 @@ def test_aggregated_node_max_flow_same_route(model):
 
 def test_aggregated_constraint_json():
     model = load_model("aggregated1.json")
+    model.run()
 
     agg = model.nodes["agg"]
     assert(agg.nodes == [model.nodes["A"], model.nodes["B"]])

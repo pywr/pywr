@@ -20,6 +20,16 @@
             "max_flow": 50
         },
         {
+            "name": "C",
+            "type": "input",
+            "max_flow": 50
+        },
+        {
+            "name": "X",
+            "type": "link",
+            "max_flow": 50
+        },
+        {
             "name": "Z",
             "type": "output",
             "max_flow": 100,
@@ -28,15 +38,17 @@
         {
             "name": "agg",
             "type": "AggregatedNode",
-            "nodes": ["A", "B"],
-            "factors": [2.0, 4.0],
-            "flow_weights": [1.0, 1.0],
+            "nodes": ["A", "B", "C", "X"],
+            "factors": [1.0, 1.0, 1.0, 1.0],
+            "flow_weights": [1.0, 1.0, 1.0, 1.0],
             "max_flow": 30.0,
             "min_flow": 5.0
         }
     ],
     "edges": [
-        ["A", "Z"],
-        ["B", "Z"]
+        ["A", "X"],
+        ["X", "Z"],
+        ["B", "Z"],
+        ["C", "Z"]
     ]
 }
