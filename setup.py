@@ -1,12 +1,8 @@
 import os
 import sys
 
-try:
-    from setuptools import setup
-    from setuptools import Extension
-except ImportError:
-    from distutils.core import setup
-    from distutils.extension import Extension
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext as _build_ext
 
 
 def setup_package():
@@ -23,24 +19,20 @@ def setup_package():
 
     annotate = False
 
-    def get_new_build_ext(args):
-        # Defer the import of Cython and NumPy until after setup_requires
-        from setuptools.command.build_ext import build_ext as _build_ext
-        from Cython.Build.Dependencies import cythonize
-        import numpy
+    class new_build_ext(_build_ext):
+        def finalize_options(self):
+            # Defer the import of Cython and NumPy until after setup_requires
+            from Cython.Build.Dependencies import cythonize
+            import numpy
 
-        class new_build_ext(_build_ext):
-            def finalize_options(self):
-                self.distribution.ext_modules[:] = cythonize(
-                    self.distribution.ext_modules,
-                    compiler_directives=compiler_directives,
-                    compile_time_env=compile_time_env,
-                    annotate=annotate,
-                )
-                self.include_dirs = [numpy.get_include()]
-                super().finalize_options()
-
-        return new_build_ext(args)
+            self.distribution.ext_modules[:] = cythonize(
+                self.distribution.ext_modules,
+                compiler_directives=compiler_directives,
+                compile_time_env=compile_time_env,
+                annotate=annotate,
+            )
+            self.include_dirs = [numpy.get_include()]
+            super().finalize_options()
 
     metadata = dict(
         name="pywr",
@@ -53,7 +45,7 @@ def setup_package():
         setup_requires=["setuptools>=18.0", "setuptools_scm", "cython", "numpy",],
         install_requires=["pandas", "networkx", "scipy", "tables", "xlrd", "packaging", "matplotlib", "jinja2",],
         extras_require={"test": ["pytest"]},
-        cmdclass={"build_ext": get_new_build_ext},
+        cmdclass={"build_ext": new_build_ext},
         packages=[
             "pywr",
             "pywr.solvers",
