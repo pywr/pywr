@@ -51,6 +51,8 @@ Annual profile parameters
    DailyProfileParameter
    WeeklyProfileParameter
    MonthlyProfileParameter
+   ScenarioDailyProfileParameter
+   ScenarioWeeklyProfileParameter
    ScenarioMonthlyProfileParameter
    ArrayIndexedScenarioMonthlyFactorsParameter
 

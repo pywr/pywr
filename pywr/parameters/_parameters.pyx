@@ -719,9 +719,9 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
 ScenarioWeeklyProfileParameter.register()
 
 cdef class ScenarioDailyProfileParameter(Parameter):
-    """Parameter which provides a daily profile per scenario
+    """Parameter which provides a daily profile per scenario.
 
-    This parameter provides a repeating annual profile wiatth a daily resolution. A
+    This parameter provides a repeating annual profile with a daily resolution. A
     different profile is returned for each member of a given scenario
 
     Parameters
