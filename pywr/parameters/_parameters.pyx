@@ -601,9 +601,25 @@ cdef class MonthlyProfileParameter(Parameter):
 
     The monthly profile returns a different value based on the month of the current
     time-step. By default this creates a piecewise profile with a step change at the
-    beginning of each month. An optional `interp_day` keyword can instead creates a
+    beginning of each month. An optional `interp_day` keyword can instead create a
     linearly interpolated daily profile assuming the given values correspond to either
     the first or last day of the month.
+
+    Parameters
+    ----------
+    values : iterable, array
+        The 12 values that represent the monthly profile.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the monthly profile values when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the monthly profile values when used during optimisation.
+    inter_day : str or None (default=None)
+        If `interp_day` is None then no interpolation is undertaken, and the parameter
+         returns values representing a piecewise monthly profile. Otherwise `interp_day`
+         must be a string of either "first" or "last" representing which day of the month
+         each of the 12 values represents. The parameter then returns linearly
+         interpolated values between the given day of the month.
+
 
     See also
     --------
@@ -623,6 +639,9 @@ cdef class MonthlyProfileParameter(Parameter):
 
     cpdef reset(self):
         Parameter.reset(self)
+        # The interpolated profile is recalculated during reset so that
+        # it will update when the _values array is updated via `set_double_variables`
+        # and the model is rerun. I.e. during optimisation (where setup is not redone).
         if self.interp_day is not None:
             self._interpolate()
 
