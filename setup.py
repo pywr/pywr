@@ -89,7 +89,12 @@ def setup_package():
         else:
             lpsolve_macros = define_macros
         ext_modules.append(
-            Extension("pywr.solvers.cython_lpsolve", ["pywr/solvers/cython_lpsolve.pyx"], define_macros=lpsolve_macros)
+            Extension(
+                "pywr.solvers.cython_lpsolve",
+                ["pywr/solvers/cython_lpsolve.pyx"],
+                libraries=["lpsolve55"],
+                define_macros=lpsolve_macros,
+            )
         )
 
     annotate = config["annotate"]
