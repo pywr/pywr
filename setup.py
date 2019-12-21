@@ -37,7 +37,6 @@ setup_kwargs = {
         'networkx',
         'scipy',
         'tables',
-        'future',
         'xlrd',
         'packaging',
         'matplotlib',

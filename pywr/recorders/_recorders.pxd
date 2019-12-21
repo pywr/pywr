@@ -5,6 +5,8 @@ from pywr.parameters._parameters cimport Parameter, IndexParameter
 
 cdef class Aggregator:
     cdef object _user_func
+    cdef public list func_args
+    cdef public dict func_kwargs
     cdef int _func
     cpdef double aggregate_1d(self, double[:] data, ignore_nan=*) except *
     cpdef double[:] aggregate_2d(self, double[:, :] data, axis=*, ignore_nan=*) except *
@@ -121,6 +123,30 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 
 cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
     cdef public double threshold
+
+cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
+    cdef public int threshold
+    cdef int[:] _count
+
+cdef class AnnualCountIndexThresholdRecorder(Recorder):
+    cdef public list parameters
+    cdef public int threshold
+    cdef int _num_years
+    cdef int _ncomb
+    cdef double[:, :] _data
+    cdef double[:, :] _data_this_year
+    cdef int _current_year
+    cdef int _start_year
+    cdef Aggregator _temporal_aggregator
+
+cdef class AnnualTotalFlowRecorder(Recorder):
+    cdef public list nodes
+    cdef int _num_years
+    cdef int _ncomb
+    cdef double[:, :] _data
+    cdef int _current_year
+    cdef int _start_year
+    cdef Aggregator _temporal_aggregator
 
 cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
     cdef public int threshold

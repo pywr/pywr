@@ -7,16 +7,15 @@ from ._parameters import (
     ArrayIndexedParameter, ConstantScenarioParameter, IndexedArrayParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
-    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
-    align_and_resample_dataframe, DataFrameParameter,
-    IndexParameter, AggregatedParameter, AggregatedIndexParameter,
+    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter, ScenarioDailyProfileParameter,
+    ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
+    IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
     NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
     DeficitParameter, DivisionParameter, load_parameter, load_parameter_values, load_dataframe)
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
 from ._hydropower import HydropowerTargetParameter
-from past.builtins import basestring
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
@@ -128,6 +127,28 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
         kind = data.pop("kind", "linear")
         return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
 InterpolatedVolumeParameter.register()
+
+
+class InterpolatedFlowParameter(AbstractInterpolatedParameter):
+    """
+    Generic interpolation parameter that uses a node's  flow at the previous time-step for interpolation.
+
+    """
+    def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
+        super().__init__(model, x, y, interp_kwargs, **kwargs)
+        self._node = node
+
+    def _value_to_interpolate(self, ts, scenario_index):       
+        return self._node.prev_flow[scenario_index.global_id]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        volumes = np.array(data.pop("flows"))
+        values = np.array(data.pop("values"))
+        kind = data.pop("kind", "linear")
+        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+InterpolatedFlowParameter.register()
 
 
 class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):

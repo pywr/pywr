@@ -4,7 +4,6 @@ A collection of tests for pywr.domains.river
 Specific additional functionality of the 'special' classes in the river domain
 are tested here.
 """
-from __future__ import print_function
 import pywr.core
 from pywr.core import Model, Input, Output, Catchment
 from pywr.parameters import MonthlyProfileParameter
