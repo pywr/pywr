@@ -50,8 +50,10 @@ def simple_river_split_gauge_model():
     """
     Make a simple model with a single Input and Output and RiverGauge
 
-    Input -> RiverSplit -> Output 1
-                 \ --->--> Output 2
+    ::
+
+        Input -> RiverSplit -> Output 1
+                     \\ --->--> Output 2
 
     """
     in_flow = 100.0

@@ -4,10 +4,28 @@ pywr.optimisation package
 Submodules
 ----------
 
-pywr.optimisation.moea module
------------------------------
+Inspyred (pywr.optimisation.inspyred)
+-------------------------------------
 
-.. automodule:: pywr.optimisation.moea
+.. automodule:: pywr.optimisation.inspyred
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Platypus (pywr.optimisation.platypus)
+-------------------------------------
+
+.. automodule:: pywr.optimisation.platypus
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Pygmo (pywr.optimisation.pygmo)
+-------------------------------
+
+.. automodule:: pywr.optimisation.pygmo
     :members:
     :undoc-members:
     :show-inheritance:
