@@ -7,8 +7,8 @@ from ._parameters import (
     ArrayIndexedParameter, ConstantScenarioParameter, IndexedArrayParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
-    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
-    align_and_resample_dataframe, DataFrameParameter,
+    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter, ScenarioDailyProfileParameter,
+    ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
     NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
     DeficitParameter, load_parameter, load_parameter_values, load_dataframe)

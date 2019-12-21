@@ -6,9 +6,10 @@ from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioP
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
-    Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
+    ScenarioWeeklyProfileParameter, Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
     InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter, PiecewiseIntegralParameter,
-    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter)
+    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter,
+    ScenarioDailyProfileParameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
 from pywr.dataframe_tools import ResamplingError
@@ -359,6 +360,69 @@ def test_daily_profile_leap_day(model):
     model.timestepper.end = pd.to_datetime("2016-12-31")
     model.run()
     assert_allclose(inpt.flow, 365)
+
+class TestScenarioDailyProfileParameter:
+
+    def test_scenario_daily_profile(self, simple_linear_model):
+
+        model = simple_linear_model
+        scenario = Scenario(model, 'A', 2)
+        values = np.array([np.arange(366, dtype=np.float64), np.arange(366, 0, -1, dtype=np.float64)])
+
+        # Remove values for 29th feb as not testing leap year in this func
+        expected_values = np.delete(values.T, 59, 0)
+
+        p = ScenarioDailyProfileParameter.load(model, {"scenario": "A", "values": values})
+
+        AssertionRecorder(model, p, expected_data=expected_values)
+
+        model.setup()
+        model.run()
+
+    def test_scenario_daily_profile_leap_day(self, simple_linear_model):
+        """Test behaviour of daily profile parameter for leap years
+        """
+
+        model = simple_linear_model
+        model.timestepper.start = pd.to_datetime("2016-01-01")
+        model.timestepper.end = pd.to_datetime("2016-12-31")
+
+        scenario = Scenario(model, 'A', 2)
+        values = np.array([np.arange(366, dtype=np.float64), np.arange(366, 0, -1, dtype=np.float64)])
+
+        expected_values = values.T
+
+        p = ScenarioDailyProfileParameter(model, scenario, values)
+        AssertionRecorder(model, p, expected_data=expected_values)
+
+        model.setup()
+        model.run()
+
+def test_scenario_weekly_profile(simple_linear_model):
+
+    model = simple_linear_model
+    scenario = Scenario(model, 'A', 2)
+
+    v = np.arange(1, 53, dtype=np.float64)
+    values = np.array([v, v * 2])
+
+    p = ScenarioWeeklyProfileParameter(model, scenario, values)
+
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        day = timestep.dayofyear - 1
+        if day > 58:  # 28th Feb
+            day += 1
+        week = min(day // 7, 51)
+        value = week + 1
+        if scenario_index.global_id == 1:
+            value *= 2
+        return value
+
+    model.setup()
+    model.run()
+
+
 
 def test_weekly_profile(simple_linear_model):
     model = simple_linear_model

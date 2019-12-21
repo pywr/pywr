@@ -708,7 +708,7 @@ MonthlyProfileParameter.register()
 
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
-    """ Parameter which provides a monthly profile per scenario
+    """ Parameter that provides a monthly profile per scenario
 
     Behaviour is the same as `MonthlyProfileParameter` except a different
     profile is returned for each ensemble in a given scenario.
@@ -741,6 +741,96 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
         return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
 
 ScenarioMonthlyProfileParameter.register()
+
+cdef class ScenarioWeeklyProfileParameter(Parameter):
+    """Parameter that provides a weekly profile per scenario
+
+    This parameter provides a repeating annual profile with a weekly resolution. A
+    different profile is returned for each member of a given scenario
+    
+    Parameters
+    ----------
+    scenario: Scenario
+        Scenario object over which different profiles should be provided.
+    values : iterable, array
+        Length of 1st dimension should equal the number of members in the scenario object 
+        and the length of the second dimension should be 52
+
+    """
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        values = np.array(values)
+        if values.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+        if scenario._size != values.shape[0]:
+            raise ValueError("First dimension of factors must be the same size as scenario.")
+        if values.shape[1] != 52:
+            raise ValueError("52 values must be given for a weekly profile.")
+        self._values = values
+        self._scenario = scenario
+
+    cpdef setup(self):
+        super(ScenarioWeeklyProfileParameter, self).setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(ts.year):
+            if i > 58: # 28th Feb
+                i += 1
+        cdef Py_ssize_t week
+        if i >= 364:
+            # last week of year is slightly longer than 7 days
+            week = 51
+        else:
+            week = i // 7
+        return self._values[scenario_index._indices[self._scenario_index], week]
+
+ScenarioWeeklyProfileParameter.register()
+
+cdef class ScenarioDailyProfileParameter(Parameter):
+    """Parameter which provides a daily profile per scenario.
+
+    This parameter provides a repeating annual profile with a daily resolution. A
+    different profile is returned for each member of a given scenario
+
+    Parameters
+    ----------
+    scenario: Scenario
+        Scenario object over which different profiles should be provided
+    values : iterable, array
+        Length of 1st dimension should equal the number of members in the scenario object 
+        and the length of the second dimension should be 366
+
+    """
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        values = np.array(values)
+        if values.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+        if scenario._size != values.shape[0]:
+            raise ValueError("First dimension of factors must be the same size as scenario.")
+        if values.shape[1] != 366:
+            raise ValueError("366 values must be given for a daily profile.")
+        self._values = values
+        self._scenario = scenario
+
+    cpdef setup(self):
+        super(ScenarioDailyProfileParameter, self).setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(ts.year):
+            if i > 58: # 28th Feb
+                i += 1
+        return self._values[scenario_index._indices[self._scenario_index], i]
+
+ScenarioDailyProfileParameter.register()
 
 
 cdef class IndexParameter(Parameter):
