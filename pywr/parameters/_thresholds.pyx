@@ -54,7 +54,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
             self.values = np.array(values, np.float64)
         if predicate is None:
             predicate = Predicates.LT
-        elif isinstance(predicate, basestring):
+        elif isinstance(predicate, str):
             predicate = _predicate_lookup[predicate.upper()]
         self.predicate = predicate
         self.ratchet = ratchet
@@ -253,3 +253,33 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
         predicate = data.pop("predicate", None)
         return cls(model, recorder, threshold, values=values, predicate=predicate, **data)
 RecorderThresholdParameter.register()
+
+
+cdef class CurrentYearThresholdParameter(AbstractThresholdParameter):
+    """ Returns one of two values depending on the year of the current timestep..
+    """
+    cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return float(timestep.year)
+
+    @classmethod
+    def load(cls, model, data):
+        threshold = load_parameter(model, data.pop("threshold"))
+        values = data.pop("values", None)
+        predicate = data.pop("predicate", None)
+        return cls(model, threshold, values=values, predicate=predicate, **data)
+CurrentYearThresholdParameter.register()
+
+
+cdef class CurrentOrdinalDayThresholdParameter(AbstractThresholdParameter):
+    """ Returns one of two values depending on the ordinal of the current timestep.
+    """
+    cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        return float(timestep.datetime.toordinal())
+
+    @classmethod
+    def load(cls, model, data):
+        threshold = load_parameter(model, data.pop("threshold"))
+        values = data.pop("values", None)
+        predicate = data.pop("predicate", None)
+        return cls(model, threshold, values=values, predicate=predicate, **data)
+CurrentOrdinalDayThresholdParameter.register()

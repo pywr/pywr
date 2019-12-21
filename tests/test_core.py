@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
 import datetime
 import pytest
 from fixtures import *
@@ -422,7 +421,7 @@ def test_storage_initial_volume_pc():
 
 def test_storage_max_volume_param_raises():
     """Test a that an max_volume with a Parameter that has children.
-    
+
     Only some aggregated style parameters should work here.
     """
 
@@ -501,6 +500,15 @@ def test_json_include():
     supply1 = model.nodes["supply1"]
     supply2 = model.nodes["supply2"]
     assert(isinstance(supply2.max_flow, ConstantParameter))
+
+
+def test_py_include():
+    """Test include in Python document"""
+    filename = os.path.join(TEST_FOLDER, "models", "python_include.json")
+    model = Model.load(filename)
+
+    model.run()
+
 
 def test_json_min_version():
     """Test warning is raised if document minimum version is more than we have"""

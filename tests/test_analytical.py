@@ -5,7 +5,6 @@ network problem.
 
 
 """
-from __future__ import print_function
 import pywr.core
 import datetime
 import numpy as np

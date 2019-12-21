@@ -1,7 +1,3 @@
-import warnings
-warnings.simplefilter(action = "ignore", category = FutureWarning)
-warnings.simplefilter(action = "ignore", category = UnicodeWarning)
-
 from pywr.timestepper import Timestepper
 from pywr.model import Model
 from pywr.model import ModelStructureError, ModelDocumentWarning # TODO: exceptions module?

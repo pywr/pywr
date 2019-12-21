@@ -1,5 +1,3 @@
-from __future__ import division
-
 from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep, Output
 from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter, PiecewiseLinearControlCurve
@@ -36,18 +34,18 @@ class TestPiecewiseLinearControlCurve:
         parameter = PiecewiseLinearControlCurve(model, storage_node, control_curve, values=[(50, 100), (200, 500)], name="PLCC")
         assert parameter.minimum == 0.0
         assert parameter.maximum == 1.0
-    
+
         input_node.max_flow = 1.0
         input_node.cost = 0
         output_node.max_flow = 0.0
         storage_node.initial_volume = 0.0
         storage_node.max_volume = 100.0
         storage_node.cost = -10
-        
+
         model.timestepper.start = "1920-01-01"
         model.timestepper.delta = 1
         model.timestepper.end = model.timestepper.start + model.timestepper.offset*100
-        
+
         @assert_rec(model, parameter)
         def expected_func(timestep, scenario_index):
             volume = timestep.index
@@ -60,9 +58,9 @@ class TestPiecewiseLinearControlCurve:
                 factor = volume / 50
                 value = 50 + factor * (100 - 50)
             return value
-        
+
         model.run()
-    
+
     @pytest.mark.parametrize("configuration, expected_value", [
         ((0.0, 0.0, 1.0, 50.0, 100.0), 50.0),
         ((1.0, 0.0, 1.0, 50.0, 100.0), 100.0),

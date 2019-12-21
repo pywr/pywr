@@ -203,10 +203,14 @@ cdef class CythonGLPKEdgeSolver:
             # The Output nodes, in contrast, apply the constraint to the incoming flow (because there is no out going flow)
             if isinstance(some_node, BaseInput):
                 cols = some_node.__data.out_edges
-                assert len(some_node.__data.in_edges) == 0
+                if len(some_node.__data.in_edges) != 0:
+                    raise ModelStructureError(f'Input node "{some_node.name}" should not have any upstream '
+                                              f'connections.')
             elif isinstance(some_node, BaseOutput):
                 cols = some_node.__data.in_edges
-                assert len(some_node.__data.out_edges) == 0
+                if len(some_node.__data.out_edges) != 0:
+                    raise ModelStructureError(f'Output node "{some_node.name}" should not have any downstream '
+                                              f'connections.')
             else:
                 # Other nodes apply their flow constraints to all routes passing through them
                 cols = some_node.__data.out_edges

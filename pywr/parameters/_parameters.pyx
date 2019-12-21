@@ -2,9 +2,9 @@ import os
 import numpy as np
 cimport numpy as np
 import pandas
+import calendar
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
-from past.builtins import basestring
 from pywr.h5tools import H5Store
 from pywr.hashes import check_hash
 from ..dataframe_tools import align_and_resample_dataframe, load_dataframe, read_dataframe
@@ -597,28 +597,100 @@ WeeklyProfileParameter.register()
 
 
 cdef class MonthlyProfileParameter(Parameter):
-    """ Parameter which provides a monthly profile
+    """Parameter which provides a monthly profile.
 
-    A monthly profile is a static profile that returns a different
-    value based on the current time-step.
+    The monthly profile returns a different value based on the month of the current
+    time-step. By default this creates a piecewise profile with a step change at the
+    beginning of each month. An optional `interp_day` keyword can instead create a
+    linearly interpolated daily profile assuming the given values correspond to either
+    the first or last day of the month.
+
+    Parameters
+    ----------
+    values : iterable, array
+        The 12 values that represent the monthly profile.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the monthly profile values when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the monthly profile values when used during optimisation.
+    inter_day : str or None (default=None)
+        If `interp_day` is None then no interpolation is undertaken, and the parameter
+         returns values representing a piecewise monthly profile. Otherwise `interp_day`
+         must be a string of either "first" or "last" representing which day of the month
+         each of the 12 values represents. The parameter then returns linearly
+         interpolated values between the given day of the month.
+
 
     See also
     --------
     ScenarioMonthlyProfileParameter
     ArrayIndexedScenarioMonthlyFactorsParameter
     """
-    def __init__(self, model, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+    def __init__(self, model, values, lower_bounds=0.0, upper_bounds=np.inf, interp_day=None, **kwargs):
         super(MonthlyProfileParameter, self).__init__(model, **kwargs)
         self.double_size = 12
         self.integer_size = 0
         if len(values) != self.double_size:
             raise ValueError("12 values must be given for a monthly profile.")
         self._values = np.array(values)
+        self.interp_day = interp_day
         self._lower_bounds = np.ones(self.double_size)*lower_bounds
         self._upper_bounds = np.ones(self.double_size)*upper_bounds
 
+    cpdef reset(self):
+        Parameter.reset(self)
+        # The interpolated profile is recalculated during reset so that
+        # it will update when the _values array is updated via `set_double_variables`
+        # and the model is rerun. I.e. during optimisation (where setup is not redone).
+        if self.interp_day is not None:
+            self._interpolate()
+
+    cpdef _interpolate(self):
+
+        # Create an array to save the daily profile in.
+        self._interp_values = np.zeros(366)
+        cdef int i = 0
+        cdef int mth
+
+        # Create interpolation knots depending on values
+        if self.interp_day == 'first':
+            x = [1]  # First month
+            y = []
+            for mth in range(1, 13):
+                x.append(x[-1] + calendar.monthrange(2015, mth)[1])
+                y.append(self._values[mth-1])
+            y.append(self._values[0])
+        elif self.interp_day == 'last':
+            x = [0]  # End of previous year
+            y = [self._values[11]]  # Use value from December
+            for mth in range(1, 13):
+                x.append(x[-1] + calendar.monthrange(2015, mth)[1])
+                y.append(self._values[mth-1])
+        else:
+            raise ValueError(f'Interpolation day "{self.interp_day}" not supported.')
+
+        # Do the interpolation
+        values = np.interp(np.arange(365) + 1, x, y)
+        # Make the daily profile of 366 values repeating the same value for 28th & 29th Feb.
+        for i in range(365):
+            if i < 58:
+                self._interp_values[i] = values[i]
+            elif i == 58:
+                self._interp_values[i] = values[i]
+                self._interp_values[i+1] = values[i]
+            elif i > 58:
+                self._interp_values[i+1] = values[i]
+
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return self._values[ts.month-1]
+        cdef int i
+        if self.interp_day is None:
+            return self._values[ts.month-1]
+        else:
+            i = ts.dayofyear - 1
+            if not is_leap_year(ts.year):
+                if i > 58: # 28th Feb
+                    i += 1
+            return self._interp_values[i]
 
     cpdef set_double_variables(self, double[:] values):
         self._values[...] = values
@@ -636,7 +708,7 @@ MonthlyProfileParameter.register()
 
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
-    """ Parameter which provides a monthly profile per scenario
+    """ Parameter that provides a monthly profile per scenario
 
     Behaviour is the same as `MonthlyProfileParameter` except a different
     profile is returned for each ensemble in a given scenario.
@@ -669,6 +741,96 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
         return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
 
 ScenarioMonthlyProfileParameter.register()
+
+cdef class ScenarioWeeklyProfileParameter(Parameter):
+    """Parameter that provides a weekly profile per scenario
+
+    This parameter provides a repeating annual profile with a weekly resolution. A
+    different profile is returned for each member of a given scenario
+    
+    Parameters
+    ----------
+    scenario: Scenario
+        Scenario object over which different profiles should be provided.
+    values : iterable, array
+        Length of 1st dimension should equal the number of members in the scenario object 
+        and the length of the second dimension should be 52
+
+    """
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        values = np.array(values)
+        if values.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+        if scenario._size != values.shape[0]:
+            raise ValueError("First dimension of factors must be the same size as scenario.")
+        if values.shape[1] != 52:
+            raise ValueError("52 values must be given for a weekly profile.")
+        self._values = values
+        self._scenario = scenario
+
+    cpdef setup(self):
+        super(ScenarioWeeklyProfileParameter, self).setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(ts.year):
+            if i > 58: # 28th Feb
+                i += 1
+        cdef Py_ssize_t week
+        if i >= 364:
+            # last week of year is slightly longer than 7 days
+            week = 51
+        else:
+            week = i // 7
+        return self._values[scenario_index._indices[self._scenario_index], week]
+
+ScenarioWeeklyProfileParameter.register()
+
+cdef class ScenarioDailyProfileParameter(Parameter):
+    """Parameter which provides a daily profile per scenario.
+
+    This parameter provides a repeating annual profile with a daily resolution. A
+    different profile is returned for each member of a given scenario
+
+    Parameters
+    ----------
+    scenario: Scenario
+        Scenario object over which different profiles should be provided
+    values : iterable, array
+        Length of 1st dimension should equal the number of members in the scenario object 
+        and the length of the second dimension should be 366
+
+    """
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        values = np.array(values)
+        if values.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+        if scenario._size != values.shape[0]:
+            raise ValueError("First dimension of factors must be the same size as scenario.")
+        if values.shape[1] != 366:
+            raise ValueError("366 values must be given for a daily profile.")
+        self._values = values
+        self._scenario = scenario
+
+    cpdef setup(self):
+        super(ScenarioDailyProfileParameter, self).setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(ts.year):
+            if i > 58: # 28th Feb
+                i += 1
+        return self._values[scenario_index._indices[self._scenario_index], i]
+
+ScenarioDailyProfileParameter.register()
 
 
 cdef class IndexParameter(Parameter):
@@ -964,7 +1126,7 @@ cdef class AggregatedParameter(Parameter):
             return _agg_func_lookup_reverse[self._agg_func]
         def __set__(self, agg_func):
             self._agg_user_func = None
-            if isinstance(agg_func, basestring):
+            if isinstance(agg_func, str):
                 agg_func = _agg_func_lookup[agg_func.lower()]
             elif callable(agg_func):
                 self._agg_user_func = agg_func
@@ -1084,7 +1246,7 @@ cdef class AggregatedIndexParameter(IndexParameter):
             return _agg_func_lookup_reverse[self._agg_func]
         def __set__(self, agg_func):
             self._agg_user_func = None
-            if isinstance(agg_func, basestring):
+            if isinstance(agg_func, str):
                 agg_func = _agg_func_lookup[agg_func.lower()]
             elif callable(agg_func):
                 self._agg_user_func = agg_func
@@ -1200,7 +1362,7 @@ cdef class DivisionParameter(Parameter):
 
             self._numerator = parameter
             self.children.add(parameter)
-            
+
     property denominator:
         def __get__(self):
             return self._denominator
@@ -1210,7 +1372,7 @@ cdef class DivisionParameter(Parameter):
                 self._denominator.parents.remove(self)
 
             self._denominator = parameter
-            self.children.add(parameter)            
+            self.children.add(parameter)
 
     cdef calc_values(self, Timestep timestep):
         cdef int i
@@ -1444,6 +1606,65 @@ cdef class FlowParameter(Parameter):
 FlowParameter.register()
 
 
+cdef class PiecewiseIntegralParameter(Parameter):
+    """Parameter that integrates a piecewise function.
+
+    This parameter calculates the integral of a piecewise function. The
+    piecewise function is given as two arrays (`x` and `y`) and is assumed to
+    start from (0, 0). The values of `x` should be monotonically increasing
+    and greater than zero.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter the defines the right hand bounds of the integration.
+    x : iterable of doubles
+    y : iterable of doubles
+
+    """
+    def __init__(self, model, parameter, x, y, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.x = np.array(x, dtype=float)
+        self.y = np.array(y, dtype=float)
+
+    cpdef setup(self):
+        super(PiecewiseIntegralParameter, self).setup()
+
+        if len(self.x) != len(self.y):
+            raise ValueError('The length of `x` and `y` should be the same.')
+
+        if np.any(np.diff(self.x) < 0):
+            raise ValueError('The array `x` should be monotonically increasing.')
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef double integral = 0.0
+        cdef double x = self.parameter.get_value(scenario_index)
+        cdef int i
+        cdef double dx, prev_x
+
+        prev_x = 0
+        for i in range(self.x.shape[0]):
+            if x < self.x[i]:
+                dx = x - prev_x
+            else:
+                dx = self.x[i] - prev_x
+
+            if dx < 0.0:
+                break
+            else:
+                integral += dx * self.y[i]
+            prev_x = self.x[i]
+        return integral
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop('parameter'))
+        return cls(model, parameter, **data)
+PiecewiseIntegralParameter.register()
+
+
 def get_parameter_from_registry(parameter_type):
     key = parameter_type.lower()
     try:
@@ -1462,7 +1683,7 @@ def get_parameter_from_registry(parameter_type):
 
 def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         # parameter is a reference
         try:
             parameter = model.parameters[data]

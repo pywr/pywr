@@ -1,15 +1,15 @@
 """
 Test for individual Parameter classes
 """
-from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output
 from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
-    Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
-    InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter,
-    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter)
+    ScenarioWeeklyProfileParameter, Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
+    InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter, PiecewiseIntegralParameter,
+    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter,
+    ScenarioDailyProfileParameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
 from pywr.dataframe_tools import ResamplingError
@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import itertools
+import calendar
 from numpy.testing import assert_allclose
 
 TEST_DIR = os.path.dirname(__file__)
@@ -231,21 +232,57 @@ def test_parameter_array_indexed_scenario_monthly_factors_json(model):
     model.run()
 
 
-def test_parameter_monthly_profile(simple_linear_model):
-    """
-    Test MonthlyProfileParameter
+class TestMonthlyProfileParameter:
 
-    """
-    model = simple_linear_model
-    values = np.arange(12, dtype=np.float64)
-    p = MonthlyProfileParameter(model, values)
-    model.setup()
+    def test_no_interpolation(self, simple_linear_model):
+        """Test no-interpolation. """
+        model = simple_linear_model
+        values = np.arange(12, dtype=np.float64)
+        p = MonthlyProfileParameter(model, values)
+        model.setup()
 
-    # Iterate in time
-    for ts in model.timestepper:
-        imth = ts.datetime.month - 1
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        np.testing.assert_allclose(p.value(ts, si), values[imth])
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            imth = timestep.month - 1
+            return values[imth]
+
+        model.run()
+
+    def test_interpolation_month_start(self, simple_linear_model):
+        """Test interpolating monthly values from first day of the month."""
+        model = simple_linear_model
+        values = np.arange(12, dtype=np.float64)
+        p = MonthlyProfileParameter(model, values, interp_day='first')
+        model.setup()
+
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            imth = timestep.month - 1
+            days_in_month = calendar.monthrange(timestep.year, timestep.month)[1]
+            day = timestep.day
+
+            # Perform linear interpolation
+            x = (day - 1) / (days_in_month - 1)
+            return values[imth] * (1 - x) + values[(imth+1) % 12] * x
+        model.run()
+
+    def test_interpolation_month_end(self, simple_linear_model):
+        """Test interpolating monthly values from last day of the month."""
+        model = simple_linear_model
+        values = np.arange(12, dtype=np.float64)
+        p = MonthlyProfileParameter(model, values, interp_day='last')
+        model.setup()
+
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            imth = timestep.month - 1
+            days_in_month = calendar.monthrange(timestep.year, timestep.month)[1]
+            day = timestep.day
+
+            # Perform linear interpolation
+            x = day / days_in_month
+            return values[(imth - 1) % 12] * (1 - x) + values[imth] * x
+        model.run()
 
 
 class TestScenarioMonthlyProfileParameter:
@@ -323,6 +360,69 @@ def test_daily_profile_leap_day(model):
     model.timestepper.end = pd.to_datetime("2016-12-31")
     model.run()
     assert_allclose(inpt.flow, 365)
+
+class TestScenarioDailyProfileParameter:
+
+    def test_scenario_daily_profile(self, simple_linear_model):
+
+        model = simple_linear_model
+        scenario = Scenario(model, 'A', 2)
+        values = np.array([np.arange(366, dtype=np.float64), np.arange(366, 0, -1, dtype=np.float64)])
+
+        # Remove values for 29th feb as not testing leap year in this func
+        expected_values = np.delete(values.T, 59, 0)
+
+        p = ScenarioDailyProfileParameter.load(model, {"scenario": "A", "values": values})
+
+        AssertionRecorder(model, p, expected_data=expected_values)
+
+        model.setup()
+        model.run()
+
+    def test_scenario_daily_profile_leap_day(self, simple_linear_model):
+        """Test behaviour of daily profile parameter for leap years
+        """
+
+        model = simple_linear_model
+        model.timestepper.start = pd.to_datetime("2016-01-01")
+        model.timestepper.end = pd.to_datetime("2016-12-31")
+
+        scenario = Scenario(model, 'A', 2)
+        values = np.array([np.arange(366, dtype=np.float64), np.arange(366, 0, -1, dtype=np.float64)])
+
+        expected_values = values.T
+
+        p = ScenarioDailyProfileParameter(model, scenario, values)
+        AssertionRecorder(model, p, expected_data=expected_values)
+
+        model.setup()
+        model.run()
+
+def test_scenario_weekly_profile(simple_linear_model):
+
+    model = simple_linear_model
+    scenario = Scenario(model, 'A', 2)
+
+    v = np.arange(1, 53, dtype=np.float64)
+    values = np.array([v, v * 2])
+
+    p = ScenarioWeeklyProfileParameter(model, scenario, values)
+
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        day = timestep.dayofyear - 1
+        if day > 58:  # 28th Feb
+            day += 1
+        week = min(day // 7, 51)
+        value = week + 1
+        if scenario_index.global_id == 1:
+            value *= 2
+        return value
+
+    model.setup()
+    model.run()
+
+
 
 def test_weekly_profile(simple_linear_model):
     model = simple_linear_model
@@ -1066,6 +1166,65 @@ class TestInterpolatedQuadratureParameter:
         model.run()
 
 
+class TestPiecewiseIntegralParameter:
+    X = [3, 8, 11]
+    Y = [5, 10, 2]
+
+    @staticmethod
+    def area(i):
+        if i < 0:
+            value = 0
+        elif i <= 3:
+            value = 5 * i
+        elif i <= 8:
+            value = 5 * 3 + 10 * (i - 3)
+        else:
+            value = 5 * 3 + 10 * (8 - 3) + 2 * (i - 8)
+        return value
+
+    def test_calc(self, simple_linear_model):
+        """Test the piecewise integral calculaiton."""
+        model = simple_linear_model
+
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        x = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        p2 = PiecewiseIntegralParameter(model, x, self.X, self.Y)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            return self.area(i)
+
+        model.run()
+
+    def test_load(self, simple_linear_model):
+        """Test loading from JSON."""
+        model = simple_linear_model
+
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        x = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name='x')
+
+        p2 = {
+            'type': 'piecewiseintegralparameter',
+            'parameter': 'x',
+            'x': self.X,
+            'y': self.Y,
+        }
+
+        p2 = load_parameter(model, p2)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            return self.area(i)
+
+        model.run()
+
+
 class Test2DStoragePolynomialParameter:
 
     def test_1st(self, simple_storage_model):
@@ -1344,6 +1503,55 @@ class TestThresholdParameters:
         m.step()
         # flow < 5
         assert p1.index(m.timestepper.current, si) == 0
+
+    def test_current_year_threshold_parameter(self, simple_linear_model):
+        """Test CurrentYearThresholdParameter"""
+        m = simple_linear_model
+
+        m.timestepper.start = '2020-01-01'
+        m.timestepper.end = '2030-01-01'
+
+        data = {
+            'type': 'currentyearthreshold',
+            'threshold': 2025,
+            "predicate": ">=",
+        }
+
+        p = load_parameter(m, data)
+
+        @assert_rec(m, p, get_index=True)
+        def expected_func(timestep, scenario_index):
+            current_year = timestep.year
+            value = 1 if current_year >= 2025 else 0
+            return value
+
+        m.run()
+
+    def test_current_ordinal_threshold_parameter(self, simple_linear_model):
+        """Test CurrentYearThresholdParameter"""
+        m = simple_linear_model
+
+        m.timestepper.start = '2020-01-01'
+        m.timestepper.end = '2030-01-01'
+
+        threshold = datetime.date(2025, 6, 15).toordinal()
+
+        data = {
+            'type': 'currentordinaldaythreshold',
+            'threshold': threshold,
+            "predicate": ">=",
+        }
+
+        p = load_parameter(m, data)
+
+        @assert_rec(m, p, get_index=True)
+        def expected_func(timestep, scenario_index):
+            o = timestep.datetime.toordinal()
+            value = 1 if o >= threshold else 0
+            return value
+
+        m.run()
+
 
 def test_orphaned_components(simple_linear_model):
     model = simple_linear_model
