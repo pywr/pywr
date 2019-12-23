@@ -624,12 +624,3 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             _node.commit(scenario_index.global_id, node_flows[n])
 
         self.stats['result_update'] += time.perf_counter() - t0
-
-    cpdef dump_mps(self, filename):
-        glp_write_mps(self.prob, GLP_MPS_FILE, NULL, filename)
-
-    cpdef dump_lp(self, filename):
-        glp_write_lp(self.prob, NULL, filename)
-
-    cpdef dump_glpk(self, filename):
-        glp_write_prob(self.prob, 0, filename)

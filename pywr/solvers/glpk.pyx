@@ -31,6 +31,15 @@ cdef class GLPKSolver:
     cpdef object solve(self, model):
         raise NotImplementedError()
 
+    cpdef dump_mps(self, filename):
+        glp_write_mps(self.prob, GLP_MPS_FILE, NULL, filename)
+
+    cpdef dump_lp(self, filename):
+        glp_write_lp(self.prob, NULL, filename)
+
+    cpdef dump_glpk(self, filename):
+        glp_write_prob(self.prob, 0, filename)
+
 
 cdef class BasisManager:
     cdef init_basis(self, glp_prob* prob, int nscenarios):

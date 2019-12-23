@@ -19,7 +19,10 @@ cdef class GLPKSolver:
     cdef glp_smcp smcp
 
     cpdef object solve(self, model)
-    # cpdef object dump(self, filename, format)
+
+    cpdef dump_mps(self, filename)
+    cpdef dump_lp(self, filename)
+    cpdef dump_glpk(self, filename)
 
 
 cdef class BasisManager:
