@@ -149,6 +149,10 @@ extensions = [
 extensions_optional = []
 if 'glpk' in optional:
     extensions_optional.extend([
+        Extension('pywr.solvers.glpk', ['pywr/solvers/glpk.pyx'],
+                  include_dirs=[np.get_include()],
+                  libraries=['glpk'],
+                  define_macros=define_macros),
         Extension('pywr.solvers.cython_glpk', ['pywr/solvers/cython_glpk.pyx'],
                   include_dirs=[np.get_include()],
                   libraries=['glpk'],
