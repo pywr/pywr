@@ -10,7 +10,8 @@ cdef class GLPKSolver:
     def __dealloc__(self):
         glp_delete_prob(self.prob)
 
-    def __init__(self, time_limit=None, iteration_limit=None, message_level="error"):
+    def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level="error"):
+        self.use_presolve = use_presolve
         self.set_solver_options(time_limit, iteration_limit, message_level)
         glp_term_hook(term_hook, NULL)
 
@@ -22,14 +23,18 @@ cdef class GLPKSolver:
         if iteration_limit is not None:
             self.smcp.it_lim = iteration_limit
 
-    def setup(self):
-        raise NotImplementedError()
+    def setup(self, model):
+        self.has_presolved = False
 
     def reset(self):
-        raise NotImplementedError()
+        pass
 
     cpdef object solve(self, model):
-        raise NotImplementedError()
+        if self.use_presolve and not self.has_presolved:
+            self.smcp.presolve = GLP_ON
+            self.has_presolved = True
+        else:
+            self.smcp.presolve = GLP_OFF
 
     cpdef dump_mps(self, filename):
         glp_write_mps(self.prob, GLP_MPS_FILE, NULL, filename)

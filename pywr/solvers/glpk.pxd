@@ -18,6 +18,9 @@ cdef class GLPKSolver:
     cdef glp_prob* prob
     cdef glp_smcp smcp
 
+    cdef public bint use_presolve
+    cdef bint has_presolved
+
     cpdef object solve(self, model)
 
     cpdef dump_mps(self, filename)

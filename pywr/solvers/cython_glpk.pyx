@@ -50,23 +50,20 @@ cdef class CythonGLPKSolver(GLPKSolver):
     # Internal representation of the basis for each scenario
     cdef BasisManager basis_manager
     cdef bint is_first_solve
-    cdef bint has_presolved
-    cdef public bint use_presolve
     cdef public bint save_routes_flows
     cdef public bint retry_solve
 
     def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level='error',
                  save_routes_flows=False, retry_solve=False):
-        super().__init__(time_limit, iteration_limit, message_level)
+        super().__init__(use_presolve, time_limit, iteration_limit, message_level)
         self.stats = None
         self.is_first_solve = True
-        self.has_presolved = False
-        self.use_presolve = use_presolve
         self.save_routes_flows = save_routes_flows
         self.retry_solve = retry_solve
         self.basis_manager = BasisManager()
 
     def setup(self, model):
+        super().setup(model)
         cdef Node input
         cdef Node output
         cdef AbstractNode some_node
@@ -357,7 +354,6 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
         self.basis_manager.init_basis(self.prob, len(model.scenarios.combinations))
         self.is_first_solve = True
-        self.has_presolved = False
 
         # reset stats
         self.stats = {
@@ -381,6 +377,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         self.is_first_solve = True
 
     cpdef object solve(self, model):
+        GLPKSolver.solve(self, model)
         t0 = time.perf_counter()
         cdef int[:] scenario_combination
         cdef int scenario_id
@@ -520,13 +517,6 @@ cdef class CythonGLPKSolver(GLPKSolver):
         self.stats['bounds_update_storage'] += time.perf_counter() - t0
 
         t0 = time.perf_counter()
-
-        # Apply presolve if required
-        if self.use_presolve and not self.has_presolved:
-            self.smcp.presolve = GLP_ON
-            self.has_presolved = True
-        else:
-            self.smcp.presolve = GLP_OFF
 
         # Set the basis for this scenario
         self.basis_manager.set_basis(self.prob, self.is_first_solve, scenario_index.global_id)
