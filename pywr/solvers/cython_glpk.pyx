@@ -15,8 +15,6 @@ import time
 
 include "glpk.pxi"
 
-inf = float('inf')
-
 cdef class AbstractNodeData:
     cdef public int id
     cdef public bint is_link
