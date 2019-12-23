@@ -67,6 +67,19 @@ cdef class BasisManager:
                 glp_set_col_stat(prob, i + 1, self.col_stat[global_id, i])
 
 
+cdef int term_hook(void *info, const char *s):
+    """ Callback function to print GLPK messages through Python's print function """
+    # TODO make this use logging.
+    message = s.strip().decode('UTF-8')
+    if message.startswith("Constructing initial basis"):
+        pass
+    elif message.startswith("Size of triangular part is"):
+        pass
+    else:
+        print(message)
+    return 1
+
+
 cdef int simplex(glp_prob *P, glp_smcp parm):
     return glp_simplex(P, &parm)
 

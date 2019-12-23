@@ -60,6 +60,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
     def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level='error',
                  save_routes_flows=False, retry_solve=False):
+        super().__init__(time_limit, iteration_limit, message_level)
         self.stats = None
         self.is_first_solve = True
         self.has_presolved = False
@@ -67,16 +68,6 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         self.save_routes_flows = save_routes_flows
         self.retry_solve = retry_solve
         self.basis_manager = BasisManager()
-
-        # Set solver options
-        glp_init_smcp(&self.smcp)
-        self.smcp.msg_lev = message_levels[message_level]
-        if time_limit is not None:
-            self.smcp.tm_lim = time_limit
-        if iteration_limit is not None:
-            self.smcp.it_lim = iteration_limit
-
-        glp_term_hook(term_hook, NULL)
 
     def setup(self, model):
         cdef Node input

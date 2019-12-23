@@ -60,3 +60,9 @@ target/
 
 # vscode
 .vscode/
+
+venv/
+.pytest_cache/
+
+pywr_glpk_debug.lp
+pywr_glpk_debug.mps

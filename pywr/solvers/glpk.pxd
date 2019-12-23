@@ -30,6 +30,7 @@ cdef class BasisManager:
     cdef set_basis(self, glp_prob* prob, bint is_first_solve, int global_id)
 
 
+cdef int term_hook(void *info, const char *s)
 cdef int simplex(glp_prob *P, glp_smcp parm)
 cdef set_obj_coef(glp_prob *P, int j, double coef)
 cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub)
