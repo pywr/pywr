@@ -31,6 +31,7 @@ def setup_package():
                 compile_time_env=compile_time_env,
                 annotate=annotate,
             )
+            print("include_dirs", self.include_dirs)
             if not self.include_dirs:
                 self.include_dirs = []
             self.include_dirs.append(numpy.get_include())
