@@ -858,6 +858,12 @@ class NamedIterator(object):
     def __iter__(self):
         return iter(self._objects)
 
+    def __contains__(self, value):
+        for obj in self._objects:
+            if obj.name == value or obj == value:
+                return True
+        return False
+
     def append(self, obj):
         # TODO: check for name collisions / duplication
         self._objects.append(obj)
