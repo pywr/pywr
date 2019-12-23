@@ -31,7 +31,9 @@ def setup_package():
                 compile_time_env=compile_time_env,
                 annotate=annotate,
             )
-            self.include_dirs = [numpy.get_include()]
+            if not self.include_dirs:
+                self.include_dirs = []
+            self.include_dirs.append(numpy.get_include())
             super().finalize_options()
 
     metadata = dict(
