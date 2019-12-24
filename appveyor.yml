@@ -19,6 +19,9 @@ environment:
     LPSOLVE_DLL: "lpsolve55.dll"
     LPSOLVE_URL: "https://sourceforge.net/projects/lpsolve/files/lpsolve/%LPSOLVE_VER%/lp_solve_%LPSOLVE_VER%_dev_win64.zip/download"
 
+    INCLUDE: "%INCLUDE%;%GLPK_HOME%\\src;%LPSOLVE_HOME%"
+    LIBPATH: "%LIBPATH%;%GLPK_HOME%\\w64;%LPSOLVE_HOME%\\lpsolve"
+
     PYTHON_ARCH: "64"
 
   matrix:
@@ -93,10 +96,8 @@ build_script:
 
   - cmd: copy %LPSOLVE_HOME%\lpsolve\%LPSOLVE_DLL% pywr\.libs\%LPSOLVE_DLL%
 
-  - cmd: SET INCLUDE=%INCLUDE%;%GLPK_HOME%\\src;%LPSOLVE_HOME%
-
   # build pywr and create a wheel
-  - "python setup.py build_ext -L%GLPK_HOME%\\w64 --with-glpk --with-lpsolve bdist_wheel"
+  - "python setup.py build_ext --with-glpk --with-lpsolve bdist_wheel"
 
   # install the wheel
   # - ps: python -m pip install --upgrade pip
