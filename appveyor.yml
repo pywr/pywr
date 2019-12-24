@@ -19,8 +19,8 @@ environment:
     LPSOLVE_DLL: "lpsolve55.dll"
     LPSOLVE_URL: "https://sourceforge.net/projects/lpsolve/files/lpsolve/%LPSOLVE_VER%/lp_solve_%LPSOLVE_VER%_dev_win64.zip/download"
 
-    INCLUDE: "%INCLUDE%;%GLPK_HOME%\\src;%LPSOLVE_HOME%"
-    LIBPATH: "%LIBPATH%;%GLPK_HOME%\\w64;%LPSOLVE_HOME%\\lpsolve"
+    INCLUDE: "%GLPK_HOME%\\src;%LPSOLVE_HOME%"
+    LIBPATH: "%GLPK_HOME%\\w64;%LPSOLVE_HOME%\\lpsolve"
 
     PYTHON_ARCH: "64"
 
