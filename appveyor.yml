@@ -20,7 +20,7 @@ environment:
     LPSOLVE_URL: "https://sourceforge.net/projects/lpsolve/files/lpsolve/%LPSOLVE_VER%/lp_solve_%LPSOLVE_VER%_dev_win64.zip/download"
 
     INCLUDE: "%GLPK_HOME%\\src;%LPSOLVE_HOME%"
-    LIBPATH: "%GLPK_HOME%\\w64;%LPSOLVE_HOME%\\lpsolve"
+    LIB: "%GLPK_HOME%\\w64;%LPSOLVE_HOME%\\lpsolve"
 
     PYTHON_ARCH: "64"
 
