@@ -3,7 +3,6 @@
 Test the Recorder object API
 
 """
-from __future__ import print_function
 import pywr.core
 from pywr.core import Model, Input, Output, Scenario, AggregatedNode
 import numpy as np
@@ -24,7 +23,8 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, N
                             HydropowerRecorder, TotalHydroEnergyRecorder,
                             TotalParameterRecorder, MeanParameterRecorder,
                             NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
-                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
+                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning,
+                            AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder)
 
 from pywr.recorders.progress import ProgressRecorder
 
@@ -290,7 +290,7 @@ def test_numpy_array_area_recorder(simple_storage_model):
     area_param = InterpolatedVolumeParameter(model, storage, [0, 20], [0, 100])
     storage.area = area_param
     area_rec = NumpyArrayAreaRecorder(model, storage, temporal_agg_func='min')
-    
+
     model.run()
 
     expected = np.array([[50, 35, 20, 5, 0]]).T
@@ -627,7 +627,7 @@ def test_loading_csv_recorder_from_json(tmpdir):
                 actual = [row[0]]
                 assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
             assert expected == actual
-       
+
 class TestTablesRecorder:
 
     def test_create_directory(self, simple_linear_model, tmpdir):
@@ -1207,6 +1207,92 @@ class TestDeficitRecorders:
         df = rec.to_dataframe()
         assert df.shape == (365, 1)
         np.testing.assert_allclose(expected_curtailment_ratio[:, np.newaxis], df.values)
+
+
+def test_timestep_count_index_parameter_recorder(simple_storage_model):
+    """
+    The test uses a simple reservoir model with different inputs that
+    trigger a control curve failure after a different number of years.
+    """
+    from pywr.parameters import ConstantScenarioParameter, ConstantParameter
+    from pywr.parameters.control_curves import ControlCurveIndexParameter
+    model = simple_storage_model
+    scenario = Scenario(model, 'A', size=2)
+    # Simulate 5 years
+    model.timestepper.start = '2015-01-01'
+    model.timestepper.end = '2019-12-31'
+    # Control curve parameter
+    param = ControlCurveIndexParameter(model, model.nodes['Storage'], ConstantParameter(model, 0.25))
+
+    # Storage model has a capacity of 20, but starts at 10 Ml
+    # Demand is roughly 2 Ml/d per year
+    #  First ensemble balances the demand
+    #  Second ensemble should fail during 3rd year
+    demand = 2.0 / 365
+    model.nodes['Input'].max_flow = ConstantScenarioParameter(model, scenario, [demand, 0])
+    model.nodes['Output'].max_flow = demand
+
+    # Create the recorder with a threshold of 1
+    rec = TimestepCountIndexParameterRecorder(model, param, 1)
+
+    model.run()
+
+    assert_allclose([0, 183 + 365 + 365], rec.values(), atol=1e-7)
+
+
+@pytest.mark.parametrize("params", [1, 2])
+def test_annual_count_index_threshold_recorder(simple_storage_model, params):
+    """
+    The test sets uses a simple reservoir model with different inputs that
+    trigger a control curve failure after different numbers of years.
+    """
+    from pywr.parameters import ConstantScenarioParameter, ConstantParameter
+    from pywr.parameters.control_curves import ControlCurveIndexParameter
+    model = simple_storage_model
+    scenario = Scenario(model, 'A', size=2)
+    # Simulate 5 years
+    model.timestepper.start = '2015-01-01'
+    model.timestepper.end = '2019-12-31'
+    # Control curve parameter
+    param = ControlCurveIndexParameter(model, model.nodes['Storage'], ConstantParameter(model, 0.25))
+
+    # Storage model has a capacity of 20, but starts at 10 Ml
+    # Demand is roughly 2 Ml/d per year
+    #  First ensemble balances the demand
+    #  Second ensemble should fail during 3rd year
+    demand = 2.0 / 365
+    model.nodes['Input'].max_flow = ConstantScenarioParameter(model, scenario, [demand, 0])
+    model.nodes['Output'].max_flow = demand
+
+    # Create the recorder with a threshold of 1
+    rec = AnnualCountIndexThresholdRecorder(model, [param] * params, 'TestRec', 1)
+
+    model.run()
+
+    # We expect no failures in the first ensemble, the reservoir starts failing halfway through
+    # the 3rd year
+    assert_allclose([[0, 0],
+                     [0, 0],
+                     [0, 183],
+                     [0, 365],
+                     [0, 365]], rec.data, atol=1e-7)
+
+
+def test_annual_total_flow_recorder(simple_linear_model):
+    """
+    Test AnnualTotalFlowRecorder
+    """
+
+    model = simple_linear_model
+    otpt = model.nodes['Output']
+    otpt.max_flow = 30.0
+    model.nodes['Input'].max_flow = 10.0
+    otpt.cost = -2
+    rec = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt])
+
+    model.run()
+
+    assert_allclose(3650.0, rec.data, atol=1e-7)
 
 
 def test_total_flow_node_recorder(simple_linear_model):

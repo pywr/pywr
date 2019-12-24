@@ -3,7 +3,7 @@ cimport numpy as np
 from scipy.stats import percentileofscore
 import pandas as pd
 import warnings
-from past.builtins import basestring
+
 
 recorder_registry = {}
 
@@ -57,7 +57,7 @@ cdef class Aggregator:
             self._user_func = None
             func_args = []
             func_kwargs = {}
-            if isinstance(func, basestring):
+            if isinstance(func, str):
                 func_type = _agg_func_lookup[func.lower()]
             elif isinstance(func, dict):
                 func_type = _agg_func_lookup[func['func']]
@@ -259,7 +259,7 @@ cdef class AggregatedRecorder(Recorder):
         # Optional different method for aggregating across self.recorders scenarios
         agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func'))
 
-        if isinstance(agg_func, basestring):
+        if isinstance(agg_func, str):
             agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.recorder_agg_func = agg_func
@@ -498,7 +498,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     property data:
         def __get__(self, ):
             return np.array(self._data)
-        
+
     cpdef double[:] values(self):
         """Compute a value for each scenario using `temporal_agg_func`.
         """
@@ -724,19 +724,19 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
     fdc_agg_func: str, optional
         optional different function for aggregating across scenarios.
     months: array
-        The numeric values of the months the flow duration curve should be calculated for. 
+        The numeric values of the months the flow duration curve should be calculated for.
     """
 
     def __init__(self, model, AbstractNode node, percentiles, months, **kwargs):
         super(SeasonalFlowDurationCurveRecorder, self).__init__(model, node, percentiles, **kwargs)
         self._months = set(months)
-    
+
     cpdef finish(self):
-        # this is a def method rather than cpdef because closures inside cpdef functions are not supported yet.        
+        # this is a def method rather than cpdef because closures inside cpdef functions are not supported yet.
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
 
-        df = pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)        
+        df = pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
         mask = np.asarray(df.index.map(self.is_season))
         self._fdc = np.percentile(df.loc[mask, :], np.asarray(self._percentiles), axis=0)
 
@@ -751,10 +751,10 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     calculates their deviation from upper and lower target FDCs. The 2nd dimension of the target
     duration curves and percentiles list must be of the same length and have the same
     order (high to low values or low to high values).
-    
+
     Deviation is calculated as positive if actual FDC is above the upper target or below the lower
-    target. If actual FDC falls between the upper and lower targets zero deviation is returned.    
-    
+    target. If actual FDC falls between the upper and lower targets zero deviation is returned.
+
     Parameters
     ----------
     model : `pywr.core.Model`
@@ -766,7 +766,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     lower_target_fdc : array
         The lower FDC against which the scenario FDCs are compared
     upper_target_fdc : array
-        The upper FDC against which the scenario FDCs are compared        
+        The upper FDC against which the scenario FDCs are compared
     agg_func: str, optional
         Function used for aggregating the FDC deviations across percentiles.
         Numpy style functions that support an axis argument are supported.
@@ -869,7 +869,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
 
     def to_dataframe(self, return_fdc=False):
         """ Return a `pandas.DataFrame` of the deviations from the target FDCs
-                
+
         Parameters
         ----------
         return_fdc : bool (default=False)
@@ -1522,6 +1522,199 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
 MinimumThresholdVolumeStorageRecorder.register()
 
 
+cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
+    """Record the number of times an index parameter exceeds a threshold for each scenario.
+
+    This recorder will count the number of timesteps so will be a daily count when running on a
+    daily timestep.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    parameter : `pywr.core.IndexParameter`
+        The parameter to record
+    threshold : int
+        The threshold to compare the parameter to
+    """
+    def __init__(self, model, IndexParameter parameter, int threshold, *args, **kwargs):
+        super().__init__(model, parameter, *args, **kwargs)
+        self.threshold = threshold
+
+    cpdef setup(self):
+        self._count = np.zeros(len(self.model.scenarios.combinations), np.int32)
+
+    cpdef reset(self):
+        self._count[...] = 0
+
+    cpdef after(self):
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int value
+        cdef ScenarioIndex scenario_index
+
+        for scenario_index in self.model.scenarios.combinations:
+            value = self._param.get_index(scenario_index)
+            if value >= self.threshold:
+                # threshold achieved, increment count
+                self._count[scenario_index.global_id] += 1
+
+    cpdef double[:] values(self):
+        return np.asarray(self._count).astype(np.float64)
+TimestepCountIndexParameterRecorder.register()
+
+
+cdef class AnnualCountIndexThresholdRecorder(Recorder):
+    """
+    For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
+    If multiple parameters exceed in one timestep then it is only counted once.
+
+    Output from data property has shape: (years, scenario combinations)
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    parameters : list
+        List of `pywr.core.IndexParameter` to record against
+    name : str
+        The name of the recorder
+    threshold : int
+        Threshold to compare parameters against
+    """
+    def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
+        # Optional different method for aggregating across time.
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
+        super().__init__(model, name=name, *args, **kwargs)
+        self.parameters = parameters
+        self.threshold = threshold
+        for parameter in self.parameters:
+            self.children.add(parameter)
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
+
+    cpdef setup(self):
+        super(AnnualCountIndexThresholdRecorder, self).setup()
+        self._num_years = self.model.timestepper.end.year - self.model.timestepper.start.year + 1
+        self._ncomb = len(self.model.scenarios.combinations)
+        self._data = np.empty([self._num_years, self._ncomb])
+        self._data_this_year = np.zeros([len(self.parameters), self._ncomb])
+
+    cpdef reset(self):
+        self._data[...] = 0
+        self._current_year = -1
+        self._start_year = self.model.timestepper.start.year
+
+    cpdef after(self):
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int idx = self._current_year - self._start_year
+        cdef int p
+        cdef Py_ssize_t i
+        cdef double value
+        cdef ScenarioIndex scenario_index
+        cdef IndexParameter parameter
+
+        if ts.year != self._current_year:
+            # A new year
+            if self._current_year != -1:
+                # As long as at least one year has been run
+                # then save data for previous year
+                for i in range(self._ncomb):
+                    self._data[idx, i] = np.sum(self._data_this_year[:, i])
+
+            self._data_this_year[...] = 0
+            self._current_year = ts.year
+
+        for scenario_index in self.model.scenarios.combinations:
+            for p, parameter in enumerate(self.parameters):
+                value = parameter.get_index(scenario_index)
+                if value >= self.threshold:
+                    self._data_this_year[p, scenario_index.global_id] += 1
+                    break  # if multiple parameters exceed, only count once
+
+    cpdef finish(self):
+        cdef int idx = self._current_year - self._start_year
+        cdef Py_ssize_t i
+        for i in range(self._ncomb):
+            self._data[idx, i] = np.sum(self._data_this_year[:, i])
+
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
+
+    property data:
+        def __get__(self):
+            return np.array(self._data, dtype=np.int16)
+
+    @classmethod
+    def load(cls, model, data):
+        from pywr.parameters import load_parameter
+        parameters = [load_parameter(model, p) for p in data.pop("parameters")]
+        return cls(model, parameters=parameters, **data)
+AnnualCountIndexThresholdRecorder.register()
+
+
+cdef class AnnualTotalFlowRecorder(Recorder):
+    """
+    For each scenario, record the total flow in each year across a list of nodes.
+    Output from data property has shape: (years, scenario combinations)
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    name : str
+        The name of the recorder
+    nodes : list
+        List of `pywr.core.Node` instances to record
+    """
+    def __init__(self, model, str name, list nodes, *args, **kwargs):
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
+        super().__init__(model, name=name, *args, **kwargs)
+        self.nodes = nodes
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
+
+    cpdef setup(self):
+        super(AnnualTotalFlowRecorder, self).setup()
+        self._num_years = self.model.timestepper.end.year - self.model.timestepper.start.year + 1
+        self._ncomb = len(self.model.scenarios.combinations)
+        self._data = np.empty([self._num_years, self._ncomb])
+
+    cpdef reset(self):
+        self._data[...] = 0
+        self._current_year = -1
+        self._start_year = self.model.timestepper.start.year
+
+    cpdef after(self):
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int idx = ts.year - self._start_year
+        cdef AbstractNode node
+        cdef double[:] flow = np.zeros(self._ncomb, np.float64)
+
+        for i in range(self._ncomb):
+            for node in self.nodes:
+                self._data[idx, i] += node._flow[i]
+
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
+
+    property data:
+        def __get__(self):
+            return np.array(self._data, dtype=np.float64)
+
+    @classmethod
+    def load(cls, model, data):
+        nodes = [model._get_node_from_ref(model, n) for n in data.pop("nodes")]
+        return cls(model, nodes=nodes, **data)
+AnnualTotalFlowRecorder.register()
+
+
 cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
     """ Record the number of years where an IndexParameter is greater than or equal to a threshold """
     def __init__(self, model, IndexParameter param, int threshold, *args, **kwargs):
@@ -1583,7 +1776,7 @@ AnnualCountIndexParameterRecorder.register()
 def load_recorder(model, data, recorder_name=None):
     recorder = None
 
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         recorder_name = data
 
     # check if recorder has already been loaded
@@ -1592,7 +1785,7 @@ def load_recorder(model, data, recorder_name=None):
             recorder = rec
             break
 
-    if recorder is None and isinstance(data, basestring):
+    if recorder is None and isinstance(data, str):
         # recorder was requested by name, but hasn't been loaded yet
         if hasattr(model, "_recorders_to_load"):
             # we're still in the process of loading data from JSON and

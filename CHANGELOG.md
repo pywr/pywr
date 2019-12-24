@@ -2,6 +2,24 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.4.0
+
+### New Features
+
+- Added support time-steps based on Pandas offsets (#675)
+- Added `InterpolatedFlowParameter` (#740)
+- Added support for `percentile` and `percentileofscore` aggregation functions (#777)
+- Added `PiecewiseIntegralParameter` (#772)
+- Added support for including references to Python modules in JSON format (#765)
+- Added `CurrentYearThresholdParameter` and `CurrentOrdinalDayThresholdParameter` parameters (#789)
+
+### Bug fixes
+
+- Ensure `comment` key doesn't get passed to Pandas `read_xxx` functions (#788)
+
+### Documentation
+
+- Added some docs for AggregatedNode (#756)
 
 ## v1.3.0
 

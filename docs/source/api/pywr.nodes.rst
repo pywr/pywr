@@ -18,6 +18,12 @@ Nodes that are instantiable by the user
    Output
    BreakLink
    PiecewiseLink
+   MultiSplitLink
+   Storage
+   VirtualStorage
+   AnnualVirtualStorage
+   AggregatedStorage
+   AggregatedNode
 
 .. currentmodule:: pywr.domains.river
 

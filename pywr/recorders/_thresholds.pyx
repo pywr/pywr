@@ -55,7 +55,7 @@ cdef class StorageThresholdRecorder(StorageRecorder):
 
         if predicate is None:
             predicate = Predicates.LT
-        elif isinstance(predicate, basestring):
+        elif isinstance(predicate, str):
             predicate = _predicate_lookup[predicate.upper()]
         self.predicate = predicate
 
@@ -100,7 +100,7 @@ cdef class NodeThresholdRecorder(NodeRecorder):
 
         if predicate is None:
             predicate = Predicates.LT
-        elif isinstance(predicate, basestring):
+        elif isinstance(predicate, str):
             predicate = _predicate_lookup[predicate.upper()]
         self.predicate = predicate
 

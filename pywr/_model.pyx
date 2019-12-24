@@ -2,7 +2,6 @@ import os
 import pandas
 import json
 import networkx as nx
-from past.builtins import basestring
 import copy
 from packaging.version import parse as parse_version
 import warnings
@@ -263,7 +262,7 @@ class Model(object):
             Name of the solver to use for the model. This overrides the solver
             section of the model document.
         """
-        if isinstance(data, basestring):
+        if isinstance(data, str):
             # argument is a filename
             logger.info('Loading model from file: "{}"'.format(path))
             path = data
@@ -770,7 +769,7 @@ class NodeIterator(object):
 
     def __delitem__(self, key):
         """Remove a node from the graph"""
-        if isinstance(key, basestring):
+        if isinstance(key, str):
             node = self[key]
         else:
             node = key
