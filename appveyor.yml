@@ -117,6 +117,9 @@ test_script:
   - "SET PYWR_SOLVER=glpk-edge"
   - "python -m pytest"
 
+  - "SET PYWR_SOLVER=lpsolve"
+  - "python -m pytest"
+
   - "jupyter nbconvert --to html --execute tests\\notebook.ipynb"
 
 artifacts:
