@@ -15,8 +15,8 @@ environment:
 
     LPSOLVE_VER: "5.5.2.5"
     LPSOLVE_HOME: "C:\\lpsolve-%LPSOLVE_VER%"
-    LPSOLVE_LIB: "lpsolve.lib"
-    LPSOLVE_DLL: "lpsolve.dll"
+    LPSOLVE_LIB: "lpsolve55.lib"
+    LPSOLVE_DLL: "lpsolve55.dll"
     LPSOLVE_URL: "https://sourceforge.net/projects/lpsolve/files/lpsolve/%LPSOLVE_VER%/lp_solve_%LPSOLVE_VER%_dev_win64.zip/download"
 
     PYTHON_ARCH: "64"
