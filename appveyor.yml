@@ -56,7 +56,7 @@ install:
     - ps: "ls \"C:/\""
     - ps: "ls %GLPK_HOME%"
 
-    - curl -L -O %LPSOLVE_URL% --output lpsolve.zip
+    - curl -L --output lpsolve.zip %LPSOLVE_URL%
     - 7z x lpsolve.zip -o%LPSOLVE_HOME%
 
     - "SET PACKAGE_DATA=true"
