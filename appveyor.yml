@@ -56,8 +56,8 @@ install:
     - ps: "ls \"C:/\""
     - ps: "ls %GLPK_HOME%"
 
-    - ps: curl -L -O $ENV:LPSOLVE_URL --output lpsolve.zip
-    - ps: 7z x lpsolve.zip -o$ENV:LPSOLVE_HOME
+    - curl -L -O %LPSOLVE_URL% --output lpsolve.zip
+    - 7z x lpsolve.zip -o%LPSOLVE_HOME%
 
     - "SET PACKAGE_DATA=true"
 
@@ -93,8 +93,10 @@ build_script:
 
   - cmd: copy %LPSOLVE_HOME%\%LPSOLVE_DLL% pywr\.libs\%LPSOLVE_DLL%
 
+  - cmd: SET INCLUDE=%GLPK_HOME%\\src;%LPSOLVE_HOME%
+
   # build pywr and create a wheel
-  - "python setup.py build_ext -I%GLPK_HOME%\\src -L%GLPK_HOME%\\w64 --with-glpk --with-lpsolve bdist_wheel"
+  - "python setup.py build_ext -L%GLPK_HOME%\\w64 --with-glpk --with-lpsolve bdist_wheel"
 
   # install the wheel
   # - ps: python -m pip install --upgrade pip
