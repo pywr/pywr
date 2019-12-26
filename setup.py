@@ -1,9 +1,7 @@
 import os
 import sys
-
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
-
 
 def setup_package():
     compiler_directives = {
@@ -82,6 +80,7 @@ def setup_package():
     if config["glpk"]:
         ext_modules.extend(
             [
+                Extension("pywr.solvers.glpk", ["pywr/solvers/glpk.pyx"], libraries=["glpk"],),  
                 Extension("pywr.solvers.cython_glpk", ["pywr/solvers/cython_glpk.pyx"], libraries=["glpk"],),
                 Extension("pywr.solvers.cython_glpk_edge", ["pywr/solvers/cython_glpk_edge.pyx"], libraries=["glpk"],),
             ]
