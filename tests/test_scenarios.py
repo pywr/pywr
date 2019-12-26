@@ -315,9 +315,9 @@ def test_scenario_slices(simple_linear_model):
     assert(len(index.levels) == 2)
     assert(len(index.levels[0]) == 10)
     assert(len(index.levels[1]) == 3)
-    assert(len(index.labels) == 2)
-    assert(len(index.labels[0]) == 10 * 3)
-    assert(len(index.labels[1]) == 10 * 3)
+    assert(len(index.codes) == 2)
+    assert(len(index.codes[0]) == 10 * 3)
+    assert(len(index.codes[1]) == 10 * 3)
     assert(index.names == ["A", "B"])
 
     s2.slice = slice(1, 3, 1)
