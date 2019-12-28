@@ -799,6 +799,12 @@ class NodeIterator(object):
         """Returns the number of nodes in the model"""
         return len(list(self._nodes()))
 
+    def __contains__(self, value):
+        for node in self._nodes():
+            if node.name == value or node == value:
+                return True
+        return False
+
     def __iter__(self):
         return self
 
@@ -857,6 +863,12 @@ class NamedIterator(object):
 
     def __iter__(self):
         return iter(self._objects)
+
+    def __contains__(self, value):
+        for obj in self._objects:
+            if obj.name == value or obj == value:
+                return True
+        return False
 
     def append(self, obj):
         # TODO: check for name collisions / duplication
