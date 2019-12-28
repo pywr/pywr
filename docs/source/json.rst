@@ -120,7 +120,7 @@ The ``Storage`` type and it's subtypes have a ``max_volume``, ``min_volume`` and
     ]}
 
 When defining a storage node with multiple inputs or outputs connections need to be made using the slot notation (discussed in the `edges`_ section).
-    
+
 Edges
 ~~~~~
 
@@ -199,6 +199,7 @@ Loading a JSON document
 A Pywr JSON document can be loaded into a `Model` instance by using the `Model.load` class-method:
 
 .. code-block:: python
+
     from pywr.model import Model
     my_model = model.load('/path/to/my_model.json')
     my_model.run()
@@ -206,6 +207,7 @@ A Pywr JSON document can be loaded into a `Model` instance by using the `Model.l
 Once a model is loaded if a reference to an actual node is required, using .get ...
 
 .. code-block:: python
+
     node = my_model.nodes.get("River Thames")
     if node:
         print(f"max_flow: {node.max_flow}")
@@ -215,6 +217,7 @@ Once a model is loaded if a reference to an actual node is required, using .get 
 ... or try-except is preferable to avoid searching twice.
 
 .. code-block:: python
+
     try:
         node = model.nodes["River Thames"]
     except KeyError:
@@ -225,6 +228,7 @@ Once a model is loaded if a reference to an actual node is required, using .get 
 It is also possible to test for node and component membership using their names:
 
 .. code-block:: python
+
     assert "River Thames" in model.nodes
     assert "Demand" in model.parameters
 
