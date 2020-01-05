@@ -9,6 +9,17 @@ Currently there are only linear programme based solvers using,
     - LPSolve55
 """
 
+import os
+import sys
+
+
+# https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew
+if sys.platform == "win32" and (sys.version_info.major >= 3 and sys.version_info.minor >= 8):
+    dll_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".libs"))
+    if os.path.exists(dll_folder):
+        os.add_dll_directory(dll_folder)
+
+
 solver_registry = []
 
 
@@ -197,5 +208,3 @@ else:
         def stats(self):
             return self._cy_solver.stats
     solver_registry.append(CythonLPSolveSolver)
-
-
