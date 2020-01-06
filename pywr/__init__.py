@@ -9,5 +9,10 @@ except DistributionNotFound:
     pass
 
 if sys.platform == "win32":
-    libdir = os.path.join(os.path.dirname(__file__), ".libs")
-    os.environ["PATH"] = os.environ["PATH"] + ";" + libdir
+    dll_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), ".libs"))
+    if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+        # https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew
+        if os.path.exists(dll_folder):
+            os.add_dll_directory(dll_folder)
+    else:
+        os.environ["PATH"] = os.environ["PATH"] + ";" + dll_folder
