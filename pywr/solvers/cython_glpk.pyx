@@ -6,6 +6,8 @@ cimport numpy as np
 
 cimport cython
 
+from .glpk cimport GLPKSolver, BasisManager, simplex, set_obj_coef, set_row_bnds, set_col_bnds, set_mat_row
+
 from pywr._core import BaseInput, BaseOutput, BaseLink
 from pywr._core cimport *
 from pywr.core import ModelStructureError
@@ -13,15 +15,11 @@ import time
 
 include "glpk.pxi"
 
-inf = float('inf')
-
 cdef class AbstractNodeData:
     cdef public int id
     cdef public bint is_link
 
-cdef class CythonGLPKSolver:
-    cdef glp_prob* prob
-    cdef glp_smcp smcp
+cdef class CythonGLPKSolver(GLPKSolver):
     cdef int idx_col_routes
     cdef int idx_row_non_storages
     cdef int idx_row_cross_domain
@@ -50,42 +48,22 @@ cdef class CythonGLPKSolver:
     cdef public object stats
 
     # Internal representation of the basis for each scenario
-    cdef int[:, :] row_stat
-    cdef int[:, :] col_stat
+    cdef BasisManager basis_manager
     cdef bint is_first_solve
-    cdef bint has_presolved
-    cdef public bint use_presolve
     cdef public bint save_routes_flows
     cdef public bint retry_solve
 
-    def __cinit__(self):
-        # create a new problem
-        self.prob = glp_create_prob()
-
     def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level='error',
                  save_routes_flows=False, retry_solve=False):
+        super().__init__(use_presolve, time_limit, iteration_limit, message_level)
         self.stats = None
         self.is_first_solve = True
-        self.has_presolved = False
-        self.use_presolve = use_presolve
         self.save_routes_flows = save_routes_flows
         self.retry_solve = retry_solve
-
-        # Set solver options
-        glp_init_smcp(&self.smcp)
-        self.smcp.msg_lev = message_levels[message_level]
-        if time_limit is not None:
-            self.smcp.tm_lim = time_limit
-        if iteration_limit is not None:
-            self.smcp.it_lim = iteration_limit
-
-        glp_term_hook(term_hook, NULL)
-
-    def __dealloc__(self):
-        # free the problem
-        glp_delete_prob(self.prob)
+        self.basis_manager = BasisManager()
 
     def setup(self, model):
+        super().setup(model)
         cdef Node input
         cdef Node output
         cdef AbstractNode some_node
@@ -374,9 +352,8 @@ cdef class CythonGLPKSolver:
         self.virtual_storages = virtual_storages
         self.aggregated = aggregated
 
-        self._init_basis_arrays(model)
+        self.basis_manager.init_basis(self.prob, len(model.scenarios.combinations))
         self.is_first_solve = True
-        self.has_presolved = False
 
         # reset stats
         self.stats = {
@@ -395,48 +372,12 @@ cdef class CythonGLPKSolver:
             'number_of_nodes': len(self.all_nodes)
         }
 
-    cdef _init_basis_arrays(self, model):
-        """ Initialise the arrays used for storing the LP basis by scenario """
-        cdef int nscenarios = len(model.scenarios.combinations)
-        cdef int nrows = glp_get_num_rows(self.prob)
-        cdef int ncols = glp_get_num_cols(self.prob)
-
-        self.row_stat = np.empty((nscenarios, nrows), dtype=np.int32)
-        self.col_stat = np.empty((nscenarios, ncols), dtype=np.int32)
-
-    cdef _save_basis(self, int global_id):
-        """ Save the current basis for scenario associated with global_id """
-        cdef int i
-        cdef int nrows = glp_get_num_rows(self.prob)
-        cdef int ncols = glp_get_num_cols(self.prob)
-
-        for i in range(nrows):
-            self.row_stat[global_id, i] = glp_get_row_stat(self.prob, i+1)
-        for i in range(ncols):
-            self.col_stat[global_id, i] = glp_get_col_stat(self.prob, i+1)
-
-    cdef _set_basis(self, int global_id):
-        """ Set the current basis for scenario associated with global_id """
-        cdef int i, nrows, ncols
-
-        if self.is_first_solve:
-            # First time solving we use the default advanced basis
-            glp_adv_basis(self.prob, 0)
-        else:
-            # otherwise we restore basis from previous solve of this scenario
-            nrows = glp_get_num_rows(self.prob)
-            ncols = glp_get_num_cols(self.prob)
-
-            for i in range(nrows):
-                glp_set_row_stat(self.prob, i+1, self.row_stat[global_id, i])
-            for i in range(ncols):
-                glp_set_col_stat(self.prob, i+1, self.col_stat[global_id, i])
-
     def reset(self):
         # Resetting this triggers a crashing of a new basis in each scenario
         self.is_first_solve = True
 
     cpdef object solve(self, model):
+        GLPKSolver.solve(self, model)
         t0 = time.perf_counter()
         cdef int[:] scenario_combination
         cdef int scenario_id
@@ -577,15 +518,8 @@ cdef class CythonGLPKSolver:
 
         t0 = time.perf_counter()
 
-        # Apply presolve if required
-        if self.use_presolve and not self.has_presolved:
-            self.smcp.presolve = GLP_ON
-            self.has_presolved = True
-        else:
-            self.smcp.presolve = GLP_OFF
-
         # Set the basis for this scenario
-        self._set_basis(scenario_index.global_id)
+        self.basis_manager.set_basis(self.prob, self.is_first_solve, scenario_index.global_id)
         # attempt to solve the linear programme
         simplex_ret = simplex(self.prob, self.smcp)
         status = glp_get_status(self.prob)
@@ -612,7 +546,7 @@ cdef class CythonGLPKSolver:
             raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(
                 simplex_status_string[simplex_ret], status_string[status]))
         # Now save the basis
-        self._save_basis(scenario_index.global_id)
+        self.basis_manager.save_basis(self.prob, scenario_index.global_id)
 
         self.stats['lp_solve'] += time.perf_counter() - t0
         t0 = time.perf_counter()
@@ -645,63 +579,3 @@ cdef class CythonGLPKSolver:
             _node.commit(scenario_index.global_id, node_flows[n])
 
         self.stats['result_update'] += time.perf_counter() - t0
-
-    cpdef dump_mps(self, filename):
-        glp_write_mps(self.prob, GLP_MPS_FILE, NULL, filename)
-
-    cpdef dump_lp(self, filename):
-        glp_write_lp(self.prob, NULL, filename)
-
-    cpdef dump_glpk(self, filename):
-        glp_write_prob(self.prob, 0, filename)
-
-
-cdef int simplex(glp_prob *P, glp_smcp parm):
-    return glp_simplex(P, &parm)
-
-
-cdef set_obj_coef(glp_prob *P, int j, double coef):
-    IF SOLVER_DEBUG:
-        assert np.isfinite(coef)
-        if abs(coef) < 1e-9:
-            if abs(coef) != 0.0:
-                print(j, coef)
-                assert False
-    glp_set_obj_coef(P, j, coef)
-
-
-cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
-    IF SOLVER_DEBUG:
-        assert np.isfinite(lb)
-        assert np.isfinite(ub)
-        assert lb <= ub
-        if abs(lb) < 1e-9:
-            if abs(lb) != 0.0:
-                print(i, type, lb, ub)
-
-                assert False
-        if abs(ub) < 1e-9:
-            if abs(ub) != 0.0:
-                print(i, type, lb, ub)
-                assert False
-
-    glp_set_row_bnds(P, i, type, lb, ub)
-
-
-cdef set_col_bnds(glp_prob *P, int i, int type, double lb, double ub):
-    IF SOLVER_DEBUG:
-        assert np.isfinite(lb)
-        assert np.isfinite(ub)
-        assert lb <= ub
-    glp_set_col_bnds(P, i, type, lb, ub)
-
-
-cdef set_mat_row(glp_prob *P, int i, int len, int* ind, double* val):
-    IF SOLVER_DEBUG:
-        cdef int j
-        for j in range(len):
-            assert np.isfinite(val[j+1])
-            assert abs(val[j+1]) > 1e-6
-            assert ind[j+1] > 0
-
-    glp_set_mat_row(P, i, len, ind, val)
