@@ -1,18 +1,18 @@
 """
 Test for individual Parameter classes
 """
-from __future__ import division
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output
 from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
     DataFrameParameter, AggregatedParameter, ConstantParameter, ConstantScenarioIndexParameter,
     IndexParameter, AggregatedIndexParameter, RecorderThresholdParameter, ScenarioMonthlyProfileParameter,
-    Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
-    InterpolatedParameter, WeeklyProfileParameter,
-    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter)
+    ScenarioWeeklyProfileParameter, Polynomial1DParameter, Polynomial2DStorageParameter, ArrayIndexedScenarioParameter,
+    InterpolatedParameter, WeeklyProfileParameter, InterpolatedQuadratureParameter, PiecewiseIntegralParameter,
+    FunctionParameter, AnnualHarmonicSeriesParameter, load_parameter, InterpolatedFlowParameter,
+    ScenarioDailyProfileParameter)
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
-
+from pywr.dataframe_tools import ResamplingError
 from pywr.recorders import Recorder
 from fixtures import simple_linear_model, simple_storage_model
 from helpers import load_model
@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import itertools
+import calendar
 from numpy.testing import assert_allclose
 
 TEST_DIR = os.path.dirname(__file__)
@@ -101,7 +102,7 @@ def test_parameter_array_indexed(simple_linear_model):
         np.testing.assert_allclose(p.value(ts, si), v)
 
     # Now check that IndexError is raised if an out of bounds Timestep is given.
-    ts = Timestep(datetime.datetime(2016, 1, 1), 366, 1.0)
+    ts = Timestep(pd.Period('2016-01-01', freq='1D'), 366, 1)
     with pytest.raises(IndexError):
         p.value(ts, si)
 
@@ -231,21 +232,57 @@ def test_parameter_array_indexed_scenario_monthly_factors_json(model):
     model.run()
 
 
-def test_parameter_monthly_profile(simple_linear_model):
-    """
-    Test MonthlyProfileParameter
+class TestMonthlyProfileParameter:
 
-    """
-    model = simple_linear_model
-    values = np.arange(12, dtype=np.float64)
-    p = MonthlyProfileParameter(model, values)
-    model.setup()
+    def test_no_interpolation(self, simple_linear_model):
+        """Test no-interpolation. """
+        model = simple_linear_model
+        values = np.arange(12, dtype=np.float64)
+        p = MonthlyProfileParameter(model, values)
+        model.setup()
 
-    # Iterate in time
-    for ts in model.timestepper:
-        imth = ts.datetime.month - 1
-        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
-        np.testing.assert_allclose(p.value(ts, si), values[imth])
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            imth = timestep.month - 1
+            return values[imth]
+
+        model.run()
+
+    def test_interpolation_month_start(self, simple_linear_model):
+        """Test interpolating monthly values from first day of the month."""
+        model = simple_linear_model
+        values = np.arange(12, dtype=np.float64)
+        p = MonthlyProfileParameter(model, values, interp_day='first')
+        model.setup()
+
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            imth = timestep.month - 1
+            days_in_month = calendar.monthrange(timestep.year, timestep.month)[1]
+            day = timestep.day
+
+            # Perform linear interpolation
+            x = (day - 1) / (days_in_month - 1)
+            return values[imth] * (1 - x) + values[(imth+1) % 12] * x
+        model.run()
+
+    def test_interpolation_month_end(self, simple_linear_model):
+        """Test interpolating monthly values from last day of the month."""
+        model = simple_linear_model
+        values = np.arange(12, dtype=np.float64)
+        p = MonthlyProfileParameter(model, values, interp_day='last')
+        model.setup()
+
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            imth = timestep.month - 1
+            days_in_month = calendar.monthrange(timestep.year, timestep.month)[1]
+            day = timestep.day
+
+            # Perform linear interpolation
+            x = day / days_in_month
+            return values[(imth - 1) % 12] * (1 - x) + values[imth] * x
+        model.run()
 
 
 class TestScenarioMonthlyProfileParameter:
@@ -323,6 +360,69 @@ def test_daily_profile_leap_day(model):
     model.timestepper.end = pd.to_datetime("2016-12-31")
     model.run()
     assert_allclose(inpt.flow, 365)
+
+class TestScenarioDailyProfileParameter:
+
+    def test_scenario_daily_profile(self, simple_linear_model):
+
+        model = simple_linear_model
+        scenario = Scenario(model, 'A', 2)
+        values = np.array([np.arange(366, dtype=np.float64), np.arange(366, 0, -1, dtype=np.float64)])
+
+        # Remove values for 29th feb as not testing leap year in this func
+        expected_values = np.delete(values.T, 59, 0)
+
+        p = ScenarioDailyProfileParameter.load(model, {"scenario": "A", "values": values})
+
+        AssertionRecorder(model, p, expected_data=expected_values)
+
+        model.setup()
+        model.run()
+
+    def test_scenario_daily_profile_leap_day(self, simple_linear_model):
+        """Test behaviour of daily profile parameter for leap years
+        """
+
+        model = simple_linear_model
+        model.timestepper.start = pd.to_datetime("2016-01-01")
+        model.timestepper.end = pd.to_datetime("2016-12-31")
+
+        scenario = Scenario(model, 'A', 2)
+        values = np.array([np.arange(366, dtype=np.float64), np.arange(366, 0, -1, dtype=np.float64)])
+
+        expected_values = values.T
+
+        p = ScenarioDailyProfileParameter(model, scenario, values)
+        AssertionRecorder(model, p, expected_data=expected_values)
+
+        model.setup()
+        model.run()
+
+def test_scenario_weekly_profile(simple_linear_model):
+
+    model = simple_linear_model
+    scenario = Scenario(model, 'A', 2)
+
+    v = np.arange(1, 53, dtype=np.float64)
+    values = np.array([v, v * 2])
+
+    p = ScenarioWeeklyProfileParameter(model, scenario, values)
+
+    @assert_rec(model, p)
+    def expected_func(timestep, scenario_index):
+        day = timestep.dayofyear - 1
+        if day > 58:  # 28th Feb
+            day += 1
+        week = min(day // 7, 51)
+        value = week + 1
+        if scenario_index.global_id == 1:
+            value *= 2
+        return value
+
+    model.setup()
+    model.run()
+
+
 
 def test_weekly_profile(simple_linear_model):
     model = simple_linear_model
@@ -403,6 +503,10 @@ class TestAnnualHarmonicSeriesParameter:
             np.testing.assert_allclose(p1.value(ts, si), 0.6 + 0.1*np.cos(doy*2*np.pi + np.pi/2))
 
 
+def custom_test_func(array, axis=None):
+    return np.sum(array**2, axis=axis)
+
+
 class TestAggregatedParameter:
     """Tests for AggregatedParameter"""
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "median": np.median, "sum": np.sum}
@@ -455,6 +559,16 @@ class TestAggregatedParameter:
             return (timestep.month - 1) * 0.8
 
         model.run()
+
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum", "custom"])
+    def test_agg_func_get_set(self, model, agg_func):
+        if agg_func == "custom":
+            agg_func = custom_test_func
+        p = AggregatedParameter(model, [], agg_func=agg_func)
+        assert p.agg_func == agg_func
+        p.agg_func = "product"
+        assert p.agg_func == "product"
+
 
 class DummyIndexParameter(IndexParameter):
     """A simple IndexParameter which returns a constant value"""
@@ -523,6 +637,16 @@ class TestAggregatedIndexParameter:
                 r = AssertionRecorder(model, p, expected_data=e, name="assertion {}-{}".format(n, agg_func))
 
         model.run()
+
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum", "custom"])
+    def test_agg_func_get_set(self, model, agg_func):
+        if agg_func == "custom":
+            agg_func = custom_test_func
+        p = AggregatedIndexParameter(model, [], agg_func=agg_func)
+        assert p.agg_func == agg_func
+        p.agg_func = "product"
+        assert p.agg_func == "product"
+
 
 def test_parameter_child_variables(model):
 
@@ -593,9 +717,10 @@ def test_parameter_df_upsampling(model):
     model.timestepper.delta = datetime.timedelta(7)
     model.timestepper.start = pd.to_datetime('2015-01-01')
     model.timestepper.end = pd.to_datetime('2015-12-31')
+    model.timestepper.setup()
 
     # Daily time-step
-    index = pd.date_range('2015-01-01', periods=365, freq='D')
+    index = pd.period_range('2015-01-01', periods=365, freq='D')
     series = pd.Series(np.arange(365), index=index)
 
     p = DataFrameParameter(model, series)
@@ -624,7 +749,7 @@ def test_parameter_df_upsampling(model):
     series = pd.Series(np.arange(365), index=index)
 
     p = DataFrameParameter(model, series)
-    with pytest.raises(ValueError):
+    with pytest.raises(ResamplingError):
         p.setup()
 
     model.reset()
@@ -633,7 +758,7 @@ def test_parameter_df_upsampling(model):
     series = pd.Series(np.arange(365), index=index)
 
     p = DataFrameParameter(model, series)
-    with pytest.raises(ValueError):
+    with pytest.raises(ResamplingError):
         p.setup()
 
 
@@ -648,6 +773,7 @@ def test_parameter_df_upsampling_multiple_columns(model):
     model.timestepper.delta = datetime.timedelta(7)
     model.timestepper.start = pd.to_datetime('2015-01-01')
     model.timestepper.end = pd.to_datetime('2015-12-31')
+    model.timestepper.setup()
 
     # Daily time-step
     index = pd.date_range('2015-01-01', periods=365, freq='D')
@@ -957,6 +1083,7 @@ class Test1DPolynomialParameter:
             return 0.5 + 2.5*xscaled
         model.run()
 
+
 def test_interpolated_parameter(simple_linear_model):
     model = simple_linear_model
     model.timestepper.start = "1920-01-01"
@@ -970,6 +1097,133 @@ def test_interpolated_parameter(simple_linear_model):
         values = [0, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 2]
         return values[timestep.index]
     model.run()
+
+
+class TestInterpolatedQuadratureParameter:
+
+    @pytest.mark.parametrize("lower_interval", [None, 0, 1])
+    def test_calc(self, simple_linear_model, lower_interval):
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        b = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        a = None
+        if lower_interval is not None:
+            a = ConstantParameter(model, lower_interval)
+
+        p2 = InterpolatedQuadratureParameter(model, b, [-5, 0, 5, 10, 11], [0, 0, 5 * 2, 10 * 3, 2],
+                                             lower_parameter=a)
+
+        def area(i):
+            if i < 0:
+                value = 0
+            elif i < 6:
+                value = 2*i**2 / 2
+            elif i < 11:
+                value = 25 + 4*(i - 5)**2 / 2 + (i - 5) * 10
+            else:
+                value = 25 + 50 + 50 + 28 / 2 + 2
+            return value
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            value = area(i)
+            if lower_interval is not None:
+                value -= area(lower_interval)
+            return value
+
+        model.run()
+
+    def test_load(self, simple_linear_model):
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        p1 = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name='p1')
+
+        p2 = {
+            'type': 'interpolatedquadrature',
+            'upper_parameter': 'p1',
+            'x': [0, 5, 10, 11],
+            'y': [0, 5 * 2, 10 * 3, 2]
+        }
+
+        p2 = load_parameter(model, p2)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            if i < 6:
+                value = 2 * i ** 2 / 2
+            elif i < 11:
+                value = 25 + 4 * (i - 5) ** 2 / 2 + (i - 5) * 10
+            else:
+                value = 25 + 50 + 50 + 28 / 2 + 2
+            return value
+
+        model.run()
+
+
+class TestPiecewiseIntegralParameter:
+    X = [3, 8, 11]
+    Y = [5, 10, 2]
+
+    @staticmethod
+    def area(i):
+        if i < 0:
+            value = 0
+        elif i <= 3:
+            value = 5 * i
+        elif i <= 8:
+            value = 5 * 3 + 10 * (i - 3)
+        else:
+            value = 5 * 3 + 10 * (8 - 3) + 2 * (i - 8)
+        return value
+
+    def test_calc(self, simple_linear_model):
+        """Test the piecewise integral calculaiton."""
+        model = simple_linear_model
+
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        x = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        p2 = PiecewiseIntegralParameter(model, x, self.X, self.Y)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            return self.area(i)
+
+        model.run()
+
+    def test_load(self, simple_linear_model):
+        """Test loading from JSON."""
+        model = simple_linear_model
+
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        x = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name='x')
+
+        p2 = {
+            'type': 'piecewiseintegralparameter',
+            'parameter': 'x',
+            'x': self.X,
+            'y': self.Y,
+        }
+
+        p2 = load_parameter(model, p2)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            return self.area(i)
+
+        model.run()
+
 
 class Test2DStoragePolynomialParameter:
 
@@ -1047,6 +1301,42 @@ class Test2DStoragePolynomialParameter:
             return 0.5 + np.pi*x + 2.5*y+ 0.3*x*y
         model.setup()
         model.step()
+
+
+class TestDivisionParameter:
+
+    def test_divsion(self, simple_linear_model):
+        model = simple_linear_model
+        model.timestepper.start = "2017-01-01"
+        model.timestepper.end = "2017-01-15"
+
+        profile = list(range(1, 367))
+
+        data = {
+            "type": "division",
+            "numerator": {
+                "name": "raw",
+                "type": "dailyprofile",
+                "values": profile,
+            },
+            "denominator": {
+                "type": "constant",
+                "value": 123.456
+            }
+        }
+
+        model.nodes["Input"].max_flow = parameter = load_parameter(model, data)
+        model.nodes["Output"].max_flow = 9999
+        model.nodes["Output"].cost = -100
+
+        daily_profile = model.parameters["raw"]
+
+        @assert_rec(model, parameter)
+        def expected(timestep, scenario_index):
+            value = daily_profile.get_value(scenario_index)
+            return value / 123.456
+        model.run()
+
 
 class TestMinMaxNegativeParameter:
     @pytest.mark.parametrize("ptype,profile", [
@@ -1214,6 +1504,55 @@ class TestThresholdParameters:
         # flow < 5
         assert p1.index(m.timestepper.current, si) == 0
 
+    def test_current_year_threshold_parameter(self, simple_linear_model):
+        """Test CurrentYearThresholdParameter"""
+        m = simple_linear_model
+
+        m.timestepper.start = '2020-01-01'
+        m.timestepper.end = '2030-01-01'
+
+        data = {
+            'type': 'currentyearthreshold',
+            'threshold': 2025,
+            "predicate": ">=",
+        }
+
+        p = load_parameter(m, data)
+
+        @assert_rec(m, p, get_index=True)
+        def expected_func(timestep, scenario_index):
+            current_year = timestep.year
+            value = 1 if current_year >= 2025 else 0
+            return value
+
+        m.run()
+
+    def test_current_ordinal_threshold_parameter(self, simple_linear_model):
+        """Test CurrentYearThresholdParameter"""
+        m = simple_linear_model
+
+        m.timestepper.start = '2020-01-01'
+        m.timestepper.end = '2030-01-01'
+
+        threshold = datetime.date(2025, 6, 15).toordinal()
+
+        data = {
+            'type': 'currentordinaldaythreshold',
+            'threshold': threshold,
+            "predicate": ">=",
+        }
+
+        p = load_parameter(m, data)
+
+        @assert_rec(m, p, get_index=True)
+        def expected_func(timestep, scenario_index):
+            o = timestep.datetime.toordinal()
+            value = 1 if o >= threshold else 0
+            return value
+
+        m.run()
+
+
 def test_orphaned_components(simple_linear_model):
     model = simple_linear_model
     model.nodes["Input"].max_flow = ConstantParameter(model, 10.0)
@@ -1260,6 +1599,26 @@ def test_deficit_parameter():
     assert_allclose(expected_yesterday, actual_yesterday[:,0])
 
 
+def test_flow_parameter():
+    """test FlowParameter
+
+    """
+    model = load_model("flow_parameter.json")
+
+    model.run()
+
+    max_flow = np.array([5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8])
+    demand = 10.0
+    supplied = np.minimum(max_flow, demand)
+
+    actual = model.recorders["flow_recorder"].data
+    assert_allclose(supplied, actual[:,0])
+
+    expected_yesterday = [3.1415]+list(supplied[0:-1])
+    actual_yesterday = model.recorders["yesterday_flow_recorder"].data
+    assert_allclose(expected_yesterday, actual_yesterday[:,0])
+
+
 class TestHydroPowerTargets:
     def test_target_json(self):
         """ Test loading a HydropowerTargetParameter from JSON. """
@@ -1286,3 +1645,18 @@ class TestHydroPowerTargets:
             else:
                 # If flow is within the bounds target is met exactly.
                 assert_allclose(rec.data[i, 0], param.target.get_value(si))
+
+
+class TestFlowInterpolation:
+
+    def test_flow_interpolation_parameter(self):
+        """The test includes interpolation of river water level based on flow"""
+
+        model = load_model("flow_interpolation.json")
+
+        model.run()
+
+        water_levels1 = np.array([3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7])
+
+        modelled_levels = model.recorders["water_level_value"].data
+        assert_allclose(water_levels1, modelled_levels[:, 0])

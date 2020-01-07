@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
 import datetime
 import pytest
 from fixtures import *
 from helpers import *
 from pywr._core import Timestep, ScenarioIndex
-
+import pandas
 from pywr.core import *
 from pywr.domains.river import *
 from pywr.parameters import Parameter, ConstantParameter, DataFrameParameter, AggregatedParameter
@@ -202,8 +201,9 @@ def test_timeseries_excel(simple_linear_model, filename):
     ts = DataFrameParameter.load(model, data)
 
     # model (intentionally not aligned)
-    model.timestepper.start = ts.dataframe.index[0] + 5
-    model.timestepper.end = ts.dataframe.index[-1] - 12
+    index = ts.dataframe.index
+    model.timestepper.start = index[0] + (5 * index.freq)
+    model.timestepper.end = index[-1] - (12 * index.freq)
 
     # need to assign parameter for it's setup method to be called
     model.nodes["Input"].max_flow = ts
@@ -471,6 +471,15 @@ def test_json_include():
     supply2 = model.nodes["supply2"]
     assert(isinstance(supply2.max_flow, ConstantParameter))
 
+
+def test_py_include():
+    """Test include in Python document"""
+    filename = os.path.join(TEST_FOLDER, "models", "python_include.json")
+    model = Model.load(filename)
+
+    model.run()
+
+
 def test_json_min_version():
     """Test warning is raised if document minimum version is more than we have"""
     filename = os.path.join(TEST_FOLDER, "models", "version1.json")
@@ -539,3 +548,19 @@ def test_variable_load():
     assert sorted([c.is_objective for c in model.objectives]) == ["minimise", ]
     assert sorted([c.name for c in model.constraints]) == ["min_volume", ]
 
+
+def test_delta_greater_than_zero_days(simple_linear_model):
+    """Test trying to use zero length timestep raises an error."""
+    model = simple_linear_model
+    model.timestepper.delta = 0
+
+    with pytest.raises(ValueError):
+        model.run()
+
+
+def test_timestep_greater_than_zero_days():
+    """Test trying to create zero length Timestep."""
+
+    with pytest.raises(ValueError):
+        # Test setting days <= 0 raises an error
+        Timestep(pandas.Period('2019-01-01', freq='D'), 0, 0)

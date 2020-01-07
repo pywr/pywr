@@ -67,11 +67,23 @@ cdef class WeeklyProfileParameter(Parameter):
 
 cdef class MonthlyProfileParameter(Parameter):
     cdef double[:] _values
+    cdef double[:] _interp_values
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
-
+    cdef public object interp_day
+    cpdef _interpolate(self)
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
+    cdef double[:, :] _values
+    cdef Scenario _scenario
+    cdef int _scenario_index
+
+cdef class ScenarioDailyProfileParameter(Parameter):
+    cdef double[:, :] _values
+    cdef Scenario _scenario
+    cdef int _scenario_index
+
+cdef class ScenarioWeeklyProfileParameter(Parameter):
     cdef double[:, :] _values
     cdef Scenario _scenario
     cdef int _scenario_index
@@ -132,6 +144,12 @@ cdef class AggregatedIndexParameter(IndexParameter):
     cpdef add(self, Parameter parameter)
     cpdef remove(self, Parameter parameter)
 
+
+cdef class DivisionParameter(Parameter):
+    cdef Parameter _numerator
+    cdef Parameter _denominator
+
+
 cdef class NegativeParameter(Parameter):
     cdef public Parameter parameter
 
@@ -151,3 +169,13 @@ cdef class NegativeMinParameter(MinParameter):
 
 cdef class DeficitParameter(Parameter):
     cdef public Node node
+
+cdef class FlowParameter(Parameter):
+    cdef public Node node
+    cdef double[:] __next_values
+    cdef public double initial_value
+
+cdef class PiecewiseIntegralParameter(Parameter):
+    cdef public double[:] x
+    cdef public double[:] y
+    cdef public Parameter parameter

@@ -1,10 +1,12 @@
 from pywr._component cimport Component
-from pywr._core cimport Timestep, AbstractNode, AbstractStorage, ScenarioIndex, Scenario
+from pywr._core cimport Timestep, AbstractNode, Node, AbstractStorage, Storage, ScenarioIndex, Scenario
 from pywr.parameters._parameters cimport Parameter, IndexParameter
 
 
 cdef class Aggregator:
     cdef object _user_func
+    cdef public list func_args
+    cdef public dict func_kwargs
     cdef int _func
     cpdef double aggregate_1d(self, double[:] data, ignore_nan=*) except *
     cpdef double[:] aggregate_2d(self, double[:, :] data, axis=*, ignore_nan=*) except *
@@ -39,14 +41,27 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     cdef Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
-cdef class NumpyArrayStorageRecorder(StorageRecorder):
+cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
+    pass
+
+cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
+    pass
+
+cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
+    pass
+
+cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
     cdef public Aggregator _temporal_aggregator
-    cdef public bint proportional
     cdef double[:, :] _data
 
-cdef class NumpyArrayLevelRecorder(StorageRecorder):
-    cdef public Aggregator _temporal_aggregator
-    cdef double[:, :] _data
+cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
+    cdef public bint proportional
+
+cdef class NumpyArrayLevelRecorder(NumpyArrayAbstractStorageRecorder):
+    pass
+
+cdef class NumpyArrayAreaRecorder(NumpyArrayAbstractStorageRecorder):
+    pass
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     cdef public Aggregator _temporal_aggregator
@@ -108,6 +123,30 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 
 cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
     cdef public double threshold
+
+cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
+    cdef public int threshold
+    cdef int[:] _count
+
+cdef class AnnualCountIndexThresholdRecorder(Recorder):
+    cdef public list parameters
+    cdef public int threshold
+    cdef int _num_years
+    cdef int _ncomb
+    cdef double[:, :] _data
+    cdef double[:, :] _data_this_year
+    cdef int _current_year
+    cdef int _start_year
+    cdef Aggregator _temporal_aggregator
+
+cdef class AnnualTotalFlowRecorder(Recorder):
+    cdef public list nodes
+    cdef int _num_years
+    cdef int _ncomb
+    cdef double[:, :] _data
+    cdef int _current_year
+    cdef int _start_year
+    cdef Aggregator _temporal_aggregator
 
 cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
     cdef public int threshold

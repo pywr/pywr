@@ -13,12 +13,12 @@
         {
             "name": "catchment1",
             "type": "catchment",
-            "max_flow": "inflow"
+            "flow": "inflow"
         },
         {
             "name": "catchment2",
             "type": "catchment",
-            "max_flow": "inflow"
+            "flow": "inflow"
         },
         {
             "name": "reservoir1",

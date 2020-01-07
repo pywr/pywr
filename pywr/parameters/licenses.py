@@ -116,9 +116,8 @@ class AnnualLicense(StorageLicense):
 
     def value(self, timestep, scenario_index):
         i = scenario_index.global_id
-        timetuple = timestep.datetime.timetuple()
-        day_of_year = timetuple.tm_yday
-        days_in_year = 365 + int(calendar.isleap(timestep.datetime.year))
+        day_of_year = timestep.dayofyear
+        days_in_year = 365 + int(calendar.isleap(timestep.year))
         if day_of_year == days_in_year:
             return self._remaining[i]
         else:
@@ -128,17 +127,16 @@ class AnnualLicense(StorageLicense):
     def before(self):
         # Reset licence if year changes.
         timestep = self.model.timestepper.current
-        if self._prev_year != timestep.datetime.year:
+        if self._prev_year != timestep.year:
             self.reset()
 
             # The number of days in the year before the first timestep of that year
-            timetuple = timestep.datetime.timetuple()
-            days_before_reset = timetuple.tm_yday - 1
+            days_before_reset = timestep.dayofyear - 1
             # Adjust the license by the rate in previous timestep. This is needed for timesteps greater
             # than 1 day where the license reset is not exactly on the anniversary
             self._remaining[...] -= days_before_reset*self._node.prev_flow
 
-            self._prev_year = timestep.datetime.year
+            self._prev_year = timestep.year
 AnnualLicense.register()
 
 
@@ -171,7 +169,7 @@ class AnnualExponentialLicense(AnnualLicense):
 
     def value(self, timestep, scenario_index):
         remaining = super(AnnualExponentialLicense, self).value(timestep, scenario_index)
-        expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
+        expected = self._amount / (365 + int(calendar.isleap(timestep.year)))
         x = remaining / expected
         return self._max_value * np.exp(-x / self._k)
 AnnualExponentialLicense.register()
@@ -203,7 +201,7 @@ class AnnualHyperbolaLicense(AnnualLicense):
 
     def value(self, timestep, scenario_index):
         remaining = super(AnnualHyperbolaLicense, self).value(timestep, scenario_index)
-        expected = self._amount / (365 + int(calendar.isleap(timestep.datetime.year)))
+        expected = self._amount / (365 + int(calendar.isleap(timestep.year)))
         x = remaining / expected
         try:
             return self._value / x
