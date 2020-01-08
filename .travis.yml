@@ -18,6 +18,7 @@ env:
     - PYBIN=/opt/python/cp36-cp36m/bin BUILD_DOC=1
     - PYBIN=/opt/python/cp36-cp36m/bin PYWR_BUILD_TRACE=true
     - PYBIN=/opt/python/cp37-cp37m/bin
+    - PYBIN=/opt/python/cp38-cp38/bin
 
 install:
   - docker pull $DOCKER_IMAGE

@@ -31,6 +31,8 @@ environment:
     # Python 3.7
     - PYTHON: "C:\\Python37-x64"
 
+    # Python 3.8
+    - PYTHON: "C:\\Python38-x64"
 
 
 # We always use a 64-bit machine, but can build x86 distributions
@@ -119,8 +121,6 @@ test_script:
 
   - "SET PYWR_SOLVER=lpsolve"
   - "python -m pytest"
-
-  - "jupyter nbconvert --to html --execute tests\\notebook.ipynb"
 
 artifacts:
   - path: dist\*.whl
