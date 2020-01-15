@@ -78,12 +78,8 @@ def setup_package():
     config = parse_optional_arguments()
 
     if config["glpk"]:
-        ext_modules.extend(
-            [
-                Extension("pywr.solvers.glpk", ["pywr/solvers/glpk.pyx"], libraries=["glpk"],),  
-                Extension("pywr.solvers.cython_glpk", ["pywr/solvers/cython_glpk.pyx"], libraries=["glpk"],),
-                Extension("pywr.solvers.cython_glpk_edge", ["pywr/solvers/cython_glpk_edge.pyx"], libraries=["glpk"],),
-            ]
+        ext_modules.append(
+                Extension("pywr.solvers.cython_glpk", ["pywr/solvers/cython_glpk.pyx"], libraries=["glpk"],)
         )
 
     if config["lpsolve"]:
