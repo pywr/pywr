@@ -121,9 +121,13 @@ def long_description():
 def package_data():
     pkg_data = {
         "pywr.notebook": ["*.js", "*.css"],
+        'pywr': ['*.pxd'],
+        'pywr.parameters': ['*.pxd'],
+        'pywr.recorders': ['*.pxd'],
+        'pywr.solvers': ['*.pxd'],
     }
     if os.environ.get("PACKAGE_DATA", "false").lower() == "true":
-        pkg_data["pywr"] = [".libs/*", ".libs/licenses/*"]
+        pkg_data["pywr"].extend([".libs/*", ".libs/licenses/*"])
     return pkg_data
 
 
