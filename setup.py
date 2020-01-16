@@ -127,7 +127,7 @@ def package_data():
         'pywr.solvers': ['*.pxd'],
     }
     if os.environ.get("PACKAGE_DATA", "false").lower() == "true":
-        pkg_data["pywr"] = [".libs/*", ".libs/licenses/*"]
+        pkg_data["pywr"].extend([".libs/*", ".libs/licenses/*"])
     return pkg_data
 
 
