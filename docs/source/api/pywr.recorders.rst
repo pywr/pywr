@@ -66,11 +66,14 @@ Statistical recorders
    AggregatedRecorder
    MeanFlowNodeRecorder
    TotalFlowNodeRecorder
+   AnnualTotalFlowRecorder
    MeanParameterRecorder
    TotalParameterRecorder
    RollingMeanFlowNodeRecorder
    MinimumVolumeStorageRecorder
    MinimumThresholdVolumeStorageRecorder
+   TimestepCountIndexParameterRecorder
+   AnnualCountIndexThresholdRecorder
    RollingWindowParameterRecorder
 
 
