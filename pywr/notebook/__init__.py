@@ -159,7 +159,7 @@ def pywr_json_to_d3_json(model, attributes=False):
     node_classes = create_node_class_trees()
 
     for node in model["nodes"]:
-        json_node = {'name': node.pop("name"), 'clss': node_classes[node["type"].lower()]}
+        json_node = {'name': node["name"], 'clss': node_classes[node["type"].lower()]}
         try:
             json_node['position'] = node['position']['schematic']
         except KeyError:
