@@ -55,13 +55,13 @@ require(["d3"], function(d3) {
 
     // set initial node positions 
     for (let i = 0; i < nodes.length; i++) {
-        let node = nodes[i];
-        if (node.position != undefined) {
-            node.x = posX(node.position[0]);
-            node.y = posY(node.position[1]);
-            node.fixed = true;
+        let n = nodes[i];
+        if (n.position != undefined) {
+            n.x = posX(n.position[0]);
+            n.y = posY(n.position[1]);
+            n.fixed = true;
         } else {
-            node.fixed = false;
+            n.fixed = false;
         }
     }
 
@@ -99,7 +99,8 @@ require(["d3"], function(d3) {
     }
 
     function dblclick(d) {
-    d3.select(this).classed("fixed", d.fixed = false);
+        d.fx = d.x;
+        d.fy = d.y;
     }
 
     function drag() {
@@ -117,8 +118,6 @@ require(["d3"], function(d3) {
         
         function dragended(d) {
           if (!d3.event.active) simulation.alphaTarget(0);
-          d.fx = null;
-          d.fy = null;
         }
         
         return d3.drag()
@@ -194,6 +193,8 @@ require(["d3"], function(d3) {
 
     {% if attributes %}
         node.on("mouseover", function(d){
+            
+            d3.select(".table-tooltip").remove();
 
             const table  = d3.selectAll(element)
                         .append("table")
@@ -208,24 +209,28 @@ require(["d3"], function(d3) {
                 .data(columns).enter()
                 .append('th')
                 .text(function (column) { return column; });
-    
+
+            const table_data = Object.assign([], d["attributes"])
+            table_data.push({"attribute": "x coordinate", "value": d.x.toFixed(2)})
+            table_data.push({"attribute": "y coordinate", "value": d.y.toFixed(2)})
+
             const rows = tbody.selectAll('tr')
-                            .data(d["attributes"])
+                            .data(table_data)
                             .enter()
                             .append('tr');
             
-            const cells = rows.selectAll('td')
-                            .data(function (d) {
-                                return columns.map(function (column) {
-                                return {column: column, value: d[column]};
-                                });
-                            })
-                            .enter()
-                            .append('td')
-                            .text(function (d) { return d.value; });
+            rows.selectAll('td')
+                .data(function (d) {
+                    return columns.map(function (column) {
+                    return {column: column, value: d[column]};
+                    });
+                })
+                .enter()
+                .append('td')
+                .text(function (d) { return d.value; });
 
         }).on("mouseout", function(){
-            d3.select(".table-tooltip").remove()
+            d3.select(".table-tooltip").transition().delay(2000).remove();
         });
     {% endif %}
 })
