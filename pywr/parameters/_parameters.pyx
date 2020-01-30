@@ -747,13 +747,13 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
 
     This parameter provides a repeating annual profile with a weekly resolution. A
     different profile is returned for each member of a given scenario
-    
+
     Parameters
     ----------
     scenario: Scenario
         Scenario object over which different profiles should be provided.
     values : iterable, array
-        Length of 1st dimension should equal the number of members in the scenario object 
+        Length of 1st dimension should equal the number of members in the scenario object
         and the length of the second dimension should be 52
 
     """
@@ -801,7 +801,7 @@ cdef class ScenarioDailyProfileParameter(Parameter):
     scenario: Scenario
         Scenario object over which different profiles should be provided
     values : iterable, array
-        Length of 1st dimension should equal the number of members in the scenario object 
+        Length of 1st dimension should equal the number of members in the scenario object
         and the length of the second dimension should be 366
 
     """
@@ -831,6 +831,76 @@ cdef class ScenarioDailyProfileParameter(Parameter):
         return self._values[scenario_index._indices[self._scenario_index], i]
 
 ScenarioDailyProfileParameter.register()
+
+
+cdef class UniformDrawdownProfileParameter(Parameter):
+    """Parameter which provides a uniformly reducing value from one to zero.
+
+     This parameter is intended to be used with an `AnnualVirtualStorage` node to provide a profile
+     that represents perfect average utilisation of the annual volume. It returns a value one the
+     reset day, and subsequently reduces by 1/366 every day afterward.
+
+    Parameters
+    ----------
+    reset_day: int
+        The day of the month (1-31) to reset the volume to the initial value.
+    reset_month: int
+        The month of the year (1-12) to reset the volume to the initial value.
+
+    See also
+    --------
+    `pywr.nodes.AnnualVirtualStorage`
+    """
+    def __init__(self, model, reset_day=1, reset_month=1, **kwargs):
+        super().__init__(model, **kwargs)
+        self.reset_day = reset_day
+        self.reset_month = reset_month
+
+    cpdef reset(self):
+        super(UniformDrawdownProfileParameter, self).reset()
+        # Reset day of the year based on a leap year.
+        # Note that this is zero-based
+        self._reset_idoy = pandas.Period(year=2016, month=self.reset_month, day=self.reset_day, freq='D').dayofyear - 1
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int current_idoy = ts.dayofyear - 1
+        cdef int total_days_in_period
+        cdef int days_into_period
+        cdef int year = ts.year
+
+        if not is_leap_year(ts.year):
+            if current_idoy > 58: # 28th Feb
+                current_idoy += 1
+
+        days_into_period = current_idoy - self._reset_idoy
+        if days_into_period < 0:
+            # We're not past the reset day yet; use the previous year
+            year -= 1
+
+        if self._reset_idoy > 59:
+            # Reset occurs after February therefore next year's February might be a leap year?
+            year += 1
+
+        # Determine the number of days in the period based on whether there is a leap year or not in the current period
+        if is_leap_year(year):
+            total_days_in_period = 366
+        else:
+            total_days_in_period = 365
+
+        # Now determine number of days we're into the period if it has wrapped around to a new year
+        if days_into_period < 0:
+            days_into_period += 366
+            # Need to adjust for post 29th Feb in non-leap years.
+            # Recall `current_idoy` was incremented by 1 if it is a non-leap already (hence comparison to 59)
+            if not is_leap_year(ts.year) and current_idoy > 59:
+                days_into_period -= 1
+
+        return 1.0 - days_into_period / total_days_in_period
+
+    @classmethod
+    def load(cls, model, data):
+        return cls(model, **data)
+UniformDrawdownProfileParameter.register()
 
 
 cdef class IndexParameter(Parameter):

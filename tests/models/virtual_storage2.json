@@ -1,0 +1,75 @@
+{
+    "metadata": {
+        "title": "Annual virtual storage",
+        "description": "Annual abstraction licence implemented as an annual virtual storage with a dynamic cost.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-04-01",
+        "end": "2016-04-01",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 10,
+            "cost": "supply1_cost"
+        },
+        {
+            "name": "supply2",
+            "type": "Input",
+            "max_flow": 5,
+            "cost": 5
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -100
+        },
+        {
+            "name": "licence1",
+            "type": "AnnualVirtualStorage",
+            "max_volume": 3000,
+            "initial_volume": 3000,
+            "nodes": [
+                "supply1"
+            ],
+            "factors": [
+                1.0
+            ],
+            "reset_day": 1,
+            "reset_month": 4
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["supply2", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "supply1_cost": {
+            "type": "controlcurve",
+            "storage_node": "licence1",
+            "control_curves": [
+                {
+                    "type": "uniformdrawdownprofile",
+                    "reset_day": 1,
+                    "reset_month": 4
+                }
+            ],
+            "values":[0, 10]
+        }
+    },
+    "recorders": {
+        "supply1": {
+            "type": "numpyarraynoderecorder",
+            "node": "supply1"
+        }
+    }
+}
