@@ -1277,22 +1277,40 @@ def test_annual_count_index_threshold_recorder(simple_storage_model, params):
                      [0, 365],
                      [0, 365]], rec.data, atol=1e-7)
 
+class TestAnnualTotalFlowRecorder:
 
-def test_annual_total_flow_recorder(simple_linear_model):
-    """
-    Test AnnualTotalFlowRecorder
-    """
+    def test_annual_total_flow_recorder(self, simple_linear_model):
+        """
+        Test AnnualTotalFlowRecorder
+        """
 
-    model = simple_linear_model
-    otpt = model.nodes['Output']
-    otpt.max_flow = 30.0
-    model.nodes['Input'].max_flow = 10.0
-    otpt.cost = -2
-    rec = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt])
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        otpt.max_flow = 30.0
+        model.nodes['Input'].max_flow = 10.0
+        otpt.cost = -2
+        rec = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt])
 
-    model.run()
+        model.run()
 
-    assert_allclose(3650.0, rec.data, atol=1e-7)
+        assert_allclose(3650.0, rec.data, atol=1e-7)
+
+    def test_annual_total_flow_recorder_factored(self, simple_linear_model):    
+        """
+        Test AnnualTotalFlowRecorder with factors applied
+        """
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        otpt.max_flow = 30.0
+        model.nodes['Input'].max_flow = 10.0
+        otpt.cost = -2
+
+        factors = {"Output": 2}
+        rec_fact = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt], factors=factors)
+
+        model.run()
+
+        assert_allclose(7300.0, rec_fact.data, atol=1e-7)
 
 
 def test_total_flow_node_recorder(simple_linear_model):

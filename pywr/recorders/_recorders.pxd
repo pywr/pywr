@@ -147,6 +147,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
     cdef int _current_year
     cdef int _start_year
     cdef Aggregator _temporal_aggregator
+    cdef dict factors
 
 cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
     cdef public int threshold
