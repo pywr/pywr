@@ -837,7 +837,7 @@ cdef class UniformDrawdownProfileParameter(Parameter):
     """Parameter which provides a uniformly reducing value from one to zero.
 
      This parameter is intended to be used with an `AnnualVirtualStorage` node to provide a profile
-     that represents perfect average utilisation of the annual volume. It returns a value one the
+     that represents perfect average utilisation of the annual volume. It returns a value of 1 on the
      reset day, and subsequently reduces by 1/366 every day afterward.
 
     Parameters
