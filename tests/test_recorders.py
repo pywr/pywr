@@ -1305,7 +1305,7 @@ class TestAnnualTotalFlowRecorder:
         model.nodes['Input'].max_flow = 10.0
         otpt.cost = -2
 
-        factors = {"Output": 2}
+        factors = [2.0]
         rec_fact = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt], factors=factors)
 
         model.run()
