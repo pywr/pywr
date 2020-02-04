@@ -1660,6 +1660,8 @@ cdef class AnnualTotalFlowRecorder(Recorder):
     For each scenario, record the total flow in each year across a list of nodes.
     Output from data property has shape: (years, scenario combinations)
 
+    A list of factors can be provided to scale the total flow (e.g. for calculating operational costs).
+
     Parameters
     ----------
     model : `pywr.core.Model`
@@ -1667,16 +1669,29 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         The name of the recorder
     nodes : list
         List of `pywr.core.Node` instances to record
+    factors : list, optional
+        List of factors to apply to each node
     """
     def __init__(self, model, str name, list nodes, *args, **kwargs):
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
+        factors = kwargs.pop('factors', None)
         super().__init__(model, name=name, *args, **kwargs)
         self.nodes = nodes
+        self.factors = factors
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
     property temporal_agg_func:
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
+
+    property factors:
+        # Property provides np.array style access to the internal memoryview.
+        def __get__(self):
+            return np.array(self._factors)
+        def __set__(self, factors):
+            if factors is None:
+                factors = np.array([1.0 for n in self.nodes])
+            self._factors = np.array(factors)
 
     cpdef setup(self):
         super(AnnualTotalFlowRecorder, self).setup()
@@ -1697,7 +1712,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
 
         for i in range(self._ncomb):
             for node in self.nodes:
-                self._data[idx, i] += node._flow[i]
+                self._data[idx, i] += node._flow[i] * self._factors[i]
 
     cpdef double[:] values(self):
         """Compute a value for each scenario using `temporal_agg_func`.
