@@ -88,6 +88,11 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
     cdef Scenario _scenario
     cdef int _scenario_index
 
+cdef class UniformDrawdownProfileParameter(Parameter):
+    cdef public int reset_day
+    cdef public int reset_month
+    cdef int _reset_idoy
+
 cdef class IndexParameter(Parameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
     cdef int[:] __indices
