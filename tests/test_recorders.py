@@ -77,6 +77,23 @@ def test_numpy_recorder_from_json(simple_linear_model):
     rec = load_recorder(model, data)
     assert isinstance(rec, NumpyArrayNodeRecorder)
 
+def test_numpy_recorder_factored(simple_linear_model):
+    """Test the optional factor applies correctly """
+
+    model = simple_linear_model
+    otpt = model.nodes['Output']
+    otpt.max_flow = 30.0
+    model.nodes['Input'].max_flow = 10.0
+    otpt.cost = -2
+
+    factor = 2.0
+    rec_fact = NumpyArrayNodeRecorder(model, otpt, factor=factor)
+
+    model.run()
+
+    assert rec_fact.data.shape == (365, 1) 
+    assert rec_fact.factor == 2.0
+    assert_allclose(20, rec_fact.data, atol=1e-7)
 
 class TestFlowDurationCurveRecorders:
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
