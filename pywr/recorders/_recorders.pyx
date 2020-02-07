@@ -503,10 +503,6 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
-    property factor:
-        def __get__(self, ):
-            return np.array(self.factor)
-
     cpdef double[:] values(self):
         """Compute a value for each scenario using `temporal_agg_func`.
         """

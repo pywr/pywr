@@ -92,7 +92,6 @@ def test_numpy_recorder_factored(simple_linear_model):
     model.run()
 
     assert rec_fact.data.shape == (365, 1) 
-    assert rec_fact.factor == 2.0
     assert_allclose(20, rec_fact.data, atol=1e-7)
 
 class TestFlowDurationCurveRecorders:
