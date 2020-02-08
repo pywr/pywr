@@ -463,6 +463,8 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         Aggregation function used over time when computing a value per scenario. This can be used
         to return, for example, the median flow over a simulation. For aggregation over scenarios
         see the `agg_func` keyword argument.
+    factor: float (default=1.0)
+        A factor can be provided to scale the total flow (e.g. for calculating operational costs).
 
     See also
     --------
@@ -473,8 +475,10 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     def __init__(self, model, AbstractNode node, **kwargs):
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
+        factor = kwargs.pop('factor', 1.0)
         super(NumpyArrayNodeRecorder, self).__init__(model, node, **kwargs)
         self._temporal_aggregator = Aggregator(temporal_agg_func)
+        self.factor = factor
 
     property temporal_agg_func:
         def __set__(self, agg_func):
@@ -492,7 +496,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         cdef int i
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
-            self._data[ts.index, i] = self._node._flow[i]
+            self._data[ts.index, i] = self._node._flow[i]*self.factor
         return 0
 
     property data:

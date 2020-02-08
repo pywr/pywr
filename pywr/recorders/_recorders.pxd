@@ -40,6 +40,7 @@ cdef class IndexParameterRecorder(Recorder):
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
     cdef Aggregator _temporal_aggregator
     cdef double[:, :] _data
+    cdef public float factor
 
 cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
     pass
