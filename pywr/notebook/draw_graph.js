@@ -1,20 +1,7 @@
 // javascript jinja2 template for drawing a directional graph
 
-
 require.config({paths: {d3: 'https://d3js.org/d3.v5.min'}});
-
-// internet explorer can't follow standards so we need some workarounds...
-const ua = window.navigator.userAgent;
-let browser;
-if ((ua.indexOf("MSIE") != -1) || (ua.indexOf("Trident") != -1)) {
-    browser = "ie";
-    var p = d3.selectAll(element).append("p");
-    p.html("Warning: Internet Explorer doesn't support directional arrows on the graph.");
-    p.style("color", "#d00");
-} else {
-    browser = "something better than ie";
-}
-
+  
 require(["d3"], function(d3) {
     const graph = {{ graph }};
 
@@ -36,10 +23,8 @@ require(["d3"], function(d3) {
         .force("x", d3.forceX())
         .force("y", d3.forceY());
 
-
-    // workaround for IE not sizing output correctly
     div.style("height", height+"px")
-       .style("width", width+"px");
+    .style("width", width+"px");
 
     const svg = div.append("svg")
         .attr("width", width)
@@ -77,26 +62,15 @@ require(["d3"], function(d3) {
     .attr("d", "M0,-5L10,0L0,5")
     .attr("fill", "#333");
 
-    let link;
-    if(browser == "ie") {
-        // internet explorer
-        link = svg.selectAll(".link")
-        .data(graph.links)
-        .enter().append("line")
-        .attr("class", "link")
-        .style("stroke", "#333")
-        .style("stroke-width", 2);
-    } else {
-        // firefox, etc.
-        link = svg.selectAll(".link")
-        .data(graph.links)
-        .enter().append("svg:path")
-        .attr("class", "link")
-        .style("fill", "none")
-        .style("stroke", "#333")
-        .style("stroke-width", 2)
-        .style("marker-end", function(d) { return "url(#end-arrow)"; });
-    }
+    const link = svg.selectAll(".link")
+                    .data(graph.links)
+                    .enter().append("svg:path")
+                    .attr("class", "link")
+                    .style("fill", "none")
+                    .style("stroke", "#333")
+                    .style("stroke-width", 2)
+                    .style("marker-end", function(d) { return "url(#end-arrow)"; });
+
 
     function dblclick(d) {
         d.fx = d.x;
@@ -104,27 +78,27 @@ require(["d3"], function(d3) {
     }
 
     function drag() {
-  
+
         function dragstarted(d) {
-          if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
         }
         
         function dragged(d) {
-          d.fx = d3.event.x;
-          d.fy = d3.event.y;
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
         }
         
         function dragended(d) {
-          if (!d3.event.active) simulation.alphaTarget(0);
+        if (!d3.event.active) simulation.alphaTarget(0);
         }
         
         return d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended);
-      }
+    }
 
     const node = svg.selectAll(".node")
                 .data(nodes)
@@ -161,29 +135,21 @@ require(["d3"], function(d3) {
     {% endif %}
 
     function tick() {
-        if(browser == "ie") {
-            // internet explorer
-            link.attr("x1", function(d) { return d.source.x; })
-                .attr("y1", function(d) { return d.source.y; })
-                .attr("x2", function(d) { return d.target.x; })
-                .attr("y2", function(d) { return d.target.y; });
-        } else {
-            // firefox, etc.
-            link.attr("d", function(d) {
-                let deltaX = d.target.x - d.source.x,
-                    deltaY = d.target.y - d.source.y,
-                    dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
-                    normX = deltaX / dist,
-                    normY = deltaY / dist,
-                    sourcePadding = node_size,
-                    targetPadding = node_size + 3,
-                    sourceX = d.source.x + (sourcePadding * normX),
-                    sourceY = d.source.y + (sourcePadding * normY),
-                    targetX = d.target.x - (targetPadding * normX),
-                    targetY = d.target.y - (targetPadding * normY);
-                return "M" + sourceX + "," + sourceY + "L" + targetX + "," + targetY;
-            });
-        }
+
+        link.attr("d", function(d) {
+            let deltaX = d.target.x - d.source.x,
+                deltaY = d.target.y - d.source.y,
+                dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
+                normX = deltaX / dist,
+                normY = deltaY / dist,
+                sourcePadding = node_size,
+                targetPadding = node_size + 3,
+                sourceX = d.source.x + (sourcePadding * normX),
+                sourceY = d.source.y + (sourcePadding * normY),
+                targetX = d.target.x - (targetPadding * normX),
+                targetY = d.target.y - (targetPadding * normY);
+            return "M" + sourceX + "," + sourceY + "L" + targetX + "," + targetY;
+        });
 
         node.attr("transform", function(d) {
             return "translate(" + d.x + "," + d.y + ")";
