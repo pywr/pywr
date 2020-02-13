@@ -1318,15 +1318,16 @@ class TestAnnualTotalFlowRecorder:
         model = simple_linear_model
         otpt = model.nodes['Output']
         otpt.max_flow = 30.0
-        model.nodes['Input'].max_flow = 10.0
+        inpt = model.nodes['Input']
+        inpt.max_flow = 10.0
         otpt.cost = -2
 
-        factors = [2.0]
-        rec_fact = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt], factors=factors)
+        factors = [2.0, 1.0]
+        rec_fact = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt, inpt], factors=factors)
 
         model.run()
 
-        assert_allclose(7300.0, rec_fact.data, atol=1e-7)
+        assert_allclose(3650.0*3, rec_fact.data, atol=1e-7)
 
 
 def test_total_flow_node_recorder(simple_linear_model):

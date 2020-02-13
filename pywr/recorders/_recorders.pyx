@@ -1709,14 +1709,15 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         self._start_year = self.model.timestepper.start.year
 
     cpdef after(self):
+        cdef int i, j
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = ts.year - self._start_year
         cdef AbstractNode node
         cdef double[:] flow = np.zeros(self._ncomb, np.float64)
 
         for i in range(self._ncomb):
-            for node in self.nodes:
-                self._data[idx, i] += node._flow[i] * self._factors[i]
+            for j, node in enumerate(self.nodes):
+                self._data[idx, i] += node._flow[i] * self._factors[j]
 
     cpdef double[:] values(self):
         """Compute a value for each scenario using `temporal_agg_func`.
