@@ -51,6 +51,8 @@ Annual profile parameters
    DailyProfileParameter
    WeeklyProfileParameter
    MonthlyProfileParameter
+   ScenarioDailyProfileParameter
+   ScenarioWeeklyProfileParameter
    ScenarioMonthlyProfileParameter
    ArrayIndexedScenarioMonthlyFactorsParameter
 
@@ -91,6 +93,7 @@ Interpolation parameters
     InterpolatedParameter
     InterpolatedVolumeParameter
     InterpolatedQuadratureParameter
+    InterpolatedFlowParameter
 
 
 Control curve parameters
@@ -120,5 +123,7 @@ Other parameters
 
    AnnualHarmonicSeriesParameter
    DeficitParameter
+   ScenarioWrapperParameter
+   PiecewiseIntegralParameter
 
 

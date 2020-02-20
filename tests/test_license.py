@@ -9,6 +9,7 @@ from fixtures import simple_linear_model
 from helpers import load_model
 from numpy.testing import assert_allclose
 import numpy as np
+import pandas
 
 def test_base_license():
     with pytest.raises(TypeError):
@@ -21,10 +22,10 @@ def test_daily_license(simple_linear_model):
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
     lic = TimestepLicense(m, None, 42.0)
     assert(isinstance(lic, License))
-    assert(lic.value(Timestep(datetime(2015, 1, 1), 0, 0), si) == 42.0)
+    assert(lic.value(Timestep(pandas.Period('2015-1-1'), 0, 1), si) == 42.0)
 
     # daily licences don't have resource state
-    assert(lic.resource_state(Timestep(datetime(2015, 1, 1), 0, 0)) is None)
+    assert(lic.resource_state(Timestep(pandas.Period('2015-1-1'), 0, 1)) is None)
 
 
 def test_simple_model_with_annual_licence(simple_linear_model):

@@ -229,11 +229,13 @@ def test_piecewise_constraint(model, flow):
     Flows are tested at 100, 200 and 300 to ensure the aggregated ratio works
     when there is too much to route entirely through to node 'D'.
 
-             / -->-- X0 -->-- \
-    A -->-- Xo -->-- X1 -->-- Xi -->-- C
-             \ -->-- X2 -->-- /
-                     |
-                     Bo -->-- Bi --> D
+    ::
+
+                 / -->-- X0 -->-- \
+        A -->-- Xo -->-- X1 -->-- Xi -->-- C
+                 \\ -->-- X2 -->-- /
+                         |
+                         Bo -->-- Bi --> D
     """
     A = Input(model, "A", min_flow=flow, max_flow=flow)
     X = PiecewiseLink(model, name="X", cost=[-500.0, 0, 0], max_flow=[40.0, None, None])

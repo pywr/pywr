@@ -1,4 +1,5 @@
 import pytest
+from numpy.testing import assert_array_equal
 
 try:
     import IPython
@@ -43,6 +44,9 @@ def test_from_json(from_json):
     node_names = ["Inflow", "Reservoir", "Demand", "Spill"]
     for node in json_dict["nodes"]:
         assert node["name"] in node_names
+
+        if node["name"] == "Reservoir":
+            assert_array_equal(node["position"], [1, 1])
 
     demand = get_node(json_dict["nodes"], "Demand")
     demand_max_flow = get_node_attribute(demand, "max_flow")

@@ -7,16 +7,15 @@ from ._parameters import (
     ArrayIndexedParameter, ConstantScenarioParameter, IndexedArrayParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
-    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
-    align_and_resample_dataframe, DataFrameParameter,
-    IndexParameter, AggregatedParameter, AggregatedIndexParameter,
+    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter, ScenarioDailyProfileParameter,
+    ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
+    IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
     NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
-    DeficitParameter, load_parameter, load_parameter_values, load_dataframe)
+    DeficitParameter, DivisionParameter, load_parameter, load_parameter_values, load_dataframe)
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
 from ._hydropower import HydropowerTargetParameter
-from past.builtins import basestring
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
@@ -130,6 +129,28 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
 InterpolatedVolumeParameter.register()
 
 
+class InterpolatedFlowParameter(AbstractInterpolatedParameter):
+    """
+    Generic interpolation parameter that uses a node's  flow at the previous time-step for interpolation.
+
+    """
+    def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
+        super().__init__(model, x, y, interp_kwargs, **kwargs)
+        self._node = node
+
+    def _value_to_interpolate(self, ts, scenario_index):       
+        return self._node.prev_flow[scenario_index.global_id]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        volumes = np.array(data.pop("flows"))
+        values = np.array(data.pop("values"))
+        kind = data.pop("kind", "linear")
+        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+InterpolatedFlowParameter.register()
+
+
 class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
     """Parameter value is equal to the quadrature of the interpolation of another parameter
 
@@ -187,6 +208,60 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
         return cls(model, upper_parameter, x, y, lower_parameter=lower_parameter,
                    interp_kwargs={'kind': kind})
 InterpolatedQuadratureParameter.register()
+
+
+class ScenarioWrapperParameter(Parameter):
+    """Parameter that utilises a different child parameter in each scenario ensemble.
+
+    This parameter is used to switch between different child parameters based on different
+    ensembles in a given `Scenario`. It can be used to vary data in a non-scenario aware
+    parameter type across multiple scenario ensembles. For example, many of control curve or
+    interpolation parameters do not explicitly support scenarios. This parameter can be used
+    to test multiple control curve definitions as part of a single simulation.
+
+    Parameters
+    ----------
+    scenario : Scenario
+        The scenario instance which is used to select the parameters.
+    parameters : iterable of Parameter instances
+        The child parameters that are used in each of `scenario`'s ensembles. The number
+        of parameters must equal the size of the given scenario.
+
+    """
+    def __init__(self, model, scenario, parameters, **kwargs):
+        super().__init__(model, **kwargs)
+        if scenario.size != len(parameters):
+            raise ValueError("The number of parameters must equal the size of the scenario.")
+        self.scenario = scenario
+        self.parameters = []
+        for p in parameters:
+            self.children.add(p)
+            self.parameters.append(p)
+        # Initialise internal attributes
+        self._scenario_index = None
+
+    def setup(self):
+        super().setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
+
+    def value(self, ts, scenario_index):
+        # This is a bit confusing.
+        # scenario_indices contains the current scenario number for all
+        # the Scenario objects in the model run. We have cached the
+        # position of self._scenario in self._scenario_index to lookup the
+        # correct number to use in this instance.
+        parameter = self.parameters[scenario_index.indices[self._scenario_index]]
+        return parameter.get_value(scenario_index)
+
+    @classmethod
+    def load(cls, model, data):
+        scenario = model.scenarios[data.pop('scenario')]
+
+        parameters = [load_parameter(model, p) for p in data.pop('parameters')]
+        return cls(model, scenario, parameters, **data)
+ScenarioWrapperParameter.register()
 
 
 def pop_kwarg_parameter(kwargs, key, default):
