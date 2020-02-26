@@ -103,7 +103,7 @@ else:
 
 
 try:
-    from .cython_glpk_edge import CythonGLPKEdgeSolver as cy_CythonGLPKEdgeSolver
+    from .cython_glpk import CythonGLPKEdgeSolver as cy_CythonGLPKEdgeSolver
 except ImportError:
     pass
 else:
@@ -197,5 +197,3 @@ else:
         def stats(self):
             return self._cy_solver.stats
     solver_registry.append(CythonLPSolveSolver)
-
-

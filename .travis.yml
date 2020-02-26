@@ -18,13 +18,14 @@ env:
     - PYBIN=/opt/python/cp36-cp36m/bin BUILD_DOC=1
     - PYBIN=/opt/python/cp36-cp36m/bin PYWR_BUILD_TRACE=true
     - PYBIN=/opt/python/cp37-cp37m/bin
+    - PYBIN=/opt/python/cp38-cp38/bin
 
 install:
   - docker pull $DOCKER_IMAGE
   - |
     if [[ "${PYWR_BUILD_TRACE}" == "true" ]]; then
       # Cython is needed for the coverage plugin.
-      pip install codecov cython 'coverage>=4.4'
+      pip install codecov cython 'coverage<5.0'
     fi
 
 script:
@@ -34,16 +35,16 @@ script:
       -e PYWR_BUILD_TRACE=$PYWR_BUILD_TRACE \
       -e BUILD_DOC=$BUILD_DOC \
       $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
-  # Fix permissions of files created in docker    
-  - sudo chown -R travis:travis .    
+  # Fix permissions of files created in docker
+  - sudo chown -R travis:travis .
   - |
     if [ "$BUILD_DOC" -eq "1" ]; then
       if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
       if [[ "${TRAVIS_PULL_REQUEST}" == "false" ]]; then
-        if [[ -z "$TRAVIS_TAG" ]]; then
-          DEPLOY_DIR=master;
+        if [[ "${TRAVIS_TAG}" == "v"* ]]; then
+          DEPLOY_DIR=${TRAVIS_TAG};
         else
-          DEPLOY_DIR="v-$TRAVIS_TAG";
+          DEPLOY_DIR=master;
         fi
 
         pip install doctr

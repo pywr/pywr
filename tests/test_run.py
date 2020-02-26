@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
-
 import os
 import datetime
 import pytest
@@ -324,6 +322,19 @@ def test_annual_virtual_storage():
     assert_allclose(rec.data[21], 0) # licence is exhausted
     assert_allclose(rec.data[365], 10) # licence is refreshed
 
+
+def test_annual_virtual_storage_with_dynamic_cost():
+    model = load_model('virtual_storage2.json')
+    model.run()
+    node = model.nodes["supply1"]
+    rec = node.recorders[0]
+
+    assert_allclose(rec.data[0], 10)  # licence is not a constraint
+    assert_allclose(rec.data[1], 5)  # now used slightly too much; switch to the other source
+    assert_allclose(rec.data[2], 10)  # continue back and forth.
+    assert_allclose(rec.data[3], 5)
+
+
 def test_storage_spill_compensation():
     """Test storage spill and compensation flows
 
@@ -507,6 +518,16 @@ def test_run():
     model.reset(start=pandas.to_datetime('2015-12-01'))
     result = model.run()
     assert(result.timestep.index == 364)
+
+
+def test_run_monthly():
+    model = load_model('simple1_monthly.json')
+
+    result = model.run()
+    assert result.timestep.index == 11
+
+    result = model.run()
+    assert result.timestep.index == 11
 
 
 def test_select_solver():

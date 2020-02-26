@@ -460,13 +460,13 @@ class AnnualVirtualStorage(VirtualStorage):
         super(AnnualVirtualStorage, self).before(ts)
 
         # Reset the storage volume if necessary
-        if ts.datetime.year != self._last_reset_year:
+        if ts.year != self._last_reset_year:
             # I.e. we're in a new year and ...
             # ... we're at or past the reset month/day
-            if ts.datetime.month > self.reset_month or \
-                    (ts.datetime.month == self.reset_month and ts.datetime.day >= self.reset_day):
+            if ts.month > self.reset_month or \
+                    (ts.month == self.reset_month and ts.day >= self.reset_day):
                 self._reset_storage_only()
-                self._last_reset_year = ts.datetime.year
+                self._last_reset_year = ts.year
 
 
 class PiecewiseLink(Node):
@@ -562,11 +562,13 @@ class MultiSplitLink(PiecewiseLink):
 
     Conceptually this node looks like the following internally,
 
-             / -->-- X0 -->-- \
-    A -->-- Xo -->-- X1 -->-- Xi -->-- C
-             \ -->-- X2 -->-- /
-                     |
-                     Bo -->-- Bi --> D
+    ::
+
+                 / -->-- X0 -->-- \\
+        A -->-- Xo -->-- X1 -->-- Xi -->-- C
+                 \\ -->-- X2 -->-- /
+                         |
+                         Bo -->-- Bi --> D
 
     An additional sublink in the PiecewiseLink (i.e. X2 above) and nodes
     (i.e. Bo and Bi) in this class are added for each extra slot.
@@ -763,9 +765,11 @@ class BreakLink(Node):
     In a model with form (3, 1, 3), i.e. 3 (A,B,C) inputs connected to 3
     outputs (D,E,F) via a bottleneck (X), there are 3*3 routes = 9 routes.
 
-    A -->\ /--> D
-    B --> X --> E
-    C -->/ \--> F
+    ::
+
+        A -->\\ /--> D
+        B --> X --> E
+        C -->/ \\--> F
 
     If X is a storage, there are only 6 routes: A->X_o, B->X_o, C->X_o and
     X_i->D_o, X_i->E_o, X_i->F_o.

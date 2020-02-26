@@ -2,7 +2,6 @@ import os
 import pandas
 import json
 import networkx as nx
-from past.builtins import basestring
 import copy
 from packaging.version import parse as parse_version
 import warnings
@@ -26,7 +25,7 @@ from pywr._component cimport Component
 from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
 from pywr._core import ScenarioCollection, Scenario
 from pywr._core cimport AbstractNode
-from pywr.parameters._parameters import load_dataframe
+from .dataframe_tools import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
@@ -112,8 +111,6 @@ class Model(object):
         if kwargs:
             key = list(kwargs.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
-
-        self.reset()
 
     @property
     def components(self):
@@ -207,29 +204,45 @@ class Model(object):
         """
         if "includes" in data:
             for filename in data["includes"]:
+                _, ext = os.path.splitext(filename)
                 if path is not None:
                     filename = os.path.join(os.path.dirname(path), filename)
-                with open(filename, "r") as f:
-                    try:
-                        include_data = json.loads(f.read())
-                    except ValueError as e:
-                        message = e.args[0]
-                        if path:
-                            e.args = ("{} [{}]".format(e.args[0], os.path.basename(filename)),)
-                        raise(e)
-                for key, value in include_data.items():
-                    if isinstance(value, list):
-                        try:
-                            data[key].extend(value)
-                        except KeyError:
-                            data[key] = value
-                    elif isinstance(value, dict):
-                        try:
-                            data[key].update(value)
-                        except KeyError:
-                            data[key] = value
-                    else:
-                        raise TypeError("Invalid type for key \"{}\" in include \"{}\".".format(key, path))
+
+                ext = ext.lower()
+                if ext == '.json':
+                    cls._load_json_include(data, filename)
+                elif ext == '.py':
+                    cls._load_py_include(filename)
+                else:
+                    raise NotImplementedError(f'Include file type "{ext}" not supported.')
+
+    @classmethod
+    def _load_py_include(cls, filename):
+        import runpy
+        runpy.run_path(filename)
+
+    @classmethod
+    def _load_json_include(cls, data, filename):
+        with open(filename, "r") as f:
+            try:
+                include_data = json.loads(f.read())
+            except ValueError as e:
+                message = e.args[0]
+                e.args = ("{} [{}]".format(e.args[0], os.path.basename(filename)),)
+                raise(e)
+        for key, value in include_data.items():
+            if isinstance(value, list):
+                try:
+                    data[key].extend(value)
+                except KeyError:
+                    data[key] = value
+            elif isinstance(value, dict):
+                try:
+                    data[key].update(value)
+                except KeyError:
+                    data[key] = value
+            else:
+                raise TypeError("Invalid type for key \"{}\" in include \"{}\".".format(key, filename))
         return None  # data modified in-place
 
     @classmethod
@@ -249,7 +262,7 @@ class Model(object):
             Name of the solver to use for the model. This overrides the solver
             section of the model document.
         """
-        if isinstance(data, basestring):
+        if isinstance(data, str):
             # argument is a filename
             logger.info('Loading model from file: "{}"'.format(path))
             path = data
@@ -297,7 +310,7 @@ class Model(object):
         else:
             start = pandas.to_datetime(timestepper_data['start'])
             end = pandas.to_datetime(timestepper_data['end'])
-            timestep = int(timestepper_data['timestep'])
+            timestep = timestepper_data['timestep']
 
         if model is None:
             model = cls(
@@ -550,7 +563,7 @@ class Model(object):
 
 
         """
-        if self.dirty:
+        if self.dirty or self.timestepper.dirty:
             self.setup()
         self.timestep = next(self.timestepper)
         return self._step()
@@ -573,9 +586,8 @@ class Model(object):
         t0 = time.time()
         timestep = None
         try:
-            if self.dirty:
+            if self.dirty or self.timestepper.dirty:
                 self.setup()
-                self.timestepper.reset()
             else:
                 self.reset()
             t1 = time.time()
@@ -615,6 +627,7 @@ class Model(object):
         """Setup the model for the first time or if it has changed since
         last run."""
         logger.info('Setting up model ...')
+        self.timestepper.setup()
         self.scenarios.setup()
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
@@ -770,7 +783,7 @@ class NodeIterator(object):
 
     def __delitem__(self, key):
         """Remove a node from the graph"""
-        if isinstance(key, basestring):
+        if isinstance(key, str):
             node = self[key]
         else:
             node = key
@@ -799,6 +812,12 @@ class NodeIterator(object):
     def __len__(self):
         """Returns the number of nodes in the model"""
         return len(list(self._nodes()))
+
+    def __contains__(self, value):
+        for node in self._nodes():
+            if node.name == value or node == value:
+                return True
+        return False
 
     def __iter__(self):
         return self
@@ -858,6 +877,12 @@ class NamedIterator(object):
 
     def __iter__(self):
         return iter(self._objects)
+
+    def __contains__(self, value):
+        for obj in self._objects:
+            if obj.name == value or obj == value:
+                return True
+        return False
 
     def append(self, obj):
         # TODO: check for name collisions / duplication

@@ -4,6 +4,7 @@ environment:
 
   global:
     BUILD_HOME: "C:\\build"
+  
     GLPK_VER: "4.65"
     GLPK_HOME: "C:\\glpk-%GLPK_VER%"
     GLPK_PKG_LIB: "glpk_4_65.lib"
@@ -11,6 +12,16 @@ environment:
     GLPK_PKG_DLL: "glpk_4_65.dll"
     GLPK_DLL: "glpk.dll"
     GLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-%GLPK_VER%/winglpk-%GLPK_VER%.zip/download"
+
+    LPSOLVE_VER: "5.5.2.5"
+    LPSOLVE_HOME: "C:\\lpsolve-%LPSOLVE_VER%"
+    LPSOLVE_LIB: "lpsolve55.lib"
+    LPSOLVE_DLL: "lpsolve55.dll"
+    LPSOLVE_URL: "https://sourceforge.net/projects/lpsolve/files/lpsolve/%LPSOLVE_VER%/lp_solve_%LPSOLVE_VER%_dev_win64.zip/download"
+
+    INCLUDE: "%GLPK_HOME%\\src;%LPSOLVE_HOME%"
+    LIB: "%GLPK_HOME%\\w64;%LPSOLVE_HOME%\\lpsolve"
+
     PYTHON_ARCH: "64"
 
   matrix:
@@ -20,6 +31,8 @@ environment:
     # Python 3.7
     - PYTHON: "C:\\Python37-x64"
 
+    # Python 3.8
+    - PYTHON: "C:\\Python38-x64"
 
 
 # We always use a 64-bit machine, but can build x86 distributions
@@ -47,6 +60,9 @@ install:
     - cmd: echo "Installed GLPK:"
     - ps: "ls \"C:/\""
     - ps: "ls %GLPK_HOME%"
+
+    - curl -L --output lpsolve.zip %LPSOLVE_URL%
+    - 7z x lpsolve.zip -o%LPSOLVE_HOME%\lpsolve
 
     - "SET PACKAGE_DATA=true"
 
@@ -80,8 +96,10 @@ build_script:
   - cmd: copy %GLPK_HOME%\w64\%GLPK_PKG_DLL% pywr\.libs\%GLPK_PKG_DLL%
   - cmd: copy %GLPK_HOME%\COPYING pywr\.libs\licenses\COPYING
 
+  - cmd: copy %LPSOLVE_HOME%\lpsolve\%LPSOLVE_DLL% pywr\.libs\%LPSOLVE_DLL%
+
   # build pywr and create a wheel
-  - "python setup.py build_ext -I%GLPK_HOME%\\src -L%GLPK_HOME%\\w64 --with-glpk bdist_wheel"
+  - "python setup.py build_ext --with-glpk --with-lpsolve bdist_wheel"
 
   # install the wheel
   # - ps: python -m pip install --upgrade pip
@@ -101,7 +119,8 @@ test_script:
   - "SET PYWR_SOLVER=glpk-edge"
   - "python -m pytest"
 
-  - "jupyter nbconvert --to html --execute tests\\notebook.ipynb"
+  - "SET PYWR_SOLVER=lpsolve"
+  - "python -m pytest"
 
 artifacts:
   - path: dist\*.whl
