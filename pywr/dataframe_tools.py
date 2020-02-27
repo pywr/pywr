@@ -28,7 +28,7 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
 
     Parameters
     ==========
-    
+
     df : `pandas.DataFrame`
         The input data that needs to be aligned and/or resampled.
     target_index : `pandas.PeriodIndex`
@@ -36,7 +36,7 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
     resample_func : str, func
         Function to be used when down-sampling from high frequency data to lower
         frequency.
-     
+
     """
     # Must resample and align the DataFrame to the model.
     start = target_index[0]
@@ -239,31 +239,26 @@ def read_dataframe(model, data):
 
         filetype = "dict"
 
-    data.pop("comment", None) # remove kwargs from data before passing to Pandas
-        
+    pandas_kwargs = data.pop('pandas_kwargs', {})
+
     if filetype == "csv":
-        if hasattr(data, "index_col"):
-            data["parse_dates"] = True
-            if "dayfirst" not in data.keys():
-                data["dayfirst"] = True  # we're bias towards non-American dates here
-        df = pandas.read_csv(url, **data)  # automatically decompressed gzipped data!
+        if hasattr(pandas_kwargs, "index_col"):
+            pandas_kwargs["parse_dates"] = True
+            if "dayfirst" not in pandas_kwargs.keys():
+                pandas_kwargs["dayfirst"] = True  # we're bias towards non-American dates here
+        df = pandas.read_csv(url, **pandas_kwargs)  # automatically decompressed gzipped data!
     elif filetype == "excel":
-        df = pandas.read_excel(url, **data)
+        df = pandas.read_excel(url, **pandas_kwargs)
     elif filetype == "hdf":
-        key = data.pop("key", None)
-        df = pandas.read_hdf(url, key=key, **data)
+        df = pandas.read_hdf(url, **pandas_kwargs)
     elif filetype == "dict":
-        parse_dates = data.pop('parse_dates', False)
-        df = pandas.DataFrame.from_dict(df_data, **data)
+        parse_dates = pandas_kwargs.pop('parse_dates', False)
+        df = pandas.DataFrame.from_dict(df_data, **pandas_kwargs)
         if parse_dates:
             df.index = pandas.DatetimeIndex(df.index)
 
     if df.index.dtype.name == "object" and data.get("parse_dates", False):
         # catch dates that haven't been parsed yet
         raise TypeError("Invalid DataFrame index type \"{}\" in \"{}\".".format(df.index.dtype.name, url))
-
-    # clean up
-    # Assume all keywords are consumed by pandas.read_* functions
-    data.clear()
 
     return df
