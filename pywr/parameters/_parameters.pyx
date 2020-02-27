@@ -261,11 +261,8 @@ cdef class ArrayIndexedParameter(Parameter):
         return self.values[ts._index]
 ArrayIndexedParameter.register(ArrayIndexedParameterSchema)
 
-
 class ArrayIndexedScenarioParameterSchema(ExternalDataSchema):
     scenario = fields.ScenarioReferenceField(allow_none=True)
-        return self.values[ts.index]
-
 
 cdef class ArrayIndexedScenarioParameter(Parameter):
     """A Scenario varying Parameter
