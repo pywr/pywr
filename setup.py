@@ -50,6 +50,7 @@ def setup_package():
         cmdclass={"build_ext": new_build_ext},
         packages=[
             "pywr",
+            "pywr.schema",
             "pywr.solvers",
             "pywr.domains",
             "pywr.parameters",
