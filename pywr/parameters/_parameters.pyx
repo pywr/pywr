@@ -258,7 +258,7 @@ cdef class ArrayIndexedParameter(Parameter):
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the parameter at a given timestep
         """
-        return self.values[ts._index]
+        return self.values[ts.index]
 ArrayIndexedParameter.register(ArrayIndexedParameterSchema)
 
 class ArrayIndexedScenarioParameterSchema(ExternalDataSchema):
