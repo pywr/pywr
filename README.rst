@@ -58,7 +58,8 @@ Citation
 
 Please consider citing the following paper when using Pywr:
 
-> Tomlinson, J.E., Arnott, J.H. and Harou, J.J., 2020. A water resource simulator in Python. Environmental Modelling & Software. https://doi.org/10.1016/j.envsoft.2020.104635
+
+    Tomlinson, J.E., Arnott, J.H. and Harou, J.J., 2020. A water resource simulator in Python. Environmental Modelling & Software. https://doi.org/10.1016/j.envsoft.2020.104635
 
 
 License
