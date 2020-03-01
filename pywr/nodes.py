@@ -767,6 +767,7 @@ class AggregatedNode(Drawable, _core.AggregatedNode, metaclass=NodeMeta):
         super(AggregatedNode, self).__init__(model, name, **kwargs)
         self.nodes = nodes
 
+
 class BreakLink(Node):
     """Compound node used to reduce the number of routes in a model
 
@@ -800,7 +801,7 @@ class BreakLink(Node):
     """
     allow_isolated = True
 
-    def __init__(self, model, name, min_flow=0.0, max_flow=None, cost=0.0, *args, **kwargs):
+    def __init__(self, model, name, **kwargs):
         storage_name = "{} (storage)".format(name)
         link_name = "{} (link)".format(name)
         assert(storage_name not in model.nodes)
@@ -815,15 +816,12 @@ class BreakLink(Node):
         )
         self.link = Link(
             model,
-            name=link_name,
-            min_flow=min_flow,
-            max_flow=max_flow,
-            cost=cost,
+            name=link_name
         )
 
         self.storage.connect(self.link)
 
-        super(BreakLink, self).__init__(model, name, *args, **kwargs)
+        super(BreakLink, self).__init__(model, name, **kwargs)
 
     def min_flow():
         def fget(self):
