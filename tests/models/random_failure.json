@@ -1,0 +1,61 @@
+{
+    "metadata": {
+        "title": "Random failure",
+        "description": "A test of the RandomFailure parameter.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "scenarios": [
+        {
+            "name": "simulations",
+            "size": 100
+        }
+    ],
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 15
+        },
+        {
+            "name": "link1",
+            "type": "Link",
+            "max_flow": "link_max_flow"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "is_failed": {
+            "type": "randomfailureindexparameter",
+            "mean_time_between_failures": 25,
+            "mean_time_to_repair": 5
+        },
+        "link_max_flow": {
+            "type": "indexedarrayparameter",
+            "index_parameter": "is_failed",
+            "parameters": [
+                {"type": "constant", "value": 20},
+                {"type": "constant", "value": 0}
+            ]
+        }
+    },
+    "recorders": {
+        "link_flow": {
+            "type": "numpyarraynoderecorder",
+            "node": "link1"
+        }
+    }
+}
