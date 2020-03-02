@@ -1,8 +1,9 @@
 import numpy as np
 cimport numpy as np
+from scipy.stats import percentileofscore
 import pandas as pd
 import warnings
-from past.builtins import basestring
+
 
 recorder_registry = {}
 
@@ -14,6 +15,8 @@ cdef enum AggFuncs:
     MEDIAN = 4
     PRODUCT = 5
     CUSTOM = 6
+    PERCENTILE = 7
+    PERCENTILEOFSCORE = 8
 _agg_func_lookup = {
     "sum": AggFuncs.SUM,
     "min": AggFuncs.MIN,
@@ -22,7 +25,10 @@ _agg_func_lookup = {
     "median": AggFuncs.MEDIAN,
     "product": AggFuncs.PRODUCT,
     "custom": AggFuncs.CUSTOM,
+    "percentile": AggFuncs.PERCENTILE,
+    "percentileofscore": AggFuncs.PERCENTILEOFSCORE,
 }
+_agg_func_lookup_reverse = {v: k for k, v in _agg_func_lookup.items()}
 
 cdef enum ObjDirection:
     NONE = 0
@@ -43,16 +49,28 @@ cdef class Aggregator:
         self.func = func
 
     property func:
+        def __get__(self):
+            if self._func == AggFuncs.CUSTOM:
+                return self._user_func
+            return _agg_func_lookup_reverse[self._func]
         def __set__(self, func):
             self._user_func = None
-            if isinstance(func, basestring):
-                func = _agg_func_lookup[func.lower()]
+            func_args = []
+            func_kwargs = {}
+            if isinstance(func, str):
+                func_type = _agg_func_lookup[func.lower()]
+            elif isinstance(func, dict):
+                func_type = _agg_func_lookup[func['func']]
+                func_args = func.get('args', [])
+                func_kwargs = func.get('kwargs', {})
             elif callable(func):
                 self._user_func = func
-                func = AggFuncs.CUSTOM
+                func_type = AggFuncs.CUSTOM
             else:
                 raise ValueError("Unrecognised aggregation function: \"{}\".".format(func))
-            self._func = func
+            self._func = func_type
+            self.func_args = func_args
+            self.func_kwargs = func_kwargs
 
     cpdef double aggregate_1d(self, double[:] data, ignore_nan=False) except *:
         """Compute an aggregated value across 1D array.
@@ -76,6 +94,10 @@ cdef class Aggregator:
             return np.median(values)
         elif self._func == AggFuncs.CUSTOM:
             return self._user_func(np.array(values))
+        elif self._func == AggFuncs.PERCENTILE:
+            return np.percentile(values, *self.func_args, **self.func_kwargs)
+        elif self._func == AggFuncs.PERCENTILEOFSCORE:
+            return percentileofscore(values, *self.func_args, **self.func_kwargs)
         else:
             raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
 
@@ -83,6 +105,7 @@ cdef class Aggregator:
         """Compute an aggregated value along an axis of a 2D array.
         """
         cdef double[:, :] values = data
+        cdef Py_ssize_t i
 
         if ignore_nan:
             values = np.array(values)[~np.isnan(values)]
@@ -101,6 +124,22 @@ cdef class Aggregator:
             return np.median(values, axis=axis)
         elif self._func == AggFuncs.CUSTOM:
             return self._user_func(np.array(values), axis=axis)
+        elif self._func == AggFuncs.PERCENTILE:
+            return np.percentile(values, *self.func_args, axis=axis, **self.func_kwargs)
+        elif self._func == AggFuncs.PERCENTILEOFSCORE:
+            # percentileofscore doesn't support the axis argument
+            # we must therefore iterate over the array
+            if axis == 0:
+                out = np.empty(data.shape[1])
+                for i in range(data.shape[1]):
+                    out[i] = percentileofscore(values[:, i], *self.func_args, **self.func_kwargs)
+            elif axis == 1:
+                out = np.empty(data.shape[0])
+                for i in range(data.shape[0]):
+                    out[i] = percentileofscore(values[i, :], *self.func_args, **self.func_kwargs)
+            else:
+                raise ValueError('Axis "{}" not recognised for percentileofscore function.'.format(axis))
+            return out
         else:
             raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
 
@@ -142,6 +181,8 @@ cdef class Recorder(Component):
         self._scenario_aggregator = Aggregator(agg_func)
 
     property agg_func:
+        def __get__(self):
+            return self._scenario_aggregator.func
         def __set__(self, agg_func):
             self._scenario_aggregator.func = agg_func
 
@@ -218,7 +259,7 @@ cdef class AggregatedRecorder(Recorder):
         # Optional different method for aggregating across self.recorders scenarios
         agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func'))
 
-        if isinstance(agg_func, basestring):
+        if isinstance(agg_func, str):
             agg_func = _agg_func_lookup[agg_func.lower()]
         elif callable(agg_func):
             self.recorder_agg_func = agg_func
@@ -282,10 +323,10 @@ cdef class AggregatedRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        recorder_names = data["recorders"]
-        recorders = [model.recorders[name] for name in recorder_names]
-        del(data["recorders"])
+        recorder_names = data.pop("recorders")
+        recorders = [load_recorder(model, name) for name in recorder_names]
         rec = cls(model, recorders, **data)
+        return rec
 
 AggregatedRecorder.register()
 
@@ -422,12 +463,22 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         Aggregation function used over time when computing a value per scenario. This can be used
         to return, for example, the median flow over a simulation. For aggregation over scenarios
         see the `agg_func` keyword argument.
+    factor: float (default=1.0)
+        A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+
+    See also
+    --------
+    NumpyArrayNodeDeficitRecorder
+    NumpyArrayNodeSuppliedRatioRecorder
+    NumpyArrayNodeCurtailmentRatioRecorder
     """
     def __init__(self, model, AbstractNode node, **kwargs):
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
+        factor = kwargs.pop('factor', 1.0)
         super(NumpyArrayNodeRecorder, self).__init__(model, node, **kwargs)
         self._temporal_aggregator = Aggregator(temporal_agg_func)
+        self.factor = factor
 
     property temporal_agg_func:
         def __set__(self, agg_func):
@@ -445,13 +496,13 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         cdef int i
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
-            self._data[ts._index,i] = self._node._flow[i]
+            self._data[ts.index, i] = self._node._flow[i]*self.factor
         return 0
 
     property data:
         def __get__(self, ):
             return np.array(self._data)
-        
+
     cpdef double[:] values(self):
         """Compute a value for each scenario using `temporal_agg_func`.
         """
@@ -471,6 +522,130 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
 
 NumpyArrayNodeRecorder.register()
 
+
+cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
+    """Recorder for timeseries of deficit from a `Node`.
+
+    This class stores deficit from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+
+    Notes
+    -----
+    Deficit is calculated as the difference between `max_flow` and `self.node.flow` (i.e. the actual
+    flow allocated during the time-step)::
+
+        deficit = max_flow - actual_flow
+
+    See also
+    --------
+    NumpyArrayNodeRecorder
+    NumpyArrayNodeSuppliedRatioRecorder
+    NumpyArrayNodeCurtailmentRatioRecorder
+    """
+    cpdef after(self):
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef Node node = self._node
+        for scenario_index in self.model.scenarios.combinations:
+            max_flow = node.get_max_flow(scenario_index)
+            self._data[ts.index,scenario_index.global_id] = max_flow - node._flow[scenario_index.global_id]
+        return 0
+NumpyArrayNodeDeficitRecorder.register()
+
+
+cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
+    """Recorder for timeseries of ratio of supplied flow from a `Node`.
+
+    This class stores supply ratio from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+
+    Notes
+    -----
+    Supply ratio is calculated calculated as the ratio of `self.node.flow` to `self.node.max_flow`
+    for each time-step::
+
+        supply_ratio = actual_flow / max_flow
+
+    See also
+    --------
+    NumpyArrayNodeRecorder
+    NumpyArrayNodeDeficitRecorder
+    NumpyArrayNodeCurtailmentRatioRecorder
+    """
+    cpdef after(self):
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef Node node = self._node
+        for scenario_index in self.model.scenarios.combinations:
+            max_flow = node.get_max_flow(scenario_index)
+            self._data[ts.index,scenario_index.global_id] = node._flow[scenario_index.global_id] / max_flow
+        return 0
+NumpyArrayNodeSuppliedRatioRecorder.register()
+
+
+cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
+    """Recorder for timeseries of curtailment ratio from a `Node`.
+
+    This class stores curtailment ratio from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+
+    Notes
+    -----
+    Curtailment ratio is calculated calculated as one minues the ratio of `self.node.flow` to
+    `self.node.max_flow` for each time-step::
+
+        curtailment_ratio = 1 - actual_flow / max_flow
+
+    See also
+    --------
+    NumpyArrayNodeRecorder
+    NumpyArrayNodeDeficitRecorder
+    NumpyArrayNodeSuppliedRatioRecorder
+    """
+    cpdef after(self):
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef Node node = self._node
+        for scenario_index in self.model.scenarios.combinations:
+            max_flow = node.get_max_flow(scenario_index)
+            self._data[ts.index,scenario_index.global_id] = 1 - node._flow[scenario_index.global_id] / max_flow
+NumpyArrayNodeCurtailmentRatioRecorder.register()
 
 
 cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
@@ -553,19 +728,19 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
     fdc_agg_func: str, optional
         optional different function for aggregating across scenarios.
     months: array
-        The numeric values of the months the flow duration curve should be calculated for. 
+        The numeric values of the months the flow duration curve should be calculated for.
     """
 
     def __init__(self, model, AbstractNode node, percentiles, months, **kwargs):
         super(SeasonalFlowDurationCurveRecorder, self).__init__(model, node, percentiles, **kwargs)
         self._months = set(months)
-    
+
     cpdef finish(self):
-        # this is a def method rather than cpdef because closures inside cpdef functions are not supported yet.        
+        # this is a def method rather than cpdef because closures inside cpdef functions are not supported yet.
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
 
-        df = pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)        
+        df = pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
         mask = np.asarray(df.index.map(self.is_season))
         self._fdc = np.percentile(df.loc[mask, :], np.asarray(self._percentiles), axis=0)
 
@@ -580,10 +755,10 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     calculates their deviation from upper and lower target FDCs. The 2nd dimension of the target
     duration curves and percentiles list must be of the same length and have the same
     order (high to low values or low to high values).
-    
+
     Deviation is calculated as positive if actual FDC is above the upper target or below the lower
-    target. If actual FDC falls between the upper and lower targets zero deviation is returned.    
-    
+    target. If actual FDC falls between the upper and lower targets zero deviation is returned.
+
     Parameters
     ----------
     model : `pywr.core.Model`
@@ -595,7 +770,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     lower_target_fdc : array
         The lower FDC against which the scenario FDCs are compared
     upper_target_fdc : array
-        The upper FDC against which the scenario FDCs are compared        
+        The upper FDC against which the scenario FDCs are compared
     agg_func: str, optional
         Function used for aggregating the FDC deviations across percentiles.
         Numpy style functions that support an axis argument are supported.
@@ -603,10 +778,19 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         Optional different function for aggregating across scenarios.
 
     """
-    def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc, upper_target_fdc, scenario=None, name=None, **kwargs):
-        super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, name=None, **kwargs)
-        self._lower_target_fdc = np.asarray(lower_target_fdc, dtype=np.float64)
-        self._upper_target_fdc = np.asarray(upper_target_fdc, dtype=np.float64)
+    def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc, upper_target_fdc, scenario=None, **kwargs):
+        super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, **kwargs)
+
+        lower_target = np.array(lower_target_fdc, dtype=np.float64)
+        if lower_target.ndim < 2:
+            lower_target = lower_target[:, np.newaxis]
+
+        upper_target = np.array(upper_target_fdc, dtype=np.float64)
+        if upper_target.ndim < 2:
+            upper_target = upper_target[:, np.newaxis]
+
+        self._lower_target_fdc = lower_target
+        self._upper_target_fdc = upper_target
         self.scenario = scenario
         if len(self._percentiles) != self._lower_target_fdc.shape[0]:
             raise ValueError("The lengths of the lower target FDC and the percentiles list do not match")
@@ -623,21 +807,25 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             if self._upper_target_fdc.shape[1] != self.scenario.size:
                 raise ValueError('The number of upper target FDCs does not match the size ({}) of scenario "{}"'.format(self.scenario.size, self.scenario.name))
         else:
-            if self._lower_target_fdc.shape[1] != len(self.model.scenarios.combinations):
+            if self._lower_target_fdc.shape[1] > 1 and \
+                    self._lower_target_fdc.shape[1] != len(self.model.scenarios.combinations):
                 raise ValueError("The number of lower target FDCs does not match the number of scenarios")
-            if self._upper_target_fdc.shape[1] != len(self.model.scenarios.combinations):
+            if self._upper_target_fdc.shape[1] > 1 and \
+                    self._upper_target_fdc.shape[1] != len(self.model.scenarios.combinations):
                 raise ValueError("The number of upper target FDCs does not match the number of scenarios")
 
     cpdef finish(self):
         super(FlowDurationCurveDeviationRecorder, self).finish()
 
-        cdef int i, j, k, sc_index
+        cdef int i, j, jl, ju, k, sc_index
         cdef ScenarioIndex scenario_index
         cdef double[:] utrgt_fdc, ltrgt_fdc
         cdef double udev, ldev
 
         # We have to do this the slow way by iterating through all scenario combinations
-        sc_index = self.model.scenarios.get_scenario_index(self.scenario)
+        if self.scenario is not None:
+            sc_index = self.model.scenarios.get_scenario_index(self.scenario)
+
         self._fdc_deviations = np.empty((self._lower_target_fdc.shape[0], len(self.model.scenarios.combinations)), dtype=np.float64)
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
 
@@ -646,9 +834,20 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
                 j = scenario_index._indices[sc_index]
             else:
                 j = scenario_index.global_id
+
+            if self._lower_target_fdc.shape[1] == 1:
+                jl = 0
+            else:
+                jl = j
+
+            if self._upper_target_fdc.shape[1] == 1:
+                ju = 0
+            else:
+                ju = j
+
             # Cache the target FDC to use in this combination
-            ltrgt_fdc = self._lower_target_fdc[:, j]
-            utrgt_fdc = self._upper_target_fdc[:, j]
+            ltrgt_fdc = self._lower_target_fdc[:, jl]
+            utrgt_fdc = self._upper_target_fdc[:, ju]
             # Finally calculate deviation
             for k in range(ltrgt_fdc.shape[0]):
                 try:
@@ -674,7 +873,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
 
     def to_dataframe(self, return_fdc=False):
         """ Return a `pandas.DataFrame` of the deviations from the target FDCs
-                
+
         Parameters
         ----------
         return_fdc : bool (default=False)
@@ -693,30 +892,11 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
 FlowDurationCurveDeviationRecorder.register()
 
 
-cdef class NumpyArrayStorageRecorder(StorageRecorder):
-    """Recorder for timeseries information from a `Storage` node.
-
-    This class stores volume from a specific node for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
-
-    Parameters
-    ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        Node instance to record.
-    proportional : bool
-        Whether to record proportional [0, 1.0] or absolute storage volumes (default=False).
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
-    """
+cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
     def __init__(self, model, AbstractStorage node, **kwargs):
         # Optional different method for aggregating across time.
-        self.proportional = kwargs.pop('proportional', False)
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
-        super(NumpyArrayStorageRecorder, self).__init__(model, node, **kwargs)
+        super().__init__(model, node, **kwargs)
 
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
@@ -733,14 +913,7 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
         self._data[:, :] = 0.0
 
     cpdef after(self):
-        cdef int i
-        cdef Timestep ts = self.model.timestepper.current
-        for i in range(self._data.shape[1]):
-            if self.proportional:
-                self._data[ts._index,i] = self._node._current_pc[i]
-            else:
-                self._data[ts._index,i] = self._node._volume[i]
-        return 0
+        raise NotImplementedError()
 
     property data:
         def __get__(self, ):
@@ -763,6 +936,40 @@ cdef class NumpyArrayStorageRecorder(StorageRecorder):
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 
+
+cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
+    """Recorder for timeseries information from a `Storage` node.
+
+    This class stores volume from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    proportional : bool
+        Whether to record proportional [0, 1.0] or absolute storage volumes (default=False).
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    def __init__(self, *args, **kwargs):
+        # Optional different method for aggregating across time.
+        self.proportional = kwargs.pop('proportional', False)
+        super().__init__(*args, **kwargs)
+
+    cpdef after(self):
+        cdef int i
+        cdef Timestep ts = self.model.timestepper.current
+        for i in range(self._data.shape[1]):
+            if self.proportional:
+                self._data[ts.index, i] = self._node._current_pc[i]
+            else:
+                self._data[ts.index, i] = self._node._volume[i]
+        return 0
 NumpyArrayStorageRecorder.register()
 
 
@@ -828,28 +1035,61 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
 
 StorageDurationCurveRecorder.register()
 
-cdef class NumpyArrayLevelRecorder(StorageRecorder):
-    cpdef setup(self):
-        cdef int ncomb = len(self.model.scenarios.combinations)
-        cdef int nts = len(self.model.timestepper)
-        self._data = np.zeros((nts, ncomb))
+cdef class NumpyArrayLevelRecorder(NumpyArrayAbstractStorageRecorder):
+    """Recorder for level timeseries from a `Storage` node.
 
-    cpdef reset(self):
-        self._data[:, :] = 0.0
+    This class stores level from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
 
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
     cpdef after(self):
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
+        cdef Storage node = self._node
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
-            self._data[ts._index,i] = self._node.get_level(scenario_index)
+            self._data[ts.index, i] = node.get_level(scenario_index)
         return 0
-
-    property data:
-        def __get__(self, ):
-            return np.array(self._data)
-
 NumpyArrayLevelRecorder.register()
+
+
+cdef class NumpyArrayAreaRecorder(NumpyArrayAbstractStorageRecorder):
+    """Recorder for area timeseries from a `Storage` node.
+
+    This class stores area from a specific node for each time-step of a simulation. The
+    data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    cpdef after(self):
+        cdef int i
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef Storage node = self._node
+        for i, scenario_index in enumerate(self.model.scenarios.combinations):
+            self._data[ts.index, i] = node.get_area(scenario_index)
+        return 0
+NumpyArrayAreaRecorder.register()
+
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     """Recorder for timeseries information from a `Parameter`.
@@ -891,7 +1131,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
-        self._data[ts._index, :] = self._param.get_all_values()
+        self._data[ts.index, :] = self._param.get_all_values()
         return 0
 
     property data:
@@ -956,7 +1196,7 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
-        self._data[ts._index, :] = self._param.get_all_indices()
+        self._data[ts.index, :] = self._param.get_all_indices()
         return 0
 
     property data:
@@ -1018,13 +1258,13 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
             self._memory[self.position, i] = self._param.get_value(scenario_index)
 
-        if timestep._index < self.window:
-            n = timestep._index + 1
+        if timestep.index < self.window:
+            n = timestep.index + 1
         else:
             n = self.window
 
         value = self._temporal_aggregator.aggregate_2d(self._memory[0:n, :], axis=0)
-        self._data[timestep._index, :] = value
+        self._data[timestep.index, :] = value
 
         self.position += 1
         if self.position >= self.window:
@@ -1081,8 +1321,11 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
         super(RollingMeanFlowNodeRecorder, self).setup()
         self.position = 0
         self._data = np.empty([len(self.model.timestepper), len(self.model.scenarios.combinations)])
-        if self.days:
-            self.timesteps = self.days // self.model.timestepper.delta.days
+        if self.days > 0:
+            try:
+                self.timesteps = self.days // self.model.timestepper.delta
+            except TypeError:
+                raise TypeError('A rolling window defined as a number of days is only valid with daily time-steps.')
         if self.timesteps == 0:
             raise ValueError("Timesteps property of MeanFlowRecorder is less than 1.")
         self._memory = np.zeros([len(self.model.scenarios.combinations), self.timesteps])
@@ -1154,7 +1397,7 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
-        cdef int days = self.model.timestepper.current.days
+        cdef double days = self.model.timestepper.current.days
         cdef AbstractNode node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
@@ -1177,7 +1420,7 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
     cpdef after(self):
         cdef ScenarioIndex scenario_index
         cdef int i
-        cdef int days = self.model.timestepper.current.days
+        cdef double days = self.model.timestepper.current.days
         for scenario_index in self.model.scenarios.combinations:
             i = scenario_index.global_id
             self._values[i] += self._node._flow[i]*self.factor*days
@@ -1283,6 +1526,215 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
 MinimumThresholdVolumeStorageRecorder.register()
 
 
+cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
+    """Record the number of times an index parameter exceeds a threshold for each scenario.
+
+    This recorder will count the number of timesteps so will be a daily count when running on a
+    daily timestep.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    parameter : `pywr.core.IndexParameter`
+        The parameter to record
+    threshold : int
+        The threshold to compare the parameter to
+    """
+    def __init__(self, model, IndexParameter parameter, int threshold, *args, **kwargs):
+        super().__init__(model, parameter, *args, **kwargs)
+        self.threshold = threshold
+
+    cpdef setup(self):
+        self._count = np.zeros(len(self.model.scenarios.combinations), np.int32)
+
+    cpdef reset(self):
+        self._count[...] = 0
+
+    cpdef after(self):
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int value
+        cdef ScenarioIndex scenario_index
+
+        for scenario_index in self.model.scenarios.combinations:
+            value = self._param.get_index(scenario_index)
+            if value >= self.threshold:
+                # threshold achieved, increment count
+                self._count[scenario_index.global_id] += 1
+
+    cpdef double[:] values(self):
+        return np.asarray(self._count).astype(np.float64)
+TimestepCountIndexParameterRecorder.register()
+
+
+cdef class AnnualCountIndexThresholdRecorder(Recorder):
+    """
+    For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
+    If multiple parameters exceed in one timestep then it is only counted once.
+
+    Output from data property has shape: (years, scenario combinations)
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    parameters : list
+        List of `pywr.core.IndexParameter` to record against
+    name : str
+        The name of the recorder
+    threshold : int
+        Threshold to compare parameters against
+    """
+    def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
+        # Optional different method for aggregating across time.
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
+        super().__init__(model, name=name, *args, **kwargs)
+        self.parameters = parameters
+        self.threshold = threshold
+        for parameter in self.parameters:
+            self.children.add(parameter)
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
+
+    cpdef setup(self):
+        super(AnnualCountIndexThresholdRecorder, self).setup()
+        self._num_years = self.model.timestepper.end.year - self.model.timestepper.start.year + 1
+        self._ncomb = len(self.model.scenarios.combinations)
+        self._data = np.empty([self._num_years, self._ncomb])
+        self._data_this_year = np.zeros([len(self.parameters), self._ncomb])
+
+    cpdef reset(self):
+        self._data[...] = 0
+        self._current_year = -1
+        self._start_year = self.model.timestepper.start.year
+
+    cpdef after(self):
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int idx = self._current_year - self._start_year
+        cdef int p
+        cdef Py_ssize_t i
+        cdef double value
+        cdef ScenarioIndex scenario_index
+        cdef IndexParameter parameter
+
+        if ts.year != self._current_year:
+            # A new year
+            if self._current_year != -1:
+                # As long as at least one year has been run
+                # then save data for previous year
+                for i in range(self._ncomb):
+                    self._data[idx, i] = np.sum(self._data_this_year[:, i])
+
+            self._data_this_year[...] = 0
+            self._current_year = ts.year
+
+        for scenario_index in self.model.scenarios.combinations:
+            for p, parameter in enumerate(self.parameters):
+                value = parameter.get_index(scenario_index)
+                if value >= self.threshold:
+                    self._data_this_year[p, scenario_index.global_id] += 1
+                    break  # if multiple parameters exceed, only count once
+
+    cpdef finish(self):
+        cdef int idx = self._current_year - self._start_year
+        cdef Py_ssize_t i
+        for i in range(self._ncomb):
+            self._data[idx, i] = np.sum(self._data_this_year[:, i])
+
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
+
+    property data:
+        def __get__(self):
+            return np.array(self._data, dtype=np.int16)
+
+    @classmethod
+    def load(cls, model, data):
+        from pywr.parameters import load_parameter
+        parameters = [load_parameter(model, p) for p in data.pop("parameters")]
+        return cls(model, parameters=parameters, **data)
+AnnualCountIndexThresholdRecorder.register()
+
+
+cdef class AnnualTotalFlowRecorder(Recorder):
+    """
+    For each scenario, record the total flow in each year across a list of nodes.
+    Output from data property has shape: (years, scenario combinations)
+
+    A list of factors can be provided to scale the total flow (e.g. for calculating operational costs).
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    name : str
+        The name of the recorder
+    nodes : list
+        List of `pywr.core.Node` instances to record
+    factors : list, optional
+        List of factors to apply to each node
+    """
+    def __init__(self, model, str name, list nodes, *args, **kwargs):
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
+        factors = kwargs.pop('factors', None)
+        super().__init__(model, name=name, *args, **kwargs)
+        self.nodes = nodes
+        self.factors = factors
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
+
+    property factors:
+        # Property provides np.array style access to the internal memoryview.
+        def __get__(self):
+            return np.array(self._factors)
+        def __set__(self, factors):
+            if factors is None:
+                factors = np.array([1.0 for n in self.nodes])
+            self._factors = np.array(factors)
+
+    cpdef setup(self):
+        super(AnnualTotalFlowRecorder, self).setup()
+        self._num_years = self.model.timestepper.end.year - self.model.timestepper.start.year + 1
+        self._ncomb = len(self.model.scenarios.combinations)
+        self._data = np.empty([self._num_years, self._ncomb])
+
+    cpdef reset(self):
+        self._data[...] = 0
+        self._current_year = -1
+        self._start_year = self.model.timestepper.start.year
+
+    cpdef after(self):
+        cdef int i, j
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int idx = ts.year - self._start_year
+        cdef AbstractNode node
+        cdef double[:] flow = np.zeros(self._ncomb, np.float64)
+
+        for i in range(self._ncomb):
+            for j, node in enumerate(self.nodes):
+                self._data[idx, i] += node._flow[i] * self._factors[j]
+
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
+
+    property data:
+        def __get__(self):
+            return np.array(self._data, dtype=np.float64)
+
+    @classmethod
+    def load(cls, model, data):
+        nodes = [model._get_node_from_ref(model, n) for n in data.pop("nodes")]
+        return cls(model, nodes=nodes, **data)
+AnnualTotalFlowRecorder.register()
+
+
 cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
     """ Record the number of years where an IndexParameter is greater than or equal to a threshold """
     def __init__(self, model, IndexParameter param, int threshold, *args, **kwargs):
@@ -1341,13 +1793,11 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
 AnnualCountIndexParameterRecorder.register()
 
 
-def load_recorder(model, data):
+def load_recorder(model, data, recorder_name=None):
     recorder = None
 
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         recorder_name = data
-    else:
-        recorder_name = None
 
     # check if recorder has already been loaded
     for rec in model.recorders:
@@ -1355,13 +1805,13 @@ def load_recorder(model, data):
             recorder = rec
             break
 
-    if recorder is None and isinstance(data, basestring):
+    if recorder is None and isinstance(data, str):
         # recorder was requested by name, but hasn't been loaded yet
         if hasattr(model, "_recorders_to_load"):
             # we're still in the process of loading data from JSON and
             # the parameter requested hasn't been loaded yet - do it now
             try:
-                data = model._recorders_to_load[recorder_name]
+                data = model._recorders_to_load.pop(recorder_name)
             except KeyError:
                 raise KeyError("Unknown recorder: '{}'".format(data))
             recorder = load_recorder(model, data)

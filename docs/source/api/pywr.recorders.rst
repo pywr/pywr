@@ -30,6 +30,7 @@ accessed following a model run before the model instances is destroyed.
    NumpyArrayNodeRecorder
    NumpyArrayStorageRecorder
    NumpyArrayLevelRecorder
+   NumpyArrayAreaRecorder
    NumpyArrayParameterRecorder
    NumpyArrayIndexParameterRecorder
 
@@ -50,6 +51,9 @@ Deficit recorders
 .. autosummary::
    :toctree: generated/
 
+   NumpyArrayNodeDeficitRecorder
+   NumpyArrayNodeSuppliedRatioRecorder
+   NumpyArrayNodeCurtailmentRatioRecorder
    TotalDeficitNodeRecorder
    DeficitFrequencyNodeRecorder
 
@@ -62,11 +66,14 @@ Statistical recorders
    AggregatedRecorder
    MeanFlowNodeRecorder
    TotalFlowNodeRecorder
+   AnnualTotalFlowRecorder
    MeanParameterRecorder
    TotalParameterRecorder
    RollingMeanFlowNodeRecorder
    MinimumVolumeStorageRecorder
    MinimumThresholdVolumeStorageRecorder
+   TimestepCountIndexParameterRecorder
+   AnnualCountIndexThresholdRecorder
    RollingWindowParameterRecorder
 
 

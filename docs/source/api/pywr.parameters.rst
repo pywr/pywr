@@ -35,6 +35,7 @@ Combining multiple parameters
 
    AggregatedParameter
    AggregatedIndexParameter
+   DivisionParameter
    NegativeParameter
    MaxParameter
    NegativeMaxParameter
@@ -50,6 +51,8 @@ Annual profile parameters
    DailyProfileParameter
    WeeklyProfileParameter
    MonthlyProfileParameter
+   ScenarioDailyProfileParameter
+   ScenarioWeeklyProfileParameter
    ScenarioMonthlyProfileParameter
    ArrayIndexedScenarioMonthlyFactorsParameter
 
@@ -81,6 +84,18 @@ Array based parameters
    IndexedArrayParameter
 
 
+Interpolation parameters
+------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    InterpolatedParameter
+    InterpolatedVolumeParameter
+    InterpolatedQuadratureParameter
+    InterpolatedFlowParameter
+
+
 Control curve parameters
 ------------------------
 
@@ -108,5 +123,7 @@ Other parameters
 
    AnnualHarmonicSeriesParameter
    DeficitParameter
+   ScenarioWrapperParameter
+   PiecewiseIntegralParameter
 
 

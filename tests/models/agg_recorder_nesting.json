@@ -1,0 +1,83 @@
+{
+    "metadata": {
+        "title": "Parameter recorder",
+        "description": "JSON example of parameter recorder",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-01-02",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": "supply_max"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": "demand_max",
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "demand1"]
+    ],
+    "parameters": {
+        "demand_max": {
+            "type": "constant",
+            "value": 10
+        },
+        "supply_max": {
+            "type": "constant",
+            "value": 15,
+            "name": "supply_max"
+        }
+    },
+    "recorders": {
+        "demand_max_recorder1": {
+            "type": "NumpyArrayParameterRecorder",
+            "parameter": "demand_max"
+        },
+        "demand_max_recorder2": {
+            "type": "NumpyArrayParameterRecorder",
+            "parameter": "demand_max"
+        },
+        "supply_max_recorder1": {
+            "type": "NumpyArrayParameterRecorder",
+            "node": "supply1",
+            "parameter": "supply_max"
+        },
+        "supply_max_recorder2": {
+            "type": "NumpyArrayParameterRecorder",
+            "node": "supply1",
+            "parameter": "supply_max"
+        },
+        "demand_max_recorder": {
+            "type": "aggregated",
+            "recorder_agg_func": "mean",
+            "recorders": [
+                "demand_max_recorder1",
+                "demand_max_recorder2"
+            ]
+        },
+        "supply_max_recorder": {
+            "type": "aggregated",
+            "recorder_agg_func": "mean",
+            "recorders": [
+                "supply_max_recorder1",
+                "supply_max_recorder2"
+            ]
+        },
+        "max_recorder": {
+            "type": "aggregated",
+            "recorder_agg_func": "sum",
+            "recorders": [
+                "demand_max_recorder",
+                "supply_max_recorder"
+            ]
+        }
+    }
+}

@@ -54,7 +54,7 @@ cpdef double hydropower_calculation(double flow, double water_elevation, double 
     # Convert flow to correct units (typically to m3/day)
     q = flow * flow_unit_conversion
     # Power
-    power = density * q * 9.81 * head
+    power = density * q * 9.81 * head * efficiency
 
     return power * energy_unit_conversion
 
@@ -149,7 +149,7 @@ cdef class HydropowerRecorder(NumpyArrayNodeRecorder):
                                              flow_unit_conversion=self.flow_unit_conversion,
                                              energy_unit_conversion=self.energy_unit_conversion)
 
-            self._data[ts._index, scenario_index.global_id] = power
+            self._data[ts.index, scenario_index.global_id] = power
 
     @classmethod
     def load(cls, model, data):
@@ -233,7 +233,7 @@ cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
         cdef int i
         cdef double q, head, power
         cdef Timestep ts = self.model.timestepper.current
-        cdef int days = ts.days
+        cdef double days = ts.days
         cdef ScenarioIndex scenario_index
         flow = self.node.flow
 

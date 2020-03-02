@@ -1,0 +1,60 @@
+{
+    "metadata": {
+        "title": "Flow",
+        "description": "Example of flow parameter",
+        "minimum_version": "1.1.1dev0"
+    },
+    "timestepper": {
+        "start": "2015-01-20",
+        "end": "2015-12-31",
+        "timestep": 31
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": {
+                "type": "monthlyprofile",
+                "values": [5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8]
+            }
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        },
+        {
+            "name": "yesterday_flow",
+            "type": "input",
+            "max_flow": "flow"
+        },
+        {
+            "name": "dummy_output",
+            "type": "output",
+            "max_flow": null,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "demand1"],
+        ["yesterday_flow", "dummy_output"]
+    ],
+    "parameters": {
+        "flow": {
+            "type": "flow",
+            "node": "demand1",
+            "initial_value": 3.1415
+        }
+    },
+    "recorders": {
+        "flow_recorder": {
+            "type": "numpyarraynoderecorder",
+            "node": "demand1"
+        },
+        "yesterday_flow_recorder": {
+            "type": "numpyarraynoderecorder",
+            "node": "yesterday_flow"
+        }
+    }
+}

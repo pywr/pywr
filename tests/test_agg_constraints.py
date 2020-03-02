@@ -190,6 +190,7 @@ def test_aggregated_node_min_flow_parameter(model):
     assert_allclose(A.flow, 15.0)
     assert_allclose(B.flow, 0.0)
 
+@pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
 def test_aggregated_node_max_flow_same_route(model):
     """Unusual case where the aggregated nodes are in the same route"""
     A = Input(model, "A", max_flow=20.0, cost=1)
@@ -228,11 +229,13 @@ def test_piecewise_constraint(model, flow):
     Flows are tested at 100, 200 and 300 to ensure the aggregated ratio works
     when there is too much to route entirely through to node 'D'.
 
-             / -->-- X0 -->-- \
-    A -->-- Xo -->-- X1 -->-- Xi -->-- C
-             \ -->-- X2 -->-- /
-                     |
-                     Bo -->-- Bi --> D
+    ::
+
+                 / -->-- X0 -->-- \
+        A -->-- Xo -->-- X1 -->-- Xi -->-- C
+                 \\ -->-- X2 -->-- /
+                         |
+                         Bo -->-- Bi --> D
     """
     A = Input(model, "A", min_flow=flow, max_flow=flow)
     X = PiecewiseLink(model, name="X", cost=[-500.0, 0, 0], max_flow=[40.0, None, None])

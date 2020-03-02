@@ -13,9 +13,6 @@ cdef class Parameter(Component):
     cdef calc_values(self, Timestep ts)
     cpdef double get_value(self, ScenarioIndex scenario_index)
     cpdef double[:] get_all_values(self)
-    cpdef update(self, double[:] values)
-    cpdef double[:] lower_bounds(self)
-    cpdef double[:] upper_bounds(self)
 
     # New variable API
     cpdef set_double_variables(self, double[:] values)
@@ -70,14 +67,31 @@ cdef class WeeklyProfileParameter(Parameter):
 
 cdef class MonthlyProfileParameter(Parameter):
     cdef double[:] _values
+    cdef double[:] _interp_values
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
-
+    cdef public object interp_day
+    cpdef _interpolate(self)
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
     cdef double[:, :] _values
     cdef Scenario _scenario
     cdef int _scenario_index
+
+cdef class ScenarioDailyProfileParameter(Parameter):
+    cdef double[:, :] _values
+    cdef Scenario _scenario
+    cdef int _scenario_index
+
+cdef class ScenarioWeeklyProfileParameter(Parameter):
+    cdef double[:, :] _values
+    cdef Scenario _scenario
+    cdef int _scenario_index
+
+cdef class UniformDrawdownProfileParameter(Parameter):
+    cdef public int reset_day
+    cdef public int reset_month
+    cdef int _reset_idoy
 
 cdef class IndexParameter(Parameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
@@ -135,6 +149,12 @@ cdef class AggregatedIndexParameter(IndexParameter):
     cpdef add(self, Parameter parameter)
     cpdef remove(self, Parameter parameter)
 
+
+cdef class DivisionParameter(Parameter):
+    cdef Parameter _numerator
+    cdef Parameter _denominator
+
+
 cdef class NegativeParameter(Parameter):
     cdef public Parameter parameter
 
@@ -154,3 +174,13 @@ cdef class NegativeMinParameter(MinParameter):
 
 cdef class DeficitParameter(Parameter):
     cdef public Node node
+
+cdef class FlowParameter(Parameter):
+    cdef public Node node
+    cdef double[:] __next_values
+    cdef public double initial_value
+
+cdef class PiecewiseIntegralParameter(Parameter):
+    cdef public double[:] x
+    cdef public double[:] y
+    cdef public Parameter parameter

@@ -19,12 +19,14 @@ class ProgressRecorder(Recorder):
         if print_func is None:
             print_func = logger.info
         self.print_func = print_func
-
-    def setup(self):
-        self.last_progress = -1
-        self.last_timestep = 0
+        self.last_progress = None
+        self.last_timestep = None
+        self.t0 = None
+        self.combinations = None
 
     def reset(self):
+        self.last_progress = -1
+        self.last_timestep = 0
         self.t0 = time.time()
         self.combinations = len(self.model.scenarios.combinations)
 

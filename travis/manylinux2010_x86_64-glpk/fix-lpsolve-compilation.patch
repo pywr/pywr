@@ -1,0 +1,66 @@
+Index: lp_solve_5.5/lp_solve/ccc.osx
+===================================================================
+--- lp_solve_5.5/lp_solve/ccc.osx	(revision 11215)
++++ lp_solve_5.5/lp_solve/ccc.osx	(revision 11216)
+@@ -20,7 +20,7 @@
+ echo '#include <stdio.h>'>>/tmp/isnan.c
+ echo '#include <stdlib.h>'>>/tmp/isnan.c
+ echo '#include <math.h>'>>/tmp/isnan.c
+-echo 'main(){isnan(0);}'>>/tmp/isnan.c
++echo 'main(){isnan(0.0);}'>>/tmp/isnan.c
+ $c /tmp/isnan.c -o /tmp/isnan $math >/dev/null 2>&1
+ if [ $? = 0 ]
+ then NOISNAN=
+Index: lp_solve_5.5/lp_solve/ccc
+===================================================================
+--- lp_solve_5.5/lp_solve/ccc	(revision 11215)
++++ lp_solve_5.5/lp_solve/ccc	(revision 11216)
+@@ -20,7 +20,7 @@
+ echo '#include <stdio.h>'>>/tmp/isnan.c
+ echo '#include <stdlib.h>'>>/tmp/isnan.c
+ echo '#include <math.h>'>>/tmp/isnan.c
+-echo 'main(){isnan(0);}'>>/tmp/isnan.c
++echo 'main(){isnan(0.0);}'>>/tmp/isnan.c
+ $c /tmp/isnan.c -o /tmp/isnan $math >/dev/null 2>&1
+ if [ $? = 0 ]
+ then NOISNAN=
+Index: lp_solve_5.5/lpsolve55/cccLUSOL.osx
+===================================================================
+--- lp_solve_5.5/lpsolve55/cccLUSOL.osx	(revision 11215)
++++ lp_solve_5.5/lpsolve55/cccLUSOL.osx	(revision 11216)
+@@ -17,7 +17,7 @@
+ echo '#include <stdio.h>'>>/tmp/isnan.c
+ echo '#include <stdlib.h>'>>/tmp/isnan.c
+ echo '#include <math.h>'>>/tmp/isnan.c
+-echo 'main(){isnan(0);}'>>/tmp/isnan.c
++echo 'main(){isnan(0.0);}'>>/tmp/isnan.c
+ $c /tmp/isnan.c -o /tmp/isnan $math >/dev/null 2>&1
+ if [ $? = 0 ]
+ then NOISNAN=
+Index: lp_solve_5.5/lpsolve55/ccc
+===================================================================
+--- lp_solve_5.5/lpsolve55/ccc	(revision 11215)
++++ lp_solve_5.5/lpsolve55/ccc	(revision 11216)
+@@ -18,7 +18,7 @@
+ echo '#include <stdio.h>'>>/tmp/isnan.c
+ echo '#include <stdlib.h>'>>/tmp/isnan.c
+ echo '#include <math.h>'>>/tmp/isnan.c
+-echo 'main(){isnan(0);}'>>/tmp/isnan.c
++echo 'main(){isnan(0.0);}'>>/tmp/isnan.c
+ $c /tmp/isnan.c -o /tmp/isnan $math >/dev/null 2>&1
+ if [ $? = 0 ]
+ then NOISNAN=
+Index: lp_solve_5.5/lpsolve55/ccc.osx
+===================================================================
+--- lp_solve_5.5/lpsolve55/ccc.osx	(revision 11215)
++++ lp_solve_5.5/lpsolve55/ccc.osx	(revision 11216)
+@@ -18,7 +18,7 @@
+ echo '#include <stdio.h>'>>/tmp/isnan.c
+ echo '#include <stdlib.h>'>>/tmp/isnan.c
+ echo '#include <math.h>'>>/tmp/isnan.c
+-echo 'main(){isnan(0);}'>>/tmp/isnan.c
++echo 'main(){isnan(0);}'>>/tmp/isnan.c
+ $c /tmp/isnan.c -o /tmp/isnan $math >/dev/null 2>&1
+ if [ $? = 0 ]
+ then NOISNAN=
+

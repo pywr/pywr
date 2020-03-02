@@ -2,12 +2,12 @@ import os
 import pandas
 import json
 import networkx as nx
-from past.builtins import basestring
 import copy
 from packaging.version import parse as parse_version
 import warnings
 import inspect
 import time
+from functools import wraps
 import logging
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ from pywr._component cimport Component
 from pywr.nodes import Storage, AggregatedStorage, AggregatedNode, VirtualStorage
 from pywr._core import ScenarioCollection, Scenario
 from pywr._core cimport AbstractNode
-from pywr.parameters._parameters import load_dataframe
+from .dataframe_tools import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
@@ -208,29 +208,45 @@ class Model(object):
         """
         if "includes" in data:
             for filename in data["includes"]:
+                _, ext = os.path.splitext(filename)
                 if path is not None:
                     filename = os.path.join(os.path.dirname(path), filename)
-                with open(filename, "r") as f:
-                    try:
-                        include_data = json.loads(f.read())
-                    except ValueError as e:
-                        message = e.args[0]
-                        if path:
-                            e.args = ("{} [{}]".format(e.args[0], os.path.basename(filename)),)
-                        raise(e)
-                for key, value in include_data.items():
-                    if isinstance(value, list):
-                        try:
-                            data[key].extend(value)
-                        except KeyError:
-                            data[key] = value
-                    elif isinstance(value, dict):
-                        try:
-                            data[key].update(value)
-                        except KeyError:
-                            data[key] = value
-                    else:
-                        raise TypeError("Invalid type for key \"{}\" in include \"{}\".".format(key, path))
+
+                ext = ext.lower()
+                if ext == '.json':
+                    cls._load_json_include(data, filename)
+                elif ext == '.py':
+                    cls._load_py_include(filename)
+                else:
+                    raise NotImplementedError(f'Include file type "{ext}" not supported.')
+
+    @classmethod
+    def _load_py_include(cls, filename):
+        import runpy
+        runpy.run_path(filename)
+
+    @classmethod
+    def _load_json_include(cls, data, filename):
+        with open(filename, "r") as f:
+            try:
+                include_data = json.loads(f.read())
+            except ValueError as e:
+                message = e.args[0]
+                e.args = ("{} [{}]".format(e.args[0], os.path.basename(filename)),)
+                raise(e)
+        for key, value in include_data.items():
+            if isinstance(value, list):
+                try:
+                    data[key].extend(value)
+                except KeyError:
+                    data[key] = value
+            elif isinstance(value, dict):
+                try:
+                    data[key].update(value)
+                except KeyError:
+                    data[key] = value
+            else:
+                raise TypeError("Invalid type for key \"{}\" in include \"{}\".".format(key, filename))
         return None  # data modified in-place
 
     @classmethod
@@ -250,7 +266,7 @@ class Model(object):
             Name of the solver to use for the model. This overrides the solver
             section of the model document.
         """
-        if isinstance(data, basestring):
+        if isinstance(data, str):
             # argument is a filename
             logger.info('Loading model from file: "{}"'.format(path))
             path = data
@@ -298,7 +314,7 @@ class Model(object):
         else:
             start = pandas.to_datetime(timestepper_data['start'])
             end = pandas.to_datetime(timestepper_data['end'])
-            timestep = int(timestepper_data['timestep'])
+            timestep = timestepper_data['timestep']
 
         if model is None:
             model = cls(
@@ -351,39 +367,29 @@ class Model(object):
             nodes_to_load[node_name] = node_data
         model._nodes_to_load = nodes_to_load
 
-        # collect parameters to load
-        try:
-            parameters_to_load = data["parameters"]
-        except KeyError:
-            parameters_to_load = {}
-        else:
-            for key, value in parameters_to_load.items():
-                if isinstance(value, dict):
-                    parameters_to_load[key]["name"] = key
-        model._parameters_to_load = parameters_to_load
+        def collect_components(data, key):
+            components_data = data.get(key, {})
+            for name, component_data in components_data.items():
+                component_data["name"] = name
+            return components_data
 
-        # collect recorders to load
-        try:
-            recorders_to_load = data["recorders"]
-        except KeyError:
-            recorders_to_load = {}
-        else:
-            for key, value in recorders_to_load.items():
-                if isinstance(value, dict):
-                    recorders_to_load[key]["name"] = key
-        model._recorders_to_load = recorders_to_load
+        model._parameters_to_load = collect_components(data, "parameters")
+        model._recorders_to_load = collect_components(data, "recorders")
 
-        # load parameters and recorders
-        for name, rdata in model._recorders_to_load.items():
-            load_recorder(model, rdata)
-        while True:
-            try:
-                name, pdata = model._parameters_to_load.popitem()
-            except KeyError:
-                break
-            parameter = load_parameter(model, pdata, name)
+        @listify
+        def load_components(components_to_load, load_component):
+            while True:
+                try:
+                    name, component_data = components_to_load.popitem()
+                except KeyError:
+                    break
+                component = load_component(model, component_data, name)
+                yield component
+
+        load_components(model._recorders_to_load, load_recorder)
+        for parameter in load_components(model._parameters_to_load, load_parameter):
             if not isinstance(parameter, BaseParameter):
-                raise TypeError("Named parameters cannot be literal values. Use type \"constant\" instead.")
+                raise TypeError("Named parameters cannot be literal values. Use type `constant` instead.")
 
         # load the remaining nodes
         for node_name in list(nodes_to_load.keys()):
@@ -547,7 +553,7 @@ class Model(object):
 
 
         """
-        if self.dirty:
+        if self.dirty or self.timestepper.dirty:
             self.setup()
         self.timestep = next(self.timestepper)
         return self._step()
@@ -570,9 +576,8 @@ class Model(object):
         t0 = time.time()
         timestep = None
         try:
-            if self.dirty:
+            if self.dirty or self.timestepper.dirty:
                 self.setup()
-                self.timestepper.reset()
             else:
                 self.reset()
             t1 = time.time()
@@ -606,7 +611,6 @@ class Model(object):
             solver_name=self.solver.name,
             solver_stats=self.solver.stats,
             version=pywr.__version__,
-            git_hash=pywr.__git_hash__,
         )
         logger.info('Model run complete!')
         return result
@@ -615,6 +619,7 @@ class Model(object):
         """Setup the model for the first time or if it has changed since
         last run."""
         logger.info('Setting up model ...')
+        self.timestepper.setup()
         self.scenarios.setup()
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
@@ -777,7 +782,7 @@ class NodeIterator(object):
 
     def __delitem__(self, key):
         """Remove a node from the graph"""
-        if isinstance(key, basestring):
+        if isinstance(key, str):
             node = self[key]
         else:
             node = key
@@ -806,6 +811,12 @@ class NodeIterator(object):
     def __len__(self):
         """Returns the number of nodes in the model"""
         return len(list(self._nodes()))
+
+    def __contains__(self, value):
+        for node in self._nodes():
+            if node.name == value or node == value:
+                return True
+        return False
 
     def __iter__(self):
         return self
@@ -866,6 +877,12 @@ class NamedIterator(object):
     def __iter__(self):
         return iter(self._objects)
 
+    def __contains__(self, value):
+        for obj in self._objects:
+            if obj.name == value or obj == value:
+                return True
+        return False
+
     def append(self, obj):
         # TODO: check for name collisions / duplication
         self._objects.append(obj)
@@ -873,7 +890,7 @@ class NamedIterator(object):
 
 class ModelResult(object):
     def __init__(self, num_scenarios, timestep, time_taken, time_taken_before, time_taken_after, time_taken_with_overhead,
-                 speed, solver_name, solver_stats, version, git_hash):
+                 speed, solver_name, solver_stats, version):
         self.timestep = timestep
         self.timesteps = timestep.index + 1
         self.time_taken = time_taken
@@ -885,7 +902,6 @@ class ModelResult(object):
         self.solver_name = solver_name
         self.solver_stats = solver_stats
         self.version = version
-        self.git_hash = git_hash
 
     def to_dict(self):
         return {attr: value for attr, value in self.__dict__.items()}
@@ -907,3 +923,10 @@ class ModelResult(object):
 
     def _repr_html_(self):
         return self.to_dataframe()._repr_html_()
+
+
+def listify(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        return list(f(*args, **kwargs))
+    return wrapper
