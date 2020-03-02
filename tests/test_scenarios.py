@@ -152,7 +152,8 @@ def test_scenario_storage():
     assert_allclose(s_rec.data[1], [510, 520])
 
 
-def test_scenarios_from_json():
+@pytest.mark.parametrize("json_file", ['simple_with_scenario.json', 'simple_with_scenario_wrapper.json'])
+def test_scenarios_from_json(json_file):
     """
     Test a simple model with two scenarios.
 
@@ -163,7 +164,7 @@ def test_scenarios_from_json():
     the `MultiIndex` on the `DataFrame` from the recorder.
     """
 
-    model = load_model('simple_with_scenario.json')
+    model = load_model(json_file)
     assert len(model.scenarios) == 2
 
     model.setup()
@@ -314,9 +315,9 @@ def test_scenario_slices(simple_linear_model):
     assert(len(index.levels) == 2)
     assert(len(index.levels[0]) == 10)
     assert(len(index.levels[1]) == 3)
-    assert(len(index.labels) == 2)
-    assert(len(index.labels[0]) == 10 * 3)
-    assert(len(index.labels[1]) == 10 * 3)
+    assert(len(index.codes) == 2)
+    assert(len(index.codes[0]) == 10 * 3)
+    assert(len(index.codes[1]) == 10 * 3)
     assert(index.names == ["A", "B"])
 
     s2.slice = slice(1, 3, 1)

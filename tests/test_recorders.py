@@ -3,7 +3,6 @@
 Test the Recorder object API
 
 """
-from __future__ import print_function
 import pywr.core
 from pywr.core import Model, Input, Output, Scenario, AggregatedNode
 import numpy as np
@@ -13,7 +12,7 @@ import tables
 import json
 from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
-from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
+from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayAreaRecorder, NumpyArrayLevelRecorder,
                             AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
                             TotalFlowNodeRecorder, RollingMeanFlowNodeRecorder, MeanFlowNodeRecorder, NumpyArrayParameterRecorder,
                             NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
@@ -23,11 +22,14 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder,
                             FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
                             HydropowerRecorder, TotalHydroEnergyRecorder,
                             TotalParameterRecorder, MeanParameterRecorder,
-                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning)
+                            NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
+                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning,
+                            AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder)
 
 from pywr.recorders.progress import ProgressRecorder
 
-from pywr.parameters import DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter
+from pywr.parameters import (DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter,
+                             InterpolatedVolumeParameter)
 from helpers import load_model
 import os
 import sys
@@ -75,6 +77,22 @@ def test_numpy_recorder_from_json(simple_linear_model):
     rec = load_recorder(model, data)
     assert isinstance(rec, NumpyArrayNodeRecorder)
 
+def test_numpy_recorder_factored(simple_linear_model):
+    """Test the optional factor applies correctly """
+
+    model = simple_linear_model
+    otpt = model.nodes['Output']
+    otpt.max_flow = 30.0
+    model.nodes['Input'].max_flow = 10.0
+    otpt.cost = -2
+
+    factor = 2.0
+    rec_fact = NumpyArrayNodeRecorder(model, otpt, factor=factor)
+
+    model.run()
+
+    assert rec_fact.data.shape == (365, 1) 
+    assert_allclose(20, rec_fact.data, atol=1e-7)
 
 class TestFlowDurationCurveRecorders:
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
@@ -260,6 +278,47 @@ def test_numpy_storage_recorder(simple_storage_model, proportional):
     assert_allclose(df.values, expected, atol=1e-7)
 
 
+def test_numpy_array_level_recorder(simple_storage_model):
+    model = simple_storage_model
+
+    storage = model.nodes["Storage"]
+    level_param = InterpolatedVolumeParameter(model, storage, [0, 20], [0, 100])
+    storage.level = level_param
+    level_rec = NumpyArrayLevelRecorder(model, storage, temporal_agg_func='min')
+
+    model.run()
+
+    expected = np.array([[50, 35, 20, 5, 0]]).T
+    assert_allclose(level_rec.data, expected, atol=1e-7)
+
+    df = level_rec.to_dataframe()
+    assert df.shape == (5, 1)
+    assert_allclose(df.values, expected, atol=1e-7)
+
+    assert_allclose(level_rec.aggregated_value(), np.min(expected))
+
+
+def test_numpy_array_area_recorder(simple_storage_model):
+
+    model = simple_storage_model
+
+    storage = model.nodes["Storage"]
+    area_param = InterpolatedVolumeParameter(model, storage, [0, 20], [0, 100])
+    storage.area = area_param
+    area_rec = NumpyArrayAreaRecorder(model, storage, temporal_agg_func='min')
+
+    model.run()
+
+    expected = np.array([[50, 35, 20, 5, 0]]).T
+    assert_allclose(area_rec.data, expected, atol=1e-7)
+
+    df = area_rec.to_dataframe()
+    assert df.shape == (5, 1)
+    assert_allclose(df.values, expected, atol=1e-7)
+
+    assert_allclose(area_rec.aggregated_value(), np.min(expected))
+
+
 def test_numpy_parameter_recorder(simple_linear_model):
     """
     Test the NumpyArrayParameterRecorder
@@ -329,6 +388,18 @@ def test_parameter_recorder_json():
     model.run()
     assert_allclose(rec_demand.data, 10)
     assert_allclose(rec_supply.data, 15)
+
+
+def test_nested_recorder_json():
+    model = load_model("agg_recorder_nesting.json")
+    rec_demand = model.recorders["demand_max_recorder"]
+    rec_supply = model.recorders["supply_max_recorder"]
+    rec_total = model.recorders["max_recorder"]
+    model.run()
+    assert_allclose(rec_demand.aggregated_value(), 10)
+    assert_allclose(rec_supply.aggregated_value(), 15)
+    assert_allclose(rec_total.aggregated_value(), 25)
+
 
 @pytest.fixture()
 def daily_profile_model(simple_linear_model):
@@ -476,24 +547,16 @@ def test_concatenated_dataframes(simple_storage_model):
 
 
 @pytest.mark.parametrize("complib", [None, "gzip", "bz2"])
-def test_csv_recorder(simple_linear_model, tmpdir, complib):
+def test_csv_recorder(simple_storage_model, tmpdir, complib):
+    """Test the CSV Recorder
     """
-    Test the CSV Recorder
-
-    """
-    model = simple_linear_model
+    model = simple_storage_model
     otpt = model.nodes['Output']
-    model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
 
     # Rename output to a unicode character to check encoding to files
-    if sys.version_info.major >= 3:
-        # This only works with Python 3.
-        # There are some limitations with encoding with the CSV writers in Python 2
-        otpt.name = u"\u03A9"
-        expected_header = ['Datetime', 'Input', 'Link', u"\u03A9"]
-    else:
-        expected_header = ['Datetime', 'Input', 'Link', 'Output']
+    otpt.name = u"\u03A9"
+    expected_header = ['Datetime', 'Input', 'Storage', u"\u03A9"]
 
     csvfile = tmpdir.join('output.csv')
     # By default the CSVRecorder saves all nodes in alphabetical order
@@ -503,41 +566,40 @@ def test_csv_recorder(simple_linear_model, tmpdir, complib):
     model.run()
 
     import csv
-
-    if sys.version_info.major >= 3:
-        kwargs = {"encoding": "utf-8"}
-        mode = "rt"
-    else:
-        kwargs = {}
-        mode = "r"
+    kwargs = {"encoding": "utf-8"}
+    mode = "rt"
 
     if complib == "gzip":
         import gzip
         fh = gzip.open(str(csvfile), mode, **kwargs)
     elif complib in ("bz2", "bzip2"):
         import bz2
-        if sys.version_info.major >= 3:
-            fh = bz2.open(str(csvfile), mode, **kwargs)
-        else:
-            fh = bz2.BZ2File(str(csvfile), mode)
+        fh = bz2.open(str(csvfile), mode, **kwargs)
     else:
         fh = open(str(csvfile), mode, **kwargs)
-    
+
+    expected = [
+        expected_header,
+        ['2016-01-01T00:00:00', 5.0, 7.0, 8.0],
+        ['2016-01-02T00:00:00', 5.0, 4.0, 8.0],
+        ['2016-01-03T00:00:00', 5.0, 1.0, 8.0],
+        ['2016-01-04T00:00:00', 5.0, 0.0, 6.0],
+        ['2016-01-05T00:00:00', 5.0, 0.0, 5.0],
+    ]
+
     data = fh.read(1024)
     dialect = csv.Sniffer().sniff(data)
     fh.seek(0)
     reader = csv.reader(fh, dialect)
+
     for irow, row in enumerate(reader):
+        expected_row = expected[irow]
         if irow == 0:
-            expected = expected_header
-            actual = row
+            assert expected_row == row
         else:
-            dt = model.timestepper.start+(irow-1)*model.timestepper.delta
-            expected = [dt.isoformat()]
-            actual = [row[0]]
-            assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
-        assert expected == actual
-        
+            assert expected_row[0] == row[0]  # Check datetime
+            # Check values
+            np.testing.assert_allclose([float(v) for v in row[1:]], expected_row[1:])
     fh.close()
 
 
@@ -563,6 +625,9 @@ def test_loading_csv_recorder_from_json(tmpdir):
 
     csvfile = tmpdir.join('output.csv')
     model.run()
+
+    periods = model.timestepper.datetime_index
+
     import csv
     with open(str(csvfile), 'r') as fh:
         dialect = csv.Sniffer().sniff(fh.read(1024))
@@ -573,12 +638,12 @@ def test_loading_csv_recorder_from_json(tmpdir):
                 expected = ['Datetime', 'inpt', 'otpt']
                 actual = row
             else:
-                dt = model.timestepper.start+(irow-1)*model.timestepper.delta
+                dt = periods[irow-1].to_timestamp()
                 expected = [dt.isoformat()]
                 actual = [row[0]]
                 assert np.all((np.array([float(v) for v in row[1:]]) - 10.0) < 1e-12)
             assert expected == actual
-       
+
 class TestTablesRecorder:
 
     def test_create_directory(self, simple_linear_model, tmpdir):
@@ -1058,23 +1123,211 @@ class TestTablesRecorder:
         np.testing.assert_allclose(link['value'], 40.0)
 
 
-def test_total_deficit_node_recorder(simple_linear_model):
-    """
-    Test TotalDeficitNodeRecorder
-    """
-    model = simple_linear_model
-    model.timestepper.delta = 5
-    otpt = model.nodes['Output']
-    otpt.max_flow = 30.0
-    model.nodes['Input'].max_flow = 10.0
-    otpt.cost = -2.0
-    rec = TotalDeficitNodeRecorder(model, otpt)
+class TestDeficitRecorders:
 
-    model.step()
-    assert_allclose(20.0*5, rec.aggregated_value(), atol=1e-7)
+    def test_total_deficit_node_recorder(self, simple_linear_model):
+        """
+        Test TotalDeficitNodeRecorder
+        """
+        model = simple_linear_model
+        model.timestepper.delta = 5
+        otpt = model.nodes['Output']
+        otpt.max_flow = 30.0
+        model.nodes['Input'].max_flow = 10.0
+        otpt.cost = -2.0
+        rec = TotalDeficitNodeRecorder(model, otpt)
 
-    model.step()
-    assert_allclose(40.0*5, rec.aggregated_value(), atol=1e-7)
+        model.step()
+        assert_allclose(20.0*5, rec.aggregated_value(), atol=1e-7)
+
+        model.step()
+        assert_allclose(40.0*5, rec.aggregated_value(), atol=1e-7)
+
+    def test_array_deficit_recoder(self, simple_linear_model):
+        """Test `NumpyArrayNodeDeficitRecorder` """
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        otpt = model.nodes['Output']
+
+        inflow = np.arange(365) * 0.1
+        demand = np.ones_like(inflow) * 30.0
+
+        model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
+        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.cost = -2.0
+
+        expected_supply = np.minimum(inflow, demand)
+        expected_deficit = demand - expected_supply
+
+        rec = NumpyArrayNodeDeficitRecorder(model, otpt)
+
+        model.run()
+
+        assert rec.data.shape == (365, 1)
+        np.testing.assert_allclose(expected_deficit[:, np.newaxis], rec.data)
+
+        df = rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(expected_deficit[:, np.newaxis], df.values)
+
+    def test_array_supplied_ratio_recoder(self, simple_linear_model):
+        """Test `NumpyArrayNodeSuppliedRatioRecorder` """
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        otpt = model.nodes['Output']
+
+        inflow = np.arange(365) * 0.1
+        demand = np.ones_like(inflow) * 30.0
+
+        model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
+        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.cost = -2.0
+
+        expected_supply = np.minimum(inflow, demand)
+        expected_ratio = expected_supply / demand
+
+        rec = NumpyArrayNodeSuppliedRatioRecorder(model, otpt)
+
+        model.run()
+
+        assert rec.data.shape == (365, 1)
+        np.testing.assert_allclose(expected_ratio[:, np.newaxis], rec.data)
+
+        df = rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(expected_ratio[:, np.newaxis], df.values)
+
+    def test_array_curtailment_ratio_recoder(self, simple_linear_model):
+        """Test `NumpyArrayNodeCurtailmentRatioRecorder` """
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        otpt = model.nodes['Output']
+
+        inflow = np.arange(365) * 0.1
+        demand = np.ones_like(inflow) * 30.0
+
+        model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
+        otpt.max_flow = ArrayIndexedParameter(model, demand)
+        otpt.cost = -2.0
+
+        expected_supply = np.minimum(inflow, demand)
+        expected_curtailment_ratio = 1 - expected_supply / demand
+
+        rec = NumpyArrayNodeCurtailmentRatioRecorder(model, otpt)
+
+        model.run()
+
+        assert rec.data.shape == (365, 1)
+        np.testing.assert_allclose(expected_curtailment_ratio[:, np.newaxis], rec.data)
+
+        df = rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(expected_curtailment_ratio[:, np.newaxis], df.values)
+
+
+def test_timestep_count_index_parameter_recorder(simple_storage_model):
+    """
+    The test uses a simple reservoir model with different inputs that
+    trigger a control curve failure after a different number of years.
+    """
+    from pywr.parameters import ConstantScenarioParameter, ConstantParameter
+    from pywr.parameters.control_curves import ControlCurveIndexParameter
+    model = simple_storage_model
+    scenario = Scenario(model, 'A', size=2)
+    # Simulate 5 years
+    model.timestepper.start = '2015-01-01'
+    model.timestepper.end = '2019-12-31'
+    # Control curve parameter
+    param = ControlCurveIndexParameter(model, model.nodes['Storage'], ConstantParameter(model, 0.25))
+
+    # Storage model has a capacity of 20, but starts at 10 Ml
+    # Demand is roughly 2 Ml/d per year
+    #  First ensemble balances the demand
+    #  Second ensemble should fail during 3rd year
+    demand = 2.0 / 365
+    model.nodes['Input'].max_flow = ConstantScenarioParameter(model, scenario, [demand, 0])
+    model.nodes['Output'].max_flow = demand
+
+    # Create the recorder with a threshold of 1
+    rec = TimestepCountIndexParameterRecorder(model, param, 1)
+
+    model.run()
+
+    assert_allclose([0, 183 + 365 + 365], rec.values(), atol=1e-7)
+
+
+@pytest.mark.parametrize("params", [1, 2])
+def test_annual_count_index_threshold_recorder(simple_storage_model, params):
+    """
+    The test sets uses a simple reservoir model with different inputs that
+    trigger a control curve failure after different numbers of years.
+    """
+    from pywr.parameters import ConstantScenarioParameter, ConstantParameter
+    from pywr.parameters.control_curves import ControlCurveIndexParameter
+    model = simple_storage_model
+    scenario = Scenario(model, 'A', size=2)
+    # Simulate 5 years
+    model.timestepper.start = '2015-01-01'
+    model.timestepper.end = '2019-12-31'
+    # Control curve parameter
+    param = ControlCurveIndexParameter(model, model.nodes['Storage'], ConstantParameter(model, 0.25))
+
+    # Storage model has a capacity of 20, but starts at 10 Ml
+    # Demand is roughly 2 Ml/d per year
+    #  First ensemble balances the demand
+    #  Second ensemble should fail during 3rd year
+    demand = 2.0 / 365
+    model.nodes['Input'].max_flow = ConstantScenarioParameter(model, scenario, [demand, 0])
+    model.nodes['Output'].max_flow = demand
+
+    # Create the recorder with a threshold of 1
+    rec = AnnualCountIndexThresholdRecorder(model, [param] * params, 'TestRec', 1)
+
+    model.run()
+
+    # We expect no failures in the first ensemble, the reservoir starts failing halfway through
+    # the 3rd year
+    assert_allclose([[0, 0],
+                     [0, 0],
+                     [0, 183],
+                     [0, 365],
+                     [0, 365]], rec.data, atol=1e-7)
+
+class TestAnnualTotalFlowRecorder:
+
+    def test_annual_total_flow_recorder(self, simple_linear_model):
+        """
+        Test AnnualTotalFlowRecorder
+        """
+
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        otpt.max_flow = 30.0
+        model.nodes['Input'].max_flow = 10.0
+        otpt.cost = -2
+        rec = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt])
+
+        model.run()
+
+        assert_allclose(3650.0, rec.data, atol=1e-7)
+
+    def test_annual_total_flow_recorder_factored(self, simple_linear_model):    
+        """
+        Test AnnualTotalFlowRecorder with factors applied
+        """
+        model = simple_linear_model
+        otpt = model.nodes['Output']
+        otpt.max_flow = 30.0
+        inpt = model.nodes['Input']
+        inpt.max_flow = 10.0
+        otpt.cost = -2
+
+        factors = [2.0, 1.0]
+        rec_fact = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt, inpt], factors=factors)
+
+        model.run()
+
+        assert_allclose(3650.0*3, rec_fact.data, atol=1e-7)
 
 
 def test_total_flow_node_recorder(simple_linear_model):
@@ -1112,6 +1365,10 @@ def test_mean_flow_node_recorder(simple_linear_model):
     assert_allclose(10.0, rec.aggregated_value(), atol=1e-7)
 
 
+def custom_test_func(array, axis=None):
+    return np.sum(array**2, axis=axis)
+
+
 class TestAggregatedRecorder:
     """Tests for AggregatedRecorder"""
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
@@ -1138,6 +1395,17 @@ class TestAggregatedRecorder:
 
         model.step()
         assert_allclose(func([20.0, 40.0]), rec.aggregated_value(), atol=1e-7)
+
+    @pytest.mark.parametrize("agg_func", ["min", "max", "mean", "sum", "custom"])
+    def test_agg_func_get_set(self, simple_linear_model, agg_func):
+        """Test getter and setter for AggregatedRecorder.agg_func"""
+        if agg_func == "custom":
+            agg_func = custom_test_func
+        model = simple_linear_model
+        rec = AggregatedRecorder(model, [], agg_func=agg_func)
+        assert rec.agg_func == agg_func
+        rec.agg_func = "product"
+        assert rec.agg_func == "product"
 
 
 def test_reset_timestepper_recorder():
@@ -1366,7 +1634,7 @@ class TestEventRecorder:
             td = evt.end.datetime - evt.start.datetime
             assert evt.duration == td.days
 
-        # Test that the volumes in the Storage node during the event periods match
+        #   Test that the volumes in the Storage node during the event periods match
         assert_equal(triggered, arry.data <= 4)
 
         df = evt_rec.to_dataframe()
@@ -1525,7 +1793,8 @@ def test_progress_recorder(simple_linear_model):
 
 class TestHydroPowerRecorder:
 
-    def test_constant_level(self, simple_storage_model):
+    @pytest.mark.parametrize('efficiency', [1.0, 0.85])
+    def test_constant_level(self, simple_storage_model, efficiency):
         """ Test HydropowerRecorder """
         m = simple_storage_model
 
@@ -1533,8 +1802,8 @@ class TestHydroPowerRecorder:
         otpt = m.nodes['Output']
 
         elevation = ConstantParameter(m, 100)
-        rec = HydropowerRecorder(m, otpt, elevation)
-        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation)
+        rec = HydropowerRecorder(m, otpt, elevation, efficiency=efficiency)
+        rec_total = TotalHydroEnergyRecorder(m, otpt, elevation, efficiency=efficiency)
 
         m.setup()
         m.step()
@@ -1544,11 +1813,11 @@ class TestHydroPowerRecorder:
         # Flow: 8 m3/day
         # Power: 1000 * 9.81 * 8 * 100
         # Energy: power * 1 day = power
-        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec.data[0, 0], 1000 * 9.81 * 8 * 100 * 1e-6 * efficiency)
         # Second step has the same answer in this model
         m.step()
-        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6)
-        np.testing.assert_allclose(rec_total.values()[0], 2* 1000 * 9.81 * 8 * 100 * 1e-6)
+        np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 100 * 1e-6 * efficiency)
+        np.testing.assert_allclose(rec_total.values()[0], 2 * 1000 * 9.81 * 8 * 100 * 1e-6 * efficiency)
 
     def test_varying_level(self, simple_storage_model):
         """ Test HydropowerRecorder with varying level on Storage node """

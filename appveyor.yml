@@ -1,15 +1,39 @@
-# This build script is adapted from conda-smithy, see:
-# https://github.com/conda-forge/conda-smithy-feedstock
+# Based on appveyor.yml from https://github.com/Toblerity/Fiona
 
 environment:
 
+  global:
+    BUILD_HOME: "C:\\build"
+  
+    GLPK_VER: "4.65"
+    GLPK_HOME: "C:\\glpk-%GLPK_VER%"
+    GLPK_PKG_LIB: "glpk_4_65.lib"
+    GLPK_LIB: "glpk.lib"
+    GLPK_PKG_DLL: "glpk_4_65.dll"
+    GLPK_DLL: "glpk.dll"
+    GLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-%GLPK_VER%/winglpk-%GLPK_VER%.zip/download"
+
+    LPSOLVE_VER: "5.5.2.5"
+    LPSOLVE_HOME: "C:\\lpsolve-%LPSOLVE_VER%"
+    LPSOLVE_LIB: "lpsolve55.lib"
+    LPSOLVE_DLL: "lpsolve55.dll"
+    LPSOLVE_URL: "https://sourceforge.net/projects/lpsolve/files/lpsolve/%LPSOLVE_VER%/lp_solve_%LPSOLVE_VER%_dev_win64.zip/download"
+
+    INCLUDE: "%GLPK_HOME%\\src;%LPSOLVE_HOME%"
+    LIB: "%GLPK_HOME%\\w64;%LPSOLVE_HOME%\\lpsolve"
+
+    PYTHON_ARCH: "64"
+
   matrix:
-    - TARGET_ARCH: x64
-      CONDA_PY: 36
-      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
-    - TARGET_ARCH: x64
-      CONDA_PY: 37
-      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
+    # Python 3.6
+    - PYTHON: "C:\\Python36-x64"
+
+    # Python 3.7
+    - PYTHON: "C:\\Python37-x64"
+
+    # Python 3.8
+    - PYTHON: "C:\\Python38-x64"
+
 
 # We always use a 64-bit machine, but can build x86 distributions
 # with the TARGET_ARCH variable.
@@ -17,27 +41,87 @@ platform:
     - x64
 
 install:
-    # Cywing's git breaks conda-build. (See https://github.com/conda-forge/conda-smithy-feedstock/pull/2.)
-    - cmd: rmdir C:\cygwin /s /q
+    - ECHO "Filesystem root:"
+    - ps: "ls \"C:/\""
 
-    # Add path and activate `conda`
-    - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
-    - cmd: set PYTHONUNBUFFERED=1
+    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - "SET PYTHONPATH=%PYTHON%\\Lib\\site-packages;%PYTHONPATH%"
 
-    # Update conda
-    - cmd: conda update --yes --quiet conda
+    - "python --version"
+    - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-    # Add our channels
-    - cmd: conda config --set show_channel_urls true
-    - cmd: conda config --add channels conda-forge
+    # Create working directories
+    - ps: mkdir %BUILD_HOME% | out-null
+    - ps: mkdir %GLPK_HOME% | out-null
+    - ps: mkdir %LPSOLVE_HOME% | out-null
 
+    - curl -L %GLPK_URL% --output glpk.zip
+    - 7z x glpk.zip -oC:\
+    - cmd: echo "Installed GLPK:"
+    - ps: "ls \"C:/\""
+    - ps: "ls %GLPK_HOME%"
 
-    # Configure the VM.
-    - cmd: conda.exe install -n root --quiet --yes conda-forge-ci-setup
-    - cmd: run_conda_forge_build_setup
+    - curl -L --output lpsolve.zip %LPSOLVE_URL%
+    - 7z x lpsolve.zip -o%LPSOLVE_HOME%\lpsolve
 
-# Skip .NET project specific build phase.
-build: off
+    - "SET PACKAGE_DATA=true"
+
+    - cd C:\projects\pywr
+    # Upgrade to the latest version of pip to avoid it displaying warnings
+    # about it being out of date.
+    - cmd: python -m pip install --disable-pip-version-check --user --upgrade pip
+
+    - cmd: pip --version
+    # Install the build dependencies of the project. If some dependencies contain
+    # compiled extensions and are not provided as pre-built wheel packages,
+    # pip will build them from source using the MSVC compiler matching the
+    # target Python version and architecture
+    - "pip install cython packaging numpy jupyter pytest wheel"
+
+    # Install optional dependencies for tests
+    # pygmo is not install because Win32 wheels are not supported.
+    - "pip install platypus-opt inspyred"
+
+build_script:
+  # Build the compiled extension
+  - cmd: echo %PATH%
+  - cmd: echo %PYTHONPATH%
+
+  # Rename (remove version number) the packaged library files for linking
+  - cmd: copy %GLPK_HOME%\w64\%GLPK_PKG_LIB% %GLPK_HOME%\w64\%GLPK_LIB%
+  - cmd: copy %GLPK_HOME%\w64\%GLPK_PKG_DLL% %GLPK_HOME%\w64\%GLPK_DLL%
+  # Copy GLPK libraries to package
+  - ps: mkdir pywr\.libs
+  - ps: mkdir pywr\.libs\licenses
+  - cmd: copy %GLPK_HOME%\w64\%GLPK_PKG_DLL% pywr\.libs\%GLPK_PKG_DLL%
+  - cmd: copy %GLPK_HOME%\COPYING pywr\.libs\licenses\COPYING
+
+  - cmd: copy %LPSOLVE_HOME%\lpsolve\%LPSOLVE_DLL% pywr\.libs\%LPSOLVE_DLL%
+
+  # build pywr and create a wheel
+  - "python setup.py build_ext --with-glpk --with-lpsolve bdist_wheel"
+
+  # install the wheel
+  # - ps: python -m pip install --upgrade pip
+  - cmd: FOR %%i in (dist\*.whl) DO pip install --force-reinstall --ignore-installed %%i
+  - cmd: move pywr pywr.build
 
 test_script:
-    - "%CMD_IN_ENV% conda build conda-recipe --quiet"
+  # Run the project tests
+  - cmd: SET
+
+  - ps: python -c "import pywr"
+  - ps: python -c "from pywr.solvers import cython_glpk"
+
+  - "SET PYWR_SOLVER=glpk"
+  - "python -m pytest"
+
+  - "SET PYWR_SOLVER=glpk-edge"
+  - "python -m pytest"
+
+  - "SET PYWR_SOLVER=lpsolve"
+  - "python -m pytest"
+
+artifacts:
+  - path: dist\*.whl
+    name: wheel

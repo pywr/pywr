@@ -2,11 +2,12 @@ import os
 import numpy as np
 cimport numpy as np
 import pandas
+import calendar
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
-from past.builtins import basestring
 from pywr.h5tools import H5Store
 from pywr.hashes import check_hash
+from ..dataframe_tools import align_and_resample_dataframe, load_dataframe, read_dataframe
 import warnings
 
 
@@ -156,46 +157,6 @@ cdef class ConstantParameter(Parameter):
 ConstantParameter.register()
 
 
-def align_and_resample_dataframe(df, datetime_index):
-    from pandas.tseries.offsets import DateOffset, Week, Day
-    # Must resample and align the DataFrame to the model.
-    start = datetime_index[0]
-    end = datetime_index[-1]
-
-    df_index = df.index
-    df_freq = df.index.freq
-    if df_freq is None:
-        raise ValueError('DataFrame index has no frequency.')
-
-    # Special case of a weekly frequency that can be treated as 7D
-    if isinstance(df_freq, Week):
-        df_freq = Day(n=7)
-
-    if df_index[0] > start:
-        raise ValueError('DataFrame data begins after the index start date.')
-    elif df_index[0] < start:
-        warnings.warn("Model starts after the beginning of the DataFrame. Some data is not used.", UnutilisedDataWarning)
-
-    if df_index[-1] < end:
-        raise ValueError('DataFrame data ends before the index end date.')
-    elif df_index[-1] > end:
-        warnings.warn("Model ends before the end of the DataFrame. Some data is not used.", UnutilisedDataWarning)
-
-    # Downsampling (i.e. from high freq to lower model freq)
-    if datetime_index.freq >= df_freq:
-        # Slice to required dates
-        df = df[start:end]
-        if df.index[0] != start:
-            raise ValueError('Start date of DataFrame can not be aligned with the desired index start date.')
-        # Take mean at the model's frequency
-        df = df.resample(datetime_index.freq).mean()
-        df.index.freq = datetime_index.freq
-    else:
-        raise NotImplementedError('Upsampling DataFrame not implemented.')
-
-    return df
-
-
 cdef class DataFrameParameter(Parameter):
     """Timeseries parameter with automatic alignment and resampling
 
@@ -249,7 +210,7 @@ cdef class DataFrameParameter(Parameter):
 DataFrameParameter.register()
 
 cdef class ArrayIndexedParameter(Parameter):
-    """Time varying parameter using an array and Timestep._index
+    """Time varying parameter using an array and Timestep.index
 
     The values in this parameter are constant across all scenarios.
     """
@@ -259,12 +220,12 @@ cdef class ArrayIndexedParameter(Parameter):
 
     cdef calc_values(self, Timestep ts):
         # constant parameter can just set the entire array to one value
-        self.__values[...] = self.values[ts._index]
+        self.__values[...] = self.values[ts.index]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the parameter at a given timestep
         """
-        return self.values[ts._index]
+        return self.values[ts.index]
 ArrayIndexedParameter.register()
 
 
@@ -299,7 +260,7 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         # the Scenario objects in the model run. We have cached the
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
-        return self.values[ts._index, scenario_index._indices[self._scenario_index]]
+        return self.values[ts.index, scenario_index._indices[self._scenario_index]]
 
 
 cdef class TablesArrayParameter(IndexParameter):
@@ -418,7 +379,7 @@ cdef class TablesArrayParameter(IndexParameter):
                 self._values_int = node.read().astype(np.int32)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef Py_ssize_t i = ts._index
+        cdef Py_ssize_t i = ts.index
         cdef Py_ssize_t j
         if self._values_dbl is None:
             return float(self.index(ts, scenario_index))
@@ -432,7 +393,7 @@ cdef class TablesArrayParameter(IndexParameter):
             return self._values_dbl[i, j]
 
     cpdef int index(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef Py_ssize_t i = ts._index
+        cdef Py_ssize_t i = ts.index
         cdef Py_ssize_t j
         if self._values_int is None:
             return int(self.value(ts, scenario_index))
@@ -504,7 +465,7 @@ ConstantScenarioParameter.register()
 
 
 cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
-    """Time varying parameter using an array and Timestep._index with
+    """Time varying parameter using an array and Timestep.index with
     multiplicative factors per Scenario
     """
     def __init__(self, model, Scenario scenario, values, factors, *args, **kwargs):
@@ -542,7 +503,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         # correct number to use in this instance.
         cdef int imth = ts.month-1
         cdef int i = scenario_index._indices[self._scenario_index]
-        return self._values[ts._index]*self._factors[i, imth]
+        return self._values[ts.index]*self._factors[i, imth]
 
     @classmethod
     def load(cls, model, data):
@@ -597,7 +558,7 @@ cdef class DailyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts._datetime.year)):
+        if not is_leap_year(<int>(ts.year)):
             if i > 58: # 28th Feb
                 i += 1
         return self._values[i]
@@ -622,7 +583,7 @@ cdef class WeeklyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts._datetime.year)):
+        if not is_leap_year(<int>(ts.datetime.year)):
             if i > 58: # 28th Feb
                 i += 1
         cdef Py_ssize_t week
@@ -636,28 +597,100 @@ WeeklyProfileParameter.register()
 
 
 cdef class MonthlyProfileParameter(Parameter):
-    """ Parameter which provides a monthly profile
+    """Parameter which provides a monthly profile.
 
-    A monthly profile is a static profile that returns a different
-    value based on the current time-step.
+    The monthly profile returns a different value based on the month of the current
+    time-step. By default this creates a piecewise profile with a step change at the
+    beginning of each month. An optional `interp_day` keyword can instead create a
+    linearly interpolated daily profile assuming the given values correspond to either
+    the first or last day of the month.
+
+    Parameters
+    ----------
+    values : iterable, array
+        The 12 values that represent the monthly profile.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the monthly profile values when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the monthly profile values when used during optimisation.
+    inter_day : str or None (default=None)
+        If `interp_day` is None then no interpolation is undertaken, and the parameter
+         returns values representing a piecewise monthly profile. Otherwise `interp_day`
+         must be a string of either "first" or "last" representing which day of the month
+         each of the 12 values represents. The parameter then returns linearly
+         interpolated values between the given day of the month.
+
 
     See also
     --------
     ScenarioMonthlyProfileParameter
     ArrayIndexedScenarioMonthlyFactorsParameter
     """
-    def __init__(self, model, values, lower_bounds=0.0, upper_bounds=np.inf, **kwargs):
+    def __init__(self, model, values, lower_bounds=0.0, upper_bounds=np.inf, interp_day=None, **kwargs):
         super(MonthlyProfileParameter, self).__init__(model, **kwargs)
         self.double_size = 12
         self.integer_size = 0
         if len(values) != self.double_size:
             raise ValueError("12 values must be given for a monthly profile.")
         self._values = np.array(values)
+        self.interp_day = interp_day
         self._lower_bounds = np.ones(self.double_size)*lower_bounds
         self._upper_bounds = np.ones(self.double_size)*upper_bounds
 
+    cpdef reset(self):
+        Parameter.reset(self)
+        # The interpolated profile is recalculated during reset so that
+        # it will update when the _values array is updated via `set_double_variables`
+        # and the model is rerun. I.e. during optimisation (where setup is not redone).
+        if self.interp_day is not None:
+            self._interpolate()
+
+    cpdef _interpolate(self):
+
+        # Create an array to save the daily profile in.
+        self._interp_values = np.zeros(366)
+        cdef int i = 0
+        cdef int mth
+
+        # Create interpolation knots depending on values
+        if self.interp_day == 'first':
+            x = [1]  # First month
+            y = []
+            for mth in range(1, 13):
+                x.append(x[-1] + calendar.monthrange(2015, mth)[1])
+                y.append(self._values[mth-1])
+            y.append(self._values[0])
+        elif self.interp_day == 'last':
+            x = [0]  # End of previous year
+            y = [self._values[11]]  # Use value from December
+            for mth in range(1, 13):
+                x.append(x[-1] + calendar.monthrange(2015, mth)[1])
+                y.append(self._values[mth-1])
+        else:
+            raise ValueError(f'Interpolation day "{self.interp_day}" not supported.')
+
+        # Do the interpolation
+        values = np.interp(np.arange(365) + 1, x, y)
+        # Make the daily profile of 366 values repeating the same value for 28th & 29th Feb.
+        for i in range(365):
+            if i < 58:
+                self._interp_values[i] = values[i]
+            elif i == 58:
+                self._interp_values[i] = values[i]
+                self._interp_values[i+1] = values[i]
+            elif i > 58:
+                self._interp_values[i+1] = values[i]
+
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return self._values[ts.month-1]
+        cdef int i
+        if self.interp_day is None:
+            return self._values[ts.month-1]
+        else:
+            i = ts.dayofyear - 1
+            if not is_leap_year(ts.year):
+                if i > 58: # 28th Feb
+                    i += 1
+            return self._interp_values[i]
 
     cpdef set_double_variables(self, double[:] values):
         self._values[...] = values
@@ -675,7 +708,7 @@ MonthlyProfileParameter.register()
 
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
-    """ Parameter which provides a monthly profile per scenario
+    """ Parameter that provides a monthly profile per scenario
 
     Behaviour is the same as `MonthlyProfileParameter` except a different
     profile is returned for each ensemble in a given scenario.
@@ -708,6 +741,166 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
         return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
 
 ScenarioMonthlyProfileParameter.register()
+
+cdef class ScenarioWeeklyProfileParameter(Parameter):
+    """Parameter that provides a weekly profile per scenario
+
+    This parameter provides a repeating annual profile with a weekly resolution. A
+    different profile is returned for each member of a given scenario
+
+    Parameters
+    ----------
+    scenario: Scenario
+        Scenario object over which different profiles should be provided.
+    values : iterable, array
+        Length of 1st dimension should equal the number of members in the scenario object
+        and the length of the second dimension should be 52
+
+    """
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        values = np.array(values)
+        if values.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+        if scenario._size != values.shape[0]:
+            raise ValueError("First dimension of factors must be the same size as scenario.")
+        if values.shape[1] != 52:
+            raise ValueError("52 values must be given for a weekly profile.")
+        self._values = values
+        self._scenario = scenario
+
+    cpdef setup(self):
+        super(ScenarioWeeklyProfileParameter, self).setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(ts.year):
+            if i > 58: # 28th Feb
+                i += 1
+        cdef Py_ssize_t week
+        if i >= 364:
+            # last week of year is slightly longer than 7 days
+            week = 51
+        else:
+            week = i // 7
+        return self._values[scenario_index._indices[self._scenario_index], week]
+
+ScenarioWeeklyProfileParameter.register()
+
+cdef class ScenarioDailyProfileParameter(Parameter):
+    """Parameter which provides a daily profile per scenario.
+
+    This parameter provides a repeating annual profile with a daily resolution. A
+    different profile is returned for each member of a given scenario
+
+    Parameters
+    ----------
+    scenario: Scenario
+        Scenario object over which different profiles should be provided
+    values : iterable, array
+        Length of 1st dimension should equal the number of members in the scenario object
+        and the length of the second dimension should be 366
+
+    """
+    def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        values = np.array(values)
+        if values.ndim != 2:
+            raise ValueError("Factors must be two dimensional.")
+        if scenario._size != values.shape[0]:
+            raise ValueError("First dimension of factors must be the same size as scenario.")
+        if values.shape[1] != 366:
+            raise ValueError("366 values must be given for a daily profile.")
+        self._values = values
+        self._scenario = scenario
+
+    cpdef setup(self):
+        super(ScenarioDailyProfileParameter, self).setup()
+        # This setup must find out the index of self._scenario in the model
+        # so that it can return the correct value in value()
+        self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(ts.year):
+            if i > 58: # 28th Feb
+                i += 1
+        return self._values[scenario_index._indices[self._scenario_index], i]
+
+ScenarioDailyProfileParameter.register()
+
+
+cdef class UniformDrawdownProfileParameter(Parameter):
+    """Parameter which provides a uniformly reducing value from one to zero.
+
+     This parameter is intended to be used with an `AnnualVirtualStorage` node to provide a profile
+     that represents perfect average utilisation of the annual volume. It returns a value of 1 on the
+     reset day, and subsequently reduces by 1/366 every day afterward.
+
+    Parameters
+    ----------
+    reset_day: int
+        The day of the month (1-31) to reset the volume to the initial value.
+    reset_month: int
+        The month of the year (1-12) to reset the volume to the initial value.
+
+    See also
+    --------
+    `pywr.nodes.AnnualVirtualStorage`
+    """
+    def __init__(self, model, reset_day=1, reset_month=1, **kwargs):
+        super().__init__(model, **kwargs)
+        self.reset_day = reset_day
+        self.reset_month = reset_month
+
+    cpdef reset(self):
+        super(UniformDrawdownProfileParameter, self).reset()
+        # Reset day of the year based on a leap year.
+        # Note that this is zero-based
+        self._reset_idoy = pandas.Period(year=2016, month=self.reset_month, day=self.reset_day, freq='D').dayofyear - 1
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int current_idoy = ts.dayofyear - 1
+        cdef int total_days_in_period
+        cdef int days_into_period
+        cdef int year = ts.year
+
+        if not is_leap_year(ts.year):
+            if current_idoy > 58: # 28th Feb
+                current_idoy += 1
+
+        days_into_period = current_idoy - self._reset_idoy
+        if days_into_period < 0:
+            # We're not past the reset day yet; use the previous year
+            year -= 1
+
+        if self._reset_idoy > 59:
+            # Reset occurs after February therefore next year's February might be a leap year?
+            year += 1
+
+        # Determine the number of days in the period based on whether there is a leap year or not in the current period
+        if is_leap_year(year):
+            total_days_in_period = 366
+        else:
+            total_days_in_period = 365
+
+        # Now determine number of days we're into the period if it has wrapped around to a new year
+        if days_into_period < 0:
+            days_into_period += 366
+            # Need to adjust for post 29th Feb in non-leap years.
+            # Recall `current_idoy` was incremented by 1 if it is a non-leap already (hence comparison to 59)
+            if not is_leap_year(ts.year) and current_idoy > 59:
+                days_into_period -= 1
+
+        return 1.0 - days_into_period / total_days_in_period
+
+    @classmethod
+    def load(cls, model, data):
+        return cls(model, **data)
+UniformDrawdownProfileParameter.register()
 
 
 cdef class IndexParameter(Parameter):
@@ -903,8 +1096,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         self._ts_index_cache = -1
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        cdef int ts_index = timestep._index
-        cdef int doy = timestep._datetime.dayofyear - 1
+        cdef int ts_index = timestep.index
+        cdef int doy = timestep.dayofyear - 1
         cdef int n = self._amplitudes.shape[0]
         cdef int i
         cdef double val
@@ -955,6 +1148,7 @@ _agg_func_lookup = {
     "all": AggFuncs.ALL,
     "median": AggFuncs.MEDIAN,
 }
+_agg_func_lookup_reverse = {v: k for k, v in _agg_func_lookup.items()}
 
 def wrap_const(model, value):
     if isinstance(value, (int, float)):
@@ -996,9 +1190,13 @@ cdef class AggregatedParameter(Parameter):
         return cls(model, parameters=parameters, agg_func=agg_func, **data)
 
     property agg_func:
+        def __get__(self):
+            if self._agg_func == AggFuncs.CUSTOM:
+                return self._agg_user_func
+            return _agg_func_lookup_reverse[self._agg_func]
         def __set__(self, agg_func):
             self._agg_user_func = None
-            if isinstance(agg_func, basestring):
+            if isinstance(agg_func, str):
                 agg_func = _agg_func_lookup[agg_func.lower()]
             elif callable(agg_func):
                 self._agg_user_func = agg_func
@@ -1112,9 +1310,13 @@ cdef class AggregatedIndexParameter(IndexParameter):
         return cls(model, parameters=parameters, agg_func=agg_func, **data)
 
     property agg_func:
+        def __get__(self):
+            if self._agg_func == AggFuncs.CUSTOM:
+               return self._agg_user_func
+            return _agg_func_lookup_reverse[self._agg_func]
         def __set__(self, agg_func):
             self._agg_user_func = None
-            if isinstance(agg_func, basestring):
+            if isinstance(agg_func, str):
                 agg_func = _agg_func_lookup[agg_func.lower()]
             elif callable(agg_func):
                 self._agg_user_func = agg_func
@@ -1201,6 +1403,60 @@ cdef class AggregatedIndexParameter(IndexParameter):
 
 
 AggregatedIndexParameter.register()
+
+
+cdef class DivisionParameter(Parameter):
+    """ Parameter that divides one `Parameter` by another.
+
+    Parameters
+    ----------
+    denominator : `Parameter`
+        The parameter to use as the denominator (or divisor).
+    numerator : `Parameter`
+        The parameter to use as the numerator (or dividend).
+    """
+    def __init__(self, model, numerator, denominator, **kwargs):
+        super().__init__(model, **kwargs)
+        self._numerator = None
+        self._denominator = None
+        self.numerator = numerator
+        self.denominator = denominator
+
+    property numerator:
+        def __get__(self):
+            return self._numerator
+        def __set__(self, parameter):
+            # remove any existing parameter
+            if self._numerator is not None:
+                self._numerator.parents.remove(self)
+
+            self._numerator = parameter
+            self.children.add(parameter)
+
+    property denominator:
+        def __get__(self):
+            return self._denominator
+        def __set__(self, parameter):
+            # remove any existing parameter
+            if self._denominator is not None:
+                self._denominator.parents.remove(self)
+
+            self._denominator = parameter
+            self.children.add(parameter)
+
+    cdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = self._numerator.__values[i] / self._denominator.__values[i]
+
+    @classmethod
+    def load(cls, model, data):
+        numerator = load_parameter(model, data.pop("numerator"))
+        denominator = load_parameter(model, data.pop("denominator"))
+        return cls(model, numerator, denominator, **data)
+DivisionParameter.register()
 
 
 cdef class NegativeParameter(Parameter):
@@ -1368,6 +1624,117 @@ cdef class DeficitParameter(Parameter):
 DeficitParameter.register()
 
 
+cdef class FlowParameter(Parameter):
+    """Parameter that provides the flow from a node from the previous time-step.
+
+    Parameters
+    ----------
+    model : pywr.model.Model
+    node : Node
+      The node that will have its flow tracked
+    initial_value : float (default=0.0)
+      The value to return on the first  time-step before the node has any past flow.
+
+    Notes
+    -----
+    This parameter keeps track of the previous time step's flow on the given node. These
+    values can be used in calculations for the current timestep as though this was any
+    other parameter.
+    """
+    def __init__(self, model, node, *args, **kwargs):
+        self.initial_value = kwargs.pop('initial_value', 0)
+        super().__init__(model, *args, **kwargs)
+        self.node = node
+
+    cpdef setup(self):
+        super(FlowParameter, self).setup()
+        cdef int num_comb
+        if self.model.scenarios.combinations:
+            num_comb = len(self.model.scenarios.combinations)
+        else:
+            num_comb = 1
+        self.__next_values = np.empty([num_comb], np.float64)
+
+    cpdef reset(self):
+        self.__next_values[...] = self.initial_value
+        self.__values[...] = 0.0
+
+    cdef calc_values(self, Timestep timestep):
+        cdef int i
+        for i in range(self.__values.shape[0]):
+            self.__values[i] = self.__next_values[i]
+
+    cpdef after(self):
+        cdef int i
+        for i in range(self.node._flow.shape[0]):
+            self.__next_values[i] = self.node._flow[i]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        return cls(model, node=node, **data)
+FlowParameter.register()
+
+
+cdef class PiecewiseIntegralParameter(Parameter):
+    """Parameter that integrates a piecewise function.
+
+    This parameter calculates the integral of a piecewise function. The
+    piecewise function is given as two arrays (`x` and `y`) and is assumed to
+    start from (0, 0). The values of `x` should be monotonically increasing
+    and greater than zero.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter the defines the right hand bounds of the integration.
+    x : iterable of doubles
+    y : iterable of doubles
+
+    """
+    def __init__(self, model, parameter, x, y, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.x = np.array(x, dtype=float)
+        self.y = np.array(y, dtype=float)
+
+    cpdef setup(self):
+        super(PiecewiseIntegralParameter, self).setup()
+
+        if len(self.x) != len(self.y):
+            raise ValueError('The length of `x` and `y` should be the same.')
+
+        if np.any(np.diff(self.x) < 0):
+            raise ValueError('The array `x` should be monotonically increasing.')
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        cdef double integral = 0.0
+        cdef double x = self.parameter.get_value(scenario_index)
+        cdef int i
+        cdef double dx, prev_x
+
+        prev_x = 0
+        for i in range(self.x.shape[0]):
+            if x < self.x[i]:
+                dx = x - prev_x
+            else:
+                dx = self.x[i] - prev_x
+
+            if dx < 0.0:
+                break
+            else:
+                integral += dx * self.y[i]
+            prev_x = self.x[i]
+        return integral
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop('parameter'))
+        return cls(model, parameter, **data)
+PiecewiseIntegralParameter.register()
+
+
 def get_parameter_from_registry(parameter_type):
     key = parameter_type.lower()
     try:
@@ -1386,7 +1753,7 @@ def get_parameter_from_registry(parameter_type):
 
 def load_parameter(model, data, parameter_name=None):
     """Load a parameter from a dict"""
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         # parameter is a reference
         try:
             parameter = model.parameters[data]
@@ -1469,120 +1836,4 @@ def load_parameter_values(model, data, values_key='values', url_key='url',
     return values
 
 
-def load_dataframe(model, data):
 
-
-    column = data.pop("column", None)
-    if isinstance(column, list):
-        # Cast multiindex to a tuple to ensure .loc works correctly
-        column = tuple(column)
-
-    index = data.pop("index", None)
-    if isinstance(index, list):
-        # Cast multiindex to a tuple to ensure .loc works correctly
-        index = tuple(index)
-
-
-    table_ref = data.pop('table', None)
-    if table_ref is not None:
-        name = table_ref
-        df = model.tables[table_ref]
-    else:
-        name = data.get('url', None)
-        df = read_dataframe(model, data)
-
-    # if column is not specified, use the whole dataframe
-    if column is not None:
-        try:
-            df = df[column]
-        except KeyError:
-            raise KeyError('Column "{}" not found in dataset "{}"'.format(column, name))
-
-    if index is not None:
-        try:
-            df = df.loc[index]
-        except KeyError:
-            raise KeyError('Index "{}" not found in dataset "{}"'.format(index, name))
-
-    try:
-        if isinstance(df.index, pandas.DatetimeIndex):
-            # Only infer freq if one isn't already found.
-            # E.g. HDF stores the saved freq, but CSV tends to have None, but infer to Weekly for example
-            if df.index.freq is None:
-                freq = pandas.infer_freq(df.index)
-                if freq is None:
-                    raise IndexError("Failed to identify frequency of dataset \"{}\"".format(name))
-                df = df.asfreq(freq)
-    except AttributeError:
-        # Probably wasn't a pandas dataframe at this point.
-        pass
-
-    return df
-
-
-def read_dataframe(model, data):
-
-    # values reference data in an external file
-    url = data.pop('url', None)
-    if url is not None:
-        if not os.path.isabs(url) and model.path is not None:
-            url = os.path.join(model.path, url)
-    else:
-        # Must be an embedded dataframe
-        df_data = data.pop('data', None)
-
-    if url is None and df_data is None:
-        raise ValueError('No data specified. Provide a "url" or "data" key.')
-
-    if url is not None:
-        # Check hashes if given before reading the data
-        checksums = data.pop('checksum', {})
-        for algo, hash in checksums.items():
-            check_hash(url, hash, algorithm=algo)
-        
-        try:
-            filetype = data.pop('filetype')
-        except KeyError:
-            # guess file type based on extension
-            if url.endswith(('.xls', '.xlsx')):
-                filetype = "excel"
-            elif url.endswith(('.csv', '.gz')):
-                filetype = "csv"
-            elif url.endswith(('.hdf', '.hdf5', '.h5')):
-                filetype = "hdf"
-            else:
-                raise NotImplementedError('Unknown file extension: "{}"'.format(url))
-    else:
-        if 'filetype' in data:
-            raise ValueError('"filetype" is only valid when loading data from a URL.')
-        if 'checksum' in data:
-            raise ValueError('"checksum" is only valid when loading data from a URL.')
-        
-        filetype = "dict"
-
-    if filetype == "csv":
-        if hasattr(data, "index_col"):
-            data["parse_dates"] = True
-            if "dayfirst" not in data.keys():
-                data["dayfirst"] = True # we're bias towards non-American dates here
-        df = pandas.read_csv(url, **data) # automatically decompressed gzipped data!
-    elif filetype == "excel":
-        df = pandas.read_excel(url, **data)
-    elif filetype == "hdf":
-        key = data.pop("key", None)
-        df = pandas.read_hdf(url, key=key, **data)
-    elif filetype == "dict":
-        parse_dates = data.pop('parse_dates', False)
-        df = pandas.DataFrame.from_dict(df_data, **data)
-        if parse_dates:
-            df.index = pandas.DatetimeIndex(df.index)
-
-    if df.index.dtype.name == "object" and data.get("parse_dates", False):
-        # catch dates that haven't been parsed yet
-        raise TypeError("Invalid DataFrame index type \"{}\" in \"{}\".".format(df.index.dtype.name, url))
-
-    # clean up
-    # Assume all keywords are consumed by pandas.read_* functions
-    data.clear()
-
-    return df
