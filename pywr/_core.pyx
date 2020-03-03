@@ -1001,6 +1001,7 @@ cdef class AggregatedStorage(AbstractStorage):
         cdef ScenarioIndex si
 
         for i, si in enumerate(self.model.scenarios.combinations):
+            mxv = 0.0
             for s in self._storage_nodes:
                 mxv += s.get_max_volume(si)
 
