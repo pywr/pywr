@@ -379,6 +379,7 @@ cdef class AbstractNode:
         cdef int i
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
+            self._prev_flow[i] = 0.0
 
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""

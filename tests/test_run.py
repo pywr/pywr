@@ -514,6 +514,23 @@ def test_run():
     assert(result.timestep.index == 364)
 
 
+def test_reset_prev_flow():
+    """Test resetting the prev_flow attribte of a node."""
+    model = load_model('simple1.json')
+    demand1 = model.nodes['demand1']
+    model.run()
+    assert_allclose(demand1.flow, 10.0, atol=1e-7)
+    assert_allclose(demand1.prev_flow, 10.0, atol=1e-7)
+    # Reset and check flow attributes are zeroed
+    model.reset()
+    assert_allclose(demand1.flow, 0.0, atol=1e-7)
+    assert_allclose(demand1.prev_flow, 0.0, atol=1e-7)
+    # Run again
+    model.run()
+    assert_allclose(demand1.flow, 10.0, atol=1e-7)
+    assert_allclose(demand1.prev_flow, 10.0, atol=1e-7)
+
+
 def test_run_monthly():
     model = load_model('simple1_monthly.json')
 
