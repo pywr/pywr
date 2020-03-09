@@ -51,6 +51,7 @@ Annual profile parameters
    DailyProfileParameter
    WeeklyProfileParameter
    MonthlyProfileParameter
+   UniformDrawdownProfileParameter
    ScenarioDailyProfileParameter
    ScenarioWeeklyProfileParameter
    ScenarioMonthlyProfileParameter

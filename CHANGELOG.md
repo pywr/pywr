@@ -2,6 +2,25 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.6.0
+
+### New Features
+
+- `AnnualTotalFlowRecorder` now accepts an optional list of factors to scale the flow by. (#837)
+- `NumpyArrayNodeRecorder` now accepts an optional factor (default=1.0) to scale the flow by. (#838, #840)
+- Added `UniformDrawdownProfileParameter` (#836)
+
+### Bug Fixes
+
+- Fix bug draw_graph modifying model data when a data dict is given. (#832)
+- Fix reset of `AbstractNode._prev_flow`. (#855)
+- Fix a bug calculating of `AggregatedStorage`'s initial volume in multiple scenarios. (#854)
+
+### Miscellaneous
+
+- Add reference to published academic paper. (#846) 
+
+
 ## v1.5.0
 
 ### New Features
