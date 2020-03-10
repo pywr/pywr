@@ -255,7 +255,7 @@ def _draw_graph(model, width=500, height=400, labels=False, attributes=False, cs
             labels=labels,
             attributes=attributes,
             css=css.replace("\n","")
-        ),
-        lib="http://d3js.org/d3.v3.min.js",
+        )
     )
+
     return js
