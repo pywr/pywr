@@ -3,6 +3,7 @@ import numpy as np
 cimport numpy as np
 from .parameters import parameter_registry, ConstantParameter, parameter_property
 from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter
+import warnings
 
 # http://stackoverflow.com/a/20031818/1300519
 cdef extern from "numpy/npy_math.h":
@@ -25,6 +26,9 @@ cdef class PiecewiseLinearControlCurve(Parameter):
         The storage considered the top of the upper curve, 0-1 (default=1).
     """
     def __init__(self, model, storage_node, control_curve, values, minimum=0.0, maximum=1.0, *args, **kwargs):
+        warnings.warn("`PiecewiseLinearControlCurve` has been deprecated in favour of "
+                      "`ControlCurvePiecewiseInterpolatedParameter`. It will be removed in a future version "
+                      "of Pywr.", DeprecationWarning)
         super(PiecewiseLinearControlCurve, self).__init__(model, *args, **kwargs)
         self._control_curve = None
         self.storage_node = storage_node
