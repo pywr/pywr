@@ -313,7 +313,7 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
     Return values are linearly interpolated between a pair of values depending on the current
     storage. The first pair is used between maximum and the first control curve, the next pair
     between the first control curve and second control curve, and so on until the last pair is
-    used between the last control curve the minimum value. The first value in each pair is the
+    used between the last control curve and the minimum value. The first value in each pair is the
     value at the upper position, and the second the value at the lower position.
 
     Parameters
@@ -335,14 +335,6 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
     """
     def __init__(self, model, storage_node, control_curves, values, minimum=0.0, maximum=1.0, **kwargs):
         super(ControlCurvePiecewiseInterpolatedParameter, self).__init__(model, storage_node, control_curves, **kwargs)
-        # Expected number of values is number of control curves plus two.
-        nvalues = len(self.control_curves) + 1
-
-        if len(values) != nvalues:
-            raise ValueError('Length of values should be two more than the number of '
-                             'control curves ({}).'.format(nvalues))
-        elif len(values[0]) != 2:
-            raise ValueError('The second dimension of values should be of length 2.')
         self.values = np.array(values, dtype=np.float64)
         self.minimum = minimum
         self.maximum = maximum
@@ -351,6 +343,13 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
         def __get__(self):
             return np.array(self._values)
         def __set__(self, values):
+            # Expected number of values is number of control curves plus one.
+            nvalues = len(self.control_curves) + 1
+            if len(values) != nvalues:
+                raise ValueError('Length of values should be two more than the number of '
+                                 'control curves ({}).'.format(nvalues))
+            elif len(values[0]) != 2:
+                raise ValueError('The second dimension of values should be of length 2.')
             self._values = np.array(values)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
