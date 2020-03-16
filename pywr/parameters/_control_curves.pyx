@@ -246,9 +246,8 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         cdef int j
         cdef Parameter cc_param, value_param
         cdef double cc, cc_prev
-        cdef Storage node = self._storage_node
         # return the interpolated value for the current level.
-        cdef double current_pc = node._current_pc[scenario_index.global_id]
+        cdef double current_pc = self._storage_node._current_pc[scenario_index.global_id]
         cdef double weight
         cdef double[:] values  # y values to interpolate between in this time-step
 
@@ -360,9 +359,8 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
         cdef int j, ncc
         cdef Parameter cc_param
         cdef double cc, cc_prev, val
-        cdef Storage node = self._storage_node
         # return the interpolated value for the current level.
-        cdef double current_pc = node._current_pc[scenario_index.global_id]
+        cdef double current_pc = self._storage_node._current_pc[scenario_index.global_id]
 
         cc_prev = self.maximum
         for j, cc_param in enumerate(self._control_curves):
