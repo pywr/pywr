@@ -262,6 +262,8 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         # correct number to use in this instance.
         return self.values[ts.index, scenario_index._indices[self._scenario_index]]
 
+ArrayIndexedScenarioParameter.register()
+
 
 cdef class TablesArrayParameter(IndexParameter):
     def __init__(self, model, h5file, node, where='/', scenario=None, **kwargs):
