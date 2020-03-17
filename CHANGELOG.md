@@ -9,17 +9,24 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 - `AnnualTotalFlowRecorder` now accepts an optional list of factors to scale the flow by. (#837)
 - `NumpyArrayNodeRecorder` now accepts an optional factor (default=1.0) to scale the flow by. (#838, #840)
 - Added `UniformDrawdownProfileParameter` (#836)
+- Added `ControlCurvePiecewiseInterpolatedParameter` as a more general replacement for `PiecewiseLinearControlCurve`. (#857)
 
 ### Bug Fixes
 
 - Fix bug draw_graph modifying model data when a data dict is given. (#832)
+- Fix the `__init__` method of `BreakLink`. (#850)
 - Fix reset of `AbstractNode._prev_flow`. (#855)
 - Fix a bug calculating of `AggregatedStorage`'s initial volume in multiple scenarios. (#854)
+- Fix resetting of `AnnualVirtualStorage` volume to maximum volume instead of initial volume. (#860)
+- Fix cdef type issue in some control curve parameters allowing use with any `AbstractStorage` (instead of just `Storage`). (#861) 
+- Fix registering of `ArrayIndexedScenarioParameter` (#863)
 
 ### Miscellaneous
 
-- Add reference to published academic paper. (#846) 
-
+- Fixed documentation building on tags. (#831)
+- Updated notebook graph drawing to use d3.v5 and removed IE specific code. (#834)
+- Add reference to published academic paper. (#846)
+- `PiecewiseLinearControlCurve` has been marked as deprecated and will be removed in a future version. (#857) 
 
 ## v1.5.0
 
