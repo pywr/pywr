@@ -106,6 +106,8 @@ Control curve parameters
     control_curves.BaseControlCurveParameter
     control_curves.ControlCurveInterpolatedParameter
     control_curves.ControlCurveIndexParameter
+    control_curves.ControlCurvePiecewiseInterpolatedParameter
+
 
 Hydropower parameters
 ----------------------
