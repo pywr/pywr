@@ -19,6 +19,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+*.eggs/
 # PyInstaller
 # Usually these files are written by a python script from a template
 # before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -66,3 +67,5 @@ venv/
 
 pywr_glpk_debug.lp
 pywr_glpk_debug.mps
+
+build.bat
