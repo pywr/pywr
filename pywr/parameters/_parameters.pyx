@@ -454,6 +454,13 @@ cdef class ConstantScenarioParameter(Parameter):
         # so that it can return the correct value in value()
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
+    cpdef set_double_variables(self, double[:] values):
+        n = len(self._values)
+        self._values[...] = values[0:n]
+
+    cpdef double[:] get_double_variables(self):
+        return np.array(self._values, dtype=np.float64)
+
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is a bit confusing.
         # scenario_indices contains the current scenario number for all
