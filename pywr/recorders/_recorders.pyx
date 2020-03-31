@@ -17,6 +17,7 @@ cdef enum AggFuncs:
     CUSTOM = 6
     PERCENTILE = 7
     PERCENTILEOFSCORE = 8
+    COUNT_NONZERO = 9
 _agg_func_lookup = {
     "sum": AggFuncs.SUM,
     "min": AggFuncs.MIN,
@@ -27,6 +28,7 @@ _agg_func_lookup = {
     "custom": AggFuncs.CUSTOM,
     "percentile": AggFuncs.PERCENTILE,
     "percentileofscore": AggFuncs.PERCENTILEOFSCORE,
+    "count_nonzero": AggFuncs.COUNT_NONZERO
 }
 _agg_func_lookup_reverse = {v: k for k, v in _agg_func_lookup.items()}
 
@@ -98,6 +100,8 @@ cdef class Aggregator:
             return np.percentile(values, *self.func_args, **self.func_kwargs)
         elif self._func == AggFuncs.PERCENTILEOFSCORE:
             return percentileofscore(values, *self.func_args, **self.func_kwargs)
+        elif self._func == AggFuncs.COUNT_NONZERO:
+            return np.count_nonzero(values)
         else:
             raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
 
@@ -140,6 +144,8 @@ cdef class Aggregator:
             else:
                 raise ValueError('Axis "{}" not recognised for percentileofscore function.'.format(axis))
             return out
+        elif self._func == AggFuncs.COUNT_NONZERO:
+            return np.count_nonzero(values, axis=axis)
         else:
             raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
 
