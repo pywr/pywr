@@ -43,19 +43,14 @@ def platypus_main(harmonic=False):
     wrapper = PlatypusWrapper(get_model_data(harmonic=harmonic))
 
     with platypus.ProcessPoolEvaluator() as evaluator:
-        algorithm = platypus.NSGAII(wrapper.problem, population_size=50, evaluator=evaluator)
+        algorithm = platypus.NSGAIII(wrapper.problem, population_size=50, evaluator=evaluator, divisions_outer=12)
         algorithm.run(10000)
 
-    plt.scatter([s.objectives[0] for s in algorithm.result],
-                [s.objectives[1] for s in algorithm.result])
+    objectives = pd.DataFrame(data=np.array([s.objectives for s in algorithm.result]),
+                              columns=[o.name for o in wrapper.model_objectives])
 
-    objectives = wrapper.model_objectives
-    plt.xlabel(objectives[0].name)
-    plt.ylabel(objectives[1].name)
-    plt.grid(True)
-    title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
-    plt.savefig('{} Example ({}).pdf'.format('platypus', title), format='pdf')
-    plt.show()
+    title = 'harmonic' if harmonic else 'monthly'
+    objectives.to_hdf('two_reservoir_moea.h5', f'platypus_{title}')
 
 
 def pygmo_main(harmonic=False):
@@ -189,9 +184,17 @@ def inspyred_main(prng=None, display=False, harmonic=False):
     return ea
 
 
-
 if __name__ == '__main__':
     import argparse
+
+    # Setup logging
+    import logging
+    logger = logging.getLogger('pywr')
+    logger.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--harmonic', action='store_true', help='Use an harmonic control curve.')

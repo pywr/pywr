@@ -1,4 +1,5 @@
 import sys
+import pandas
 import numpy as np
 from functools import wraps
 from pywr._core import AbstractNode, AbstractStorage
@@ -517,5 +518,43 @@ class TablesRecorder(Recorder):
         self.h5store = None
         self._arrays = {}
         self._routes_flow_array = None
+
+    @staticmethod
+    def generate_dataframes(h5file, time='/time', scenarios='/scenarios'):
+        """Helper function to generate pandas dataframes from `TablesRecorder` data.
+
+        Parameters
+        h5file : str
+            A path to a H5 file created by `TablesRecorder`.
+        time : str
+            The internal table that contains the time information (default "/time")
+        scenarios : str
+            The internal table that contains the scenario information (default "/scenarios")
+        """
+        store = H5Store(h5file, mode='r')
+
+        # Get the time information
+        if time:
+            time_table = store.file.get_node(time)
+            index = pandas.to_datetime({k: time_table.col(k) for k in ('year', 'month', 'day')})
+        else:
+            index = None
+
+        # Get the scenario information
+        if scenarios:
+            scenarios_table = store.file.get_node(scenarios)
+            scenarios = pandas.DataFrame({k: scenarios_table.col(k) for k in ('name', 'size')})
+            columns = pandas.MultiIndex.from_product(
+                [range(row['size']) for _, row in scenarios.iterrows()],
+                names=[row['name'].decode() for _, row in scenarios.iterrows()]
+            )
+        else:
+            columns = None
+
+        for node in store.file.walk_nodes('/', 'CArray'):
+            data = node.read()
+            data = data.reshape((data.shape[0], -1))
+            df = pandas.DataFrame(data, index=index, columns=columns)
+            yield node._v_name, df
 
 TablesRecorder.register()
