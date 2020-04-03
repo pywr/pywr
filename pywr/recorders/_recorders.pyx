@@ -101,7 +101,7 @@ cdef class Aggregator:
         elif self._func == AggFuncs.PERCENTILEOFSCORE:
             return percentileofscore(values, *self.func_args, **self.func_kwargs)
         elif self._func == AggFuncs.COUNT_NONZERO:
-            return np.count_nonzero(values).astype(np.float64)
+            return np.count_nonzero(values)
         else:
             raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
 
