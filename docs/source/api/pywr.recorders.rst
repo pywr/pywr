@@ -17,6 +17,7 @@ All the `Recorder` subclasses in `pywr` are descended from a common base class.
    StorageRecorder
    ParameterRecorder
    IndexParameterRecorder
+   Aggregator
 
 Numpy array recorders
 ---------------------
