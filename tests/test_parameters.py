@@ -1660,3 +1660,34 @@ class TestFlowInterpolation:
 
         modelled_levels = model.recorders["water_level_value"].data
         assert_allclose(water_levels1, modelled_levels[:, 0])
+
+
+class TestUniformDrawdownProfileParameter:
+
+    def test_uniform_drawdown_profile(self, simple_linear_model):
+        """Test the uniform drawn profile over a leap year and non-leap year."""
+
+        m = simple_linear_model
+        m.timestepper.start = '2015-04-01'
+        m.timestepper.end = '2017-04-01'
+
+        expected_values = np.r_[
+            np.linspace(1, 1/366, 366),  # This period covers Apr-2015 to Apr-2016 (i.e. 366 days)
+            np.linspace(1, 1/365, 365),  # This period covers Apr-2016 to Apr-2017 (i.e. 365 days)
+            np.linspace(1, 1/365, 365),  # This period covers Apr-2017 to Apr-2018 (i.e. 365 days)
+        ]
+
+        data = {
+            'type': 'uniformdrawdownprofile',
+            "reset_day": 1,
+            "reset_month": 4
+        }
+
+        p = load_parameter(m, data)
+
+        @assert_rec(m, p)
+        def expected_func(timestep, scenario_index):
+            return expected_values[timestep.index]
+
+        m.run()
+

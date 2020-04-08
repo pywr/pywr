@@ -45,6 +45,12 @@ def test_aggregated_storage_scenarios(three_storage_model):
     inpt1 = m.nodes['Input 1'].max_flow = ConstantScenarioParameter(m, sc, range(sc.size))
 
     m.setup()
+
+    # Test initial volume
+    np.testing.assert_allclose(agg_stg.volume, sum(s.initial_volume for s in stgs))
+    current_pc = sum(s.initial_volume for s in stgs) / (sum(s.max_volume for s in stgs))
+    np.testing.assert_allclose(agg_stg.current_pc, current_pc)
+
     m.step()
 
     # Finally check volume is summed correctly

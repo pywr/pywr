@@ -112,6 +112,10 @@ class Model(object):
             key = list(kwargs.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
 
+        self._time_before = None
+        self._time_after = None
+        self.reset()
+
     @property
     def components(self):
         return NamedIterator(n for n in self.component_graph.nodes() if n != ROOT_NODE)
@@ -600,6 +604,8 @@ class Model(object):
             num_scenarios=num_scenarios,
             timestep=timestep,
             time_taken=time_taken,
+            time_taken_before=self._time_before,
+            time_taken_after=self._time_after,
             time_taken_with_overhead=time_taken_with_overhead,
             speed=speed,
             solver_name=self.solver.name,
@@ -644,6 +650,9 @@ class Model(object):
             component.reset()
 
         self.solver.reset()
+        # reset the timers
+        self._time_before = 0.0
+        self._time_after = 0.0
         logger.info('Reset complete!')
 
     def before(self):
@@ -659,6 +668,7 @@ class Model(object):
         cdef AbstractNode node
         cdef Component component
         cdef BaseParameter param
+        cdef double t0 = time.time()
         for node in self.graph.nodes():
             node.before(self.timestep)
         cdef list components = self.flatten_component_tree(rebuild=False)
@@ -668,15 +678,18 @@ class Model(object):
             if isinstance(component, BaseParameter):
                 param = component
                 param.calc_values(self.timestep)
+        self._time_before += time.time() - t0
 
     def after(self):
         cdef AbstractNode node
         cdef Component component
+        cdef double t0 = time.time()
         for node in self.graph.nodes():
             node.after(self.timestep)
         cdef list components = self.flatten_component_tree(rebuild=False)
         for component in components:
             component.after()
+        self._time_after += time.time() - t0
 
     def finish(self):
         for node in self.graph.nodes():
@@ -876,11 +889,13 @@ class NamedIterator(object):
 
 
 class ModelResult(object):
-    def __init__(self, num_scenarios, timestep, time_taken, time_taken_with_overhead, speed,
-                 solver_name, solver_stats, version):
+    def __init__(self, num_scenarios, timestep, time_taken, time_taken_before, time_taken_after, time_taken_with_overhead,
+                 speed, solver_name, solver_stats, version):
         self.timestep = timestep
         self.timesteps = timestep.index + 1
         self.time_taken = time_taken
+        self.time_taken_before = time_taken_before
+        self.time_taken_after = time_taken_after
         self.time_taken_with_overhead = time_taken_with_overhead
         self.speed = speed
         self.num_scenarios = num_scenarios

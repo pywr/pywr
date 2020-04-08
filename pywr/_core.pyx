@@ -379,6 +379,7 @@ cdef class AbstractNode:
         cdef int i
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
+            self._prev_flow[i] = 0.0
 
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""
@@ -908,37 +909,64 @@ cdef class Storage(AbstractStorage):
         AbstractStorage.reset(self)
         self._reset_storage_only()
 
-    cpdef _reset_storage_only(self):
+    cpdef _reset_storage_only(self, bint use_initial_volume=True):
+        """Reset the current volume of the storage node.
+
+        Parameters
+        ==========
+        use_initial_volume : bool (default: True)
+            Reset the volume to the initial volume of the storage node. If false the volume is reset to max_volume.
+        """
         cdef int i
         cdef double mxv = self._max_volume
-        cdef double initial_volume, initial_pc
+        cdef double reset_volume, reset_pc
 
-        # TODO at some point remove this limitation
-        # See issue #470 https://github.com/pywr/pywr/issues/470
-        if self._max_volume_param is not None:
-            # Max volume is a parameter; require both initial_volume and initial_volume_pc be given.
-            if not np.isfinite(self._initial_volume_pc) or not np.isfinite(self._initial_volume):
-                raise RuntimeError('Both `initial_volume` and `initial_volume_pc` must be supplied if `max_volume`'
-                                   ' is defined as a parameter.')
+        for i, si in enumerate(self.model.scenarios.combinations):
 
-            initial_volume = self._initial_volume
-            initial_pc = self._initial_volume_pc
-        else:
-            # Max volume is a double; user only has to supply absolute or relative initial volume
-            if np.isfinite(self._initial_volume_pc):
-                initial_volume = self._initial_volume_pc * mxv
-                initial_pc = self._initial_volume_pc
-            elif np.isfinite(self._initial_volume):
-                initial_volume = self._initial_volume
-                try:
-                    initial_pc = self._initial_volume / mxv
-                except ZeroDivisionError:
-                    initial_pc = np.nan
+            if self._max_volume_param is not None:
+                # Ensure variable maximum volume is taken in to account
+                if use_initial_volume:
+                    # Max volume is a parameter; require both initial_volume and initial_volume_pc be given.
+                    # The parameter will not be evaluated at the beginning of the model run.
+                    if not np.isfinite(self._initial_volume_pc) or not np.isfinite(self._initial_volume):
+                        raise RuntimeError('Both `initial_volume` and `initial_volume_pc` must be supplied if'
+                                           '`max_volume` is defined as a parameter.')
+
+                    reset_volume = self._initial_volume
+                    reset_pc = self._initial_volume_pc
+                elif self.model.timestep.index > 0:
+                    # If it's not the first time-step, and we want to reset to max capacity then the
+                    # parameter should already have been evaluated.
+                    mxv = self._max_volume_param.get_value(si)
+                    # Reset to max capacity, accounting for variable volume
+                    reset_volume = mxv
+                    # We do this division (rather than setting reset_pc = 1.0) to be consistent with the case below
+                    # when mxv is zero.
+                    try:
+                        reset_pc = reset_volume / mxv
+                    except ZeroDivisionError:
+                        reset_pc = np.nan
             else:
-                raise RuntimeError('Initial volume must be set as either a percentage or absolute volume.')
+                # Max volume is a double.
+                if use_initial_volume:
+                    # User only has to supply absolute or relative initial volume
+                    if np.isfinite(self._initial_volume_pc):
+                        reset_volume = self._initial_volume_pc * mxv
+                    elif np.isfinite(self._initial_volume):
+                        reset_volume = self._initial_volume
+                    else:
+                        raise RuntimeError('Initial volume must be set as either a percentage or absolute volume.')
+                else:
+                    reset_volume = mxv
 
-        self._volume[:] = initial_volume
-        self._current_pc[:] = initial_pc
+                # Compute the proportional volume.
+                try:
+                    reset_pc = reset_volume / mxv
+                except ZeroDivisionError:
+                    reset_pc = np.nan
+
+            self._volume[i] = reset_volume
+            self._current_pc[i] = reset_pc
 
     cpdef after(self, Timestep ts):
         AbstractStorage.after(self, ts)
@@ -990,6 +1018,7 @@ cdef class AggregatedStorage(AbstractStorage):
         cdef ScenarioIndex si
 
         for i, si in enumerate(self.model.scenarios.combinations):
+            mxv = 0.0
             for s in self._storage_nodes:
                 mxv += s.get_max_volume(si)
 

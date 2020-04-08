@@ -51,6 +51,7 @@ Annual profile parameters
    DailyProfileParameter
    WeeklyProfileParameter
    MonthlyProfileParameter
+   UniformDrawdownProfileParameter
    ScenarioDailyProfileParameter
    ScenarioWeeklyProfileParameter
    ScenarioMonthlyProfileParameter
@@ -105,6 +106,8 @@ Control curve parameters
     control_curves.BaseControlCurveParameter
     control_curves.ControlCurveInterpolatedParameter
     control_curves.ControlCurveIndexParameter
+    control_curves.ControlCurvePiecewiseInterpolatedParameter
+
 
 Hydropower parameters
 ----------------------

@@ -78,12 +78,8 @@ def setup_package():
     config = parse_optional_arguments()
 
     if config["glpk"]:
-        ext_modules.extend(
-            [
-                Extension("pywr.solvers.glpk", ["pywr/solvers/glpk.pyx"], libraries=["glpk"],),  
-                Extension("pywr.solvers.cython_glpk", ["pywr/solvers/cython_glpk.pyx"], libraries=["glpk"],),
-                Extension("pywr.solvers.cython_glpk_edge", ["pywr/solvers/cython_glpk_edge.pyx"], libraries=["glpk"],),
-            ]
+        ext_modules.append(
+                Extension("pywr.solvers.cython_glpk", ["pywr/solvers/cython_glpk.pyx"], libraries=["glpk"],)
         )
 
     if config["lpsolve"]:
@@ -125,9 +121,13 @@ def long_description():
 def package_data():
     pkg_data = {
         "pywr.notebook": ["*.js", "*.css"],
+        'pywr': ['*.pxd'],
+        'pywr.parameters': ['*.pxd'],
+        'pywr.recorders': ['*.pxd'],
+        'pywr.solvers': ['*.pxd'],
     }
     if os.environ.get("PACKAGE_DATA", "false").lower() == "true":
-        pkg_data["pywr"] = [".libs/*", ".libs/licenses/*"]
+        pkg_data["pywr"].extend([".libs/*", ".libs/licenses/*"])
     return pkg_data
 
 

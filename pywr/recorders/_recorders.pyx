@@ -17,6 +17,7 @@ cdef enum AggFuncs:
     CUSTOM = 6
     PERCENTILE = 7
     PERCENTILEOFSCORE = 8
+    COUNT_NONZERO = 9
 _agg_func_lookup = {
     "sum": AggFuncs.SUM,
     "min": AggFuncs.MIN,
@@ -27,6 +28,7 @@ _agg_func_lookup = {
     "custom": AggFuncs.CUSTOM,
     "percentile": AggFuncs.PERCENTILE,
     "percentileofscore": AggFuncs.PERCENTILEOFSCORE,
+    "count_nonzero": AggFuncs.COUNT_NONZERO
 }
 _agg_func_lookup_reverse = {v: k for k, v in _agg_func_lookup.items()}
 
@@ -44,7 +46,39 @@ _obj_direction_lookup = {
 }
 
 cdef class Aggregator:
-    """Utility class for computing aggregate values."""
+    """Utility class for computing aggregate values.
+
+    Users are unlikely to use this class directly. Instead `Recorder` sub-classes will use this functionality
+    to aggregate their results across different dimensions (e.g. time, scenarios, etc.).
+
+    Parameters
+    ==========
+    func : str, dict or callable
+        The aggregation function to use. Can be a string or dict defining aggregation functions, or a callable
+        custom function that performs aggregation.
+
+        When a string it can be one of: "sum", "min", "max", "mean", "median", "product", or "count_nonzero". These
+        strings map to and cause the aggregator to use the corresponding `numpy` functions.
+
+        A dict can be provided containing a "func" key, and optional "args" and "kwargs" keys. The value of "func"
+        should be a string corresponding to the aforementioned numpy function names with the additional options of
+        "percentile" and "percentileofscore". These latter two functions require additional arguments (the percentile
+        and score) to function and must be provided as the values in either the "args" or "kwargs" keys of the
+        dictionary. Please refer to the corresponding numpy (or scipy) function definitions for documentation on these
+        arguments.
+
+        Finally, a callable function can be given. This function must accept either a 1D or 2D numpy array as the
+        first argument, and support the "axis" keyword as integer value that determines which axis over which the
+        function should apply aggregation. The axis keyword is only supplied when a 2D array is given. Therefore,`
+        the callable function should behave in a similar fashion to the numpy functions.
+
+    Examples
+    ========
+    >>> Aggregator("sum")
+    >>> Aggregator({"func": "percentile", "args": [95],"kwargs": {}})
+    >>> Aggregator({"func": "percentileofscore", "kwargs": {"score": 0.5, "kind": "rank"}})
+
+    """
     def __init__(self, func):
         self.func = func
 
@@ -98,6 +132,8 @@ cdef class Aggregator:
             return np.percentile(values, *self.func_args, **self.func_kwargs)
         elif self._func == AggFuncs.PERCENTILEOFSCORE:
             return percentileofscore(values, *self.func_args, **self.func_kwargs)
+        elif self._func == AggFuncs.COUNT_NONZERO:
+            return np.count_nonzero(values)
         else:
             raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
 
@@ -140,6 +176,8 @@ cdef class Aggregator:
             else:
                 raise ValueError('Axis "{}" not recognised for percentileofscore function.'.format(axis))
             return out
+        elif self._func == AggFuncs.COUNT_NONZERO:
+            return np.count_nonzero(values, axis=axis).astype(np.float64)
         else:
             raise ValueError('Aggregation function code "{}" not recognised.'.format(self._func))
 
@@ -463,6 +501,8 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         Aggregation function used over time when computing a value per scenario. This can be used
         to return, for example, the median flow over a simulation. For aggregation over scenarios
         see the `agg_func` keyword argument.
+    factor: float (default=1.0)
+        A factor can be provided to scale the total flow (e.g. for calculating operational costs).
 
     See also
     --------
@@ -473,8 +513,10 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     def __init__(self, model, AbstractNode node, **kwargs):
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
+        factor = kwargs.pop('factor', 1.0)
         super(NumpyArrayNodeRecorder, self).__init__(model, node, **kwargs)
         self._temporal_aggregator = Aggregator(temporal_agg_func)
+        self.factor = factor
 
     property temporal_agg_func:
         def __set__(self, agg_func):
@@ -492,7 +534,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         cdef int i
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
-            self._data[ts.index, i] = self._node._flow[i]
+            self._data[ts.index, i] = self._node._flow[i]*self.factor
         return 0
 
     property data:
@@ -1660,6 +1702,8 @@ cdef class AnnualTotalFlowRecorder(Recorder):
     For each scenario, record the total flow in each year across a list of nodes.
     Output from data property has shape: (years, scenario combinations)
 
+    A list of factors can be provided to scale the total flow (e.g. for calculating operational costs).
+
     Parameters
     ----------
     model : `pywr.core.Model`
@@ -1667,16 +1711,29 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         The name of the recorder
     nodes : list
         List of `pywr.core.Node` instances to record
+    factors : list, optional
+        List of factors to apply to each node
     """
     def __init__(self, model, str name, list nodes, *args, **kwargs):
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
+        factors = kwargs.pop('factors', None)
         super().__init__(model, name=name, *args, **kwargs)
         self.nodes = nodes
+        self.factors = factors
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
     property temporal_agg_func:
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
+
+    property factors:
+        # Property provides np.array style access to the internal memoryview.
+        def __get__(self):
+            return np.array(self._factors)
+        def __set__(self, factors):
+            if factors is None:
+                factors = np.array([1.0 for n in self.nodes])
+            self._factors = np.array(factors)
 
     cpdef setup(self):
         super(AnnualTotalFlowRecorder, self).setup()
@@ -1690,14 +1747,15 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         self._start_year = self.model.timestepper.start.year
 
     cpdef after(self):
+        cdef int i, j
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = ts.year - self._start_year
         cdef AbstractNode node
         cdef double[:] flow = np.zeros(self._ncomb, np.float64)
 
         for i in range(self._ncomb):
-            for node in self.nodes:
-                self._data[idx, i] += node._flow[i]
+            for j, node in enumerate(self.nodes):
+                self._data[idx, i] += node._flow[i] * self._factors[j]
 
     cpdef double[:] values(self):
         """Compute a value for each scenario using `temporal_agg_func`.

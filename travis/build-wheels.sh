@@ -14,8 +14,8 @@ export PYWR_BUILD_LPSOLVE=true
 # compiled extensions and are not provided as pre-built wheel packages,
 # pip will build them from source matching the target Python version and architecture
 pip install cython packaging numpy jupyter pytest pytest-cov wheel setuptools_scm 'coverage<5.0'
-# Install run-time packages
-pip install platypus-opt inspyred pygmo
+# Install run-time packages; install is allowed to fail for these as they are optional.
+pip install platypus-opt inspyred pygmo || true
 
 if [[ "${PYWR_BUILD_TRACE}" == "true" ]]; then
     # For tracing we need to build in-place

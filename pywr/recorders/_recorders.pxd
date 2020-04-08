@@ -40,6 +40,7 @@ cdef class IndexParameterRecorder(Recorder):
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
     cdef Aggregator _temporal_aggregator
     cdef double[:, :] _data
+    cdef public float factor
 
 cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
     pass
@@ -147,6 +148,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
     cdef int _current_year
     cdef int _start_year
     cdef Aggregator _temporal_aggregator
+    cdef double [:] _factors
 
 cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
     cdef public int threshold
