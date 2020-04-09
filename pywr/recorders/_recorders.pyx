@@ -709,14 +709,19 @@ cdef class AbstractAnnualRecorder(Recorder):
         Iterable of Node instances to record.
     reset_month, reset_day : int
         The month and day in which the cumulative actual and max_flow are reset to zero.
-
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
     Notes
     -----
     If the first time-step of a simulation does not align with `reset_day` and `reset_month` then
     the first period of the model will be less than one year in length.
     """
     def __init__(self, model, nodes, reset_day=1, reset_month=1, **kwargs):
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
         super().__init__(model, **kwargs)
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
         self.nodes = [n for n in nodes]
 
         # Validate the reset day and month
@@ -726,6 +731,10 @@ cdef class AbstractAnnualRecorder(Recorder):
 
         self.reset_day = reset_day
         self.reset_month = reset_month
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
 
     @classmethod
     def load(cls, model, data):
@@ -799,6 +808,10 @@ cdef class AbstractAnnualRecorder(Recorder):
             self._actual_flow[i, j] += actual_flow
         return 0
 
+    cpdef double[:] values(self):
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
 cdef class AnnualDeficitRecorder(AbstractAnnualRecorder):
     """Recorder for the cumulative annual deficit across multiple nodes.
