@@ -19,7 +19,10 @@
             "type": "reservoir",
             "name": "Reservoir",
             "max_volume": 1000,
-            "initial_volume": 1000
+            "initial_volume": 1000,
+            "position": {
+                "schematic": [1, 1]
+            }
         },
         {
             "type": "output",

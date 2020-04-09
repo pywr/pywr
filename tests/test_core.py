@@ -201,8 +201,9 @@ def test_timeseries_excel(simple_linear_model, filename):
     ts = DataFrameParameter.load(model, data)
 
     # model (intentionally not aligned)
-    model.timestepper.start = ts.dataframe.index[0] + 5
-    model.timestepper.end = ts.dataframe.index[-1] - 12
+    index = ts.dataframe.index
+    model.timestepper.start = index[0] + (5 * index.freq)
+    model.timestepper.end = index[-1] - (12 * index.freq)
 
     # need to assign parameter for it's setup method to be called
     model.nodes["Input"].max_flow = ts
@@ -419,10 +420,8 @@ def test_storage_initial_volume_pc():
     np.testing.assert_allclose(storage.volume, 20.0)
 
 
-def test_storage_max_volume_param_raises():
-    """Test a that an max_volume with a Parameter that has children.
-
-    Only some aggregated style parameters should work here.
+def test_storage_max_volume_nested_param():
+    """Test that a max_volume can be used with a Parameter with children.
     """
 
     model = Model(
@@ -444,8 +443,7 @@ def test_storage_max_volume_param_raises():
 
 
 def test_storage_max_volume_param_raises():
-    """Test a that an max_volume with a Parameter that has children is an error
-
+    """Test that a max_volume can not be used with 2 levels of child parameters.
     """
 
     model = Model(

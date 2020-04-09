@@ -379,6 +379,7 @@ cdef class AbstractNode:
         cdef int i
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
+            self._prev_flow[i] = 0.0
 
     cpdef before(self, Timestep ts):
         """Called at the beginning of the timestep"""
@@ -908,7 +909,14 @@ cdef class Storage(AbstractStorage):
         AbstractStorage.reset(self)
         self._reset_storage_only()
 
-    cpdef _reset_storage_only(self):
+    cpdef _reset_storage_only(self, bint use_initial_volume=True):
+        """Reset the current volume of the storage node.
+
+        Parameters
+        ==========
+        use_initial_volume : bool (default: True)
+            Reset the volume to the initial volume of the storage node. If false the volume is reset to max_volume.
+        """
         cdef int i
         cdef double mxv = self._max_volume
         cdef ScenarioIndex si
@@ -939,12 +947,15 @@ cdef class Storage(AbstractStorage):
             if self._max_volume_param is not None:
                 mxv = self._max_volume_param.get_value(si)
 
-            if np.isfinite(self._initial_volume_pc):
-                self._volume[i] = self._initial_volume_pc * mxv
-            elif np.isfinite(self._initial_volume):
-                self._volume[i] = self._initial_volume
+            if use_initial_volume:
+                if np.isfinite(self._initial_volume_pc):
+                    self._volume[i] = self._initial_volume_pc * mxv
+                elif np.isfinite(self._initial_volume):
+                    self._volume[i] = self._initial_volume
+                else:
+                    raise RuntimeError('Initial volume must be set as either a percentage or absolute volume.')
             else:
-                raise RuntimeError('Initial volume must be set as either a percentage or absolute volume.')
+                self._volume[i] = mxv
 
             try:
                 self._current_pc[i] = self._volume[i] / mxv
@@ -1001,6 +1012,7 @@ cdef class AggregatedStorage(AbstractStorage):
         cdef ScenarioIndex si
 
         for i, si in enumerate(self.model.scenarios.combinations):
+            mxv = 0.0
             for s in self._storage_nodes:
                 mxv += s.get_max_volume(si)
 

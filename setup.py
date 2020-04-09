@@ -1,185 +1,184 @@
-#!/usr/bin/env python
-
-try:
-    from setuptools import setup
-    from setuptools import Extension
-    print('Using setuptools for setup!')
-except ImportError:
-    from distutils.core import setup
-    from distutils.extension import Extension
-    print('Using distutils for setup!')
-from distutils.errors import CCompilerError, DistutilsExecError, \
-    DistutilsPlatformError
-from Cython.Distutils import build_ext
-from Cython.Build import cythonize
-import numpy as np
-import sys
 import os
-from packaging.version import Version
-import subprocess
+import sys
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext as _build_ext
 
-with open('README.rst') as fh:
-    long_description = fh.read()
+def setup_package():
+    compiler_directives = {
+        "language_level": 3,
+        "embedsignature": True,
+    }
 
-setup_kwargs = {
-    'name': 'pywr',
-    'description': 'Python Water Resource model',
-    'long_description': long_description,
-    'long_description_content_type': 'text/x-rst',
-    'author': 'Joshua Arnott',
-    'author_email': 'josh@snorfalorpagus.net',
-    'url': 'https://github.com/pywr/pywr',
-    'packages': ['pywr', 'pywr.solvers', 'pywr.domains', 'pywr.parameters', 'pywr.recorders', 'pywr.notebook', 'pywr.optimisation'],
-    'use_scm_version': True,
-    'setup_requires': ['setuptools_scm'],
-    'install_requires': [
-        'pandas',
-        'networkx',
-        'scipy',
-        'tables',
-        'xlrd',
-        'packaging',
-        'matplotlib',
-        'jinja2'
-    ]
-}
+    define_macros = []
 
+    compile_time_env = {
+        "SOLVER_DEBUG": False,
+    }
 
-define_macros = []
-
-# HACK: optional features are too difficult to do properly
-# http://stackoverflow.com/a/4056848/1300519
-optional = set()
-if '--with-glpk' in sys.argv:
-    optional.add('glpk')
-    sys.argv.remove('--with-glpk')
-elif os.environ.get('PYWR_BUILD_GLPK', 'false').lower() == 'true':
-    optional.add('glpk')
-
-if '--with-lpsolve' in sys.argv:
-    optional.add('lpsolve')
-    sys.argv.remove('--with-lpsolve')
-elif os.environ.get('PYWR_BUILD_LPSOLVE', 'false').lower() == 'true':
-    optional.add('lpsolve')
-
-if '--annotate' in sys.argv:
-    annotate = True
-    sys.argv.remove('--annotate')
-else:
     annotate = False
-if not optional:
-    # default is to attempt to build everything
-    optional.add('glpk')
-    optional.add('lpsolve')
 
-compiler_directives = {}
-if '--enable-profiling' in sys.argv:
-     compiler_directives['profile'] = True
-     sys.argv.remove('--enable-profiling')
+    class new_build_ext(_build_ext):
+        def finalize_options(self):
+            # Defer the import of Cython and NumPy until after setup_requires
+            from Cython.Build.Dependencies import cythonize
+            import numpy
 
-build_trace = False
-if '--enable-trace' in sys.argv:
-    sys.argv.remove('--enable-trace')
-    build_trace = True
-elif os.environ.get('PYWR_BUILD_TRACE', 'false').lower() == 'true':
-    build_trace = True
+            self.distribution.ext_modules[:] = cythonize(
+                self.distribution.ext_modules,
+                compiler_directives=compiler_directives,
+                compile_time_env=compile_time_env,
+                annotate=annotate,
+            )
+            if not self.include_dirs:
+                self.include_dirs = []
+            elif isinstance(self.include_dirs, str):
+                self.include_dirs = [self.include_dirs]
+            self.include_dirs.append(numpy.get_include())
+            super().finalize_options()
 
-if build_trace:
-    print('Tracing is enabled.')
-    compiler_directives['linetrace'] = True
-    define_macros.append(('CYTHON_TRACE', '1'))
-    define_macros.append(('CYTHON_TRACE_NOGIL', '1'))
-
-compile_time_env = {}
-if '--enable-debug' in sys.argv:
-    compile_time_env['SOLVER_DEBUG'] = True
-    sys.argv.remove('--enable-debug')
-else:
-    compile_time_env['SOLVER_DEBUG'] = False
-
-# See the following documentation for a description of these directives
-#  https://cython.readthedocs.io/en/latest/src/reference/compilation.html#compiler-directives
-compiler_directives['language_level'] = 3
-compiler_directives['embedsignature'] = True
-
-
-extensions = [
-    Extension('pywr._core', ['pywr/_core.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr._model', ['pywr/_model.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr._component', ['pywr/_component.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-
-    # Parameters sub-package
-
-    Extension('pywr.parameters._parameters', ['pywr/parameters/_parameters.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr.parameters._polynomial', ['pywr/parameters/_polynomial.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr.parameters._thresholds', ['pywr/parameters/_thresholds.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr.parameters._control_curves', ['pywr/parameters/_control_curves.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr.parameters._hydropower', ['pywr/parameters/_hydropower.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-
-    # Other modules
-    Extension('pywr.recorders._recorders', ['pywr/recorders/_recorders.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr.recorders._thresholds', ['pywr/recorders/_thresholds.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-    Extension('pywr.recorders._hydropower', ['pywr/recorders/_hydropower.pyx'],
-              include_dirs=[np.get_include()],
-              define_macros=define_macros),
-
-
-]
-
-extensions_optional = []
-if 'glpk' in optional:
-    extensions_optional.extend([
-        Extension('pywr.solvers.cython_glpk', ['pywr/solvers/cython_glpk.pyx'],
-                  include_dirs=[np.get_include()],
-                  libraries=['glpk'],
-                  define_macros=define_macros),
-        Extension('pywr.solvers.cython_glpk_edge', ['pywr/solvers/cython_glpk_edge.pyx'],
-                  include_dirs=[np.get_include()],
-                  libraries=['glpk'],
-                  define_macros=define_macros),
-    ])
-if 'lpsolve' in optional:
-    if os.name == 'nt':
-        define_macros.append(('WIN32', 1))
-    extensions_optional.append(
-        Extension('pywr.solvers.cython_lpsolve', ['pywr/solvers/cython_lpsolve.pyx'],
-                  include_dirs=[np.get_include()],
-                  libraries=['lpsolve55'],
-                  define_macros=define_macros),
+    metadata = dict(
+        name="pywr",
+        description="Python Water Resource model",
+        long_description=long_description(),
+        long_description_content_type="text/x-rst",
+        author="Joshua Arnott",
+        author_email="josh@snorfalorpagus.net",
+        url="https://github.com/pywr/pywr",
+        setup_requires=["setuptools>=18.0", "setuptools_scm", "cython", "numpy",],
+        install_requires=["pandas", "networkx", "scipy", "tables", "xlrd", "packaging", "matplotlib", "jinja2",],
+        extras_require={"test": ["pytest"]},
+        cmdclass={"build_ext": new_build_ext},
+        packages=[
+            "pywr",
+            "pywr.solvers",
+            "pywr.domains",
+            "pywr.parameters",
+            "pywr.recorders",
+            "pywr.notebook",
+            "pywr.optimisation",
+        ],
+        package_data=package_data(),
+        use_scm_version=True,
     )
 
-setup_kwargs['package_data'] = {
-    'pywr.notebook': ['*.js', '*.css']
-}
+    metadata["ext_modules"] = ext_modules = [
+        Extension("pywr._core", ["pywr/_core.pyx"]),
+        Extension("pywr._model", ["pywr/_model.pyx"]),
+        Extension("pywr._component", ["pywr/_component.pyx"]),
+        Extension("pywr.parameters._parameters", ["pywr/parameters/_parameters.pyx"]),
+        Extension("pywr.parameters._polynomial", ["pywr/parameters/_polynomial.pyx"]),
+        Extension("pywr.parameters._thresholds", ["pywr/parameters/_thresholds.pyx"]),
+        Extension("pywr.parameters._control_curves", ["pywr/parameters/_control_curves.pyx"]),
+        Extension("pywr.parameters._hydropower", ["pywr/parameters/_hydropower.pyx"]),
+        Extension("pywr.recorders._recorders", ["pywr/recorders/_recorders.pyx"]),
+        Extension("pywr.recorders._thresholds", ["pywr/recorders/_thresholds.pyx"]),
+        Extension("pywr.recorders._hydropower", ["pywr/recorders/_hydropower.pyx"]),
+    ]
 
-# build the core extension(s)
-setup_kwargs['ext_modules'] = cythonize(extensions + extensions_optional,
-                                        compiler_directives=compiler_directives, annotate=annotate,
-                                        compile_time_env=compile_time_env)
+    config = parse_optional_arguments()
 
-if os.environ.get('PACKAGE_DATA', 'false').lower() == 'true':
-    pkg_data = setup_kwargs["package_data"].get("pywr", [])
-    pkg_data.extend(['.libs/*', '.libs/licenses/*'])
-    setup_kwargs["package_data"]["pywr"] = pkg_data
+    if config["glpk"]:
+        ext_modules.append(
+                Extension("pywr.solvers.cython_glpk", ["pywr/solvers/cython_glpk.pyx"], libraries=["glpk"],)
+        )
 
-setup(**setup_kwargs)
+    if config["lpsolve"]:
+        if os.name == "nt":
+            lpsolve_macros = define_macros + [("WIN32", 1)]
+        else:
+            lpsolve_macros = define_macros
+        ext_modules.append(
+            Extension(
+                "pywr.solvers.cython_lpsolve",
+                ["pywr/solvers/cython_lpsolve.pyx"],
+                libraries=["lpsolve55"],
+                define_macros=lpsolve_macros,
+            )
+        )
+
+    annotate = config["annotate"]
+
+    if config["profile"]:
+        compiler_directives["profile"] = True
+
+    if config["trace"]:
+        compiler_directives["linetrace"] = True
+        define_macros.extend(
+            [("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1"),]
+        )
+
+    if config["debug"]:
+        compile_time_env["SOLVER_DEBUG"] = True
+
+    setup(**metadata)
+
+
+def long_description():
+    with open("README.rst") as f:
+        return f.read()
+
+
+def package_data():
+    pkg_data = {
+        "pywr.notebook": ["*.js", "*.css"],
+        'pywr': ['*.pxd'],
+        'pywr.parameters': ['*.pxd'],
+        'pywr.recorders': ['*.pxd'],
+        'pywr.solvers': ['*.pxd'],
+    }
+    if os.environ.get("PACKAGE_DATA", "false").lower() == "true":
+        pkg_data["pywr"].extend([".libs/*", ".libs/licenses/*"])
+    return pkg_data
+
+
+def parse_optional_arguments():
+    config = {
+        "glpk": True,
+        "lpsolve": True,
+        "annotate": False,
+        "profile": False,
+        "trace": False,
+        "debug": False,
+    }
+
+    if "--with-glpk" in sys.argv:
+        config["glpk"] = True
+        sys.argv.remove("--with-glpk")
+    elif "PYWR_BUILD_GLPK" in os.environ:
+        config["glpk"] = os.environ["PYWR_BUILD_GLPK"].lower() in ("true", "1",)
+    elif "--without-glpk" in sys.argv:
+        config["glpk"] = False
+        sys.argv.remove("--without-glpk")
+
+    if "--with-lpsolve" in sys.argv:
+        config["lpsolve"] = True
+        sys.argv.remove("--with-lpsolve")
+    elif "PYWR_BUILD_LPSOLVE" in os.environ:
+        config["lpsolve"] = os.environ["PYWR_BUILD_LPSOLVE"].lower() in ("true", "1",)
+    elif "--without-lpsolve" in sys.argv:
+        config["lpsolve"] = False
+        sys.argv.remove("--without-lpsolve")
+
+    if "--annotate" in sys.argv:
+        config["annotate"] = True
+        sys.argv.remove("--annotate")
+
+    if "--enable-profiling" in sys.argv:
+        config["profile"] = True
+        sys.argv.remove("--enable-profiling")
+
+    if "--enable-trace" in sys.argv:
+        config["trace"] = True
+        sys.argv.remove("--enable-trace")
+    elif "PYWR_BUILD_TRACE" in os.environ:
+        config["trace"] = os.environ["PYWR_BUILD_TRACE"].lower() in ("true", "1",)
+
+    if "--enable-debug" in sys.argv:
+        config["debug"] = True
+        sys.argv.remove("--enable-debug")
+
+    return config
+
+
+if __name__ == "__main__":
+    setup_package()

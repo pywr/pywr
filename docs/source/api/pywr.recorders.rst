@@ -17,6 +17,7 @@ All the `Recorder` subclasses in `pywr` are descended from a common base class.
    StorageRecorder
    ParameterRecorder
    IndexParameterRecorder
+   Aggregator
 
 Numpy array recorders
 ---------------------
@@ -69,11 +70,14 @@ Statistical recorders
    AggregatedRecorder
    MeanFlowNodeRecorder
    TotalFlowNodeRecorder
+   AnnualTotalFlowRecorder
    MeanParameterRecorder
    TotalParameterRecorder
    RollingMeanFlowNodeRecorder
    MinimumVolumeStorageRecorder
    MinimumThresholdVolumeStorageRecorder
+   TimestepCountIndexParameterRecorder
+   AnnualCountIndexThresholdRecorder
    RollingWindowParameterRecorder
 
 
