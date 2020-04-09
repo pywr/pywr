@@ -7,16 +7,15 @@ from ._parameters import (
     ArrayIndexedParameter, ConstantScenarioParameter, IndexedArrayParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
     DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
-    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter,
-    align_and_resample_dataframe, DataFrameParameter,
-    IndexParameter, AggregatedParameter, AggregatedIndexParameter,
+    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter, ScenarioDailyProfileParameter,
+    ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
+    IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
     NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
-    DeficitParameter, load_parameter, load_parameter_values, load_dataframe)
+    DeficitParameter, DivisionParameter, load_parameter, load_parameter_values, load_dataframe)
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
 from ._hydropower import HydropowerTargetParameter
-from past.builtins import basestring
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad

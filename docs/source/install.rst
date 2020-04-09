@@ -24,8 +24,6 @@ Pywr has several external dependencies, listed below.
 
    * `packaging <https://pypi.python.org/pypi/packaging>`_
 
-   * `future <https://pypi.python.org/pypi/future>`_
-
  * Linear programming solvers (at least one required)
 
    * `GLPK <https://www.gnu.org/software/glpk/>`_ (recommended)
