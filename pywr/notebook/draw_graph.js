@@ -11,7 +11,7 @@ require(["d3"], function(d3) {
     const style = d3.selectAll(element).append("style");
     style.html("{{ css }}");
 
-    const div = d3.selectAll(element).append("div");
+    const div = d3.selectAll(element).append("div").classed("pywr_schematic", true);
 
     const width = {{ width }},
         height = {{ height }};
@@ -38,12 +38,12 @@ require(["d3"], function(d3) {
         .range([0, height])
         .domain([100, -100]); // map-style, +ve is up
 
-    // set initial node positions 
+    // set initial node positions
     for (let i = 0; i < nodes.length; i++) {
         let n = nodes[i];
         if (n.position != undefined) {
-            n.x = posX(n.position[0]);
-            n.y = posY(n.position[1]);
+            n.fx = posX(n.position[0]);
+            n.fy = posY(n.position[1]);
             n.fixed = true;
         } else {
             n.fixed = false;
@@ -92,6 +92,7 @@ require(["d3"], function(d3) {
         
         function dragended(d) {
         if (!d3.event.active) simulation.alphaTarget(0);
+        d.fixed = true;
         }
         
         return d3.drag()
