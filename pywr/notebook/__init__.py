@@ -21,6 +21,8 @@ with open(os.path.join(folder, "save_graph.js"), "r") as f:
     save_graph_template = Template(f.read())
 with open(os.path.join(folder, "graph.css"), "r") as f:
     draw_graph_css = f.read()
+with open(os.path.join(folder, "template.html"), "r") as f:
+    html_template = Template(f.read())
 
 
 class PywrSchematic:
@@ -54,20 +56,13 @@ class PywrSchematic:
 
         self.height = height
         self.width = width
+        self.labels = labels
+        self.attributes = attributes
 
         if css is None:
-            css = draw_graph_css
-
-        self.js = Javascript(
-            data=draw_graph_template.render(
-                graph=self.graph,
-                width=self.width,
-                height=self.height,
-                labels=labels,
-                attributes=attributes,
-                css=css.replace("\n","")
-            )
-        )
+            self.css = draw_graph_css
+        else:
+            self.css = css
 
     def pywr_model_to_d3_json(self, model, attributes=False):
         """
@@ -260,7 +255,16 @@ class PywrSchematic:
         return node_class_trees
 
     def draw_graph(self):
-        display(self.js)
+        js = draw_graph_template.render(
+            graph=self.graph,
+            width=self.width,
+            height=self.height,
+            element="element",
+            labels=self.labels,
+            attributes=self.attributes,
+            css=self.css.replace("\n", "")
+        ) 
+        display(Javascript(data=js))
 
     def save_graph(self, filename="model"):
         """Save a copy of the model json with update schematic positions"""
@@ -271,10 +275,25 @@ class PywrSchematic:
             filename=json.dumps(filename)
         )))
 
-    def print_graph_positions_html(self):
-        """Print list of all node positions to console"""
-        # TODO
 
-    def to_html(self):
+    def to_html(self, filename, title="Model Schematic"):
         """Save an HTML file of schematic"""
-        # TODO
+
+        js = draw_graph_template.render(
+            graph=self.graph,
+            width=self.width,
+            height=self.height,
+            element=json.dumps(".schematic"),
+            labels=self.labels,
+            attributes=self.attributes,
+            css=""
+        ) 
+
+        html = html_template.render(
+            title=title,
+            css=self.css,
+            d3_script=js
+        )
+
+        with open(filename, "w") as f:
+            f.write(html)

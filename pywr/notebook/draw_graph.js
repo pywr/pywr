@@ -8,10 +8,10 @@ require(["d3"], function(d3) {
     const links = graph.links.map(d => Object.create(d));
     const nodes = graph.nodes.map(d => Object.create(d));
 
-    const style = d3.selectAll(element).append("style");
+    const style = d3.selectAll({{ element }}).append("style");
     style.html("{{ css }}");
 
-    const div = d3.selectAll(element).append("div").classed("pywr_schematic", true);
+    const div = d3.selectAll({{ element }}).append("div").classed("pywr_schematic", true);
 
     const width = {{ width }},
         height = {{ height }};
@@ -163,7 +163,7 @@ require(["d3"], function(d3) {
             
             d3.select(".table-tooltip").remove();
 
-            const table  = d3.selectAll(element)
+            const table  = d3.selectAll({{ element }})
                         .append("table")
                         .classed("table-tooltip", true);
 
