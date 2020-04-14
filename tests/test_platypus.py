@@ -1,10 +1,10 @@
 import pytest
 platypus = pytest.importorskip("platypus")
-
-from pywr.optimisation.platypus import PlatypusWrapper
+from pywr.optimisation.platypus import PlatypusWrapper, PywrRandomGenerator
 from pywr.optimisation import clear_global_model_cache
 from platypus import NSGAII, ProcessPoolEvaluator
 import os
+import numpy as np
 
 
 TEST_FOLDER = os.path.dirname(__file__)
@@ -51,3 +51,11 @@ def test_platypus_nsgaii_process_pool(two_reservoir_problem):
         algorithm.run(10)
 
 
+def test_pywr_random_generator(two_reservoir_problem):
+    """ Test PywrRandomGenerator inserts the current model configuration in to the population. """
+    generator = PywrRandomGenerator(wrapper=two_reservoir_problem)
+    algorithm = NSGAII(two_reservoir_problem.problem, population_size=10, generator=generator)
+    algorithm.initialize()
+    # Ensure the first solution in the population has variable values from the model
+    solution = algorithm.population[0]
+    np.testing.assert_allclose(solution.variables, np.zeros(12))
