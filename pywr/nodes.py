@@ -436,6 +436,9 @@ class AnnualVirtualStorage(VirtualStorage):
         The day of the month (0-31) to reset the volume to the initial value.
     reset_month: int
         The month of the year (0-12) to reset the volume to the initial value.
+    reset_to_initial_volume: bool
+        Reset the volume to the initial volume instead of maximum volume each year (default is False).
+
     """
     class Schema(NodeSchema):
         # The main attributes are not validated (i.e. `Raw`)
@@ -452,21 +455,27 @@ class AnnualVirtualStorage(VirtualStorage):
     def __init__(self, *args, **kwargs):
         self.reset_day = kwargs.pop('reset_day', 1)
         self.reset_month = kwargs.pop('reset_month', 1)
+        self.reset_to_initial_volume = kwargs.pop('reset_to_initial_volume', False)
         self._last_reset_year = None
 
         super(AnnualVirtualStorage, self).__init__(*args, **kwargs)
+
+    def reset(self):
+        super(AnnualVirtualStorage, self).reset()
+        self._last_reset_year = None
 
     def before(self, ts):
         super(AnnualVirtualStorage, self).before(ts)
 
         # Reset the storage volume if necessary
-        if ts.datetime.year != self._last_reset_year:
+        if ts.year != self._last_reset_year:
             # I.e. we're in a new year and ...
             # ... we're at or past the reset month/day
-            if ts.datetime.month > self.reset_month or \
-                    (ts.datetime.month == self.reset_month and ts.datetime.day >= self.reset_day):
-                self._reset_storage_only()
-                self._last_reset_year = ts.datetime.year
+            if ts.month > self.reset_month or \
+                    (ts.month == self.reset_month and ts.day >= self.reset_day):
+                # Reset to maximum volume (i.e. full capacity. )
+                self._reset_storage_only(use_initial_volume=self.reset_to_initial_volume)
+                self._last_reset_year = ts.year
 
 
 class PiecewiseLink(Node):
@@ -562,11 +571,13 @@ class MultiSplitLink(PiecewiseLink):
 
     Conceptually this node looks like the following internally,
 
-             / -->-- X0 -->-- \
-    A -->-- Xo -->-- X1 -->-- Xi -->-- C
-             \ -->-- X2 -->-- /
-                     |
-                     Bo -->-- Bi --> D
+    ::
+
+                 / -->-- X0 -->-- \\
+        A -->-- Xo -->-- X1 -->-- Xi -->-- C
+                 \\ -->-- X2 -->-- /
+                         |
+                         Bo -->-- Bi --> D
 
     An additional sublink in the PiecewiseLink (i.e. X2 above) and nodes
     (i.e. Bo and Bi) in this class are added for each extra slot.
@@ -746,6 +757,7 @@ class AggregatedNode(Drawable, _core.AggregatedNode, metaclass=NodeMeta):
         if max_flow is not None:
             self.max_flow = max_flow
 
+
 class BreakLink(Node):
     """Compound node used to reduce the number of routes in a model
 
@@ -763,9 +775,11 @@ class BreakLink(Node):
     In a model with form (3, 1, 3), i.e. 3 (A,B,C) inputs connected to 3
     outputs (D,E,F) via a bottleneck (X), there are 3*3 routes = 9 routes.
 
-    A -->\ /--> D
-    B --> X --> E
-    C -->/ \--> F
+    ::
+
+        A -->\\ /--> D
+        B --> X --> E
+        C -->/ \\--> F
 
     If X is a storage, there are only 6 routes: A->X_o, B->X_o, C->X_o and
     X_i->D_o, X_i->E_o, X_i->F_o.
@@ -790,6 +804,7 @@ class BreakLink(Node):
             initial_volume=0,
             cost=0,
         )
+
         self.link = Link(model, name=link_name)
         self.storage.connect(self.link)
 

@@ -1,4 +1,5 @@
 import sys
+import pandas
 import numpy as np
 from functools import wraps
 from pywr._core import AbstractNode, AbstractStorage
@@ -7,7 +8,6 @@ from ._thresholds import *
 from ._hydropower import *
 from .events import *
 from .calibration import *
-from past.builtins import basestring
 from pywr.h5tools import H5Store
 from ..parameter_property import parameter_property
 import warnings
@@ -15,7 +15,7 @@ import warnings
 class ParameterNameWarning(UserWarning):
     pass
 
-def assert_rec(model, parameter, name=None):
+def assert_rec(model, parameter, name=None, get_index=False):
     """Decorator for creating AssertionRecorder objects
 
     Example
@@ -25,13 +25,13 @@ def assert_rec(model, parameter, name=None):
         return timestep.dayofyear * 2.0
     """
     def assert_rec_(f):
-        rec = AssertionRecorder(model, parameter, expected_func=f, name=name)
+        rec = AssertionRecorder(model, parameter, expected_func=f, name=name, get_index=get_index)
         return f
     return assert_rec_
 
 class AssertionRecorder(Recorder):
     """A recorder that asserts the value of a parameter for testing purposes"""
-    def __init__(self, model, parameter, expected_data=None, expected_func=None, **kwargs):
+    def __init__(self, model, parameter, expected_data=None, expected_func=None, get_index=False, **kwargs):
         """
         Parameters
         ----------
@@ -39,6 +39,7 @@ class AssertionRecorder(Recorder):
         parameter : pywr.parameters.Parameter
         expected_data : np.ndarray[timestep, scenario] (optional)
         expected_func : function
+        get_index : bool
 
         See also
         --------
@@ -49,6 +50,7 @@ class AssertionRecorder(Recorder):
         self.parameter = parameter
         self.expected_data = expected_data
         self.expected_func = expected_func
+        self.get_index = get_index
 
     parameter = parameter_property("_parameter")
 
@@ -64,7 +66,10 @@ class AssertionRecorder(Recorder):
                 expected_value = self.expected_func(timestep, scenario_index)
             elif self.expected_data is not None:
                 expected_value = self.expected_data[timestep.index, scenario_index.global_id]
-            value = self._parameter.get_value(scenario_index)
+            if self.get_index:
+                value = self._parameter.get_index(scenario_index)
+            else:
+                value = self._parameter.get_value(scenario_index)
             try:
                 np.testing.assert_allclose(value, expected_value)
             except AssertionError:
@@ -131,7 +136,7 @@ class CSVRecorder(Recorder):
             node_names = []
             for node_ in self.nodes:
                 # test if the node name is provided
-                if isinstance(node_, basestring):
+                if isinstance(node_, str):
                     # lookup node by name
                     node_names.append(node_)
                 else:
@@ -140,25 +145,15 @@ class CSVRecorder(Recorder):
 
     def reset(self):
         import csv
+        kwargs = {"newline": "", "encoding": "utf-8"}
+        mode = "wt"
 
-        if sys.version_info.major >= 3:
-            kwargs = {"newline": "", "encoding": "utf-8"}
-        else:
-            kwargs = {}
-        if sys.version_info.major >= 3:
-            mode = "wt"
-        else:
-            mode = "w"
         if self.complib == "gzip":
             import gzip
             self._fh = gzip.open(self.csvfile, mode, self.complevel, **kwargs)
         elif self.complib in ("bz2", "bzip2"):
             import bz2
-            # Different API between Python 2 and 3 unfortunately.
-            if sys.version_info.major >= 3:
-                self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
-            else:
-                self._fh = bz2.BZ2File(self.csvfile, mode, self.complevel)
+            self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
         elif self.complib is None:
             self._fh = open(self.csvfile, mode, **kwargs)
         else:
@@ -175,10 +170,10 @@ class CSVRecorder(Recorder):
         values = [self.model.timestepper.current.datetime.isoformat()]
         for node_name in self._node_names:
             node = self.model.nodes[node_name]
-            if isinstance(node, AbstractNode):
-                values.append(node.flow[self.scenario_index])
-            elif isinstance(node, AbstractStorage):
+            if isinstance(node, AbstractStorage):
                 values.append(node.volume[self.scenario_index])
+            elif isinstance(node, AbstractNode):
+                values.append(node.flow[self.scenario_index])
             else:
                 raise ValueError("Unrecognised Node type '{}' for CSV writer".format(type(node)))
 
@@ -281,7 +276,7 @@ class TablesRecorder(Recorder):
         except (TypeError, ValueError):
             where = None
             param = parameter
-        if isinstance(param, basestring):
+        if isinstance(param, str):
             from ..parameters import load_parameter
             param = load_parameter(self.model, param)
         if not param.name:
@@ -299,7 +294,7 @@ class TablesRecorder(Recorder):
         self.parameters.append((where, param))
 
     def _remove_parameter(self, parameter):
-        if isinstance(parameter, basestring):
+        if isinstance(parameter, str):
             parameter = self.model.parameters[parameter]
         index = None
         for n, (where, param) in enumerate(self.parameters):
@@ -350,7 +345,7 @@ class TablesRecorder(Recorder):
                     where = self.where + "/" + node
 
                 # Accept a str, and lookup node by name instead.
-                if isinstance(node, basestring):
+                if isinstance(node, str):
                     node = self.model.nodes[node]
                 # Otherwise assume it is a node object anyway
 
@@ -490,13 +485,12 @@ class TablesRecorder(Recorder):
         scenario_shape = list(self.model.scenarios.shape)
         ts = self.model.timestepper.current
         idx = ts.index
-        dt = ts.datetime
 
         if self._time_table is not None:
             entry = self._time_table.row
-            entry['year'] = dt.year
-            entry['month'] = dt.month
-            entry['day'] = dt.day
+            entry['year'] = ts.year
+            entry['month'] = ts.month
+            entry['day'] = ts.day
             entry['index'] = idx
             entry.append()
 
@@ -524,5 +518,43 @@ class TablesRecorder(Recorder):
         self.h5store = None
         self._arrays = {}
         self._routes_flow_array = None
+
+    @staticmethod
+    def generate_dataframes(h5file, time='/time', scenarios='/scenarios'):
+        """Helper function to generate pandas dataframes from `TablesRecorder` data.
+
+        Parameters
+        h5file : str
+            A path to a H5 file created by `TablesRecorder`.
+        time : str
+            The internal table that contains the time information (default "/time")
+        scenarios : str
+            The internal table that contains the scenario information (default "/scenarios")
+        """
+        store = H5Store(h5file, mode='r')
+
+        # Get the time information
+        if time:
+            time_table = store.file.get_node(time)
+            index = pandas.to_datetime({k: time_table.col(k) for k in ('year', 'month', 'day')})
+        else:
+            index = None
+
+        # Get the scenario information
+        if scenarios:
+            scenarios_table = store.file.get_node(scenarios)
+            scenarios = pandas.DataFrame({k: scenarios_table.col(k) for k in ('name', 'size')})
+            columns = pandas.MultiIndex.from_product(
+                [range(row['size']) for _, row in scenarios.iterrows()],
+                names=[row['name'].decode() for _, row in scenarios.iterrows()]
+            )
+        else:
+            columns = None
+
+        for node in store.file.walk_nodes('/', 'CArray'):
+            data = node.read()
+            data = data.reshape((data.shape[0], -1))
+            df = pandas.DataFrame(data, index=index, columns=columns)
+            yield node._v_name, df
 
 TablesRecorder.register()

@@ -2,6 +2,101 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.6.0
+
+### New Features
+
+- `AnnualTotalFlowRecorder` now accepts an optional list of factors to scale the flow by. (#837)
+- `NumpyArrayNodeRecorder` now accepts an optional factor (default=1.0) to scale the flow by. (#838, #840)
+- Added `UniformDrawdownProfileParameter` (#836)
+- Added `ControlCurvePiecewiseInterpolatedParameter` as a more general replacement for `PiecewiseLinearControlCurve`. (#857)
+- Added 'count_nonzero' as an aggregation function for recorders. (#866)
+
+### Bug Fixes
+
+- Fix bug draw_graph modifying model data when a data dict is given. (#832)
+- Fix the `__init__` method of `BreakLink`. (#850)
+- Fix reset of `AbstractNode._prev_flow`. (#855)
+- Fix a bug calculating of `AggregatedStorage`'s initial volume in multiple scenarios. (#854)
+- Fix resetting of `AnnualVirtualStorage` volume to maximum volume instead of initial volume. (#860)
+- Fix cdef type issue in some control curve parameters allowing use with any `AbstractStorage` (instead of just `Storage`). (#861) 
+- Fix registering of `ArrayIndexedScenarioParameter` (#863)
+
+### Miscellaneous
+
+- Fixed documentation building on tags. (#831)
+- Updated notebook graph drawing to use d3.v5 and removed IE specific code. (#834)
+- Add reference to published academic paper. (#846)
+- `PiecewiseLinearControlCurve` has been marked as deprecated and will be removed in a future version. (#857) 
+- Added examples from the recently published paper. (#852)
+
+## v1.5.0
+
+### New Features
+
+- Added `ScenarioDailyProfileParameter` and `ScenarioWeeklyProfileParameter` to provide different profiles per scenario. (#802)
+- Added `TimestepCountIndexParameterRecorder`, `AnnualCountIndexThresholdRecorder` and `AnnualTotalFlowRecorder` (#784)
+- Added daily interpolation support to `MonthlyProfileParameter`. (#807)
+- Added `__contains__` method to `NamedIterator` and `NodeIterator` (#813) 
+
+### Bug fixes
+
+- Fix resetting progress of `ProgressRecorder` (#816)
+- Fix for `draw_graph` issue error when loading model object that has schematic positions (#821)
+
+### Miscellaneous
+
+- Removed `FutureWarning` and `UnicodeWarning` warning filters (#803)
+- Refactored `setup.py` to improve build time dependency handling and specifying build arguments (#811)
+- Fix deprecated use of `.labels` in the tests (#814) 
+- Fix test warning when incrementing timestep by integers (#815)
+- Fix duplicated test function names (#818)
+- Support Python 3.8 (#796)
+- Refactored the GLPK solvers in to a single extension module. (#822)
+- Add `.pxd` files to the Pywr's package data so they are distributed. (#824)
+
+### Documentation
+
+- Fixed some warning and deployment issues with the documentation (#771) 
+- Add missing new line from code-block sections in `json.rst` (#817)
+
+## v1.4.0
+
+### New Features
+
+- Added support time-steps based on Pandas offsets (#675)
+- Added `InterpolatedFlowParameter` (#740)
+- Added support for `percentile` and `percentileofscore` aggregation functions (#777)
+- Added `PiecewiseIntegralParameter` (#772)
+- Added support for including references to Python modules in JSON format (#765)
+- Added `CurrentYearThresholdParameter` and `CurrentOrdinalDayThresholdParameter` parameters (#789)
+
+### Bug fixes
+
+- Ensure `comment` key doesn't get passed to Pandas `read_xxx` functions (#788)
+
+### Documentation
+
+- Added some docs for AggregatedNode (#756)
+
+## v1.3.0
+
+### New Features
+
+- Allow use of parameters as values in `ControlCurveInterpolatedParameter` (#750)
+- Added `ScenarioWrapper` parameter (#763)
+
+### Bug fixes
+
+- Fix loading PiecewiseLink with parameters from JSON (#749)
+- Fixed a bug with `CSVRecorder` not saving volumes correctly (#767)
+
+### Miscellaneous
+
+- Removed `six` as dependency (#745)
+- Removed `pywr.__git_hash__` (#752)
+- Removed `Blender` node (#757)
+
 ## v1.2.0
 
 ### New Features

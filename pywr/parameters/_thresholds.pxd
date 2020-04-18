@@ -26,3 +26,9 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
 cdef class RecorderThresholdParameter(AbstractThresholdParameter):
     cdef public Recorder recorder
     cdef public initial_value
+
+cdef class CurrentYearThresholdParameter(AbstractThresholdParameter):
+    pass
+
+cdef class CurrentOrdinalDayThresholdParameter(AbstractThresholdParameter):
+    pass

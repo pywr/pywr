@@ -72,7 +72,7 @@ def pywr_model_to_d3_json(model, attributes=False):
         classes = classes[::-1]
         node_dict["clss"] = [cls.__name__.lower() for cls in classes]
         try:
-            node["position"] = node.position["schematic"]
+            node_dict["position"] = node.position["schematic"]
         except KeyError:
             pass
 
@@ -128,7 +128,7 @@ def get_node_attr(node):
         else:
             attr_val = str(attr_val)
 
-        attribute_data.append({"attribute": attr_name,  "value": attr_val})
+        attribute_data.append({"attribute": attr_name, "value": attr_val})
 
     return attribute_data
 
@@ -159,7 +159,7 @@ def pywr_json_to_d3_json(model, attributes=False):
     node_classes = create_node_class_trees()
 
     for node in model["nodes"]:
-        json_node = {'name': node.pop("name"), 'clss': node_classes[node["type"].lower()]}
+        json_node = {'name': node["name"], 'clss': node_classes[node["type"].lower()]}
         try:
             json_node['position'] = node['position']['schematic']
         except KeyError:
@@ -255,7 +255,7 @@ def _draw_graph(model, width=500, height=400, labels=False, attributes=False, cs
             labels=labels,
             attributes=attributes,
             css=css.replace("\n","")
-        ),
-        lib="http://d3js.org/d3.v3.min.js",
+        )
     )
+
     return js

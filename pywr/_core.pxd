@@ -24,9 +24,9 @@ cdef class ScenarioIndex:
     cdef int[:] _indices
 
 cdef class Timestep:
-    cdef object _datetime
-    cdef int _index
-    cdef double _days
+    cdef readonly object period
+    cdef readonly int index
+    cdef readonly double days
     cdef readonly int dayofyear
     cdef readonly int day
     cdef readonly int month
@@ -105,7 +105,7 @@ cdef class Storage(AbstractStorage):
     cdef Parameter _max_volume_param
     cdef Parameter _level_param
     cdef Parameter _area_param
-    cpdef _reset_storage_only(self)
+    cpdef _reset_storage_only(self, bint use_initial_volume = *)
     cpdef double get_min_volume(self, ScenarioIndex scenario_index) except? -1
     cpdef double get_max_volume(self, ScenarioIndex scenario_index) except? -1
     cpdef double get_level(self, ScenarioIndex scenario_index) except? -1

@@ -1,0 +1,39 @@
+{
+    "metadata": {
+        "title": "Python include",
+        "description": "An example of including a Python file to define a custom parameter.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "includes": [
+        "my_parameter.py"
+    ],
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": {
+                "type": "MyParameter",
+                "value": 15
+            }
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ]
+}
