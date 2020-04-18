@@ -201,16 +201,15 @@ cdef class Recorder(Component):
         Flag to ignore NaN values when calling `aggregated_value`.
     is_objective : {None, 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min'}
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
-    is_constraint : bool (default=False)
-        Flag to denote whether this recorder is to be used as a constraint during optimisation.
     epsilon : float (default=1.0)
         Epsilon distance used by some optimisation algorithms.
-    constraint_predicate : str (default='EQ')
-        The predicate to use for the constraint. Can be one of {"LT", "GT", "EQ", "LE", "GE", "<", "<=", "==",
-        ">", ">="}.
-    constraint_threshold : double (default=0.0)
-        The threshold against which the the aggregated value from is compared with the predicate to determine
-        if there is a constraint violation.
+    constraint_lower_bounds, constraint_upper_bounds : double (default=None)
+        The value(s) to use for lower and upper bound definitions. These values determine whether the recorder
+        instance is marked as a constraint. Either bound can be `None` (the default) to disable the respective
+        bound. If both bounds are `None` then the `is_constraint` property will return `False`. The lower bound must
+        be strictly less than the upper bound. The constraint bounds are not used during model simulation. Instead
+        they are intended for use by optimisation wrappers (or other external tools) to define constrained optimisation
+        problems.
     """
     def __init__(self, model, agg_func="mean", ignore_nan=False, is_objective=None, epsilon=1.0,
                  name=None, constraint_lower_bounds=None, constraint_upper_bounds=None, **kwargs):
