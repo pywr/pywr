@@ -75,7 +75,7 @@ class PygmoWrapper(BaseOptimisationWrapper):
         return len(self.model_objectives)
 
     def get_nec(self):
-        return len(c for c in self.model_constraints if c.is_equality_constraint)
+        return len([c for c in self.model_constraints if c.is_equality_constraint])
 
     def get_nic(self):
         count = 0
