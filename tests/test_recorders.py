@@ -12,7 +12,7 @@ import tables
 import json
 from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
-from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayAreaRecorder, NumpyArrayLevelRecorder,
+from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayAreaRecorder, NumpyArrayLevelRecorder,
                             AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
                             TotalFlowNodeRecorder, RollingMeanFlowNodeRecorder, MeanFlowNodeRecorder, NumpyArrayParameterRecorder,
                             NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
@@ -33,6 +33,62 @@ from pywr.parameters import (DailyProfileParameter, FunctionParameter, ArrayInde
 from helpers import load_model
 import os
 import sys
+
+
+class TestRecorder:
+    """Tests for Recorder base class."""
+
+    def test_default_no_constraint(self, simple_linear_model):
+        """Test the constraint properties in the default instance (i.e. not a constraint)."""
+        r = Recorder(simple_linear_model)
+        assert r.constraint_lower_bounds is None
+        assert r.constraint_upper_bounds is None
+        assert not r.is_constraint
+        assert not r.is_lower_bounded_constraint
+        assert not r.is_double_bounded_constraint
+        assert not r.is_upper_bounded_constraint
+        assert not r.is_equality_constraint
+
+    def test_equality_constraint(self, simple_linear_model):
+        """Test equality constraint identification. """
+        r = Recorder(simple_linear_model, constraint_lower_bounds=10.0, constraint_upper_bounds=10.0)
+        assert r.is_constraint
+        assert not r.is_lower_bounded_constraint
+        assert not r.is_double_bounded_constraint
+        assert not r.is_upper_bounded_constraint
+        assert r.is_equality_constraint
+
+    def test_lower_bounded_constraint(self, simple_linear_model):
+        """Test lower bounded constraint identification. """
+        r = Recorder(simple_linear_model, constraint_lower_bounds=10.0, constraint_upper_bounds=None)
+        assert r.is_constraint
+        assert r.is_lower_bounded_constraint
+        assert not r.is_double_bounded_constraint
+        assert not r.is_upper_bounded_constraint
+        assert not r.is_equality_constraint
+
+    def test_upper_bounded_constraint(self, simple_linear_model):
+        """Test upper bounded constraint identification. """
+        r = Recorder(simple_linear_model, constraint_lower_bounds=None, constraint_upper_bounds=10.0)
+        assert r.is_constraint
+        assert not r.is_lower_bounded_constraint
+        assert not r.is_double_bounded_constraint
+        assert r.is_upper_bounded_constraint
+        assert not r.is_equality_constraint
+
+    def test_double_bounded_constraint(self, simple_linear_model):
+        """Test upper bounds constraint identification. """
+        r = Recorder(simple_linear_model, constraint_lower_bounds=2.0, constraint_upper_bounds=10.0)
+        assert r.is_constraint
+        assert not r.is_lower_bounded_constraint
+        assert r.is_double_bounded_constraint
+        assert not r.is_upper_bounded_constraint
+        assert not r.is_equality_constraint
+
+    def test_invalid_bounds_constraint(self, simple_linear_model):
+        """Test lower bounds greater than upper bounds."""
+        with pytest.raises(ValueError):
+            r = Recorder(simple_linear_model, constraint_lower_bounds=10.0, constraint_upper_bounds=2.0)
 
 
 def test_numpy_recorder(simple_linear_model):

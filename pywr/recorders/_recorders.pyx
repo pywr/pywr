@@ -205,16 +205,27 @@ cdef class Recorder(Component):
         Flag to denote whether this recorder is to be used as a constraint during optimisation.
     epsilon : float (default=1.0)
         Epsilon distance used by some optimisation algorithms.
+    constraint_predicate : str (default='EQ')
+        The predicate to use for the constraint. Can be one of {"LT", "GT", "EQ", "LE", "GE", "<", "<=", "==",
+        ">", ">="}.
+    constraint_threshold : double (default=0.0)
+        The threshold against which the the aggregated value from is compared with the predicate to determine
+        if there is a constraint violation.
     """
     def __init__(self, model, agg_func="mean", ignore_nan=False, is_objective=None, epsilon=1.0,
-                 is_constraint=False, name=None, **kwargs):
+                 name=None, constraint_lower_bounds=None, constraint_upper_bounds=None, **kwargs):
+        # Default the constraints internal values to be +/- inf.
+        # This ensures the bounds checking works later in the init.
+        self._constraint_lower_bounds = -np.inf
+        self._constraint_upper_bounds = np.inf
         if name is None:
             name = self.__class__.__name__.lower()
         super(Recorder, self).__init__(model, name=name, **kwargs)
         self.ignore_nan = ignore_nan
         self.is_objective = is_objective
-        self.is_constraint = is_constraint
         self.epsilon = epsilon
+        self.constraint_lower_bounds = constraint_lower_bounds
+        self.constraint_upper_bounds = constraint_upper_bounds
         # Create the aggregator for scenarios
         self._scenario_aggregator = Aggregator(agg_func)
 
@@ -240,6 +251,60 @@ cdef class Recorder(Component):
             else:
                 raise ValueError("Objective direction type not recognised.")
 
+    property constraint_lower_bounds:
+        def __set__(self, value):
+            if value is None:
+                self._constraint_lower_bounds = -np.inf
+            else:
+                if self.constraint_upper_bounds is not None and value > self.constraint_upper_bounds:
+                    raise ValueError('Lower bounds can not be larger than the upper bounds.')
+                self._constraint_lower_bounds = value
+        def __get__(self):
+            if np.isneginf(self._constraint_lower_bounds):
+                return None
+            else:
+                return self._constraint_lower_bounds
+
+    property constraint_upper_bounds:
+        def __set__(self, value):
+            if value is None:
+                self._constraint_upper_bounds = -np.inf
+            else:
+                if self.constraint_lower_bounds is not None and value < self.constraint_lower_bounds:
+                    raise ValueError('Upper bounds can not be smaller than the lower bounds.')
+                self._constraint_upper_bounds = value
+        def __get__(self):
+            if np.isneginf(self._constraint_upper_bounds):
+                return None
+            else:
+                return self._constraint_upper_bounds
+
+    @property
+    def is_equality_constraint(self):
+        """Returns true if upper and lower constraint bounds are both defined and equal to one another."""
+        return self.constraint_upper_bounds is not None and self.constraint_lower_bounds is not None and \
+               self.constraint_lower_bounds == self.constraint_upper_bounds
+
+    @property
+    def is_double_bounded_constraint(self):
+        """Returns true if upper and lower constraint bounds are both defined and not-equal to one another."""
+        return self.constraint_upper_bounds is not None and self.constraint_lower_bounds is not None and \
+               self.constraint_lower_bounds != self.constraint_upper_bounds
+
+    @property
+    def is_lower_bounded_constraint(self):
+        """Returns true if lower constraint bounds is defined and upper constraint bounds is not."""
+        return self.constraint_upper_bounds is None and self.constraint_lower_bounds is not None
+
+    @property
+    def is_upper_bounded_constraint(self):
+        """Returns true if upper constraint bounds is defined and lower constraint bounds is not."""
+        return self.constraint_upper_bounds is not None and self.constraint_lower_bounds is None
+
+    @property
+    def is_constraint(self):
+        """Returns true if either upper or lower constraint bounds is defined."""
+        return self.constraint_upper_bounds is not None or self.constraint_lower_bounds is not None
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)

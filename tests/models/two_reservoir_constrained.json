@@ -1,0 +1,145 @@
+{
+    "metadata": {
+        "title": "Two reservoirs",
+        "description": "A simple problem with two reservoirs.",
+        "minimum_version": "0.5"
+    },
+    "timestepper": {
+        "start": "2100-01-01",
+        "end": "2110-01-01",
+        "timestep": 7
+    },
+    "nodes": [
+        {
+            "name": "catchment1",
+            "type": "catchment",
+            "flow": "inflow"
+        },
+        {
+            "name": "catchment2",
+            "type": "catchment",
+            "flow": "inflow"
+        },
+        {
+            "name": "reservoir1",
+            "type": "storage",
+            "min_volume": 3000,
+            "max_volume": 20000,
+            "initial_volume": 16000,
+            "cost": -5
+        },
+        {
+            "name": "reservoir2",
+            "type": "storage",
+            "min_volume": 3000,
+            "max_volume": 20000,
+            "initial_volume": 16000,
+            "cost": -5
+        },
+        {
+            "name": "transfer",
+            "type": "link",
+            "cost": -500,
+            "max_flow": "transfer_controller"
+        },
+        {
+            "name": "demand1",
+            "type": "output",
+            "max_flow": 45.0,
+            "cost": -101
+        },
+        {
+            "name": "demand2",
+            "type": "output",
+            "max_flow": 20.0,
+            "cost": -100
+        },
+        {
+            "name": "river1",
+            "type": "link"
+        },
+        {
+            "name": "river2",
+            "type": "link"
+        },
+        {
+            "name": "compensation1",
+            "type": "rivergauge",
+            "mrf": 5.0,
+            "mrf_cost": -1000
+        },
+        {
+            "name": "compensation2",
+            "type": "rivergauge",
+            "mrf": 5.0,
+            "mrf_cost": -1000
+        },
+        {
+            "name": "terminator",
+            "type": "output"
+        }
+
+    ],
+    "edges": [
+        ["catchment1", "reservoir1"],
+        ["catchment2", "reservoir2"],
+        ["reservoir1", "river1"],
+        ["reservoir2", "river2"],
+        ["river1", "compensation1"],
+        ["river2", "compensation2"],
+        ["compensation1", "terminator"],
+        ["compensation2", "terminator"],
+        ["reservoir2", "transfer"],
+        ["transfer", "reservoir1"],
+        ["reservoir1", "demand1"],
+        ["reservoir2", "demand2"]
+    ],
+    "parameters": {
+        "inflow": {
+            "type": "dataframe",
+            "url": "data/thames_stochastic_flow.gz",
+            "index_col": "Date",
+            "column": "flow",
+            "parse_dates": true
+        },
+        "control_curve": {
+            "type": "monthlyprofile",
+            "values": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "is_variable": true,
+            "upper_bounds": 1.0
+        },
+        "transfer_controller": {
+            "type": "controlcurve",
+            "storage_node": "reservoir1",
+            "control_curve": "control_curve",
+            "values": [0.0, 10.0]
+        }
+    },
+    "recorders": {
+        "deficit1": {
+            "type": "totaldeficitnode",
+            "node": "demand1"
+        },
+        "deficit2": {
+            "type": "totaldeficitnode",
+            "node": "demand2"
+        },
+        "deficit": {
+            "type": "aggregated",
+            "recorders": ["deficit1", "deficit2"],
+            "recorder_agg_func": "sum",
+            "is_objective": "minimise"
+        },
+        "transferred": {
+            "type": "totalflownode",
+            "node": "transfer",
+            "is_objective": "minimise"
+        },
+        "mean_transfer": {
+            "type": "meanflownode",
+            "node": "transfer",
+            "constraint_lower_bounds": 1.0,
+            "constraint_upper_bounds": 8.0
+        }
+    }
+}
