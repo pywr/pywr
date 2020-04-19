@@ -120,7 +120,7 @@ def long_description():
 
 def package_data():
     pkg_data = {
-        "pywr.notebook": ["*.js", "*.css"],
+        "pywr.notebook": ["*.js", "*.css", "*.html"],
         'pywr': ['*.pxd'],
         'pywr.parameters': ['*.pxd'],
         'pywr.recorders': ['*.pxd'],
