@@ -137,6 +137,12 @@ require(["d3"], function(d3) {
 
     function tick() {
 
+        node.attr("transform", function(d) {
+            d.x = Math.max(node_size, Math.min(width - node_size, d.x))
+            d.y = Math.max(node_size, Math.min(height - node_size, d.y));
+            return "translate(" + d.x + "," + d.y + ")";
+        });
+
         link.attr("d", function(d) {
             let deltaX = d.target.x - d.source.x,
                 deltaY = d.target.y - d.source.y,
@@ -150,10 +156,6 @@ require(["d3"], function(d3) {
                 targetX = d.target.x - (targetPadding * normX),
                 targetY = d.target.y - (targetPadding * normY);
             return "M" + sourceX + "," + sourceY + "L" + targetX + "," + targetY;
-        });
-
-        node.attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y + ")";
         });
     }
     simulation.on("tick", tick);
