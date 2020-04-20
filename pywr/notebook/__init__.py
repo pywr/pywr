@@ -1,14 +1,13 @@
 import os
 import json
 import inspect
-import numpy
-from IPython.core.display import HTML, Javascript, display
+import warnings
+from IPython.core.display import Javascript, display
 from jinja2 import Template
 from pywr.core import Node
-from pywr.core import Model, Input, Output, Link, Storage, StorageInput, StorageOutput
+from pywr.core import Model
 from pywr.nodes import NodeMeta
 from pywr._component import Component
-import pywr.domains
 from pywr.parameters._parameters import get_parameter_from_registry
 
 from .figures import *
@@ -28,7 +27,11 @@ with open(os.path.join(folder, "template.html"), "r") as f:
 class PywrSchematic:
 
     def __init__(self, model, width=500, height=400, labels=False, attributes=False, css=None):
-        """Display a Pywr model using D3 in Jupyter
+        """This object contains methods that allow the graph of a pywr model network to be displayed in a jupyter
+        notebook or saved to an html file.
+
+        It also contains a method to save the node positions of a notebook graph back to a pywr model json file. Note
+        that this method currently odoes not work if the object has be instantiated using a model object. 
 
         Parameters
         ----------
@@ -49,6 +52,8 @@ class PywrSchematic:
 
         if isinstance(model, Model):
             self.graph = self.pywr_model_to_d3_json(model, attributes)
+            # TODO update when schema branch is merged
+            self.json = None
         else:
             self.graph = self.pywr_json_to_d3_json(model, attributes)
             with open(model) as d:
@@ -255,6 +260,7 @@ class PywrSchematic:
         return node_class_trees
 
     def draw_graph(self):
+        """Draw pywr schematic graph in a jupyter notebook"""
         js = draw_graph_template.render(
             graph=self.graph,
             width=self.width,
@@ -263,21 +269,27 @@ class PywrSchematic:
             labels=self.labels,
             attributes=self.attributes,
             css=self.css.replace("\n", "")
-        ) 
+        )
         display(Javascript(data=js))
 
-    def save_graph(self, filename="model"):
+    def save_graph(self, filename="model.json"):
         """Save a copy of the model json with update schematic positions"""
-        display(Javascript(save_graph_template.render(
-            model_data=json.dumps(self.json),
-            height=self.height,
-            width=self.width,
-            filename=json.dumps(filename)
-        )))
 
+        if self.json is None:
+            warnings.warn("Node positions cannot be saved to json if PywrSchematic object has been instantiated using"
+                          "a pywr model object. Please use a json file path or Python dict instead", stacklevel=2)
+        else:
+            display(Javascript(save_graph_template.render(
+                model_data=json.dumps(self.json),
+                height=self.height,
+                width=self.width,
+                filename=json.dumps(filename)
+            )))
 
     def to_html(self, filename, title="Model Schematic"):
         """Save an HTML file of schematic"""
+
+        # TODO add option to get node position from graph that has already been drawn in a notebook
 
         js = draw_graph_template.render(
             graph=self.graph,
@@ -287,7 +299,7 @@ class PywrSchematic:
             labels=self.labels,
             attributes=self.attributes,
             css=""
-        ) 
+        )
 
         html = html_template.render(
             title=title,

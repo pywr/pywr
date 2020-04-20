@@ -33,7 +33,7 @@ require(["d3"], function(d3) {
     }
 
     const filename = {{ filename }}
-    download(filename + ".json", JSON.stringify(model_data))   
+    download(filename, JSON.stringify(model_data))   
 });
 
 function download(filename, text) {
