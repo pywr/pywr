@@ -1,15 +1,6 @@
 import pytest
 from numpy.testing import assert_array_equal
-
-try:
-    import IPython
-    import jinja2
-    import matplotlib
-    matplotlib.use("tkagg")
-except ImportError:
-    pytestmark = pytest.mark.skip("IPython + jinja2 + matplotlib required to test pywr.notebook")
-else:
-    from pywr.notebook import pywr_model_to_d3_json, pywr_json_to_d3_json
+from pywr.notebook import pywr_model_to_d3_json, pywr_json_to_d3_json
 from pywr.model import Model
 import os
 
