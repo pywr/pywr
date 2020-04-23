@@ -51,11 +51,11 @@ class PywrSchematic:
         """
 
         if isinstance(model, Model):
-            self.graph = self.pywr_model_to_d3_json(model, attributes)
+            self.graph = pywr_model_to_d3_json(model, attributes)
             # TODO update when schema branch is merged
             self.json = None
         else:
-            self.graph = self.pywr_json_to_d3_json(model, attributes)
+            self.graph = pywr_json_to_d3_json(model, attributes)
             with open(model) as d:
                 self.json = json.load(d)
 
