@@ -140,6 +140,13 @@ class Model(object):
     def objectives(self):
         return NamedIterator(n for n in self.recorders if n.is_objective)
 
+    def is_feasible(self):
+        """Returns true if none of the constraints are violated."""
+        for c in self.constraints:
+            if c.is_constraint_violated():
+                return False
+        return True
+
     def check(self):
         """Check the validity of the model
 

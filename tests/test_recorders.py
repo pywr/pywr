@@ -90,6 +90,55 @@ class TestRecorder:
         with pytest.raises(ValueError):
             r = Recorder(simple_linear_model, constraint_lower_bounds=10.0, constraint_upper_bounds=2.0)
 
+    @pytest.mark.parametrize('lb, ub', (
+            (None, None),
+            (5.0, 10.0),  # Feasible double bounds
+            (15.0, 20.0),  # Infeasible double bounds
+            (0.0, 2.0),  # Infeasible double bounds
+            (0.0, None),  # Feasible lower bounds
+            (15.0, None),  # Infeasible lower bounds
+            (None, 15.0),  # Feasible upper bounds
+            (None, 5.0),  # Infeasible upper bounds
+    ))
+    def test_is_constraint_violated(self, simple_linear_model, lb, ub):
+        """Test the calculation of a violated constraint and model feasibility."""
+        m = simple_linear_model
+
+        class TestRecorder(Recorder):
+            def aggregated_value(self):
+                return 10.0
+
+        r = TestRecorder(m, constraint_lower_bounds=lb, constraint_upper_bounds=ub)
+
+        if lb is None and ub is None:
+            assert not r.is_constraint
+            with pytest.raises(ValueError):
+                r.is_constraint_violated()
+        elif lb is None and ub is not None:
+            # Upper bounded only
+            if ub >= 10.0:
+                assert not r.is_constraint_violated()
+                assert m.is_feasible()
+            else:
+                assert r.is_constraint_violated()
+                assert not m.is_feasible()
+        elif lb is not None and ub is None:
+            # Lower bounded only
+            if lb <= 10.0:
+                assert not r.is_constraint_violated()
+                assert m.is_feasible()
+            else:
+                assert r.is_constraint_violated()
+                assert not m.is_feasible()
+        else:
+            # Double bounds
+            if lb <= 10.0 <= ub:
+                assert not r.is_constraint_violated()
+                assert m.is_feasible()
+            else:
+                assert r.is_constraint_violated()
+                assert not m.is_feasible()
+
 
 def test_numpy_recorder(simple_linear_model):
     """

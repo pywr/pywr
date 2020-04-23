@@ -305,6 +305,24 @@ cdef class Recorder(Component):
         """Returns true if either upper or lower constraint bounds is defined."""
         return self.constraint_upper_bounds is not None or self.constraint_lower_bounds is not None
 
+    def is_constraint_violated(self):
+        """Returns true if the value from this Recorder violates its constraint bounds.
+
+        If no constraint bounds are defined (i.e. self.is_constraint == False) then a ValueError is raised.
+        """
+        value = self.aggregated_value()
+        if self.is_equality_constraint:
+            feasible = value == self.constraint_lower_bounds
+        elif self.is_double_bounded_constraint:
+            feasible = self.constraint_lower_bounds <= value <= self.constraint_upper_bounds
+        elif self.is_lower_bounded_constraint:
+            feasible = self.constraint_lower_bounds <= value
+        elif self.is_upper_bounded_constraint:
+            feasible = value <= self.constraint_upper_bounds
+        else:
+            raise ValueError(f'Recorder "{self.name}" has no constraint bounds defined.')
+        return not feasible
+
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
