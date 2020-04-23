@@ -45,7 +45,7 @@ def setup_package():
         author_email="josh@snorfalorpagus.net",
         url="https://github.com/pywr/pywr",
         setup_requires=["setuptools>=18.0", "setuptools_scm", "cython", "numpy",],
-        install_requires=["pandas", "networkx", "scipy", "tables", "xlrd", "packaging", "matplotlib", "jinja2",],
+        install_requires=["pandas", "networkx", "scipy", "tables", "xlrd", "packaging", "matplotlib", "jinja2", "ipython"],
         extras_require={"test": ["pytest"]},
         cmdclass={"build_ext": new_build_ext},
         packages=[
