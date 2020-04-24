@@ -25,7 +25,7 @@ class PygmoWrapper(BaseOptimisationWrapper):
 
         # Return separate lists for equality and inequality constraints.
         # pygmo requires that inequality constraints are all of the form g(x) <= 0
-        # Therefore these a converted to this form from their respective bounds.
+        # Therefore these are converted to this form from their respective bounds.
         eq_constraints = []
         ineq_constraints = []
         for r in self.model_constraints:

@@ -90,7 +90,7 @@ class PlatypusWrapper(BaseOptimisationWrapper):
                 self.problem.constraints[ic] = platypus.Constraint('<=', value=c.constraint_upper_bounds)
                 ic += 1
             else:
-                raise RuntimeError(f'The bounds if constraint "{c.name}" could not be identified correctly.')
+                raise RuntimeError(f'The bounds of constraint "{c.name}" could not be identified correctly.')
 
     def evaluate(self, solution):
         logger.info('Evaluating solution ...')

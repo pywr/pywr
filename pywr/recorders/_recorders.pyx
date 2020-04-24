@@ -207,9 +207,11 @@ cdef class Recorder(Component):
         The value(s) to use for lower and upper bound definitions. These values determine whether the recorder
         instance is marked as a constraint. Either bound can be `None` (the default) to disable the respective
         bound. If both bounds are `None` then the `is_constraint` property will return `False`. The lower bound must
-        be strictly less than the upper bound. The constraint bounds are not used during model simulation. Instead
-        they are intended for use by optimisation wrappers (or other external tools) to define constrained optimisation
-        problems.
+        be strictly less than the upper bound. An equality constraint can be created by setting both bounds to the
+        same value.
+
+        The constraint bounds are not used during model simulation. Instead they are intended for use by optimisation
+        wrappers (or other external tools) to define constrained optimisation problems.
     """
     def __init__(self, model, agg_func="mean", ignore_nan=False, is_objective=None, epsilon=1.0,
                  name=None, constraint_lower_bounds=None, constraint_upper_bounds=None, **kwargs):
