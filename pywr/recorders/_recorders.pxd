@@ -13,7 +13,8 @@ cdef class Aggregator:
 
 cdef class Recorder(Component):
     cdef int _is_objective
-    cdef public bint is_constraint
+    cdef double _constraint_lower_bounds
+    cdef double _constraint_upper_bounds
     cdef public double epsilon
     cdef public bint ignore_nan
     cdef public Aggregator _scenario_aggregator

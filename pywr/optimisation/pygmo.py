@@ -23,11 +23,29 @@ class PygmoWrapper(BaseOptimisationWrapper):
             value = r.aggregated_value()
             objectives.append(sign*value)
 
-        constraints = [r.aggregated_value() for r in self.model_constraints]
+        # Return separate lists for equality and inequality constraints.
+        # pygmo requires that inequality constraints are all of the form g(x) <= 0
+        # Therefore these are converted to this form from their respective bounds.
+        eq_constraints = []
+        ineq_constraints = []
+        for r in self.model_constraints:
+            x = r.aggregated_value()
+            if r.is_double_bounded_constraint:
+                # Need to create two constraints
+                ineq_constraints.append(r.constraint_lower_bounds - x)
+                ineq_constraints.append(x - r.constraint_upper_bounds)
+            elif r.is_equality_constraint:
+                eq_constraints.append(x)
+            elif r.is_lower_bounded_constraint:
+                ineq_constraints.append(r.constraint_lower_bounds - x)
+            elif r.is_upper_bounded_constraint:
+                ineq_constraints.append(x - r.constraint_upper_bounds)
+            else:
+                raise RuntimeError(f'The bounds if constraint "{r.name}" could not be identified correctly.')
 
         # Return values to the solution
         logger.info('Evaluation complete!')
-        return objectives + constraints
+        return objectives + eq_constraints + ineq_constraints
 
     def get_bounds(self):
         """ Return the variable bounds. """
@@ -57,4 +75,13 @@ class PygmoWrapper(BaseOptimisationWrapper):
         return len(self.model_objectives)
 
     def get_nec(self):
-        return len(self.model_constraints)
+        return len([c for c in self.model_constraints if c.is_equality_constraint])
+
+    def get_nic(self):
+        count = 0
+        for c in self.model_constraints:
+            if c.is_double_bounded_constraint:
+                count += 2
+            elif c.is_lower_bounded_constraint or c.is_upper_bounded_constraint:
+                count += 1
+        return count

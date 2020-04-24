@@ -140,6 +140,18 @@ class Model(object):
     def objectives(self):
         return NamedIterator(n for n in self.recorders if n.is_objective)
 
+    def is_feasible(self):
+        """Returns True if none of the constraints are violated.
+
+        This function checks `is_constraint_violated()` for all defined constraints. If any constraints
+        are violated this function returns False. The checking of constraint violation requires that a
+        simulation has been completed before this function is called.
+        """
+        for c in self.constraints:
+            if c.is_constraint_violated():
+                return False
+        return True
+
     def check(self):
         """Check the validity of the model
 
