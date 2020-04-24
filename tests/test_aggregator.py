@@ -13,7 +13,8 @@ npy_funcs = {
     "median": np.median,
     "product": np.product,
     "all": np.all,
-    "any": np.any
+    "any": np.any,
+    "count_nonzero": np.count_nonzero
 }
 
 

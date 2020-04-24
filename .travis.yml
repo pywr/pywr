@@ -39,18 +39,11 @@ script:
   - sudo chown -R travis:travis .
   - |
     if [ "$BUILD_DOC" -eq "1" ]; then
-      if [[ "${TRAVIS_BRANCH}" == "master" ]]; then
-      if [[ "${TRAVIS_PULL_REQUEST}" == "false" ]]; then
-        if [[ "${TRAVIS_TAG}" == "v"* ]]; then
-          DEPLOY_DIR=${TRAVIS_TAG};
-        else
-          DEPLOY_DIR=master;
-        fi
-
-        pip install doctr
-        doctr deploy --deploy-repo pywr/pywr-docs \
-          --build-tags --built-docs pywr-docs/html $DEPLOY_DIR
-      fi
+      pip install doctr
+      if [[ "${TRAVIS_TAG}" == "v"* ]]; then
+        doctr deploy --deploy-repo pywr/pywr-docs --build-tags --built-docs pywr-docs/html ${TRAVIS_TAG}
+      elif [[ "${TRAVIS_BRANCH}" == "master" ]]; then
+        doctr deploy --deploy-repo pywr/pywr-docs --build-tags --built-docs pywr-docs/html master
       fi
     fi
 
