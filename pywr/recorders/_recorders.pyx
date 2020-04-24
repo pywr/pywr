@@ -267,13 +267,13 @@ cdef class Recorder(Component):
     property constraint_upper_bounds:
         def __set__(self, value):
             if value is None:
-                self._constraint_upper_bounds = -np.inf
+                self._constraint_upper_bounds = np.inf
             else:
                 if self.constraint_lower_bounds is not None and value < self.constraint_lower_bounds:
                     raise ValueError('Upper bounds can not be smaller than the lower bounds.')
                 self._constraint_upper_bounds = value
         def __get__(self):
-            if np.isneginf(self._constraint_upper_bounds):
+            if np.isinf(self._constraint_upper_bounds):
                 return None
             else:
                 return self._constraint_upper_bounds
