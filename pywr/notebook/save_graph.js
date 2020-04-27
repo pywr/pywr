@@ -24,16 +24,35 @@ require(["d3"], function(d3) {
                    .range([100, -100])
                    .domain([0, height]);
     
-    for (let i = 0; i < model_data.nodes.length; i++){
-        let node_name = model_data.nodes[i].name;
-        let node_data = node_data_obj[node_name]
-        if (node_data.fixed){
-            model_data["nodes"][i]["position"] = {"schematic": [posX(node_data.x), posY(node_data.y)]}
+    const filename = {{ filename }};
+
+    if ({{filetype}} == "model_json"){
+        for (let i = 0; i < model_data.nodes.length; i++){
+            let node_name = model_data.nodes[i].name;
+            let node_data = node_data_obj[node_name]
+            if (node_data.fixed){
+                model_data["nodes"][i]["position"] = {"schematic": [posX(node_data.x), posY(node_data.y)]}
+            }
         }
+        download(filename, JSON.stringify(model_data));
+    } else {
+        let output_data = ["Node name,Fixed,x,y"];
+        for (let i = 0; i < model_data.nodes.length; i++){
+            let node_name = model_data.nodes[i].name;
+            let node_data = node_data_obj[node_name]
+            let position_data = [
+                node_name,
+                node_data.fixed,
+                posX(node_data.x),
+                posY(node_data.y),
+            ]
+            output_data.push(position_data.join(","))
+        }
+        download(filename, output_data.join("\n"));
     }
 
-    const filename = {{ filename }}
-    download(filename, JSON.stringify(model_data))   
+    
+      
 });
 
 function download(filename, text) {

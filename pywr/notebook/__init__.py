@@ -93,7 +93,23 @@ class PywrSchematic:
                 model_data=json.dumps(self.json),
                 height=self.height,
                 width=self.width,
-                filename=json.dumps(filename)
+                filename=json.dumps(filename),
+                filetype=json.dumps("model_json")
+            )))
+
+    def save_positions(self, filename="node_positions.csv"):
+        """Save a copy of the model json with update schematic positions"""
+
+        if self.json is None:
+            warnings.warn("Node positions cannot be saved to json if PywrSchematic object has been instantiated using"
+                          "a pywr model object. Please use a json file path or Python dict instead", stacklevel=2)
+        else:
+            display(Javascript(save_graph_template.render(
+                model_data=json.dumps(self.json),
+                height=self.height,
+                width=self.width,
+                filename=json.dumps(filename),
+                filetype=json.dumps("csv")
             )))
 
     def to_html(self, filename, title="Model Schematic"):
