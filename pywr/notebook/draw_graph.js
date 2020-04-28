@@ -138,6 +138,7 @@ require(["d3"], function(d3) {
     function tick() {
 
         node.attr("transform", function(d) {
+            // ensure nodes do not go beyond svg bounds
             d.x = Math.max(node_size, Math.min(width - node_size, d.x))
             d.y = Math.max(node_size, Math.min(height - node_size, d.y));
             return "translate(" + d.x + "," + d.y + ")";

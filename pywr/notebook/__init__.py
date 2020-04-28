@@ -145,6 +145,15 @@ class PywrSchematic:
             f.write(html)
 
 
+def draw_graph(model, width=500, height=400, labels=False, attributes=False, css=None):
+    """Display a Pywr model using D3 in Jupyter
+
+    Functionality for creating the d3 graph is now in the PywrSchematic object
+    """
+    schematic = PywrSchematic(model, width=width, height=height, labels=labels, attributes=attributes, css=css)
+    schematic.draw_graph()
+
+
 def pywr_model_to_d3_json(model, attributes=False):
     """
     Convert a Pywr graph to a structure d3 can display
