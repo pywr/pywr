@@ -31,7 +31,7 @@ class PywrSchematic:
         notebook or saved to an html file.
 
         It also contains a method to save the node positions of a notebook graph back to a pywr model json file. Note
-        that this method currently odoes not work if the object has be instantiated using a model object. 
+        that this method currently does not work if the object has be instantiated using a model object.
 
         Parameters
         ----------
@@ -82,38 +82,46 @@ class PywrSchematic:
         )
         display(Javascript(data=js))
 
-    def save_graph(self, filename="model.json"):
-        """Save a copy of the model json with update schematic positions"""
+    def save_graph(self, filename, save_unfixed=False, filetype="json"):
+        """Save a copy of the model json with update schematic positions.
+
+        When run in a jupyter notebook this will trigger a download.
+
+        Parameters
+        ----------
+        filename: str
+            The name of the file to save the output data to.
+        save_unfixed: bool
+            If True, then all node position are saved to output file. If False, only nodes who have had their position
+            fixed in the d3 grpah have their positions saved.
+        filetype: str
+            Should be either 'json' to save the model data with updated node positions to a json file or 'csv' to save
+            node positions to a csv file.
+        """
 
         if self.json is None:
             warnings.warn("Node positions cannot be saved to json if PywrSchematic object has been instantiated using"
-                          "a pywr model object. Please use a json file path or Python dict instead", stacklevel=2)
+                          "a pywr model object. Please use a json file path or model dict instead", stacklevel=2)
         else:
             display(Javascript(save_graph_template.render(
                 model_data=json.dumps(self.json),
                 height=self.height,
                 width=self.width,
+                save_unfixed=json.dumps(save_unfixed),
                 filename=json.dumps(filename),
-                filetype=json.dumps("model_json")
+                filetype=json.dumps(filetype)
             )))
 
-    def save_positions(self, filename="node_positions.csv"):
-        """Save a copy of the model json with update schematic positions"""
+    def to_html(self, filename="model.html", title="Model Schematic"):
+        """Save an HTML file of schematic
 
-        if self.json is None:
-            warnings.warn("Node positions cannot be saved to json if PywrSchematic object has been instantiated using"
-                          "a pywr model object. Please use a json file path or Python dict instead", stacklevel=2)
-        else:
-            display(Javascript(save_graph_template.render(
-                model_data=json.dumps(self.json),
-                height=self.height,
-                width=self.width,
-                filename=json.dumps(filename),
-                filetype=json.dumps("csv")
-            )))
-
-    def to_html(self, filename, title="Model Schematic"):
-        """Save an HTML file of schematic"""
+        Parameters
+        ----------
+        filename: str
+            The name of the html file
+        title: str
+            The schematic title
+        """
 
         # TODO add option to get node position from graph that has already been drawn in a notebook
 
@@ -222,9 +230,9 @@ def get_node_attr(node):
             continue
         attr_type = type(attr_val).__name__
 
-        attrs_to_skip = ["component_attrs", "components", "color", "model",  "input", "output",
-                        "inputs", "outputs", "sub_domain", "sub_output", "sublinks", "visible",
-                        "fully_qualified_name", "allow_isolated"]
+        attrs_to_skip = ["component_attrs", "components", "color", "model", "input", "output",
+                         "inputs", "outputs", "sub_domain", "sub_output", "sublinks", "visible",
+                         "fully_qualified_name", "allow_isolated"]
         if not attr_val or attr_name.lower() in attrs_to_skip:
             continue
 
