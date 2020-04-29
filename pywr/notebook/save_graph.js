@@ -14,11 +14,6 @@ require(["d3"], function(d3) {
 
     const nodes = d3.select(".pywr_schematic").selectAll(".node").data();
 
-    const node_data_obj = {};
-    nodes.forEach(element => {
-        node_data_obj[element.name] = element
-    });
-
     // scales to convert back to values between -100 and 100
     const posX = d3.scaleLinear()
                     .range([-100, 100])
@@ -29,10 +24,9 @@ require(["d3"], function(d3) {
 
     const output_data = ["Node name,Fixed,x,y"];
     // loop through model nodes and get postions
-    for (let i = 0; i < model_data.nodes.length; i++){
+    for (let i = 0; i < nodes.length; i++){
         
-        let node_name = model_data.nodes[i].name;
-        let node_data = node_data_obj[node_name];
+        let node_data = nodes[i];
 
         if (!(node_data.fixed) && !(save_unfixed)) {
             // If node is unfixed and unfixed node positions are not being saved move to next node
@@ -48,7 +42,7 @@ require(["d3"], function(d3) {
             }
         } else if (filetype == "csv") {
             let position_data = [
-                node_name,
+                node_data.name,
                 node_data.fixed,
                 posX(node_data.x),
                 posY(node_data.y),
