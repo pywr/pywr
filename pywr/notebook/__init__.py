@@ -99,7 +99,7 @@ class PywrSchematic:
             node positions to a csv file.
         """
 
-        if self.json is None:
+        if self.json is None and filetype == "json":
             warnings.warn("Node positions cannot be saved to json if PywrSchematic object has been instantiated using"
                           "a pywr model object. Please use a json file path or model dict instead", stacklevel=2)
         else:
