@@ -203,4 +203,7 @@ require(["d3"], function(d3) {
             d3.select(".table-tooltip").transition().delay(2000).remove();
         });
     {% endif %}
-})
+
+}, function(err) {
+    element.append("<p style='color:red'>d3 failed to load:" + err + "</p>");   
+});

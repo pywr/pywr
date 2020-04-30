@@ -48,8 +48,7 @@ require(["d3"], function(d3) {
                 posY(node_data.y),
             ];
             output_data.push(position_data.join(","));
-        }
-        // TODO append error message if filetype not recognised
+        } 
     }
 
     if (filetype == "json"){
@@ -58,6 +57,8 @@ require(["d3"], function(d3) {
         download(filename, output_data.join("\n"));
     }
       
+}, function(err) {
+    element.append("<p style='color:red'>d3.js failed to load:" + err + "</p>");
 });
 
 function download(filename, text) {

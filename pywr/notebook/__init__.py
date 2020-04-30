@@ -83,7 +83,7 @@ class PywrSchematic:
         display(Javascript(data=js))
 
     def save_graph(self, filename, save_unfixed=False, filetype="json"):
-        """Save a copy of the model json with update schematic positions.
+        """Save a copy of the model JSON with update schematic positions.
 
         When run in a jupyter notebook this will trigger a download.
 
@@ -93,15 +93,19 @@ class PywrSchematic:
             The name of the file to save the output data to.
         save_unfixed: bool
             If True, then all node position are saved to output file. If False, only nodes who have had their position
-            fixed in the d3 grpah have their positions saved.
+            fixed in the d3 graph have their positions saved.
         filetype: str
-            Should be either 'json' to save the model data with updated node positions to a json file or 'csv' to save
+            Should be either 'json' to save the model data with updated node positions to a JSON file or 'csv' to save
             node positions to a csv file.
         """
 
+        if filetype not in ["json", "csv"]:
+            warnings.warn(f"Output filetype '{filetype}' not recognised. Please use either 'json' or 'csv'</p>",
+                          stacklevel=2)
+
         if self.json is None and filetype == "json":
-            warnings.warn("Node positions cannot be saved to json if PywrSchematic object has been instantiated using "
-                          "a pywr model object. Please use a json file path or model dict instead.", stacklevel=2)
+            warnings.warn("Node positions cannot be saved to JSON if PywrSchematic object has been instantiated using "
+                          "a pywr model object. Please use a JSON file path or model dict instead.", stacklevel=2)
         else:
             display(Javascript(save_graph_template.render(
                 model_data=json.dumps(self.json),
