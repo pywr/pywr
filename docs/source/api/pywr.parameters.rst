@@ -56,6 +56,7 @@ Annual profile parameters
    ScenarioWeeklyProfileParameter
    ScenarioMonthlyProfileParameter
    ArrayIndexedScenarioMonthlyFactorsParameter
+   RbfProfileParameter
 
 Dataframe parameter
 -------------------

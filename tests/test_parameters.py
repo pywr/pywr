@@ -25,6 +25,7 @@ import pytest
 import itertools
 import calendar
 from numpy.testing import assert_allclose
+from scipy.interpolate import Rbf
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -1691,3 +1692,33 @@ class TestUniformDrawdownProfileParameter:
 
         m.run()
 
+
+class TestRbfProfileParameter:
+
+    def test_rbf_profile(self, simple_linear_model):
+        """Test the Rbf profile parameter."""
+
+        m = simple_linear_model
+        m.timestepper.start = '2015-01-01'
+        m.timestepper.end = '2015-12-31'
+
+        # The Rbf parameter should mirror the input data at the start and end to create roughly
+        # consistent gradients across the end of year boundary.
+        interp_days_of_year = [-64, 1, 100, 200, 300, 365, 464]
+        interp_values = [0.2, 0.5, 0.7, 0.5, 0.2, 0.5, 0.7]
+
+        expected_values = Rbf(interp_days_of_year, interp_values)(np.arange(365) + 1)
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 100, 200, 300],
+            "values": [0.5, 0.7, 0.5, 0.2]
+        }
+
+        p = load_parameter(m, data)
+
+        @assert_rec(m, p)
+        def expected_func(timestep, scenario_index):
+            return expected_values[timestep.index]
+
+        m.run()

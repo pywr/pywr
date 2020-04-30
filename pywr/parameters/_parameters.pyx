@@ -1,6 +1,7 @@
 import os
 import numpy as np
 cimport numpy as np
+from scipy.interpolate import Rbf
 import pandas
 import calendar
 from libc.math cimport cos, M_PI
@@ -903,6 +904,109 @@ cdef class UniformDrawdownProfileParameter(Parameter):
     def load(cls, model, data):
         return cls(model, **data)
 UniformDrawdownProfileParameter.register()
+
+
+cdef class RbfProfileParameter(Parameter):
+    """Parameter which interpolates a daily profile using a radial basis function (RBF).
+
+    The daily profile is computed during model `reset` using a radial basis function with
+    day-of-year as the independent variables. The days of the year are defined by the user
+    alongside the values to use on each of those days for the interpolation. The first
+    day of the years should always be one, and its value is repeated as the 365th value.
+    In addition the second and penultimate values are mirrored to encourage a consistent
+    gradient to appear across the boundary. The RBF calculations are undertaken using
+    the `scipy.interpolate.Rbf` object, please refer to Scipy's documentation for more
+    information.
+
+    Parameters
+    ----------
+    days_of_year : iterable, integer
+        The days of the year at which the interpolation values are defined. The first
+        value should be one.
+    values : iterable, float
+        Values to use for interpolation corresponding to the `days_of_year`.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the values when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the values when used during optimisation.
+    rbf_kwargs: Optional, dict
+        Optional dictionary of keyword arguments to base to the Rbf object.
+
+    """
+    def __init__(self, model, days_of_year, values, lower_bounds=0.0, upper_bounds=np.inf, rbf_kwargs=None, **kwargs):
+        super(RbfProfileParameter, self).__init__(model, **kwargs)
+
+        if len(days_of_year) != len(values):
+            raise ValueError(f"The length of values ({len(values)}) must equal the length of "
+                             f"`days_of_year` ({len(days_of_year)}).")
+
+        self.double_size = len(values)
+        self.integer_size = 0
+        self._values = np.array(values)
+        self._days_of_year = np.array(days_of_year, dtype=np.int32)
+        self._lower_bounds = np.ones(self.double_size)*lower_bounds
+        self._upper_bounds = np.ones(self.double_size)*upper_bounds
+        self.rbf_kwargs = rbf_kwargs if rbf_kwargs is not None else {}
+
+    cpdef reset(self):
+        Parameter.reset(self)
+        # The interpolated profile is recalculated during reset so that
+        # it will update when the _values array is updated via `set_double_variables`
+        # and the model is rerun. I.e. during optimisation (where setup is not redone).
+        self._interpolate()
+
+    cpdef _interpolate(self):
+        cdef int i
+
+        days_of_year = list(self._days_of_year)
+        # Append day 365 to the list and mirror the penultimate and second DOY at the start and end
+        # of the list respectively. This helps ensure the gradient is roughly the same across the boundary
+        # between days 365 and 0.
+        days_of_year = [days_of_year[-1]-365+1] + list(days_of_year) + [365, 365+days_of_year[1]-1]
+        # Create the corresponding y values including the mirrored entries
+        y = list(self._values)
+        y = [y[-1]] + y + [y[0], y[1]]
+        rbfi = Rbf(days_of_year, y)
+
+        # Do the interpolation
+        values = rbfi(np.arange(365) + 1)
+
+        # Create an array to save the daily profile in.
+        self._interp_values = np.zeros(366)
+        # Make the daily profile of 366 values repeating the same value for 28th & 29th Feb.
+        for i in range(365):
+            if i < 58:
+                self._interp_values[i] = values[i]
+            elif i == 58:
+                self._interp_values[i] = values[i]
+                self._interp_values[i+1] = values[i]
+            elif i > 58:
+                self._interp_values[i+1] = values[i]
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(ts.year):
+            if i > 58: # 28th Feb
+                i += 1
+        return self._interp_values[i]
+
+    cpdef set_double_variables(self, double[:] values):
+        self._values[...] = values
+
+    cpdef double[:] get_double_variables(self):
+        # Make sure we return a copy of the data instead of a view.
+        return np.array(self._values).copy()
+
+    cpdef double[:] get_double_lower_bounds(self):
+        return self._lower_bounds
+
+    cpdef double[:] get_double_upper_bounds(self):
+        return self._upper_bounds
+
+    @classmethod
+    def load(cls, model, data):
+        return cls(model, **data)
+RbfProfileParameter.register()
 
 
 cdef class IndexParameter(Parameter):
