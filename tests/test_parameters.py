@@ -1338,17 +1338,18 @@ class TestDivisionParameter:
         model.run()
 
 
-class TestMinMaxNegativeParameter:
+class TestMinMaxNegativeOffsetParameter:
     @pytest.mark.parametrize("ptype,profile", [
         ("max", list(range(-10, 356))),
         ("min", list(range(0, 366))),
         ("negative", list(range(-366, 0))),
         ("negativemax", list(range(-366, 0))),
+        ("offset", list(range(0, 366))),
     ])
     def test_parameter(cls, simple_linear_model, ptype,profile):
         model = simple_linear_model
         model.timestepper.start = "2017-01-01"
-        model.timestepper.end = "2017-01-15"
+        model.timestepper.end = "2017-12-31"
 
         data = {
             "type": ptype,
@@ -1359,11 +1360,18 @@ class TestMinMaxNegativeParameter:
             }
         }
 
-
-        if ptype in ("max", "min"):
+        if ptype in ("max", "min", "negativemax", "negativemin"):
             data["threshold"] = 3
+        elif ptype == 'offset':
+            data["offset"] = 3
 
-        func = {"min": min, "max": max, "negative": lambda t,x: -x, "negativemax": lambda t,x: max(t, -x)}[ptype]
+        func = {
+            "min": min,
+            "max": max,
+            "negative": lambda t, x: -x,
+            "negativemax": lambda t, x: max(t, -x),
+            "offset": lambda o, x: x + o
+        }[ptype]
 
         model.nodes["Input"].max_flow = parameter = load_parameter(model, data)
         model.nodes["Output"].max_flow = 9999

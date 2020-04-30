@@ -41,6 +41,7 @@ Combining multiple parameters
    NegativeMaxParameter
    MinParameter
    NegativeMinParameter
+   OffsetParameter
 
 Annual profile parameters
 -------------------------

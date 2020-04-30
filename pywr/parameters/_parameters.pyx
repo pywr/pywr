@@ -1577,6 +1577,58 @@ cdef class NegativeMinParameter(MinParameter):
 NegativeMinParameter.register()
 
 
+cdef class OffsetParameter(Parameter):
+    """Parameter that takes offsets another `Parameter` by a constant value.
+
+    This class is a more efficient version of `AggregatedParameter` where
+    a single `Parameter` is offset by a constant value.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to to compare with the float.
+    offset : float (default=0.0)
+        The offset to add to apply to value returned by `parameter`.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the offset when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the offset when used during optimisation.
+    """
+    def __init__(self, model, parameter, offset=0.0, lower_bounds=0.0, upper_bounds=np.inf, *args, **kwargs):
+        super(OffsetParameter, self).__init__(model, *args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.offset = offset
+        self.double_size = 1
+        self._lower_bounds = np.ones(self.double_size) * lower_bounds
+        self._upper_bounds = np.ones(self.double_size) * upper_bounds
+
+    cdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = self.parameter.__values[i] + self.offset
+
+    cpdef set_double_variables(self, double[:] values):
+        self.offset = values[0]
+
+    cpdef double[:] get_double_variables(self):
+        return np.array([self.offset, ], dtype=np.float64)
+
+    cpdef double[:] get_double_lower_bounds(self):
+        return self._lower_bounds
+
+    cpdef double[:] get_double_upper_bounds(self):
+        return self._upper_bounds
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+OffsetParameter.register()
+
+
 cdef class DeficitParameter(Parameter):
     """Parameter track the deficit (max_flow - actual flow) of a Node
 
