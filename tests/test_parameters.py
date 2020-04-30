@@ -1344,6 +1344,7 @@ class TestMinMaxNegativeOffsetParameter:
         ("min", list(range(0, 366))),
         ("negative", list(range(-366, 0))),
         ("negativemax", list(range(-366, 0))),
+        ("negativemin", list(range(-366, 0))),
         ("offset", list(range(0, 366))),
     ])
     def test_parameter(cls, simple_linear_model, ptype,profile):
@@ -1370,6 +1371,7 @@ class TestMinMaxNegativeOffsetParameter:
             "max": max,
             "negative": lambda t, x: -x,
             "negativemax": lambda t, x: max(t, -x),
+            "negativemin": lambda t, x: min(t, -x),
             "offset": lambda o, x: x + o
         }[ptype]
 
