@@ -1387,6 +1387,31 @@ class TestMinMaxNegativeOffsetParameter:
             return func(3, value)
         model.run()
 
+    def test_offset_parameter_variable(self, simple_linear_model):
+        """Test OffsetParameter's variable API."""
+
+        data = {
+            "type": "offset",
+            "parameter": {
+                "name": "raw",
+                "type": "dailyprofile",
+                "values": list(range(366)),
+            },
+            "offset": 10,
+            "lower_bounds": -100,
+            "upper_bounds": 100,
+        }
+        parameter = load_parameter(simple_linear_model, data)
+        np.testing.assert_allclose(parameter.offset, 10)
+        np.testing.assert_allclose(parameter.get_double_variables(), [10.0])
+        np.testing.assert_allclose(parameter.get_double_lower_bounds(), [-100.0])
+        np.testing.assert_allclose(parameter.get_double_upper_bounds(), [100.0])
+        # Update value using variable API
+        parameter.set_double_variables(np.array([20.0]))
+        np.testing.assert_allclose(parameter.offset, 20)
+        np.testing.assert_allclose(parameter.get_double_variables(), [20.0])
+
+
 def test_ocptt(simple_linear_model):
     model = simple_linear_model
     inpt = model.nodes["Input"]
