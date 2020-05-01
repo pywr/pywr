@@ -1578,7 +1578,7 @@ NegativeMinParameter.register()
 
 
 cdef class OffsetParameter(Parameter):
-    """Parameter that takes offsets another `Parameter` by a constant value.
+    """Parameter that offsets another `Parameter` by a constant value.
 
     This class is a more efficient version of `AggregatedParameter` where
     a single `Parameter` is offset by a constant value.
@@ -1586,9 +1586,9 @@ cdef class OffsetParameter(Parameter):
     Parameters
     ----------
     parameter : `Parameter`
-        The parameter to to compare with the float.
+        The parameter to compare with the float.
     offset : float (default=0.0)
-        The offset to add to apply to value returned by `parameter`.
+        The offset to apply to the value returned by `parameter`.
     lower_bounds : float (default=0.0)
         The lower bounds of the offset when used during optimisation.
     upper_bounds : float (default=np.inf)
