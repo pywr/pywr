@@ -172,6 +172,12 @@ cdef class MinParameter(Parameter):
 cdef class NegativeMinParameter(MinParameter):
     pass
 
+cdef class OffsetParameter(Parameter):
+    cdef public Parameter parameter
+    cdef public double offset
+    cdef double[:] _lower_bounds
+    cdef double[:] _upper_bounds
+
 cdef class DeficitParameter(Parameter):
     cdef public Node node
 

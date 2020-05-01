@@ -1338,17 +1338,19 @@ class TestDivisionParameter:
         model.run()
 
 
-class TestMinMaxNegativeParameter:
+class TestMinMaxNegativeOffsetParameter:
     @pytest.mark.parametrize("ptype,profile", [
         ("max", list(range(-10, 356))),
         ("min", list(range(0, 366))),
         ("negative", list(range(-366, 0))),
         ("negativemax", list(range(-366, 0))),
+        ("negativemin", list(range(-366, 0))),
+        ("offset", list(range(0, 366))),
     ])
     def test_parameter(cls, simple_linear_model, ptype,profile):
         model = simple_linear_model
         model.timestepper.start = "2017-01-01"
-        model.timestepper.end = "2017-01-15"
+        model.timestepper.end = "2017-12-31"
 
         data = {
             "type": ptype,
@@ -1359,11 +1361,19 @@ class TestMinMaxNegativeParameter:
             }
         }
 
-
-        if ptype in ("max", "min"):
+        if ptype in ("max", "min", "negativemax", "negativemin"):
             data["threshold"] = 3
+        elif ptype == 'offset':
+            data["offset"] = 3
 
-        func = {"min": min, "max": max, "negative": lambda t,x: -x, "negativemax": lambda t,x: max(t, -x)}[ptype]
+        func = {
+            "min": min,
+            "max": max,
+            "negative": lambda t, x: -x,
+            "negativemax": lambda t, x: max(t, -x),
+            "negativemin": lambda t, x: min(t, -x),
+            "offset": lambda o, x: x + o
+        }[ptype]
 
         model.nodes["Input"].max_flow = parameter = load_parameter(model, data)
         model.nodes["Output"].max_flow = 9999
@@ -1376,6 +1386,31 @@ class TestMinMaxNegativeParameter:
             value = daily_profile.get_value(scenario_index)
             return func(3, value)
         model.run()
+
+    def test_offset_parameter_variable(self, simple_linear_model):
+        """Test OffsetParameter's variable API."""
+
+        data = {
+            "type": "offset",
+            "parameter": {
+                "name": "raw",
+                "type": "dailyprofile",
+                "values": list(range(366)),
+            },
+            "offset": 10,
+            "lower_bounds": -100,
+            "upper_bounds": 100,
+        }
+        parameter = load_parameter(simple_linear_model, data)
+        np.testing.assert_allclose(parameter.offset, 10)
+        np.testing.assert_allclose(parameter.get_double_variables(), [10.0])
+        np.testing.assert_allclose(parameter.get_double_lower_bounds(), [-100.0])
+        np.testing.assert_allclose(parameter.get_double_upper_bounds(), [100.0])
+        # Update value using variable API
+        parameter.set_double_variables(np.array([20.0]))
+        np.testing.assert_allclose(parameter.offset, 20)
+        np.testing.assert_allclose(parameter.get_double_variables(), [20.0])
+
 
 def test_ocptt(simple_linear_model):
     model = simple_linear_model
