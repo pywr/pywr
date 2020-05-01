@@ -129,3 +129,38 @@ class PlatypusWrapper(BaseOptimisationWrapper):
             return objectives, constraints
         else:
             return objectives
+
+
+class PywrRandomGenerator(platypus.RandomGenerator):
+    """A Platypus Generator that injects the current setup of the Pywr model into the population.
+
+    The first Solution returned from the generate method is taken from the wrapper (i.e. the Pywr
+    model being wrapped) as the current values of the variable Parameters. This allows the population
+    to be seeded with the current model configuration, which is often a initial solution.
+
+    Parameters
+    ==========
+    wrapper : PlatypusWrapper
+        Wrapper from which to grab the current model and decision variables.
+    """
+    def __init__(self, *args, **kwargs):
+        self.wrapper = kwargs.pop('wrapper', None)
+        super().__init__(*args, **kwargs)
+        self._wrapped_generated = False
+
+    def generate(self, problem):
+        if self.wrapper is not None and not self._wrapped_generated:
+            solution = platypus.Solution(problem)
+            # Gather the variable values from the wrapper.
+            variables = []
+            for ivar, var in enumerate(self.wrapper.model_variables):
+                if var.double_size > 0:
+                    variables.extend(np.array(var.get_double_variables()))
+                if var.integer_size > 0:
+                    variables.extend(np.array(var.get_integer_variables()))
+            solution.variables = variables
+            self._wrapped_generated = True  # Only include one solution with the current config.
+        else:
+            # Default to behaviour of RandomGenerator
+            solution = super().generate(problem)
+        return solution
