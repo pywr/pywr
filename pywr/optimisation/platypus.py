@@ -106,7 +106,7 @@ class PlatypusWrapper(BaseOptimisationWrapper):
                 ints = np.round(np.array(x[-var.integer_size:])).astype(np.int32)
                 var.set_integer_variables(ints)
 
-        run_stats = self.model.run()
+        self.run_stats = self.model.run()
 
         objectives = []
         for r in self.model_objectives:
@@ -124,7 +124,8 @@ class PlatypusWrapper(BaseOptimisationWrapper):
                 constraints.append(x)
 
         # Return values to the solution
-        logger.info(f'Evaluation completed in {run_stats.time_taken:.2f} seconds ({run_stats.speed:.2f} ts/s).')
+        logger.info(f'Evaluation completed in {self.run_stats.time_taken:.2f} seconds '
+                    f'({self.run_stats.speed:.2f} ts/s).')
         if len(constraints) > 0:
             return objectives, constraints
         else:
