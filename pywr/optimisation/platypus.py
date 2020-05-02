@@ -124,7 +124,7 @@ class PlatypusWrapper(BaseOptimisationWrapper):
                 constraints.append(x)
 
         # Return values to the solution
-        logger.info('Evaluation complete!')
+        logger.info(f'Evaluation completed in {run_stats.time_taken:.2f} seconds ({run_stats.speed:.2f} ts/s).')
         if len(constraints) > 0:
             return objectives, constraints
         else:
