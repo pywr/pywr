@@ -1694,7 +1694,7 @@ class TestUniformDrawdownProfileParameter:
 
 
 class TestRbfProfileParameter:
-
+    """Tests for RbfParameter."""
     def test_rbf_profile(self, simple_linear_model):
         """Test the Rbf profile parameter."""
 
@@ -1704,7 +1704,7 @@ class TestRbfProfileParameter:
 
         # The Rbf parameter should mirror the input data at the start and end to create roughly
         # consistent gradients across the end of year boundary.
-        interp_days_of_year = [-64, 1, 100, 200, 300, 365, 464]
+        interp_days_of_year = [-65, 1, 100, 200, 300, 366, 465]
         interp_values = [0.2, 0.5, 0.7, 0.5, 0.2, 0.5, 0.7]
 
         expected_values = Rbf(interp_days_of_year, interp_values)(np.arange(365) + 1)
@@ -1722,3 +1722,32 @@ class TestRbfProfileParameter:
             return expected_values[timestep.index]
 
         m.run()
+
+    @pytest.mark.parametrize('wrong_doys', [[2, 100, 300], [1, 180], [1, 100, 366]])
+    def test_incorrect_inputs(self, simple_linear_model, wrong_doys):
+        """Test initialising RbfParameter with incorrect days of the year."""
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": wrong_doys,
+            "values": np.random.rand(len(wrong_doys)).tolist()
+        }
+        with pytest.raises(ValueError):
+            load_parameter(simple_linear_model, data)
+
+    def test_variable_api(self, simple_linear_model):
+        """Test setting using variable API implementation on RbfParameter."""
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 100, 200, 300],
+            "values": [0.5, 0.7, 0.5, 0.2]
+        }
+
+        p = load_parameter(simple_linear_model, data)
+        assert p.double_size == 4
+        assert p.integer_size == 0
+
+        new_values = np.random.rand(p.double_size)
+        p.set_double_variables(new_values)
+        np.testing.assert_allclose(p.get_double_variables(), new_values)

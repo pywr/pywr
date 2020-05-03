@@ -912,7 +912,7 @@ cdef class RbfProfileParameter(Parameter):
     The daily profile is computed during model `reset` using a radial basis function with
     day-of-year as the independent variables. The days of the year are defined by the user
     alongside the values to use on each of those days for the interpolation. The first
-    day of the years should always be one, and its value is repeated as the 365th value.
+    day of the years should always be one, and its value is repeated as the 366th value.
     In addition the second and penultimate values are mirrored to encourage a consistent
     gradient to appear across the boundary. The RBF calculations are undertaken using
     the `scipy.interpolate.Rbf` object, please refer to Scipy's documentation for more
@@ -943,10 +943,23 @@ cdef class RbfProfileParameter(Parameter):
         self.double_size = len(values)
         self.integer_size = 0
         self._values = np.array(values)
-        self._days_of_year = np.array(days_of_year, dtype=np.int32)
+        self.days_of_year = days_of_year
         self._lower_bounds = np.ones(self.double_size)*lower_bounds
         self._upper_bounds = np.ones(self.double_size)*upper_bounds
         self.rbf_kwargs = rbf_kwargs if rbf_kwargs is not None else {}
+
+    property days_of_year:
+        def __get__(self):
+            return np.array(self._days_of_year)
+        def __set__(self, values):
+            values = np.array(values, dtype=np.int32)
+            if values[0] != 1:
+                raise ValueError('The first day of the years must be 1.')
+            if len(values) < 3:
+                raise ValueError('At least days of the year are required.')
+            if np.any(0 > values > 365):
+                raise ValueError('Days of the years should be between 1 and 365 inclusive.')
+            self._days_of_year = values
 
     cpdef reset(self):
         Parameter.reset(self)
@@ -962,7 +975,7 @@ cdef class RbfProfileParameter(Parameter):
         # Append day 365 to the list and mirror the penultimate and second DOY at the start and end
         # of the list respectively. This helps ensure the gradient is roughly the same across the boundary
         # between days 365 and 0.
-        days_of_year = [days_of_year[-1]-365+1] + list(days_of_year) + [365, 365+days_of_year[1]-1]
+        days_of_year = [days_of_year[-1]-365] + list(days_of_year) + [366, 366+days_of_year[1]-1]
         # Create the corresponding y values including the mirrored entries
         y = list(self._values)
         y = [y[-1]] + y + [y[0], y[1]]
