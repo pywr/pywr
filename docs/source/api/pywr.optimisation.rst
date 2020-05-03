@@ -4,15 +4,6 @@ pywr.optimisation package
 Submodules
 ----------
 
-Inspyred (pywr.optimisation.inspyred)
--------------------------------------
-
-.. automodule:: pywr.optimisation.inspyred
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 Platypus (pywr.optimisation.platypus)
 -------------------------------------
 
