@@ -15,7 +15,7 @@ class PygmoWrapper(BaseOptimisationWrapper):
             var.set_double_variables(np.array(solution[j]).copy())
 
         self.model.reset()
-        run_stats = self.model.run()
+        self.run_stats = self.model.run()
 
         objectives = []
         for r in self.model_objectives:
@@ -44,7 +44,8 @@ class PygmoWrapper(BaseOptimisationWrapper):
                 raise RuntimeError(f'The bounds if constraint "{r.name}" could not be identified correctly.')
 
         # Return values to the solution
-        logger.info('Evaluation complete!')
+        logger.info(f'Evaluation completed in {self.run_stats.time_taken:.2f} seconds '
+                    f'({self.run_stats.speed:.2f} ts/s).')
         return objectives + eq_constraints + ineq_constraints
 
     def get_bounds(self):
