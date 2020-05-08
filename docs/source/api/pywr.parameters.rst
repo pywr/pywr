@@ -87,6 +87,21 @@ Array based parameters
    IndexedArrayParameter
 
 
+Threshold parameters
+--------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    AbstractThresholdParameter
+    StorageThresholdParameter
+    NodeThresholdParameter
+    ParameterThresholdParameter
+    RecorderThresholdParameter
+    CurrentYearThresholdParameter
+    CurrentOrdinalDayThresholdParameter
+
+
 Interpolation parameters
 ------------------------
 
