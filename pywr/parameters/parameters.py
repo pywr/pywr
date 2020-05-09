@@ -14,7 +14,10 @@ from ._parameters import (
     DeficitParameter, DivisionParameter, load_parameter, load_parameter_values, load_dataframe)
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
-from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
+from ._thresholds import (
+    AbstractThresholdParameter, StorageThresholdParameter, NodeThresholdParameter, ParameterThresholdParameter,
+    RecorderThresholdParameter, CurrentYearThresholdParameter, CurrentOrdinalDayThresholdParameter
+)
 from ._hydropower import HydropowerTargetParameter
 import numpy as np
 from scipy.interpolate import interp1d
@@ -138,7 +141,7 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
         super().__init__(model, x, y, interp_kwargs, **kwargs)
         self._node = node
 
-    def _value_to_interpolate(self, ts, scenario_index):       
+    def _value_to_interpolate(self, ts, scenario_index):
         return self._node.prev_flow[scenario_index.global_id]
 
     @classmethod
