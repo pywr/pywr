@@ -2024,11 +2024,9 @@ TotalParameterRecorder.register()
 cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
     """Record the mean value of a `Parameter` during a simulation.
 
-    This recorder can be used to track the sum total of the values returned by a
+    This recorder can be used to track the mean of the values returned by a
     `Parameter` during a models simulation. An optional factor can be provided to
-    apply a linear scaling of the values. If the parameter represents a flux
-    the `integrate` keyword argument can be used to multiply the values by the time-step
-    length in days.
+    apply a linear scaling of the values.
 
     Parameters
     ----------
