@@ -36,6 +36,12 @@ def setup_package():
             self.include_dirs.append(numpy.get_include())
             super().finalize_options()
 
+    # Extra optional dependencies
+    docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc"]
+    test_extras = ["pytest"]
+    dev_extras = docs_extras + test_extras
+    opt_extras = ["platypus-opt", "pygmo"]
+
     metadata = dict(
         name="pywr",
         description="Python Water Resource model",
@@ -44,9 +50,14 @@ def setup_package():
         author="Joshua Arnott",
         author_email="josh@snorfalorpagus.net",
         url="https://github.com/pywr/pywr",
-        setup_requires=["setuptools>=18.0", "setuptools_scm", "cython", "numpy",],
+        setup_requires=["setuptools>=18.0", "setuptools_scm", "cython", "numpy"],
         install_requires=["pandas", "networkx", "scipy", "tables", "xlrd", "packaging", "matplotlib", "jinja2", "ipython"],
-        extras_require={"test": ["pytest"]},
+        extras_require={
+            "docs": docs_extras,
+            "test": test_extras,
+            "dev": dev_extras,
+            "optimisation": opt_extras
+        },
         cmdclass={"build_ext": new_build_ext},
         packages=[
             "pywr",
