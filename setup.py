@@ -38,7 +38,9 @@ def setup_package():
 
     # Extra optional dependencies
     docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc"]
-    dev_extras = docs_extras + ["pytest"]
+    test_extras = ["pytest"]
+    dev_extras = docs_extras + test_extras
+    opt_extras = ["platypus-opt", "pygmo"]
 
     metadata = dict(
         name="pywr",
@@ -52,7 +54,9 @@ def setup_package():
         install_requires=["pandas", "networkx", "scipy", "tables", "xlrd", "packaging", "matplotlib", "jinja2", "ipython"],
         extras_require={
             "docs": docs_extras,
-            "dev": dev_extras
+            "test": test_extras,
+            "dev": dev_extras,
+            "optimisation": opt_extras
         },
         cmdclass={"build_ext": new_build_ext},
         packages=[
