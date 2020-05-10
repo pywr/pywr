@@ -328,11 +328,11 @@ cdef class Recorder(Component):
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
-    cpdef double aggregated_value(self) except? -1:
+    cpdef double aggregated_value(self) except *:
         cdef double[:] values = self.values()
         return self._scenario_aggregator.aggregate_1d(values)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         raise NotImplementedError()
 
     @classmethod
@@ -396,7 +396,7 @@ cdef class AggregatedRecorder(Recorder):
         for rec in self.recorders:
             self.children.add(rec)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         cdef Recorder recorder
         cdef double[:] value, value2
         assert(len(self.recorders))
@@ -461,7 +461,7 @@ cdef class NodeRecorder(Recorder):
         self._node = node
         node._recorders.append(self)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._node._flow
 
     property node:
@@ -482,7 +482,7 @@ cdef class StorageRecorder(Recorder):
         self._node = node
         node._recorders.append(self)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._node._volume
 
     property node:
@@ -625,7 +625,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -811,7 +811,7 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
         def __get__(self, ):
             return np.array(self._fdc)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._fdc, axis=0, ignore_nan=self.ignore_nan)
@@ -988,7 +988,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             return np.array(self._fdc_deviations)
 
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._fdc_deviations, axis=0, ignore_nan=self.ignore_nan)
@@ -1041,7 +1041,7 @@ cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -1138,7 +1138,7 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
         def __get__(self, ):
             return np.array(self._sdc)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._sdc, axis=0, ignore_nan=self.ignore_nan)
@@ -1260,7 +1260,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -1507,7 +1507,7 @@ cdef class BaseConstantNodeRecorder(NodeRecorder):
     cpdef after(self):
         raise NotImplementedError()
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._values
 
 
@@ -1610,7 +1610,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
     cpdef after(self):
         raise NotImplementedError()
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._values
 BaseConstantStorageRecorder.register()
 
@@ -1683,7 +1683,7 @@ cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
                 # threshold achieved, increment count
                 self._count[scenario_index.global_id] += 1
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return np.asarray(self._count).astype(np.float64)
 TimestepCountIndexParameterRecorder.register()
 
@@ -1736,7 +1736,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         cdef int idx = self._current_year - self._start_year
         cdef int p
         cdef Py_ssize_t i
-        cdef double value
+        cdef int value
         cdef ScenarioIndex scenario_index
         cdef IndexParameter parameter
 
@@ -1764,7 +1764,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         for i in range(self._ncomb):
             self._data[idx, i] = np.sum(self._data_this_year[:, i])
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -1841,7 +1841,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
             for j, node in enumerate(self.nodes):
                 self._data[idx, i] += node._flow[i] * self._factors[j]
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -1910,7 +1910,7 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
             if self._current_max[i] >= self.threshold:
                 self._count[i] += 1
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return np.asarray(self._count).astype(np.float64)
 AnnualCountIndexParameterRecorder.register()
 
@@ -1974,7 +1974,7 @@ cdef class BaseConstantParameterRecorder(ParameterRecorder):
     cpdef after(self):
         raise NotImplementedError()
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._values
 
 
