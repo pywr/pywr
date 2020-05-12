@@ -46,8 +46,10 @@ def test_from_json(from_json):
 
 
 def test_d3_data():
-    """ Check that the graph data returned by the pywr_json_to_d3_json and pywr_model_to_d3_json functions contains the
-    same nodes and number on links. The data won't match exactly due to differences in node ordering.
+    """Test returned by `pywr_json_to_d3_json` and `pywr_model_to_d3_json` is similar.
+
+    These return graph data from a JSON file and Model instance respectively. Here we test that each returns the
+    same node names and number on links. The data won't match exactly due to differences in node ordering.
     """
     json_path = os.path.join(os.path.dirname(__file__), "models", "demand_saving2_with_variables.json")
     model = load_model("demand_saving2_with_variables.json")
