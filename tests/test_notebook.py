@@ -43,3 +43,22 @@ def test_from_json(from_json):
     demand_max_flow = get_node_attribute(demand, "max_flow")
 
     assert demand_max_flow["value"] == "demand_max_flow - AggregatedParameter"
+
+
+def test_d3_data():
+    """Test returned by `pywr_json_to_d3_json` and `pywr_model_to_d3_json` is similar.
+
+    These return graph data from a JSON file and Model instance respectively. Here we test that each returns the
+    same node names and number on links. The data won't match exactly due to differences in node ordering.
+    """
+    json_path = os.path.join(os.path.dirname(__file__), "models", "demand_saving2_with_variables.json")
+    model = load_model("demand_saving2_with_variables.json")
+
+    d3_data_from_json = pywr_json_to_d3_json(json_path)
+    d3_data_from_model = pywr_model_to_d3_json(model)
+
+    json_nodes = {n["name"]: n for n in d3_data_from_json["nodes"]}
+    model_nodes = {n["name"]: n for n in d3_data_from_model["nodes"]}
+
+    assert json_nodes == model_nodes
+    assert len(d3_data_from_json["links"]) == len(d3_data_from_model["links"])

@@ -285,18 +285,14 @@ def pywr_json_to_d3_json(model, attributes=False):
         with open(model) as d:
             model = json.load(d)
 
-    nodes = [node["name"] for node in model["nodes"]]
-
-    edges = []
-    for edge in model["edges"]:
-        sourceindex = nodes.index(edge[0])
-        targetindex = nodes.index(edge[1])
-        edges.append({'source': sourceindex, 'target': targetindex})
-
     nodes = []
     node_classes = create_node_class_trees()
 
     for node in model["nodes"]:
+
+        if node["type"].lower() in ["annualvirtualstorage", "virtualstorage"]:
+            continue
+
         json_node = {'name': node["name"], 'clss': node_classes[node["type"].lower()]}
         try:
             json_node['position'] = node['position']['schematic']
@@ -326,6 +322,14 @@ def pywr_json_to_d3_json(model, attributes=False):
                 json_node["attributes"].append(attr_dict)
 
         nodes.append(json_node)
+
+    nodes_names = [node["name"] for node in nodes]
+
+    edges = []
+    for edge in model["edges"]:
+        sourceindex = nodes_names.index(edge[0])
+        targetindex = nodes_names.index(edge[1])
+        edges.append({'source': sourceindex, 'target': targetindex})
 
     graph = {
         "nodes": nodes,
