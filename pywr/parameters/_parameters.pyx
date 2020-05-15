@@ -1875,7 +1875,7 @@ def load_parameter(model, data, parameter_name=None):
                 parameter = schema.load(kwargs)
             except ValueError as e:
                 raise ValueError(f"An error has occurred loading schema"
-                                 f"for parameter [{parameter_name}]: {e}"
+                                 f"for parameter [{parameter_name}]: {e}")
         else:
             warnings.warn('Parameter of type "{}" with name "{}" has no schema.'
                           'Falling back to deprecated .load method.'.format(cls, parameter_name), DeprecationWarning)
