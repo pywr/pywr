@@ -1849,7 +1849,13 @@ def load_parameter(model, data, parameter_name=None):
         parameter = data
     else:
         # parameter is dynamic
-        parameter_type = data['type']
+
+        try:
+            parameter_type = data['type']
+        except KeyError:
+            data_summary = str(data)[0:100]
+            raise KeyError(f"Unable to find key 'type' in {data_summary}")
+
         try:
             parameter_name = data["name"]
         except:
@@ -1865,7 +1871,11 @@ def load_parameter(model, data, parameter_name=None):
         schema_cls = cls.Schema
         if schema_cls is not None:
             schema = schema_cls(context={'model': model, 'klass': cls})
-            parameter = schema.load(kwargs)
+            try:
+                parameter = schema.load(kwargs)
+            except ValueError as e:
+                raise ValueError(f"An error has occurred loading schema"
+                                 f"for parameter [{parameter_name}]: {e}"
         else:
             warnings.warn('Parameter of type "{}" with name "{}" has no schema.'
                           'Falling back to deprecated .load method.'.format(cls, parameter_name), DeprecationWarning)

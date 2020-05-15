@@ -75,7 +75,13 @@ class NodeSchema(PywrSchema):
                 else:
                     continue
             from pywr.parameters import load_parameter
-            param = load_parameter(model, field_data)
+
+            try:
+                param = load_parameter(model, field_data)
+            except Exception as e:
+                raise Exception(f"Error loading parameter {field.name} on {obj.name}.\n"
+                                f"Error Was: {e}")
+
             setattr(obj, field.name, param)
         return obj
 
@@ -153,4 +159,3 @@ class ExternalDataSchema(DataFrameSchema):
         values = load_parameter_values(model, data)
         print(self, data)
         return klass(model, values=values, **data)
-

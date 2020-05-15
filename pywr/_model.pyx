@@ -388,7 +388,15 @@ class Model(object):
                     name, component_data = components_to_load.popitem()
                 except KeyError:
                     break
-                component = load_component(model, component_data, name)
+                #If unable to load a node, then reraise the exception with some
+                #useful information like node name and parameter name.
+                try:
+                      component = load_component(model, component_data, name)
+                except Exception as err:
+                    logger.critical("Error loading component %s", name)
+                    #Reraise the exception
+                    raise
+
                 yield component
 
         load_components(model._recorders_to_load, load_recorder)
@@ -641,7 +649,12 @@ class Model(object):
 
         components = self.flatten_component_tree(rebuild=True)
         for component in components:
-            component.setup()
+            try:
+                component.setup()
+            except Exception as err:
+              #reraise the exception after logging some info about source of error
+              logger.critical("An error occurred setting up component %s", component.name)
+              raise
 
         self.solver.setup(self)
         self.reset()
