@@ -78,9 +78,10 @@ class NodeSchema(PywrSchema):
 
             try:
                 param = load_parameter(model, field_data)
-            except Exception as e:
-                raise Exception(f"Error loading parameter {field.name} on {obj.name}.\n"
-                                f"Error Was: {e}")
+            except Exception as err:
+                logger.critical("Error loading parameter %s on %s.\n"
+                                "Error Was: %s", field.name, obj.name, err)
+                raise
 
             setattr(obj, field.name, param)
         return obj
