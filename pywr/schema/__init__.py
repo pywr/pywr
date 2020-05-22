@@ -153,10 +153,8 @@ class ExternalDataSchema(DataFrameSchema):
     @marshmallow.post_load
     def make_component(self, data, **kwargs):
         """ Create or append data to a node object. """
-        print(data)
         from pywr.parameters import load_parameter_values
         model = self.context['model']
         klass = self.context['klass']
         values = load_parameter_values(model, data)
-        print(self, data)
         return klass(model, values=values, **data)
