@@ -645,7 +645,13 @@ class Model(object):
         self.scenarios.setup()
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
-            node.setup(self)
+            try:
+                node.setup()
+            except Exception as err:
+              #reraise the exception after logging some info about source of error
+              logger.critical("An error occurred setting up node during setup %s",
+                              node.name)
+              raise
 
         components = self.flatten_component_tree(rebuild=True)
         for component in components:
@@ -653,7 +659,8 @@ class Model(object):
                 component.setup()
             except Exception as err:
               #reraise the exception after logging some info about source of error
-              logger.critical("An error occurred setting up component %s", component.name)
+              logger.critical("An error occurred setting up component during setup %s",
+                              component.name)
               raise
 
         self.solver.setup(self)
@@ -667,13 +674,25 @@ class Model(object):
         length_changed = self.timestepper.reset(start=start)
         for node in self.nodes:
             if length_changed:
-                node.setup(self)
+                try:
+                    node.setup()
+                except Exception as err:
+                  #reraise the exception after logging some info about source of error
+                  logger.critical("An error occurred resetting node %s",
+                                  node.name)
+                  raise
             node.reset()
 
         components = self.flatten_component_tree(rebuild=False)
         for component in components:
             if length_changed:
-                component.setup()
+              try:
+                  component.setup()
+              except Exception as err:
+                #reraise the exception after logging some info about source of error
+                logger.critical("An error occurred resetting component %s",
+                                component.name)
+                raise
             component.reset()
 
         self.solver.reset()
@@ -723,7 +742,12 @@ class Model(object):
             node.finish()
         components = self.flatten_component_tree(rebuild=False)
         for component in components:
-            component.finish()
+            try:
+                component.finish()
+            except Exception as err:
+              #reraise the exception after logging some info about source of error
+              logger.critical("An error occurred finishing component %s", component.name)
+              raise
 
     def to_dataframe(self):
         """ Return a DataFrame from any Recorders with a `to_dataframe` attribute
