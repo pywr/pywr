@@ -646,7 +646,7 @@ class Model(object):
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
             try:
-                node.setup()
+                node.setup(self)
             except Exception as err:
               #reraise the exception after logging some info about source of error
               logger.critical("An error occurred setting up node during setup %s",
@@ -675,7 +675,7 @@ class Model(object):
         for node in self.nodes:
             if length_changed:
                 try:
-                    node.setup()
+                    node.setup(self)
                 except Exception as err:
                   #reraise the exception after logging some info about source of error
                   logger.critical("An error occurred resetting node %s",
