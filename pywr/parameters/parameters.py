@@ -152,7 +152,7 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
     ----------
     node: Node
         Node to provide input flow values to interpolation caluculation
-    volumes: array_like
+    flows: array_like
         x coordinates of the data points for interpolation.
     values : array_like
         y coordinates of the data points for interpolation.
@@ -170,10 +170,10 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
     @classmethod
     def load(cls, model, data):
         node = model._get_node_from_ref(model, data.pop("node"))
-        volumes = np.array(data.pop("flows"))
+        flows = np.array(data.pop("flows"))
         values = np.array(data.pop("values"))
         kind = data.pop("kind", "linear")
-        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+        return cls(model, node, flows, values, interp_kwargs={'kind': kind})
 InterpolatedFlowParameter.register()
 
 
