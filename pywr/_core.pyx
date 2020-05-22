@@ -962,7 +962,7 @@ cdef class Storage(AbstractStorage):
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
 
-    cpdef after(self, Timestep ts):
+    cpdef after(self, Timestep ts, double[:] adjustment = None):
         AbstractStorage.after(self, ts)
         cdef int i
         cdef double mxv, mnv
@@ -970,10 +970,15 @@ cdef class Storage(AbstractStorage):
 
         for i, si in enumerate(self.model.scenarios.combinations):
             self._volume[i] += self._flow[i]*ts.days
-            # Ensure variable maximum volume is taken in to account
+            # Apply any storage adjustment if given
+            if adjustment is not None:
+                self._volume[i] += adjustment[i]
 
+            # Ensure variable maximum volume is taken in to account
             mxv = self.get_max_volume(si)
             mnv = self.get_min_volume(si)
+            # Ensure volume stays within bounds.
+            self._volume[i] = min(mxv, max(mnv, self._volume[i]))
 
             if abs(self._volume[i] - mxv) < 1e-6:
                 self._volume[i] = mxv
@@ -1071,7 +1076,7 @@ cdef class VirtualStorage(Storage):
         def __set__(self, value):
             self._factors = np.array(value, dtype=np.float64)
 
-    cpdef after(self, Timestep ts):
+    cpdef after(self, Timestep ts, double[:] adjustment = None):
         cdef int i
         cdef ScenarioIndex si
         cdef AbstractNode n
@@ -1080,4 +1085,38 @@ cdef class VirtualStorage(Storage):
             self._flow[i] = 0.0
             for n, f in zip(self._nodes, self._factors):
                 self._flow[i] -= f*n._flow[i]
-        Storage.after(self, ts)
+        Storage.after(self, ts, adjustment = adjustment)
+
+
+cdef class RollingVirtualStorage(VirtualStorage):
+    def __cinit__(self):
+        self._memory_pointer = 0
+
+    cpdef setup(self, model):
+        super(RollingVirtualStorage, self).setup(model)
+        cdef int ncomb = len(model.scenarios.combinations)
+        if self.timesteps < 2:
+            raise ValueError('The number of time-steps for a RollingVirtualStorage node must be greater than one.')
+        self._memory = np.zeros((self.timesteps-1, ncomb), dtype=np.float64)
+        self._memory_pointer = 0
+
+    cpdef reset(self):
+        VirtualStorage.reset(self)
+        self._memory[:] = 0.0
+        self._memory_pointer = 0
+
+    cpdef after(self, Timestep ts, double[:] adjustment = None):
+        cdef int i
+        cdef ScenarioIndex si
+
+        assert adjustment is None
+
+        # Update the storage volumes by applying an adjustment
+        VirtualStorage.after(self, ts, adjustment=self._memory[self._memory_pointer, :])
+
+        # Store today's flow in the memory and increment the memory pointer
+        for i, si in enumerate(self.model.scenarios.combinations):
+            # Flow is negative in VirtualStorage to remove from the store, save the +ve number here for
+            # returning to the store later
+            self._memory[self._memory_pointer, i] = -self._flow[i]
+        self._memory_pointer = (self._memory_pointer + 1) % (self.timesteps - 1)

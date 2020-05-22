@@ -477,6 +477,92 @@ class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
         node = cls(model, nodes=nodes, **data)
         return node
 
+
+class RollingVirtualStorage(Drawable, _core.RollingVirtualStorage, metaclass=NodeMeta):
+    """A rolling virtual storage node useful for implementing rolling licences.
+
+    Parameters
+    ----------
+    model: pywr.core.Model
+    name: str
+        The name of the virtual node
+    nodes: list of nodes
+        List of inflow/outflow nodes that affect the storage volume
+    factors: list of floats
+        List of factors to multiply node flow by. Positive factors remove
+        water from the storage, negative factors remove it.
+    min_volume: float or parameter
+        The minimum volume the storage is allowed to reach.
+    max_volume: float or parameter
+        The maximum volume of the storage.
+    initial_volume: float
+        The initial storage volume.
+    timesteps : int
+        The number of timesteps to apply to the rolling storage over.
+    days : int
+        The number of days to apply the rolling storage over. Specifying a number of days (instead of a number
+        of timesteps) is only valid with models running a timestep of daily frequency.
+    cost: float or parameter
+        The cost of flow into/outfrom the storage.
+
+    Notes
+    -----
+    TODO: The cost property is not currently respected. See issue #242.
+    """
+    def __init__(self, model, name, nodes, **kwargs):
+        min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        if min_volume is None:
+            min_volume = 0.0
+        max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
+        initial_volume = kwargs.pop('initial_volume', 0.0)
+        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+        factors = kwargs.pop('factors', None)
+        days = kwargs.pop('days', None)
+        timesteps = kwargs.pop('timesteps', 0)
+
+        if not timesteps and not days:
+            raise ValueError("Either `timesteps` or `days` must be specified.")
+
+        super().__init__(model, name, **kwargs)
+
+        self.min_volume = min_volume
+        self.max_volume = max_volume
+        self.initial_volume = initial_volume
+        self.cost = cost
+        self.nodes = nodes
+        self.days = days
+        self.timesteps = timesteps
+
+        if factors is None:
+            self.factors = [1.0 for i in range(len(nodes))]
+        else:
+            self.factors = factors
+
+    def check(self):
+        super().check()
+        if self.cost not in (0.0, None):
+            raise NotImplementedError("VirtualStorage does not currently support a non-zero cost.")
+
+    def setup(self, model):
+        if self.days is not None and self.days > 0:
+            try:
+                self.timesteps = self.days // self.model.timestepper.delta
+            except TypeError:
+                raise TypeError('A rolling period defined as a number of days is only valid with daily time-steps.')
+        if self.timesteps < 1:
+            raise ValueError('The number of time-steps for a RollingVirtualStorage node must be greater than one.')
+        super().setup(model)
+
+    @classmethod
+    def load(cls, data, model):
+        del(data["type"])
+        nodes = []
+        for node_name in data.pop("nodes"):
+            nodes.append(model._get_node_from_ref(model, node_name))
+        node = cls(model, nodes=nodes, **data)
+        return node
+
+
 class AnnualVirtualStorage(VirtualStorage):
     """A virtual storage which resets annually, useful for licences
 

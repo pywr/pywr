@@ -110,6 +110,7 @@ cdef class Storage(AbstractStorage):
     cpdef double get_max_volume(self, ScenarioIndex scenario_index) except? -1
     cpdef double get_level(self, ScenarioIndex scenario_index) except? -1
     cpdef double get_area(self, ScenarioIndex scenario_index) except? -1
+    cpdef after(self, Timestep ts, double[:] adjustment = *)
 
 cdef class AggregatedStorage(AbstractStorage):
     cdef list _storage_nodes
@@ -117,3 +118,8 @@ cdef class AggregatedStorage(AbstractStorage):
 cdef class VirtualStorage(Storage):
     cdef list _nodes
     cdef double[:] _factors
+
+cdef class RollingVirtualStorage(VirtualStorage):
+    cdef public int timesteps
+    cdef double[:, :] _memory
+    cdef int _memory_pointer
