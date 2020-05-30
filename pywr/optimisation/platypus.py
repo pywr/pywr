@@ -133,7 +133,7 @@ class PlatypusWrapper(BaseOptimisationWrapper):
 
 
 class PywrRandomGenerator(platypus.RandomGenerator):
-    """A Platypus Generator that injects the current setup of the Pywr model into the population.
+    """A Platypus Generator that injects current and/or alternative setups of the Pywr model into the population.
 
     When use_current is true the first Solution returned from the generate method is taken from the wrapper
     (i.e. the Pywr model being wrapped) as the current values of the variable Parameters. This allows the population
