@@ -1438,10 +1438,10 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
         else:
             self.days = 0
         self._data = None
+        self.position = 0
 
     cpdef setup(self):
         super(RollingMeanFlowNodeRecorder, self).setup()
-        self.position = 0
         self._data = np.empty([len(self.model.timestepper), len(self.model.scenarios.combinations)])
         if self.days > 0:
             try:
@@ -1451,6 +1451,10 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
         if self.timesteps == 0:
             raise ValueError("Timesteps property of MeanFlowRecorder is less than 1.")
         self._memory = np.zeros([len(self.model.scenarios.combinations), self.timesteps])
+
+    cpdef reset(self):
+        super(RollingMeanFlowNodeRecorder, self).reset()
+        self.position = 0
 
     cpdef after(self):
         cdef Timestep timestep
