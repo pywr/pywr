@@ -75,7 +75,14 @@ class NodeSchema(PywrSchema):
                 else:
                     continue
             from pywr.parameters import load_parameter
-            param = load_parameter(model, field_data)
+
+            try:
+                param = load_parameter(model, field_data)
+            except Exception as err:
+                logger.critical("Error loading parameter %s on %s.\n"
+                                "Error Was: %s", field.name, obj.name, err)
+                raise
+
             setattr(obj, field.name, param)
         return obj
 
@@ -146,11 +153,8 @@ class ExternalDataSchema(DataFrameSchema):
     @marshmallow.post_load
     def make_component(self, data, **kwargs):
         """ Create or append data to a node object. """
-        print(data)
         from pywr.parameters import load_parameter_values
         model = self.context['model']
         klass = self.context['klass']
         values = load_parameter_values(model, data)
-        print(self, data)
         return klass(model, values=values, **data)
-
