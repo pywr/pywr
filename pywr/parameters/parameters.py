@@ -14,7 +14,10 @@ from ._parameters import (
     DeficitParameter, DivisionParameter, load_parameter, load_parameter_values, load_dataframe)
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
-from ._thresholds import StorageThresholdParameter, RecorderThresholdParameter
+from ._thresholds import (
+    AbstractThresholdParameter, StorageThresholdParameter, NodeThresholdParameter, ParameterThresholdParameter,
+    RecorderThresholdParameter, CurrentYearThresholdParameter, CurrentOrdinalDayThresholdParameter
+)
 from ._hydropower import HydropowerTargetParameter
 import numpy as np
 from scipy.interpolate import interp1d
@@ -111,9 +114,21 @@ InterpolatedParameter.register()
 class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
     """
     Generic interpolation parameter calculated from current volume
+
+    Parameters
+    ----------
+    node: Node
+        Storage node to provide input volume values to interpolation calculation
+    volumes: array_like
+        x coordinates of the data points for interpolation.
+    values : array_like
+        y coordinates of the data points for interpolation.
+    interp_kwargs : dict
+        Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
+        for interpolation.
     """
-    def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
-        super(InterpolatedVolumeParameter, self).__init__(model, x, y, interp_kwargs, **kwargs)
+    def __init__(self, model, node, volumes, values, interp_kwargs=None, **kwargs):
+        super(InterpolatedVolumeParameter, self).__init__(model, volumes, values, interp_kwargs, **kwargs)
         self._node = node
 
     def _value_to_interpolate(self, ts, scenario_index):
@@ -131,23 +146,34 @@ InterpolatedVolumeParameter.register()
 
 class InterpolatedFlowParameter(AbstractInterpolatedParameter):
     """
-    Generic interpolation parameter that uses a node's  flow at the previous time-step for interpolation.
+    Generic interpolation parameter that uses a node's flow at the previous time-step for interpolation.
 
+    Parameters
+    ----------
+    node: Node
+        Node to provide input flow values to interpolation caluculation
+    flows: array_like
+        x coordinates of the data points for interpolation.
+    values : array_like
+        y coordinates of the data points for interpolation.
+    interp_kwargs : dict
+        Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
+        for interpolation.
     """
-    def __init__(self, model, node, x, y, interp_kwargs=None, **kwargs):
-        super().__init__(model, x, y, interp_kwargs, **kwargs)
+    def __init__(self, model, node, flows, values, interp_kwargs=None, **kwargs):
+        super().__init__(model, flows, values, interp_kwargs, **kwargs)
         self._node = node
 
-    def _value_to_interpolate(self, ts, scenario_index):       
+    def _value_to_interpolate(self, ts, scenario_index):
         return self._node.prev_flow[scenario_index.global_id]
 
     @classmethod
     def load(cls, model, data):
         node = model._get_node_from_ref(model, data.pop("node"))
-        volumes = np.array(data.pop("flows"))
+        flows = np.array(data.pop("flows"))
         values = np.array(data.pop("values"))
         kind = data.pop("kind", "linear")
-        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+        return cls(model, node, flows, values, interp_kwargs={'kind': kind})
 InterpolatedFlowParameter.register()
 
 

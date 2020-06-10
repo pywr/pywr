@@ -93,6 +93,16 @@ cdef class UniformDrawdownProfileParameter(Parameter):
     cdef public int reset_month
     cdef int _reset_idoy
 
+cdef class RbfProfileParameter(Parameter):
+    cdef double[:] _values
+    cdef double[:] _interp_values
+    cdef int[:] _days_of_year
+    cdef double[:] _lower_bounds
+    cdef double[:] _upper_bounds
+    cdef public object rbf
+    cdef public object rbf_kwargs
+    cpdef _interpolate(self)
+
 cdef class IndexParameter(Parameter):
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1
     cdef int[:] __indices
@@ -171,6 +181,12 @@ cdef class MinParameter(Parameter):
 
 cdef class NegativeMinParameter(MinParameter):
     pass
+
+cdef class OffsetParameter(Parameter):
+    cdef public Parameter parameter
+    cdef public double offset
+    cdef double[:] _lower_bounds
+    cdef double[:] _upper_bounds
 
 cdef class DeficitParameter(Parameter):
     cdef public Node node

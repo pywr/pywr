@@ -1,6 +1,7 @@
 import os
 import numpy as np
 cimport numpy as np
+from scipy.interpolate import Rbf
 import pandas
 import calendar
 from libc.math cimport cos, M_PI
@@ -21,6 +22,24 @@ class UnutilisedDataWarning(Warning):
     """ Simple warning to indicate that not all data has been used. """
     pass
 
+class TypeNotFoundError(KeyError):
+    """
+      Key Error, specifically designed for when the 'type' key is not found
+      in a dataset. This takes the data valuye and outputs a summary of it, to
+      aid in debugging.
+    """
+    def __init__(self, data):
+        #Try to print out some sensible amount of data without overloading
+        #the terminal with data. 1000 chars should be enough to get an idea
+        #of what the data looks like. If more than 100 chars, do a pandas-style
+        #summary using ...
+        data_str = str(data)
+        if len(data_str) > 1000:
+            data_summary = f"{data_str[:500]} ... {data_str[-500:]}"
+        else:
+            data_summary = data_str
+
+        return f"Unable to find key 'type' in {data_summary}"
 
 class classproperty(object):
     def __init__(self, fget):
@@ -956,6 +975,122 @@ cdef class UniformDrawdownProfileParameter(Parameter):
 UniformDrawdownProfileParameter.register()
 
 
+cdef class RbfProfileParameter(Parameter):
+    """Parameter which interpolates a daily profile using a radial basis function (RBF).
+
+    The daily profile is computed during model `reset` using a radial basis function with
+    day-of-year as the independent variables. The days of the year are defined by the user
+    alongside the values to use on each of those days for the interpolation. The first
+    day of the years should always be one, and its value is repeated as the 366th value.
+    In addition the second and penultimate values are mirrored to encourage a consistent
+    gradient to appear across the boundary. The RBF calculations are undertaken using
+    the `scipy.interpolate.Rbf` object, please refer to Scipy's documentation for more
+    information.
+
+    Parameters
+    ----------
+    days_of_year : iterable, integer
+        The days of the year at which the interpolation values are defined. The first
+        value should be one.
+    values : iterable, float
+        Values to use for interpolation corresponding to the `days_of_year`.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the values when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the values when used during optimisation.
+    rbf_kwargs: Optional, dict
+        Optional dictionary of keyword arguments to base to the Rbf object.
+
+    """
+    def __init__(self, model, days_of_year, values, lower_bounds=0.0, upper_bounds=np.inf, rbf_kwargs=None, **kwargs):
+        super(RbfProfileParameter, self).__init__(model, **kwargs)
+
+        if len(days_of_year) != len(values):
+            raise ValueError(f"The length of values ({len(values)}) must equal the length of "
+                             f"`days_of_year` ({len(days_of_year)}).")
+
+        self.double_size = len(values)
+        self.integer_size = 0
+        self._values = np.array(values)
+        self.days_of_year = days_of_year
+        self._lower_bounds = np.ones(self.double_size)*lower_bounds
+        self._upper_bounds = np.ones(self.double_size)*upper_bounds
+        self.rbf_kwargs = rbf_kwargs if rbf_kwargs is not None else {}
+
+    property days_of_year:
+        def __get__(self):
+            return np.array(self._days_of_year)
+        def __set__(self, values):
+            values = np.array(values, dtype=np.int32)
+            if values[0] != 1:
+                raise ValueError('The first day of the years must be 1.')
+            if len(values) < 3:
+                raise ValueError('At least days of the year are required.')
+            if np.any(0 > values > 365):
+                raise ValueError('Days of the years should be between 1 and 365 inclusive.')
+            self._days_of_year = values
+
+    cpdef reset(self):
+        Parameter.reset(self)
+        # The interpolated profile is recalculated during reset so that
+        # it will update when the _values array is updated via `set_double_variables`
+        # and the model is rerun. I.e. during optimisation (where setup is not redone).
+        self._interpolate()
+
+    cpdef _interpolate(self):
+        cdef int i
+
+        days_of_year = list(self._days_of_year)
+        # Append day 365 to the list and mirror the penultimate and second DOY at the start and end
+        # of the list respectively. This helps ensure the gradient is roughly the same across the boundary
+        # between days 365 and 0.
+        days_of_year = [days_of_year[-1]-365] + list(days_of_year) + [366, 366+days_of_year[1]-1]
+        # Create the corresponding y values including the mirrored entries
+        y = list(self._values)
+        y = [y[-1]] + y + [y[0], y[1]]
+        rbfi = Rbf(days_of_year, y)
+
+        # Do the interpolation
+        values = rbfi(np.arange(365) + 1)
+
+        # Create an array to save the daily profile in.
+        self._interp_values = np.zeros(366)
+        # Make the daily profile of 366 values repeating the same value for 28th & 29th Feb.
+        for i in range(365):
+            if i < 58:
+                self._interp_values[i] = values[i]
+            elif i == 58:
+                self._interp_values[i] = values[i]
+                self._interp_values[i+1] = values[i]
+            elif i > 58:
+                self._interp_values[i+1] = values[i]
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear - 1
+        if not is_leap_year(ts.year):
+            if i > 58: # 28th Feb
+                i += 1
+        return self._interp_values[i]
+
+    cpdef set_double_variables(self, double[:] values):
+        self._values[...] = values
+
+    cpdef double[:] get_double_variables(self):
+        # Make sure we return a copy of the data instead of a view.
+        return np.array(self._values).copy()
+
+    cpdef double[:] get_double_lower_bounds(self):
+        return self._lower_bounds
+
+    cpdef double[:] get_double_upper_bounds(self):
+        return self._upper_bounds
+
+    @classmethod
+    def load(cls, model, data):
+        return cls(model, **data)
+RbfProfileParameter.register()
+
+
 cdef class IndexParameter(Parameter):
     """Base parameter providing an `index` method
 
@@ -1648,6 +1783,58 @@ cdef class NegativeMinParameter(MinParameter):
 NegativeMinParameter.register()
 
 
+cdef class OffsetParameter(Parameter):
+    """Parameter that offsets another `Parameter` by a constant value.
+
+    This class is a more efficient version of `AggregatedParameter` where
+    a single `Parameter` is offset by a constant value.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to compare with the float.
+    offset : float (default=0.0)
+        The offset to apply to the value returned by `parameter`.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the offset when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the offset when used during optimisation.
+    """
+    def __init__(self, model, parameter, offset=0.0, lower_bounds=0.0, upper_bounds=np.inf, *args, **kwargs):
+        super(OffsetParameter, self).__init__(model, *args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.offset = offset
+        self.double_size = 1
+        self._lower_bounds = np.ones(self.double_size) * lower_bounds
+        self._upper_bounds = np.ones(self.double_size) * upper_bounds
+
+    cdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = self.parameter.__values[i] + self.offset
+
+    cpdef set_double_variables(self, double[:] values):
+        self.offset = values[0]
+
+    cpdef double[:] get_double_variables(self):
+        return np.array([self.offset, ], dtype=np.float64)
+
+    cpdef double[:] get_double_lower_bounds(self):
+        return self._lower_bounds
+
+    cpdef double[:] get_double_upper_bounds(self):
+        return self._upper_bounds
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+OffsetParameter.register()
+
+
 cdef class DeficitParameter(Parameter):
     """Parameter track the deficit (max_flow - actual flow) of a Node
 
@@ -1849,7 +2036,13 @@ def load_parameter(model, data, parameter_name=None):
         parameter = data
     else:
         # parameter is dynamic
-        parameter_type = data['type']
+
+        try:
+             parameter_type = data['type']
+        except KeyError:
+            #raise custom exception that makes the error a bit easier to interpret
+            raise TypeNotFoundError(data)
+
         try:
             parameter_name = data["name"]
         except:

@@ -41,6 +41,7 @@ Combining multiple parameters
    NegativeMaxParameter
    MinParameter
    NegativeMinParameter
+   OffsetParameter
 
 Annual profile parameters
 -------------------------
@@ -56,6 +57,7 @@ Annual profile parameters
    ScenarioWeeklyProfileParameter
    ScenarioMonthlyProfileParameter
    ArrayIndexedScenarioMonthlyFactorsParameter
+   RbfProfileParameter
 
 Dataframe parameter
 -------------------
@@ -83,6 +85,21 @@ Array based parameters
    ArrayIndexedParameter
    ArrayIndexedScenarioParameter
    IndexedArrayParameter
+
+
+Threshold parameters
+--------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    AbstractThresholdParameter
+    StorageThresholdParameter
+    NodeThresholdParameter
+    ParameterThresholdParameter
+    RecorderThresholdParameter
+    CurrentYearThresholdParameter
+    CurrentOrdinalDayThresholdParameter
 
 
 Interpolation parameters
