@@ -677,10 +677,14 @@ class Model(object):
                     node.setup(self)
                 except Exception as err:
                     #reraise the exception after logging some info about source of error
-                    logger.critical("An error occurred resetting node %s",node.name)
+                    logger.critical("An error occurred calling setup while resetting node %s",node.name)
                     raise
-
-            node.reset()
+            try:
+                node.reset()
+            except Exception as err:
+                #reraise the exception after logging some info about source of error
+                logger.critical("An error occurred calling reset on node %s",node.name)
+                raise
 
         components = self.flatten_component_tree(rebuild=False)
         for component in components:
@@ -689,10 +693,17 @@ class Model(object):
                     component.setup()
                 except Exception as err:
                     #reraise the exception after logging some info about source of error
-                    logger.critical("An error occurred resetting component %s",
+                    logger.critical("An error occurred calling setup while resetting component %s",
                                     component.name)
                     raise
-            component.reset()
+
+            try:
+                component.reset()
+            except Exception as err:
+                #reraise the exception after logging some info about source of error
+                logger.critical("An error occurred calling reset on component %s",
+                                component.name)
+                raise
 
         self.solver.reset()
         # reset the timers
