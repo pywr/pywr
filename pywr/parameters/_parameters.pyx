@@ -942,7 +942,7 @@ cdef class RbfProfileParameter(Parameter):
 
         self.double_size = len(values)
         self.integer_size = 0
-        self._values = np.array(values)
+        self._values = np.array(values, dtype=np.float64)
         self.days_of_year = days_of_year
         self._lower_bounds = np.ones(self.double_size)*lower_bounds
         self._upper_bounds = np.ones(self.double_size)*upper_bounds
