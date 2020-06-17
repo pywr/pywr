@@ -3,6 +3,7 @@ import numpy as np
 cimport numpy as np
 from scipy.interpolate import Rbf
 import pandas
+import json
 import calendar
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
@@ -25,15 +26,15 @@ class UnutilisedDataWarning(Warning):
 class TypeNotFoundError(KeyError):
     """
       Key Error, specifically designed for when the 'type' key is not found
-      in a dataset. This takes the data valuye and outputs a summary of it, to
+      in a dataset. This takes the data value and outputs a summary of it, to
       aid in debugging.
     """
     def __init__(self, data):
         #Try to print out some sensible amount of data without overloading
         #the terminal with data. 1000 chars should be enough to get an idea
-        #of what the data looks like. If more than 100 chars, do a pandas-style
+        #of what the data looks like. If more than 1000 chars, do a pandas-style
         #summary using ...
-        data_str = str(data)
+        data_str = json.dumps(data)
         if len(data_str) > 1000:
             data_summary = f"{data_str[:500]} ... {data_str[-500:]}"
         else:
