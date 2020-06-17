@@ -287,10 +287,10 @@ def pywr_json_to_d3_json(model, attributes=False):
 
     nodes = []
     node_classes = create_node_class_trees()
-
     for node in model["nodes"]:
 
-        if node["type"].lower() in ["annualvirtualstorage", "virtualstorage"]:
+        if node["type"].lower() in ["annualvirtualstorage", "virtualstorage", "aggregatednode", "aggregatedstorage"]:
+            # Do not add virtual nodes to the graph
             continue
 
         json_node = {'name': node["name"], 'clss': node_classes[node["type"].lower()]}
@@ -317,6 +317,8 @@ def pywr_json_to_d3_json(model, attributes=False):
                     param = model["parameters"][val]
                     attr_type = get_parameter_from_registry(param["type"]).__name__
                     attr_val = attr_val + " - " + attr_type
+                else:
+                    attr_val = str(attr_val)
 
                 attr_dict = {"attribute": name, "value": attr_val}
                 json_node["attributes"].append(attr_dict)
