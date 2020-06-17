@@ -49,15 +49,17 @@ class PywrSchematic:
         css : string
             Stylesheet data to use instead of default
         """
-
         if isinstance(model, Model):
             self.graph = pywr_model_to_d3_json(model, attributes)
             # TODO update when schema branch is merged
             self.json = None
         else:
             self.graph = pywr_json_to_d3_json(model, attributes)
-            with open(model) as d:
-                self.json = json.load(d)
+            if isinstance(model, str):
+                with open(model) as d:
+                    self.json = json.load(d)
+            else:
+                self.json = model
 
         self.height = height
         self.width = width

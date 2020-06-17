@@ -1,7 +1,7 @@
 import pytest
 from numpy.testing import assert_array_equal
-from pywr.notebook import pywr_model_to_d3_json, pywr_json_to_d3_json
-from pywr.model import Model
+from pywr.notebook import pywr_model_to_d3_json, pywr_json_to_d3_json, PywrSchematic
+import json
 import os
 
 from helpers import load_model
@@ -17,6 +17,28 @@ def get_node_attribute(node, attr_name):
     for attr in node["attributes"]:
         if attr["attribute"] == attr_name:
             return attr
+
+
+class TestPywrSchematic:
+    def test_from_json(self):
+        json_path = os.path.join(os.path.dirname(__file__), "models", "demand_saving2_with_variables.json")
+        schematic = PywrSchematic(json_path)
+        assert "nodes" in schematic.graph.keys()
+        assert "links" in schematic.graph.keys()
+
+    def test_from_dict(self):
+        json_path = os.path.join(os.path.dirname(__file__), "models", "demand_saving2_with_variables.json")
+        with open(json_path) as fh:
+            json_data = json.load(fh)
+        schematic = PywrSchematic(json_data)
+        assert "nodes" in schematic.graph.keys()
+        assert "links" in schematic.graph.keys()
+
+    def test_from_model(self):
+        model = load_model("demand_saving2_with_variables.json")
+        schematic = PywrSchematic(model)
+        assert "nodes" in schematic.graph.keys()
+        assert "links" in schematic.graph.keys()
 
 
 @pytest.mark.parametrize("from_json", [True, False])
