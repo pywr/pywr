@@ -2,12 +2,12 @@ from pywr.parameters import Parameter, load_parameter
 import datetime
 
 class DiscountFactorParameter(Parameter):
-    """Parameter that returns the current discount factor based on discount rate and the current year.
+    """Parameter that returns the current discount factor based on discount rate and a base year.
 
     Parameters
     ----------
-    rate : discount rate
-    year : current year in simulation
+    discount_rate : discount rate fixed across planning period
+    base_year : base year in 'yyyy' format
 
     """
 
