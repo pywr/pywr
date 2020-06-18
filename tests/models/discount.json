@@ -1,0 +1,63 @@
+{
+    "metadata": {
+        "title": "tutorial",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2020-12-31",
+        "timestep": 10
+    },
+    "nodes": [
+        {
+            "name": "supply",
+            "type": "Input",
+            "max_flow": 10,
+            "cost": 3
+        },
+        {
+            "name": "demand",
+            "type": "Output",
+            "max_flow": 6,
+            "cost": -100
+        }
+    ],
+    "edges": [
+        ["supply", "demand"]
+    ],
+    "parameters": {
+        "discount_factor": {
+            "type": "DiscountFactorParameter",
+            "base_year": 2015,
+            "value": 0.05
+        }
+    },
+    "recorders": {
+        "flow": {
+            "type": "NumpyArrayNodeRecorder",
+            "node": "supply"
+        },
+        "demand": {
+            "type": "NumpyArrayNodeRecorder",
+            "node": "demand"
+        },
+        "opex_cost": {
+            "type": "TotalFlowNodeRecorder",
+            "node": "supply",
+            "factor": 3,
+            "comment": "units [$/MWh]"
+        },
+        "discount_factor_rec": {
+            "type": "NumpyArrayParameterRecorder",
+            "parameter":"discount_factor"
+        },
+        "total_cost": {
+            "type": "aggregated",
+            "recorder_agg_func": "product",
+            "recorders": [
+                "opex_cost",
+                "discount_factor_rec"
+            ]
+        }
+    }
+}
