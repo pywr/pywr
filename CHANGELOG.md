@@ -2,6 +2,12 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.7.2
+
+### Miscellaneous
+
+- Release to fix packaging mistake in v1.7.1.
+
 ## v1.7.1
 
 ### Bug Fixes
