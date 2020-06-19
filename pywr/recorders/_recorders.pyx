@@ -1304,7 +1304,7 @@ cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
     def __init__(self, model, Parameter param, **kwargs):
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
-        super(NumpyArrayDailyProfileParameterRecorder, self).__init__(model, param, **kwargs)
+        super().__init__(model, param, **kwargs)
 
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
