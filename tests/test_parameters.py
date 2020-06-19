@@ -1786,3 +1786,12 @@ class TestRbfProfileParameter:
         new_values = np.random.rand(p.double_size)
         p.set_double_variables(new_values)
         np.testing.assert_allclose(p.get_double_variables(), new_values)
+
+class TestDiscountFactorParameter:
+    def test_discount_json(self):
+        """ Test loading a DiscountFactorParameter from JSON. """
+        model = load_model("discount.json")
+        # run model for period 2015-2020, with base year 2015 and discount rate of 0.035 (3.5%)
+        model.run()
+        # To add: test that the outputs of the parameter are the expected values.
+

@@ -320,3 +320,39 @@ class PropertiesDict(dict):
             value = ConstantParameter(value)
         dict.__setitem__(self, key, value)
 
+
+class DiscountFactorParameter(Parameter):
+    """Parameter that returns the current discount factor based on discount rate and a base year.
+
+    Parameters
+    ----------
+    discount_rate : 0 - 1 factor
+                Discount rate used calculate discount factor for each year.
+        base_year : int
+                Discounting base year (i.e. the year with a discount factor equal to 1.0).
+
+    """
+
+    def __init__(self, model, discount_rate, base_year, **kwargs):
+        super(DiscountFactorParameter, self).__init__(model, **kwargs)
+        self.discount_rate = discount_rate
+        self.base_year = base_year
+
+    def value(self, discount_rate, base_year, **kwargs):
+        ct = self.model.timestepper.current
+        cy = ct.year
+        cyi = cy - self.base_year
+        return 1/pow((1+self.discount_rate), cyi) 
+
+    @classmethod
+    def load(cls, model, data):
+        discount_rate = load_parameter(model, data.pop("value"))
+        base_year = load_parameter(model, data.pop("base_year"))
+        return cls(model, discount_rate, base_year, **data)
+
+DiscountFactorParameter.register()
+
+
+
+
+
