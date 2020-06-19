@@ -8,6 +8,7 @@ from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from pywr.h5tools import H5Store
 from pywr.hashes import check_hash
+from .._core cimport is_leap_year
 from ..dataframe_tools import align_and_resample_dataframe, load_dataframe, read_dataframe
 import warnings
 
@@ -533,11 +534,6 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
 ArrayIndexedScenarioMonthlyFactorsParameter.register()
 
 
-cdef inline bint is_leap_year(int year):
-    # http://stackoverflow.com/a/11595914/1300519
-    return ((year & 3) == 0 and ((year % 25) != 0 or (year & 15) == 0))
-
-
 cdef class DailyProfileParameter(Parameter):
     """ An annual profile consisting of daily values.
 
@@ -560,11 +556,7 @@ cdef class DailyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts.year)):
-            if i > 58: # 28th Feb
-                i += 1
-        return self._values[i]
+        return self._values[ts.dayofyear_index]
 DailyProfileParameter.register()
 
 cdef class WeeklyProfileParameter(Parameter):
@@ -585,10 +577,7 @@ cdef class WeeklyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts.datetime.year)):
-            if i > 58: # 28th Feb
-                i += 1
+        cdef int i = ts.dayofyear_index
         cdef Py_ssize_t week
         if i >= 364:
             # last week of year is slightly longer than 7 days
@@ -685,15 +674,10 @@ cdef class MonthlyProfileParameter(Parameter):
                 self._interp_values[i+1] = values[i]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i
         if self.interp_day is None:
             return self._values[ts.month-1]
         else:
-            i = ts.dayofyear - 1
-            if not is_leap_year(ts.year):
-                if i > 58: # 28th Feb
-                    i += 1
-            return self._interp_values[i]
+            return self._interp_values[ts.dayofyear_index]
 
     cpdef set_double_variables(self, double[:] values):
         self._values[...] = values
@@ -779,10 +763,7 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear - 1
-        if not is_leap_year(ts.year):
-            if i > 58: # 28th Feb
-                i += 1
+        cdef int i = ts.dayofyear_index
         cdef Py_ssize_t week
         if i >= 364:
             # last week of year is slightly longer than 7 days
@@ -827,10 +808,7 @@ cdef class ScenarioDailyProfileParameter(Parameter):
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear - 1
-        if not is_leap_year(ts.year):
-            if i > 58: # 28th Feb
-                i += 1
+        cdef int i = ts.dayofyear_index
         return self._values[scenario_index._indices[self._scenario_index], i]
 
 ScenarioDailyProfileParameter.register()
@@ -866,14 +844,10 @@ cdef class UniformDrawdownProfileParameter(Parameter):
         self._reset_idoy = pandas.Period(year=2016, month=self.reset_month, day=self.reset_day, freq='D').dayofyear - 1
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int current_idoy = ts.dayofyear - 1
+        cdef int current_idoy = ts.dayofyear_index
         cdef int total_days_in_period
         cdef int days_into_period
         cdef int year = ts.year
-
-        if not is_leap_year(ts.year):
-            if current_idoy > 58: # 28th Feb
-                current_idoy += 1
 
         days_into_period = current_idoy - self._reset_idoy
         if days_into_period < 0:
@@ -997,10 +971,7 @@ cdef class RbfProfileParameter(Parameter):
                 self._interp_values[i+1] = values[i]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear - 1
-        if not is_leap_year(ts.year):
-            if i > 58: # 28th Feb
-                i += 1
+        cdef int i = ts.dayofyear_index
         return self._interp_values[i]
 
     cpdef set_double_variables(self, double[:] values):

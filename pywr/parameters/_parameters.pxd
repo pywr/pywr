@@ -1,6 +1,6 @@
 from pywr.recorders._recorders cimport Recorder
 from pywr._component cimport Component
-from .._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node
+from pywr._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node
 
 cdef class Parameter(Component):
     cdef public int double_size

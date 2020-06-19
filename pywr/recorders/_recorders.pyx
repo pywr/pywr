@@ -1278,11 +1278,6 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
 NumpyArrayParameterRecorder.register()
 
 
-cdef inline bint is_leap_year(int year):
-    # http://stackoverflow.com/a/11595914/1300519
-    return ((year & 3) == 0 and ((year % 25) != 0 or (year & 15) == 0))
-
-
 cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
     """Recorder for an annual profile from a `Parameter`.
 
@@ -1327,11 +1322,7 @@ cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
     cpdef after(self):
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
-        cdef int i = ts.dayofyear - 1
-
-        if not is_leap_year(ts.year):
-            if i > 58: # 28th Feb
-                i += 1
+        cdef int i = ts.dayofyear_index
         self._data[i, :] = self._param.get_all_values()
         return 0
 
