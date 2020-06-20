@@ -577,14 +577,7 @@ cdef class WeeklyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear_index
-        cdef Py_ssize_t week
-        if i >= 364:
-            # last week of year is slightly longer than 7 days
-            week = 51
-        else:
-            week = i // 7
-        return self._values[week]
+        return self._values[ts.week]
 WeeklyProfileParameter.register()
 
 
@@ -763,14 +756,7 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear_index
-        cdef Py_ssize_t week
-        if i >= 364:
-            # last week of year is slightly longer than 7 days
-            week = 51
-        else:
-            week = i // 7
-        return self._values[scenario_index._indices[self._scenario_index], week]
+        return self._values[scenario_index._indices[self._scenario_index], ts.week]
 
 ScenarioWeeklyProfileParameter.register()
 

@@ -235,11 +235,19 @@ cdef class Timestep:
         self.year = period.year
         self.is_leap_year = is_leap_year(self.year)
 
+        # Calculate day of year index (zero based)
         cdef int i = self.dayofyear - 1
         if not self.is_leap_year:
             if i > 58: # 28th Feb
                 i += 1
         self.dayofyear_index = i
+
+        # Calculate week of year
+        if self.dayofyear_index >= 364:
+            # last week of year is slightly longer than 7 days
+            self.week = 51
+        else:
+            self.week = self.dayofyear_index // 7
 
     property datetime:
         """Timestep representation as a `datetime.datetime` object"""
