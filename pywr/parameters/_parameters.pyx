@@ -3,6 +3,7 @@ import numpy as np
 cimport numpy as np
 from scipy.interpolate import Rbf
 import pandas
+import json
 import calendar
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
@@ -19,6 +20,24 @@ class UnutilisedDataWarning(Warning):
     """ Simple warning to indicate that not all data has been used. """
     pass
 
+class TypeNotFoundError(KeyError):
+    """
+      Key Error, specifically designed for when the 'type' key is not found
+      in a dataset. This takes the data value and outputs a summary of it, to
+      aid in debugging.
+    """
+    def __init__(self, data):
+        #Try to print out some sensible amount of data without overloading
+        #the terminal with data. 1000 chars should be enough to get an idea
+        #of what the data looks like. If more than 1000 chars, do a pandas-style
+        #summary using ...
+        data_str = json.dumps(data)
+        if len(data_str) > 1000:
+            data_summary = f"{data_str[:500]} ... {data_str[-500:]}"
+        else:
+            data_summary = data_str
+
+        return f"Unable to find key 'type' in {data_summary}"
 
 cdef class Parameter(Component):
     def __init__(self, *args, is_variable=False, **kwargs):
@@ -1947,7 +1966,13 @@ def load_parameter(model, data, parameter_name=None):
         parameter = data
     else:
         # parameter is dynamic
-        parameter_type = data['type']
+
+        try:
+             parameter_type = data['type']
+        except KeyError:
+            #raise custom exception that makes the error a bit easier to interpret
+            raise TypeNotFoundError(data)
+
         try:
             parameter_name = data["name"]
         except:
@@ -2005,6 +2030,3 @@ def load_parameter_values(model, data, values_key='values', url_key='url',
         raise ValueError("Parameter ('{name}' of type '{ptype}' is missing a valid key to load its values. "
                          "Please provide either a '{}', '{}' or '{}' entry.".format(values_key, url_key, table_key, name=name, ptype=ptype))
     return values
-
-
-
