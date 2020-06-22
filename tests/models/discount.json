@@ -1,6 +1,6 @@
 {
     "metadata": {
-        "title": "tutorial",
+        "title": "DiscountFactorParameter test model",
         "minimum_version": "0.1"
     },
     "timestepper": {
@@ -30,34 +30,6 @@
             "type": "DiscountFactorParameter",
             "base_year": 2015,
             "value": 0.035
-        }
-    },
-    "recorders": {
-        "flow": {
-            "type": "NumpyArrayNodeRecorder",
-            "node": "supply"
-        },
-        "demand": {
-            "type": "NumpyArrayNodeRecorder",
-            "node": "demand"
-        },
-        "opex_cost": {
-            "type": "TotalFlowNodeRecorder",
-            "node": "supply",
-            "factor": 3,
-            "comment": "units [$/MWh]"
-        },
-        "discount_factor_rec": {
-            "type": "NumpyArrayParameterRecorder",
-            "parameter":"discount_factor"
-        },
-        "total_cost": {
-            "type": "aggregated",
-            "recorder_agg_func": "product",
-            "recorders": [
-                "opex_cost",
-                "discount_factor_rec"
-            ]
         }
     }
 }

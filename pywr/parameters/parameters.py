@@ -326,8 +326,8 @@ class DiscountFactorParameter(Parameter):
 
     Parameters
     ----------
-    discount_rate : 0 - 1 factor
-                Discount rate used calculate discount factor for each year.
+    discount_rate : float
+                Discount rate (expressed as 0 - 1) used calculate discount factor for each year.
         base_year : int
                 Discounting base year (i.e. the year with a discount factor equal to 1.0).
 
@@ -351,8 +351,3 @@ class DiscountFactorParameter(Parameter):
         return cls(model, discount_rate, base_year, **data)
 
 DiscountFactorParameter.register()
-
-
-
-
-
