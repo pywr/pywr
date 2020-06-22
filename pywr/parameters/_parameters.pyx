@@ -1906,6 +1906,55 @@ cdef class PiecewiseIntegralParameter(Parameter):
 PiecewiseIntegralParameter.register()
 
 
+cdef class FlowDelayParameter(Parameter):
+    """Parameter that returns the delayed flow for a node after a given number of timesteps or days
+    
+    Parameters
+    ----------
+    model : `pywr.model.Model`
+    node: Node
+        The node to delay for.
+    timesteps: int
+        Number of timesteps to delay the flow.
+    days: int
+        Number of days to delay the flow. Specifying a number of days (instead of a number
+        of timesteps) is only valid with models running a timestep of daily frequency.
+    """
+
+    def __init__(self, model, node, *args, **kwargs):  
+        self.node = node
+        self.timesteps = kwargs.pop('timesteps', 0)
+        self.days = kwargs.pop('days', 0)
+        super().__init__(model, *args, **kwargs)
+
+    cpdef setup(self):
+        super(FlowDelayParameter, self).setup()
+
+        if self.days is not None and self.days > 0:
+            try:
+                self.timesteps = self.days // self.model.timestepper.delta
+            except TypeError:
+                raise TypeError('The delay period defined as a number of days is only valid with daily time-steps.')
+        if self.timesteps < 1:
+            raise ValueError('The number of time-steps for a FlowDelayParameter node must be greater than one.')
+
+        self._memory = np.zeros((self.timesteps,  len(self.model.scenarios.combinations)))
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._memory[-1, scenario_index.global_id]
+
+    cpdef after(self):
+        self._memory = np.roll(self._memory, 1, axis=0)
+        for i, _ in enumerate(self.model.scenarios.combinations):
+            self._memory[0, i] = self.node._flow[i]
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        return cls(model, node, **data)
+FlowDelayParameter.register()
+
+
 def get_parameter_from_registry(parameter_type):
     key = parameter_type.lower()
     try:

@@ -5,7 +5,7 @@ from pywr._core import Node as BaseNode
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
     StorageOutput, Timestep, ScenarioIndex)
 
-from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values
+from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values, FlowDelayParameter
 
 from pywr.domains import Domain
 
@@ -862,3 +862,47 @@ class BreakLink(Node):
         self.commit_all(self.link.flow)
 
 from pywr.domains.river import *
+
+
+class DelayNode(Node):
+    """ A node that delays flow for a given number of timesteps or days
+
+    Parameters
+    ----------
+    model : `pywr.model.Model`
+    name : string
+        Name of the node
+    timesteps: int
+        Number of timesteps to delay the flow for
+    days: int
+        number of days to delay the flow for. Specifying a number of days (instead of a number
+        of timesteps) is only valid with models running a timestep of daily frequency.
+    """
+
+    def __init__(self, model, name, **kwargs): 
+        self.allow_isolated = True
+        output_name = "{} - output".format(name)
+        input_name = "{} - input".format(name)
+        param_name = "{} - delay param".format(name)
+        assert(output_name not in model.nodes)
+        assert(input_name not in model.nodes)
+        assert(param_name not in model.parameters)
+
+        days = kwargs.pop('days', 0)
+        timesteps = kwargs.pop('timesteps', 0)
+
+        self.output = Output(model, name=output_name)
+        delay_param = FlowDelayParameter(model, self.output, timesteps=timesteps, days=days, name=param_name)
+        self.input = Input(model, name=input_name, min_flow=delay_param, max_flow=delay_param)
+        super().__init__(model, name, **kwargs)
+
+    def iter_slots(self, slot_name=None, is_connector=True):
+        if is_connector:
+            yield self.input
+        else:
+            yield self.output
+
+    def after(self, timestep):
+        super().after(timestep)
+        # delayed flow is saved to the DelayNode
+        self.commit_all(self.input.flow)
