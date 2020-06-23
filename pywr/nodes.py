@@ -871,12 +871,12 @@ class DelayNode(Node):
     ----------
     model : `pywr.model.Model`
     name : string
-        Name of the node
+        Name of the node.
     timesteps: int
-        Number of timesteps to delay the flow for
+        Number of timesteps to delay the flow.
     days: int
-        number of days to delay the flow for. Specifying a number of days (instead of a number
-        of timesteps) is only valid with models running a timestep of daily frequency.
+        Number of days to delay the flow. Specifying a number of days (instead of a number
+        of timesteps) is only valid if the number of days is exactly divisible by the model timestep delta.
     """
 
     def __init__(self, model, name, **kwargs): 

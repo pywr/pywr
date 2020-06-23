@@ -1918,7 +1918,7 @@ cdef class FlowDelayParameter(Parameter):
         Number of timesteps to delay the flow.
     days: int
         Number of days to delay the flow. Specifying a number of days (instead of a number
-        of timesteps) is only valid with models running a timestep of daily frequency.
+        of timesteps) is only valid if the number of days is exactly divisible by the model timestep length.
     """
 
     def __init__(self, model, node, *args, **kwargs):  
@@ -1929,15 +1929,15 @@ cdef class FlowDelayParameter(Parameter):
 
     cpdef setup(self):
         super(FlowDelayParameter, self).setup()
-
-        if self.days is not None and self.days > 0:
-            try:
-                self.timesteps = self.days // self.model.timestepper.delta
-            except TypeError:
-                raise TypeError('The delay period defined as a number of days is only valid with daily time-steps.')
+        cdef int r
+        if self.days > 0:
+            r = self.days % self.model.timestepper.delta
+            if r == 0:
+                self.timesteps = self.days / self.model.timestepper.delta
+            else:
+                raise ValueError('The delay defined as number of days is not exactly divisible by the timestep delta.')
         if self.timesteps < 1:
             raise ValueError('The number of time-steps for a FlowDelayParameter node must be greater than one.')
-
         self._memory = np.zeros((self.timesteps,  len(self.model.scenarios.combinations)))
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
