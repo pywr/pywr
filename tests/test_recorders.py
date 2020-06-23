@@ -23,7 +23,7 @@ from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageR
                             HydropowerRecorder, TotalHydroEnergyRecorder,
                             TotalParameterRecorder, MeanParameterRecorder,
                             NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
-                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning,
+                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning, NumpyArrayDailyProfileParameterRecorder,
                             AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder)
 
 from pywr.recorders.progress import ProgressRecorder
@@ -444,6 +444,37 @@ def test_numpy_parameter_recorder(simple_linear_model):
 
     # test retrieval of recorder
     assert model.recorders['numpyarrayparameterrecorder.daily profile'] == rec
+
+    model.run()
+
+    assert rec.data.shape == (366, 1)
+    assert_allclose(rec.data, np.arange(366, dtype=np.float64)[:, np.newaxis])
+
+    df = rec.to_dataframe()
+    assert df.shape == (366, 1)
+    assert_allclose(df.values, np.arange(366, dtype=np.float64)[:, np.newaxis])
+
+
+def test_numpy_daily_profile_parameter_recorder(simple_linear_model):
+    """
+    Test the NumpyArrayDailyProfileParameterRecorder
+    """
+    from pywr.parameters import DailyProfileParameter
+
+    model = simple_linear_model
+    # using leap year simplifies tests
+    model.timestepper.start = pandas.to_datetime("2016-01-01")
+    model.timestepper.end = pandas.to_datetime("2017-12-31")
+    otpt = model.nodes['Output']
+
+    p = DailyProfileParameter(model, np.arange(366, dtype=np.float64), )
+    p.name = 'daily profile'
+    model.nodes['Input'].max_flow = p
+    otpt.cost = -2.0
+    rec = NumpyArrayDailyProfileParameterRecorder(model, model.nodes['Input'].max_flow)
+
+    # test retrieval of recorder
+    assert model.recorders['numpyarraydailyprofileparameterrecorder.daily profile'] == rec
 
     model.run()
 
