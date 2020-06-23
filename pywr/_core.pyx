@@ -245,9 +245,9 @@ cdef class Timestep:
         # Calculate week of year
         if self.dayofyear_index >= 364:
             # last week of year is slightly longer than 7 days
-            self.week = 51
+            self.week_index = 51
         else:
-            self.week = self.dayofyear_index // 7
+            self.week_index = self.dayofyear_index // 7
 
     property datetime:
         """Timestep representation as a `datetime.datetime` object"""

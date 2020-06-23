@@ -32,7 +32,7 @@ cdef class Timestep:
     cdef readonly int dayofyear
     cdef readonly int dayofyear_index  # Day of the year for profiles
     cdef readonly bint is_leap_year
-    cdef readonly int week
+    cdef readonly int week_index  # Zero-based week
     cdef readonly int day
     cdef readonly int month
     cdef readonly int year

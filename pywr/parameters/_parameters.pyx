@@ -577,7 +577,7 @@ cdef class WeeklyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return self._values[ts.week]
+        return self._values[ts.week_index]
 WeeklyProfileParameter.register()
 
 
@@ -756,7 +756,7 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return self._values[scenario_index._indices[self._scenario_index], ts.week]
+        return self._values[scenario_index._indices[self._scenario_index], ts.week_index]
 
 ScenarioWeeklyProfileParameter.register()
 
