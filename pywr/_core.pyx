@@ -32,6 +32,10 @@ cdef class Scenario:
     ensemble_names : iterable of str, optional
         User defined names describing each ensemble.
 
+    See Also
+    --------
+    ScenarioCollection
+    ScenarioIndex
     """
     def __init__(self, model, name, int size=1, slice slice=None, ensemble_names=None):
         self._name = name
@@ -77,6 +81,10 @@ cdef class ScenarioCollection:
     should be run. The latter approach takes precedent over the former per `Scenario`
     slices.
 
+    See Also
+    --------
+    Scenario
+    ScenarioIndex
     """
     def __init__(self, model):
         self.model = model
@@ -212,6 +220,11 @@ cdef class ScenarioIndex:
         Read-only global scenario index that this ScenarioIndex refers to.
     indices : np.array
         The indices for each of the Scenarios in this model.
+
+    See Also
+    --------
+    Scenario
+    ScenarioCollection
     """
     def __init__(self, int global_id, int[:] indices):
         self.global_id = global_id

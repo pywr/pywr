@@ -871,7 +871,7 @@ cdef class UniformDrawdownProfileParameter(Parameter):
 
     See also
     --------
-    `pywr.nodes.AnnualVirtualStorage`
+    AnnualVirtualStorage
     """
     def __init__(self, model, reset_day=1, reset_month=1, **kwargs):
         super().__init__(model, **kwargs)
