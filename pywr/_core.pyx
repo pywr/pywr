@@ -217,6 +217,11 @@ cdef class ScenarioIndex:
         return "<ScenarioIndex gid={:d} indices={}>".format(self.global_id, tuple(np.asarray(self._indices)))
 
 
+cdef bint is_leap_year(int year):
+    # http://stackoverflow.com/a/11595914/1300519
+    return ((year & 3) == 0 and ((year % 25) != 0 or (year & 15) == 0))
+
+
 cdef class Timestep:
     def __init__(self, period, int index, double days):
         self.period = period
@@ -228,6 +233,21 @@ cdef class Timestep:
         self.day = period.day
         self.month = period.month
         self.year = period.year
+        self.is_leap_year = is_leap_year(self.year)
+
+        # Calculate day of year index (zero based)
+        cdef int i = self.dayofyear - 1
+        if not self.is_leap_year:
+            if i > 58: # 28th Feb
+                i += 1
+        self.dayofyear_index = i
+
+        # Calculate week of year
+        if self.dayofyear_index >= 364:
+            # last week of year is slightly longer than 7 days
+            self.week_index = 51
+        else:
+            self.week_index = self.dayofyear_index // 7
 
     property datetime:
         """Timestep representation as a `datetime.datetime` object"""
