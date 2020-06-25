@@ -2006,5 +2006,32 @@ def load_parameter_values(model, data, values_key='values', url_key='url',
                          "Please provide either a '{}', '{}' or '{}' entry.".format(values_key, url_key, table_key, name=name, ptype=ptype))
     return values
 
+cdef class DiscountFactorParameter(Parameter):
+    """Parameter that returns the current discount factor based on discount rate and a base year.
 
+    Parameters
+    ----------
+    discount_rate : float
+        Discount rate (expressed as 0 - 1) used calculate discount factor for each year.
+    base_year : int
+        Discounting base year (i.e. the year with a discount factor equal to 1.0).
+    """
 
+    def __init__(self, model, discount_rate, base_year, **kwargs):
+        super(DiscountFactorParameter, self).__init__(model, **kwargs)
+        self.discount_rate = discount_rate
+        self.base_year = base_year
+
+    cpdef double value(self, discount_rate, base_year, **kwargs) except? -1:
+        ct = self.model.timestepper.current
+        cy = ct.year
+        cyi = cy - self.base_year
+        return 1/pow((1+self.discount_rate), cyi) 
+
+    @classmethod
+    def load(cls, model, data):
+        discount_rate = load_parameter(model, data.pop("value"))
+        base_year = load_parameter(model, data.pop("base_year"))
+        return cls(model, discount_rate, base_year, **data)
+
+DiscountFactorParameter.register()

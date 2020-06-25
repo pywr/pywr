@@ -1797,6 +1797,6 @@ class TestDiscountFactorParameter:
         @assert_rec(model, p)
         def expected_func(timestep, scenario_index):
             year = timestep.year
-            return 1/pow(1.035, year - 2015) 
+            return 1/pow(1.035, year - 2015)
 
         model.run()
