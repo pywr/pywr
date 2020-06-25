@@ -1823,3 +1823,8 @@ class TestRbfProfileParameter:
         p.set_integer_variables(new_doys)
         np.testing.assert_allclose(p.get_integer_variables(), new_doys)
 
+        lb = np.array([80, 180, 280], dtype=np.int32)
+        np.testing.assert_allclose(p.get_integer_lower_bounds(), lb)
+
+        ub = np.array([120, 220, 320], dtype=np.int32)
+        np.testing.assert_allclose(p.get_integer_upper_bounds(), ub)

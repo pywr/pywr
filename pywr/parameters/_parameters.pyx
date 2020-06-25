@@ -939,9 +939,9 @@ cdef class RbfProfileParameter(Parameter):
         if self.variable_days_of_year_range > 0:
             self.integer_size = len(values) - 1
             self._doy_lower_bounds = np.array([d - self.variable_days_of_year_range
-                                               for d in self.days_of_year], dtype=np.int32)
+                                               for d in self.days_of_year[1:]], dtype=np.int32)
             self._doy_upper_bounds = np.array([d + self.variable_days_of_year_range
-                                               for d in self.days_of_year], dtype=np.int32)
+                                               for d in self.days_of_year[1:]], dtype=np.int32)
         else:
             self.integer_size = 0
 
