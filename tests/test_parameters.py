@@ -1730,7 +1730,9 @@ class TestUniformDrawdownProfileParameter:
 
 class TestRbfProfileParameter:
     """Tests for RbfParameter."""
-    def test_rbf_profile(self, simple_linear_model):
+
+    @pytest.mark.parametrize(['min_value', 'max_value'], [(None, None), (0.3, None), (None, 0.6)])
+    def test_rbf_profile(self, simple_linear_model, min_value, max_value):
         """Test the Rbf profile parameter."""
 
         m = simple_linear_model
@@ -1747,14 +1749,23 @@ class TestRbfProfileParameter:
         data = {
             'type': 'rbfprofile',
             "days_of_year": [1, 100, 200, 300],
-            "values": [0.5, 0.7, 0.5, 0.2]
+            "values": [0.5, 0.7, 0.5, 0.2],
         }
+        if min_value is not None:
+            data["min_value"] = min_value
+        if max_value is not None:
+            data["max_value"] = max_value
 
         p = load_parameter(m, data)
 
         @assert_rec(m, p)
         def expected_func(timestep, scenario_index):
-            return expected_values[timestep.index]
+            ev = expected_values[timestep.index]
+            if min_value is not None:
+                ev = max(min_value, ev)
+            if max_value is not None:
+                ev = min(max_value, ev)
+            return ev
 
         m.run()
 
@@ -1771,7 +1782,7 @@ class TestRbfProfileParameter:
             load_parameter(simple_linear_model, data)
 
     def test_variable_api(self, simple_linear_model):
-        """Test setting using variable API implementation on RbfParameter."""
+        """Test using variable API implementation on RbfParameter."""
 
         data = {
             'type': 'rbfprofile',
@@ -1786,3 +1797,29 @@ class TestRbfProfileParameter:
         new_values = np.random.rand(p.double_size)
         p.set_double_variables(new_values)
         np.testing.assert_allclose(p.get_double_variables(), new_values)
+
+    def test_variable_doys_api(self, simple_linear_model):
+        """Test using the variable API when optimising the days of the year. """
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 100, 200, 300],
+            "values": [0.5, 0.7, 0.5, 0.2],
+            "lower_bounds": 0.1,
+            "upper_bounds": 0.8,
+            "variable_days_of_year_range": 20,
+            "is_variable": True
+        }
+
+        p = load_parameter(simple_linear_model, data)
+        assert p.double_size == 4
+        assert p.integer_size == 3
+
+        new_values = np.random.rand(p.double_size)
+        p.set_double_variables(new_values)
+        np.testing.assert_allclose(p.get_double_variables(), new_values)
+
+        new_doys = np.array([90, 190, 290], dtype=np.int32)
+        p.set_integer_variables(new_doys)
+        np.testing.assert_allclose(p.get_integer_variables(), new_doys)
+
