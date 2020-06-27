@@ -1,7 +1,7 @@
 from pywr.model import Model
 from pywr.nodes import Catchment, Output, DelayNode
 from pywr.recorders import NumpyArrayNodeRecorder, AssertionRecorder
-from pywr.parameters import ArrayIndexedParameter, FlowDelayParameter, load_parameter
+from pywr.parameters import ArrayIndexedScenarioParameter, FlowDelayParameter, load_parameter
 from pywr.core import Scenario
 from numpy.testing import assert_array_almost_equal
 import numpy as np
@@ -13,12 +13,16 @@ import pytest
                                         ("days", 3),
                                         ("timesteps", 10)])
 def test_delay_node(key, delay):
+    """ Test that the `DelayNode` and the `FlowDelayParameter` internal to it correctly delay node for a range of inputs and
+    across scenarios"""
     model = Model()
 
     model.timestepper.start = "2015/01/01"
     model.timestepper.end = "2015/01/31"
-    flow = ArrayIndexedParameter(model, np.arange(1, 32))
-    Scenario(model, name="scenario", size=2)
+
+    scen = Scenario(model, name="scenario", size=2)
+    flow_vals = np.arange(1, 63).reshape((31, 2), order="F")
+    flow = ArrayIndexedScenarioParameter(model, scen, flow_vals)
 
     catchment = Catchment(model, name="input", flow=flow)
     delaynode = DelayNode(model, name="delaynode", **{key: delay})
@@ -30,12 +34,13 @@ def test_delay_node(key, delay):
     rec = NumpyArrayNodeRecorder(model, output)
 
     model.run()
-    expected = np.concatenate([np.zeros(delay), np.arange(1, 32 - delay)])
-    expected = np.tile(expected.reshape(31, 1), 2)
+
+    expected = np.concatenate([np.zeros((delay, 2)), flow_vals[:-delay, :]])
     assert_array_almost_equal(rec.data, expected)
 
 
 def test_delay_param_load():
+    """Test that the `.load` method of `FlowDelayParameter` works correctly"""
 
     model = Model()
     model.timestepper.start = "2015/01/01"
@@ -68,9 +73,13 @@ def test_delay_param_load():
     model.setup()
     model.run()
 
+
 @pytest.mark.parametrize("key, delay", [("days", 5),
                                         ("timesteps", 0.5)])
 def test_delay_failure(key, delay):
+    """Test the FlowDelayParameter returns a ValueError when the input value of the `days` attribute is not
+    divisible exactly by the model timestep delta and when the `timesteps` attribute is less than 1
+    """
 
     model = Model()
     model.timestepper.start = "2015/01/01"
