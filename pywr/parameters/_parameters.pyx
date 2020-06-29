@@ -1939,17 +1939,19 @@ cdef class FlowDelayParameter(Parameter):
         if self.timesteps < 1:
             raise ValueError('The number of time-steps for a FlowDelayParameter node must be greater than one.')
         self._memory = np.zeros((self.timesteps,  len(self.model.scenarios.combinations)))
+        self._memory_pointer = 0
 
     cpdef reset(self):
         self._memory[...] = 0.0
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return self._memory[-1, scenario_index.global_id]
+        return self._memory[self._memory_pointer, scenario_index.global_id]
 
     cpdef after(self):
-        self._memory = np.roll(self._memory, 1, axis=0)
         for i in range(self._memory.shape[1]):
-            self._memory[0, i] = self.node._flow[i]
+            self._memory[self._memory_pointer, i] = self.node._flow[i]
+        if self.timesteps > 1:
+            self._memory_pointer = (self._memory_pointer + 1) % self.timesteps 
 
     @classmethod
     def load(cls, model, data):

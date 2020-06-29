@@ -206,3 +206,4 @@ cdef class FlowDelayParameter(Parameter):
     cdef public int days
     cdef public int timesteps
     cdef double[:, :] _memory
+    cdef public int _memory_pointer
