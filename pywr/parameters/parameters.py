@@ -10,8 +10,9 @@ from ._parameters import (
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter, ScenarioDailyProfileParameter,
     ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
-    NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
-    DeficitParameter, DivisionParameter, load_parameter, load_parameter_values, load_dataframe)
+    DiscountFactorParameter, NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, 
+    NegativeMinParameter, DeficitParameter, DivisionParameter, load_parameter, load_parameter_values, 
+    load_dataframe)
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import (
@@ -319,34 +320,3 @@ class PropertiesDict(dict):
         if not isinstance(value, Property):
             value = ConstantParameter(value)
         dict.__setitem__(self, key, value)
-
-
-class DiscountFactorParameter(Parameter):
-    """Parameter that returns the current discount factor based on discount rate and a base year.
-
-    Parameters
-    ----------
-    discount_rate : float
-        Discount rate (expressed as 0 - 1) used calculate discount factor for each year.
-    base_year : int
-        Discounting base year (i.e. the year with a discount factor equal to 1.0).
-    """
-
-    def __init__(self, model, discount_rate, base_year, **kwargs):
-        super(DiscountFactorParameter, self).__init__(model, **kwargs)
-        self.discount_rate = discount_rate
-        self.base_year = base_year
-
-    def value(self, discount_rate, base_year, **kwargs):
-        ct = self.model.timestepper.current
-        cy = ct.year
-        cyi = cy - self.base_year
-        return 1/pow((1+self.discount_rate), cyi) 
-
-    @classmethod
-    def load(cls, model, data):
-        discount_rate = load_parameter(model, data.pop("value"))
-        base_year = load_parameter(model, data.pop("base_year"))
-        return cls(model, discount_rate, base_year, **data)
-
-DiscountFactorParameter.register()
