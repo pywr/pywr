@@ -1917,24 +1917,19 @@ cdef class DiscountFactorParameter(Parameter):
         Discounting base year (i.e. the year with a discount factor equal to 1.0).
     """
 
-    def __init__(self, model, discount_rate, base_year, **kwargs):
+    def __init__(self, model, rate, base_year, **kwargs):
         super(DiscountFactorParameter, self).__init__(model, **kwargs)
-        self.discount_rate = discount_rate
+        self.rate = rate
         self.base_year = base_year
 
-    cpdef double value(self, discount_rate, base_year) except? -1:
-        cdef double discount_rate
-        cdef int base_year 
-        cdef int ct = self.model.timestepper.current
-        cdef int cy = ct.year
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int cy = self.model.timestepper.current.year
         cdef int cyi = cy - self.base_year
-        return 1/pow((1+self.discount_rate), cyi) 
+        return 1/pow((1+self.rate), cyi) 
 
     @classmethod
     def load(cls, model, data):
-        discount_rate = load_parameter(model, data.pop("value"))
-        base_year = load_parameter(model, data.pop("base_year"))
-        return cls(model, discount_rate, base_year, **data)
+        return cls(model, **data)
 
 DiscountFactorParameter.register()
 

@@ -29,7 +29,7 @@
         "discount_factor": {
             "type": "DiscountFactorParameter",
             "base_year": 2015,
-            "value": 0.035
+            "rate": 0.035
         }
     }
 }
