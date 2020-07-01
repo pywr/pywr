@@ -1919,12 +1919,16 @@ cdef class FlowDelayParameter(Parameter):
     days: int
         Number of days to delay the flow. Specifying a number of days (instead of a number
         of timesteps) is only valid if the number of days is exactly divisible by the model timestep length.
+    initial_flow: float
+        Flow value to return for initial model timesteps when these are less than or equal to the delay. This
+        value is constant across all delayed timesteps and any model scenarios.
     """
 
     def __init__(self, model, node, *args, **kwargs):  
         self.node = node
         self.timesteps = kwargs.pop('timesteps', 0)
         self.days = kwargs.pop('days', 0)
+        self.initial_flow = kwargs.pop('initial_flow', 0.0)
         super().__init__(model, *args, **kwargs)
 
     cpdef setup(self):
@@ -1942,7 +1946,8 @@ cdef class FlowDelayParameter(Parameter):
         self._memory_pointer = 0
 
     cpdef reset(self):
-        self._memory[...] = 0.0
+        self._memory[...] = self.initial_flow 
+        self._memory_pointer = 0
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._memory[self._memory_pointer, scenario_index.global_id]

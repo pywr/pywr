@@ -205,5 +205,6 @@ cdef class FlowDelayParameter(Parameter):
     cdef public AbstractNode node
     cdef public int days
     cdef public int timesteps
+    cdef public float initial_flow
     cdef double[:, :] _memory
     cdef public int _memory_pointer

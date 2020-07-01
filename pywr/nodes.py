@@ -868,8 +868,8 @@ class DelayNode(Node):
     This is a composite node consisting internally of an Input and an Output node. A
     `FlowDelayParameter` is used to delay the flow of the output node for a given period prior
     to this delayed flow being set as the flow of the input node. Connections to the node are connected
-    to the internal output node and connection from the node are connected to the internal input node.
-    node
+    to the internal output node and connection from the node are connected to the internal input node
+    node.
 
     Parameters
     ----------
@@ -882,6 +882,9 @@ class DelayNode(Node):
         Number of days to delay the flow. Specifying a number of days (instead of a number
         of timesteps) is only valid if the number of days is exactly divisible by the model
         timestep delta.
+    initial_flow: float
+        Flow value from node when model timestep is less than or equal to the number of delay
+        timesteps. This is constant across all delayed timesteps and any model scenarios.
     """
 
     def __init__(self, model, name, **kwargs):
@@ -895,9 +898,11 @@ class DelayNode(Node):
 
         days = kwargs.pop('days', 0)
         timesteps = kwargs.pop('timesteps', 0)
+        initial_flow = kwargs.pop('initial_flow', 0.0)
 
         self.output = Output(model, name=output_name)
-        self.delay_param = FlowDelayParameter(model, self.output, timesteps=timesteps, days=days, name=param_name)
+        self.delay_param = FlowDelayParameter(model, self.output, timesteps=timesteps, days=days,
+                                              initial_flow=initial_flow, name=param_name)
         self.input = Input(model, name=input_name, min_flow=self.delay_param, max_flow=self.delay_param)
         super().__init__(model, name, **kwargs)
 

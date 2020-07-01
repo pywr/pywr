@@ -8,11 +8,12 @@ import numpy as np
 import pytest
 
 
-@pytest.mark.parametrize("key, delay", [("days", 1),
-                                        ("timesteps", 1),
-                                        ("days", 3),
-                                        ("timesteps", 10)])
-def test_delay_node(key, delay):
+@pytest.mark.parametrize("key, delay, initial_flow", [("days", 1, None),
+                                                      ("timesteps", 1, None),
+                                                      ("days", 1, 5.0),
+                                                      ("days", 3, 5.0),
+                                                      ("timesteps", 10, 5.0)])
+def test_delay_node(key, delay, initial_flow):
     """ Test that the `DelayNode` and the `FlowDelayParameter` internal to it correctly delay node for a range of inputs and
     across scenarios"""
     model = Model()
@@ -25,7 +26,10 @@ def test_delay_node(key, delay):
     flow = ArrayIndexedScenarioParameter(model, scen, flow_vals)
 
     catchment = Catchment(model, name="input", flow=flow)
-    delaynode = DelayNode(model, name="delaynode", **{key: delay})
+    kwargs = {key: delay}
+    if initial_flow:
+        kwargs["initial_flow"] = initial_flow
+    delaynode = DelayNode(model, name="delaynode", **kwargs)
     output = Output(model, name="output")
 
     catchment.connect(delaynode)
@@ -34,8 +38,11 @@ def test_delay_node(key, delay):
     rec = NumpyArrayNodeRecorder(model, output)
 
     model.run()
+    if initial_flow:
+        expected = np.concatenate([np.full((delay, 2), initial_flow), flow_vals[:-delay, :]])
+    else:
+        expected = np.concatenate([np.zeros((delay, 2)), flow_vals[:-delay, :]])
 
-    expected = np.concatenate([np.zeros((delay, 2)), flow_vals[:-delay, :]])
     assert_array_almost_equal(rec.data, expected)
 
 
