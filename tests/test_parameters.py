@@ -1769,7 +1769,13 @@ class TestRbfProfileParameter:
 
         m.run()
 
-    @pytest.mark.parametrize('wrong_doys', [[2, 100, 300], [1, 180], [1, 100, 366]])
+    @pytest.mark.parametrize('wrong_doys', [
+        [2, 100, 300],  # Incorrect first day
+        [1, 180],  # Too few values
+        [1, 100, 366],  # Incorrect last day
+        [1, 200, 140],  # Not monotonic
+        [1, 140, 140],  # Not strictly monotonic
+    ])
     def test_incorrect_inputs(self, simple_linear_model, wrong_doys):
         """Test initialising RbfParameter with incorrect days of the year."""
 
@@ -1828,3 +1834,19 @@ class TestRbfProfileParameter:
 
         ub = np.array([120, 220, 320], dtype=np.int32)
         np.testing.assert_allclose(p.get_integer_upper_bounds(), ub)
+
+    def test_too_close_doys_error(self, simple_linear_model):
+        """Test that setting days of the year too close together for optimisation raises an error."""
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 140, 200],   # Closest distance is 60 days
+            "values": [0.5, 0.7, 0.5],
+            "lower_bounds": 0.1,
+            "upper_bounds": 0.8,
+            "variable_days_of_year_range": 30,  # A range of 30 could cause overlap (140 + 30, 200 - 30)
+            "is_variable": True
+        }
+
+        with pytest.raises(ValueError):
+            load_parameter(simple_linear_model, data)

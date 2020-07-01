@@ -937,6 +937,12 @@ cdef class RbfProfileParameter(Parameter):
         self._upper_bounds = np.ones(self.double_size)*upper_bounds
 
         if self.variable_days_of_year_range > 0:
+            if np.any(np.diff(self.days_of_year) <= 2*self.variable_days_of_year_range):
+                raise ValueError(f"The days of the year are too close together for the given "
+                                 f"`variable_days_of_year_range`. This could cause the optimised days"
+                                 f"of the year to overlap and become out of order.  Either increasing the"
+                                 f"spacing of the days of the year or reduce `variable_days_of_year_range` to"
+                                 f"less than half the closest distance between the days of the  year.")
             self.integer_size = len(values) - 1
             self._doy_lower_bounds = np.array([d - self.variable_days_of_year_range
                                                for d in self.days_of_year[1:]], dtype=np.int32)
@@ -956,6 +962,8 @@ cdef class RbfProfileParameter(Parameter):
                 raise ValueError('The first day of the years must be 1.')
             if len(values) < 3:
                 raise ValueError('At least 3 days of the year are required.')
+            if np.any(np.diff(values) <= 0):
+                raise ValueError('The days of the year should be strictly monotonically increasing.')
             if np.any(0 > values > 365):
                 raise ValueError('Days of the years should be between 1 and 365 inclusive.')
             self._days_of_year = values
