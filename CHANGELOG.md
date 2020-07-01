@@ -2,6 +2,20 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.7.2
+
+### Miscellaneous
+
+- Release to fix packaging mistake in v1.7.1.
+
+## v1.7.1
+
+### Bug Fixes
+
+- Fixed a bug when using `draw_graph` with a dictionary. (#899)
+- Fixed a bug when giving non-float values to `RbfProfileParameter`. (#897)
+- Improved handling of isolated nodes in `draw_graph` when using JSON data. (#895)
+
 ## v1.7.0
 
 ### New Features
