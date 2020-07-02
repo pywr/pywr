@@ -1,5 +1,5 @@
-pywr.solvers package
-====================
+Solvers
+=======
 
 Submodules
 ----------
