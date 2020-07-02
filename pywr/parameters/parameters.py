@@ -10,7 +10,7 @@ from ._parameters import (
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter, ScenarioDailyProfileParameter,
     ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
-    NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
+    DiscountFactorParameter, NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
     DeficitParameter, DivisionParameter, OffsetParameter, RbfProfileParameter, UniformDrawdownProfileParameter,
     load_parameter, load_parameter_values, load_dataframe)
 from . import licenses
@@ -320,4 +320,3 @@ class PropertiesDict(dict):
         if not isinstance(value, Property):
             value = ConstantParameter(value)
         dict.__setitem__(self, key, value)
-

@@ -1927,6 +1927,32 @@ cdef class PiecewiseIntegralParameter(Parameter):
 PiecewiseIntegralParameter.register()
 
 
+cdef class DiscountFactorParameter(Parameter):
+    """Parameter that returns the current discount factor based on discount rate and a base year.
+
+    Parameters
+    ----------
+    discount_rate : float
+        Discount rate (expressed as 0 - 1) used calculate discount factor for each year.
+    base_year : int
+        Discounting base year (i.e. the year with a discount factor equal to 1.0).
+    """
+
+    def __init__(self, model, rate, base_year, **kwargs):
+        super(DiscountFactorParameter, self).__init__(model, **kwargs)
+        self.rate = rate
+        self.base_year = base_year
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return 1 / pow(1.0 + self.rate, ts.year - self.base_year)
+
+    @classmethod
+    def load(cls, model, data):
+        return cls(model, **data)
+
+DiscountFactorParameter.register()
+
+
 def get_parameter_from_registry(parameter_type):
     key = parameter_type.lower()
     try:

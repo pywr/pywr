@@ -205,3 +205,7 @@ cdef class PiecewiseIntegralParameter(Parameter):
     cdef public double[:] x
     cdef public double[:] y
     cdef public Parameter parameter
+
+cdef class DiscountFactorParameter(Parameter):
+    cdef public double rate
+    cdef public int base_year
