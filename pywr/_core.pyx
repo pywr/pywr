@@ -15,7 +15,7 @@ cdef class Scenario:
     number of `Parameter` objects in the model will return different values depending
     on the scenario, but many will not. Multiple scenarios can be defined such that
     some `Parameter` values vary with one scenario, but not another. Scenarios are defined
-    with a size that represents the number of ensembles in within that scenario.
+    with a size that represents the number of ensembles in that scenario.
 
     Parameters
     ----------
@@ -76,7 +76,7 @@ cdef class ScenarioCollection:
     which combinations of ensembles are used during model execution. By default the
     product of all scenario ensembles (i.e. all possible combinations of ensembles) is
     executed. However user defined slices can be set on individual `Scenario` instances
-    to restriction the number of ensembles executed from that scenario. Alternatively
+    to restrict the number of ensembles executed from that scenario. Alternatively
     the user may provide an array of the specific ensemble combinations (indices) that
     should be run. The latter approach takes precedent over the former per `Scenario`
     slices.
