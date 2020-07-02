@@ -4,6 +4,7 @@ Pywr reference documentation.
 .. toctree::
    :maxdepth: 2
 
+   pywr.core
    pywr.nodes
    pywr.optimisation
    pywr.parameters
