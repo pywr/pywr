@@ -908,23 +908,49 @@ cdef class RbfProfileParameter(Parameter):
         The lower bounds of the values when used during optimisation.
     upper_bounds : float (default=np.inf)
         The upper bounds of the values when used during optimisation.
+    variable_days_of_year_range : int (default=0)
+        The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
+        will cause the days of the year values to be exposed as integer variables (except the first value which
+        remains at day 1). This value is bounds on those variables as maximum shift from the given `days_of_year`.
+    min_value, max_value : float
+        Optionally cap the interpolated daily profile to a minimum and/or maximum value. The default values
+        are negative and positive infinity for minimum and maximum respectively.
     rbf_kwargs: Optional, dict
         Optional dictionary of keyword arguments to base to the Rbf object.
 
     """
-    def __init__(self, model, days_of_year, values, lower_bounds=0.0, upper_bounds=np.inf, rbf_kwargs=None, **kwargs):
+    def __init__(self, model, days_of_year, values, lower_bounds=0.0, upper_bounds=np.inf, rbf_kwargs=None,
+                 variable_days_of_year_range=0, min_value=-np.inf, max_value=np.inf, **kwargs):
         super(RbfProfileParameter, self).__init__(model, **kwargs)
 
         if len(days_of_year) != len(values):
             raise ValueError(f"The length of values ({len(values)}) must equal the length of "
                              f"`days_of_year` ({len(days_of_year)}).")
 
+        self.variable_days_of_year_range = variable_days_of_year_range
         self.double_size = len(values)
-        self.integer_size = 0
         self._values = np.array(values, dtype=np.float64)
         self.days_of_year = days_of_year
+        self.min_value = min_value
+        self.max_value = max_value
         self._lower_bounds = np.ones(self.double_size)*lower_bounds
         self._upper_bounds = np.ones(self.double_size)*upper_bounds
+
+        if self.variable_days_of_year_range > 0:
+            if np.any(np.diff(self.days_of_year) <= 2*self.variable_days_of_year_range):
+                raise ValueError(f"The days of the year are too close together for the given "
+                                 f"`variable_days_of_year_range`. This could cause the optimised days"
+                                 f"of the year to overlap and become out of order.  Either increase the"
+                                 f"spacing of the days of the year or reduce `variable_days_of_year_range` to"
+                                 f"less than half the closest distance between the days of the year.")
+            self.integer_size = len(values) - 1
+            self._doy_lower_bounds = np.array([d - self.variable_days_of_year_range
+                                               for d in self.days_of_year[1:]], dtype=np.int32)
+            self._doy_upper_bounds = np.array([d + self.variable_days_of_year_range
+                                               for d in self.days_of_year[1:]], dtype=np.int32)
+        else:
+            self.integer_size = 0
+
         self.rbf_kwargs = rbf_kwargs if rbf_kwargs is not None else {}
 
     property days_of_year:
@@ -935,7 +961,9 @@ cdef class RbfProfileParameter(Parameter):
             if values[0] != 1:
                 raise ValueError('The first day of the years must be 1.')
             if len(values) < 3:
-                raise ValueError('At least days of the year are required.')
+                raise ValueError('At least 3 days of the year are required.')
+            if np.any(np.diff(values) <= 0):
+                raise ValueError('The days of the year should be strictly monotonically increasing.')
             if np.any(0 > values > 365):
                 raise ValueError('Days of the years should be between 1 and 365 inclusive.')
             self._days_of_year = values
@@ -949,6 +977,8 @@ cdef class RbfProfileParameter(Parameter):
 
     cpdef _interpolate(self):
         cdef int i
+        cdef double[:] values
+        cdef double v
 
         days_of_year = list(self._days_of_year)
         # Append day 365 to the list and mirror the penultimate and second DOY at the start and end
@@ -967,18 +997,20 @@ cdef class RbfProfileParameter(Parameter):
         self._interp_values = np.zeros(366)
         # Make the daily profile of 366 values repeating the same value for 28th & 29th Feb.
         for i in range(365):
+            v = max(min(values[i], self.max_value), self.min_value)
             if i < 58:
-                self._interp_values[i] = values[i]
+                self._interp_values[i] = v
             elif i == 58:
-                self._interp_values[i] = values[i]
-                self._interp_values[i+1] = values[i]
+                self._interp_values[i] = v
+                self._interp_values[i+1] = v
             elif i > 58:
-                self._interp_values[i+1] = values[i]
+                self._interp_values[i+1] = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int i = ts.dayofyear_index
         return self._interp_values[i]
 
+    # Double variables are for the known interpolation values (y-axis)
     cpdef set_double_variables(self, double[:] values):
         self._values[...] = values
 
@@ -991,6 +1023,19 @@ cdef class RbfProfileParameter(Parameter):
 
     cpdef double[:] get_double_upper_bounds(self):
         return self._upper_bounds
+
+    # Integer variables are for the days of the year positions (if optimised)
+    cpdef set_integer_variables(self, int[:] values):
+        self.days_of_year = [1] + np.array(values).tolist()
+
+    cpdef int[:] get_integer_variables(self):
+        return np.array(self.days_of_year[1:], dtype=np.int32)
+
+    cpdef int[:] get_integer_lower_bounds(self):
+        return self._doy_lower_bounds
+
+    cpdef int[:] get_integer_upper_bounds(self):
+        return self._doy_upper_bounds
 
     @classmethod
     def load(cls, model, data):
