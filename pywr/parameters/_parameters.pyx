@@ -1899,9 +1899,7 @@ cdef class DiscountFactorParameter(Parameter):
         self.base_year = base_year
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int cy = self.model.timestepper.current.year
-        cdef int cyi = cy - self.base_year
-        return 1/pow((1+self.rate), cyi) 
+        return 1 / pow(1.0 + self.rate, ts.year - self.base_year)
 
     @classmethod
     def load(cls, model, data):
