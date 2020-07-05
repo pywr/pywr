@@ -1,6 +1,6 @@
 from pywr.recorders._recorders cimport Recorder
 from pywr._component cimport Component
-from .._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node
+from pywr._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node
 
 cdef class Parameter(Component):
     cdef public int double_size
@@ -96,9 +96,14 @@ cdef class UniformDrawdownProfileParameter(Parameter):
 cdef class RbfProfileParameter(Parameter):
     cdef double[:] _values
     cdef double[:] _interp_values
+    cdef double min_value
+    cdef double max_value
     cdef int[:] _days_of_year
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
+    cdef int[:] _doy_lower_bounds
+    cdef int[:] _doy_upper_bounds
+    cdef readonly int variable_days_of_year_range
     cdef public object rbf
     cdef public object rbf_kwargs
     cpdef _interpolate(self)
@@ -208,3 +213,7 @@ cdef class FlowDelayParameter(Parameter):
     cdef public float initial_flow
     cdef double[:, :] _memory
     cdef public int _memory_pointer
+
+cdef class DiscountFactorParameter(Parameter):
+    cdef public double rate
+    cdef public int base_year

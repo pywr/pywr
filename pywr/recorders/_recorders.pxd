@@ -69,6 +69,10 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     cdef public Aggregator _temporal_aggregator
     cdef double[:, :] _data
 
+cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
+    cdef public Aggregator _temporal_aggregator
+    cdef double[:, :] _data
+
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
     cdef public Aggregator _temporal_aggregator
     cdef int[:, :] _data
