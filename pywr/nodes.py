@@ -883,8 +883,8 @@ class DelayNode(Node):
         of timesteps) is only valid if the number of days is exactly divisible by the model
         timestep delta.
     initial_flow: float
-        Flow value from node when model timestep is less than or equal to the number of delay
-        timesteps. This is constant across all delayed timesteps and any model scenarios.
+        Flow provided by node for initial timesteps prior to any delayed flow being available.
+        This is constant across all delayed timesteps and any model scenarios. Default is 0.0.
     """
 
     def __init__(self, model, name, **kwargs):

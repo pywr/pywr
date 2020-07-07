@@ -1941,8 +1941,8 @@ cdef class FlowDelayParameter(Parameter):
         Number of days to delay the flow. Specifying a number of days (instead of a number
         of timesteps) is only valid if the number of days is exactly divisible by the model timestep length.
     initial_flow: float
-        Flow value to return for initial model timesteps when these are less than or equal to the delay. This
-        value is constant across all delayed timesteps and any model scenarios.
+        Flow value to return for initial model timesteps prior to any delayed flow being available. This
+        value is constant across all delayed timesteps and any model scenarios. Default is 0.0.
     """
 
     def __init__(self, model, node, *args, **kwargs):  
