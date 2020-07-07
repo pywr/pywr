@@ -9,11 +9,12 @@ from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_
 
 from pywr.domains import Domain
 
+
 class Drawable(object):
     """Mixin class for objects that are drawable on a diagram of the network.
     """
     def __init__(self, *args, **kwargs):
-        self.position = kwargs.pop('position', None)
+        self.position = kwargs.pop('position', {})
         self.color = kwargs.pop('color', 'black')
         self.visible = kwargs.pop('visible', True)
         super(Drawable, self).__init__(*args, **kwargs)
@@ -136,9 +137,6 @@ class Node(Drawable, Connectable, BaseNode, metaclass=NodeMeta):
         name : string
             A unique name for the node
         """
-
-        position = kwargs.pop("position", {})
-
         color = kwargs.pop('color', 'black')
         min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
         if min_flow is None:
@@ -155,7 +153,6 @@ class Node(Drawable, Connectable, BaseNode, metaclass=NodeMeta):
         self.max_flow = max_flow
         self.cost = cost
         self.conversion_factor = conversion_factor
-        self.position = position
 
     def check(self):
         """Check the node is valid
@@ -286,8 +283,6 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         level = pop_kwarg_parameter(kwargs, 'level', None)
         area = pop_kwarg_parameter(kwargs, 'area', None)
 
-        position = kwargs.pop("position", {})
-
         super(Storage, self).__init__(model, name, **kwargs)
 
         self.outputs = []
@@ -303,7 +298,6 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         self.initial_volume = initial_volume
         self.initial_volume_pc = initial_volume_pc
         self.cost = cost
-        self.position = position
         self.level = level
         self.area = area
 
@@ -451,7 +445,6 @@ class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
             initial_volume = kwargs.pop('initial_volume', 0.0)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
 
-        position = kwargs.pop("position", {})
         factors = kwargs.pop('factors', None)
 
         super(VirtualStorage, self).__init__(model, name, **kwargs)
@@ -460,7 +453,6 @@ class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
         self.max_volume = max_volume
         self.initial_volume = initial_volume
         self.cost = cost
-        self.position = position
         self.nodes = nodes
 
         if factors is None:

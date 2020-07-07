@@ -28,7 +28,7 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
 
     Parameters
     ==========
-    
+
     df : `pandas.DataFrame`
         The input data that needs to be aligned and/or resampled.
     target_index : `pandas.PeriodIndex`
@@ -36,7 +36,7 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
     resample_func : str, func
         Function to be used when down-sampling from high frequency data to lower
         frequency.
-     
+
     """
     # Must resample and align the DataFrame to the model.
     start = target_index[0]
@@ -240,12 +240,8 @@ def read_dataframe(model, data):
         filetype = "dict"
 
     data.pop("comment", None) # remove kwargs from data before passing to Pandas
-        
+
     if filetype == "csv":
-        if hasattr(data, "index_col"):
-            data["parse_dates"] = True
-            if "dayfirst" not in data.keys():
-                data["dayfirst"] = True  # we're bias towards non-American dates here
         df = pandas.read_csv(url, **data)  # automatically decompressed gzipped data!
     elif filetype == "excel":
         df = pandas.read_excel(url, **data)

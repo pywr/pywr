@@ -201,20 +201,32 @@ cdef class Recorder(Component):
         Flag to ignore NaN values when calling `aggregated_value`.
     is_objective : {None, 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min'}
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
-    is_constraint : bool (default=False)
-        Flag to denote whether this recorder is to be used as a constraint during optimisation.
     epsilon : float (default=1.0)
         Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds, constraint_upper_bounds : double (default=None)
+        The value(s) to use for lower and upper bound definitions. These values determine whether the recorder
+        instance is marked as a constraint. Either bound can be `None` (the default) to disable the respective
+        bound. If both bounds are `None` then the `is_constraint` property will return `False`. The lower bound must
+        be strictly less than the upper bound. An equality constraint can be created by setting both bounds to the
+        same value.
+
+        The constraint bounds are not used during model simulation. Instead they are intended for use by optimisation
+        wrappers (or other external tools) to define constrained optimisation problems.
     """
     def __init__(self, model, agg_func="mean", ignore_nan=False, is_objective=None, epsilon=1.0,
-                 is_constraint=False, name=None, **kwargs):
+                 name=None, constraint_lower_bounds=None, constraint_upper_bounds=None, **kwargs):
+        # Default the constraints internal values to be +/- inf.
+        # This ensures the bounds checking works later in the init.
+        self._constraint_lower_bounds = -np.inf
+        self._constraint_upper_bounds = np.inf
         if name is None:
             name = self.__class__.__name__.lower()
         super(Recorder, self).__init__(model, name=name, **kwargs)
         self.ignore_nan = ignore_nan
         self.is_objective = is_objective
-        self.is_constraint = is_constraint
         self.epsilon = epsilon
+        self.constraint_lower_bounds = constraint_lower_bounds
+        self.constraint_upper_bounds = constraint_upper_bounds
         # Create the aggregator for scenarios
         self._scenario_aggregator = Aggregator(agg_func)
 
@@ -240,15 +252,87 @@ cdef class Recorder(Component):
             else:
                 raise ValueError("Objective direction type not recognised.")
 
+    property constraint_lower_bounds:
+        def __set__(self, value):
+            if value is None:
+                self._constraint_lower_bounds = -np.inf
+            else:
+                if self.constraint_upper_bounds is not None and value > self.constraint_upper_bounds:
+                    raise ValueError('Lower bounds can not be larger than the upper bounds.')
+                self._constraint_lower_bounds = value
+        def __get__(self):
+            if np.isneginf(self._constraint_lower_bounds):
+                return None
+            else:
+                return self._constraint_lower_bounds
+
+    property constraint_upper_bounds:
+        def __set__(self, value):
+            if value is None:
+                self._constraint_upper_bounds = np.inf
+            else:
+                if self.constraint_lower_bounds is not None and value < self.constraint_lower_bounds:
+                    raise ValueError('Upper bounds can not be smaller than the lower bounds.')
+                self._constraint_upper_bounds = value
+        def __get__(self):
+            if np.isinf(self._constraint_upper_bounds):
+                return None
+            else:
+                return self._constraint_upper_bounds
+
+    @property
+    def is_equality_constraint(self):
+        """Returns true if upper and lower constraint bounds are both defined and equal to one another."""
+        return self.constraint_upper_bounds is not None and self.constraint_lower_bounds is not None and \
+               self.constraint_lower_bounds == self.constraint_upper_bounds
+
+    @property
+    def is_double_bounded_constraint(self):
+        """Returns true if upper and lower constraint bounds are both defined and not-equal to one another."""
+        return self.constraint_upper_bounds is not None and self.constraint_lower_bounds is not None and \
+               self.constraint_lower_bounds != self.constraint_upper_bounds
+
+    @property
+    def is_lower_bounded_constraint(self):
+        """Returns true if lower constraint bounds is defined and upper constraint bounds is not."""
+        return self.constraint_upper_bounds is None and self.constraint_lower_bounds is not None
+
+    @property
+    def is_upper_bounded_constraint(self):
+        """Returns true if upper constraint bounds is defined and lower constraint bounds is not."""
+        return self.constraint_upper_bounds is not None and self.constraint_lower_bounds is None
+
+    @property
+    def is_constraint(self):
+        """Returns true if either upper or lower constraint bounds is defined."""
+        return self.constraint_upper_bounds is not None or self.constraint_lower_bounds is not None
+
+    def is_constraint_violated(self):
+        """Returns true if the value from this Recorder violates its constraint bounds.
+
+        If no constraint bounds are defined (i.e. self.is_constraint == False) then a ValueError is raised.
+        """
+        value = self.aggregated_value()
+        if self.is_equality_constraint:
+            feasible = value == self.constraint_lower_bounds
+        elif self.is_double_bounded_constraint:
+            feasible = self.constraint_lower_bounds <= value <= self.constraint_upper_bounds
+        elif self.is_lower_bounded_constraint:
+            feasible = self.constraint_lower_bounds <= value
+        elif self.is_upper_bounded_constraint:
+            feasible = value <= self.constraint_upper_bounds
+        else:
+            raise ValueError(f'Recorder "{self.name}" has no constraint bounds defined.')
+        return not feasible
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
-    cpdef double aggregated_value(self) except? -1:
+    cpdef double aggregated_value(self) except *:
         cdef double[:] values = self.values()
         return self._scenario_aggregator.aggregate_1d(values)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         raise NotImplementedError()
 
     @classmethod
@@ -312,7 +396,7 @@ cdef class AggregatedRecorder(Recorder):
         for rec in self.recorders:
             self.children.add(rec)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         cdef Recorder recorder
         cdef double[:] value, value2
         assert(len(self.recorders))
@@ -377,7 +461,7 @@ cdef class NodeRecorder(Recorder):
         self._node = node
         node._recorders.append(self)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._node._flow
 
     property node:
@@ -398,7 +482,7 @@ cdef class StorageRecorder(Recorder):
         self._node = node
         node._recorders.append(self)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._node._volume
 
     property node:
@@ -541,7 +625,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -727,7 +811,7 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
         def __get__(self, ):
             return np.array(self._fdc)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._fdc, axis=0, ignore_nan=self.ignore_nan)
@@ -904,7 +988,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             return np.array(self._fdc_deviations)
 
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._fdc_deviations, axis=0, ignore_nan=self.ignore_nan)
@@ -957,7 +1041,7 @@ cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -1054,7 +1138,7 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
         def __get__(self, ):
             return np.array(self._sdc)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._sdc, axis=0, ignore_nan=self.ignore_nan)
@@ -1176,7 +1260,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         def __get__(self, ):
             return np.array(self._data)
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -1192,6 +1276,75 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
 
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 NumpyArrayParameterRecorder.register()
+
+
+cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
+    """Recorder for an annual profile from a `Parameter`.
+
+    This recorder stores a daily profile returned by a specific parameter. For each day of the year
+    it stores the value encountered for that day during a simulation. This results in the final profile
+    being the last value encountered on each day of the year during a simulation. This recorder is useful
+    for returning the daily profile that may result from the combination of one or more parameters. For
+    example, during optimisation of new profiles non-daily parameters (e.g. `RbfProfileParameter`) and/or
+    aggregations of several parameters might be used. With this recorder the daily profile used in the simulation
+    can be easily saved.
+
+    The data is saved internally using a memory view. The data can be accessed through the `data`
+    attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    param : `pywr.parameters.Parameter`
+        Parameter instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+    """
+    def __init__(self, model, Parameter param, **kwargs):
+        # Optional different method for aggregating across time.
+        temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
+        super().__init__(model, param, **kwargs)
+
+        self._temporal_aggregator = Aggregator(temporal_agg_func)
+
+    property temporal_agg_func:
+        def __set__(self, agg_func):
+            self._temporal_aggregator.func = agg_func
+
+    cpdef setup(self):
+        cdef int ncomb = len(self.model.scenarios.combinations)
+        self._data = np.zeros((366, ncomb))
+
+    cpdef reset(self):
+        self._data[:, :] = 0.0
+
+    cpdef after(self):
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef int i = ts.dayofyear_index
+        self._data[i, :] = self._param.get_all_values()
+        return 0
+
+    property data:
+        def __get__(self, ):
+            return np.array(self._data)
+
+    cpdef double[:] values(self) except *:
+        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames
+        """
+        index = np.arange(1, 367)
+        sc_index = self.model.scenarios.multiindex
+        return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
+NumpyArrayDailyProfileParameterRecorder.register()
 
 
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
@@ -1423,7 +1576,7 @@ cdef class BaseConstantNodeRecorder(NodeRecorder):
     cpdef after(self):
         raise NotImplementedError()
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._values
 
 
@@ -1526,7 +1679,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
     cpdef after(self):
         raise NotImplementedError()
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._values
 BaseConstantStorageRecorder.register()
 
@@ -1599,7 +1752,7 @@ cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
                 # threshold achieved, increment count
                 self._count[scenario_index.global_id] += 1
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return np.asarray(self._count).astype(np.float64)
 TimestepCountIndexParameterRecorder.register()
 
@@ -1652,7 +1805,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         cdef int idx = self._current_year - self._start_year
         cdef int p
         cdef Py_ssize_t i
-        cdef double value
+        cdef int value
         cdef ScenarioIndex scenario_index
         cdef IndexParameter parameter
 
@@ -1680,7 +1833,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         for i in range(self._ncomb):
             self._data[idx, i] = np.sum(self._data_this_year[:, i])
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -1757,7 +1910,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
             for j, node in enumerate(self.nodes):
                 self._data[idx, i] += node._flow[i] * self._factors[j]
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
@@ -1826,7 +1979,7 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
             if self._current_max[i] >= self.threshold:
                 self._count[i] += 1
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return np.asarray(self._count).astype(np.float64)
 AnnualCountIndexParameterRecorder.register()
 
@@ -1890,7 +2043,7 @@ cdef class BaseConstantParameterRecorder(ParameterRecorder):
     cpdef after(self):
         raise NotImplementedError()
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return self._values
 
 
@@ -1940,11 +2093,9 @@ TotalParameterRecorder.register()
 cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
     """Record the mean value of a `Parameter` during a simulation.
 
-    This recorder can be used to track the sum total of the values returned by a
+    This recorder can be used to track the mean of the values returned by a
     `Parameter` during a models simulation. An optional factor can be provided to
-    apply a linear scaling of the values. If the parameter represents a flux
-    the `integrate` keyword argument can be used to multiply the values by the time-step
-    length in days.
+    apply a linear scaling of the values.
 
     Parameters
     ----------

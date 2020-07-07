@@ -4,7 +4,7 @@ environment:
 
   global:
     BUILD_HOME: "C:\\build"
-  
+
     GLPK_VER: "4.65"
     GLPK_HOME: "C:\\glpk-%GLPK_VER%"
     GLPK_PKG_LIB: "glpk_4_65.lib"
@@ -80,7 +80,7 @@ install:
 
     # Install optional dependencies for tests
     # pygmo is not install because Win32 wheels are not supported.
-    - "pip install platypus-opt inspyred"
+    - "pip install platypus-opt"
 
 build_script:
   # Build the compiled extension

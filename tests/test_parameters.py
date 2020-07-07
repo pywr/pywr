@@ -25,6 +25,7 @@ import pytest
 import itertools
 import calendar
 from numpy.testing import assert_allclose
+from scipy.interpolate import Rbf
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -1338,17 +1339,19 @@ class TestDivisionParameter:
         model.run()
 
 
-class TestMinMaxNegativeParameter:
+class TestMinMaxNegativeOffsetParameter:
     @pytest.mark.parametrize("ptype,profile", [
         ("max", list(range(-10, 356))),
         ("min", list(range(0, 366))),
         ("negative", list(range(-366, 0))),
         ("negativemax", list(range(-366, 0))),
+        ("negativemin", list(range(-366, 0))),
+        ("offset", list(range(0, 366))),
     ])
     def test_parameter(cls, simple_linear_model, ptype,profile):
         model = simple_linear_model
         model.timestepper.start = "2017-01-01"
-        model.timestepper.end = "2017-01-15"
+        model.timestepper.end = "2017-12-31"
 
         data = {
             "type": ptype,
@@ -1359,11 +1362,19 @@ class TestMinMaxNegativeParameter:
             }
         }
 
-
-        if ptype in ("max", "min"):
+        if ptype in ("max", "min", "negativemax", "negativemin"):
             data["threshold"] = 3
+        elif ptype == 'offset':
+            data["offset"] = 3
 
-        func = {"min": min, "max": max, "negative": lambda t,x: -x, "negativemax": lambda t,x: max(t, -x)}[ptype]
+        func = {
+            "min": min,
+            "max": max,
+            "negative": lambda t, x: -x,
+            "negativemax": lambda t, x: max(t, -x),
+            "negativemin": lambda t, x: min(t, -x),
+            "offset": lambda o, x: x + o
+        }[ptype]
 
         model.nodes["Input"].max_flow = parameter = load_parameter(model, data)
         model.nodes["Output"].max_flow = 9999
@@ -1376,6 +1387,31 @@ class TestMinMaxNegativeParameter:
             value = daily_profile.get_value(scenario_index)
             return func(3, value)
         model.run()
+
+    def test_offset_parameter_variable(self, simple_linear_model):
+        """Test OffsetParameter's variable API."""
+
+        data = {
+            "type": "offset",
+            "parameter": {
+                "name": "raw",
+                "type": "dailyprofile",
+                "values": list(range(366)),
+            },
+            "offset": 10,
+            "lower_bounds": -100,
+            "upper_bounds": 100,
+        }
+        parameter = load_parameter(simple_linear_model, data)
+        np.testing.assert_allclose(parameter.offset, 10)
+        np.testing.assert_allclose(parameter.get_double_variables(), [10.0])
+        np.testing.assert_allclose(parameter.get_double_lower_bounds(), [-100.0])
+        np.testing.assert_allclose(parameter.get_double_upper_bounds(), [100.0])
+        # Update value using variable API
+        parameter.set_double_variables(np.array([20.0]))
+        np.testing.assert_allclose(parameter.offset, 20)
+        np.testing.assert_allclose(parameter.get_double_variables(), [20.0])
+
 
 def test_ocptt(simple_linear_model):
     model = simple_linear_model
@@ -1691,3 +1727,140 @@ class TestUniformDrawdownProfileParameter:
 
         m.run()
 
+
+class TestRbfProfileParameter:
+    """Tests for RbfParameter."""
+
+    @pytest.mark.parametrize(['min_value', 'max_value'], [(None, None), (0.3, None), (None, 0.6)])
+    def test_rbf_profile(self, simple_linear_model, min_value, max_value):
+        """Test the Rbf profile parameter."""
+
+        m = simple_linear_model
+        m.timestepper.start = '2015-01-01'
+        m.timestepper.end = '2015-12-31'
+
+        # The Rbf parameter should mirror the input data at the start and end to create roughly
+        # consistent gradients across the end of year boundary.
+        interp_days_of_year = [-65, 1, 100, 200, 300, 366, 465]
+        interp_values = [0.2, 0.5, 0.7, 0.5, 0.2, 0.5, 0.7]
+
+        expected_values = Rbf(interp_days_of_year, interp_values)(np.arange(365) + 1)
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 100, 200, 300],
+            "values": [0.5, 0.7, 0.5, 0.2],
+        }
+        if min_value is not None:
+            data["min_value"] = min_value
+        if max_value is not None:
+            data["max_value"] = max_value
+
+        p = load_parameter(m, data)
+
+        @assert_rec(m, p)
+        def expected_func(timestep, scenario_index):
+            ev = expected_values[timestep.index]
+            if min_value is not None:
+                ev = max(min_value, ev)
+            if max_value is not None:
+                ev = min(max_value, ev)
+            return ev
+
+        m.run()
+
+    @pytest.mark.parametrize('wrong_doys', [
+        [2, 100, 300],  # Incorrect first day
+        [1, 180],  # Too few values
+        [1, 100, 366],  # Incorrect last day
+        [1, 200, 140],  # Not monotonic
+        [1, 140, 140],  # Not strictly monotonic
+    ])
+    def test_incorrect_inputs(self, simple_linear_model, wrong_doys):
+        """Test initialising RbfParameter with incorrect days of the year."""
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": wrong_doys,
+            "values": np.random.rand(len(wrong_doys)).tolist()
+        }
+        with pytest.raises(ValueError):
+            load_parameter(simple_linear_model, data)
+
+    def test_variable_api(self, simple_linear_model):
+        """Test using variable API implementation on RbfParameter."""
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 100, 200, 300],
+            "values": [0.5, 0.7, 0.5, 0.2]
+        }
+
+        p = load_parameter(simple_linear_model, data)
+        assert p.double_size == 4
+        assert p.integer_size == 0
+
+        new_values = np.random.rand(p.double_size)
+        p.set_double_variables(new_values)
+        np.testing.assert_allclose(p.get_double_variables(), new_values)
+        
+    def test_variable_doys_api(self, simple_linear_model):
+        """Test using the variable API when optimising the days of the year. """
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 100, 200, 300],
+            "values": [0.5, 0.7, 0.5, 0.2],
+            "lower_bounds": 0.1,
+            "upper_bounds": 0.8,
+            "variable_days_of_year_range": 20,
+            "is_variable": True
+        }
+
+        p = load_parameter(simple_linear_model, data)
+        assert p.double_size == 4
+        assert p.integer_size == 3
+
+        new_values = np.random.rand(p.double_size)
+        p.set_double_variables(new_values)
+        np.testing.assert_allclose(p.get_double_variables(), new_values)
+
+        new_doys = np.array([90, 190, 290], dtype=np.int32)
+        p.set_integer_variables(new_doys)
+        np.testing.assert_allclose(p.get_integer_variables(), new_doys)
+
+        lb = np.array([80, 180, 280], dtype=np.int32)
+        np.testing.assert_allclose(p.get_integer_lower_bounds(), lb)
+
+        ub = np.array([120, 220, 320], dtype=np.int32)
+        np.testing.assert_allclose(p.get_integer_upper_bounds(), ub)
+
+    def test_too_close_doys_error(self, simple_linear_model):
+        """Test that setting days of the year too close together for optimisation raises an error."""
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 140, 200],   # Closest distance is 60 days
+            "values": [0.5, 0.7, 0.5],
+            "lower_bounds": 0.1,
+            "upper_bounds": 0.8,
+            "variable_days_of_year_range": 30,  # A range of 30 could cause overlap (140 + 30, 200 - 30)
+            "is_variable": True
+        }
+
+        with pytest.raises(ValueError):
+            load_parameter(simple_linear_model, data)
+
+            
+class TestDiscountFactorParameter:
+    def test_discount_json(self):
+        """ Test loading a DiscountFactorParameter from JSON. """
+        model = load_model("discount.json")
+        # run model for period 2015-2020, with base year 2015 and discount rate of 0.035 (3.5%)
+        p = model.parameters['discount_factor']
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            year = timestep.year
+            return 1/pow(1.035, year - 2015)
+
+        model.run()
