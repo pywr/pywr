@@ -1927,6 +1927,66 @@ cdef class PiecewiseIntegralParameter(Parameter):
 PiecewiseIntegralParameter.register()
 
 
+cdef class FlowDelayParameter(Parameter):
+    """Parameter that returns the delayed flow for a node after a given number of timesteps or days
+    
+    Parameters
+    ----------
+    model : `pywr.model.Model`
+    node: Node
+        The node to delay for.
+    timesteps: int
+        Number of timesteps to delay the flow.
+    days: int
+        Number of days to delay the flow. Specifying a number of days (instead of a number
+        of timesteps) is only valid if the number of days is exactly divisible by the model timestep length.
+    initial_flow: float
+        Flow value to return for initial model timesteps prior to any delayed flow being available. This
+        value is constant across all delayed timesteps and any model scenarios. Default is 0.0.
+    """
+
+    def __init__(self, model, node, *args, **kwargs):  
+        self.node = node
+        self.timesteps = kwargs.pop('timesteps', 0)
+        self.days = kwargs.pop('days', 0)
+        self.initial_flow = kwargs.pop('initial_flow', 0.0)
+        super().__init__(model, *args, **kwargs)
+
+    cpdef setup(self):
+        super(FlowDelayParameter, self).setup()
+        cdef int r
+        if self.days > 0:
+            r = self.days % self.model.timestepper.delta
+            if r == 0:
+                self.timesteps = self.days / self.model.timestepper.delta
+            else:
+                raise ValueError('The delay defined as number of days is not exactly divisible by the timestep delta.')
+        if self.timesteps < 1:
+            raise ValueError('The number of time-steps for a FlowDelayParameter node must be greater than one.')
+        self._memory = np.zeros((self.timesteps,  len(self.model.scenarios.combinations)))
+        self._memory_pointer = 0
+
+    cpdef reset(self):
+        self._memory[...] = self.initial_flow 
+        self._memory_pointer = 0
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._memory[self._memory_pointer, scenario_index.global_id]
+
+    cpdef after(self):
+        for i in range(self._memory.shape[1]):
+            self._memory[self._memory_pointer, i] = self.node._flow[i]
+        if self.timesteps > 1:
+            self._memory_pointer = (self._memory_pointer + 1) % self.timesteps 
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        return cls(model, node, **data)
+
+FlowDelayParameter.register()
+
+
 cdef class DiscountFactorParameter(Parameter):
     """Parameter that returns the current discount factor based on discount rate and a base year.
 

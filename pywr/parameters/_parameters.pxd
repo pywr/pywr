@@ -206,6 +206,14 @@ cdef class PiecewiseIntegralParameter(Parameter):
     cdef public double[:] y
     cdef public Parameter parameter
 
+cdef class FlowDelayParameter(Parameter):
+    cdef public AbstractNode node
+    cdef public int days
+    cdef public int timesteps
+    cdef public double initial_flow
+    cdef double[:, :] _memory
+    cdef public int _memory_pointer
+
 cdef class DiscountFactorParameter(Parameter):
     cdef public double rate
     cdef public int base_year

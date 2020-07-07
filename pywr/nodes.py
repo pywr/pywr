@@ -5,7 +5,7 @@ from pywr._core import Node as BaseNode
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
     StorageOutput, Timestep, ScenarioIndex)
 
-from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values
+from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values, FlowDelayParameter
 
 from pywr.domains import Domain
 
@@ -860,5 +860,62 @@ class BreakLink(Node):
         super(BreakLink, self).after(timestep)
         # update flow on transfer node to flow via link node
         self.commit_all(self.link.flow)
+
+
+class DelayNode(Node):
+    """ A node that delays flow for a given number of timesteps or days.
+
+    This is a composite node consisting internally of an Input and an Output node. A
+    `FlowDelayParameter` is used to delay the flow of the output node for a given period prior
+    to this delayed flow being set as the flow of the input node. Connections to the node are connected
+    to the internal output node and connection from the node are connected to the internal input node
+    node.
+
+    Parameters
+    ----------
+    model : `pywr.model.Model`
+    name : string
+        Name of the node.
+    timesteps: int
+        Number of timesteps to delay the flow.
+    days: int
+        Number of days to delay the flow. Specifying a number of days (instead of a number
+        of timesteps) is only valid if the number of days is exactly divisible by the model
+        timestep delta.
+    initial_flow: float
+        Flow provided by node for initial timesteps prior to any delayed flow being available.
+        This is constant across all delayed timesteps and any model scenarios. Default is 0.0.
+    """
+
+    def __init__(self, model, name, **kwargs):
+        self.allow_isolated = True
+        output_name = "{} Output".format(name)
+        input_name = "{} Input".format(name)
+        param_name = "{} - delay parameter".format(name)
+        assert(output_name not in model.nodes)
+        assert(input_name not in model.nodes)
+        assert(param_name not in model.parameters)
+
+        days = kwargs.pop('days', 0)
+        timesteps = kwargs.pop('timesteps', 0)
+        initial_flow = kwargs.pop('initial_flow', 0.0)
+
+        self.output = Output(model, name=output_name)
+        self.delay_param = FlowDelayParameter(model, self.output, timesteps=timesteps, days=days,
+                                              initial_flow=initial_flow, name=param_name)
+        self.input = Input(model, name=input_name, min_flow=self.delay_param, max_flow=self.delay_param)
+        super().__init__(model, name, **kwargs)
+
+    def iter_slots(self, slot_name=None, is_connector=True):
+        if is_connector:
+            yield self.input
+        else:
+            yield self.output
+
+    def after(self, timestep):
+        super().after(timestep)
+        # delayed flow is saved to the DelayNode
+        self.commit_all(self.input.flow)
+
 
 from pywr.domains.river import *
