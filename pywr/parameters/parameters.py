@@ -10,8 +10,10 @@ from ._parameters import (
     ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter, ScenarioDailyProfileParameter,
     ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
-    NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter, NegativeMinParameter,
-    DeficitParameter, DivisionParameter, load_parameter, load_parameter_values, load_dataframe)
+    DiscountFactorParameter, NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter,
+    NegativeMinParameter, DeficitParameter, DivisionParameter, FlowDelayParameter, OffsetParameter,
+    RbfProfileParameter, UniformDrawdownProfileParameter, load_parameter, load_parameter_values, load_dataframe)
+
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import (
@@ -319,4 +321,3 @@ class PropertiesDict(dict):
         if not isinstance(value, Property):
             value = ConstantParameter(value)
         dict.__setitem__(self, key, value)
-

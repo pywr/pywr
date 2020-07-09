@@ -1736,7 +1736,9 @@ class TestUniformDrawdownProfileParameter:
 
 class TestRbfProfileParameter:
     """Tests for RbfParameter."""
-    def test_rbf_profile(self, simple_linear_model):
+
+    @pytest.mark.parametrize(['min_value', 'max_value'], [(None, None), (0.3, None), (None, 0.6)])
+    def test_rbf_profile(self, simple_linear_model, min_value, max_value):
         """Test the Rbf profile parameter."""
 
         m = simple_linear_model
@@ -1753,18 +1755,33 @@ class TestRbfProfileParameter:
         data = {
             'type': 'rbfprofile',
             "days_of_year": [1, 100, 200, 300],
-            "values": [0.5, 0.7, 0.5, 0.2]
+            "values": [0.5, 0.7, 0.5, 0.2],
         }
+        if min_value is not None:
+            data["min_value"] = min_value
+        if max_value is not None:
+            data["max_value"] = max_value
 
         p = load_parameter(m, data)
 
         @assert_rec(m, p)
         def expected_func(timestep, scenario_index):
-            return expected_values[timestep.index]
+            ev = expected_values[timestep.index]
+            if min_value is not None:
+                ev = max(min_value, ev)
+            if max_value is not None:
+                ev = min(max_value, ev)
+            return ev
 
         m.run()
 
-    @pytest.mark.parametrize('wrong_doys', [[2, 100, 300], [1, 180], [1, 100, 366]])
+    @pytest.mark.parametrize('wrong_doys', [
+        [2, 100, 300],  # Incorrect first day
+        [1, 180],  # Too few values
+        [1, 100, 366],  # Incorrect last day
+        [1, 200, 140],  # Not monotonic
+        [1, 140, 140],  # Not strictly monotonic
+    ])
     def test_incorrect_inputs(self, simple_linear_model, wrong_doys):
         """Test initialising RbfParameter with incorrect days of the year."""
 
@@ -1777,7 +1794,7 @@ class TestRbfProfileParameter:
             load_parameter(simple_linear_model, data)
 
     def test_variable_api(self, simple_linear_model):
-        """Test setting using variable API implementation on RbfParameter."""
+        """Test using variable API implementation on RbfParameter."""
 
         data = {
             'type': 'rbfprofile',
@@ -1792,3 +1809,64 @@ class TestRbfProfileParameter:
         new_values = np.random.rand(p.double_size)
         p.set_double_variables(new_values)
         np.testing.assert_allclose(p.get_double_variables(), new_values)
+        
+    def test_variable_doys_api(self, simple_linear_model):
+        """Test using the variable API when optimising the days of the year. """
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 100, 200, 300],
+            "values": [0.5, 0.7, 0.5, 0.2],
+            "lower_bounds": 0.1,
+            "upper_bounds": 0.8,
+            "variable_days_of_year_range": 20,
+            "is_variable": True
+        }
+
+        p = load_parameter(simple_linear_model, data)
+        assert p.double_size == 4
+        assert p.integer_size == 3
+
+        new_values = np.random.rand(p.double_size)
+        p.set_double_variables(new_values)
+        np.testing.assert_allclose(p.get_double_variables(), new_values)
+
+        new_doys = np.array([90, 190, 290], dtype=np.int32)
+        p.set_integer_variables(new_doys)
+        np.testing.assert_allclose(p.get_integer_variables(), new_doys)
+
+        lb = np.array([80, 180, 280], dtype=np.int32)
+        np.testing.assert_allclose(p.get_integer_lower_bounds(), lb)
+
+        ub = np.array([120, 220, 320], dtype=np.int32)
+        np.testing.assert_allclose(p.get_integer_upper_bounds(), ub)
+
+    def test_too_close_doys_error(self, simple_linear_model):
+        """Test that setting days of the year too close together for optimisation raises an error."""
+
+        data = {
+            'type': 'rbfprofile',
+            "days_of_year": [1, 140, 200],   # Closest distance is 60 days
+            "values": [0.5, 0.7, 0.5],
+            "lower_bounds": 0.1,
+            "upper_bounds": 0.8,
+            "variable_days_of_year_range": 30,  # A range of 30 could cause overlap (140 + 30, 200 - 30)
+            "is_variable": True
+        }
+
+        with pytest.raises(ValueError):
+            load_parameter(simple_linear_model, data)
+
+            
+class TestDiscountFactorParameter:
+    def test_discount_json(self):
+        """ Test loading a DiscountFactorParameter from JSON. """
+        model = load_model("discount.json")
+        # run model for period 2015-2020, with base year 2015 and discount rate of 0.035 (3.5%)
+        p = model.parameters['discount_factor']
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            year = timestep.year
+            return 1/pow(1.035, year - 2015)
+
+        model.run()
