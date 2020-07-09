@@ -8,10 +8,10 @@ require(["d3"], function(d3) {
     const links = graph.links.map(d => Object.create(d));
     const nodes = graph.nodes.map(d => Object.create(d));
 
-    const style = d3.selectAll(element).append("style");
+    const style = d3.selectAll({{ element }}).append("style");
     style.html("{{ css }}");
 
-    const div = d3.selectAll(element).append("div");
+    const div = d3.selectAll({{ element }}).append("div").classed("pywr_schematic", true);
 
     const width = {{ width }},
         height = {{ height }};
@@ -38,12 +38,12 @@ require(["d3"], function(d3) {
         .range([0, height])
         .domain([100, -100]); // map-style, +ve is up
 
-    // set initial node positions 
+    // set initial node positions
     for (let i = 0; i < nodes.length; i++) {
         let n = nodes[i];
         if (n.position != undefined) {
-            n.x = posX(n.position[0]);
-            n.y = posY(n.position[1]);
+            n.fx = posX(n.position[0]);
+            n.fy = posY(n.position[1]);
             n.fixed = true;
         } else {
             n.fixed = false;
@@ -92,6 +92,7 @@ require(["d3"], function(d3) {
         
         function dragended(d) {
         if (!d3.event.active) simulation.alphaTarget(0);
+        d.fixed = true;
         }
         
         return d3.drag()
@@ -136,6 +137,13 @@ require(["d3"], function(d3) {
 
     function tick() {
 
+        node.attr("transform", function(d) {
+            // ensure nodes do not go beyond svg bounds
+            d.x = Math.max(node_size, Math.min(width - node_size, d.x))
+            d.y = Math.max(node_size, Math.min(height - node_size, d.y));
+            return "translate(" + d.x + "," + d.y + ")";
+        });
+
         link.attr("d", function(d) {
             let deltaX = d.target.x - d.source.x,
                 deltaY = d.target.y - d.source.y,
@@ -150,10 +158,6 @@ require(["d3"], function(d3) {
                 targetY = d.target.y - (targetPadding * normY);
             return "M" + sourceX + "," + sourceY + "L" + targetX + "," + targetY;
         });
-
-        node.attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y + ")";
-        });
     }
     simulation.on("tick", tick);
 
@@ -162,7 +166,7 @@ require(["d3"], function(d3) {
             
             d3.select(".table-tooltip").remove();
 
-            const table  = d3.selectAll(element)
+            const table  = d3.selectAll({{ element }})
                         .append("table")
                         .classed("table-tooltip", true);
 
@@ -199,4 +203,7 @@ require(["d3"], function(d3) {
             d3.select(".table-tooltip").transition().delay(2000).remove();
         });
     {% endif %}
-})
+
+}, function(err) {
+    element.append("<p style='color:red'>d3 failed to load:" + err + "</p>");   
+});

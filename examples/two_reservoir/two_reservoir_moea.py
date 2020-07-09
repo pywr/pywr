@@ -5,7 +5,7 @@ Two types of control curve are possible. The first is a monthly control curve co
 month. The second is a harmonic control curve with cosine terms around a mean. Both Parameter objects
 are part of pywr.parameters.
 
-The example demonstrates the use of three different optimisation libraries: inspyred, pygmo and platypus. The
+The example demonstrates the use of two different optimisation libraries: pygmo and platypus. The
 choice of library can be made with a command line argument.
 
 """
@@ -121,69 +121,6 @@ def pygmo_main(harmonic=False):
     plt.show()
 
 
-def inspyred_main(prng=None, display=False, harmonic=False):
-    import inspyred
-    from pywr.optimisation.inspyred import InspyredOptimisationWrapper
-    from random import Random
-    from time import time
-
-    if prng is None:
-        prng = Random()
-        prng.seed(time())
-
-    script_name = os.path.splitext(os.path.basename(__file__))[0]
-    stats_file = open('{}-{}-statistics-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
-    individuals_file = open('{}-{}-individuals-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
-
-    wrapper = InspyredOptimisationWrapper(get_model_data(harmonic=harmonic))
-
-    ea = inspyred.ec.emo.NSGA2(prng)
-    #ea.variator = [inspyred.ec.variators.blend_crossover,
-    #               inspyred.ec.variators.gaussian_mutation]
-    ea.terminator = inspyred.ec.terminators.generation_termination
-    ea.observer = [
-        inspyred.ec.observers.file_observer,
-    ]
-    final_pop = ea.evolve(generator=wrapper.generator,
-                          evaluator=wrapper.evaluator,
-                          pop_size=100,
-                          bounder=wrapper.bounder,
-                          maximize=False,
-                          max_generations=200,
-                          statistics_file=stats_file,
-                          individuals_file=individuals_file)
-
-    # Save the final population archive  to CSV files
-    stats_file = open('{}-{}-final-statistics-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
-    individuals_file = open('{}-{}-final-individuals-file.csv'.format(script_name, 'harmonic' if harmonic else 'monthly'), 'w')
-    inspyred.ec.observers.file_observer(ea.archive, 'final', None,
-                                        args={'statistics_file': stats_file, 'individuals_file': individuals_file})
-
-    if display:
-        final_arc = ea.archive
-        print('Best Solutions: \n')
-        for f in final_arc:
-            print(f)
-
-        x = []
-        y = []
-
-        for f in final_arc:
-            x.append(f.fitness[0])
-            y.append(f.fitness[1])
-
-        plt.scatter(x, y, c='b')
-        plt.xlabel('Total demand deficit [Ml/d]')
-        plt.ylabel('Total Transferred volume [Ml/d]')
-        plt.ylim(0, 4000)
-        plt.xlim(215000, 215500)
-        plt.grid()
-        title = 'Harmonic Control Curve' if harmonic else 'Monthly Control Curve'
-        plt.savefig('{0} Example ({1}).pdf'.format(ea.__class__.__name__, title), format='pdf')
-        plt.show()
-    return ea
-
-
 if __name__ == '__main__':
     import argparse
 
@@ -198,12 +135,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--harmonic', action='store_true', help='Use an harmonic control curve.')
-    parser.add_argument('--library', type=str, choices=['inspyred', 'platypus', 'pygmo'])
+    parser.add_argument('--library', type=str, choices=['platypus', 'pygmo'])
     args = parser.parse_args()
 
-    if args.library == 'inspyred':
-        inspyred_main(display=True, harmonic=args.harmonic)
-    elif args.library == 'platypus':
+    if args.library == 'platypus':
         platypus_main(harmonic=args.harmonic)
     elif args.library == 'pygmo':
         pygmo_main(harmonic=args.harmonic)

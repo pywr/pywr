@@ -1,14 +1,13 @@
 import os
 import json
 import inspect
-import numpy
-from IPython.core.display import HTML, Javascript, display
+import warnings
+from IPython.core.display import Javascript, display
 from jinja2 import Template
 from pywr.core import Node
-from pywr.core import Model, Input, Output, Link, Storage, StorageInput, StorageOutput
+from pywr.core import Model
 from pywr.nodes import NodeMeta
 from pywr._component import Component
-import pywr.domains
 from pywr.parameters._parameters import get_parameter_from_registry
 
 from .figures import *
@@ -17,8 +16,149 @@ from .figures import *
 folder = os.path.dirname(__file__)
 with open(os.path.join(folder, "draw_graph.js"), "r") as f:
     draw_graph_template = Template(f.read())
+with open(os.path.join(folder, "save_graph.js"), "r") as f:
+    save_graph_template = Template(f.read())
 with open(os.path.join(folder, "graph.css"), "r") as f:
     draw_graph_css = f.read()
+with open(os.path.join(folder, "template.html"), "r") as f:
+    html_template = Template(f.read())
+
+
+class PywrSchematic:
+
+    def __init__(self, model, width=500, height=400, labels=False, attributes=False, css=None):
+        """This object contains methods that allow the graph of a pywr model network to be displayed in a jupyter
+        notebook or saved to an html file.
+
+        It also contains a method to save the node positions of a notebook graph back to a pywr model json file. Note
+        that this method currently does not work if the object has be instantiated using a model object.
+
+        Parameters
+        ----------
+        model : pywr.core.Model or json-dict that describes a model
+            The model to display
+        width : int
+            The width of the svg canvas to draw the graph on
+        height : int
+            The height of the svg canvas to draw the graph on
+        labels : bool
+            If True, each graph node is labelled with its name. If false, the node names are displayed
+            during mouseover events
+        attributes : bool
+            If True, a table of node attributes is displayed during mouseover events
+        css : string
+            Stylesheet data to use instead of default
+        """
+        if isinstance(model, Model):
+            self.graph = pywr_model_to_d3_json(model, attributes)
+            # TODO update when schema branch is merged
+            self.json = None
+        else:
+            self.graph = pywr_json_to_d3_json(model, attributes)
+            if isinstance(model, str):
+                with open(model) as d:
+                    self.json = json.load(d)
+            else:
+                self.json = model
+
+        self.height = height
+        self.width = width
+        self.labels = labels
+        self.attributes = attributes
+
+        if css is None:
+            self.css = draw_graph_css
+        else:
+            self.css = css
+
+    def draw_graph(self):
+        """Draw pywr schematic graph in a jupyter notebook"""
+        js = draw_graph_template.render(
+            graph=self.graph,
+            width=self.width,
+            height=self.height,
+            element="element",
+            labels=self.labels,
+            attributes=self.attributes,
+            css=self.css.replace("\n", "")
+        )
+        display(Javascript(data=js))
+
+    def save_graph(self, filename, save_unfixed=False, filetype="json"):
+        """Save a copy of the model JSON with update schematic positions.
+
+        When run in a jupyter notebook this will trigger a download.
+
+        Parameters
+        ----------
+        filename: str
+            The name of the file to save the output data to.
+        save_unfixed: bool
+            If True, then all node position are saved to output file. If False, only nodes who have had their position
+            fixed in the d3 graph have their positions saved.
+        filetype: str
+            Should be either 'json' to save the model data with updated node positions to a JSON file or 'csv' to save
+            node positions to a csv file.
+        """
+
+        if filetype not in ["json", "csv"]:
+            warnings.warn(f"Output filetype '{filetype}' not recognised. Please use either 'json' or 'csv'</p>",
+                          stacklevel=2)
+
+        if self.json is None and filetype == "json":
+            warnings.warn("Node positions cannot be saved to JSON if PywrSchematic object has been instantiated using "
+                          "a pywr model object. Please use a JSON file path or model dict instead.", stacklevel=2)
+        else:
+            display(Javascript(save_graph_template.render(
+                model_data=json.dumps(self.json),
+                height=self.height,
+                width=self.width,
+                save_unfixed=json.dumps(save_unfixed),
+                filename=json.dumps(filename),
+                filetype=json.dumps(filetype)
+            )))
+
+    def to_html(self, filename="model.html", title="Model Schematic"):
+        """Save an HTML file of schematic
+
+        Parameters
+        ----------
+        filename: str
+            The name of the html file
+        title: str
+            The schematic title
+        """
+
+        # TODO add option to get node position from graph that has already been drawn in a notebook
+
+        js = draw_graph_template.render(
+            graph=self.graph,
+            width=self.width,
+            height=self.height,
+            element=json.dumps(".schematic"),
+            labels=self.labels,
+            attributes=self.attributes,
+            css=""
+        )
+
+        html = html_template.render(
+            title=title,
+            css=self.css,
+            d3_script=js
+        )
+
+        with open(filename, "w") as f:
+            f.write(html)
+
+
+def draw_graph(model, width=500, height=400, labels=False, attributes=False, css=None):
+    """Display a Pywr model using D3 in Jupyter
+
+    Functionality for creating the d3 graph is now in the PywrSchematic object
+    """
+    schematic = PywrSchematic(model, width=width, height=height, labels=labels, attributes=attributes, css=css)
+    schematic.draw_graph()
+
 
 def pywr_model_to_d3_json(model, attributes=False):
     """
@@ -85,8 +225,8 @@ def pywr_model_to_d3_json(model, attributes=False):
         "nodes": json_nodes,
         "links": edges}
 
-
     return graph
+
 
 def get_node_attr(node):
     """
@@ -105,7 +245,7 @@ def get_node_attr(node):
             continue
         attr_type = type(attr_val).__name__
 
-        attrs_to_skip = ["component_attrs", "components", "color", "model",  "input", "output",
+        attrs_to_skip = ["component_attrs", "components", "color", "model", "input", "output",
                          "inputs", "outputs", "sub_domain", "sub_output", "sublinks", "visible",
                          "fully_qualified_name", "allow_isolated"]
         if not attr_val or attr_name.lower() in attrs_to_skip:
@@ -147,18 +287,14 @@ def pywr_json_to_d3_json(model, attributes=False):
         with open(model) as d:
             model = json.load(d)
 
-    nodes = [node["name"] for node in model["nodes"]]
-
-    edges = []
-    for edge in model["edges"]:
-        sourceindex = nodes.index(edge[0])
-        targetindex = nodes.index(edge[1])
-        edges.append({'source': sourceindex, 'target': targetindex})
-
     nodes = []
     node_classes = create_node_class_trees()
-
     for node in model["nodes"]:
+
+        if node["type"].lower() in ["annualvirtualstorage", "virtualstorage", "aggregatednode", "aggregatedstorage"]:
+            # Do not add virtual nodes to the graph
+            continue
+
         json_node = {'name': node["name"], 'clss': node_classes[node["type"].lower()]}
         try:
             json_node['position'] = node['position']['schematic']
@@ -183,11 +319,21 @@ def pywr_json_to_d3_json(model, attributes=False):
                     param = model["parameters"][val]
                     attr_type = get_parameter_from_registry(param["type"]).__name__
                     attr_val = attr_val + " - " + attr_type
+                else:
+                    attr_val = str(attr_val)
 
                 attr_dict = {"attribute": name, "value": attr_val}
                 json_node["attributes"].append(attr_dict)
 
         nodes.append(json_node)
+
+    nodes_names = [node["name"] for node in nodes]
+
+    edges = []
+    for edge in model["edges"]:
+        sourceindex = nodes_names.index(edge[0])
+        targetindex = nodes_names.index(edge[1])
+        edges.append({'source': sourceindex, 'target': targetindex})
 
     graph = {
         "nodes": nodes,
@@ -212,50 +358,3 @@ def create_node_class_trees():
         clss = [cls.__name__.lower() for cls in classes[::-1]]
         node_class_trees[name] = clss
     return node_class_trees
-
-
-def draw_graph(model, width=500, height=400, labels=False, attributes=False, css=None):
-    """Display a Pywr model using D3 in Jupyter
-
-    Parameters
-    ----------
-    model : pywr.core.Model or json-dict that describes a model
-        The model to display
-    width : int
-        The width of the svg canvas to draw the graph on
-    height : int
-        The height of the svg canvas to draw the graph on
-    labels : bool
-        If True, each graph node is labelled with its name. If false, the node names are displayed
-        during mouseover events
-    attributes : bool
-        If True, a table of node attributes is displayed during mouseover events
-    css : string
-        Stylesheet data to use instead of default
-    """
-    js = _draw_graph(model, width, height, labels, attributes, css)
-    display(js)
-
-
-def _draw_graph(model, width=500, height=400, labels=False, attributes=False, css=None):
-    """Creates Javascript/D3 code for graph"""
-    if isinstance(model, Model):
-        graph = pywr_model_to_d3_json(model, attributes)
-    else:
-        graph = pywr_json_to_d3_json(model, attributes)
-
-    if css is None:
-        css = draw_graph_css
-
-    js = Javascript(
-        data=draw_graph_template.render(
-            graph=graph,
-            width=width,
-            height=height,
-            labels=labels,
-            attributes=attributes,
-            css=css.replace("\n","")
-        )
-    )
-
-    return js

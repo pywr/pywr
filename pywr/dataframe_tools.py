@@ -241,6 +241,7 @@ def read_dataframe(model, data):
         filetype = "dict"
 
     pandas_kwargs = data.pop('pandas_kwargs', {})
+    data.pop("comment", None) # remove kwargs from data before passing to Pandas
 
     if filetype == "csv":
         if hasattr(pandas_kwargs, "index_col"):
