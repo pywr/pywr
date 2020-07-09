@@ -6,34 +6,34 @@
     },
     "timestepper": {
         "start": "2100-01-01",
-        "end": "2110-01-01",
+        "end": "2200-01-01",
         "timestep": 7
     },
     "nodes": [
         {
             "name": "catchment1",
             "type": "catchment",
-            "flow": "inflow"
+            "flow": "flow"
         },
         {
             "name": "catchment2",
             "type": "catchment",
-            "flow": "inflow"
+            "flow": "flow"
         },
         {
             "name": "reservoir1",
             "type": "storage",
-            "min_volume": 3000,
-            "max_volume": 20000,
-            "initial_volume": 16000,
+            "min_volume": 0,
+            "max_volume": 200,
+            "initial_volume": 200,
             "cost": -5
         },
         {
             "name": "reservoir2",
             "type": "storage",
-            "min_volume": 3000,
-            "max_volume": 20000,
-            "initial_volume": 16000,
+            "min_volume": 0,
+            "max_volume": 200,
+            "initial_volume": 200,
             "cost": -5
         },
         {
@@ -45,13 +45,13 @@
         {
             "name": "demand1",
             "type": "output",
-            "max_flow": 45.0,
+            "max_flow": 1.8,
             "cost": -101
         },
         {
             "name": "demand2",
             "type": "output",
-            "max_flow": 20.0,
+            "max_flow": 1.0,
             "cost": -100
         },
         {
@@ -65,13 +65,13 @@
         {
             "name": "compensation1",
             "type": "rivergauge",
-            "mrf": 5.0,
+            "mrf": 0.6,
             "mrf_cost": -1000
         },
         {
             "name": "compensation2",
             "type": "rivergauge",
-            "mrf": 5.0,
+            "mrf": 0.6,
             "mrf_cost": -1000
         },
         {
@@ -95,12 +95,22 @@
         ["reservoir2", "demand2"]
     ],
     "parameters": {
-        "inflow": {
-            "type": "dataframe",
-            "url": "data/thames_stochastic_flow.gz",
-            "index_col": "Date",
-            "column": "flow",
-            "parse_dates": true
+        "flow_factor": {
+            "name": "flow_factor",
+            "type": "constant",
+            "value": 0.0864
+        },
+        "flow_cumecs": {
+              "type": "dataframe",
+              "url": "../data/thames_stochastic_flow.gz",
+              "column": "flow",
+              "index_col": "Date",
+              "parse_dates": true
+        },
+        "flow": {
+            "type": "aggregated",
+            "agg_func": "product",
+            "parameters": ["flow_cumecs", "flow_factor"]
         },
         "control_curve": {
             "type": "monthlyprofile",
@@ -112,16 +122,16 @@
             "type": "controlcurve",
             "storage_node": "reservoir1",
             "control_curve": "control_curve",
-            "values": [0.0, 10.0]
+            "values": [0.0, 1.0]
         }
     },
     "recorders": {
         "deficit1": {
-            "type": "totaldeficitnode",
+            "type": "DeficitFrequencyNode",
             "node": "demand1"
         },
         "deficit2": {
-            "type": "totaldeficitnode",
+            "type": "DeficitFrequencyNode",
             "node": "demand2"
         },
         "deficit": {

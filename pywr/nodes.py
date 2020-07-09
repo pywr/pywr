@@ -5,15 +5,16 @@ from pywr._core import Node as BaseNode
 from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
     StorageOutput, Timestep, ScenarioIndex)
 
-from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values
+from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values, FlowDelayParameter
 
 from pywr.domains import Domain
+
 
 class Drawable(object):
     """Mixin class for objects that are drawable on a diagram of the network.
     """
     def __init__(self, *args, **kwargs):
-        self.position = kwargs.pop('position', None)
+        self.position = kwargs.pop('position', {})
         self.color = kwargs.pop('color', 'black')
         self.visible = kwargs.pop('visible', True)
         super(Drawable, self).__init__(*args, **kwargs)
@@ -136,9 +137,6 @@ class Node(Drawable, Connectable, BaseNode, metaclass=NodeMeta):
         name : string
             A unique name for the node
         """
-
-        position = kwargs.pop("position", {})
-
         color = kwargs.pop('color', 'black')
         min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
         if min_flow is None:
@@ -155,7 +153,6 @@ class Node(Drawable, Connectable, BaseNode, metaclass=NodeMeta):
         self.max_flow = max_flow
         self.cost = cost
         self.conversion_factor = conversion_factor
-        self.position = position
 
     def check(self):
         """Check the node is valid
@@ -286,8 +283,6 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         level = pop_kwarg_parameter(kwargs, 'level', None)
         area = pop_kwarg_parameter(kwargs, 'area', None)
 
-        position = kwargs.pop("position", {})
-
         super(Storage, self).__init__(model, name, **kwargs)
 
         self.outputs = []
@@ -303,7 +298,6 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         self.initial_volume = initial_volume
         self.initial_volume_pc = initial_volume_pc
         self.cost = cost
-        self.position = position
         self.level = level
         self.area = area
 
@@ -454,7 +448,6 @@ class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
             initial_volume = kwargs.pop('initial_volume', 0.0)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
 
-        position = kwargs.pop("position", {})
         factors = kwargs.pop('factors', None)
 
         super(VirtualStorage, self).__init__(model, name, **kwargs)
@@ -463,7 +456,6 @@ class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
         self.max_volume = max_volume
         self.initial_volume = initial_volume
         self.cost = cost
-        self.position = position
         self.nodes = nodes
 
         if factors is None:
@@ -496,13 +488,21 @@ class AnnualVirtualStorage(VirtualStorage):
         The day of the month (0-31) to reset the volume to the initial value.
     reset_month: int
         The month of the year (0-12) to reset the volume to the initial value.
+    reset_to_initial_volume: bool
+        Reset the volume to the initial volume instead of maximum volume each year (default is False).
+
     """
     def __init__(self, *args, **kwargs):
         self.reset_day = kwargs.pop('reset_day', 1)
         self.reset_month = kwargs.pop('reset_month', 1)
+        self.reset_to_initial_volume = kwargs.pop('reset_to_initial_volume', False)
         self._last_reset_year = None
 
         super(AnnualVirtualStorage, self).__init__(*args, **kwargs)
+
+    def reset(self):
+        super(AnnualVirtualStorage, self).reset()
+        self._last_reset_year = None
 
     def before(self, ts):
         super(AnnualVirtualStorage, self).before(ts)
@@ -513,7 +513,8 @@ class AnnualVirtualStorage(VirtualStorage):
             # ... we're at or past the reset month/day
             if ts.month > self.reset_month or \
                     (ts.month == self.reset_month and ts.day >= self.reset_day):
-                self._reset_storage_only()
+                # Reset to maximum volume (i.e. full capacity. )
+                self._reset_storage_only(use_initial_volume=self.reset_to_initial_volume)
                 self._last_reset_year = ts.year
 
 
@@ -767,6 +768,7 @@ class AggregatedNode(Drawable, _core.AggregatedNode, metaclass=NodeMeta):
         super(AggregatedNode, self).__init__(model, name, **kwargs)
         self.nodes = nodes
 
+
 class BreakLink(Node):
     """Compound node used to reduce the number of routes in a model
 
@@ -800,7 +802,7 @@ class BreakLink(Node):
     """
     allow_isolated = True
 
-    def __init__(self, model, name, min_flow=0.0, max_flow=None, cost=0.0, *args, **kwargs):
+    def __init__(self, model, name, **kwargs):
         storage_name = "{} (storage)".format(name)
         link_name = "{} (link)".format(name)
         assert(storage_name not in model.nodes)
@@ -815,15 +817,12 @@ class BreakLink(Node):
         )
         self.link = Link(
             model,
-            name=link_name,
-            min_flow=min_flow,
-            max_flow=max_flow,
-            cost=cost,
+            name=link_name
         )
 
         self.storage.connect(self.link)
 
-        super(BreakLink, self).__init__(model, name, *args, **kwargs)
+        super(BreakLink, self).__init__(model, name, **kwargs)
 
     def min_flow():
         def fget(self):
@@ -861,5 +860,62 @@ class BreakLink(Node):
         super(BreakLink, self).after(timestep)
         # update flow on transfer node to flow via link node
         self.commit_all(self.link.flow)
+
+
+class DelayNode(Node):
+    """ A node that delays flow for a given number of timesteps or days.
+
+    This is a composite node consisting internally of an Input and an Output node. A
+    `FlowDelayParameter` is used to delay the flow of the output node for a given period prior
+    to this delayed flow being set as the flow of the input node. Connections to the node are connected
+    to the internal output node and connection from the node are connected to the internal input node
+    node.
+
+    Parameters
+    ----------
+    model : `pywr.model.Model`
+    name : string
+        Name of the node.
+    timesteps: int
+        Number of timesteps to delay the flow.
+    days: int
+        Number of days to delay the flow. Specifying a number of days (instead of a number
+        of timesteps) is only valid if the number of days is exactly divisible by the model
+        timestep delta.
+    initial_flow: float
+        Flow provided by node for initial timesteps prior to any delayed flow being available.
+        This is constant across all delayed timesteps and any model scenarios. Default is 0.0.
+    """
+
+    def __init__(self, model, name, **kwargs):
+        self.allow_isolated = True
+        output_name = "{} Output".format(name)
+        input_name = "{} Input".format(name)
+        param_name = "{} - delay parameter".format(name)
+        assert(output_name not in model.nodes)
+        assert(input_name not in model.nodes)
+        assert(param_name not in model.parameters)
+
+        days = kwargs.pop('days', 0)
+        timesteps = kwargs.pop('timesteps', 0)
+        initial_flow = kwargs.pop('initial_flow', 0.0)
+
+        self.output = Output(model, name=output_name)
+        self.delay_param = FlowDelayParameter(model, self.output, timesteps=timesteps, days=days,
+                                              initial_flow=initial_flow, name=param_name)
+        self.input = Input(model, name=input_name, min_flow=self.delay_param, max_flow=self.delay_param)
+        super().__init__(model, name, **kwargs)
+
+    def iter_slots(self, slot_name=None, is_connector=True):
+        if is_connector:
+            yield self.input
+        else:
+            yield self.output
+
+    def after(self, timestep):
+        super().after(timestep)
+        # delayed flow is saved to the DelayNode
+        self.commit_all(self.input.flow)
+
 
 from pywr.domains.river import *

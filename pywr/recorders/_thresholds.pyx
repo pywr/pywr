@@ -65,7 +65,7 @@ cdef class StorageThresholdRecorder(StorageRecorder):
     cpdef reset(self):
         self._state[...] = 0
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return np.array(self._state, dtype=np.float)
 
     cpdef after(self):
@@ -110,7 +110,7 @@ cdef class NodeThresholdRecorder(NodeRecorder):
     cpdef reset(self):
         self._state[...] = 0
 
-    cpdef double[:] values(self):
+    cpdef double[:] values(self) except *:
         return np.array(self._state, dtype=np.float)
 
     cpdef after(self):

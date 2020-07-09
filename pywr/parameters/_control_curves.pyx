@@ -3,6 +3,7 @@ import numpy as np
 cimport numpy as np
 from .parameters import parameter_registry, ConstantParameter, parameter_property
 from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter
+import warnings
 
 # http://stackoverflow.com/a/20031818/1300519
 cdef extern from "numpy/npy_math.h":
@@ -10,7 +11,7 @@ cdef extern from "numpy/npy_math.h":
 
 cdef class PiecewiseLinearControlCurve(Parameter):
     """Piecewise function composed of two linear curves
-    
+
     Parameters
     ----------
     model : Model
@@ -25,6 +26,9 @@ cdef class PiecewiseLinearControlCurve(Parameter):
         The storage considered the top of the upper curve, 0-1 (default=1).
     """
     def __init__(self, model, storage_node, control_curve, values, minimum=0.0, maximum=1.0, *args, **kwargs):
+        warnings.warn("`PiecewiseLinearControlCurve` has been deprecated in favour of "
+                      "`ControlCurvePiecewiseInterpolatedParameter`. It will be removed in a future version "
+                      "of Pywr.", DeprecationWarning)
         super(PiecewiseLinearControlCurve, self).__init__(model, *args, **kwargs)
         self._control_curve = None
         self.storage_node = storage_node
@@ -149,16 +153,16 @@ cdef class BaseControlCurveParameter(Parameter):
 
         control_curves = []
         if 'control_curve' in data:
-            control_curves.append(load_parameter(model, data['control_curve']))
+            control_curves.append(load_parameter(model, data.pop('control_curve')))
         elif 'control_curves' in data:
-            for pdata in data['control_curves']:
+            for pdata in data.pop('control_curves'):
                 control_curves.append(load_parameter(model, pdata))
         return control_curves
 
     @classmethod
     def _load_storage_node(cls, model, data):
         """ Private class method to load storage node from dict. """
-        node = model._get_node_from_ref(model, data["storage_node"])
+        node = model._get_node_from_ref(model, data.pop("storage_node"))
         return node
 
 
@@ -242,9 +246,8 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         cdef int j
         cdef Parameter cc_param, value_param
         cdef double cc, cc_prev
-        cdef Storage node = self._storage_node
         # return the interpolated value for the current level.
-        cdef double current_pc = node._current_pc[scenario_index.global_id]
+        cdef double current_pc = self._storage_node._current_pc[scenario_index.global_id]
         cdef double weight
         cdef double[:] values  # y values to interpolate between in this time-step
 
@@ -305,6 +308,85 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         return cls(model, storage_node, control_curves, values=values, parameters=parameters)
 
 ControlCurveInterpolatedParameter.register()
+
+
+cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter):
+    """A control curve Parameter that interpolates between two or more pairs of values.
+
+    Return values are linearly interpolated between a pair of values depending on the current
+    storage. The first pair is used between maximum and the first control curve, the next pair
+    between the first control curve and second control curve, and so on until the last pair is
+    used between the last control curve and the minimum value. The first value in each pair is the
+    value at the upper position, and the second the value at the lower position.
+
+    Parameters
+    ----------
+    storage_node : `Storage`
+        The storage node to compare the control curve(s) to.
+    control_curves : list of `Parameter` or floats
+        A list of parameters representing the control curve(s). These are
+        often MonthlyProfileParameters or DailyProfileParameters, but may be
+        any Parameter that returns values between 0.0 and 1.0. If floats are
+        passed they are converted to `ConstantParameter`.
+    values : 2D array or list of lists
+        A list of value pairs to interpolate between. The length of the list should be 1 + len(control_curves).
+    minimum : float
+        The storage considered the bottom of the lower curve, 0-1 (default=0).
+    maximum : float
+        The storage considered the top of the upper curve, 0-1 (default=1).
+
+    """
+    def __init__(self, model, storage_node, control_curves, values, minimum=0.0, maximum=1.0, **kwargs):
+        super(ControlCurvePiecewiseInterpolatedParameter, self).__init__(model, storage_node, control_curves, **kwargs)
+        self.values = np.array(values, dtype=np.float64)
+        self.minimum = minimum
+        self.maximum = maximum
+
+    property values:
+        def __get__(self):
+            return np.array(self._values)
+        def __set__(self, values):
+            # Expected number of values is number of control curves plus one.
+            nvalues = len(self.control_curves) + 1
+            if len(values) != nvalues:
+                raise ValueError('Length of values should be two more than the number of '
+                                 'control curves ({}).'.format(nvalues))
+            elif len(values[0]) != 2:
+                raise ValueError('The second dimension of values should be of length 2.')
+            self._values = np.array(values)
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int j, ncc
+        cdef Parameter cc_param
+        cdef double cc, cc_prev, val
+        # return the interpolated value for the current level.
+        cdef double current_pc = self._storage_node._current_pc[scenario_index.global_id]
+
+        cc_prev = self.maximum
+        for j, cc_param in enumerate(self._control_curves):
+            cc = cc_param.get_value(scenario_index)
+            # If level above control curve then return this level's value
+            if current_pc >= cc:
+                return _interpolate(current_pc, cc, cc_prev, self._values[j, 1], self._values[j, 0])
+
+            # Update previous value for next iteration
+            cc_prev = cc
+
+        # Current storage is above none of the control curves
+        # Therefore interpolate between last control curve and minimum
+        ncc = len(self._control_curves)
+        val = _interpolate(current_pc, self.minimum, cc_prev, self._values[ncc, 1], self._values[ncc, 0])
+        return val
+
+    @classmethod
+    def load(cls, model, data):
+        control_curves = super(ControlCurvePiecewiseInterpolatedParameter, cls)._load_control_curves(model, data)
+        storage_node = super(ControlCurvePiecewiseInterpolatedParameter, cls)._load_storage_node(model, data)
+        values = load_parameter_values(model, data)
+        return cls(model, storage_node, control_curves, values=values, **data)
+
+ControlCurvePiecewiseInterpolatedParameter.register()
+
 
 cdef class ControlCurveIndexParameter(IndexParameter):
     """Multiple control curve holder which returns an index not a value

@@ -2,6 +2,76 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.7.2
+
+### Miscellaneous
+
+- Release to fix packaging mistake in v1.7.1.
+
+## v1.7.1
+
+### Bug Fixes
+
+- Fixed a bug when using `draw_graph` with a dictionary. (#899)
+- Fixed a bug when giving non-float values to `RbfProfileParameter`. (#897)
+- Improved handling of isolated nodes in `draw_graph` when using JSON data. (#895)
+
+## v1.7.0
+
+### New Features
+
+- Improve Jupyter Notebook graphing functionality. (#868, #885)
+- Added `OffsetParameter`. (#874)
+- Added `PywrRandomGenerator` for use with the Platypus optimisation library. (#867, #892)
+- Added `RbfProfileParameter`. (#873)
+- Changed the signature of recorder aggregation functions to better catch exceptions. (#879)
+
+### Bug Fixes
+
+- Removed unreachable code when CSV dataframes. (#880)
+- Fixed incorrect parsing of `position` keyword in several nodes. (#884)
+
+### Miscellaneous
+
+- Added `IPython` to install dependencies. (#870)
+- Removed optimisation wrapper for `inspyred`. (#878)
+- Exposed run statistics to optimisation wrapper. (#877)
+- Added optional dependencies for docs and dev installs. (#882)
+
+### Documentation
+
+- Added threshold parameters to API documentation. (#881)
+- Corrected `MeanParameterRecorder`'s docstring. (#772)
+- Improved docstrings and made consistent argument names for `InterpolatedVolumeParameter` and `InterpolatedFlowParameter`. (#890)
+
+## v1.6.0
+
+### New Features
+
+- `AnnualTotalFlowRecorder` now accepts an optional list of factors to scale the flow by. (#837)
+- `NumpyArrayNodeRecorder` now accepts an optional factor (default=1.0) to scale the flow by. (#838, #840)
+- Added `UniformDrawdownProfileParameter` (#836)
+- Added `ControlCurvePiecewiseInterpolatedParameter` as a more general replacement for `PiecewiseLinearControlCurve`. (#857)
+- Added 'count_nonzero' as an aggregation function for recorders. (#866)
+
+### Bug Fixes
+
+- Fix bug draw_graph modifying model data when a data dict is given. (#832)
+- Fix the `__init__` method of `BreakLink`. (#850)
+- Fix reset of `AbstractNode._prev_flow`. (#855)
+- Fix a bug calculating of `AggregatedStorage`'s initial volume in multiple scenarios. (#854)
+- Fix resetting of `AnnualVirtualStorage` volume to maximum volume instead of initial volume. (#860)
+- Fix cdef type issue in some control curve parameters allowing use with any `AbstractStorage` (instead of just `Storage`). (#861) 
+- Fix registering of `ArrayIndexedScenarioParameter` (#863)
+
+### Miscellaneous
+
+- Fixed documentation building on tags. (#831)
+- Updated notebook graph drawing to use d3.v5 and removed IE specific code. (#834)
+- Add reference to published academic paper. (#846)
+- `PiecewiseLinearControlCurve` has been marked as deprecated and will be removed in a future version. (#857) 
+- Added examples from the recently published paper. (#852)
+
 ## v1.5.0
 
 ### New Features

@@ -112,6 +112,10 @@ class Model(object):
             key = list(kwargs.keys())[0]
             raise TypeError("'{}' is an invalid keyword argument for this function".format(key))
 
+        self._time_before = None
+        self._time_after = None
+        self.reset()
+
     @property
     def components(self):
         return NamedIterator(n for n in self.component_graph.nodes() if n != ROOT_NODE)
@@ -135,6 +139,18 @@ class Model(object):
     @property
     def objectives(self):
         return NamedIterator(n for n in self.recorders if n.is_objective)
+
+    def is_feasible(self):
+        """Returns True if none of the constraints are violated.
+
+        This function checks `is_constraint_violated()` for all defined constraints. If any constraints
+        are violated this function returns False. The checking of constraint violation requires that a
+        simulation has been completed before this function is called.
+        """
+        for c in self.constraints:
+            if c.is_constraint_violated():
+                return False
+        return True
 
     def check(self):
         """Check the validity of the model
@@ -379,7 +395,16 @@ class Model(object):
                     name, component_data = components_to_load.popitem()
                 except KeyError:
                     break
-                component = load_component(model, component_data, name)
+
+                #If unable to load a node, then reraise the exception with some
+                #useful information like node name and parameter name.
+                try:
+                      component = load_component(model, component_data, name)
+                except Exception as err:
+                    logger.critical("Error loading component %s", name)
+                    #Reraise the exception
+                    raise
+
                 yield component
 
         load_components(model._recorders_to_load, load_recorder)
@@ -600,6 +625,8 @@ class Model(object):
             num_scenarios=num_scenarios,
             timestep=timestep,
             time_taken=time_taken,
+            time_taken_before=self._time_before,
+            time_taken_after=self._time_after,
             time_taken_with_overhead=time_taken_with_overhead,
             speed=speed,
             solver_name=self.solver.name,
@@ -617,11 +644,23 @@ class Model(object):
         self.scenarios.setup()
         length_changed = self.timestepper.reset()
         for node in self.graph.nodes():
-            node.setup(self)
+            try:
+                node.setup(self)
+            except Exception as err:
+              #reraise the exception after logging some info about source of error
+              logger.critical("An error occurred setting up node during setup %s",
+                              node.name)
+              raise
 
         components = self.flatten_component_tree(rebuild=True)
         for component in components:
-            component.setup()
+            try:
+                component.setup()
+            except Exception as err:
+                #reraise the exception after logging some info about source of error
+                logger.critical("An error occurred setting up component during setup %s",
+                                component.name)
+                raise
 
         self.solver.setup(self)
         self.reset()
@@ -634,16 +673,42 @@ class Model(object):
         length_changed = self.timestepper.reset(start=start)
         for node in self.nodes:
             if length_changed:
-                node.setup(self)
-            node.reset()
+                try:
+                    node.setup(self)
+                except Exception as err:
+                    #reraise the exception after logging some info about source of error
+                    logger.critical("An error occurred calling setup while resetting node %s",node.name)
+                    raise
+            try:
+                node.reset()
+            except Exception as err:
+                #reraise the exception after logging some info about source of error
+                logger.critical("An error occurred calling reset on node %s",node.name)
+                raise
 
         components = self.flatten_component_tree(rebuild=False)
         for component in components:
             if length_changed:
-                component.setup()
-            component.reset()
+                try:
+                    component.setup()
+                except Exception as err:
+                    #reraise the exception after logging some info about source of error
+                    logger.critical("An error occurred calling setup while resetting component %s",
+                                    component.name)
+                    raise
+
+            try:
+                component.reset()
+            except Exception as err:
+                #reraise the exception after logging some info about source of error
+                logger.critical("An error occurred calling reset on component %s",
+                                component.name)
+                raise
 
         self.solver.reset()
+        # reset the timers
+        self._time_before = 0.0
+        self._time_after = 0.0
         logger.info('Reset complete!')
 
     def before(self):
@@ -659,6 +724,7 @@ class Model(object):
         cdef AbstractNode node
         cdef Component component
         cdef BaseParameter param
+        cdef double t0 = time.time()
         for node in self.graph.nodes():
             node.before(self.timestep)
         cdef list components = self.flatten_component_tree(rebuild=False)
@@ -668,22 +734,30 @@ class Model(object):
             if isinstance(component, BaseParameter):
                 param = component
                 param.calc_values(self.timestep)
+        self._time_before += time.time() - t0
 
     def after(self):
         cdef AbstractNode node
         cdef Component component
+        cdef double t0 = time.time()
         for node in self.graph.nodes():
             node.after(self.timestep)
         cdef list components = self.flatten_component_tree(rebuild=False)
         for component in components:
             component.after()
+        self._time_after += time.time() - t0
 
     def finish(self):
         for node in self.graph.nodes():
             node.finish()
         components = self.flatten_component_tree(rebuild=False)
         for component in components:
-            component.finish()
+            try:
+                component.finish()
+            except Exception as err:
+                #reraise the exception after logging some info about source of error
+                logger.critical("An error occurred finishing component %s", component.name)
+                raise
 
     def to_dataframe(self):
         """ Return a DataFrame from any Recorders with a `to_dataframe` attribute
@@ -876,11 +950,13 @@ class NamedIterator(object):
 
 
 class ModelResult(object):
-    def __init__(self, num_scenarios, timestep, time_taken, time_taken_with_overhead, speed,
-                 solver_name, solver_stats, version):
+    def __init__(self, num_scenarios, timestep, time_taken, time_taken_before, time_taken_after, time_taken_with_overhead,
+                 speed, solver_name, solver_stats, version):
         self.timestep = timestep
         self.timesteps = timestep.index + 1
         self.time_taken = time_taken
+        self.time_taken_before = time_taken_before
+        self.time_taken_after = time_taken_after
         self.time_taken_with_overhead = time_taken_with_overhead
         self.speed = speed
         self.num_scenarios = num_scenarios

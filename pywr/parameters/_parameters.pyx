@@ -1,12 +1,15 @@
 import os
 import numpy as np
 cimport numpy as np
+from scipy.interpolate import Rbf
 import pandas
+import json
 import calendar
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from pywr.h5tools import H5Store
 from pywr.hashes import check_hash
+from .._core cimport is_leap_year
 from ..dataframe_tools import align_and_resample_dataframe, load_dataframe, read_dataframe
 import warnings
 
@@ -18,6 +21,24 @@ class UnutilisedDataWarning(Warning):
     """ Simple warning to indicate that not all data has been used. """
     pass
 
+class TypeNotFoundError(KeyError):
+    """
+      Key Error, specifically designed for when the 'type' key is not found
+      in a dataset. This takes the data value and outputs a summary of it, to
+      aid in debugging.
+    """
+    def __init__(self, data):
+        #Try to print out some sensible amount of data without overloading
+        #the terminal with data. 1000 chars should be enough to get an idea
+        #of what the data looks like. If more than 1000 chars, do a pandas-style
+        #summary using ...
+        data_str = json.dumps(data)
+        if len(data_str) > 1000:
+            data_summary = f"{data_str[:500]} ... {data_str[-500:]}"
+        else:
+            data_summary = data_str
+
+        return f"Unable to find key 'type' in {data_summary}"
 
 cdef class Parameter(Component):
     def __init__(self, *args, is_variable=False, **kwargs):
@@ -261,6 +282,8 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         # position of self._scenario in self._scenario_index to lookup the
         # correct number to use in this instance.
         return self.values[ts.index, scenario_index._indices[self._scenario_index]]
+
+ArrayIndexedScenarioParameter.register()
 
 
 cdef class TablesArrayParameter(IndexParameter):
@@ -530,11 +553,6 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
 ArrayIndexedScenarioMonthlyFactorsParameter.register()
 
 
-cdef inline bint is_leap_year(int year):
-    # http://stackoverflow.com/a/11595914/1300519
-    return ((year & 3) == 0 and ((year % 25) != 0 or (year & 15) == 0))
-
-
 cdef class DailyProfileParameter(Parameter):
     """ An annual profile consisting of daily values.
 
@@ -557,11 +575,7 @@ cdef class DailyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts.year)):
-            if i > 58: # 28th Feb
-                i += 1
-        return self._values[i]
+        return self._values[ts.dayofyear_index]
 DailyProfileParameter.register()
 
 cdef class WeeklyProfileParameter(Parameter):
@@ -582,17 +596,7 @@ cdef class WeeklyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear - 1
-        if not is_leap_year(<int>(ts.datetime.year)):
-            if i > 58: # 28th Feb
-                i += 1
-        cdef Py_ssize_t week
-        if i >= 364:
-            # last week of year is slightly longer than 7 days
-            week = 51
-        else:
-            week = i // 7
-        return self._values[week]
+        return self._values[ts.week_index]
 WeeklyProfileParameter.register()
 
 
@@ -682,15 +686,10 @@ cdef class MonthlyProfileParameter(Parameter):
                 self._interp_values[i+1] = values[i]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i
         if self.interp_day is None:
             return self._values[ts.month-1]
         else:
-            i = ts.dayofyear - 1
-            if not is_leap_year(ts.year):
-                if i > 58: # 28th Feb
-                    i += 1
-            return self._interp_values[i]
+            return self._interp_values[ts.dayofyear_index]
 
     cpdef set_double_variables(self, double[:] values):
         self._values[...] = values
@@ -776,17 +775,7 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear - 1
-        if not is_leap_year(ts.year):
-            if i > 58: # 28th Feb
-                i += 1
-        cdef Py_ssize_t week
-        if i >= 364:
-            # last week of year is slightly longer than 7 days
-            week = 51
-        else:
-            week = i // 7
-        return self._values[scenario_index._indices[self._scenario_index], week]
+        return self._values[scenario_index._indices[self._scenario_index], ts.week_index]
 
 ScenarioWeeklyProfileParameter.register()
 
@@ -824,10 +813,7 @@ cdef class ScenarioDailyProfileParameter(Parameter):
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = ts.dayofyear - 1
-        if not is_leap_year(ts.year):
-            if i > 58: # 28th Feb
-                i += 1
+        cdef int i = ts.dayofyear_index
         return self._values[scenario_index._indices[self._scenario_index], i]
 
 ScenarioDailyProfileParameter.register()
@@ -849,7 +835,7 @@ cdef class UniformDrawdownProfileParameter(Parameter):
 
     See also
     --------
-    `pywr.nodes.AnnualVirtualStorage`
+    AnnualVirtualStorage
     """
     def __init__(self, model, reset_day=1, reset_month=1, **kwargs):
         super().__init__(model, **kwargs)
@@ -863,14 +849,10 @@ cdef class UniformDrawdownProfileParameter(Parameter):
         self._reset_idoy = pandas.Period(year=2016, month=self.reset_month, day=self.reset_day, freq='D').dayofyear - 1
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int current_idoy = ts.dayofyear - 1
+        cdef int current_idoy = ts.dayofyear_index
         cdef int total_days_in_period
         cdef int days_into_period
         cdef int year = ts.year
-
-        if not is_leap_year(ts.year):
-            if current_idoy > 58: # 28th Feb
-                current_idoy += 1
 
         days_into_period = current_idoy - self._reset_idoy
         if days_into_period < 0:
@@ -901,6 +883,164 @@ cdef class UniformDrawdownProfileParameter(Parameter):
     def load(cls, model, data):
         return cls(model, **data)
 UniformDrawdownProfileParameter.register()
+
+
+cdef class RbfProfileParameter(Parameter):
+    """Parameter which interpolates a daily profile using a radial basis function (RBF).
+
+    The daily profile is computed during model `reset` using a radial basis function with
+    day-of-year as the independent variables. The days of the year are defined by the user
+    alongside the values to use on each of those days for the interpolation. The first
+    day of the years should always be one, and its value is repeated as the 366th value.
+    In addition the second and penultimate values are mirrored to encourage a consistent
+    gradient to appear across the boundary. The RBF calculations are undertaken using
+    the `scipy.interpolate.Rbf` object, please refer to Scipy's documentation for more
+    information.
+
+    Parameters
+    ----------
+    days_of_year : iterable, integer
+        The days of the year at which the interpolation values are defined. The first
+        value should be one.
+    values : iterable, float
+        Values to use for interpolation corresponding to the `days_of_year`.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the values when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the values when used during optimisation.
+    variable_days_of_year_range : int (default=0)
+        The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
+        will cause the days of the year values to be exposed as integer variables (except the first value which
+        remains at day 1). This value is bounds on those variables as maximum shift from the given `days_of_year`.
+    min_value, max_value : float
+        Optionally cap the interpolated daily profile to a minimum and/or maximum value. The default values
+        are negative and positive infinity for minimum and maximum respectively.
+    rbf_kwargs: Optional, dict
+        Optional dictionary of keyword arguments to base to the Rbf object.
+
+    """
+    def __init__(self, model, days_of_year, values, lower_bounds=0.0, upper_bounds=np.inf, rbf_kwargs=None,
+                 variable_days_of_year_range=0, min_value=-np.inf, max_value=np.inf, **kwargs):
+        super(RbfProfileParameter, self).__init__(model, **kwargs)
+
+        if len(days_of_year) != len(values):
+            raise ValueError(f"The length of values ({len(values)}) must equal the length of "
+                             f"`days_of_year` ({len(days_of_year)}).")
+
+        self.variable_days_of_year_range = variable_days_of_year_range
+        self.double_size = len(values)
+        self._values = np.array(values, dtype=np.float64)
+        self.days_of_year = days_of_year
+        self.min_value = min_value
+        self.max_value = max_value
+        self._lower_bounds = np.ones(self.double_size)*lower_bounds
+        self._upper_bounds = np.ones(self.double_size)*upper_bounds
+
+        if self.variable_days_of_year_range > 0:
+            if np.any(np.diff(self.days_of_year) <= 2*self.variable_days_of_year_range):
+                raise ValueError(f"The days of the year are too close together for the given "
+                                 f"`variable_days_of_year_range`. This could cause the optimised days"
+                                 f"of the year to overlap and become out of order.  Either increase the"
+                                 f"spacing of the days of the year or reduce `variable_days_of_year_range` to"
+                                 f"less than half the closest distance between the days of the year.")
+            self.integer_size = len(values) - 1
+            self._doy_lower_bounds = np.array([d - self.variable_days_of_year_range
+                                               for d in self.days_of_year[1:]], dtype=np.int32)
+            self._doy_upper_bounds = np.array([d + self.variable_days_of_year_range
+                                               for d in self.days_of_year[1:]], dtype=np.int32)
+        else:
+            self.integer_size = 0
+
+        self.rbf_kwargs = rbf_kwargs if rbf_kwargs is not None else {}
+
+    property days_of_year:
+        def __get__(self):
+            return np.array(self._days_of_year)
+        def __set__(self, values):
+            values = np.array(values, dtype=np.int32)
+            if values[0] != 1:
+                raise ValueError('The first day of the years must be 1.')
+            if len(values) < 3:
+                raise ValueError('At least 3 days of the year are required.')
+            if np.any(np.diff(values) <= 0):
+                raise ValueError('The days of the year should be strictly monotonically increasing.')
+            if np.any(0 > values > 365):
+                raise ValueError('Days of the years should be between 1 and 365 inclusive.')
+            self._days_of_year = values
+
+    cpdef reset(self):
+        Parameter.reset(self)
+        # The interpolated profile is recalculated during reset so that
+        # it will update when the _values array is updated via `set_double_variables`
+        # and the model is rerun. I.e. during optimisation (where setup is not redone).
+        self._interpolate()
+
+    cpdef _interpolate(self):
+        cdef int i
+        cdef double[:] values
+        cdef double v
+
+        days_of_year = list(self._days_of_year)
+        # Append day 365 to the list and mirror the penultimate and second DOY at the start and end
+        # of the list respectively. This helps ensure the gradient is roughly the same across the boundary
+        # between days 365 and 0.
+        days_of_year = [days_of_year[-1]-365] + list(days_of_year) + [366, 366+days_of_year[1]-1]
+        # Create the corresponding y values including the mirrored entries
+        y = list(self._values)
+        y = [y[-1]] + y + [y[0], y[1]]
+        rbfi = Rbf(days_of_year, y)
+
+        # Do the interpolation
+        values = rbfi(np.arange(365) + 1)
+
+        # Create an array to save the daily profile in.
+        self._interp_values = np.zeros(366)
+        # Make the daily profile of 366 values repeating the same value for 28th & 29th Feb.
+        for i in range(365):
+            v = max(min(values[i], self.max_value), self.min_value)
+            if i < 58:
+                self._interp_values[i] = v
+            elif i == 58:
+                self._interp_values[i] = v
+                self._interp_values[i+1] = v
+            elif i > 58:
+                self._interp_values[i+1] = v
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        cdef int i = ts.dayofyear_index
+        return self._interp_values[i]
+
+    # Double variables are for the known interpolation values (y-axis)
+    cpdef set_double_variables(self, double[:] values):
+        self._values[...] = values
+
+    cpdef double[:] get_double_variables(self):
+        # Make sure we return a copy of the data instead of a view.
+        return np.array(self._values).copy()
+
+    cpdef double[:] get_double_lower_bounds(self):
+        return self._lower_bounds
+
+    cpdef double[:] get_double_upper_bounds(self):
+        return self._upper_bounds
+
+    # Integer variables are for the days of the year positions (if optimised)
+    cpdef set_integer_variables(self, int[:] values):
+        self.days_of_year = [1] + np.array(values).tolist()
+
+    cpdef int[:] get_integer_variables(self):
+        return np.array(self.days_of_year[1:], dtype=np.int32)
+
+    cpdef int[:] get_integer_lower_bounds(self):
+        return self._doy_lower_bounds
+
+    cpdef int[:] get_integer_upper_bounds(self):
+        return self._doy_upper_bounds
+
+    @classmethod
+    def load(cls, model, data):
+        return cls(model, **data)
+RbfProfileParameter.register()
 
 
 cdef class IndexParameter(Parameter):
@@ -1575,6 +1715,58 @@ cdef class NegativeMinParameter(MinParameter):
 NegativeMinParameter.register()
 
 
+cdef class OffsetParameter(Parameter):
+    """Parameter that offsets another `Parameter` by a constant value.
+
+    This class is a more efficient version of `AggregatedParameter` where
+    a single `Parameter` is offset by a constant value.
+
+    Parameters
+    ----------
+    parameter : `Parameter`
+        The parameter to compare with the float.
+    offset : float (default=0.0)
+        The offset to apply to the value returned by `parameter`.
+    lower_bounds : float (default=0.0)
+        The lower bounds of the offset when used during optimisation.
+    upper_bounds : float (default=np.inf)
+        The upper bounds of the offset when used during optimisation.
+    """
+    def __init__(self, model, parameter, offset=0.0, lower_bounds=0.0, upper_bounds=np.inf, *args, **kwargs):
+        super(OffsetParameter, self).__init__(model, *args, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+        self.offset = offset
+        self.double_size = 1
+        self._lower_bounds = np.ones(self.double_size) * lower_bounds
+        self._upper_bounds = np.ones(self.double_size) * upper_bounds
+
+    cdef calc_values(self, Timestep timestep):
+        cdef int i
+        cdef int n = self.__values.shape[0]
+
+        for i in range(n):
+            self.__values[i] = self.parameter.__values[i] + self.offset
+
+    cpdef set_double_variables(self, double[:] values):
+        self.offset = values[0]
+
+    cpdef double[:] get_double_variables(self):
+        return np.array([self.offset, ], dtype=np.float64)
+
+    cpdef double[:] get_double_lower_bounds(self):
+        return self._lower_bounds
+
+    cpdef double[:] get_double_upper_bounds(self):
+        return self._upper_bounds
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, parameter, **data)
+OffsetParameter.register()
+
+
 cdef class DeficitParameter(Parameter):
     """Parameter track the deficit (max_flow - actual flow) of a Node
 
@@ -1735,6 +1927,92 @@ cdef class PiecewiseIntegralParameter(Parameter):
 PiecewiseIntegralParameter.register()
 
 
+cdef class FlowDelayParameter(Parameter):
+    """Parameter that returns the delayed flow for a node after a given number of timesteps or days
+    
+    Parameters
+    ----------
+    model : `pywr.model.Model`
+    node: Node
+        The node to delay for.
+    timesteps: int
+        Number of timesteps to delay the flow.
+    days: int
+        Number of days to delay the flow. Specifying a number of days (instead of a number
+        of timesteps) is only valid if the number of days is exactly divisible by the model timestep length.
+    initial_flow: float
+        Flow value to return for initial model timesteps prior to any delayed flow being available. This
+        value is constant across all delayed timesteps and any model scenarios. Default is 0.0.
+    """
+
+    def __init__(self, model, node, *args, **kwargs):  
+        self.node = node
+        self.timesteps = kwargs.pop('timesteps', 0)
+        self.days = kwargs.pop('days', 0)
+        self.initial_flow = kwargs.pop('initial_flow', 0.0)
+        super().__init__(model, *args, **kwargs)
+
+    cpdef setup(self):
+        super(FlowDelayParameter, self).setup()
+        cdef int r
+        if self.days > 0:
+            r = self.days % self.model.timestepper.delta
+            if r == 0:
+                self.timesteps = self.days / self.model.timestepper.delta
+            else:
+                raise ValueError('The delay defined as number of days is not exactly divisible by the timestep delta.')
+        if self.timesteps < 1:
+            raise ValueError('The number of time-steps for a FlowDelayParameter node must be greater than one.')
+        self._memory = np.zeros((self.timesteps,  len(self.model.scenarios.combinations)))
+        self._memory_pointer = 0
+
+    cpdef reset(self):
+        self._memory[...] = self.initial_flow 
+        self._memory_pointer = 0
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._memory[self._memory_pointer, scenario_index.global_id]
+
+    cpdef after(self):
+        for i in range(self._memory.shape[1]):
+            self._memory[self._memory_pointer, i] = self.node._flow[i]
+        if self.timesteps > 1:
+            self._memory_pointer = (self._memory_pointer + 1) % self.timesteps 
+
+    @classmethod
+    def load(cls, model, data):
+        node = model._get_node_from_ref(model, data.pop("node"))
+        return cls(model, node, **data)
+
+FlowDelayParameter.register()
+
+
+cdef class DiscountFactorParameter(Parameter):
+    """Parameter that returns the current discount factor based on discount rate and a base year.
+
+    Parameters
+    ----------
+    discount_rate : float
+        Discount rate (expressed as 0 - 1) used calculate discount factor for each year.
+    base_year : int
+        Discounting base year (i.e. the year with a discount factor equal to 1.0).
+    """
+
+    def __init__(self, model, rate, base_year, **kwargs):
+        super(DiscountFactorParameter, self).__init__(model, **kwargs)
+        self.rate = rate
+        self.base_year = base_year
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return 1 / pow(1.0 + self.rate, ts.year - self.base_year)
+
+    @classmethod
+    def load(cls, model, data):
+        return cls(model, **data)
+
+DiscountFactorParameter.register()
+
+
 def get_parameter_from_registry(parameter_type):
     key = parameter_type.lower()
     try:
@@ -1776,7 +2054,13 @@ def load_parameter(model, data, parameter_name=None):
         parameter = data
     else:
         # parameter is dynamic
-        parameter_type = data['type']
+
+        try:
+             parameter_type = data['type']
+        except KeyError:
+            #raise custom exception that makes the error a bit easier to interpret
+            raise TypeNotFoundError(data)
+
         try:
             parameter_name = data["name"]
         except:
@@ -1834,6 +2118,3 @@ def load_parameter_values(model, data, values_key='values', url_key='url',
         raise ValueError("Parameter ('{name}' of type '{ptype}' is missing a valid key to load its values. "
                          "Please provide either a '{}', '{}' or '{}' entry.".format(values_key, url_key, table_key, name=name, ptype=ptype))
     return values
-
-
-

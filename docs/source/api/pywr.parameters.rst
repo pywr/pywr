@@ -41,6 +41,7 @@ Combining multiple parameters
    NegativeMaxParameter
    MinParameter
    NegativeMinParameter
+   OffsetParameter
 
 Annual profile parameters
 -------------------------
@@ -51,10 +52,12 @@ Annual profile parameters
    DailyProfileParameter
    WeeklyProfileParameter
    MonthlyProfileParameter
+   UniformDrawdownProfileParameter
    ScenarioDailyProfileParameter
    ScenarioWeeklyProfileParameter
    ScenarioMonthlyProfileParameter
    ArrayIndexedScenarioMonthlyFactorsParameter
+   RbfProfileParameter
 
 Dataframe parameter
 -------------------
@@ -84,6 +87,21 @@ Array based parameters
    IndexedArrayParameter
 
 
+Threshold parameters
+--------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    AbstractThresholdParameter
+    StorageThresholdParameter
+    NodeThresholdParameter
+    ParameterThresholdParameter
+    RecorderThresholdParameter
+    CurrentYearThresholdParameter
+    CurrentOrdinalDayThresholdParameter
+
+
 Interpolation parameters
 ------------------------
 
@@ -105,6 +123,8 @@ Control curve parameters
     control_curves.BaseControlCurveParameter
     control_curves.ControlCurveInterpolatedParameter
     control_curves.ControlCurveIndexParameter
+    control_curves.ControlCurvePiecewiseInterpolatedParameter
+
 
 Hydropower parameters
 ----------------------
@@ -125,5 +145,6 @@ Other parameters
    DeficitParameter
    ScenarioWrapperParameter
    PiecewiseIntegralParameter
+   FlowDelayParameter
 
 

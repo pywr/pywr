@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    {{ css }}
+
+    .title{
+        text-align: center;
+    }
+
+    .pywr_schematic{
+        margin: 0 auto;
+        outline: 1px solid black;
+    }
+
+    .table-tooltip{
+        margin: 0 auto;
+        margin-top: 10px;
+        font: 12px sans-serif;
+    }    
+</style>
+<body>
+     <h1 class="title">{{ title }}</h1>
+    <div class="schematic"></div>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js></script> 
+<script>
+    {{ d3_script }}
+</script>
+</body>

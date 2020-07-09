@@ -12,7 +12,7 @@ import tables
 import json
 from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
-from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayAreaRecorder, NumpyArrayLevelRecorder,
+from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, NumpyArrayAreaRecorder, NumpyArrayLevelRecorder,
                             AggregatedRecorder, CSVRecorder, TablesRecorder, TotalDeficitNodeRecorder,
                             TotalFlowNodeRecorder, RollingMeanFlowNodeRecorder, MeanFlowNodeRecorder, NumpyArrayParameterRecorder,
                             NumpyArrayIndexParameterRecorder, RollingWindowParameterRecorder, AnnualCountIndexParameterRecorder,
@@ -23,7 +23,7 @@ from pywr.recorders import (NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, N
                             HydropowerRecorder, TotalHydroEnergyRecorder,
                             TotalParameterRecorder, MeanParameterRecorder,
                             NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
-                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning,
+                            SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning, NumpyArrayDailyProfileParameterRecorder,
                             AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder)
 
 from pywr.recorders.progress import ProgressRecorder
@@ -33,6 +33,111 @@ from pywr.parameters import (DailyProfileParameter, FunctionParameter, ArrayInde
 from helpers import load_model
 import os
 import sys
+
+
+class TestRecorder:
+    """Tests for Recorder base class."""
+
+    def test_default_no_constraint(self, simple_linear_model):
+        """Test the constraint properties in the default instance (i.e. not a constraint)."""
+        r = Recorder(simple_linear_model)
+        assert r.constraint_lower_bounds is None
+        assert r.constraint_upper_bounds is None
+        assert not r.is_constraint
+        assert not r.is_lower_bounded_constraint
+        assert not r.is_double_bounded_constraint
+        assert not r.is_upper_bounded_constraint
+        assert not r.is_equality_constraint
+
+    def test_equality_constraint(self, simple_linear_model):
+        """Test equality constraint identification. """
+        r = Recorder(simple_linear_model, constraint_lower_bounds=10.0, constraint_upper_bounds=10.0)
+        assert r.is_constraint
+        assert not r.is_lower_bounded_constraint
+        assert not r.is_double_bounded_constraint
+        assert not r.is_upper_bounded_constraint
+        assert r.is_equality_constraint
+
+    def test_lower_bounded_constraint(self, simple_linear_model):
+        """Test lower bounded constraint identification. """
+        r = Recorder(simple_linear_model, constraint_lower_bounds=10.0, constraint_upper_bounds=None)
+        assert r.is_constraint
+        assert r.is_lower_bounded_constraint
+        assert not r.is_double_bounded_constraint
+        assert not r.is_upper_bounded_constraint
+        assert not r.is_equality_constraint
+
+    def test_upper_bounded_constraint(self, simple_linear_model):
+        """Test upper bounded constraint identification. """
+        r = Recorder(simple_linear_model, constraint_lower_bounds=None, constraint_upper_bounds=10.0)
+        assert r.is_constraint
+        assert not r.is_lower_bounded_constraint
+        assert not r.is_double_bounded_constraint
+        assert r.is_upper_bounded_constraint
+        assert not r.is_equality_constraint
+
+    def test_double_bounded_constraint(self, simple_linear_model):
+        """Test upper bounds constraint identification. """
+        r = Recorder(simple_linear_model, constraint_lower_bounds=2.0, constraint_upper_bounds=10.0)
+        assert r.is_constraint
+        assert not r.is_lower_bounded_constraint
+        assert r.is_double_bounded_constraint
+        assert not r.is_upper_bounded_constraint
+        assert not r.is_equality_constraint
+
+    def test_invalid_bounds_constraint(self, simple_linear_model):
+        """Test lower bounds greater than upper bounds."""
+        with pytest.raises(ValueError):
+            r = Recorder(simple_linear_model, constraint_lower_bounds=10.0, constraint_upper_bounds=2.0)
+
+    @pytest.mark.parametrize('lb, ub', (
+            (None, None),
+            (5.0, 10.0),  # Feasible double bounds
+            (15.0, 20.0),  # Infeasible double bounds
+            (0.0, 2.0),  # Infeasible double bounds
+            (0.0, None),  # Feasible lower bounds
+            (15.0, None),  # Infeasible lower bounds
+            (None, 15.0),  # Feasible upper bounds
+            (None, 5.0),  # Infeasible upper bounds
+    ))
+    def test_is_constraint_violated(self, simple_linear_model, lb, ub):
+        """Test the calculation of a violated constraint and model feasibility."""
+        m = simple_linear_model
+
+        class TestRecorder(Recorder):
+            def aggregated_value(self):
+                return 10.0
+
+        r = TestRecorder(m, constraint_lower_bounds=lb, constraint_upper_bounds=ub)
+
+        if lb is None and ub is None:
+            assert not r.is_constraint
+            with pytest.raises(ValueError):
+                r.is_constraint_violated()
+        elif lb is None and ub is not None:
+            # Upper bounded only
+            if ub >= 10.0:
+                assert not r.is_constraint_violated()
+                assert m.is_feasible()
+            else:
+                assert r.is_constraint_violated()
+                assert not m.is_feasible()
+        elif lb is not None and ub is None:
+            # Lower bounded only
+            if lb <= 10.0:
+                assert not r.is_constraint_violated()
+                assert m.is_feasible()
+            else:
+                assert r.is_constraint_violated()
+                assert not m.is_feasible()
+        else:
+            # Double bounds
+            if lb <= 10.0 <= ub:
+                assert not r.is_constraint_violated()
+                assert m.is_feasible()
+            else:
+                assert r.is_constraint_violated()
+                assert not m.is_feasible()
 
 
 def test_numpy_recorder(simple_linear_model):
@@ -91,7 +196,7 @@ def test_numpy_recorder_factored(simple_linear_model):
 
     model.run()
 
-    assert rec_fact.data.shape == (365, 1) 
+    assert rec_fact.data.shape == (365, 1)
     assert_allclose(20, rec_fact.data, atol=1e-7)
 
 class TestFlowDurationCurveRecorders:
@@ -339,6 +444,37 @@ def test_numpy_parameter_recorder(simple_linear_model):
 
     # test retrieval of recorder
     assert model.recorders['numpyarrayparameterrecorder.daily profile'] == rec
+
+    model.run()
+
+    assert rec.data.shape == (366, 1)
+    assert_allclose(rec.data, np.arange(366, dtype=np.float64)[:, np.newaxis])
+
+    df = rec.to_dataframe()
+    assert df.shape == (366, 1)
+    assert_allclose(df.values, np.arange(366, dtype=np.float64)[:, np.newaxis])
+
+
+def test_numpy_daily_profile_parameter_recorder(simple_linear_model):
+    """
+    Test the NumpyArrayDailyProfileParameterRecorder
+    """
+    from pywr.parameters import DailyProfileParameter
+
+    model = simple_linear_model
+    # using leap year simplifies tests
+    model.timestepper.start = pandas.to_datetime("2016-01-01")
+    model.timestepper.end = pandas.to_datetime("2017-12-31")
+    otpt = model.nodes['Output']
+
+    p = DailyProfileParameter(model, np.arange(366, dtype=np.float64), )
+    p.name = 'daily profile'
+    model.nodes['Input'].max_flow = p
+    otpt.cost = -2.0
+    rec = NumpyArrayDailyProfileParameterRecorder(model, model.nodes['Input'].max_flow)
+
+    # test retrieval of recorder
+    assert model.recorders['numpyarraydailyprofileparameterrecorder.daily profile'] == rec
 
     model.run()
 
@@ -1122,6 +1258,33 @@ class TestTablesRecorder:
         assert link['target'] == 'Output'
         np.testing.assert_allclose(link['value'], 40.0)
 
+    def test_generate_dataframes(self, simple_linear_model, tmpdir):
+        """Test TablesRecorder.generate_dataframes """
+        from pywr.parameters import ConstantScenarioParameter
+        model = simple_linear_model
+        scA = Scenario(model, name='A', size=4)
+        scB = Scenario(model, name='B', size=2)
+
+        otpt = model.nodes['Output']
+        inpt = model.nodes['Input']
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join('output.h5')
+        TablesRecorder(model, h5file)
+        model.run()
+
+        dfs = {}
+        for node, df in TablesRecorder.generate_dataframes(h5file):
+            dfs[node] = df
+
+        for node_name in model.nodes.keys():
+            df = dfs[node_name]
+            assert df.shape == (365, 8)
+            np.testing.assert_allclose(df.iloc[0, :], [10, 10, 20, 20, 20, 30, 20, 40])
+
 
 class TestDeficitRecorders:
 
@@ -1311,7 +1474,7 @@ class TestAnnualTotalFlowRecorder:
 
         assert_allclose(3650.0, rec.data, atol=1e-7)
 
-    def test_annual_total_flow_recorder_factored(self, simple_linear_model):    
+    def test_annual_total_flow_recorder_factored(self, simple_linear_model):
         """
         Test AnnualTotalFlowRecorder with factors applied
         """

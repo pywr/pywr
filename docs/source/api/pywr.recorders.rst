@@ -17,6 +17,7 @@ All the `Recorder` subclasses in `pywr` are descended from a common base class.
    StorageRecorder
    ParameterRecorder
    IndexParameterRecorder
+   Aggregator
 
 Numpy array recorders
 ---------------------
@@ -33,6 +34,7 @@ accessed following a model run before the model instances is destroyed.
    NumpyArrayAreaRecorder
    NumpyArrayParameterRecorder
    NumpyArrayIndexParameterRecorder
+   NumpyArrayDailyProfileParameterRecorder
 
 Flow duration curve recorders
 -----------------------------

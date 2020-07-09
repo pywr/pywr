@@ -53,6 +53,15 @@ Provided that you have the required `dependencies <https://pywr.github.io/pywr-d
 
 For most users it will be easier to install the `binary packages made available for the Anaconda Python distribution <https://anaconda.org/pywr/pywr>`__. See install docs for more information. Note that these packages may lag behind the development version.
 
+Citation
+========
+
+Please consider citing the following paper when using Pywr:
+
+
+    Tomlinson, J.E., Arnott, J.H. and Harou, J.J., 2020. A water resource simulator in Python. Environmental Modelling & Software. https://doi.org/10.1016/j.envsoft.2020.104635
+
+
 License
 =======
 

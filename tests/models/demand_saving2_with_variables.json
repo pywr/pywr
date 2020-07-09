@@ -111,7 +111,7 @@
         "min_volume": {
             "type": "MinimumVolumeStorage",
             "node": "Reservoir",
-            "is_constraint": true
+            "constraint_lower_bounds": 100
         }
     }
 }

@@ -1,12 +1,11 @@
 import tables
-import sys
 import os
 
 
 class H5Store(object):
     def __init__(self, filename, filter_kwds=None, mode="r", title='', metadata=None, create_directories=False):
         self._opened = False
-        if isinstance(filename, str):
+        if isinstance(filename, (str, os.PathLike)):
             # filename is a path to open
             self.filename = filename
             # Note sure how else to deal with str / unicode requirements in pytables

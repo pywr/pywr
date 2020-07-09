@@ -1,6 +1,7 @@
 from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep, Output
 from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
-from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter, PiecewiseLinearControlCurve
+from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter, \
+    PiecewiseLinearControlCurve, ControlCurvePiecewiseInterpolatedParameter
 from pywr.parameters._control_curves import _interpolate
 from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, assert_rec
 import numpy as np
@@ -432,3 +433,114 @@ def test_demand_saving_with_indexed_array_from_hdf():
     # second control curve breached
     demand_saving = 0.25
     assert_allclose(rec_demand.data[13, 0], demand_baseline * demand_saving)
+
+
+class TestControlCurvePiecewiseInterpolatedParameter:
+    """Tests for `ControlCurvePiecewiseInterpolatedParameter` """
+    def test_single_control_curve(self, simple_storage_model):
+        """Test `ControlCurvePiecewiseInterpolatedParameter` with one control curve. """
+        model = simple_storage_model
+        storage_node = model.nodes["Storage"]
+        input_node = model.nodes["Input"]
+        output_node = model.nodes["Output"]
+
+        control_curves = [
+            ConstantParameter(model, 0.5),
+        ]
+
+        parameter = ControlCurvePiecewiseInterpolatedParameter(model, storage_node, control_curves,
+                                                               [(500, 200), (100, 50)], name="CCPIP")
+        assert parameter.minimum == 0.0
+        assert parameter.maximum == 1.0
+
+        input_node.max_flow = 1.0
+        input_node.cost = 0
+        output_node.max_flow = 0.0
+        storage_node.initial_volume = 0.0
+        storage_node.max_volume = 100.0
+        storage_node.cost = -10
+
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.delta = 1
+        model.timestepper.end = model.timestepper.start + model.timestepper.offset*100
+
+        @assert_rec(model, parameter)
+        def expected_func(timestep, scenario_index):
+            volume = timestep.index
+            control_curve = 0.5
+            current_position = volume / storage_node.max_volume
+            if current_position >= control_curve:
+                factor = (volume - 50) / 50
+                value = 200 + factor * (500 - 200)
+            else:
+                factor = volume / 50
+                value = 50 + factor * (100 - 50)
+            return value
+
+        model.run()
+
+    def test_two_control_curves(self, simple_storage_model):
+        """Test `ControlCurvePiecewiseInterpolatedParameter` with two control curves. """
+        model = simple_storage_model
+        storage_node = model.nodes["Storage"]
+        input_node = model.nodes["Input"]
+        output_node = model.nodes["Output"]
+
+        control_curves = [
+            ConstantParameter(model, 0.75),
+            ConstantParameter(model, 0.25),
+        ]
+
+        parameter = ControlCurvePiecewiseInterpolatedParameter(model, storage_node, control_curves,
+                                                               [(500, 200), (100, 50), (0, -100)], name="CCPIP")
+        assert parameter.minimum == 0.0
+        assert parameter.maximum == 1.0
+
+        input_node.max_flow = 1.0
+        input_node.cost = 0
+        output_node.max_flow = 0.0
+        storage_node.initial_volume = 0.0
+        storage_node.max_volume = 100.0
+        storage_node.cost = -10
+
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.delta = 1
+        model.timestepper.end = model.timestepper.start + model.timestepper.offset*100
+
+        @assert_rec(model, parameter)
+        def expected_func(timestep, scenario_index):
+            volume = timestep.index
+
+            current_position = volume / storage_node.max_volume
+            if current_position >= 0.75:
+                factor = (volume - 75) / 25
+                value = 200 + factor * (500 - 200)
+            elif current_position >= 0.25:
+                factor = (volume - 25) / 50
+                value = 50 + factor * (100 - 50)
+            else:
+                factor = volume / 25
+                value = -100 + factor * 100
+            return value
+
+        model.run()
+
+    def test_json(self, simple_storage_model):
+        """Test loading from JSON data."""
+        model = simple_storage_model
+        control_curve1 = ConstantParameter(model, 0.5, name="cc1")
+        control_curve2 = ConstantParameter(model, 0.25, name="cc2")
+        parameter_data = {
+            "type": "controlcurvepiecewiseinterpolated",
+            "storage_node": "Storage",
+            "control_curves": ["cc1", "cc2"],
+            "minimum": 0.2,
+            "maximum": 0.7,
+            "values": [[200, 100], [10, 5], [0, -10]]
+        }
+        parameter = load_parameter(model, parameter_data)
+        assert parameter.minimum == 0.2
+        assert parameter.maximum == 0.7
+        np.testing.assert_allclose(parameter.values, [[200, 100], [10, 5], [0, -10]])
+        assert parameter.control_curves == [control_curve1, control_curve2]
+        assert parameter.storage_node is model.nodes["Storage"]

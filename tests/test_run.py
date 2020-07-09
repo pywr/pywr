@@ -13,7 +13,7 @@ from pywr.nodes import Storage, Input, Output, Link
 import pywr.solvers
 import pywr.parameters.licenses
 import pywr.domains.river
-
+from pywr.recorders import assert_rec
 from helpers import load_model
 
 import pywr.parameters
@@ -323,6 +323,33 @@ def test_annual_virtual_storage():
     assert_allclose(rec.data[365], 10) # licence is refreshed
 
 
+@pytest.mark.parametrize('reset_to_initial_volume', [None, False, True])
+def test_annual_virtual_storage_reset_to_max_volume(reset_to_initial_volume):
+    """Test that AnnualVirtualStorage resets to maximum volume. """
+    model = load_model('virtual_storage1.json')
+    licence1 = model.nodes['licence1']
+    if reset_to_initial_volume is not None:
+        licence1.reset_to_initial_volume = reset_to_initial_volume
+    licence1.initial_volume = 100
+    licence1.reset_month = 4
+
+    model.setup()
+    # After reset the current volume is always the initial volume
+    assert_allclose(licence1.volume, [100.0])
+
+
+    model.timestepper.start = '2015-04-01'
+    model.reset()
+    # After stepping over the reset day the volume should have been reset 
+    # before the solve to either initial volume or maximum volume.
+    model.step()
+    if reset_to_initial_volume:
+        expected_volume = 90.0
+    else:
+        expected_volume = 195.0
+    assert_allclose(licence1.volume, [expected_volume])
+
+
 def test_annual_virtual_storage_with_dynamic_cost():
     model = load_model('virtual_storage2.json')
     model.run()
@@ -512,6 +539,23 @@ def test_run():
     model.reset(start=pandas.to_datetime('2015-12-01'))
     result = model.run()
     assert(result.timestep.index == 364)
+
+
+def test_reset_prev_flow():
+    """Test resetting the prev_flow attribte of a node."""
+    model = load_model('simple1.json')
+    demand1 = model.nodes['demand1']
+    model.run()
+    assert_allclose(demand1.flow, 10.0, atol=1e-7)
+    assert_allclose(demand1.prev_flow, 10.0, atol=1e-7)
+    # Reset and check flow attributes are zeroed
+    model.reset()
+    assert_allclose(demand1.flow, 0.0, atol=1e-7)
+    assert_allclose(demand1.prev_flow, 0.0, atol=1e-7)
+    # Run again
+    model.run()
+    assert_allclose(demand1.flow, 10.0, atol=1e-7)
+    assert_allclose(demand1.prev_flow, 10.0, atol=1e-7)
 
 
 def test_run_monthly():
