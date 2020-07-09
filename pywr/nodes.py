@@ -266,6 +266,30 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
     If a recorder is set on the storage node, instead of recording flow it
     records changes in storage. Any recorders set on the output or input
     sub-nodes record flow as normal.
+
+    Parameters
+    ----------
+    model : Model
+        Model instance to which this storage node is attached.
+    name : str
+        The name of the storage node.
+    num_inputs, num_outputs : integer (optional)
+        The number of input and output nodes to create internally. Defaults to 1.
+    min_volume : float (optional)
+        The minimum volume of the storage. Defaults to 0.0.
+    max_volume : float, Parameter (optional)
+        The maximum volume of the storage. Defaults to 0.0.
+    initial_volume, initial_volume_pc : float (optional)
+        Specify initial volume in either absolute or proportional terms. Both are required if `max_volume`
+        is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+        and `max_volume` is not a Parameter, then the absolute value is ignored.
+    cost : float, Parameter (optional)
+        The cost of net flow in to the storage node. I.e. a positive cost penalises increasing volume by
+        giving a benefit to negative net flow (release), and a negative cost penalises decreasing volume
+        by giving a benefit to positive net flow (inflow).
+    area, level : float, Parameter (optional)
+        Optional float or Parameter defining the area and level of the storage node. These values are
+        accessible through the `get_area` and `get_level` methods respectively.
     """
     def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
         # cast number of inputs/outputs to integer
@@ -277,7 +301,7 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         if min_volume is None:
             min_volume = 0.0
         max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        initial_volume = kwargs.pop('initial_volume', 0.0)
+        initial_volume = kwargs.pop('initial_volume', None)
         initial_volume_pc = kwargs.pop('initial_volume_pc', None)
         cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
         level = pop_kwarg_parameter(kwargs, 'level', None)
@@ -356,11 +380,7 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         name = data.pop('name')
         num_inputs = int(data.pop('inputs', 1))
         num_outputs = int(data.pop('outputs', 1))
-
-        if 'initial_volume' not in data and 'initial_volume_pc' not in data:
-            raise ValueError('Initial volume must be specified in absolute or relative terms.')
-
-        initial_volume = data.pop('initial_volume', 0.0)
+        initial_volume = data.pop('initial_volume', None)
         initial_volume_pc = data.pop('initial_volume_pc', None)
         max_volume = data.pop('max_volume')
         min_volume = data.pop('min_volume', 0.0)
@@ -376,10 +396,11 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         # loading errors
 
         # Try to coerce initial volume to float.
-        try:
-            initial_volume = float(initial_volume)
-        except TypeError:
-            initial_volume = load_parameter_values(model, initial_volume)
+        if initial_volume is not None:
+            try:
+                initial_volume = float(initial_volume)
+            except TypeError:
+                initial_volume = load_parameter_values(model, initial_volume)
         node.initial_volume = initial_volume
         node.initial_volume_pc = initial_volume_pc
 
