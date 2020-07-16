@@ -1301,9 +1301,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         t0 = time.perf_counter()
 
         # Initialise the cost on each edge to zero
+        cdef double[:] fixed_edge_costs = self.edge_fixed_cost_arr
         cdef double[:] edge_costs = self.edge_cost_arr
         for col in range(nedges):
-            edge_costs[col] = self.edge_fixed_cost_arr[col]
+            edge_costs[col] = fixed_edge_costs[col]
 
         # update the cost of each node in the model
         for _node in self.nodes_with_dynamic_cost:
