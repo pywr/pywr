@@ -821,6 +821,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
     cdef list non_storages
     cdef list non_storages_to_update
+    cdef list nodes_with_dynamic_cost
     cdef list storages
     cdef list virtual_storages
     cdef list aggregated
@@ -833,6 +834,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
     cdef int num_storages
     cdef int num_scenarios
     cdef cvarray edge_cost_arr
+    cdef cvarray edge_fixed_cost_arr
     cdef cvarray edge_flows_arr
     cdef cvarray node_flows_arr
     cdef public cvarray route_flows_arr
@@ -844,14 +846,16 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
     cdef public bint save_routes_flows
     cdef public bint retry_solve
     cdef public bint set_fixed_flows_once
+    cdef public bint set_fixed_costs_once
 
     def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level='error',
-                 save_routes_flows=False, retry_solve=False, set_fixed_flows_once=False):
+                 save_routes_flows=False, retry_solve=False, set_fixed_flows_once=False, set_fixed_costs_once=False):
         super().__init__(use_presolve, time_limit, iteration_limit, message_level)
         self.stats = None
         self.is_first_solve = True
         self.save_routes_flows = save_routes_flows
         self.set_fixed_flows_once = set_fixed_flows_once
+        self.set_fixed_costs_once = set_fixed_costs_once
         self.retry_solve = retry_solve
         self.basis_manager = BasisManager()
 
@@ -894,12 +898,14 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         self.num_nodes = len(self.all_nodes)
 
         self.edge_cost_arr = cvarray(shape=(len(self.all_edges),), itemsize=sizeof(double), format="d")
+        self.edge_fixed_cost_arr = cvarray(shape=(len(self.all_edges),), itemsize=sizeof(double), format="d")
         self.edge_flows_arr = cvarray(shape=(len(self.all_edges),), itemsize=sizeof(double), format="d")
         self.node_flows_arr = cvarray(shape=(self.num_nodes,), itemsize=sizeof(double), format="d")
 
         # Find cross-domain routes
         cross_domain_routes = model.find_all_routes(BaseOutput, BaseInput, max_length=2, domain_match='different')
 
+        nodes_with_dynamic_cost = []
         link_nodes = []
         non_storages = []
         non_storages_to_update = []
@@ -966,6 +972,32 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         # # Add rows for the cross-domain routes.
         if len(cross_domain_cols) > 0:
             self.idx_row_cross_domain = glp_add_rows(self.prob, len(cross_domain_cols))
+
+        self.edge_fixed_cost_arr[...] = 0.0
+        # Calculate fixed costs
+        for some_node in self.all_nodes:
+            try:
+                fixed_cost = some_node.has_fixed_cost
+            except AttributeError:
+                fixed_cost = False
+
+            if self.set_fixed_costs_once and fixed_cost:
+                # With a fixed cost this should work with no scenario index
+                cost = some_node.get_cost(None)
+                data = some_node.__data
+
+                # Link nodes have edges connected upstream & downstream. We apply
+                # half the cost assigned to the node to all the connected edges.
+                # The edge costs are then the mean of the node costs at either end.
+                if data.is_link:
+                    cost /= 2
+
+                for col in data.in_edges:
+                    self.edge_fixed_cost_arr[col] += cost
+                for col in data.out_edges:
+                    self.edge_fixed_cost_arr[col] += cost
+            else:
+                nodes_with_dynamic_cost.append(some_node)
 
         cross_domain_row = 0
         for row, node in enumerate(non_storages):
@@ -1186,6 +1218,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
         self.non_storages = non_storages
         self.non_storages_to_update = non_storages_to_update
+        self.nodes_with_dynamic_cost = nodes_with_dynamic_cost
         self.storages = storages
         self.virtual_storages = virtual_storages
         self.aggregated = aggregated
@@ -1270,13 +1303,12 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         # Initialise the cost on each edge to zero
         cdef double[:] edge_costs = self.edge_cost_arr
         for col in range(nedges):
-            edge_costs[col] = 0.0
+            edge_costs[col] = self.edge_fixed_cost_arr[col]
 
         # update the cost of each node in the model
-        for _node in self.all_nodes:
+        for _node in self.nodes_with_dynamic_cost:
             cost = _node.get_cost(scenario_index)
             data = _node.__data
-
             # Link nodes have edges connected upstream & downstream. We apply
             # half the cost assigned to the node to all the connected edges.
             # The edge costs are then the mean of the node costs at either end.

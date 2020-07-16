@@ -527,6 +527,11 @@ cdef class Node(AbstractNode):
             return self._cost
         return self._cost_param.get_value(scenario_index)
 
+    property has_fixed_cost:
+        """Returns true if both cost is not a Parameter."""
+        def __get__(self):
+            return self._cost_param is None
+
     property min_flow:
         """The minimum flow constraint on the node
 
@@ -792,6 +797,11 @@ cdef class StorageInput(BaseInput):
         # Return negative of parent cost
         return -self.parent.get_cost(scenario_index)
 
+    property has_fixed_cost:
+        """Returns true if both cost is not a Parameter."""
+        def __get__(self):
+            return self.parent.has_fixed_cost
+
 cdef class StorageOutput(BaseOutput):
     cpdef commit(self, int scenario_index, double volume):
         BaseOutput.commit(self, scenario_index, volume)
@@ -801,6 +811,10 @@ cdef class StorageOutput(BaseOutput):
         # Return parent cost
         return self.parent.get_cost(scenario_index)
 
+    property has_fixed_cost:
+        """Returns true if both cost is not a Parameter."""
+        def __get__(self):
+            return self.parent.has_fixed_cost
 
 cdef class AbstractStorage(AbstractNode):
     """ Base class for all Storage objects.
@@ -871,6 +885,11 @@ cdef class Storage(AbstractStorage):
         if self._cost_param is None:
             return self._cost
         return self._cost_param.get_value(scenario_index)
+
+    property has_fixed_cost:
+        """Returns true if both cost is not a Parameter."""
+        def __get__(self):
+            return self._cost_param is None
 
     property initial_volume:
         def __get__(self, ):
