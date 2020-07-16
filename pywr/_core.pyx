@@ -583,6 +583,11 @@ cdef class Node(AbstractNode):
             return self._max_flow
         return self._max_flow_param.get_value(scenario_index)
 
+    property has_fixed_flows:
+        """Returns true if both min_flow and max_flow are not Parameters."""
+        def __get__(self):
+            return self._max_flow_param is None and self._min_flow_param is None
+
     property conversion_factor:
         """The conversion between inflow and outflow for the node
 
