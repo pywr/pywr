@@ -1312,7 +1312,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             data = _node.__data
             # Link nodes have edges connected upstream & downstream. We apply
             # half the cost assigned to the node to all the connected edges.
-            # The edge costs are then the mean of the node costs at either end.
+            # The edge costs are then the mean of any links at either end plus
+            # the cost of any input or output nodes.
             if data.is_link:
                 cost /= 2
 
