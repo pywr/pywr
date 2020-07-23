@@ -528,7 +528,7 @@ cdef class Node(AbstractNode):
         return self._cost_param.get_value(scenario_index)
 
     property has_fixed_cost:
-        """Returns true if both cost is not a Parameter."""
+        """Returns true if cost is not a Parameter."""
         def __get__(self):
             return self._cost_param is None
 
@@ -798,7 +798,7 @@ cdef class StorageInput(BaseInput):
         return -self.parent.get_cost(scenario_index)
 
     property has_fixed_cost:
-        """Returns true if both cost is not a Parameter."""
+        """Returns true if cost is not a Parameter."""
         def __get__(self):
             return self.parent.has_fixed_cost
 
@@ -812,7 +812,7 @@ cdef class StorageOutput(BaseOutput):
         return self.parent.get_cost(scenario_index)
 
     property has_fixed_cost:
-        """Returns true if both cost is not a Parameter."""
+        """Returns true if cost is not a Parameter."""
         def __get__(self):
             return self.parent.has_fixed_cost
 
@@ -887,7 +887,7 @@ cdef class Storage(AbstractStorage):
         return self._cost_param.get_value(scenario_index)
 
     property has_fixed_cost:
-        """Returns true if both cost is not a Parameter."""
+        """Returns true if cost is not a Parameter."""
         def __get__(self):
             return self._cost_param is None
 
