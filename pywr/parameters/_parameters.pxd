@@ -96,9 +96,14 @@ cdef class UniformDrawdownProfileParameter(Parameter):
 cdef class RbfProfileParameter(Parameter):
     cdef double[:] _values
     cdef double[:] _interp_values
+    cdef double min_value
+    cdef double max_value
     cdef int[:] _days_of_year
     cdef double[:] _lower_bounds
     cdef double[:] _upper_bounds
+    cdef int[:] _doy_lower_bounds
+    cdef int[:] _doy_upper_bounds
+    cdef readonly int variable_days_of_year_range
     cdef public object rbf
     cdef public object rbf_kwargs
     cpdef _interpolate(self)
@@ -200,3 +205,15 @@ cdef class PiecewiseIntegralParameter(Parameter):
     cdef public double[:] x
     cdef public double[:] y
     cdef public Parameter parameter
+
+cdef class FlowDelayParameter(Parameter):
+    cdef public AbstractNode node
+    cdef public int days
+    cdef public int timesteps
+    cdef public double initial_flow
+    cdef double[:, :] _memory
+    cdef public int _memory_pointer
+
+cdef class DiscountFactorParameter(Parameter):
+    cdef public double rate
+    cdef public int base_year

@@ -2,6 +2,26 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.8.0
+
+### New Features
+
+- A change to the behaviour of Storage nodes with parameters for `max_volume`. Such nodes must
+now have both `initial_volume` and `initial_volume_pc` specified. This allows using arbitrary parameters
+for `max_volume` provided the initial condition is explicitly defined in absolute and percentage terms. (#690)
+- Added `DelayNode` and `FlowDelayParameter` to allow emulation of time-of-travel. (#904)
+- Added `DiscountFactorParameter`. (#901)
+- Added support for optimising days of the year in `RbfProfileParameter`. (#908)
+- Added `NumpyArrayDailyProfileParameterRecorder` for recording calculated annual profiles, and
+refactored the internal calculations around day of the year. `Timestep` now includes properties
+for `dayofyear_index`, `week_index` and `is_leap_year`. (#903)
+- Added error logging in `Model`'s `load`, `setup`, `reset` and `finish` methods. Handling of unknown
+component types now raises a custom `TypeNotFoundError`. (#896)
+
+### Miscellaneous
+
+- Improvements to API documentation. (#905)
+
 ## v1.7.2
 
 ### Miscellaneous

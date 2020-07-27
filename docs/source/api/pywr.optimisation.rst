@@ -1,5 +1,5 @@
-pywr.optimisation package
-=========================
+Optimisation
+============
 
 Submodules
 ----------

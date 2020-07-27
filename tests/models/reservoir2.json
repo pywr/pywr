@@ -21,7 +21,8 @@
                 "type": "constant",
                 "value": 0
             },
-            "initial_volume": 35
+            "initial_volume": 35,
+            "initial_volume_pc": 1.0
         },
         {
             "name": "link1",
