@@ -67,6 +67,7 @@ def setup_package():
             "pywr.recorders",
             "pywr.notebook",
             "pywr.optimisation",
+            "pywr.utils",
         ],
         package_data=package_data(),
         use_scm_version=True,
