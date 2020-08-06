@@ -8,8 +8,27 @@ Currently there are only linear programme based solvers using,
     - GLPK
     - LPSolve55
 """
-
+import os
 solver_registry = []
+
+
+def _parse_env_kwarg(kwargs, keyword, env_name, env_type):
+    """Insert a keyword argument from an environment."""
+    if keyword not in kwargs:
+        # Keyword not given by user; see if an environment variable is defined with one
+        env_value = os.environ.get(env_name, None)
+        if env_value is not None:
+            if env_type is bool:
+                kwargs[keyword] = env_value == '1' or env_value.lower() == 'true'
+            elif env_type is str:
+                kwargs[keyword] = env_value
+            elif env_type is float:
+                kwargs[keyword] = float(env_value)
+            elif env_type is int:
+                kwargs[keyword] = int(env_value)
+            else:
+                raise NotImplementedError(f'Parsing environment variables of type {env_type} is not supported.')
+    return kwargs
 
 
 class Solver(object):
@@ -116,6 +135,8 @@ else:
 
         def __init__(self, *args, **kwargs):
             super(CythonGLPKEdgeSolver, self).__init__(*args, **kwargs)
+            kwargs = _parse_env_kwarg(kwargs, 'set_fixed_flows_once', 'PYWR_SOLVER_GLPK_FIXED_FLOWS_ONCE', bool)
+            kwargs = _parse_env_kwarg(kwargs, 'set_fixed_costs_once', 'PYWR_SOLVER_GLPK_FIXED_COSTS_ONCE', bool)
             self._cy_solver = cy_CythonGLPKEdgeSolver(**kwargs)
 
         def setup(self, model):
