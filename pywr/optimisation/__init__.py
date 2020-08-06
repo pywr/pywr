@@ -52,6 +52,7 @@ class BaseOptimisationWrapper(object):
     """
     def __init__(self, pywr_model_json, *args, **kwargs):
         uid = kwargs.pop('uid', None)
+        self.pywr_model_klass = kwargs.pop("model_klass", Model)
         super(BaseOptimisationWrapper, self).__init__(*args, **kwargs)
         self.pywr_model_json = pywr_model_json
 
@@ -99,7 +100,7 @@ class BaseOptimisationWrapper(object):
         return self._cached.constraints
 
     def make_model(self):
-        m = Model.load(self.pywr_model_json)
+        m = self.pywr_model_klass.load(self.pywr_model_json)
         # Apply any user defined changes to the model
         self.customise_model(m)
         return m

@@ -292,6 +292,11 @@ class Model(object):
             data = data.read()
             return cls.loads(data, model, path, solver)
 
+        return cls._load_from_dict(data, model=model, path=path, solver=None, **kwargs)
+
+    @classmethod
+    def _load_from_dict(cls, data, model=None, path=None, solver=None, **kwargs):
+        """Load data from a dictionary."""
         # data is a dictionary, make a copy to avoid modify the input
         data = copy.deepcopy(data)
 
