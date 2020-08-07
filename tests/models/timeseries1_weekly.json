@@ -17,7 +17,6 @@
                 "type": "dataframe",
                 "url" : "timeseries1_weekly.csv",
                 "parse_dates": true,
-                "dayfirst": true,
                 "index_col": 0
             }
         },

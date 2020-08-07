@@ -15,10 +15,7 @@
             "type": "Input",
             "max_flow": {
                 "type": "dataframe",
-                "url" : "timeseries1_weekly.h5",
-                "parse_dates": true,
-                "dayfirst": true,
-                "index_col": 0
+                "url" : "timeseries1_weekly.h5"
             }
         },
         {
