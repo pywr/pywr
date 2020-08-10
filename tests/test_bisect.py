@@ -22,6 +22,17 @@ def test_simple_bisection():
     np.testing.assert_allclose(model.parameters["demand"].get_double_variables(), [17.5])
 
 
+def test_simple_infeasible_bisection():
+    """Test infeasible bisection search"""
+
+    model = load_model("simple1_infeasible_bisect.json", model_klass=BisectionSearchModel)
+    assert isinstance(model, BisectionSearchModel)
+
+    # Perform bisection search
+    with pytest.raises(ValueError):
+        model.run()
+
+
 @pytest.fixture()
 def simple_bisection_problem():
     filename = os.path.join(TEST_FOLDER, 'models', 'simple1_bisect.json')
