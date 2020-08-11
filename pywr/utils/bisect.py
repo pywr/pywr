@@ -43,6 +43,7 @@ class BisectionSearchModel(Model):
         else:
             model.bisect_parameter = bisect_data.get('parameter', None)
             model.bisect_epsilon = bisect_data.get('epsilon', None)
+            model.error_on_infeasible = bisect_data.get('error_on_infeasible', True)
         return model
 
     def run(self):

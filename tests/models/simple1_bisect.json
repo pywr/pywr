@@ -11,7 +11,8 @@
     },
     "bisection": {
         "parameter": "demand",
-        "epsilon": 1.0
+        "epsilon": 1.0,
+        "error_on_infeasible": false
     },
     "nodes": [
         {
