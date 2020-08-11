@@ -21,10 +21,15 @@ class BisectionSearchModel(Model):
     bisect_epsilon : float
         The termination criterion for the bisection process. When the bisection has narrowed to a gap
          of less than the `bisect_epsilon` the process is terminated.
+    error_on_infeasible : bool (default True)
+        If true a ValueError is raised if no feasible solution is found during the bisection process. If false
+        no error is raised if there is no feasible solution, and a solution using the lower bounds of the
+        bisection parameter is the final result.
     """
     def __init__(self, **kwargs):
         self.bisect_parameter = kwargs.pop('bisect_parameter', None)
         self.bisect_epsilon = kwargs.pop('bisect_epsilon', None)
+        self.error_on_infeasible = kwargs.pop('error_on_infeasible', True)
         super().__init__(**kwargs)
 
     @classmethod
@@ -87,8 +92,12 @@ class BisectionSearchModel(Model):
 
         # Ensure a feasible solution is found.
         if np.isneginf(best_feasible):
-            raise ValueError("No feasible solutions found during bisection. Trying lowering the bounds on the "
-                             "bisection parameter.")
+            if self.error_on_infeasible:
+                raise ValueError("No feasible solutions found during bisection. Trying lowering the bounds on the "
+                                 "bisection parameter.")
+            else:
+                # If no feasible the "best" value is the lower bounds.
+                best_feasible = min_value
         # Finally, rerun at the best found feasible value
         # This is slightly inefficient, but ensures the model's recorders are at the best_feasible
         # value's results at the end of the simulation.
