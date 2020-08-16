@@ -82,6 +82,7 @@ cdef class Node(AbstractNode):
 cdef class AggregatedNode(AbstractNode):
     cdef list _nodes
     cdef double[:] _factors
+    cdef list _factor_parameters
     cdef double[:] _flow_weights
     cdef double _max_flow
     cdef double _min_flow
@@ -90,6 +91,7 @@ cdef class AggregatedNode(AbstractNode):
 
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1
+    cpdef double[:] get_factors(self, ScenarioIndex scenario_index)
 
 cdef class BaseInput(Node):
     cdef object _licenses

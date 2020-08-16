@@ -684,6 +684,15 @@ cdef class AggregatedNode(AbstractNode):
             self._factors = values
             self.model.dirty = True
 
+    property factor_parameters:
+        def __get__(self):
+            if self._factor_parameters is None:
+                return None
+            return self._factor_parameters
+
+        def __set__(self, params):
+            self._factor_parameters = params
+
     property flow_weights:
         def __get__(self):
             if self._flow_weights is None:
@@ -754,6 +763,14 @@ cdef class AggregatedNode(AbstractNode):
             return self._max_flow
         return self._max_flow_param.get_value(scenario_index)
 
+    cpdef double[:] get_factors(self, ScenarioIndex scenario_index):
+        """Get the minimum flow at a given timestep
+        """
+        if  self._factor_parameters is None:
+            return self.factors
+        else:
+            return np.array([p.get_value(scenario_index) for p in self.factor_parameters], np.float64)
+
     @classmethod
     def load(cls, data, model):
         from pywr.parameters import load_parameter
@@ -762,6 +779,10 @@ cdef class AggregatedNode(AbstractNode):
         agg = cls(model, name, nodes)
         try:
             agg.factors = data["factors"]
+        except KeyError:
+            pass
+        try:
+            agg.factor_parameters = [load_parameter(p) for p in data["factor parameters"]]
         except KeyError:
             pass
         try:

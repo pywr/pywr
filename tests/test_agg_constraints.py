@@ -1,9 +1,10 @@
 from pywr.core import Model, Input, Output, Link, Storage, AggregatedNode, PiecewiseLink, MultiSplitLink
-from pywr.parameters import ConstantParameter
+from pywr.parameters import ConstantParameter, DailyProfileParameter
 
 import pytest
 from numpy.testing import assert_allclose
 import pandas
+import numpy as np
 from pandas import Timestamp
 
 from helpers import load_model
@@ -279,3 +280,38 @@ def test_multipiecewise_constraint(model, flow):
 
     model.step()
     assert_allclose(D.flow, min((flow - 40) * 0.25, 50.0))
+
+
+def test_dynamic_factors(model):
+
+    model.timestepper.end = Timestamp("2016-01-03")
+
+    A = Input(model, "A", max_flow=10.0)
+    B = Input(model, "B", max_flow=10.0)
+    C = Input(model, "C", max_flow=10.0)
+    Z = Output(model, "Z", max_flow=10.0, cost=-10)
+
+    agg = AggregatedNode(model, "agg", [A, B, C])
+    factor1 = DailyProfileParameter(model, np.append(np.array([0.8, 0.3]), np.ones(364)))
+    factor2 = DailyProfileParameter(model, np.append(np.array([0.1, 0.3]), np.ones(364)))
+    factor3 = DailyProfileParameter(model, np.append(np.array([0.1, 0.4]), np.ones(364)))
+
+    agg.factor_parameters = [factor1, factor2, factor3]
+
+    A.connect(Z)
+    B.connect(Z)
+    C.connect(Z)
+
+    model.step()
+
+    assert_allclose(A.flow, 8)
+    assert_allclose(B.flow, 1)
+    assert_allclose(C.flow, 1)
+
+    model.step()
+
+    assert_allclose(A.flow, 3)
+    assert_allclose(B.flow, 3)
+    assert_allclose(C.flow, 4)
+
+    #import pdb; pdb.set_trace()
