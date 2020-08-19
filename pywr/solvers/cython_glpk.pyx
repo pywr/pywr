@@ -1,3 +1,5 @@
+from cpython cimport array
+import array
 from libc.stdlib cimport malloc, free
 from libc.math cimport abs
 from libc.float cimport DBL_MAX
@@ -100,8 +102,11 @@ cdef class AbstractNodeData:
 cdef class AggNodeFactorData:
     """Helper class for caching node data for the solver."""
     cdef public int row
-    cdef public list cols
-
+    cdef public int node_ind
+    cdef public list ind_pntr
+    cdef public cvarray ind
+    cdef public cvarray val
+    
 
 cdef class GLPKSolver:
     cdef glp_prob* prob
@@ -549,10 +554,20 @@ cdef class CythonGLPKSolver(GLPKSolver):
             agg_node.__agg_factor_data.row = row
 
             cols = []
-            for i, node in enumerate(nodes):
-                cols.append([n for n, route in enumerate(routes) if node in route])
+            ind_pntr = [0,]
+            first_node_cols = [0] + [n+1 for n, route in enumerate(routes) if nodes[0] in route]
+            agg_node.__agg_factor_data.node_ind = len(first_node_cols)
+            for i, node in enumerate(nodes[1:]):
+                cols.extend( first_node_cols + [n+1 for n, route in enumerate(routes) if node in route])
+                ind_pntr.append(len(cols))
+            
+            agg_node.__agg_factor_data.ind_pntr = ind_pntr
 
-            agg_node.__agg_factor_data.cols = cols
+            agg_node.__agg_factor_data.ind = cvarray(shape=(len(cols),), itemsize=sizeof(int), format="i")
+            agg_node.__agg_factor_data.val = cvarray(shape=(len(cols),), itemsize=sizeof(double), format="d")
+            for i, v in enumerate(cols):
+                agg_node.__agg_factor_data.ind[i] = v
+                agg_node.__agg_factor_data.val[i] = 1.0
 
             for n in range(len(nodes)-1):
                 set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
@@ -663,15 +678,15 @@ cdef class CythonGLPKSolver(GLPKSolver):
         cdef double avail_volume
         cdef double t0
         cdef int col, row
-        cdef int* ind
-        cdef double* val
         cdef double lb
         cdef double ub
         cdef Timestep timestep
         cdef int status, simplex_ret
         cdef cross_domain_col
-        cdef list route
+        cdef list route, indptr_array
         cdef int node_id, indptr, nroutes
+        cdef int[::1] ind
+        cdef double[::1] val
         cdef double flow
         cdef int n, m
         cdef Py_ssize_t length
@@ -715,24 +730,21 @@ cdef class CythonGLPKSolver(GLPKSolver):
             f0 = factors[0]
             factors_norm = [f0/f for f in factors]
 
-            cols = agg_node.__agg_factor_data.cols
             row = agg_node.__agg_factor_data.row
+            indptr_array = agg_node.__agg_factor_data.ind_pntr
 
-            # update matrix
             for n in range(len(agg_node.nodes)-1):
-                length = len(cols[0])+len(cols[n+1])
-                ind = <int*>malloc(1+length * sizeof(int))
-                val = <double*>malloc(1+length * sizeof(double))
-                for i, c in enumerate(cols[0]):
-                    ind[1+i] = 1+c
-                    val[1+i] = 1.0
-                for i, c in enumerate(cols[n+1]):
-                    ind[1+len(cols[0])+i] = 1+c
-                    val[1+len(cols[0])+i] = -factors_norm[n+1]
-                set_mat_row(self.prob, row+n, length, ind, val)
 
-                free(ind)
-                free(val)
+                ind = agg_node.__agg_factor_data.ind[indptr_array[n]:indptr_array[n+1]]
+                val = agg_node.__agg_factor_data.val[indptr_array[n]:indptr_array[n+1]]
+                length = len(ind) - 1
+
+                # only update factors for second node of each row
+                for i in range(agg_node.__agg_factor_data.node_ind, val.shape[0]):
+                    val[i] = -factors_norm[n+1]
+
+                set_mat_row(self.prob, row+n, length, &ind[0], &val[0])
+
 
         # update non-storage properties
         for row, node in enumerate(non_storages):
