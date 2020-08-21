@@ -970,15 +970,15 @@ cdef class Storage(AbstractStorage):
 
         for i, si in enumerate(self.model.scenarios.combinations):
             self._volume[i] += self._flow[i]*ts.days
-            # Apply any storage adjustment if given
-            if adjustment is not None:
-                self._volume[i] += adjustment[i]
-
             # Ensure variable maximum volume is taken in to account
             mxv = self.get_max_volume(si)
             mnv = self.get_min_volume(si)
-            # Ensure volume stays within bounds.
-            self._volume[i] = min(mxv, max(mnv, self._volume[i]))
+
+            # Apply any storage adjustment if given
+            if adjustment is not None:
+                self._volume[i] += adjustment[i]
+                # Ensure volume stays within bounds.
+                self._volume[i] = min(mxv, max(mnv, self._volume[i]))
 
             if abs(self._volume[i] - mxv) < 1e-6:
                 self._volume[i] = mxv
