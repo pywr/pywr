@@ -100,12 +100,12 @@ cdef class AbstractNodeData:
 
 
 cdef class AggNodeFactorData:
-    """Helper class for caching node data for the solver."""
+    """Helper class for caching data for Aggregated Nodes that have factors defined by parameters."""
     cdef public int row
     cdef public int node_ind
-    cdef public list ind_pntr
-    cdef public cvarray ind
-    cdef public cvarray val
+    cdef public cvarray ind_ptr
+    cdef public cvarray inds
+    cdef public cvarray vals
     
 
 cdef class GLPKSolver:
@@ -554,20 +554,22 @@ cdef class CythonGLPKSolver(GLPKSolver):
             agg_node.__agg_factor_data.row = row
 
             cols = []
-            ind_pntr = [0,]
+            ind_ptr = [0,]
             first_node_cols = [0] + [n+1 for n, route in enumerate(routes) if nodes[0] in route]
             agg_node.__agg_factor_data.node_ind = len(first_node_cols)
             for i, node in enumerate(nodes[1:]):
-                cols.extend( first_node_cols + [n+1 for n, route in enumerate(routes) if node in route])
-                ind_pntr.append(len(cols))
-            
-            agg_node.__agg_factor_data.ind_pntr = ind_pntr
+                cols.extend(first_node_cols + [n+1 for n, route in enumerate(routes) if node in route])
+                ind_ptr.append(len(cols))
+                    
+            agg_node.__agg_factor_data.ind_ptr = cvarray(shape=(len(ind_ptr),), itemsize=sizeof(int), format="i")
+            for i, v in enumerate(ind_ptr):
+                agg_node.__agg_factor_data.ind_ptr[i] = v
 
-            agg_node.__agg_factor_data.ind = cvarray(shape=(len(cols),), itemsize=sizeof(int), format="i")
-            agg_node.__agg_factor_data.val = cvarray(shape=(len(cols),), itemsize=sizeof(double), format="d")
+            agg_node.__agg_factor_data.inds = cvarray(shape=(len(cols),), itemsize=sizeof(int), format="i")
+            agg_node.__agg_factor_data.vals = cvarray(shape=(len(cols),), itemsize=sizeof(double), format="d")
             for i, v in enumerate(cols):
-                agg_node.__agg_factor_data.ind[i] = v
-                agg_node.__agg_factor_data.val[i] = 1.0
+                agg_node.__agg_factor_data.inds[i] = v
+                agg_node.__agg_factor_data.vals[i] = 1.0
 
             for n in range(len(nodes)-1):
                 set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
@@ -669,6 +671,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         cdef Storage storage
         cdef AbstractNode _node
         cdef AbstractNodeData data
+        cdef AggNodeFactorData agg_data
         cdef AggregatedNode agg_node
         cdef double min_flow
         cdef double max_flow
@@ -683,13 +686,15 @@ cdef class CythonGLPKSolver(GLPKSolver):
         cdef Timestep timestep
         cdef int status, simplex_ret
         cdef cross_domain_col
-        cdef list route, indptr_array
+        cdef list route
         cdef int node_id, indptr, nroutes
-        cdef int[::1] ind
-        cdef double[::1] val
+        cdef int[::1] inds
+        cdef double[::1] vals
         cdef double flow
-        cdef int n, m
+        cdef int n, m, i, ptr
         cdef Py_ssize_t length
+        cdef int[:] indptr_array
+        cdef double[:] factors_norm
 
         timestep = model.timestep
         cdef list routes = self.routes
@@ -723,28 +728,26 @@ cdef class CythonGLPKSolver(GLPKSolver):
         self.stats['objective_update'] += time.perf_counter() - t0
         t0 = time.perf_counter()
 
+        # Update constraint matrix values for aggregated nodes that have factors defined as parameters
         for agg_node in self.aggregated_with_factor_params:
-            factors = agg_node.get_factors(scenario_index)
 
-            # normalise factors
-            f0 = factors[0]
-            factors_norm = [f0/f for f in factors]
+            factors_norm = agg_node.get_factors_norm(scenario_index)
 
-            row = agg_node.__agg_factor_data.row
-            indptr_array = agg_node.__agg_factor_data.ind_pntr
+            agg_data = agg_node.__agg_factor_data
+            inds = agg_data.inds
+            vals = agg_data.vals
+            indptr_array = agg_data.ind_ptr
 
             for n in range(len(agg_node.nodes)-1):
 
-                ind = agg_node.__agg_factor_data.ind[indptr_array[n]:indptr_array[n+1]]
-                val = agg_node.__agg_factor_data.val[indptr_array[n]:indptr_array[n+1]]
-                length = len(ind) - 1
+                ptr = indptr_array[n]
+                length = indptr_array[n+1] - ptr
 
-                # only update factors for second node of each row
-                for i in range(agg_node.__agg_factor_data.node_ind, val.shape[0]):
-                    val[i] = -factors_norm[n+1]
+                # only update factors for second node of each row, factor values for first node are already 1.0 
+                for i in range(ptr + agg_data.node_ind, ptr + length):
+                    vals[i] = -factors_norm[n+1]
 
-                set_mat_row(self.prob, row+n, length, &ind[0], &val[0])
-
+                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
         # update non-storage properties
         for row, node in enumerate(non_storages):

@@ -313,5 +313,3 @@ def test_dynamic_factors(model):
     assert_allclose(A.flow, 3)
     assert_allclose(B.flow, 3)
     assert_allclose(C.flow, 4)
-
-    #import pdb; pdb.set_trace()

@@ -764,12 +764,28 @@ cdef class AggregatedNode(AbstractNode):
         return self._max_flow_param.get_value(scenario_index)
 
     cpdef double[:] get_factors(self, ScenarioIndex scenario_index):
-        """Get the minimum flow at a given timestep
+        """Get node factor for a give timestep
         """
         if  self._factor_parameters is None:
             return self.factors
         else:
             return np.array([p.get_value(scenario_index) for p in self.factor_parameters], np.float64)
+
+    cpdef double[:] get_factors_norm(self, ScenarioIndex scenario_index):
+        """Get node factors normalised by the factor of the first node
+        """
+        cdef double f0, f
+        cdef int i
+        cdef double[:] factors_norm, factors
+
+        factors = self.get_factors(scenario_index)
+        f0 = factors[0]
+        factors_norm = np.empty(len(factors), np.float64)
+
+        for i, f in enumerate(factors):
+            factors_norm[i] = f0/f
+
+        return factors_norm
 
     @classmethod
     def load(cls, data, model):
