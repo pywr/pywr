@@ -289,9 +289,10 @@ def test_dynamic_factors(model):
     A = Input(model, "A", max_flow=10.0)
     B = Input(model, "B", max_flow=10.0)
     C = Input(model, "C", max_flow=10.0)
-    Z = Output(model, "Z", max_flow=10.0, cost=-10)
+    Z = Output(model, "Z", cost=-10)
 
     agg = AggregatedNode(model, "agg", [A, B, C])
+    agg.max_flow = 10.0
     factor1 = DailyProfileParameter(model, np.append(np.array([0.8, 0.3]), np.ones(364)))
     factor2 = DailyProfileParameter(model, np.append(np.array([0.1, 0.3]), np.ones(364)))
     factor3 = DailyProfileParameter(model, np.append(np.array([0.1, 0.4]), np.ones(364)))
@@ -313,3 +314,36 @@ def test_dynamic_factors(model):
     assert_allclose(A.flow, 3)
     assert_allclose(B.flow, 3)
     assert_allclose(C.flow, 4)
+
+
+def test_dynamic_factors_load(model):
+
+    model.timestepper.end = Timestamp("2016-01-03")
+
+    A = Input(model, "A", max_flow=10.0)
+    B = Input(model, "B", max_flow=10.0)
+    Z = Output(model, "Z", cost=-10, max_flow=10.0)
+
+    A.connect(Z)
+    B.connect(Z)
+
+    DailyProfileParameter(model, np.append(np.array([3, 4]), np.ones(364)), name="factor1")
+
+    data = {
+        "name": "agg",
+        "factors": [1, "factor1"],
+        "nodes": ["A", "B"]
+    }
+
+    AggregatedNode.load(data, model)
+
+    model.step()
+
+    print(A.flow, B.flow)
+    assert_allclose(A.flow, 2.5)
+    assert_allclose(B.flow, 7.5)
+
+    model.step()
+
+    assert_allclose(A.flow, 2)
+    assert_allclose(B.flow, 8)

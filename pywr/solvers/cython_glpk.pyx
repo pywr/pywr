@@ -357,11 +357,11 @@ cdef class CythonGLPKSolver(GLPKSolver):
             elif isinstance(some_node, Storage):
                 storages.append(some_node)
             elif isinstance(some_node, AggregatedNode):
-                if some_node.factors is not None:
-                    aggregated_with_factors.append(some_node)
                 if some_node.factor_parameters is not None:
                     aggregated_with_factor_params.append(some_node)
                     some_node.__agg_factor_data = AggNodeFactorData()
+                elif some_node.factors is not None:
+                    aggregated_with_factors.append(some_node)
                 aggregated.append(some_node)
 
         if len(routes) == 0:

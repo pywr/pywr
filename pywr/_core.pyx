@@ -672,10 +672,12 @@ cdef class AggregatedNode(AbstractNode):
 
     property factors:
         def __get__(self):
-            if self._factors is None:
-                return None
-            else:
+            if self._factors is not None:
                 return np.asarray(self._factors, np.float64)
+            elif self.factor_parameters is not None:
+                return self.factor_parameters
+            else:
+                return None
 
         def __set__(self, values):
             values = np.array(values, np.float64)
@@ -683,6 +685,7 @@ cdef class AggregatedNode(AbstractNode):
                 warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
             self._factors = values
             self.model.dirty = True
+
 
     property factor_parameters:
         def __get__(self):
@@ -789,16 +792,22 @@ cdef class AggregatedNode(AbstractNode):
 
     @classmethod
     def load(cls, data, model):
-        from pywr.parameters import load_parameter
+        from pywr.parameters import load_parameter, ConstantParameter
         name = data["name"]
         nodes = [model._get_node_from_ref(model, node_name) for node_name in data["nodes"]]
         agg = cls(model, name, nodes)
         try:
-            agg.factors = data["factors"]
-        except KeyError:
-            pass
-        try:
-            agg.factor_parameters = [load_parameter(p) for p in data["factor parameters"]]
+            factors = data["factors"]
+            if all([isinstance(x, (float, int)) for x in factors]):
+                agg.factors = factors
+            else:
+                parameters = []
+                for f in factors:
+                    if isinstance(f, (float, int)):
+                        parameters.append(ConstantParameter(model, f))
+                    else:
+                        parameters.append(load_parameter(model, f))
+                agg.factor_parameters = parameters
         except KeyError:
             pass
         try:
