@@ -281,7 +281,8 @@ def test_multipiecewise_constraint(model, flow):
     model.step()
     assert_allclose(D.flow, min((flow - 40) * 0.25, 50.0))
 
-
+@pytest.mark.skipif(Model().solver.name not in ["glpk", "glpk-edge"], reason="Dynamic factors for agg nodes have only \
+                                                                              been implemented for glpk solvers")
 def test_dynamic_factors(model):
 
     model.timestepper.end = Timestamp("2016-01-03")
@@ -315,7 +316,8 @@ def test_dynamic_factors(model):
     assert_allclose(B.flow, 3)
     assert_allclose(C.flow, 4)
 
-
+@pytest.mark.skipif(Model().solver.name not in ["glpk", "glpk-edge"], reason="Dynamic factors for agg nodes have only \
+                                                                              been implemented for glpk solvers")
 def test_dynamic_factors_load(model):
 
     model.timestepper.end = Timestamp("2016-01-03")
@@ -339,7 +341,6 @@ def test_dynamic_factors_load(model):
 
     model.step()
 
-    print(A.flow, B.flow)
     assert_allclose(A.flow, 2.5)
     assert_allclose(B.flow, 7.5)
 

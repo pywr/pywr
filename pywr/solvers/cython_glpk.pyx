@@ -888,12 +888,14 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
     cdef int idx_row_storages
     cdef int idx_row_virtual_storages
     cdef int idx_row_aggregated
+    cdef int idx_row_aggregated_with_factors
     cdef int idx_row_aggregated_min_max
 
     cdef list non_storages
     cdef list storages
     cdef list virtual_storages
     cdef list aggregated
+    cdef list aggregated_with_factor_params
 
     cdef list all_nodes
     cdef list all_edges
@@ -972,6 +974,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         storages = []
         virtual_storages = []
         aggregated_with_factors = []
+        aggregated_with_factor_params = []
         aggregated = []
 
         for some_node in self.all_nodes:
@@ -984,7 +987,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             elif isinstance(some_node, Storage):
                 storages.append(some_node)
             elif isinstance(some_node, AggregatedNode):
-                if some_node.factors is not None:
+                if some_node.factor_parameters is not None:
+                    aggregated_with_factor_params.append(some_node)
+                    some_node.__agg_factor_data = AggNodeFactorData()
+                elif some_node.factors is not None:
                     aggregated_with_factors.append(some_node)
                 aggregated.append(some_node)
 
@@ -1203,6 +1209,42 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 # glp_set_row_name(self.prob, row+n,
                 #                  'ag.f{}.{}'.format(n, agg_node.fully_qualified_name).encode('utf-8'))
 
+        if len(aggregated_with_factor_params):
+            self.idx_row_aggregated_with_factors = self.idx_row_virtual_storages + len(aggregated_with_factors)
+        for agg_node in aggregated_with_factor_params:
+            nodes = agg_node.nodes
+
+            row = glp_add_rows(self.prob, len(agg_node.nodes)-1)
+            agg_node.__agg_factor_data.row = row
+
+            cols = []
+            ind_ptr = [0,]
+            if isinstance(nodes[0], BaseOutput):
+                first_node_cols = [0] + [c+1 for c in nodes[0].__data.in_edges]
+            else:
+                first_node_cols = [0] + [c+1 for c in nodes[0].__data.out_edges]
+
+            agg_node.__agg_factor_data.node_ind = len(first_node_cols)
+            for i, some_node in enumerate(nodes[1:]):
+                if isinstance(nodes[0], BaseOutput):
+                    cols.extend(first_node_cols + [c+1 for c in some_node.__data.in_edges])
+                else:
+                    cols.extend(first_node_cols + [c+1 for c in some_node.__data.out_edges])
+                ind_ptr.append(len(cols))
+
+            agg_node.__agg_factor_data.ind_ptr = cvarray(shape=(len(ind_ptr),), itemsize=sizeof(int), format="i")
+            for i, v in enumerate(ind_ptr):
+                agg_node.__agg_factor_data.ind_ptr[i] = v
+
+            agg_node.__agg_factor_data.inds = cvarray(shape=(len(cols),), itemsize=sizeof(int), format="i")
+            agg_node.__agg_factor_data.vals = cvarray(shape=(len(cols),), itemsize=sizeof(double), format="d")
+            for i, v in enumerate(cols):
+                agg_node.__agg_factor_data.inds[i] = v
+                agg_node.__agg_factor_data.vals[i] = 1.0
+
+            for n in range(len(nodes)-1):
+                set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
+
         # aggregated node min/max flow constraints
         if aggregated:
             self.idx_row_aggregated_min_max = glp_add_rows(self.prob, len(aggregated))
@@ -1240,6 +1282,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         self.storages = storages
         self.virtual_storages = virtual_storages
         self.aggregated = aggregated
+        self.aggregated_with_factor_params = aggregated_with_factor_params
 
         self.basis_manager.init_basis(self.prob, len(model.scenarios.combinations))
         self.is_first_solve = True
@@ -1284,6 +1327,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         cdef AbstractNode _node
         cdef AbstractNodeData data
         cdef AggregatedNode agg_node
+        cdef AggNodeFactorData agg_data
         cdef double min_flow
         cdef double max_flow
         cdef double cost
@@ -1301,8 +1345,12 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         cdef cross_domain_col
         cdef list route
         cdef int node_id, indptr, nedges
+        cdef int[::1] inds
+        cdef double[::1] vals
         cdef double flow
-        cdef int n, m
+        cdef int n, m, i, ptr
+        cdef int[:] indptr_array
+        cdef double[:] factors_norm
         cdef Py_ssize_t length
 
         timestep = model.timestep
@@ -1341,6 +1389,27 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         # calculate the total cost of each route
         for col in range(nedges):
             set_obj_coef(self.prob, self.idx_col_edges+col, edge_costs[col])
+
+        # Update constraint matrix values for aggregated nodes that have factors defined as parameters
+        for agg_node in self.aggregated_with_factor_params:
+
+            factors_norm = agg_node.get_factors_norm(scenario_index)
+
+            agg_data = agg_node.__agg_factor_data
+            inds = agg_data.inds
+            vals = agg_data.vals
+            indptr_array = agg_data.ind_ptr
+
+            for n in range(len(agg_node.nodes)-1):
+
+                ptr = indptr_array[n]
+                length = indptr_array[n+1] - ptr
+
+                # only update factors for second node of each row, factor values for first node are already 1.0 
+                for i in range(ptr + agg_data.node_ind, ptr + length):
+                    vals[i] = -factors_norm[n+1]
+
+                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
         self.stats['objective_update'] += time.perf_counter() - t0
         t0 = time.perf_counter()
