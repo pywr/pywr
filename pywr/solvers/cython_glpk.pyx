@@ -635,6 +635,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
             'total': 0.0,
             'lp_solve': 0.0,
             'result_update': 0.0,
+            'constraint_update_factors': 0.0,
             'bounds_update_nonstorage': 0.0,
             'bounds_update_storage': 0.0,
             'bounds_update_nonstorage': 0.0,
@@ -748,6 +749,9 @@ cdef class CythonGLPKSolver(GLPKSolver):
                     vals[i] = -factors_norm[n+1]
 
                 set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
+
+        self.stats['constraint_update_factors'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
 
         # update non-storage properties
         for row, node in enumerate(non_storages):
@@ -1292,6 +1296,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             'total': 0.0,
             'lp_solve': 0.0,
             'result_update': 0.0,
+            'constraint_update_factors': 0.0,
             'bounds_update_nonstorage': 0.0,
             'bounds_update_storage': 0.0,
             'objective_update': 0.0,
@@ -1390,6 +1395,9 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         for col in range(nedges):
             set_obj_coef(self.prob, self.idx_col_edges+col, edge_costs[col])
 
+        self.stats['objective_update'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
+        
         # Update constraint matrix values for aggregated nodes that have factors defined as parameters
         for agg_node in self.aggregated_with_factor_params:
 
@@ -1411,7 +1419,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
                 set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
-        self.stats['objective_update'] += time.perf_counter() - t0
+        self.stats['constraint_update_factors'] += time.perf_counter() - t0
         t0 = time.perf_counter()
 
         # update non-storage properties
