@@ -680,12 +680,15 @@ cdef class AggregatedNode(AbstractNode):
                 return None
 
         def __set__(self, values):
-            values = np.array(values, np.float64)
-            if np.any(values < 1e-6):
-                warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
-            self._factors = values
-            self.model.dirty = True
-
+            from pywr.parameters import Parameter
+            if any([isinstance(v, Parameter) for v in values]):
+                self.factor_parameters = values
+            else:
+                values = np.array(values, np.float64)
+                if np.any(values < 1e-6):
+                    warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
+                self._factors = values
+                self.model.dirty = True
 
     property factor_parameters:
         def __get__(self):
@@ -694,7 +697,16 @@ cdef class AggregatedNode(AbstractNode):
             return self._factor_parameters
 
         def __set__(self, params):
-            self._factor_parameters = params
+            from pywr.parameters import load_parameter, ConstantParameter
+            parameters = []
+            for p in params:
+                if isinstance(p, (float, int)):
+                    parameters.append(ConstantParameter(self.model, p))
+                elif isinstance(p, (dict, str)):
+                    parameters.append(load_parameter(self.model, p))
+                else:
+                    parameters.append(p)         
+            self._factor_parameters = parameters
 
     property flow_weights:
         def __get__(self):
@@ -792,7 +804,7 @@ cdef class AggregatedNode(AbstractNode):
 
     @classmethod
     def load(cls, data, model):
-        from pywr.parameters import load_parameter, ConstantParameter
+        from pywr.parameters import load_parameter
         name = data["name"]
         nodes = [model._get_node_from_ref(model, node_name) for node_name in data["nodes"]]
         agg = cls(model, name, nodes)
@@ -801,13 +813,7 @@ cdef class AggregatedNode(AbstractNode):
             if all([isinstance(x, (float, int)) for x in factors]):
                 agg.factors = factors
             else:
-                parameters = []
-                for f in factors:
-                    if isinstance(f, (float, int)):
-                        parameters.append(ConstantParameter(model, f))
-                    else:
-                        parameters.append(load_parameter(model, f))
-                agg.factor_parameters = parameters
+                agg.factor_parameters = factors
         except KeyError:
             pass
         try:

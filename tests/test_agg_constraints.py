@@ -297,7 +297,7 @@ def test_dynamic_factors(model):
     factor2 = DailyProfileParameter(model, np.append(np.array([0.1, 0.3]), np.ones(364)))
     factor3 = DailyProfileParameter(model, np.append(np.array([0.1, 0.4]), np.ones(364)))
 
-    agg.factor_parameters = [factor1, factor2, factor3]
+    agg.factors = [factor1, factor2, factor3]
 
     A.connect(Z)
     B.connect(Z)
