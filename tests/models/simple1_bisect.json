@@ -1,0 +1,66 @@
+{
+    "metadata": {
+        "title": "Simple 1 bisection",
+        "description": "A very simple example of bisection.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "bisection": {
+        "parameter": "demand",
+        "epsilon": 1.0,
+        "error_on_infeasible": false
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": "supply"
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": "demand",
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "demand": {
+            "type": "ConstantParameter",
+            "value": 10.0,
+            "upper_bounds": 20.0,
+            "lower_bounds": 0.0,
+            "is_variable": false
+        },
+        "supply": {
+            "type": "ConstantParameter",
+            "value": 17.5,
+            "upper_bounds": 20.0,
+            "lower_bounds": 0.0,
+            "is_variable": true
+        }
+    },
+    "recorders": {
+        "deficit": {
+            "type": "TotalDeficitNodeRecorder",
+            "node": "demand1",
+            "constraint_upper_bounds": 0.0
+        },
+        "cost": {
+            "type": "MeanFlowNodeRecorder",
+            "node": "supply1",
+            "is_objective": "minimise"
+        }
+    }
+}
