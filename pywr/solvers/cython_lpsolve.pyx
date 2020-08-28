@@ -529,7 +529,7 @@ cdef class CythonLPSolveSolver:
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
-            elif not storage.active:
+            if not storage.active:
                 set_row_bnds(self.prob, self.idx_row_virtual_storages+col, -DBL_MAX, DBL_MAX)
             else:
                 max_volume = storage.get_max_volume(scenario_index)
