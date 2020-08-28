@@ -362,6 +362,32 @@ def test_annual_virtual_storage_with_dynamic_cost():
     assert_allclose(rec.data[3], 5)
 
 
+def test_seasonal_virtual_storage():
+
+    model = load_model('seasonal_virtual_storage.json')
+    model.run()
+    supply_df = model.recorders["supply1"].to_dataframe()
+    licence_df= model.recorders["licence1"].to_dataframe()
+
+    # License is not constraining flow as volumne remains
+    assert_allclose(supply_df.loc["2015-01-01", :], 10)
+
+    # License is depleted and constrains flow
+    assert_allclose(supply_df.loc["2015-01-11", :], 0)
+    assert_allclose(licence_df.loc["2015-01-11", :], 0)
+
+    # License is depleted but does not constrain flow as it is not active
+    assert_allclose(supply_df.loc["2015-02-01", :], 10)
+    assert_allclose(licence_df.loc["2015-02-01", :], 0)
+
+    # check same values for second year
+    assert_allclose(supply_df.loc["2016-01-01", :], 10)
+    assert_allclose(supply_df.loc["2016-01-11", :], 0)
+    assert_allclose(licence_df.loc["2016-01-11", :], 0)
+    assert_allclose(supply_df.loc["2016-02-01", :], 10)
+    assert_allclose(licence_df.loc["2016-02-01", :], 0)
+
+
 def test_storage_spill_compensation():
     """Test storage spill and compensation flows
 

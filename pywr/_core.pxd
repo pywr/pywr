@@ -122,3 +122,4 @@ cdef class AggregatedStorage(AbstractStorage):
 cdef class VirtualStorage(Storage):
     cdef list _nodes
     cdef double[:] _factors
+    cdef public bint active

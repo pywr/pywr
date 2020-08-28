@@ -537,6 +537,29 @@ class AnnualVirtualStorage(VirtualStorage):
                 # Reset to maximum volume (i.e. full capacity. )
                 self._reset_storage_only(use_initial_volume=self.reset_to_initial_volume)
                 self._last_reset_year = ts.year
+                self.active = True
+
+
+class SeasonalVirtualStorage(AnnualVirtualStorage):
+
+    def __init__(self, *args, **kwargs):
+
+        self.end_day = kwargs.pop('end_day', 31)
+        self.end_month = kwargs.pop('end_month', 12)
+        self._last_active_year = None
+
+        super().__init__(*args, **kwargs)
+
+    def before(self, ts):
+        super().before(ts)
+
+        if ts.year != self._last_active_year:
+            if ts.month > self.end_month or \
+                    (ts.month == self.end_month and ts.day >= self.end_day):
+                self._last_active_year = ts.year
+                self.active = False
+
+
 
 
 class PiecewiseLink(Node):
