@@ -81,13 +81,14 @@ cdef class Node(AbstractNode):
 
 cdef class AggregatedNode(AbstractNode):
     cdef list _nodes
-    cdef double[:] _factors
-    cdef list _factor_parameters
+    cdef list _factors
     cdef double[:] _flow_weights
     cdef double _max_flow
     cdef double _min_flow
     cdef Parameter _min_flow_param
     cdef Parameter _max_flow_param
+    cdef public bint has_fixed_factors
+    cdef public object __agg_factor_data 
 
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1

@@ -357,11 +357,12 @@ cdef class CythonGLPKSolver(GLPKSolver):
             elif isinstance(some_node, Storage):
                 storages.append(some_node)
             elif isinstance(some_node, AggregatedNode):
-                if some_node.factor_parameters is not None:
-                    aggregated_with_factor_params.append(some_node)
-                    some_node.__agg_factor_data = AggNodeFactorData()
-                elif some_node.factors is not None:
-                    aggregated_with_factors.append(some_node)
+                if some_node.factors is not None:
+                    if not some_node.has_fixed_factors:
+                        aggregated_with_factor_params.append(some_node)
+                        some_node.__agg_factor_data = AggNodeFactorData()
+                    else:
+                        aggregated_with_factors.append(some_node)
                 aggregated.append(some_node)
 
         if len(routes) == 0:
@@ -544,7 +545,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 # glp_set_row_name(self.prob, row+n,
                 #                  'ag.f{}.{}'.format(n, agg_node.fully_qualified_name).encode('utf-8'))
 
-        
+        # Add constraint rows for aggregated nodes with dynamics factors and
+        # cache data so row values can be updated in solve
         if len(aggregated_with_factor_params):
             self.idx_row_aggregated_with_factors = self.idx_row_virtual_storages + len(aggregated_with_factors)
         for agg_node in aggregated_with_factor_params:
@@ -748,6 +750,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 for i in range(ptr + agg_data.node_ind, ptr + length):
                     vals[i] = -factors_norm[n+1]
 
+                # 'length - 1' is used here because the ind and val slices start with a padded zero value.
+                # This is required by 'set_mat_row'.
                 set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
         self.stats['constraint_update_factors'] += time.perf_counter() - t0
@@ -991,11 +995,12 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             elif isinstance(some_node, Storage):
                 storages.append(some_node)
             elif isinstance(some_node, AggregatedNode):
-                if some_node.factor_parameters is not None:
-                    aggregated_with_factor_params.append(some_node)
-                    some_node.__agg_factor_data = AggNodeFactorData()
-                elif some_node.factors is not None:
-                    aggregated_with_factors.append(some_node)
+                if some_node.factors is not None:
+                    if not some_node.has_fixed_factors:
+                        aggregated_with_factor_params.append(some_node)
+                        some_node.__agg_factor_data = AggNodeFactorData()
+                    else:
+                        aggregated_with_factors.append(some_node)
                 aggregated.append(some_node)
 
         if len(non_storages) == 0:
@@ -1213,6 +1218,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 # glp_set_row_name(self.prob, row+n,
                 #                  'ag.f{}.{}'.format(n, agg_node.fully_qualified_name).encode('utf-8'))
 
+        # Add constraint rows for aggregated nodes with dynamics factors and
+        # cache data so row values can be updated in solve
         if len(aggregated_with_factor_params):
             self.idx_row_aggregated_with_factors = self.idx_row_virtual_storages + len(aggregated_with_factors)
         for agg_node in aggregated_with_factor_params:
@@ -1230,7 +1237,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
             agg_node.__agg_factor_data.node_ind = len(first_node_cols)
             for i, some_node in enumerate(nodes[1:]):
-                if isinstance(nodes[0], BaseOutput):
+                if isinstance(some_node, BaseOutput):
                     cols.extend(first_node_cols + [c+1 for c in some_node.__data.in_edges])
                 else:
                     cols.extend(first_node_cols + [c+1 for c in some_node.__data.out_edges])
@@ -1417,6 +1424,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 for i in range(ptr + agg_data.node_ind, ptr + length):
                     vals[i] = -factors_norm[n+1]
 
+                # 'length - 1' is used here because the ind and val slices start with a padded zero value.
+                # This is required by 'set_mat_row'.
                 set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
         self.stats['constraint_update_factors'] += time.perf_counter() - t0

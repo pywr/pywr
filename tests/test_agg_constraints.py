@@ -24,6 +24,7 @@ def test_aggregated_node_two_factors(model):
 
     agg = AggregatedNode(model, "agg", [A, B])
     agg.factors = [0.5, 0.5]
+
     assert_allclose(agg.factors, [0.5, 0.5])
 
     A.connect(Z)

@@ -643,6 +643,7 @@ cdef class AggregatedNode(AbstractNode):
         self._max_flow = inf
         self._min_flow_param = None
         self._max_flow_param = None
+        self.has_fixed_factors = False
 
     component_attrs = ["min_flow", "max_flow"]
 
@@ -672,42 +673,28 @@ cdef class AggregatedNode(AbstractNode):
 
     property factors:
         def __get__(self):
-            if self._factors is not None:
-                return np.asarray(self._factors, np.float64)
-            elif self.factor_parameters is not None:
-                return self.factor_parameters
-            else:
+            if self._factors is None:
                 return None
+            elif self.has_fixed_factors:
+                values = [p.get_double_variables() for p in self._factors]
+                return np.asarray(values, np.float64).squeeze()
+            else:
+                return self._factors
 
         def __set__(self, values):
-            from pywr.parameters import Parameter
-            if any([isinstance(v, Parameter) for v in values]):
-                self.factor_parameters = values
-            else:
-                values = np.array(values, np.float64)
-                if np.any(np.abs(values) < 1e-6):
-                    warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
-                self._factors = values
-                self.model.dirty = True
-
-    property factor_parameters:
-        def __get__(self):
-            if self._factor_parameters is None:
-                return None
-            return self._factor_parameters
-
-        def __set__(self, params):
-            from pywr.parameters import load_parameter, ConstantParameter
-            parameters = []
-            for p in params:
-                if isinstance(p, (float, int)):
-                    parameters.append(ConstantParameter(self.model, p))
-                elif isinstance(p, (dict, str)):
-                    parameters.append(load_parameter(self.model, p))
+            from pywr.parameters import ConstantParameter
+            params = []
+            for val in values:
+                if isinstance(val, (int, float)):
+                    params.append(ConstantParameter(self.model, val))
+                elif isinstance(val, str):
+                    params.append(self.model.parameters[val])
                 else:
-                    parameters.append(p)         
-            self._factor_parameters = parameters
-
+                    params.append(val)
+            if all([isinstance(p, ConstantParameter) for p in params]):
+                self.has_fixed_factors = True
+            self._factors = params
+            self.model.dirty = True
 
     property flow_weights:
         def __get__(self):
@@ -780,12 +767,16 @@ cdef class AggregatedNode(AbstractNode):
         return self._max_flow_param.get_value(scenario_index)
 
     cpdef double[:] get_factors(self, ScenarioIndex scenario_index):
-        """Get node factor for a give timestep
+        """Get node factors for the current timestep and given scenario index.
         """
-        if  self._factor_parameters is None:
-            return self.factors
+        cdef double[:] factors
+        if not self.has_fixed_factors:
+            factors = np.array([p.get_value(scenario_index) for p in self.factors], np.float64)
         else:
-            return np.array([p.get_value(scenario_index) for p in self.factor_parameters], np.float64)
+            factors = self.factors
+        if np.any(np.abs(factors) < 1e-6):
+            warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
+        return factors
 
     cpdef double[:] get_factors_norm(self, ScenarioIndex scenario_index):
         """Get node factors normalised by the factor of the first node
@@ -810,11 +801,10 @@ cdef class AggregatedNode(AbstractNode):
         nodes = [model._get_node_from_ref(model, node_name) for node_name in data["nodes"]]
         agg = cls(model, name, nodes)
         try:
-            factors = data["factors"]
-            if all([isinstance(x, (float, int)) for x in factors]):
-                agg.factors = factors
-            else:
-                agg.factor_parameters = factors
+            factors = []
+            for factor in data["factors"]:
+                factors.append(load_parameter(model, factor))
+            agg.factors = factors
         except KeyError:
             pass
         try:
