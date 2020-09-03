@@ -188,11 +188,11 @@ cdef class CythonLPSolveSolver:
             elif isinstance(some_node, Storage):
                 storages.append(some_node)
             elif isinstance(some_node, AggregatedNode):
-                if not some_node.has_fixed_factors:
-                    raise ValueError("{} has one or more factors defined by a parameter. This is not allowed \
-                                     when using the lpsolve solver. Please use the glpk or glpk-edge solver \
-                                     instead".format(some_node.name))
                 if some_node.factors is not None:
+                    if not some_node.has_fixed_factors:
+                        raise ValueError("{} has one or more factors defined by a parameter. This is not allowed \
+                                        when using the lpsolve solver. Please use the glpk or glpk-edge solver \
+                                        instead".format(some_node.name))
                     aggregated.append(some_node)
                 if some_node.min_flow > -inf or \
                    some_node.max_flow < inf:
