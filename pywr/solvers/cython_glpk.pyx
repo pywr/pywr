@@ -507,7 +507,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         # Add constraint rows for aggregated nodes with dynamics factors and
         # cache data so row values can be updated in solve
         if len(aggregated_with_factors):
-            self.idx_row_aggregated = self.idx_row_virtual_storages + len(aggregated_with_factors)
+            self.idx_row_aggregated = self.idx_row_virtual_storages + len(virtual_storages)
         for agg_node in aggregated_with_factors:
             nodes = agg_node.nodes
 
@@ -1134,7 +1134,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         # Add constraint rows for aggregated nodes with dynamics factors and
         # cache data so row values can be updated in solve
         if len(aggregated_with_factors):
-            self.idx_row_aggregated_with_factors = self.idx_row_virtual_storages + len(aggregated_with_factors)
+            self.idx_row_aggregated_with_factors = self.idx_row_virtual_storages + len(virtual_storages)
         for agg_node in aggregated_with_factors:
             nodes = agg_node.nodes
 
