@@ -11,8 +11,38 @@ def test_aggregated_storage(three_storage_model):
 
     agg_stg = m.nodes['Total Storage']
     stgs = [m.nodes['Storage {}'.format(num)] for num in range(3)]
-    # Check initial volume is aggregated correclty
+    # Check initial volume is aggregated correctly
     np.testing.assert_allclose(agg_stg.initial_volume, sum(s.initial_volume for s in stgs))
+
+    m.setup()
+    m.step()
+
+    # Finally check volume is summed correctly
+    np.testing.assert_allclose(agg_stg.volume, sum(s.volume for s in stgs))
+    current_pc = sum(s.volume for s in stgs) / (sum(s.max_volume for s in stgs))
+    np.testing.assert_allclose(agg_stg.current_pc, current_pc)
+    np.testing.assert_allclose(agg_stg.flow, sum(s.flow for s in stgs))
+
+    m.step()
+
+    # Finally check volume is summed correctly
+    np.testing.assert_allclose(agg_stg.volume, sum(s.volume for s in stgs))
+    current_pc = sum(s.volume for s in stgs) / (sum(s.max_volume for s in stgs))
+    np.testing.assert_allclose(agg_stg.current_pc, current_pc)
+    np.testing.assert_allclose(agg_stg.flow, sum(s.flow for s in stgs))
+
+
+def test_aggregated_storage_initial_pc(three_storage_model):
+    """Test `AggregatedStorage` correct sums multiple `Storage` with proportional initial volumes."""
+    m = three_storage_model
+
+    agg_stg = m.nodes['Total Storage']
+    stgs = [m.nodes['Storage {}'.format(num)] for num in range(3)]
+    for stg in stgs:
+        stg.initial_volume = None
+        stg.initial_volume_pc = 0.9
+    # Check initial volume is aggregated correctly
+    np.testing.assert_allclose(agg_stg.initial_volume, sum(s.initial_volume_pc * s.max_volume for s in stgs))
 
     m.setup()
     m.step()
