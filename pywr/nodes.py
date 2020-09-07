@@ -487,7 +487,7 @@ class RollingVirtualStorage(Drawable, _core.RollingVirtualStorage, metaclass=Nod
     name: str
         The name of the virtual node
     nodes: list of nodes
-        List of inflow/outflow nodes that affect the storage volume
+        List of inflow/out flow nodes that affect the storage volume
     factors: list of floats
         List of factors to multiply node flow by. Positive factors remove
         water from the storage, negative factors remove it.
@@ -541,7 +541,7 @@ class RollingVirtualStorage(Drawable, _core.RollingVirtualStorage, metaclass=Nod
     def check(self):
         super().check()
         if self.cost not in (0.0, None):
-            raise NotImplementedError("VirtualStorage does not currently support a non-zero cost.")
+            raise NotImplementedError("RollingVirtualStorage does not currently support a non-zero cost.")
 
     def setup(self, model):
         if self.days is not None and self.days > 0:

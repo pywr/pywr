@@ -350,6 +350,45 @@ class TestRollingVirtualStorage:
         assert_allclose(otpt.flow, [15], atol=1e-7)
         assert_allclose(vs.volume, [15], atol=1e-7)
 
+    def test_run_weekly(self):
+        """Test RollingVirtualStorage node behaviour with a weekly timestep."""
+
+        model = pywr.core.Model(timestep='7D')
+
+        inpt = Input(model, "Input", max_flow=20)
+        lnk = Link(model, "Link")
+        inpt.connect(lnk)
+        otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+        lnk.connect(otpt)
+
+        vs = pywr.core.RollingVirtualStorage(model, "Licence", [lnk], timesteps=3, initial_volume=100.0,
+                                             max_volume=100.0)
+
+        model.setup()
+
+        assert_allclose(vs.volume, [100.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [10.0], atol=1e-7)
+        assert_allclose(vs.volume, [30.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [30.0 / 7], atol=1e-7)
+        assert_allclose(vs.volume, [0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0], atol=1e-7)
+        # End of third day the flow from the first day is return to the licence
+        assert_allclose(vs.volume, [70.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [10.0], atol=1e-7)
+        assert_allclose(vs.volume, [30.0], atol=1e-7)
+
 
 def test_annual_virtual_storage():
     model = load_model('virtual_storage1.json')

@@ -1118,5 +1118,5 @@ cdef class RollingVirtualStorage(VirtualStorage):
         for i, si in enumerate(self.model.scenarios.combinations):
             # Flow is negative in VirtualStorage to remove from the store, save the +ve number here for
             # returning to the store later
-            self._memory[self._memory_pointer, i] = -self._flow[i]
+            self._memory[self._memory_pointer, i] = -self._flow[i] * ts.days
         self._memory_pointer = (self._memory_pointer + 1) % (self.timesteps - 1)
