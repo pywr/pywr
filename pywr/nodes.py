@@ -717,7 +717,7 @@ class MultiSplitLink(PiecewiseLink):
             self._extra_inputs.append(inpt)
             self._extra_outputs.append(otpt)
 
-        # Now create an aggregated node for addition constaints if required.
+        # Now create an aggregated node for addition constraints if required.
         if factors is not None:
             if extra_slots+1 != len(factors):
                 raise ValueError("factors must have a length equal to extra_slots.")
@@ -743,8 +743,18 @@ class MultiSplitLink(PiecewiseLink):
         else:
             yield self.output
 
+    @classmethod
+    def load(cls, data, model):
+        # max_flow and cost should be lists of parameter definitions
+        max_flow = [load_parameter(model, p) for p in data.pop('max_flow')]
+        cost = [load_parameter(model, p) for p in data.pop('cost')]
+        factors = AggregatedNode.load_factors(model, data)
 
-class AggregatedStorage( Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
+        del(data["type"])
+        return cls(model, max_flow=max_flow, cost=cost, factors=factors, **data)
+
+
+class AggregatedStorage(Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
     """ An aggregated sum of other `Storage` nodes
 
     This object should behave like `Storage` by returning current `flow`, `volume` and `current_pc`.
