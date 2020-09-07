@@ -80,11 +80,38 @@ def test_platypus_nsgaii_process_pool(two_reservoir_problem):
         algorithm.run(10)
 
 
-def test_pywr_random_generator(two_reservoir_problem):
-    """ Test PywrRandomGenerator inserts the current model configuration in to the population. """
-    generator = PywrRandomGenerator(wrapper=two_reservoir_problem)
-    algorithm = NSGAII(two_reservoir_problem.problem, population_size=10, generator=generator)
-    algorithm.initialize()
-    # Ensure the first solution in the population has variable values from the model
-    solution = algorithm.population[0]
-    np.testing.assert_allclose(solution.variables, np.zeros(12))
+class TestPywrRandomGenerator:
+    def test_current_model(self, two_reservoir_problem):
+        """ Test PywrRandomGenerator inserts the current model configuration in to the population. """
+        generator = PywrRandomGenerator(wrapper=two_reservoir_problem)
+        algorithm = NSGAII(two_reservoir_problem.problem, population_size=10, generator=generator)
+        algorithm.initialize()
+        # Ensure the first solution in the population has variable values from the model
+        solution = algorithm.population[0]
+        np.testing.assert_allclose(solution.variables, np.zeros(12))
+
+    @pytest.mark.parametrize('use_current', [True, False])
+    def test_other_solutions(self, two_reservoir_problem, use_current):
+        """Test PywrRandomGenerator inserts other solutions into the population. """
+
+        # Create some alternative initial solutions
+        solutions = [
+            {
+                'control_curve': {'doubles': [1] * 12}
+            },
+            {
+                'control_curve': {'doubles': [2] * 12}
+            },
+        ]
+
+        generator = PywrRandomGenerator(wrapper=two_reservoir_problem, solutions=solutions, use_current=use_current)
+        algorithm = NSGAII(two_reservoir_problem.problem, population_size=10, generator=generator)
+        algorithm.initialize()
+        # Ensure the first solution in the population has variable values from the model
+        if use_current:
+            np.testing.assert_allclose(algorithm.population[0].variables, np.zeros(12))
+            np.testing.assert_allclose(algorithm.population[1].variables, np.ones(12))
+            np.testing.assert_allclose(algorithm.population[2].variables, np.ones(12) * 2)
+        else:
+            np.testing.assert_allclose(algorithm.population[0].variables, np.ones(12))
+            np.testing.assert_allclose(algorithm.population[1].variables, np.ones(12) * 2)

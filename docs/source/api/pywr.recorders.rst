@@ -34,6 +34,7 @@ accessed following a model run before the model instances is destroyed.
    NumpyArrayAreaRecorder
    NumpyArrayParameterRecorder
    NumpyArrayIndexParameterRecorder
+   NumpyArrayDailyProfileParameterRecorder
 
 Flow duration curve recorders
 -----------------------------

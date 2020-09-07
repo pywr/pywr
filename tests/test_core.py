@@ -335,7 +335,7 @@ def test_check_isolated_nodes_storage():
     model = Model()
 
     # add a storage, but don't connect it's outflow to anything
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0, initial_volume=0.0)
     with pytest.raises(ModelStructureError):
         model.check()
 
@@ -354,7 +354,7 @@ def test_storage_max_volume_zero():
         end=pandas.to_datetime('2016-01-01')
     )
 
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0, initial_volume=0.0)
     otpt = Output(model, 'output', max_flow=99999, cost=-99999)
     storage.connect(otpt)
 
@@ -381,6 +381,7 @@ def test_storage_max_volume_param():
     p = ConstantParameter(model, 20.0)
     storage.max_volume = p
     storage.initial_volume = 10.0
+    storage.initial_volume_pc = 0.5
 
     model.setup()
     np.testing.assert_allclose(storage.current_pc, 0.5)
@@ -389,7 +390,14 @@ def test_storage_max_volume_param():
 
     p.set_double_variables(np.asarray([40.0, ]))
     model.reset()
-    np.testing.assert_allclose(storage.current_pc, 0.25)
+
+    # This is a demonstration of the issue describe in #470
+    #   https://github.com/pywr/pywr/issues/470
+    # The initial storage is defined in both absolute and relative terms
+    # but these are now not consistent with one another and the updated max_volume
+
+    np.testing.assert_allclose(storage.volume, 10.0)
+    np.testing.assert_allclose(storage.current_pc, 0.5)
 
 
 def test_storage_initial_volume_pc():
@@ -400,13 +408,9 @@ def test_storage_initial_volume_pc():
         end=pandas.to_datetime('2016-01-01')
     )
 
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0, initial_volume_pc=0.5, max_volume=20.0)
     otpt = Output(model, 'output', max_flow=99999, cost=-99999)
     storage.connect(otpt)
-
-    p = ConstantParameter(model, 20.0)
-    storage.max_volume = p
-    storage.initial_volume_pc = 0.5
 
     model.setup()
     np.testing.assert_allclose(storage.current_pc, 0.5)
@@ -414,52 +418,20 @@ def test_storage_initial_volume_pc():
 
     model.run()
 
-    p.set_double_variables(np.asarray([40.0, ]))
+    storage.max_volume = 40.0
     model.reset()
     np.testing.assert_allclose(storage.current_pc, 0.5)
     np.testing.assert_allclose(storage.volume, 20.0)
 
 
-def test_storage_max_volume_nested_param():
-    """Test that a max_volume can be used with a Parameter with children.
+def test_storage_initial_missing_raises():
+    """Test that a RuntimeError is raised if no initial volume is specified.
     """
+    model = Model()
 
-    model = Model(
-        start=pandas.to_datetime('2016-01-01'),
-        end=pandas.to_datetime('2016-01-01')
-    )
-
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0, max_volume=20.0)
     otpt = Output(model, 'output', max_flow=99999, cost=-99999)
     storage.connect(otpt)
-
-    p = AggregatedParameter(model, [ConstantParameter(model, 20.0), ConstantParameter(model, 20.0)], agg_func='sum')
-
-    storage.max_volume = p
-    storage.initial_volume = 10.0
-
-    model.setup()
-    np.testing.assert_allclose(storage.current_pc, 0.25)
-
-
-def test_storage_max_volume_param_raises():
-    """Test that a max_volume can not be used with 2 levels of child parameters.
-    """
-
-    model = Model(
-        start=pandas.to_datetime('2016-01-01'),
-        end=pandas.to_datetime('2016-01-01')
-    )
-
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
-    otpt = Output(model, 'output', max_flow=99999, cost=-99999)
-    storage.connect(otpt)
-
-    p = AggregatedParameter(model, [ConstantParameter(model, 20.0), ConstantParameter(model, 20.0)], agg_func='sum')
-    p1 = AggregatedParameter(model, [p, ConstantParameter(model, 1.5)], agg_func="product")
-
-    storage.max_volume = p1
-    storage.initial_volume = 10.0
 
     with pytest.raises(RuntimeError):
         model.run()

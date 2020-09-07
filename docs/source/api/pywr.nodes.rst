@@ -25,6 +25,7 @@ Nodes that are instantiable by the user
    AnnualVirtualStorage
    AggregatedStorage
    AggregatedNode
+   DelayNode
 
 .. currentmodule:: pywr.domains.river
 

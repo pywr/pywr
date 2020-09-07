@@ -2,6 +2,68 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.8.0
+
+### New Features
+
+- A change to the behaviour of Storage nodes with parameters for `max_volume`. Such nodes must
+now have both `initial_volume` and `initial_volume_pc` specified. This allows using arbitrary parameters
+for `max_volume` provided the initial condition is explicitly defined in absolute and percentage terms. (#690)
+- Added `DelayNode` and `FlowDelayParameter` to allow emulation of time-of-travel. (#904)
+- Added `DiscountFactorParameter`. (#901)
+- Added support for optimising days of the year in `RbfProfileParameter`. (#908)
+- Added `NumpyArrayDailyProfileParameterRecorder` for recording calculated annual profiles, and
+refactored the internal calculations around day of the year. `Timestep` now includes properties
+for `dayofyear_index`, `week_index` and `is_leap_year`. (#903)
+- Added error logging in `Model`'s `load`, `setup`, `reset` and `finish` methods. Handling of unknown
+component types now raises a custom `TypeNotFoundError`. (#896)
+
+### Miscellaneous
+
+- Improvements to API documentation. (#905)
+
+## v1.7.2
+
+### Miscellaneous
+
+- Release to fix packaging mistake in v1.7.1.
+
+## v1.7.1
+
+### Bug Fixes
+
+- Fixed a bug when using `draw_graph` with a dictionary. (#899)
+- Fixed a bug when giving non-float values to `RbfProfileParameter`. (#897)
+- Improved handling of isolated nodes in `draw_graph` when using JSON data. (#895)
+
+## v1.7.0
+
+### New Features
+
+- Improve Jupyter Notebook graphing functionality. (#868, #885)
+- Added `OffsetParameter`. (#874)
+- Added `PywrRandomGenerator` for use with the Platypus optimisation library. (#867, #892)
+- Added `RbfProfileParameter`. (#873)
+- Changed the signature of recorder aggregation functions to better catch exceptions. (#879)
+
+### Bug Fixes
+
+- Removed unreachable code when CSV dataframes. (#880)
+- Fixed incorrect parsing of `position` keyword in several nodes. (#884)
+
+### Miscellaneous
+
+- Added `IPython` to install dependencies. (#870)
+- Removed optimisation wrapper for `inspyred`. (#878)
+- Exposed run statistics to optimisation wrapper. (#877)
+- Added optional dependencies for docs and dev installs. (#882)
+
+### Documentation
+
+- Added threshold parameters to API documentation. (#881)
+- Corrected `MeanParameterRecorder`'s docstring. (#772)
+- Improved docstrings and made consistent argument names for `InterpolatedVolumeParameter` and `InterpolatedFlowParameter`. (#890)
+
 ## v1.6.0
 
 ### New Features
