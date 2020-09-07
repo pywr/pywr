@@ -189,6 +189,8 @@ cdef class CythonLPSolveSolver:
                 storages.append(some_node)
             elif isinstance(some_node, AggregatedNode):
                 if some_node.factors is not None:
+                    # See discussion: https://github.com/pywr/pywr/pull/919
+                    # Implementing fully dynamic factors in lpsolve is complicated.
                     if not some_node.has_fixed_factors:
                         raise ValueError("{} has one or more factors defined by a parameter. This is not allowed \
                                         when using the lpsolve solver. Please use the glpk or glpk-edge solver \
@@ -363,7 +365,8 @@ cdef class CythonLPSolveSolver:
 
         for agg_node in aggregated:
             nodes = agg_node.nodes
-            factors = agg_node.factors
+            # NB this only works because the solver supports only fixed (i.e. ConstantParameter) factors
+            factors = [f.get_double_variables()[0] for f in agg_node.factors]
             assert(len(nodes) == len(factors))
 
             ret = resize_lp(self.prob, get_Norig_rows(self.prob)+len(agg_node.nodes)-1, get_Norig_columns(self.prob))

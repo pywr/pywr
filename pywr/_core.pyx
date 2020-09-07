@@ -696,6 +696,7 @@ cdef class AggregatedNode(AbstractNode):
             self.model.dirty = True
 
     property has_fixed_factors:
+        """Returns true if all factors are of type `ConstantParameter`"""
         def __get__(self):
             from pywr.parameters import ConstantParameter
             return all([isinstance(p, ConstantParameter) for p in self.factors])
