@@ -541,6 +541,22 @@ class AnnualVirtualStorage(VirtualStorage):
 
 
 class SeasonalVirtualStorage(AnnualVirtualStorage):
+    """A virtual storage that only operates for a specified period within a year. This
+    is useful for representing seasonal licences.
+
+    Parameters
+    ----------
+    reset_day: int
+        The day of the month (0-31) when storage start operating and volume is to the initial value.
+    reset_month: int
+        The month of the year (0-12) when storage start operating and volume is to the initial value.
+    reset_to_initial_volume: bool
+        Reset the volume to the initial volume instead of maximum volume each year (default is False).
+    end_day: int
+        The day of the month (0-31) when the storage stops operating.
+    end_month: int
+        The month of the year (0-12) when the storage stops operating.
+    """
 
     def __init__(self, *args, **kwargs):
 

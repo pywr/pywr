@@ -22,6 +22,7 @@ Nodes that are instantiable by the user
    Storage
    VirtualStorage
    AnnualVirtualStorage
+   SeasonalVirtualStorage
    AggregatedStorage
    AggregatedNode
    DelayNode
