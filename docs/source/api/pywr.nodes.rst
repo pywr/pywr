@@ -21,6 +21,7 @@ Nodes that are instantiable by the user
    MultiSplitLink
    Storage
    VirtualStorage
+   RollingVirtualStorage
    AnnualVirtualStorage
    SeasonalVirtualStorage
    AggregatedStorage
@@ -29,11 +30,11 @@ Nodes that are instantiable by the user
 
 .. currentmodule:: pywr.domains.river
 
-River domain nodes 
+River domain nodes
 
 .. autosummary::
    :toctree: generated/
-   
+
    Catchment
    Reservoir
    River
