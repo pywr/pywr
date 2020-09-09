@@ -197,3 +197,21 @@ else:
         def stats(self):
             return self._cy_solver.stats
     solver_registry.append(CythonLPSolveSolver)
+
+
+class NullSolver(Solver):
+    """A null solver that performs no allocation routine.
+
+    This solver does no allocation and is mainly useful for debugging purposes.
+    """
+    name = 'null'
+
+    def setup(self, model):
+        pass
+
+    def solve(self, model):
+        pass
+
+    def reset(self):
+        pass
+solver_registry.append(NullSolver)
