@@ -766,7 +766,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
             if max_volume == min_volume:
                 set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
             elif not storage.active:
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -np.inf, np.inf)
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
@@ -1399,7 +1399,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             if max_volume == min_volume:
                 set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
             elif not storage.active:
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -np.inf, np.inf)
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or

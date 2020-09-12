@@ -656,7 +656,20 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
         super().before(ts)
 
         if ts.year != self._last_active_year:
-            if ts.month > self.end_month or \
+            if ts.index == 0:
+                if self._last_reset_year == ts.year:
+                    # First timestep is later in year than reset date
+                    if self.end_month < self.reset_month or \
+                            (self.end_month == self.reset_month and self.end_day <= self.reset_day):
+                        # end date is earlier in year than reset date so do not deactivate node in first year
+                        self._last_active_year = ts.year
+                else:
+                    # First timestep is earlier in year than reset date
+                    if self.end_month > self.reset_month or \
+                            (self.end_month == self.reset_month and self.end_day >= self.reset_day):
+                        # end date is later in year than reset date so node needs to be deactivated
+                        self.active = False
+            elif ts.month > self.end_month or \
                     (ts.month == self.end_month and ts.day >= self.end_day):
                 self._last_active_year = ts.year
                 self.active = False
