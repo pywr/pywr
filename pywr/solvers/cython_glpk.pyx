@@ -61,7 +61,7 @@ message_levels = {
 # Inline helper functions
 # =======================
 cdef inline int constraint_type(double a, double b):
-    if a == b:
+    if abs(a - b) < 1e-8:
         return GLP_FX
     elif b == DBL_MAX:
         if a == -DBL_MAX:
