@@ -627,21 +627,31 @@ class AnnualVirtualStorage(VirtualStorage):
 
 
 class SeasonalVirtualStorage(AnnualVirtualStorage):
-    """A virtual storage that only operates for a specified period within a year. This
-    is useful for representing seasonal licences.
+    """A virtual storage node that operates for a specified period within a year. This is useful for representing
+    seasonal licences.
+
+    The reset_day and reset_month parameters indicate when the node starts operating and the end_day and end_month
+    when it stops operating. For the period when the node is not operating, the volume of the node remains unchanged
+    and the node does not apply any constraints to the model.
+
+    The end_day and end_month can represent a date earlier in the year that the reset_day and and reset_month. This
+    situation represents a licence that operates across a year boundary. For example, one that is active between
+    October and March and not active between April and September.
 
     Parameters
     ----------
     reset_day: int
-        The day of the month (0-31) when storage start operating and volume is to the initial value.
+        The day of the month (0-31) when the node starts operating and its volume is reset to the initial value or
+        maximum volume.
     reset_month: int
-        The month of the year (0-12) when storage start operating and volume is to the initial value.
+        The month of the year (0-12) when the node starts operating and its volume is reset to the initial value or
+        maximum volume.
     reset_to_initial_volume: bool
         Reset the volume to the initial volume instead of maximum volume each year (default is False).
     end_day: int
-        The day of the month (0-31) when the storage stops operating.
+        The day of the month (0-31) when the node stops operating.
     end_month: int
-        The month of the year (0-12) when the storage stops operating.
+        The month of the year (0-12) when the node stops operating.
     """
 
     def __init__(self, *args, **kwargs):

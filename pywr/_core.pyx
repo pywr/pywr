@@ -1212,6 +1212,10 @@ cdef class VirtualStorage(Storage):
         self.virtual = True
         self.active = True
 
+    cpdef reset(self):
+        self.active = True
+        Storage.reset(self)
+
     property nodes:
         def __get__(self):
             return self._nodes
