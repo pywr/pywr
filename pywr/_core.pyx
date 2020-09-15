@@ -1210,6 +1210,11 @@ cdef class VirtualStorage(Storage):
     def __cinit__(self, ):
         self._allow_isolated = True
         self.virtual = True
+        self.active = True
+
+    cpdef reset(self):
+        self.active = True
+        Storage.reset(self)
 
     property nodes:
         def __get__(self):
@@ -1231,11 +1236,12 @@ cdef class VirtualStorage(Storage):
         cdef ScenarioIndex si
         cdef AbstractNode n
 
-        for i, si in enumerate(self.model.scenarios.combinations):
-            self._flow[i] = 0.0
-            for n, f in zip(self._nodes, self._factors):
-                self._flow[i] -= f*n._flow[i]
-        Storage.after(self, ts, adjustment=adjustment)
+        if self.active:
+            for i, si in enumerate(self.model.scenarios.combinations):
+                self._flow[i] = 0.0
+                for n, f in zip(self._nodes, self._factors):
+                    self._flow[i] -= f*n._flow[i]
+            Storage.after(self, ts, adjustment=adjustment)
 
 
 cdef class RollingVirtualStorage(VirtualStorage):

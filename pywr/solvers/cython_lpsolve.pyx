@@ -536,13 +536,16 @@ cdef class CythonLPSolveSolver:
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
-            max_volume = storage.get_max_volume(scenario_index)
-            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
-            # change in storage cannot be more than the current volume or
-            # result in maximum volume being exceeded
-            lb = -avail_volume/timestep.days
-            ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
-            set_row_bnds(self.prob, self.idx_row_virtual_storages+col, lb, ub)
+            if not storage.active:
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+col, -DBL_MAX, DBL_MAX)
+            else:
+                max_volume = storage.get_max_volume(scenario_index)
+                avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
+                # change in storage cannot be more than the current volume or
+                # result in maximum volume being exceeded
+                lb = -avail_volume/timestep.days
+                ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+col, lb, ub)
 
         self.stats['bounds_update_storage'] += time.perf_counter() - t0
         t0 = time.perf_counter()

@@ -623,6 +623,65 @@ class AnnualVirtualStorage(VirtualStorage):
                 # Reset to maximum volume (i.e. full capacity. )
                 self._reset_storage_only(use_initial_volume=self.reset_to_initial_volume)
                 self._last_reset_year = ts.year
+                self.active = True
+
+
+class SeasonalVirtualStorage(AnnualVirtualStorage):
+    """A virtual storage node that operates only for a specified period within a year.
+
+    This node is most useful for representing licences that are only enforced during specified periods. The
+    `reset_day` and `reset_month` parameters indicate when the node starts operating and the `end_day` and `end_month`
+    when it stops operating. For the period when the node is not operating, the volume of the node remains unchanged
+    and the node does not apply any constraints to the model.
+
+    The end_day and end_month can represent a date earlier in the year that the reset_day and and reset_month. This
+    situation represents a licence that operates across a year boundary. For example, one that is active between
+    October and March and not active between April and September.
+
+    Parameters
+    ----------
+    reset_day : int
+        The day of the month (0-31) when the node starts operating and its volume is reset to the initial value or
+        maximum volume.
+    reset_month : int
+        The month of the year (0-12) when the node starts operating and its volume is reset to the initial value or
+        maximum volume.
+    reset_to_initial_volume : bool
+        Reset the volume to the initial volume instead of maximum volume each year (default is False).
+    end_day : int
+        The day of the month (0-31) when the node stops operating.
+    end_month : int
+        The month of the year (0-12) when the node stops operating.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.end_day = kwargs.pop('end_day', 31)
+        self.end_month = kwargs.pop('end_month', 12)
+        self._last_active_year = None
+
+        super().__init__(*args, **kwargs)
+
+    def before(self, ts):
+        super().before(ts)
+
+        if ts.year != self._last_active_year:
+            if ts.index == 0:
+                if self._last_reset_year == ts.year:
+                    # First timestep is later in year than reset date
+                    if self.end_month < self.reset_month or \
+                            (self.end_month == self.reset_month and self.end_day <= self.reset_day):
+                        # end date is earlier in year than reset date so do not deactivate node in first year
+                        self._last_active_year = ts.year
+                else:
+                    # First timestep is earlier in year than reset date
+                    if self.end_month > self.reset_month or \
+                            (self.end_month == self.reset_month and self.end_day >= self.reset_day):
+                        # end date is later in year than reset date so node needs to be deactivated
+                        self.active = False
+            elif ts.month > self.end_month or \
+                    (ts.month == self.end_month and ts.day >= self.end_day):
+                self._last_active_year = ts.year
+                self.active = False
 
 
 class PiecewiseLink(Node):
