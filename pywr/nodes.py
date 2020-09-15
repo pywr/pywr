@@ -627,7 +627,7 @@ class AnnualVirtualStorage(VirtualStorage):
 
 
 class SeasonalVirtualStorage(AnnualVirtualStorage):
-    """A virtual storage node that operates for a specified period within a year. This is useful for representing
+    """A virtual storage node that operates for a specified period within a year that is useful for representing
     seasonal licences.
 
     The reset_day and reset_month parameters indicate when the node starts operating and the end_day and end_month
@@ -640,22 +640,21 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
 
     Parameters
     ----------
-    reset_day: int
+    reset_day : int
         The day of the month (0-31) when the node starts operating and its volume is reset to the initial value or
         maximum volume.
-    reset_month: int
+    reset_month : int
         The month of the year (0-12) when the node starts operating and its volume is reset to the initial value or
         maximum volume.
-    reset_to_initial_volume: bool
+    reset_to_initial_volume : bool
         Reset the volume to the initial volume instead of maximum volume each year (default is False).
-    end_day: int
+    end_day : int
         The day of the month (0-31) when the node stops operating.
-    end_month: int
+    end_month : int
         The month of the year (0-12) when the node stops operating.
     """
 
     def __init__(self, *args, **kwargs):
-
         self.end_day = kwargs.pop('end_day', 31)
         self.end_month = kwargs.pop('end_month', 12)
         self._last_active_year = None
@@ -683,8 +682,6 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
                     (ts.month == self.end_month and ts.day >= self.end_day):
                 self._last_active_year = ts.year
                 self.active = False
-
-
 
 
 class PiecewiseLink(Node):
