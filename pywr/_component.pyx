@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 
 ROOT_NODE = "root"
 
+
 class GraphInterface:
     def __init__(self, obj):
         self.obj = obj
@@ -52,8 +53,6 @@ class GraphInterface:
         return iter(self._members)
 
 
-
-
 cdef class Component:
     """ Components of a Model
 
@@ -87,7 +86,7 @@ cdef class Component:
 
         def __set__(self, name):
             # check for name collision
-            if name is  not None and name in self.model.components.keys():
+            if name is not None and name in self.model.components.keys():
                 raise ValueError('A component with the name "{}" already exists.'.format(name))
             # apply new name
             self._name = name

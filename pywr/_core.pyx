@@ -286,7 +286,7 @@ cdef class Timestep:
         # Calculate day of year index (zero based)
         cdef int i = self.dayofyear - 1
         if not self.is_leap_year:
-            if i > 58: # 28th Feb
+            if i > 58:  # 28th Feb
                 i += 1
         self.dayofyear_index = i
 
@@ -1112,7 +1112,7 @@ cdef class Storage(AbstractStorage):
             self._volume[i] = reset_volume
             self._current_pc[i] = reset_pc
 
-    cpdef after(self, Timestep ts, double[:] adjustment = None):
+    cpdef after(self, Timestep ts, double[:] adjustment=None):
         AbstractStorage.after(self, ts)
         cdef int i
         cdef double mxv, mnv
@@ -1226,7 +1226,7 @@ cdef class VirtualStorage(Storage):
         def __set__(self, value):
             self._factors = np.array(value, dtype=np.float64)
 
-    cpdef after(self, Timestep ts, double[:] adjustment = None):
+    cpdef after(self, Timestep ts, double[:] adjustment=None):
         cdef int i
         cdef ScenarioIndex si
         cdef AbstractNode n
@@ -1235,7 +1235,7 @@ cdef class VirtualStorage(Storage):
             self._flow[i] = 0.0
             for n, f in zip(self._nodes, self._factors):
                 self._flow[i] -= f*n._flow[i]
-        Storage.after(self, ts, adjustment = adjustment)
+        Storage.after(self, ts, adjustment=adjustment)
 
 
 cdef class RollingVirtualStorage(VirtualStorage):
@@ -1255,7 +1255,7 @@ cdef class RollingVirtualStorage(VirtualStorage):
         self._memory[:] = 0.0
         self._memory_pointer = 0
 
-    cpdef after(self, Timestep ts, double[:] adjustment = None):
+    cpdef after(self, Timestep ts, double[:] adjustment=None):
         cdef int i
         cdef ScenarioIndex si
 
