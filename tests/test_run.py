@@ -441,6 +441,96 @@ def test_annual_virtual_storage_with_dynamic_cost():
     assert_allclose(rec.data[3], 5)
 
 
+class TestSeasonalVirtualStorage:
+    def test_run(self):
+
+        model = load_model('seasonal_virtual_storage.json')
+        model.run()
+        supply_df = model.recorders["supply1"].to_dataframe()
+        licence_df = model.recorders["licence1"].to_dataframe()
+
+        # License is not constraining flow as volumne remains
+        assert_allclose(supply_df.loc["2015-01-01", :], 10)
+
+        # License is depleted and constrains flow
+        assert_allclose(supply_df.loc["2015-01-11", :], 0)
+        assert_allclose(licence_df.loc["2015-01-11", :], 0)
+
+        # License is depleted but does not constrain flow as it is not active
+        assert_allclose(supply_df.loc["2015-02-01", :], 10)
+        assert_allclose(licence_df.loc["2015-02-01", :], 0)
+
+        # check same values for second year
+        assert_allclose(supply_df.loc["2016-01-01", :], 10)
+        assert_allclose(supply_df.loc["2016-01-11", :], 0)
+        assert_allclose(licence_df.loc["2016-01-11", :], 0)
+        assert_allclose(supply_df.loc["2016-02-01", :], 10)
+        assert_allclose(licence_df.loc["2016-02-01", :], 0)
+
+    def test_year_overlap(self):
+        """test the the node works: end date < reset date < model start date. This
+        means that the node's active period extends from one year to the next
+        """
+
+        model = load_model('seasonal_virtual_storage.json')
+
+        vs = model.nodes["licence1"]
+        vs.reset_day = 1
+        vs.reset_month = 12
+        vs.end_day = 31
+        vs.end_month = 3
+        model.timestepper.start = "2015-12-15"
+        model.timestepper.end = "2016-12-02"
+
+        model.run()
+        supply_df = model.recorders["supply1"].to_dataframe()
+        licence_df = model.recorders["licence1"].to_dataframe()
+
+        # Start date is after reset data so there should be flow and volume should be reduced
+        assert_allclose(supply_df.loc["2015-12-15", :], 10)
+        assert_allclose(licence_df.loc["2015-12-15", :], 90)
+
+        # Licence is depleted but remains active so flow is 0
+        assert_allclose(supply_df.loc["2015-12-31", :], 0)
+        assert_allclose(licence_df.loc["2015-12-31", :], 0)
+
+        # License is turned off so flow is not constrained
+        assert_allclose(supply_df.loc["2016-03-31", :], 10)
+
+        # License is reset and made active
+        assert_allclose(supply_df.loc["2016-12-01", :], 10)
+        assert_allclose(licence_df.loc["2016-12-01", :], 90)
+
+    def test_start_deactivated(self):
+        """test the the node is not active when:  model start date < reset date < end date
+        """
+
+        model = load_model('seasonal_virtual_storage.json')
+
+        vs = model.nodes["licence1"]
+        vs.reset_day = 1
+        vs.reset_month = 2
+        vs.end_day = 1
+        vs.end_month = 3
+        model.timestepper.start = "2015-01-01"
+        model.timestepper.end = "2015-04-01"
+
+        model.run()
+        supply_df = model.recorders["supply1"].to_dataframe()
+        licence_df = model.recorders["licence1"].to_dataframe()
+
+        # Start date before reset date and end date so there should be flow but no reduction in node storage
+        assert_allclose(supply_df.loc["2015-01-15", :], 10)
+        assert_allclose(licence_df.loc["2015-01-15", :], 100)
+
+        # Licence active but depleted so flow is 0
+        assert_allclose(supply_df.loc["2015-2-15", :], 0)
+        assert_allclose(licence_df.loc["2015-2-15", :], 0)
+
+        # License is turned off so flow is not constrained
+        assert_allclose(supply_df.loc["2015-03-01", :], 10)
+
+
 def test_storage_spill_compensation():
     """Test storage spill and compensation flows
 
