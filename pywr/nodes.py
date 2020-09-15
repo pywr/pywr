@@ -627,10 +627,10 @@ class AnnualVirtualStorage(VirtualStorage):
 
 
 class SeasonalVirtualStorage(AnnualVirtualStorage):
-    """A virtual storage node that operates for a specified period within a year that is useful for representing
-    seasonal licences.
+    """A virtual storage node that operates only for a specified period within a year.
 
-    The reset_day and reset_month parameters indicate when the node starts operating and the end_day and end_month
+    This node is most useful for representing licences that are only enforced during specified periods. The
+    `reset_day` and `reset_month` parameters indicate when the node starts operating and the `end_day` and `end_month`
     when it stops operating. For the period when the node is not operating, the volume of the node remains unchanged
     and the node does not apply any constraints to the model.
 

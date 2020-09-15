@@ -447,7 +447,7 @@ class TestSeasonalVirtualStorage:
         model = load_model('seasonal_virtual_storage.json')
         model.run()
         supply_df = model.recorders["supply1"].to_dataframe()
-        licence_df= model.recorders["licence1"].to_dataframe()
+        licence_df = model.recorders["licence1"].to_dataframe()
 
         # License is not constraining flow as volumne remains
         assert_allclose(supply_df.loc["2015-01-01", :], 10)
@@ -484,9 +484,9 @@ class TestSeasonalVirtualStorage:
 
         model.run()
         supply_df = model.recorders["supply1"].to_dataframe()
-        licence_df= model.recorders["licence1"].to_dataframe()
+        licence_df = model.recorders["licence1"].to_dataframe()
 
-        # Start date is after reset data so there should be flow and volumne should be reduced
+        # Start date is after reset data so there should be flow and volume should be reduced
         assert_allclose(supply_df.loc["2015-12-15", :], 10)
         assert_allclose(licence_df.loc["2015-12-15", :], 90)
 
@@ -517,7 +517,7 @@ class TestSeasonalVirtualStorage:
 
         model.run()
         supply_df = model.recorders["supply1"].to_dataframe()
-        licence_df= model.recorders["licence1"].to_dataframe()
+        licence_df = model.recorders["licence1"].to_dataframe()
 
         # Start date before reset date and end date so there should be flow but no reduction in node storage
         assert_allclose(supply_df.loc["2015-01-15", :], 10)
