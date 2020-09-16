@@ -672,17 +672,34 @@ cdef class AggregatedNode(AbstractNode):
 
     property factors:
         def __get__(self):
-            if self._factors is None:
-                return None
-            else:
-                return np.asarray(self._factors, np.float64)
+            return self._factors
 
         def __set__(self, values):
-            values = np.array(values, np.float64)
-            if np.any(values < 1e-6):
-                warnings.warn("Very small factors in AggregateNode result in ill-conditioned matrix")
-            self._factors = values
+            from pywr.parameters import ConstantParameter
+
+            # remove existing factors (if any)
+            if self._factors is not None:
+                for factor in self._factors:
+                    factor.parents.remove(self)
+
+            if values is None:
+                factors = None
+            else:
+                factors = []
+                for val in values:
+                    if isinstance(val, (int, float)):
+                        factors.append(ConstantParameter(self.model, val))
+                    else:
+                        factors.append(val)
+
+            self._factors = factors
             self.model.dirty = True
+
+    property has_fixed_factors:
+        """Returns true if all factors are of type `ConstantParameter`"""
+        def __get__(self):
+            from pywr.parameters import ConstantParameter
+            return all([isinstance(p, ConstantParameter) for p in self.factors])
 
     property flow_weights:
         def __get__(self):
@@ -693,7 +710,7 @@ cdef class AggregatedNode(AbstractNode):
 
         def __set__(self, values):
             values = np.array(values, np.float64)
-            if np.any(values < 1e-6):
+            if np.any(np.abs(values) < 1e-6):
                 warnings.warn("Very small flow_weights in AggregateNode result in ill-conditioned matrix")
             self._flow_weights = values
             self.model.dirty = True
@@ -754,16 +771,47 @@ cdef class AggregatedNode(AbstractNode):
             return self._max_flow
         return self._max_flow_param.get_value(scenario_index)
 
+    cpdef double[:] get_factors(self, ScenarioIndex scenario_index):
+        """Get node factors for the current timestep and given scenario index.
+        """
+        cdef Parameter p
+        return np.array([p.get_value(scenario_index) for p in self.factors], np.float64)
+
+    cpdef double[:] get_factors_norm(self, ScenarioIndex scenario_index):
+        """Get node factors normalised by the factor of the first node
+        """
+        cdef double f0, f
+        cdef int i
+        cdef double[:] factors_norm, factors
+
+        factors = self.get_factors(scenario_index)
+        f0 = factors[0]
+        factors_norm = np.empty(len(factors), np.float64)
+
+        for i in range(len(factors)):
+            factors_norm[i] = f0/factors[i]
+        return factors_norm
+
+    @classmethod
+    def load_factors(cls, model, data):
+        """ Class method to load factors data from dict. """
+        from pywr.parameters import load_parameter
+
+        factors = None
+        if 'factors' in data:
+            factors = []
+            for pdata in data.pop('factors'):
+                factors.append(load_parameter(model, pdata))
+        return factors
+
     @classmethod
     def load(cls, data, model):
         from pywr.parameters import load_parameter
         name = data["name"]
         nodes = [model._get_node_from_ref(model, node_name) for node_name in data["nodes"]]
         agg = cls(model, name, nodes)
-        try:
-            agg.factors = data["factors"]
-        except KeyError:
-            pass
+        agg.factors = cls.load_factors(model, data)
+
         try:
             agg.flow_weights = data["flow_weights"]
         except KeyError:
@@ -887,6 +935,52 @@ cdef class Storage(AbstractStorage):
             else:
                 self._initial_volume_pc = value
 
+    cpdef double get_initial_volume(self) except? -1:
+        """Returns the absolute initial volume. """
+        cdef double mxv = self._max_volume
+
+        if self._max_volume_param is not None:
+            # Max volume is a parameter; require both initial_volume and initial_volume_pc be given.
+            # The parameter will not be evaluated at the beginning of the model run.
+            if not np.isfinite(self._initial_volume_pc) or not np.isfinite(self._initial_volume):
+                raise RuntimeError('Both `initial_volume` and `initial_volume_pc` must be supplied if'
+                                   '`max_volume` is defined as a parameter.')
+
+            initial_volume = self._initial_volume
+        else:
+            # User only has to supply absolute or relative initial volume
+            if np.isfinite(self._initial_volume_pc):
+                initial_volume = self._initial_volume_pc * mxv
+            elif np.isfinite(self._initial_volume):
+                initial_volume = self._initial_volume
+            else:
+                raise RuntimeError('Initial volume must be set as either a percentage or absolute volume.')
+        return initial_volume
+
+    cpdef double get_initial_pc(self) except? -1:
+        """Returns the initial volume as a proportion. """
+        cdef double mxv = self._max_volume
+
+        if self._max_volume_param is not None:
+            # Max volume is a parameter; require both initial_volume and initial_volume_pc be given.
+            # The parameter will not be evaluated at the beginning of the model run.
+            if not np.isfinite(self._initial_volume_pc) or not np.isfinite(self._initial_volume):
+                raise RuntimeError('Both `initial_volume` and `initial_volume_pc` must be supplied if'
+                                   '`max_volume` is defined as a parameter.')
+            initial_pc = self._initial_volume_pc
+        else:
+            # User only has to supply absolute or relative initial volume
+            if np.isfinite(self._initial_volume_pc):
+                initial_pc = self._initial_volume_pc
+            elif np.isfinite(self._initial_volume):
+                try:
+                    initial_pc = self._initial_volume / mxv
+                except ZeroDivisionError:
+                    initial_pc = np.nan
+            else:
+                raise RuntimeError('Initial volume must be set as either a percentage or absolute volume.')
+        return initial_pc
+
     property min_volume:
         def __get__(self):
             if self._min_volume_param is None:
@@ -991,18 +1085,11 @@ cdef class Storage(AbstractStorage):
 
         for i, si in enumerate(self.model.scenarios.combinations):
 
-            if self._max_volume_param is not None:
-                # Ensure variable maximum volume is taken in to account
-                if use_initial_volume:
-                    # Max volume is a parameter; require both initial_volume and initial_volume_pc be given.
-                    # The parameter will not be evaluated at the beginning of the model run.
-                    if not np.isfinite(self._initial_volume_pc) or not np.isfinite(self._initial_volume):
-                        raise RuntimeError('Both `initial_volume` and `initial_volume_pc` must be supplied if'
-                                           '`max_volume` is defined as a parameter.')
-
-                    reset_volume = self._initial_volume
-                    reset_pc = self._initial_volume_pc
-                elif self.model.timestep.index > 0:
+            if use_initial_volume:
+                reset_volume = self.get_initial_volume()
+                reset_pc = self.get_initial_pc()
+            else:
+                if self._max_volume_param is not None:
                     # If it's not the first time-step, and we want to reset to max capacity then the
                     # parameter should already have been evaluated.
                     mxv = self._max_volume_param.get_value(si)
@@ -1014,29 +1101,18 @@ cdef class Storage(AbstractStorage):
                         reset_pc = reset_volume / mxv
                     except ZeroDivisionError:
                         reset_pc = np.nan
-            else:
-                # Max volume is a double.
-                if use_initial_volume:
-                    # User only has to supply absolute or relative initial volume
-                    if np.isfinite(self._initial_volume_pc):
-                        reset_volume = self._initial_volume_pc * mxv
-                    elif np.isfinite(self._initial_volume):
-                        reset_volume = self._initial_volume
-                    else:
-                        raise RuntimeError('Initial volume must be set as either a percentage or absolute volume.')
                 else:
                     reset_volume = mxv
-
-                # Compute the proportional volume.
-                try:
-                    reset_pc = reset_volume / mxv
-                except ZeroDivisionError:
-                    reset_pc = np.nan
+                    # Compute the proportional volume.
+                    try:
+                        reset_pc = reset_volume / mxv
+                    except ZeroDivisionError:
+                        reset_pc = np.nan
 
             self._volume[i] = reset_volume
             self._current_pc[i] = reset_pc
 
-    cpdef after(self, Timestep ts):
+    cpdef after(self, Timestep ts, double[:] adjustment = None):
         AbstractStorage.after(self, ts)
         cdef int i
         cdef double mxv, mnv
@@ -1045,9 +1121,14 @@ cdef class Storage(AbstractStorage):
         for i, si in enumerate(self.model.scenarios.combinations):
             self._volume[i] += self._flow[i]*ts.days
             # Ensure variable maximum volume is taken in to account
-
             mxv = self.get_max_volume(si)
             mnv = self.get_min_volume(si)
+
+            # Apply any storage adjustment if given
+            if adjustment is not None:
+                self._volume[i] += adjustment[i]
+                # Ensure volume stays within bounds.
+                self._volume[i] = min(mxv, max(mnv, self._volume[i]))
 
             if abs(self._volume[i] - mxv) < 1e-6:
                 self._volume[i] = mxv
@@ -1078,7 +1159,7 @@ cdef class AggregatedStorage(AbstractStorage):
     property initial_volume:
         def __get__(self, ):
             cdef Storage s
-            return np.sum([s._initial_volume for s in self._storage_nodes])
+            return np.sum([s.get_initial_volume() for s in self._storage_nodes])
 
     cpdef reset(self):
         cdef int i
@@ -1129,6 +1210,11 @@ cdef class VirtualStorage(Storage):
     def __cinit__(self, ):
         self._allow_isolated = True
         self.virtual = True
+        self.active = True
+
+    cpdef reset(self):
+        self.active = True
+        Storage.reset(self)
 
     property nodes:
         def __get__(self):
@@ -1145,13 +1231,48 @@ cdef class VirtualStorage(Storage):
         def __set__(self, value):
             self._factors = np.array(value, dtype=np.float64)
 
-    cpdef after(self, Timestep ts):
+    cpdef after(self, Timestep ts, double[:] adjustment = None):
         cdef int i
         cdef ScenarioIndex si
         cdef AbstractNode n
 
+        if self.active:
+            for i, si in enumerate(self.model.scenarios.combinations):
+                self._flow[i] = 0.0
+                for n, f in zip(self._nodes, self._factors):
+                    self._flow[i] -= f*n._flow[i]
+            Storage.after(self, ts, adjustment = adjustment)
+
+
+cdef class RollingVirtualStorage(VirtualStorage):
+    def __cinit__(self):
+        self._memory_pointer = 0
+
+    cpdef setup(self, model):
+        super(RollingVirtualStorage, self).setup(model)
+        cdef int ncomb = len(model.scenarios.combinations)
+        if self.timesteps < 2:
+            raise ValueError('The number of time-steps for a RollingVirtualStorage node must be greater than one.')
+        self._memory = np.zeros((self.timesteps-1, ncomb), dtype=np.float64)
+        self._memory_pointer = 0
+
+    cpdef reset(self):
+        VirtualStorage.reset(self)
+        self._memory[:] = 0.0
+        self._memory_pointer = 0
+
+    cpdef after(self, Timestep ts, double[:] adjustment = None):
+        cdef int i
+        cdef ScenarioIndex si
+
+        assert adjustment is None
+
+        # Update the storage volumes by applying an adjustment
+        VirtualStorage.after(self, ts, adjustment=self._memory[self._memory_pointer, :])
+
+        # Store today's flow in the memory and increment the memory pointer
         for i, si in enumerate(self.model.scenarios.combinations):
-            self._flow[i] = 0.0
-            for n, f in zip(self._nodes, self._factors):
-                self._flow[i] -= f*n._flow[i]
-        Storage.after(self, ts)
+            # Flow is negative in VirtualStorage to remove from the store, save the +ve number here for
+            # returning to the store later
+            self._memory[self._memory_pointer, i] = -self._flow[i] * ts.days
+        self._memory_pointer = (self._memory_pointer + 1) % (self.timesteps - 1)

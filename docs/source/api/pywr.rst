@@ -11,4 +11,5 @@ Pywr reference documentation.
    pywr.recorders
    pywr.solvers
    pywr.notebook
+   pywr.utils
 

@@ -1,3 +1,5 @@
+from cpython cimport array
+import array
 from libc.stdlib cimport malloc, free
 from libc.math cimport abs
 from libc.float cimport DBL_MAX
@@ -59,7 +61,7 @@ message_levels = {
 # Inline helper functions
 # =======================
 cdef inline int constraint_type(double a, double b):
-    if a == b:
+    if abs(a - b) < 1e-8:
         return GLP_FX
     elif b == DBL_MAX:
         if a == -DBL_MAX:
@@ -95,6 +97,15 @@ cdef class AbstractNodeData:
     cdef public int id
     cdef public bint is_link
     cdef public list in_edges, out_edges
+
+
+cdef class AggNodeFactorData:
+    """Helper class for caching data for Aggregated Nodes that have factors defined by parameters."""
+    cdef public int row
+    cdef public int node_ind
+    cdef public cvarray ind_ptr
+    cdef public cvarray inds
+    cdef public cvarray vals
 
 
 cdef class GLPKSolver:
@@ -253,6 +264,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
     cdef int idx_row_storages
     cdef int idx_row_virtual_storages
     cdef int idx_row_aggregated
+    cdef int idx_row_aggregated_with_factors
     cdef int idx_row_aggregated_min_max
 
     cdef public list routes
@@ -260,6 +272,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
     cdef list storages
     cdef list virtual_storages
     cdef list aggregated
+    cdef list aggregated_with_factors
 
     cdef int[:] routes_cost
     cdef int[:] routes_cost_indptr
@@ -345,6 +358,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
             elif isinstance(some_node, AggregatedNode):
                 if some_node.factors is not None:
                     aggregated_with_factors.append(some_node)
+                    some_node.__agg_factor_data = AggNodeFactorData()
                 aggregated.append(some_node)
 
         if len(routes) == 0:
@@ -490,42 +504,36 @@ cdef class CythonGLPKSolver(GLPKSolver):
             free(ind)
             free(val)
 
-        # aggregated node flow ratio constraints
+        # Add constraint rows for aggregated nodes with dynamics factors and
+        # cache data so row values can be updated in solve
         if len(aggregated_with_factors):
             self.idx_row_aggregated = self.idx_row_virtual_storages + len(virtual_storages)
         for agg_node in aggregated_with_factors:
             nodes = agg_node.nodes
-            factors = agg_node.factors
-            assert(len(nodes) == len(factors))
 
             row = glp_add_rows(self.prob, len(agg_node.nodes)-1)
+            agg_node.__agg_factor_data.row = row
 
             cols = []
-            for node in nodes:
-                cols.append([n for n, route in enumerate(routes) if node in route])
+            ind_ptr = [0,]
+            first_node_cols = [0] + [n+1 for n, route in enumerate(routes) if nodes[0] in route]
+            agg_node.__agg_factor_data.node_ind = len(first_node_cols)
+            for i, node in enumerate(nodes[1:]):
+                cols.extend(first_node_cols + [n+1 for n, route in enumerate(routes) if node in route])
+                ind_ptr.append(len(cols))
 
-            # normalise factors
-            f0 = factors[0]
-            factors_norm = [f0/f for f in factors]
+            agg_node.__agg_factor_data.ind_ptr = cvarray(shape=(len(ind_ptr),), itemsize=sizeof(int), format="i")
+            for i, v in enumerate(ind_ptr):
+                agg_node.__agg_factor_data.ind_ptr[i] = v
 
-            # update matrix
+            agg_node.__agg_factor_data.inds = cvarray(shape=(len(cols),), itemsize=sizeof(int), format="i")
+            agg_node.__agg_factor_data.vals = cvarray(shape=(len(cols),), itemsize=sizeof(double), format="d")
+            for i, v in enumerate(cols):
+                agg_node.__agg_factor_data.inds[i] = v
+                agg_node.__agg_factor_data.vals[i] = 1.0
+
             for n in range(len(nodes)-1):
-                length = len(cols[0])+len(cols[n+1])
-                ind = <int*>malloc(1+length * sizeof(int))
-                val = <double*>malloc(1+length * sizeof(double))
-                for i, c in enumerate(cols[0]):
-                    ind[1+i] = 1+c
-                    val[1+i] = 1.0
-                for i, c in enumerate(cols[n+1]):
-                    ind[1+len(cols[0])+i] = 1+c
-                    val[1+len(cols[0])+i] = -factors_norm[n+1]
-                set_mat_row(self.prob, row+n, length, ind, val)
-                free(ind)
-                free(val)
-
                 set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
-                # glp_set_row_name(self.prob, row+n,
-                #                  'ag.f{}.{}'.format(n, agg_node.fully_qualified_name).encode('utf-8'))
 
         # aggregated node min/max flow constraints
         if aggregated:
@@ -578,6 +586,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         self.storages = storages
         self.virtual_storages = virtual_storages
         self.aggregated = aggregated
+        self.aggregated_with_factors = aggregated_with_factors
 
         self.basis_manager.init_basis(self.prob, len(model.scenarios.combinations))
         self.is_first_solve = True
@@ -587,8 +596,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
             'total': 0.0,
             'lp_solve': 0.0,
             'result_update': 0.0,
-            'bounds_update_nonstorage': 0.0,
-            'bounds_update_storage': 0.0,
+            'constraint_update_factors': 0.0,
             'bounds_update_nonstorage': 0.0,
             'bounds_update_storage': 0.0,
             'objective_update': 0.0,
@@ -623,6 +631,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         cdef Storage storage
         cdef AbstractNode _node
         cdef AbstractNodeData data
+        cdef AggNodeFactorData agg_data
         cdef AggregatedNode agg_node
         cdef double min_flow
         cdef double max_flow
@@ -632,8 +641,6 @@ cdef class CythonGLPKSolver(GLPKSolver):
         cdef double avail_volume
         cdef double t0
         cdef int col, row
-        cdef int* ind
-        cdef double* val
         cdef double lb
         cdef double ub
         cdef Timestep timestep
@@ -641,9 +648,13 @@ cdef class CythonGLPKSolver(GLPKSolver):
         cdef cross_domain_col
         cdef list route
         cdef int node_id, indptr, nroutes
+        cdef int[::1] inds
+        cdef double[::1] vals
         cdef double flow
-        cdef int n, m
+        cdef int n, m, i, ptr
         cdef Py_ssize_t length
+        cdef int[:] indptr_array
+        cdef double[:] factors_norm
 
         timestep = model.timestep
         cdef list routes = self.routes
@@ -675,6 +686,32 @@ cdef class CythonGLPKSolver(GLPKSolver):
             set_obj_coef(self.prob, self.idx_col_routes+col, cost)
 
         self.stats['objective_update'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
+
+        # Update constraint matrix values for aggregated nodes that have factors defined as parameters
+        for agg_node in self.aggregated_with_factors:
+
+            factors_norm = agg_node.get_factors_norm(scenario_index)
+
+            agg_data = agg_node.__agg_factor_data
+            inds = agg_data.inds
+            vals = agg_data.vals
+            indptr_array = agg_data.ind_ptr
+
+            for n in range(len(agg_node.nodes)-1):
+
+                ptr = indptr_array[n]
+                length = indptr_array[n+1] - ptr
+
+                # only update factors for second node of each row, factor values for first node are already 1.0
+                for i in range(ptr + agg_data.node_ind, ptr + length):
+                    vals[i] = -factors_norm[n+1]
+
+                # 'length - 1' is used here because the ind and val slices start with a padded zero value.
+                # This is required by 'set_mat_row'.
+                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
+
+        self.stats['constraint_update_factors'] += time.perf_counter() - t0
         t0 = time.perf_counter()
 
         # update non-storage properties
@@ -728,6 +765,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
             if max_volume == min_volume:
                 set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
+            elif not storage.active:
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
@@ -816,12 +855,14 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
     cdef int idx_row_storages
     cdef int idx_row_virtual_storages
     cdef int idx_row_aggregated
+    cdef int idx_row_aggregated_with_factors
     cdef int idx_row_aggregated_min_max
 
     cdef list non_storages
     cdef list storages
     cdef list virtual_storages
     cdef list aggregated
+    cdef list aggregated_with_factors
 
     cdef list all_nodes
     cdef list all_edges
@@ -914,6 +955,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             elif isinstance(some_node, AggregatedNode):
                 if some_node.factors is not None:
                     aggregated_with_factors.append(some_node)
+                    some_node.__agg_factor_data = AggNodeFactorData()
                 aggregated.append(some_node)
 
         if len(non_storages) == 0:
@@ -1091,45 +1133,43 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             free(ind)
             free(val)
 
-        # aggregated node flow ratio constraints
+        # Add constraint rows for aggregated nodes with dynamics factors and
+        # cache data so row values can be updated in solve
         if len(aggregated_with_factors):
-            self.idx_row_aggregated = self.idx_row_virtual_storages + len(virtual_storages)
+            self.idx_row_aggregated_with_factors = self.idx_row_virtual_storages + len(virtual_storages)
         for agg_node in aggregated_with_factors:
             nodes = agg_node.nodes
-            factors = agg_node.factors
-            assert(len(nodes) == len(factors))
 
             row = glp_add_rows(self.prob, len(agg_node.nodes)-1)
+            agg_node.__agg_factor_data.row = row
 
             cols = []
-            for node in nodes:
-                if isinstance(node, BaseOutput):
-                    cols.append([c for c in node.__data.in_edges])
+            ind_ptr = [0,]
+            if isinstance(nodes[0], BaseOutput):
+                first_node_cols = [0] + [c+1 for c in nodes[0].__data.in_edges]
+            else:
+                first_node_cols = [0] + [c+1 for c in nodes[0].__data.out_edges]
+
+            agg_node.__agg_factor_data.node_ind = len(first_node_cols)
+            for i, some_node in enumerate(nodes[1:]):
+                if isinstance(some_node, BaseOutput):
+                    cols.extend(first_node_cols + [c+1 for c in some_node.__data.in_edges])
                 else:
-                    cols.append([c for c in node.__data.out_edges])
+                    cols.extend(first_node_cols + [c+1 for c in some_node.__data.out_edges])
+                ind_ptr.append(len(cols))
 
-            # normalise factors
-            f0 = factors[0]
-            factors_norm = [f0/f for f in factors]
+            agg_node.__agg_factor_data.ind_ptr = cvarray(shape=(len(ind_ptr),), itemsize=sizeof(int), format="i")
+            for i, v in enumerate(ind_ptr):
+                agg_node.__agg_factor_data.ind_ptr[i] = v
 
-            # update matrix
+            agg_node.__agg_factor_data.inds = cvarray(shape=(len(cols),), itemsize=sizeof(int), format="i")
+            agg_node.__agg_factor_data.vals = cvarray(shape=(len(cols),), itemsize=sizeof(double), format="d")
+            for i, v in enumerate(cols):
+                agg_node.__agg_factor_data.inds[i] = v
+                agg_node.__agg_factor_data.vals[i] = 1.0
+
             for n in range(len(nodes)-1):
-                length = len(cols[0])+len(cols[n+1])
-                ind = <int*>malloc(1+length * sizeof(int))
-                val = <double*>malloc(1+length * sizeof(double))
-                for i, c in enumerate(cols[0]):
-                    ind[1+i] = 1+c
-                    val[1+i] = 1.0
-                for i, c in enumerate(cols[n+1]):
-                    ind[1+len(cols[0])+i] = 1+c
-                    val[1+len(cols[0])+i] = -factors_norm[n+1]
-                set_mat_row(self.prob, row+n, length, ind, val)
-                free(ind)
-                free(val)
-
                 set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
-                # glp_set_row_name(self.prob, row+n,
-                #                  'ag.f{}.{}'.format(n, agg_node.fully_qualified_name).encode('utf-8'))
 
         # aggregated node min/max flow constraints
         if aggregated:
@@ -1168,6 +1208,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         self.storages = storages
         self.virtual_storages = virtual_storages
         self.aggregated = aggregated
+        self.aggregated_with_factors = aggregated_with_factors
 
         self.basis_manager.init_basis(self.prob, len(model.scenarios.combinations))
         self.is_first_solve = True
@@ -1177,6 +1218,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             'total': 0.0,
             'lp_solve': 0.0,
             'result_update': 0.0,
+            'constraint_update_factors': 0.0,
             'bounds_update_nonstorage': 0.0,
             'bounds_update_storage': 0.0,
             'objective_update': 0.0,
@@ -1212,6 +1254,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         cdef AbstractNode _node
         cdef AbstractNodeData data
         cdef AggregatedNode agg_node
+        cdef AggNodeFactorData agg_data
         cdef double min_flow
         cdef double max_flow
         cdef double cost
@@ -1229,8 +1272,12 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         cdef cross_domain_col
         cdef list route
         cdef int node_id, indptr, nedges
+        cdef int[::1] inds
+        cdef double[::1] vals
         cdef double flow
-        cdef int n, m
+        cdef int n, m, i, ptr
+        cdef int[:] indptr_array
+        cdef double[:] factors_norm
         cdef Py_ssize_t length
 
         timestep = model.timestep
@@ -1271,6 +1318,32 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             set_obj_coef(self.prob, self.idx_col_edges+col, edge_costs[col])
 
         self.stats['objective_update'] += time.perf_counter() - t0
+        t0 = time.perf_counter()
+
+        # Update constraint matrix values for aggregated nodes that have factors defined as parameters
+        for agg_node in self.aggregated_with_factors:
+
+            factors_norm = agg_node.get_factors_norm(scenario_index)
+
+            agg_data = agg_node.__agg_factor_data
+            inds = agg_data.inds
+            vals = agg_data.vals
+            indptr_array = agg_data.ind_ptr
+
+            for n in range(len(agg_node.nodes)-1):
+
+                ptr = indptr_array[n]
+                length = indptr_array[n+1] - ptr
+
+                # only update factors for second node of each row, factor values for first node are already 1.0
+                for i in range(ptr + agg_data.node_ind, ptr + length):
+                    vals[i] = -factors_norm[n+1]
+
+                # 'length - 1' is used here because the ind and val slices start with a padded zero value.
+                # This is required by 'set_mat_row'.
+                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
+
+        self.stats['constraint_update_factors'] += time.perf_counter() - t0
         t0 = time.perf_counter()
 
         # update non-storage properties
@@ -1325,6 +1398,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
             if max_volume == min_volume:
                 set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
+            elif not storage.active:
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or

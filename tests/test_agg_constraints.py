@@ -1,9 +1,10 @@
 from pywr.core import Model, Input, Output, Link, Storage, AggregatedNode, PiecewiseLink, MultiSplitLink
-from pywr.parameters import ConstantParameter
+from pywr.parameters import ConstantParameter, DailyProfileParameter
 
 import pytest
 from numpy.testing import assert_allclose
 import pandas
+import numpy as np
 from pandas import Timestamp
 
 from helpers import load_model
@@ -23,13 +24,15 @@ def test_aggregated_node_two_factors(model):
 
     agg = AggregatedNode(model, "agg", [A, B])
     agg.factors = [0.5, 0.5]
-    assert_allclose(agg.factors, [0.5, 0.5])
+
+    for f in agg.factors:
+        assert isinstance(f, ConstantParameter)
+        assert_allclose(f.get_double_variables(), 0.5)
 
     A.connect(Z)
     B.connect(Z)
 
     model.run()
-
     assert_allclose(agg.flow, 80.0)
     assert_allclose(A.flow, 40.0)
     assert_allclose(B.flow, 40.0)
@@ -43,7 +46,10 @@ def test_aggregated_node_three_factors(model):
 
     agg = AggregatedNode(model, "agg", [A, B, C])
     agg.factors = [0.5, 1.0, 2.0]
-    assert_allclose(agg.factors, [0.5, 1.0, 2.0])
+
+    for f, v in zip(agg.factors, [0.5, 1.0, 2.0]):
+        assert isinstance(f, ConstantParameter)
+        assert_allclose(f.get_double_variables(), v)
 
     A.connect(Z)
     B.connect(Z)
@@ -55,37 +61,6 @@ def test_aggregated_node_three_factors(model):
     assert_allclose(A.flow, 5.0)
     assert_allclose(B.flow, 10.0)
     assert_allclose(C.flow, 20.0)
-
-@pytest.mark.skip(reason="not implemented")
-def test_aggregated_node_two_factors_time_varying(model):
-    """Nodes constrained by a time-varying ratio between flows (2 nodes)"""
-    model.timestepper.end = Timestamp("2016-01-03")
-
-    A = Input(model, "A")
-    B = Input(model, "B", max_flow=40.0)
-    Z = Output(model, "Z", max_flow=100, cost=-10)
-
-    agg = AggregatedNode(model, "agg", [A, B])
-    agg.factors = [0.5, 0.5]
-    assert_allclose(agg.factors, [0.5, 0.5])
-
-    A.connect(Z)
-    B.connect(Z)
-
-    model.setup()
-    model.step()
-
-    assert_allclose(agg.flow, 80.0)
-    assert_allclose(A.flow, 40.0)
-    assert_allclose(B.flow, 40.0)
-
-    agg.factors = [1.0, 2.0]
-
-    model.step()
-
-    assert_allclose(agg.flow, 60.0)
-    assert_allclose(A.flow, 20.0)
-    assert_allclose(B.flow, 40.0)
 
 
 def test_aggregated_node_max_flow(model):
@@ -215,7 +190,11 @@ def test_aggregated_constraint_json():
 
     agg = model.nodes["agg"]
     assert(agg.nodes == [model.nodes["A"], model.nodes["B"]])
-    assert_allclose(agg.factors, [2.0, 4.0])
+
+    for f, v in zip(agg.factors, [2.0, 4.0]):
+        assert isinstance(f, ConstantParameter)
+        assert_allclose(f.get_double_variables(), v)
+
     assert_allclose(agg.max_flow, 30.0)
     assert_allclose(agg.min_flow, 5.0)
 
@@ -279,3 +258,71 @@ def test_multipiecewise_constraint(model, flow):
 
     model.step()
     assert_allclose(D.flow, min((flow - 40) * 0.25, 50.0))
+
+@pytest.mark.skipif(Model().solver.name not in ["glpk", "glpk-edge"], reason="Dynamic factors for agg nodes have only \
+                                                                              been implemented for glpk solvers")
+def test_dynamic_factors(model):
+
+    model.timestepper.end = Timestamp("2016-01-03")
+
+    A = Input(model, "A", max_flow=10.0)
+    B = Input(model, "B", max_flow=10.0)
+    C = Input(model, "C", max_flow=10.0)
+    Z = Output(model, "Z", cost=-10)
+
+    agg = AggregatedNode(model, "agg", [A, B, C])
+    agg.max_flow = 10.0
+    factor1 = DailyProfileParameter(model, np.append(np.array([0.8, 0.3]), np.ones(364)))
+    factor2 = DailyProfileParameter(model, np.append(np.array([0.1, 0.3]), np.ones(364)))
+    factor3 = DailyProfileParameter(model, np.append(np.array([0.1, 0.4]), np.ones(364)))
+
+    agg.factors = [factor1, factor2, factor3]
+
+    A.connect(Z)
+    B.connect(Z)
+    C.connect(Z)
+
+    model.step()
+
+    assert_allclose(A.flow, 8)
+    assert_allclose(B.flow, 1)
+    assert_allclose(C.flow, 1)
+
+    model.step()
+
+    assert_allclose(A.flow, 3)
+    assert_allclose(B.flow, 3)
+    assert_allclose(C.flow, 4)
+
+@pytest.mark.skipif(Model().solver.name not in ["glpk", "glpk-edge"], reason="Dynamic factors for agg nodes have only \
+                                                                              been implemented for glpk solvers")
+def test_dynamic_factors_load(model):
+
+    model.timestepper.end = Timestamp("2016-01-03")
+
+    A = Input(model, "A", max_flow=10.0)
+    B = Input(model, "B", max_flow=10.0)
+    Z = Output(model, "Z", cost=-10, max_flow=10.0)
+
+    A.connect(Z)
+    B.connect(Z)
+
+    DailyProfileParameter(model, np.append(np.array([3, 4]), np.ones(364)), name="factor1")
+
+    data = {
+        "name": "agg",
+        "factors": [1, "factor1"],
+        "nodes": ["A", "B"]
+    }
+
+    AggregatedNode.load(data, model)
+
+    model.step()
+
+    assert_allclose(A.flow, 2.5)
+    assert_allclose(B.flow, 7.5)
+
+    model.step()
+
+    assert_allclose(A.flow, 2)
+    assert_allclose(B.flow, 8)

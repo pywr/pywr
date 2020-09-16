@@ -2,6 +2,28 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.9.0
+
+### New Features
+
+- Added `BisectionSearchModel` that performs a bisectional search on a single parameter instead of a 
+standard simulation. (#915)
+- Allow `AggregatedNode` factors to be time-varying using `Parameter`s. (#919)
+- Added `RollingVirtualStorage` node intended for modelling rolling licenses. (#891)
+- Added `SeasonalVirtualStorage` node intended for modelling licenses that apply for limited periods. (#923)
+
+### Bug Fixes
+
+- Ensure `RollingMeanFlowNodeRecorder`'s internal memory pointer is reset correctly. (#893)
+- Fix a bug where `AggregatedNode` would warn about small factors with any negative value. (#921)
+- Fixed `AggreagtedNode` initial volume being incorrectly calculated when its dependent nodes used a proportional
+initial volume. (#922)
+
+### Miscellaneous
+
+- Added `NullSolver` that performs no allocation and is intended for debugging purposes. (#924)
+- Added a small tolerance for equality checking of fixed bounds in the GLPK solvers. (#925)
+
 ## v1.8.0
 
 ### New Features
