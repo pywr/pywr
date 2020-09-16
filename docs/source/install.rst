@@ -161,13 +161,13 @@ There are a collection of unit tests for Pywr written using ``pytest``. These ca
 
 .. code-block:: shell
 
-  py.test tests
+  pytest tests
 
-This will run all avaialble tests using the default solver. A specific solver can be tested by specifying at the command line:
+This will run all avaialble tests using the default solver. A specific solver can be tested by specifying the `PYWR_SOLVER` environment variable:
 
 .. code-block:: shell
 
-  py.test tests --solver=lpsolve
+  PYWR_SOLVER=lpsolve pytest tests
 
 Continuous Integration
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -178,6 +178,6 @@ Creating a pull request on GitHub will automatically trigger a build.
 
 https://travis-ci.org/pywr/pywr
 
-https://ci.appveyor.com/project/snorfalorpagus/pywr
+https://ci.appveyor.com/project/pywr-admin/pywr
 
 Both services install Pywr using the Anaconda Python distribution, as this was the easiest way to install all the dependencies.
