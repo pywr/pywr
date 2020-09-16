@@ -14,6 +14,7 @@ def parameter_property(private_name):
     def parameter():
         def fget(self):
             return getattr(self, private_name)
+
         def fset(self, parameter):
             old_parameter = getattr(self, private_name)
             if old_parameter:

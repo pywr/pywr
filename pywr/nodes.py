@@ -1,13 +1,10 @@
 import numpy as np
-
 from pywr import _core
 from pywr._core import Node as BaseNode
-from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
-    StorageOutput, Timestep, ScenarioIndex)
-
+from pywr._core import BaseInput, BaseLink, BaseOutput, StorageInput, StorageOutput
 from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values, FlowDelayParameter
-
 from pywr.domains import Domain
+import networkx as nx
 
 
 class Drawable(object):
@@ -85,7 +82,7 @@ class Connectable(object):
         disconnected = False
         try:
             self.model.graph.remove_edge(self, node)
-        except:
+        except nx.exception.NetworkXError:
             for node_slot in node.iter_slots(slot_name=slot_name, is_connector=False, all_slots=all_slots):
                 try:
                     self.model.graph.remove_edge(self, node_slot)
@@ -104,11 +101,14 @@ class NodeMeta(type):
     """Node metaclass used to keep a registry of Node classes"""
     # node subclasses are stored in a dict for convenience
     node_registry = {}
+
     def __new__(meta, name, bases, dct):
         return super(NodeMeta, meta).__new__(meta, name, bases, dct)
+
     def __init__(cls, name, bases, dct):
         super(NodeMeta, cls).__init__(name, bases, dct)
         cls.node_registry[name.lower()] = cls
+
     def __call__(cls, *args, **kwargs):
         # Create new instance of Node (or subclass thereof)
         node = type.__call__(cls, *args, **kwargs)
@@ -204,7 +204,7 @@ class Input(Node, BaseInput):
             A simple maximum flow constraint for the input. Defaults to 0.0
         """
         super(Input, self).__init__(*args, **kwargs)
-        self.color = '#F26C4F' # light red
+        self.color = '#F26C4F'  # light red
 
 
 class Output(Node, BaseOutput):
@@ -733,12 +733,12 @@ class PiecewiseLink(Node):
         self.output = Output(self.model, name='{} Output'.format(self.name), parent=self)
 
         self.sub_output = Output(self.model, name='{} Sub Output'.format(self.name), parent=self,
-                             domain=self.sub_domain)
+                                 domain=self.sub_domain)
         self.sub_output.connect(self.input)
         self.sublinks = []
         for max_flow, cost in zip(max_flows, costs):
             self.sublinks.append(Input(self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
-                                      cost=cost, max_flow=max_flow, parent=self, domain=self.sub_domain))
+                                       cost=cost, max_flow=max_flow, parent=self, domain=self.sub_domain))
             self.sublinks[-1].connect(self.sub_output)
             self.output.connect(self.sublinks[-1])
 
@@ -747,9 +747,6 @@ class PiecewiseLink(Node):
             yield self.input
         else:
             yield self.output
-            # All sublinks are connected upstream and downstream
-            #for link in self.sublinks:
-            #    yield link
 
     def after(self, timestep):
         """
@@ -877,7 +874,6 @@ class MultiSplitLink(PiecewiseLink):
             agg = AggregatedNode(self.model, "{} Agg".format(self.name), nodes)
             agg.factors = valid_factors
 
-
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
             i = self.slot_names.index(slot_name)
@@ -1003,6 +999,7 @@ class BreakLink(Node):
     def min_flow():
         def fget(self):
             return self.link.min_flow
+
         def fset(self, value):
             self.link.min_flow = value
         return locals()
@@ -1011,6 +1008,7 @@ class BreakLink(Node):
     def max_flow():
         def fget(self):
             return self.link.max_flow
+
         def fset(self, value):
             self.link.max_flow = value
         return locals()
@@ -1019,6 +1017,7 @@ class BreakLink(Node):
     def cost():
         def fget(self):
             return self.link.cost
+
         def fset(self, value):
             self.link.cost = value
         return locals()
@@ -1094,4 +1093,4 @@ class DelayNode(Node):
         self.commit_all(self.input.flow)
 
 
-from pywr.domains.river import *
+from pywr.domains.river import *  # noqa

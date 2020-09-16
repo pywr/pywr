@@ -29,6 +29,3 @@ def check_hash(filename, hash, algorithm='md5', **kwargs):
 
     if hash != actual_hash:
         raise HashMismatchError('Hash mismatch using {} on file: "{}"'.format(algorithm, filename))
-
-
-

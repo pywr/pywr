@@ -1,6 +1,6 @@
-from pywr.timestepper import Timestepper
-from pywr.model import Model
-from pywr.model import ModelStructureError, ModelDocumentWarning # TODO: exceptions module?
-from pywr.nodes import *
-from pywr._core import Scenario, ScenarioCollection, Timestep
-from pywr._component import Component
+from pywr.timestepper import Timestepper  # noqa
+from pywr.model import Model  # noqa
+from pywr.model import ModelStructureError, ModelDocumentWarning  # noqa TODO: exceptions module?
+from pywr.nodes import *  # noqa
+from pywr._core import Scenario, ScenarioCollection, ScenarioIndex, Timestep  # noqa
+from pywr._component import Component  # noqa

@@ -1,16 +1,16 @@
-
-from pywr.nodes import Node, Domain, Input, Output, Link, Storage, PiecewiseLink, MultiSplitLink
+from pywr.nodes import Domain, Input, Link, Storage, PiecewiseLink, MultiSplitLink
 from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter
 
 DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
+
 
 class RiverDomainMixin(object):
     def __init__(self, *args, **kwargs):
         # if 'domain' not in kwargs:
         #     kwargs['domain'] = DEFAULT_RIVER_DOMAIN
         if 'color' not in kwargs:
-            self.color = '#6ECFF6' # blue
+            self.color = '#6ECFF6'  # blue
         super(RiverDomainMixin, self).__init__(*args, **kwargs)
 
 
@@ -28,7 +28,7 @@ class Catchment(RiverDomainMixin, Input):
         flow : float or function
             The amount of water supplied by the catchment each timestep
         """
-        self.color = '#82CA9D' # green
+        self.color = '#82CA9D'  # green
         # Grab flow from kwargs
         flow = kwargs.pop('flow', 0.0)
         # Min/max flow set in super inits
@@ -193,6 +193,7 @@ class RiverSplitWithGauge(RiverSplit):
         parameter = cls(model, name, mrf=mrf, cost=cost, mrf_cost=mrf_cost, **data)
         return parameter
 
+
 class Discharge(Catchment):
     """An inline discharge to the river network
 
@@ -200,6 +201,7 @@ class Discharge(Catchment):
     rather than at the head of the river.
     """
     pass
+
 
 class RiverGauge(RiverDomainMixin, PiecewiseLink):
     """A river gauging station, with a minimum residual flow (MRF)
@@ -225,6 +227,7 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
     def mrf():
         def fget(self):
             return self.sublinks[0].max_flow
+
         def fset(self, value):
             self.sublinks[0].max_flow = value
         return locals()
@@ -233,6 +236,7 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
     def mrf_cost():
         def fget(self):
             return self.sublinks[0].cost
+
         def fset(self, value):
             self.sublinks[0].cost = value
         return locals()
