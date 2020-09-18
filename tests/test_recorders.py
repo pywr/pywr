@@ -21,7 +21,7 @@ from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageR
                             EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
                             FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
                             HydropowerRecorder, TotalHydroEnergyRecorder,
-                            TotalParameterRecorder, MeanParameterRecorder,
+                            TotalParameterRecorder, MeanParameterRecorder, NumpyArrayNodeCostRecorder,
                             NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning, NumpyArrayDailyProfileParameterRecorder,
                             AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder)
@@ -150,9 +150,11 @@ def test_numpy_recorder(simple_linear_model):
     model.nodes['Input'].max_flow = 10.0
     otpt.cost = -2.0
     rec = NumpyArrayNodeRecorder(model, otpt)
+    cost_rec = NumpyArrayNodeCostRecorder(model, otpt)
 
     # test retrieval of recorder
     assert model.recorders['numpyarraynoderecorder.Output'] == rec
+    assert model.recorders['numpyarraynodecostrecorder.Output'] == cost_rec
     # test changing name of recorder
     rec.name = 'timeseries.Output'
     assert model.recorders['timeseries.Output'] == rec
@@ -162,11 +164,15 @@ def test_numpy_recorder(simple_linear_model):
     model.run()
 
     assert rec.data.shape == (365, 1)
+    assert cost_rec.data.shape == (365, 1)
     assert np.all((rec.data - 10.0) < 1e-12)
+    np.testing.assert_allclose(cost_rec.data, np.ones_like(cost_rec.data) * -2.0)
 
     df = rec.to_dataframe()
+    df2 = cost_rec.to_dataframe()
     assert df.shape == (365, 1)
     assert np.all((df.values - 10.0) < 1e-12)
+    np.testing.assert_allclose(df2.values, np.ones_like(cost_rec.data) * -2.0)
 
 
 def test_numpy_recorder_from_json(simple_linear_model):
