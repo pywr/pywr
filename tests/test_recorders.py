@@ -21,7 +21,7 @@ from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageR
                             EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
                             FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
                             HydropowerRecorder, TotalHydroEnergyRecorder,
-                            TotalParameterRecorder, MeanParameterRecorder,
+                            TotalParameterRecorder, MeanParameterRecorder, NumpyArrayNodeCostRecorder,
                             NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning, NumpyArrayDailyProfileParameterRecorder,
                             AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder)
@@ -29,7 +29,7 @@ from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageR
 from pywr.recorders.progress import ProgressRecorder
 
 from pywr.parameters import (DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter,
-                             InterpolatedVolumeParameter)
+                             InterpolatedVolumeParameter, ConstantScenarioParameter)
 from helpers import load_model
 import os
 import sys
@@ -198,6 +198,72 @@ def test_numpy_recorder_factored(simple_linear_model):
 
     assert rec_fact.data.shape == (365, 1)
     assert_allclose(20, rec_fact.data, atol=1e-7)
+
+
+class TestNumpyArrayCostRecorder:
+    def test_simple(self, simple_linear_model):
+        """Test NumpyArrayCostRecorder with fixed cost"""
+        model = simple_linear_model
+        model.nodes['Input'].max_flow = 10.0
+        otpt = model.nodes['Output']
+        otpt.cost = -2.0
+
+        cost_rec = NumpyArrayNodeCostRecorder(model, otpt)
+        # test retrieval of recorder
+        assert model.recorders['numpyarraynodecostrecorder.Output'] == cost_rec
+        model.run()
+
+        assert cost_rec.data.shape == (365, 1)
+        np.testing.assert_allclose(cost_rec.data, np.ones_like(cost_rec.data) * -2.0)
+
+        df = cost_rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(df.values, np.ones_like(cost_rec.data) * -2.0)
+
+    def test_scenarios(self, simple_linear_model):
+        """Test NumpyArrayNodeCostRecorder with scenario varying costs."""
+        model = simple_linear_model
+        model.nodes['Input'].max_flow = 10.0
+        otpt = model.nodes['Output']
+        scenario = Scenario(model, name='A', size=2)
+        otpt.cost = ConstantScenarioParameter(model, values=[-2, -10], scenario=scenario)
+
+        cost_rec = NumpyArrayNodeCostRecorder(model, otpt)
+        # test retrieval of recorder
+        assert model.recorders['numpyarraynodecostrecorder.Output'] == cost_rec
+        model.run()
+
+        assert cost_rec.data.shape == (365, 2)
+        expected = np.empty_like(cost_rec.data)
+        expected[:, 0] = -2.0
+        expected[:, 1] = -10.0
+        np.testing.assert_allclose(cost_rec.data, expected)
+
+        df = cost_rec.to_dataframe()
+        assert df.shape == (365, 2)
+        np.testing.assert_allclose(df.values, expected)
+
+    def test_time_varying(self, simple_linear_model):
+        """Test NumpyArrayNodeCostRecorder with time varying costs."""
+        model = simple_linear_model
+        model.nodes['Input'].max_flow = 10.0
+        otpt = model.nodes['Output']
+
+        costs = -2.0 - np.arange(365) * 0.1
+        otpt.cost = ArrayIndexedParameter(model, costs)
+
+        cost_rec = NumpyArrayNodeCostRecorder(model, otpt)
+        # test retrieval of recorder
+        assert model.recorders['numpyarraynodecostrecorder.Output'] == cost_rec
+        model.run()
+
+        assert cost_rec.data.shape == (365, 1)
+        np.testing.assert_allclose(cost_rec.data, costs[:, np.newaxis])
+
+        df = cost_rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(df.values, costs[:, np.newaxis])
+
 
 class TestFlowDurationCurveRecorders:
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
