@@ -75,7 +75,6 @@ class AbstractInterpolatedParameter(Parameter):
 
     def setup(self):
         super(AbstractInterpolatedParameter, self).setup()
-        print(type(self.x))
         self.interp = interp1d(self.x, self.y, **self.interp_kwargs)
 
     def value(self, ts, scenario_index):
