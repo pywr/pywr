@@ -15,7 +15,6 @@
             "type": "Storage",
             "max_volume": 1000,
             "initial_volume": 1000,
-            "area": "reservoir_area",
             "outputs": 0
         },
         {
