@@ -121,9 +121,9 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
     ----------
     node: Node
         Storage node to provide input volume values to interpolation calculation
-    volumes: array_like
+    volumes: array_like or from file
         x coordinates of the data points for interpolation.
-    values : array_like
+    values : array_like or from file
         y coordinates of the data points for interpolation.
     interp_kwargs : dict
         Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
@@ -139,8 +139,20 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
     @classmethod
     def load(cls, model, data):
         node = model._get_node_from_ref(model, data.pop("node"))
-        volumes = np.array(data.pop("volumes"))
-        values = np.array(data.pop("values"))
+        volumes = data.pop("volumes")
+        if isinstance(volumes, list):
+            volumes = np.asarray(volumes, np.float64)
+        elif isinstance(volumes, dict):
+            volumes = load_parameter_values(model, volumes)
+        else:
+            raise TypeError("Unexpected type for \"volumes\" in {}".format(cls.__name__))
+        values = data.pop("values")
+        if isinstance(values, list):
+            values = np.asarray(values, np.float64)
+        elif isinstance(values, dict):
+            values = load_parameter_values(model, values)
+        else:
+            raise TypeError("Unexpected type for \"values\" in {}".format(cls.__name__))
         kind = data.pop("kind", "linear")
         return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
 InterpolatedVolumeParameter.register()

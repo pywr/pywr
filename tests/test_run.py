@@ -685,6 +685,16 @@ def test_reservoir_surface_area_without_area_property():
     res = model.run()
     assert_allclose(model.nodes["evaporation"].flow, 2.46875)
 
+def test_reservoir_surface_area_external_data():
+    """ Testing the InterpolatedVolume parameter with external data as 
+    inputs of Volume and Values, in this case a .csv file. """
+    model = load_model('reservoir_evaporation_areafromfile.json')
+    model.timestepper.start = "1920-01-01"
+    model.timestepper.end = "1920-01-02"
+    res = model.run()
+    assert_allclose(model.nodes["evaporation"].flow, 2.46875)
+
+
 
 def test_run_empty():
     # empty model should raise an exception if run
