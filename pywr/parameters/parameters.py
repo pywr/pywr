@@ -11,7 +11,7 @@ from ._parameters import (
     ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
     DiscountFactorParameter, NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter,
-    NegativeMinParameter, DeficitParameter, DivisionParameter, FlowDelayParameter, OffsetParameter,
+    NegativeMinParameter, DeficitParameter, DivisionParameter, FlowParameter, FlowDelayParameter, OffsetParameter,
     RbfProfileParameter, UniformDrawdownProfileParameter, load_parameter, load_parameter_values, load_dataframe)
 
 from . import licenses
