@@ -145,6 +145,8 @@ Other parameters
    DeficitParameter
    ScenarioWrapperParameter
    PiecewiseIntegralParameter
+   FlowParameter
    FlowDelayParameter
+   DiscountFactorParameter
 
 
