@@ -34,11 +34,14 @@ require(["d3"], function(d3) {
         }
 
         if (filetype == "json"){
-            if ("position" in model_data["nodes"][i]){
+
+            let model_node_data = model_data["nodes"].find(node => node.name == node_data.name)
+
+            if ("position" in model_node_data){
                 // ensure that any geographic position are not overwritten
-                model_data["nodes"][i]["position"]["schematic"] = [posX(node_data.x), posY(node_data.y)]
+                model_node_data["position"]["schematic"] = [posX(node_data.x), posY(node_data.y)]
             } else {
-                model_data["nodes"][i]["position"] = {"schematic": [posX(node_data.x), posY(node_data.y)]}
+                model_node_data["position"] = {"schematic": [posX(node_data.x), posY(node_data.y)]}
             }
         } else if (filetype == "csv") {
             let position_data = [
@@ -75,4 +78,3 @@ function download(filename, text) {
         pom.click();
     }
 }
-
