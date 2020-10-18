@@ -1075,10 +1075,10 @@ class DelayNode(Node):
         timesteps = kwargs.pop('timesteps', 0)
         initial_flow = kwargs.pop('initial_flow', 0.0)
 
-        self.output = Output(model, name=output_name)
+        self.output = Output(model, name=output_name, parent=self)
         self.delay_param = FlowDelayParameter(model, self.output, timesteps=timesteps, days=days,
                                               initial_flow=initial_flow, name=param_name)
-        self.input = Input(model, name=input_name, min_flow=self.delay_param, max_flow=self.delay_param)
+        self.input = Input(model, name=input_name, min_flow=self.delay_param, max_flow=self.delay_param, parent=self)
         super().__init__(model, name, **kwargs)
 
     def iter_slots(self, slot_name=None, is_connector=True):
