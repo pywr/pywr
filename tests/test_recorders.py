@@ -1522,6 +1522,14 @@ def test_annual_count_index_threshold_recorder(simple_storage_model, params):
                      [0, 365],
                      [0, 365]], rec.data, atol=1e-7)
 
+    df = rec.to_dataframe()
+    assert_allclose([[0, 0],
+                     [0, 0],
+                     [0, 183],
+                     [0, 365],
+                     [0, 365]], df.values, atol=1e-7)
+
+
 class TestAnnualTotalFlowRecorder:
 
     def test_annual_total_flow_recorder(self, simple_linear_model):
@@ -1539,6 +1547,8 @@ class TestAnnualTotalFlowRecorder:
         model.run()
 
         assert_allclose(3650.0, rec.data, atol=1e-7)
+        df = rec.to_dataframe()
+        assert_allclose([[3650.0]], df.values)
 
     def test_annual_total_flow_recorder_factored(self, simple_linear_model):
         """
@@ -1557,6 +1567,8 @@ class TestAnnualTotalFlowRecorder:
         model.run()
 
         assert_allclose(3650.0*3, rec_fact.data, atol=1e-7)
+        df = rec_fact.to_dataframe()
+        assert_allclose([[3650.0*3]], df.values)
 
 
 def test_total_flow_node_recorder(simple_linear_model):
