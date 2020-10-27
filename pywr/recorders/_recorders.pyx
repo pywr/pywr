@@ -1873,6 +1873,19 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames.
+        """
+        start_year = self.model.timestepper.start.year
+        end_year = self.model.timestepper.end.year
+        index = pd.period_range(f'{start_year}-01-01', f'{end_year}-01-01', freq='A')
+        sc_index = self.model.scenarios.multiindex
+        return pd.DataFrame(data=np.array(self._data, dtype=int), index=index, columns=sc_index)
+
     property data:
         def __get__(self):
             return np.array(self._data, dtype=np.int16)
@@ -1953,6 +1966,19 @@ cdef class AnnualTotalFlowRecorder(Recorder):
     property data:
         def __get__(self):
             return np.array(self._data, dtype=np.float64)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames.
+        """
+        start_year = self.model.timestepper.start.year
+        end_year = self.model.timestepper.end.year
+        index = pd.period_range(f'{start_year}-01-01', f'{end_year}-01-01', freq='A')
+        sc_index = self.model.scenarios.multiindex
+        return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 
     @classmethod
     def load(cls, model, data):
