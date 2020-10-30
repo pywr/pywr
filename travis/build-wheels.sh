@@ -1,7 +1,10 @@
 #!/bin/bash
-# Build script for use with manylinux1 docker image to construct Linux wheels
+# Build script for use with manylinux2014 docker image to construct Linux wheels
 
 set -e -x
+
+# Install dependencies
+yum install -y glpk-devel lpsolve-devel
 
 cd /io
 # Setup path to use PYBIN's binary folder
