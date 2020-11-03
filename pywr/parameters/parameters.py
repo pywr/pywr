@@ -109,7 +109,17 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
         kind = data.pop("kind", "linear")
-        return cls(model, parameter, x, y, interp_kwargs={'kind': kind})
+        interp_kwargs = data.pop("interp_kwargs", None)
+        if interp_kwargs:
+            interp_kwargs["kind"] = kind
+            if "fill_value" in interp_kwargs and isinstance(interp_kwargs["fill_value"], list):
+                # interp1d expects a tuple when defining fill values for the upper and lower bounds
+                interp_kwargs["fill_value"] = tuple(interp_kwargs["fill_value"])
+        else:
+            interp_kwargs = {"kind": kind}
+        return cls(model, parameter, x, y, interp_kwargs=interp_kwargs)
+
+
 InterpolatedParameter.register()
 
 
@@ -154,7 +164,17 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
         else:
             raise TypeError("Unexpected type for \"values\" in {}".format(cls.__name__))
         kind = data.pop("kind", "linear")
-        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+        interp_kwargs = data.pop("interp_kwargs", None)
+        if interp_kwargs:
+            interp_kwargs["kind"] = kind
+            if "fill_value" in interp_kwargs and isinstance(interp_kwargs["fill_value"], list):
+                # interp1d expects a tuple when defining fill values for the upper and lower bounds
+                interp_kwargs["fill_value"] = tuple(interp_kwargs["fill_value"])
+        else:
+            interp_kwargs = {"kind": kind}
+        return cls(model, node, volumes, values, interp_kwargs=interp_kwargs)
+
+
 InterpolatedVolumeParameter.register()
 
 
@@ -187,7 +207,17 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
         flows = np.array(data.pop("flows"))
         values = np.array(data.pop("values"))
         kind = data.pop("kind", "linear")
-        return cls(model, node, flows, values, interp_kwargs={'kind': kind})
+        interp_kwargs = data.pop("interp_kwargs", None)
+        if interp_kwargs:
+            interp_kwargs["kind"] = kind
+            if "fill_value" in interp_kwargs and isinstance(interp_kwargs["fill_value"], list):
+                # interp1d expects a tuple when defining fill values for the upper and lower bounds
+                interp_kwargs["fill_value"] = tuple(interp_kwargs["fill_value"])
+        else:
+            interp_kwargs = {"kind": kind}
+        return cls(model, node, flows, values, interp_kwargs=interp_kwargs)
+
+
 InterpolatedFlowParameter.register()
 
 
@@ -245,8 +275,18 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
         kind = data.pop("kind", "linear")
+        interp_kwargs = data.pop("interp_kwargs", None)
+        if interp_kwargs:
+            interp_kwargs["kind"] = kind
+            if "fill_value" in interp_kwargs and isinstance(interp_kwargs["fill_value"], list):
+                # interp1d expects a tuple when defining fill values for the upper and lower bounds
+                interp_kwargs["fill_value"] = tuple(interp_kwargs["fill_value"])
+        else:
+            interp_kwargs = {"kind": kind}
         return cls(model, upper_parameter, x, y, lower_parameter=lower_parameter,
-                   interp_kwargs={'kind': kind})
+                   interp_kwargs=interp_kwargs)
+
+
 InterpolatedQuadratureParameter.register()
 
 

@@ -1085,19 +1085,37 @@ class Test1DPolynomialParameter:
         model.run()
 
 
-def test_interpolated_parameter(simple_linear_model):
-    model = simple_linear_model
-    model.timestepper.start = "1920-01-01"
-    model.timestepper.end = "1920-01-12"
+class TestInterpolatedParameter:
 
-    p1 = ArrayIndexedParameter(model, [0,1,2,3,4,5,6,7,8,9,10,11])
-    p2 = InterpolatedParameter(model, p1, [0, 5, 10, 11], [0, 5*2, 10*3, 2])
+    def test_interpolated_parameter(self, simple_linear_model):
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
 
-    @assert_rec(model, p2)
-    def expected_func(timestep, scenario_index):
-        values = [0, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 2]
-        return values[timestep.index]
-    model.run()
+        p1 = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        p2 = InterpolatedParameter(model, p1, [0, 5, 10, 11], [0, 5*2, 10*3, 2])
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            values = [0, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 2]
+            return values[timestep.index]
+        model.run()
+
+    def test_interp_kwargs(self, simple_linear_model):
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        ArrayIndexedParameter(model, [-2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15], name="myparam")
+        interp_kwargs = {"bounds_error": False, "fill_value": [0, 2]}
+        data = {"parameter": "myparam", "x": [0, 5, 10, 11], "y": [0, 5*2, 10*3, 2], "interp_kwargs": interp_kwargs}
+        p2 = InterpolatedParameter.load(model, data)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            values = [0, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 2]
+            return values[timestep.index]
+        model.run()
 
 
 class TestInterpolatedQuadratureParameter:
