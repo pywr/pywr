@@ -89,7 +89,7 @@ def test_run_reservoir2():
 def test_empty_storage_min_flow():
 
     model = Model()
-    storage = Storage(model, "storage", initial_volume=100, max_volume=100, num_inputs=1, num_outputs=0)
+    storage = Storage(model, "storage", initial_volume=100, max_volume=100, inputs=1, outputs=0)
     otpt = Output(model, "output", min_flow=75)
     storage.connect(otpt)
     model.check()
@@ -230,7 +230,7 @@ def test_new_storage():
 
     supply1 = pywr.core.Input(model, 'supply1')
 
-    splitter = pywr.core.Storage(model, 'splitter', num_outputs=1, num_inputs=2, max_volume=10, initial_volume=5)
+    splitter = pywr.core.Storage(model, 'splitter', outputs=1, inputs=2, max_volume=10, initial_volume=5)
 
     demand1 = pywr.core.Output(model, 'demand1')
     demand2 = pywr.core.Output(model, 'demand2')
@@ -686,7 +686,7 @@ def test_reservoir_surface_area_without_area_property():
     assert_allclose(model.nodes["evaporation"].flow, 2.46875)
 
 def test_reservoir_surface_area_external_data():
-    """ Testing the InterpolatedVolume parameter with external data as 
+    """ Testing the InterpolatedVolume parameter with external data as
     inputs of Volume and Values, in this case a .csv file. """
     model = load_model('reservoir_evaporation_areafromfile.json')
     model.timestepper.start = "1920-01-01"

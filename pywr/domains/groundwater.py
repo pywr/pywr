@@ -50,8 +50,7 @@ class KeatingAquifer(Storage):
 
         See also documentation for the `KeatingStreamFlowParameter`.
         """
-        super(KeatingAquifer, self).__init__(model, name,
-            num_inputs=(num_streams + num_additional_inputs), **kwargs)
+        super(KeatingAquifer, self).__init__(model, name, inputs=(num_streams + num_additional_inputs), **kwargs)
 
         if not (num_streams > 0):
             raise ValueError("Keating aquifer must have at least one stream outflow")

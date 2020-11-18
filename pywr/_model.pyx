@@ -412,6 +412,10 @@ class Model(object):
 
                 yield component
 
+        # preload the nodes
+        for node_name in list(nodes_to_load.keys()):
+            node = model.pre_load_node(node_name)
+
         load_components(model._recorders_to_load, load_recorder)
         for parameter in load_components(model._parameters_to_load, load_parameter):
             if not isinstance(parameter, BaseParameter):
@@ -419,7 +423,7 @@ class Model(object):
 
         # load the remaining nodes
         for node_name in list(nodes_to_load.keys()):
-            node = cls._get_node_from_ref(model, node_name)
+            model.finalise_node(node_name)
 
         del(model._recorders_to_load)
         del(model._parameters_to_load)
@@ -440,19 +444,20 @@ class Model(object):
         logger.info('Model load complete!')
         return model
 
-    @classmethod
-    def _get_node_from_ref(cls, model, node_name):
+    def pre_load_node(self, node_name):
         try:
-            # first check if node has already been loaded
-            node = model.nodes[node_name]
+            node = self.nodes[node_name]
         except KeyError:
             # if not, load it now
-            node_data = model._nodes_to_load[node_name]
-            node_type = node_data['type'].lower()
+            node_data = self._nodes_to_load[node_name]
+            node_type = node_data.pop('type').lower()
             cls = NodeMeta.node_registry[node_type]
-            node = cls.load(node_data, model)
-            del(model._nodes_to_load[node_name])
+            node = cls.pre_load(self, node_data)
         return node
+
+    def finalise_node(self, node_name):
+        node = self.nodes[node_name]
+        node.finalise_load()
 
     def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):
         """Find all routes between two nodes or types of node

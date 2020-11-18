@@ -217,7 +217,7 @@ def test_piecewise_constraint(model, flow):
                          Bo -->-- Bi --> D
     """
     A = Input(model, "A", min_flow=flow, max_flow=flow)
-    X = PiecewiseLink(model, name="X", cost=[-500.0, 0, 0], max_flow=[40.0, None, None])
+    X = PiecewiseLink(model, name="X", nsteps=3, costs=[-500.0, 0, 0], max_flows=[40.0, None, None])
     C = Output(model, "C")
 
     A.connect(X)
@@ -247,7 +247,7 @@ def test_multipiecewise_constraint(model, flow):
      for brevity.
     """
     A = Input(model, "A", min_flow=flow, max_flow=flow)
-    X = MultiSplitLink(model, name="X", cost=[-500.0, 0], max_flow=[40.0, None],
+    X = MultiSplitLink(model, name="X", nsteps=2, costs=[-500.0, 0], max_flows=[40.0, None],
                        factors=[3, 1], extra_slots=1, slot_names=['river', 'abstraction'])
     C = Output(model, "C")
     D = Output(model, "D", max_flow=50, cost=-100)
@@ -315,7 +315,8 @@ def test_dynamic_factors_load(model):
         "nodes": ["A", "B"]
     }
 
-    AggregatedNode.load(data, model)
+    node = AggregatedNode.pre_load(model, data)
+    node.finalise_load()
 
     model.step()
 

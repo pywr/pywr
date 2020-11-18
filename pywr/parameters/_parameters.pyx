@@ -1810,7 +1810,7 @@ cdef class DeficitParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         return cls(model, node=node, **data)
 
 DeficitParameter.register()
@@ -1863,7 +1863,7 @@ cdef class FlowParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         return cls(model, node=node, **data)
 FlowParameter.register()
 
@@ -1929,7 +1929,7 @@ PiecewiseIntegralParameter.register()
 
 cdef class FlowDelayParameter(Parameter):
     """Parameter that returns the delayed flow for a node after a given number of timesteps or days
-    
+
     Parameters
     ----------
     model : `pywr.model.Model`
@@ -1945,7 +1945,7 @@ cdef class FlowDelayParameter(Parameter):
         value is constant across all delayed timesteps and any model scenarios. Default is 0.0.
     """
 
-    def __init__(self, model, node, *args, **kwargs):  
+    def __init__(self, model, node, *args, **kwargs):
         self.node = node
         self.timesteps = kwargs.pop('timesteps', 0)
         self.days = kwargs.pop('days', 0)
@@ -1967,7 +1967,7 @@ cdef class FlowDelayParameter(Parameter):
         self._memory_pointer = 0
 
     cpdef reset(self):
-        self._memory[...] = self.initial_flow 
+        self._memory[...] = self.initial_flow
         self._memory_pointer = 0
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
@@ -1977,11 +1977,11 @@ cdef class FlowDelayParameter(Parameter):
         for i in range(self._memory.shape[1]):
             self._memory[self._memory_pointer, i] = self.node._flow[i]
         if self.timesteps > 1:
-            self._memory_pointer = (self._memory_pointer + 1) % self.timesteps 
+            self._memory_pointer = (self._memory_pointer + 1) % self.timesteps
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         return cls(model, node, **data)
 
 FlowDelayParameter.register()

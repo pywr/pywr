@@ -676,7 +676,7 @@ def test_scaled_profile_nested_load(model):
     """ Test `ScaledProfileParameter` loading with `AggregatedParameter` """
     model.timestepper.delta = 15
 
-    s = Storage(model, 'Storage', max_volume=100.0, initial_volume=50.0, num_outputs=0)
+    s = Storage(model, 'Storage', max_volume=100.0, initial_volume=50.0, outputs=0)
     d = Output(model, 'Link')
     data = {
         'type': 'scaledprofile',
@@ -1803,7 +1803,7 @@ class TestRbfProfileParameter:
         new_values = np.random.rand(p.double_size)
         p.set_double_variables(new_values)
         np.testing.assert_allclose(p.get_double_variables(), new_values)
-        
+
     def test_variable_doys_api(self, simple_linear_model):
         """Test using the variable API when optimising the days of the year. """
 
@@ -1851,7 +1851,7 @@ class TestRbfProfileParameter:
         with pytest.raises(ValueError):
             load_parameter(simple_linear_model, data)
 
-            
+
 class TestDiscountFactorParameter:
     def test_discount_json(self):
         """ Test loading a DiscountFactorParameter from JSON. """
