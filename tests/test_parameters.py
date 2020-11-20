@@ -1731,8 +1731,13 @@ class TestUniformDrawdownProfileParameter:
 class TestRbfProfileParameter:
     """Tests for RbfParameter."""
 
-    @pytest.mark.parametrize(['min_value', 'max_value'], [(None, None), (0.3, None), (None, 0.6)])
-    def test_rbf_profile(self, simple_linear_model, min_value, max_value):
+    @pytest.mark.parametrize(['min_value', 'max_value', 'rbf_kwargs'], [
+        (None, None, None),
+        (None, None, {'function': 'linear'}),
+        (0.3, None, None),
+        (None, 0.6, None)
+    ])
+    def test_rbf_profile(self, simple_linear_model, min_value, max_value, rbf_kwargs):
         """Test the Rbf profile parameter."""
 
         m = simple_linear_model
@@ -1744,7 +1749,10 @@ class TestRbfProfileParameter:
         interp_days_of_year = [-65, 1, 100, 200, 300, 366, 465]
         interp_values = [0.2, 0.5, 0.7, 0.5, 0.2, 0.5, 0.7]
 
-        expected_values = Rbf(interp_days_of_year, interp_values)(np.arange(365) + 1)
+        if rbf_kwargs is not None:
+            expected_values = Rbf(interp_days_of_year, interp_values, **rbf_kwargs)(np.arange(365) + 1)
+        else:
+            expected_values = Rbf(interp_days_of_year, interp_values)(np.arange(365) + 1)
 
         data = {
             'type': 'rbfprofile',
@@ -1755,6 +1763,8 @@ class TestRbfProfileParameter:
             data["min_value"] = min_value
         if max_value is not None:
             data["max_value"] = max_value
+        if rbf_kwargs is not None:
+            data["rbf_kwargs"] = rbf_kwargs
 
         p = load_parameter(m, data)
 
@@ -1803,7 +1813,7 @@ class TestRbfProfileParameter:
         new_values = np.random.rand(p.double_size)
         p.set_double_variables(new_values)
         np.testing.assert_allclose(p.get_double_variables(), new_values)
-        
+
     def test_variable_doys_api(self, simple_linear_model):
         """Test using the variable API when optimising the days of the year. """
 
@@ -1851,7 +1861,7 @@ class TestRbfProfileParameter:
         with pytest.raises(ValueError):
             load_parameter(simple_linear_model, data)
 
-            
+
 class TestDiscountFactorParameter:
     def test_discount_json(self):
         """ Test loading a DiscountFactorParameter from JSON. """
