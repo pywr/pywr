@@ -444,6 +444,13 @@ class Model(object):
         logger.info('Model load complete!')
         return model
 
+    @classmethod
+    def _get_node_from_ref(cls, model, node_name):
+        import warnings
+        warnings.warn("Use of `_get_node_from_ref` is deprecated and will be removed in the future."
+                      "Please use `model.nodes[node_name] instead.", DeprecationWarning)
+        return model.nodes[node_name]
+
     def pre_load_node(self, node_name):
         try:
             node = self.nodes[node_name]
