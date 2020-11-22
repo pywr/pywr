@@ -7,6 +7,8 @@ env:
   CIBW_TEST_COMMAND: "pytest {project}/tests"
   # Only build on Python 3.6+
   CIBW_BUILD: cp36-* cp37-* cp38-*
+  # Install GLPK
+  CIBW_BEFORE_ALL_LINUX: apt-get install -y libglpk-dev
 
 jobs:
   build_wheels:
