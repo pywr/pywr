@@ -18,6 +18,7 @@ env:
   # Windows binary paths
   # These binaries must be downloaded, unzipped and renamed to allow linking
   CIBW_ENVIRONMENT_WINDOWS: LIB="c://glpk//w64;c://lpsolve" INCLUDE="c://glpk//src;c://"
+  CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python .github/workflows/repair-wheel-windows.py {wheel} {dest_dir} c:\glpk\w64\glpk.dll c:\lpsolve\lpsolve55.dll
 
 jobs:
   build_wheels:
