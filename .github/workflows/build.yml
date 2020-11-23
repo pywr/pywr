@@ -17,7 +17,7 @@ env:
 
   # Win GLPK binaries
   # These binaries must be downloaded, unzipped and renamed to allow linking
-  CIBW_ENVIRONMENT_WINDOWS: CL="/IC:\glpk\src" LINK="/LIBPATH:C:\glpk\w64"
+  CIBW_ENVIRONMENT_WINDOWS: LIB="c://glpk//w64" INCLUDE="c://glpk//src"
 
 jobs:
   build_wheels:
@@ -47,14 +47,15 @@ jobs:
         env:
           WINGLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-4.65/winglpk-4.65.zip/download"
         run: |
+          ls -la /c
           curl -L $WINGLPK_URL --output glpk.zip
-          7z x glpk.zip -o/
-          mv /glpk-4.65 /glpk
-          ls -la /glpk
-          ls -la /glpk/src
-          cp /glpk/w64/glpk_4_65.lib /glpk/w64/glpk.lib
-          cp /glpk/w64/glpk_4_65.dll /glpk/w64/glpk.dll
-          ls -la /glpk/w64
+          7z x glpk.zip -o/c/
+          mv /c/glpk-4.65 /c/glpk
+          ls -la /c/glpk
+          ls -la /c/glpk/src
+          cp /c/glpk/w64/glpk_4_65.lib /c/glpk/w64/glpk.lib
+          cp /c/glpk/w64/glpk_4_65.dll /c/glpk/w64/glpk.dll
+          ls -la /c/glpk/w64
 
       - name: Build wheels
         run: |
