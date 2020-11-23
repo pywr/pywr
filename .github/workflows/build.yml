@@ -7,6 +7,8 @@ env:
   CIBW_TEST_COMMAND: "pytest {project}/tests"
   # Only build on Python 3.6+
   CIBW_BUILD: cp36-* cp37-* cp38-*
+  # Skip 32-bit builds
+  CIBW_SKIP: "*-win32 *-manylinux_i686"
   # Install GLPK
   CIBW_BEFORE_ALL_LINUX: yum install -y glpk-devel lpsolve-devel
   # build using the manylinux2014 image
