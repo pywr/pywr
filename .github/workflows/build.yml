@@ -17,14 +17,7 @@ env:
 
   # Win GLPK binaries
   # These binaries must be downloaded, unzipped and renamed to allow linking
-  WINGLPK_VER: "4.65"
-  WINGLPK_HOME: "/glpk-4.65"
-  WINGLPK_PKG_LIB: "glpk_4_65.lib"
-  WINGLPK_LIB: "glpk.lib"
-  WINGLPK_PKG_DLL: "glpk_4_65.dll"
-  WINGLPK_DLL: "glpk.dll"
-  WINGLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-$WINGLPK_VER/winglpk-$WINGLPK_VER.zip/download"
-  CIBW_ENVIRONMENT_WINDOWS: "LIB=$LIB:$WINGLPK_HOME/w64 INCLUDE=$INCLUDE:$WINGLPK_HOME/src"
+  CIBW_ENVIRONMENT_WINDOWS: "LIB=$LIB:/glpk/w64 INCLUDE=$INCLUDE:/glpk/src"
 
 jobs:
   build_wheels:
@@ -51,12 +44,14 @@ jobs:
       - name: Install WinGLPK (Windows)
         if: runner.os == 'Windows'
         shell: bash
+        env:
+          WINGLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-4.65/winglpk-4.65.zip/download"
         run: |
           curl -L $WINGLPK_URL --output glpk.zip
-          7z x glpk.zip -o$WINGLPK_HOME
-          ls -la $WINGLPK_HOME
-          cp "${WINGLPK_HOME}"/w64/$WINGLPK_PKG_LIB $WINGLPK_HOME/w64/$WINGLPK_LIB
-          cp "${WINGLPK_HOME}"/w64/$WINGLPK_PKG_DLL $WINGLPK_HOME/w64/$WINGLPK_DLL
+          7z x glpk.zip -o/glpk
+          ls -la /glpk
+          cp /glpk/w64/glpk_4_65.lib /glpk/w64/"glpk.lib"
+          cp /glpk/w64/glpk_4_65.dll /glpk/w64/"glpk.dll"
 
       - name: Build wheels
         run: |
