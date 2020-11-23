@@ -3,7 +3,7 @@ name: Build
 on: [push, pull_request]
 
 env:
-  CIBW_TEST_REQUIRES: pytest
+  CIBW_TEST_REQUIRES: pytest platypus-opt
   CIBW_TEST_COMMAND: "pytest {project}/tests"
   # Only build on Python 3.6+
   CIBW_BUILD: cp36-* cp37-* cp38-*
