@@ -9,6 +9,9 @@ env:
   CIBW_BUILD: cp36-* cp37-* cp38-*
   # Install GLPK
   CIBW_BEFORE_ALL_LINUX: yum install -y glpk-devel lpsolve-devel
+  # build using the manylinux2014 image
+  CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+  CIBW_MANYLINUX_I686_IMAGE: manylinux2014
 
 jobs:
   build_wheels:
