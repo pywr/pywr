@@ -23,7 +23,7 @@ env:
   WINGLPK_LIB: "glpk.lib"
   WINGLPK_PKG_DLL: "glpk_4_65.dll"
   WINGLPK_DLL: "glpk.dll"
-  WINGLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-$GLPK_VER/winglpk-$GLPK_VER.zip/download"
+  WINGLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-$WINGLPK_VER/winglpk-$WINGLPK_VER.zip/download"
   CIBW_ENVIRONMENT_WINDOWS: "LIB=$LIB:$WINGLPK_HOME/w64 INCLUDE=$INCLUDE:$WINGLPK_HOME/src"
 
 jobs:
