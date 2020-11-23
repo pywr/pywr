@@ -52,11 +52,11 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          curl -L "${WINGLPK_URL}" --output glpk.zip
-          7z x glpk.zip -o"${WINGLPK_HOME}"
-          ls -la "${WINGLPK_HOME}"
-          cp "${WINGLPK_HOME}"/w64/${WINGLPK_PKG_LIB} "${WINGLPK_HOME}"/w64/${WINGLPK_LIB}
-          cp "${WINGLPK_HOME}"/w64/${WINGLPK_PKG_DLL} "${WINGLPK_HOME}"/w64/${WINGLPK_DLL}
+          curl -L $WINGLPK_URL --output glpk.zip
+          7z x glpk.zip -o$WINGLPK_HOME
+          ls -la $WINGLPK_HOME
+          cp "${WINGLPK_HOME}"/w64/$WINGLPK_PKG_LIB $WINGLPK_HOME/w64/$WINGLPK_LIB
+          cp "${WINGLPK_HOME}"/w64/$WINGLPK_PKG_DLL $WINGLPK_HOME/w64/$WINGLPK_DLL
 
       - name: Build wheels
         run: |
