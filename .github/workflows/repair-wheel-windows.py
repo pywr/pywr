@@ -9,7 +9,7 @@ def write_dll(wheel_path, dlls):
     with zipfile.ZipFile(wheel_path, mode="a") as wheel:
         for local_dll in dlls:
             name = os.path.basename(local_dll)
-            archive_path = os.path.join('pywr', '.lib', name)
+            archive_path = os.path.join('pywr', '.libs', name)
             wheel.write(local_dll, archive_path)
 
 
