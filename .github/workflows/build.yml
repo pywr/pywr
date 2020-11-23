@@ -17,7 +17,7 @@ env:
 
   # Win GLPK binaries
   # These binaries must be downloaded, unzipped and renamed to allow linking
-  CIBW_ENVIRONMENT_WINDOWS: LIB="c:\\glpk\\w64" INCLUDE="c:\\glpk\\src"
+  CIBW_ENVIRONMENT_WINDOWS: CL="/IC:\glpk\src" LINK="/LIBPATH:C:\glpk\w64"
 
 jobs:
   build_wheels:
