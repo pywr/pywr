@@ -59,7 +59,7 @@ jobs:
         env:
           LPSOLVE_URL: "https://sourceforge.net/projects/lpsolve/files/lpsolve/5.5.2.5/lp_solve_5.5.2.5_dev_win64.zip/download"
         run: |
-          curl -L LPSOLVE_URL --output lpsolve.zip
+          curl -L $LPSOLVE_URL --output lpsolve.zip
           7z x lpsolve.zip -o/c/lpsolve
 
       - name: Build wheels
