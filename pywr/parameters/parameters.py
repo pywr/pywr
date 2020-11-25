@@ -73,6 +73,17 @@ class AbstractInterpolatedParameter(Parameter):
     def _value_to_interpolate(self, ts, scenario_index):
         raise NotImplementedError()
 
+    @property
+    def interp_kwargs(self):
+        return self._interp_kwargs
+
+    @interp_kwargs.setter
+    def interp_kwargs(self, data):
+        if "fill_value" in data and isinstance(data["fill_value"], list):
+            # SciPy's interp1d expects a tuple when defining fill values for the upper and lower bounds
+            data["fill_value"] = tuple(data["fill_value"])
+        self._interp_kwargs = data
+
     def setup(self):
         super(AbstractInterpolatedParameter, self).setup()
         self.interp = interp1d(self.x, self.y, **self.interp_kwargs)
@@ -108,8 +119,10 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
         parameter = load_parameter(model, data.pop("parameter"))
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
-        kind = data.pop("kind", "linear")
-        return cls(model, parameter, x, y, interp_kwargs={'kind': kind})
+        interp_kwargs = data.pop("interp_kwargs", None)
+        return cls(model, parameter, x, y, interp_kwargs=interp_kwargs)
+
+
 InterpolatedParameter.register()
 
 
@@ -153,8 +166,10 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
             values = load_parameter_values(model, values)
         else:
             raise TypeError("Unexpected type for \"values\" in {}".format(cls.__name__))
-        kind = data.pop("kind", "linear")
-        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+        interp_kwargs = data.pop("interp_kwargs", None)
+        return cls(model, node, volumes, values, interp_kwargs=interp_kwargs)
+
+
 InterpolatedVolumeParameter.register()
 
 
@@ -186,8 +201,10 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
         node = model._get_node_from_ref(model, data.pop("node"))
         flows = np.array(data.pop("flows"))
         values = np.array(data.pop("values"))
-        kind = data.pop("kind", "linear")
-        return cls(model, node, flows, values, interp_kwargs={'kind': kind})
+        interp_kwargs = data.pop("interp_kwargs", None)
+        return cls(model, node, flows, values, interp_kwargs=interp_kwargs)
+
+
 InterpolatedFlowParameter.register()
 
 
@@ -244,9 +261,11 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
         lower_parameter = load_parameter(model, data.pop("lower_parameter", None))
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
-        kind = data.pop("kind", "linear")
+        interp_kwargs = data.pop("interp_kwargs", None)
         return cls(model, upper_parameter, x, y, lower_parameter=lower_parameter,
-                   interp_kwargs={'kind': kind})
+                   interp_kwargs=interp_kwargs)
+
+
 InterpolatedQuadratureParameter.register()
 
 
