@@ -1,5 +1,8 @@
 
 echo "Running tests in: %1";
+
+dir %1;
+
 SET PYWR_SOLVER=glpk
 python -m pytest "%1"\tests;
 
