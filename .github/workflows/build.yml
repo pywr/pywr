@@ -6,7 +6,7 @@ env:
   CIBW_TEST_REQUIRES: pytest platypus-opt
   CIBW_BEFORE_TEST_LINUX: "chmod +x {project}/.github/workflows/run-tests.sh"
   CIBW_TEST_COMMAND_LINUX: "{project}/.github/workflows/run-tests.sh {project}"
-  CIBW_TEST_COMMAND_WINDOWS: "{project}\.github\workflows\run-tests-windows.bat {project}"
+  CIBW_TEST_COMMAND_WINDOWS: "{project}\\.github\\workflows\\run-tests-windows.bat {project}"
   # Only build on Python 3.6+
   CIBW_BUILD: cp36-* cp37-* cp38-*
   # Skip 32-bit builds
