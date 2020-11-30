@@ -108,7 +108,7 @@ jobs:
 
       - name: Build docs
         run: |
-          apt-get install -y libglpk-dev liblpsolve55-dev
+          sudo apt-get install libglpk-dev liblpsolve55-dev
           pip install sphinx sphinx_rtd_theme numpydoc
           python setup.py install
           cd docs
