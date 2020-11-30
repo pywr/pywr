@@ -92,3 +92,23 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           path: dist/*.tar.gz
+
+  build_docs:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0   # This is required for setuptools_scm: https://github.com/pypa/setuptools_scm/issues/480
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: '3.7'
+
+      - name: Build docs
+        run: |
+          pip install sphinx sphinx_rtd_theme numpydoc
+          python setup.py install
+          cd docs
+          make html
