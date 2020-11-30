@@ -6,18 +6,22 @@ import shutil
 
 def write_dll(wheel_path, dlls):
     """Insert DLLs into a wheel"""
+    print(f'Inserting dlls into wheel: {wheel_path}')
     with zipfile.ZipFile(wheel_path, mode="a") as wheel:
         for local_dll in dlls:
             name = os.path.basename(local_dll)
             archive_path = os.path.join('pywr', '.libs', name)
+            print(f'Writing local dll "{local_dll}" to archive path "{archive_path}".')
             wheel.write(local_dll, archive_path)
+    print('Wheel repaired!')
 
 
 def copy_wheel(original, dest_dir):
     """Copy wheel to dest_dir"""
     wheel_name = os.path.basename(original)
     new_wheel = os.path.join(dest_dir, wheel_name)
-    shutil.copy(args.wheel, new_wheel)
+    print(f'Copying wheel from "{wheel_name}" to "{new_wheel}"')
+    shutil.copy(original, new_wheel)
     return new_wheel
 
 
