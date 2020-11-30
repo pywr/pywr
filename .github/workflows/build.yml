@@ -107,9 +107,11 @@ jobs:
           python-version: '3.7'
 
       - name: Build docs
+        # lpsolve doesn't compile on Ubuntu without building the library from source - disable for the time being.
+        # This doesn't really matter for the documentation builds.
         run: |
-          sudo apt-get install libglpk-dev liblpsolve55-dev
+          sudo apt-get install libglpk-dev
           pip install sphinx sphinx_rtd_theme numpydoc
-          python setup.py install
+          python setup.py install --without-lpsolve
           cd docs
           make html
