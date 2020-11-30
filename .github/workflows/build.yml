@@ -13,13 +13,13 @@ env:
   CIBW_SKIP: "*-win32 *-manylinux_i686"
   # Install GLPK
   CIBW_BEFORE_ALL_LINUX: yum install -y glpk-devel lpsolve-devel
-  # build using the manylinux2014 image
+  # build using the manylinux2014 image. Can link to system provided GLPk
   CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
   CIBW_MANYLINUX_I686_IMAGE: manylinux2014
 
-  # Windows binary paths
-  # These binaries must be downloaded, unzipped and renamed to allow linking
+  # Windows binary paths to allow linking
   CIBW_ENVIRONMENT_WINDOWS: LIB="c://glpk//w64;c://lpsolve" INCLUDE="c://glpk//src;c://"
+  # Custom repair script that moves the required DLLs to the pywr/.libs folder
   CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python .github/workflows/repair-wheel-windows.py {wheel} {dest_dir} c:\glpk\w64\glpk.dll c:\lpsolve\lpsolve55.dll
 
 jobs:
