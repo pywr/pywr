@@ -239,3 +239,13 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
             self.sublinks[0].cost = value
         return locals()
     mrf_cost = property(**mrf_cost())
+
+    def cost():
+        def fget(self):
+            return self.sublinks[1].cost
+
+        def fset(self, value):
+            self.sublinks[1].cost = value
+        return locals()
+    cost = property(**cost())
+
