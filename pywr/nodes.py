@@ -26,7 +26,6 @@ class Loadable:
     concrete parameter instances where needed.
     """
     __parameter_attributes__ = ()
-    __deferred_parameter_list_attributes__ = ()
     __node_attributes__ = ()
     __parameter_value_attributes__ = ()
 
