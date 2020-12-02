@@ -5,13 +5,15 @@ from pywr.core import Model, Input, Output, Link, Storage, AggregatedStorage, Ag
 
 import pandas
 import datetime
-
+from helpers import load_model
 import pytest
+
 
 @pytest.fixture()
 def model(request):
     model = Model()
     return model
+
 
 @pytest.fixture()
 def simple_linear_model(request):
@@ -29,6 +31,7 @@ def simple_linear_model(request):
     lnk.connect(otpt)
 
     return model
+
 
 @pytest.fixture()
 def simple_storage_model(request):
@@ -66,27 +69,4 @@ def three_storage_model(request):
 
 
     """
-
-    model = pywr.core.Model(
-        start=pandas.to_datetime('2016-01-01'),
-        end=pandas.to_datetime('2016-01-05'),
-        timestep=datetime.timedelta(1),
-    )
-
-    all_res = []
-    all_otpt = []
-
-    for num in range(3):
-        inpt = Input(model, name="Input {}".format(num), max_flow=5.0*num, cost=-1)
-        res = Storage(model, name="Storage {}".format(num), outputs=1, inputs=1, max_volume=20, initial_volume=10+num)
-        otpt = Output(model, name="Output {}".format(num), max_flow=8+num, cost=-999)
-
-        inpt.connect(res)
-        res.connect(otpt)
-
-        all_res.append(res)
-        all_otpt.append(otpt)
-
-    AggregatedStorage(model, name='Total Storage', storage_nodes=all_res)
-    AggregatedNode(model, name='Total Output', nodes=all_otpt)
-    return model
+    return load_model("three_storage.json")

@@ -868,7 +868,7 @@ class MultiSplitLink(PiecewiseLink):
             yield self.output
 
 
-class AggregatedStorage(Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
+class AggregatedStorage(Loadable, Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
     """ An aggregated sum of other `Storage` nodes
 
     This object should behave like `Storage` by returning current `flow`, `volume` and `current_pc`.
@@ -886,6 +886,8 @@ class AggregatedStorage(Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
     This node can not be connected to other nodes in the network.
 
     """
+    __node_attributes__ = ('storage_nodes', )
+
     def __init__(self, model, name, storage_nodes, **kwargs):
         super(AggregatedStorage, self).__init__(model, name, **kwargs)
         self.storage_nodes = storage_nodes
