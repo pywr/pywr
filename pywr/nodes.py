@@ -469,7 +469,7 @@ class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMet
             raise NotImplementedError("VirtualStorage does not currently support a non-zero cost.")
 
 
-class RollingVirtualStorage(Drawable, _core.RollingVirtualStorage, metaclass=NodeMeta):
+class RollingVirtualStorage(Loadable, Drawable, _core.RollingVirtualStorage, metaclass=NodeMeta):
     """A rolling virtual storage node useful for implementing rolling licences.
 
     Parameters
@@ -500,6 +500,9 @@ class RollingVirtualStorage(Drawable, _core.RollingVirtualStorage, metaclass=Nod
     -----
     TODO: The cost property is not currently respected. See issue #242.
     """
+    __parameter_attributes__ = ('min_volume', 'max_volume')
+    __node_attributes__ = ('nodes', )
+
     def __init__(self, model, name, nodes, **kwargs):
         min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         if min_volume is None:

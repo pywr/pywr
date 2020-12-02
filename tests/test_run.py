@@ -312,18 +312,26 @@ def test_virtual_storage_duplicate_route():
 
 
 class TestRollingVirtualStorage:
-    def test_run(self):
+
+    @pytest.mark.parametrize('from_json', [True, False])
+    def test_run(self, from_json):
         """Test RollingVirtualStorage node behaviour."""
 
-        model = pywr.core.Model()
+        if from_json:
+            model = load_model('rolling_virtual_storage.json')
 
-        inpt = Input(model, "Input", max_flow=20)
-        lnk = Link(model, "Link")
-        inpt.connect(lnk)
-        otpt = Output(model, "Output", max_flow=15, cost=-10.0)
-        lnk.connect(otpt)
+            vs = model.nodes['Licence']
+            otpt = model.nodes['Output']
+        else:
+            model = pywr.core.Model()
 
-        vs = pywr.core.RollingVirtualStorage(model, "Licence", [lnk], days=3, initial_volume=30.0, max_volume=30.0)
+            inpt = Input(model, "Input", max_flow=20)
+            lnk = Link(model, "Link")
+            inpt.connect(lnk)
+            otpt = Output(model, "Output", max_flow=15, cost=-10.0)
+            lnk.connect(otpt)
+
+            vs = pywr.core.RollingVirtualStorage(model, "Licence", [lnk], days=3, initial_volume=30.0, max_volume=30.0)
 
         model.setup()
 
