@@ -1485,8 +1485,12 @@ def test_timestep_count_index_parameter_recorder(simple_storage_model):
     assert_allclose([0, 183 + 365 + 365], rec.values(), atol=1e-7)
 
 
-@pytest.mark.parametrize("params", [1, 2])
-def test_annual_count_index_threshold_recorder(simple_storage_model, params):
+@pytest.mark.parametrize(("params", "exclude_months"), [
+    [1, None],
+    [2, None],
+    [1, [1, 2, 12]],
+])
+def test_annual_count_index_threshold_recorder(simple_storage_model, params, exclude_months):
     """
     The test sets uses a simple reservoir model with different inputs that
     trigger a control curve failure after different numbers of years.
@@ -1510,24 +1514,22 @@ def test_annual_count_index_threshold_recorder(simple_storage_model, params):
     model.nodes['Output'].max_flow = demand
 
     # Create the recorder with a threshold of 1
-    rec = AnnualCountIndexThresholdRecorder(model, [param] * params, 'TestRec', 1)
+    rec = AnnualCountIndexThresholdRecorder(model, [param] * params, 'TestRec', 1, exclude_months=exclude_months)
 
     model.run()
 
     # We expect no failures in the first ensemble, the reservoir starts failing halfway through
     # the 3rd year
-    assert_allclose([[0, 0],
-                     [0, 0],
-                     [0, 183],
-                     [0, 365],
-                     [0, 365]], rec.data, atol=1e-7)
+    if exclude_months is None:
+        expected_data = [[0, 0], [0, 0], [0, 183], [0, 365],[0, 365]]
+    else:
+        # Ignore counts for Jan, Feb and Dec
+        assert exclude_months == [1, 2, 12]  # Test is hard-coded for these exclusion months.
+        expected_data = [[0, 0], [0, 0], [0, 183 - 31], [0, 365 - 31 - 28 - 31], [0, 365 - 31 - 28 - 31]]
 
+    assert_allclose(expected_data, rec.data, atol=1e-7)
     df = rec.to_dataframe()
-    assert_allclose([[0, 0],
-                     [0, 0],
-                     [0, 183],
-                     [0, 365],
-                     [0, 365]], df.values, atol=1e-7)
+    assert_allclose(expected_data, df.values, atol=1e-7)
 
 
 class TestAnnualTotalFlowRecorder:
