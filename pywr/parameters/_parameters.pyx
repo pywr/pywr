@@ -988,7 +988,7 @@ cdef class RbfProfileParameter(Parameter):
         # Create the corresponding y values including the mirrored entries
         y = list(self._values)
         y = [y[-1]] + y + [y[0], y[1]]
-        rbfi = Rbf(days_of_year, y)
+        rbfi = Rbf(days_of_year, y, **self.rbf_kwargs)
 
         # Do the interpolation
         values = rbfi(np.arange(365) + 1)
