@@ -1808,8 +1808,11 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         The name of the recorder
     threshold : int
         Threshold to compare parameters against
+    exclude_months : list or None
+        Optional list of month numbers to exclude from the count.
     """
     def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
+        self.exclude_months = kwargs.pop('exclude_months', None)
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
         super().__init__(model, name=name, *args, **kwargs)
@@ -1854,6 +1857,9 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
 
             self._data_this_year[...] = 0
             self._current_year = ts.year
+
+        if self.exclude_months is not None and ts.month in self.exclude_months:
+            return
 
         for scenario_index in self.model.scenarios.combinations:
             for p, parameter in enumerate(self.parameters):
