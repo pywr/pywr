@@ -46,7 +46,6 @@
       ~InterpolatedFlowParameter.comment
       ~InterpolatedFlowParameter.double_size
       ~InterpolatedFlowParameter.integer_size
-      ~InterpolatedFlowParameter.interp_kwargs
       ~InterpolatedFlowParameter.is_variable
       ~InterpolatedFlowParameter.model
       ~InterpolatedFlowParameter.name
