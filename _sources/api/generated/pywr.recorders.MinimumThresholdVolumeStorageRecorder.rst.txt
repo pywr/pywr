@@ -1,0 +1,56 @@
+﻿pywr.recorders.MinimumThresholdVolumeStorageRecorder
+====================================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: MinimumThresholdVolumeStorageRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MinimumThresholdVolumeStorageRecorder.__init__
+      ~MinimumThresholdVolumeStorageRecorder.after
+      ~MinimumThresholdVolumeStorageRecorder.aggregated_value
+      ~MinimumThresholdVolumeStorageRecorder.before
+      ~MinimumThresholdVolumeStorageRecorder.finish
+      ~MinimumThresholdVolumeStorageRecorder.is_constraint_violated
+      ~MinimumThresholdVolumeStorageRecorder.load
+      ~MinimumThresholdVolumeStorageRecorder.register
+      ~MinimumThresholdVolumeStorageRecorder.reset
+      ~MinimumThresholdVolumeStorageRecorder.setup
+      ~MinimumThresholdVolumeStorageRecorder.unregister
+      ~MinimumThresholdVolumeStorageRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MinimumThresholdVolumeStorageRecorder.agg_func
+      ~MinimumThresholdVolumeStorageRecorder.children
+      ~MinimumThresholdVolumeStorageRecorder.comment
+      ~MinimumThresholdVolumeStorageRecorder.constraint_lower_bounds
+      ~MinimumThresholdVolumeStorageRecorder.constraint_upper_bounds
+      ~MinimumThresholdVolumeStorageRecorder.epsilon
+      ~MinimumThresholdVolumeStorageRecorder.ignore_nan
+      ~MinimumThresholdVolumeStorageRecorder.is_constraint
+      ~MinimumThresholdVolumeStorageRecorder.is_double_bounded_constraint
+      ~MinimumThresholdVolumeStorageRecorder.is_equality_constraint
+      ~MinimumThresholdVolumeStorageRecorder.is_lower_bounded_constraint
+      ~MinimumThresholdVolumeStorageRecorder.is_objective
+      ~MinimumThresholdVolumeStorageRecorder.is_upper_bounded_constraint
+      ~MinimumThresholdVolumeStorageRecorder.model
+      ~MinimumThresholdVolumeStorageRecorder.name
+      ~MinimumThresholdVolumeStorageRecorder.node
+      ~MinimumThresholdVolumeStorageRecorder.parents
+      ~MinimumThresholdVolumeStorageRecorder.threshold
+   
+   

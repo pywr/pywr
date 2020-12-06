@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pywr.core.Timestep &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="pywr.core.Scenario" href="pywr.core.Scenario.html" />
+    <link rel="prev" title="Core classes" href="../pywr.core.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../json.html">JSON model format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extending_pywr/index.html">Extending Pywr</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../pywr.html">Python API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../pywr.core.html">Core classes</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">pywr.core.Timestep</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pywr.core.Scenario.html">pywr.core.Scenario</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pywr.core.ScenarioCollection.html">pywr.core.ScenarioCollection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pywr.core.ScenarioIndex.html">pywr.core.ScenarioIndex</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.nodes.html">Nodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.optimisation.html">Optimisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.parameters.html">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.recorders.html">Recorders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.notebook.html">Notebook Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.utils.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../pywr.html">Pywr reference documentation.</a> &raquo;</li>
+        
+          <li><a href="../pywr.core.html">Core classes</a> &raquo;</li>
+        
+      <li>pywr.core.Timestep</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/pywr.core.Timestep.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pywr-core-timestep">
+<h1>pywr.core.Timestep<a class="headerlink" href="#pywr-core-timestep" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="pywr.core.Timestep">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.core.</code><code class="sig-name descname">Timestep</code><span class="sig-paren">(</span><em class="sig-param">period</em>, <em class="sig-param">int index</em>, <em class="sig-param">double days</em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.core.Timestep" title="Permalink to this definition">¶</a></dt>
+<dd><p>A representation of a simulation time-step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>period</strong><span class="classifier">pandas.Period</span></dt><dd><p>Read-only global scenario index that this ScenarioIndex refers to.</p>
+</dd>
+<dt><strong>index</strong><span class="classifier">int</span></dt><dd><p>The time-step index of the simulation.</p>
+</dd>
+<dt><strong>days</strong><span class="classifier">int</span></dt><dd><p>The time-step length in days.</p>
+</dd>
+<dt><strong>dayofyear</strong><span class="classifier">int</span></dt><dd><p>The day of the year (from <cite>pandas.Period.dayofyear</cite>).</p>
+</dd>
+<dt><strong>dayofyear_index</strong><span class="classifier">int</span></dt><dd><p>A zero-based index for the day of the year. This begins at 0 and ends at 366. The 29th of February
+is skipped if it is not a leap year.</p>
+</dd>
+<dt><strong>day</strong><span class="classifier">int</span></dt><dd><p>The day of the month.</p>
+</dd>
+<dt><strong>week_index</strong><span class="classifier">int</span></dt><dd><p>A zero-based index for the week of the year. The last week of the year (index 51) is always slightly
+longer than 7 days.</p>
+</dd>
+<dt><strong>month</strong><span class="classifier">int</span></dt><dd><p>The month number (1 - 12).</p>
+</dd>
+<dt><strong>year</strong><span class="classifier">int</span></dt><dd><p>The year.</p>
+</dd>
+<dt><strong>is_leap_year</strong><span class="classifier">bool</span></dt><dd><p>True if the current year is a leap year; false otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="pywr.core.Timestep.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.core.Timestep.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pywr.core.Timestep.__init__" title="pywr.core.Timestep.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Initialize self.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">datetime</span></code></p></td>
+<td><p>Timestep representation as a <cite>datetime.datetime</cite> object</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">day</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dayofyear</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dayofyear_index</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">days</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_leap_year</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">month</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">period</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">week_index</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">year</span></code></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="pywr.core.Scenario.html" class="btn btn-neutral float-right" title="pywr.core.Scenario" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../pywr.core.html" class="btn btn-neutral float-left" title="Core classes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

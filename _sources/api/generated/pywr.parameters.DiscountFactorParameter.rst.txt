@@ -1,0 +1,57 @@
+﻿pywr.parameters.DiscountFactorParameter
+=======================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: DiscountFactorParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DiscountFactorParameter.__init__
+      ~DiscountFactorParameter.after
+      ~DiscountFactorParameter.before
+      ~DiscountFactorParameter.finish
+      ~DiscountFactorParameter.get_all_values
+      ~DiscountFactorParameter.get_double_lower_bounds
+      ~DiscountFactorParameter.get_double_upper_bounds
+      ~DiscountFactorParameter.get_double_variables
+      ~DiscountFactorParameter.get_integer_lower_bounds
+      ~DiscountFactorParameter.get_integer_upper_bounds
+      ~DiscountFactorParameter.get_integer_variables
+      ~DiscountFactorParameter.get_value
+      ~DiscountFactorParameter.load
+      ~DiscountFactorParameter.register
+      ~DiscountFactorParameter.reset
+      ~DiscountFactorParameter.set_double_variables
+      ~DiscountFactorParameter.set_integer_variables
+      ~DiscountFactorParameter.setup
+      ~DiscountFactorParameter.unregister
+      ~DiscountFactorParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DiscountFactorParameter.base_year
+      ~DiscountFactorParameter.children
+      ~DiscountFactorParameter.comment
+      ~DiscountFactorParameter.double_size
+      ~DiscountFactorParameter.integer_size
+      ~DiscountFactorParameter.is_variable
+      ~DiscountFactorParameter.model
+      ~DiscountFactorParameter.name
+      ~DiscountFactorParameter.parents
+      ~DiscountFactorParameter.rate
+      ~DiscountFactorParameter.size
+   
+   

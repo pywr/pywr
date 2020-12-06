@@ -1,0 +1,61 @@
+﻿pywr.domains.river.Catchment
+============================
+
+.. currentmodule:: pywr.domains.river
+
+.. autoclass:: Catchment
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Catchment.__init__
+      ~Catchment.after
+      ~Catchment.before
+      ~Catchment.check
+      ~Catchment.commit
+      ~Catchment.commit_all
+      ~Catchment.connect
+      ~Catchment.disconnect
+      ~Catchment.finish
+      ~Catchment.get_conversion_factor
+      ~Catchment.get_cost
+      ~Catchment.get_flow
+      ~Catchment.get_max_flow
+      ~Catchment.get_min_flow
+      ~Catchment.iter_slots
+      ~Catchment.load
+      ~Catchment.reset
+      ~Catchment.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Catchment.allow_isolated
+      ~Catchment.comment
+      ~Catchment.component_attrs
+      ~Catchment.components
+      ~Catchment.conversion_factor
+      ~Catchment.cost
+      ~Catchment.domain
+      ~Catchment.flow
+      ~Catchment.fully_qualified_name
+      ~Catchment.max_flow
+      ~Catchment.min_flow
+      ~Catchment.model
+      ~Catchment.name
+      ~Catchment.parent
+      ~Catchment.prev_flow
+      ~Catchment.recorders
+      ~Catchment.virtual
+   
+   

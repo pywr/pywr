@@ -1,0 +1,60 @@
+﻿pywr.parameters.CurrentYearThresholdParameter
+=============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: CurrentYearThresholdParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CurrentYearThresholdParameter.__init__
+      ~CurrentYearThresholdParameter.after
+      ~CurrentYearThresholdParameter.before
+      ~CurrentYearThresholdParameter.finish
+      ~CurrentYearThresholdParameter.get_all_indices
+      ~CurrentYearThresholdParameter.get_all_values
+      ~CurrentYearThresholdParameter.get_double_lower_bounds
+      ~CurrentYearThresholdParameter.get_double_upper_bounds
+      ~CurrentYearThresholdParameter.get_double_variables
+      ~CurrentYearThresholdParameter.get_index
+      ~CurrentYearThresholdParameter.get_integer_lower_bounds
+      ~CurrentYearThresholdParameter.get_integer_upper_bounds
+      ~CurrentYearThresholdParameter.get_integer_variables
+      ~CurrentYearThresholdParameter.get_value
+      ~CurrentYearThresholdParameter.index
+      ~CurrentYearThresholdParameter.load
+      ~CurrentYearThresholdParameter.register
+      ~CurrentYearThresholdParameter.reset
+      ~CurrentYearThresholdParameter.set_double_variables
+      ~CurrentYearThresholdParameter.set_integer_variables
+      ~CurrentYearThresholdParameter.setup
+      ~CurrentYearThresholdParameter.unregister
+      ~CurrentYearThresholdParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CurrentYearThresholdParameter.children
+      ~CurrentYearThresholdParameter.comment
+      ~CurrentYearThresholdParameter.double_size
+      ~CurrentYearThresholdParameter.integer_size
+      ~CurrentYearThresholdParameter.is_variable
+      ~CurrentYearThresholdParameter.model
+      ~CurrentYearThresholdParameter.name
+      ~CurrentYearThresholdParameter.parents
+      ~CurrentYearThresholdParameter.ratchet
+      ~CurrentYearThresholdParameter.size
+      ~CurrentYearThresholdParameter.threshold
+   
+   

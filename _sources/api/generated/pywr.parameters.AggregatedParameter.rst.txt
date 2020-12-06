@@ -1,0 +1,59 @@
+﻿pywr.parameters.AggregatedParameter
+===================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: AggregatedParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AggregatedParameter.__init__
+      ~AggregatedParameter.add
+      ~AggregatedParameter.after
+      ~AggregatedParameter.before
+      ~AggregatedParameter.finish
+      ~AggregatedParameter.get_all_values
+      ~AggregatedParameter.get_double_lower_bounds
+      ~AggregatedParameter.get_double_upper_bounds
+      ~AggregatedParameter.get_double_variables
+      ~AggregatedParameter.get_integer_lower_bounds
+      ~AggregatedParameter.get_integer_upper_bounds
+      ~AggregatedParameter.get_integer_variables
+      ~AggregatedParameter.get_value
+      ~AggregatedParameter.load
+      ~AggregatedParameter.register
+      ~AggregatedParameter.remove
+      ~AggregatedParameter.reset
+      ~AggregatedParameter.set_double_variables
+      ~AggregatedParameter.set_integer_variables
+      ~AggregatedParameter.setup
+      ~AggregatedParameter.unregister
+      ~AggregatedParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AggregatedParameter.agg_func
+      ~AggregatedParameter.children
+      ~AggregatedParameter.comment
+      ~AggregatedParameter.double_size
+      ~AggregatedParameter.integer_size
+      ~AggregatedParameter.is_variable
+      ~AggregatedParameter.model
+      ~AggregatedParameter.name
+      ~AggregatedParameter.parameters
+      ~AggregatedParameter.parents
+      ~AggregatedParameter.size
+   
+   

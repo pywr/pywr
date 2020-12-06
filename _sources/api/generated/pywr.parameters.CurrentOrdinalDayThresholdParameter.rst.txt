@@ -1,0 +1,60 @@
+﻿pywr.parameters.CurrentOrdinalDayThresholdParameter
+===================================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: CurrentOrdinalDayThresholdParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CurrentOrdinalDayThresholdParameter.__init__
+      ~CurrentOrdinalDayThresholdParameter.after
+      ~CurrentOrdinalDayThresholdParameter.before
+      ~CurrentOrdinalDayThresholdParameter.finish
+      ~CurrentOrdinalDayThresholdParameter.get_all_indices
+      ~CurrentOrdinalDayThresholdParameter.get_all_values
+      ~CurrentOrdinalDayThresholdParameter.get_double_lower_bounds
+      ~CurrentOrdinalDayThresholdParameter.get_double_upper_bounds
+      ~CurrentOrdinalDayThresholdParameter.get_double_variables
+      ~CurrentOrdinalDayThresholdParameter.get_index
+      ~CurrentOrdinalDayThresholdParameter.get_integer_lower_bounds
+      ~CurrentOrdinalDayThresholdParameter.get_integer_upper_bounds
+      ~CurrentOrdinalDayThresholdParameter.get_integer_variables
+      ~CurrentOrdinalDayThresholdParameter.get_value
+      ~CurrentOrdinalDayThresholdParameter.index
+      ~CurrentOrdinalDayThresholdParameter.load
+      ~CurrentOrdinalDayThresholdParameter.register
+      ~CurrentOrdinalDayThresholdParameter.reset
+      ~CurrentOrdinalDayThresholdParameter.set_double_variables
+      ~CurrentOrdinalDayThresholdParameter.set_integer_variables
+      ~CurrentOrdinalDayThresholdParameter.setup
+      ~CurrentOrdinalDayThresholdParameter.unregister
+      ~CurrentOrdinalDayThresholdParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CurrentOrdinalDayThresholdParameter.children
+      ~CurrentOrdinalDayThresholdParameter.comment
+      ~CurrentOrdinalDayThresholdParameter.double_size
+      ~CurrentOrdinalDayThresholdParameter.integer_size
+      ~CurrentOrdinalDayThresholdParameter.is_variable
+      ~CurrentOrdinalDayThresholdParameter.model
+      ~CurrentOrdinalDayThresholdParameter.name
+      ~CurrentOrdinalDayThresholdParameter.parents
+      ~CurrentOrdinalDayThresholdParameter.ratchet
+      ~CurrentOrdinalDayThresholdParameter.size
+      ~CurrentOrdinalDayThresholdParameter.threshold
+   
+   

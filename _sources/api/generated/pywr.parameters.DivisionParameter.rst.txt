@@ -1,0 +1,57 @@
+﻿pywr.parameters.DivisionParameter
+=================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: DivisionParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DivisionParameter.__init__
+      ~DivisionParameter.after
+      ~DivisionParameter.before
+      ~DivisionParameter.finish
+      ~DivisionParameter.get_all_values
+      ~DivisionParameter.get_double_lower_bounds
+      ~DivisionParameter.get_double_upper_bounds
+      ~DivisionParameter.get_double_variables
+      ~DivisionParameter.get_integer_lower_bounds
+      ~DivisionParameter.get_integer_upper_bounds
+      ~DivisionParameter.get_integer_variables
+      ~DivisionParameter.get_value
+      ~DivisionParameter.load
+      ~DivisionParameter.register
+      ~DivisionParameter.reset
+      ~DivisionParameter.set_double_variables
+      ~DivisionParameter.set_integer_variables
+      ~DivisionParameter.setup
+      ~DivisionParameter.unregister
+      ~DivisionParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DivisionParameter.children
+      ~DivisionParameter.comment
+      ~DivisionParameter.denominator
+      ~DivisionParameter.double_size
+      ~DivisionParameter.integer_size
+      ~DivisionParameter.is_variable
+      ~DivisionParameter.model
+      ~DivisionParameter.name
+      ~DivisionParameter.numerator
+      ~DivisionParameter.parents
+      ~DivisionParameter.size
+   
+   

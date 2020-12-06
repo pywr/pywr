@@ -1,0 +1,60 @@
+﻿pywr.nodes.MultiSplitLink
+=========================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: MultiSplitLink
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MultiSplitLink.__init__
+      ~MultiSplitLink.after
+      ~MultiSplitLink.before
+      ~MultiSplitLink.check
+      ~MultiSplitLink.commit
+      ~MultiSplitLink.commit_all
+      ~MultiSplitLink.connect
+      ~MultiSplitLink.disconnect
+      ~MultiSplitLink.finish
+      ~MultiSplitLink.get_conversion_factor
+      ~MultiSplitLink.get_cost
+      ~MultiSplitLink.get_max_flow
+      ~MultiSplitLink.get_min_flow
+      ~MultiSplitLink.iter_slots
+      ~MultiSplitLink.load
+      ~MultiSplitLink.reset
+      ~MultiSplitLink.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MultiSplitLink.allow_isolated
+      ~MultiSplitLink.comment
+      ~MultiSplitLink.component_attrs
+      ~MultiSplitLink.components
+      ~MultiSplitLink.conversion_factor
+      ~MultiSplitLink.cost
+      ~MultiSplitLink.domain
+      ~MultiSplitLink.flow
+      ~MultiSplitLink.fully_qualified_name
+      ~MultiSplitLink.max_flow
+      ~MultiSplitLink.min_flow
+      ~MultiSplitLink.model
+      ~MultiSplitLink.name
+      ~MultiSplitLink.parent
+      ~MultiSplitLink.prev_flow
+      ~MultiSplitLink.recorders
+      ~MultiSplitLink.virtual
+   
+   

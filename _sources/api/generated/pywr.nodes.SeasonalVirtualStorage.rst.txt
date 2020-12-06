@@ -1,0 +1,68 @@
+﻿pywr.nodes.SeasonalVirtualStorage
+=================================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: SeasonalVirtualStorage
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SeasonalVirtualStorage.__init__
+      ~SeasonalVirtualStorage.after
+      ~SeasonalVirtualStorage.before
+      ~SeasonalVirtualStorage.check
+      ~SeasonalVirtualStorage.commit
+      ~SeasonalVirtualStorage.commit_all
+      ~SeasonalVirtualStorage.finish
+      ~SeasonalVirtualStorage.get_area
+      ~SeasonalVirtualStorage.get_cost
+      ~SeasonalVirtualStorage.get_initial_pc
+      ~SeasonalVirtualStorage.get_initial_volume
+      ~SeasonalVirtualStorage.get_level
+      ~SeasonalVirtualStorage.get_max_volume
+      ~SeasonalVirtualStorage.get_min_volume
+      ~SeasonalVirtualStorage.load
+      ~SeasonalVirtualStorage.reset
+      ~SeasonalVirtualStorage.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SeasonalVirtualStorage.active
+      ~SeasonalVirtualStorage.allow_isolated
+      ~SeasonalVirtualStorage.area
+      ~SeasonalVirtualStorage.comment
+      ~SeasonalVirtualStorage.component_attrs
+      ~SeasonalVirtualStorage.components
+      ~SeasonalVirtualStorage.cost
+      ~SeasonalVirtualStorage.current_pc
+      ~SeasonalVirtualStorage.domain
+      ~SeasonalVirtualStorage.factors
+      ~SeasonalVirtualStorage.flow
+      ~SeasonalVirtualStorage.fully_qualified_name
+      ~SeasonalVirtualStorage.initial_volume
+      ~SeasonalVirtualStorage.initial_volume_pc
+      ~SeasonalVirtualStorage.level
+      ~SeasonalVirtualStorage.max_volume
+      ~SeasonalVirtualStorage.min_volume
+      ~SeasonalVirtualStorage.model
+      ~SeasonalVirtualStorage.name
+      ~SeasonalVirtualStorage.nodes
+      ~SeasonalVirtualStorage.parent
+      ~SeasonalVirtualStorage.prev_flow
+      ~SeasonalVirtualStorage.recorders
+      ~SeasonalVirtualStorage.virtual
+      ~SeasonalVirtualStorage.volume
+   
+   

@@ -1,0 +1,68 @@
+﻿pywr.nodes.VirtualStorage
+=========================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: VirtualStorage
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~VirtualStorage.__init__
+      ~VirtualStorage.after
+      ~VirtualStorage.before
+      ~VirtualStorage.check
+      ~VirtualStorage.commit
+      ~VirtualStorage.commit_all
+      ~VirtualStorage.finish
+      ~VirtualStorage.get_area
+      ~VirtualStorage.get_cost
+      ~VirtualStorage.get_initial_pc
+      ~VirtualStorage.get_initial_volume
+      ~VirtualStorage.get_level
+      ~VirtualStorage.get_max_volume
+      ~VirtualStorage.get_min_volume
+      ~VirtualStorage.load
+      ~VirtualStorage.reset
+      ~VirtualStorage.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~VirtualStorage.active
+      ~VirtualStorage.allow_isolated
+      ~VirtualStorage.area
+      ~VirtualStorage.comment
+      ~VirtualStorage.component_attrs
+      ~VirtualStorage.components
+      ~VirtualStorage.cost
+      ~VirtualStorage.current_pc
+      ~VirtualStorage.domain
+      ~VirtualStorage.factors
+      ~VirtualStorage.flow
+      ~VirtualStorage.fully_qualified_name
+      ~VirtualStorage.initial_volume
+      ~VirtualStorage.initial_volume_pc
+      ~VirtualStorage.level
+      ~VirtualStorage.max_volume
+      ~VirtualStorage.min_volume
+      ~VirtualStorage.model
+      ~VirtualStorage.name
+      ~VirtualStorage.nodes
+      ~VirtualStorage.parent
+      ~VirtualStorage.prev_flow
+      ~VirtualStorage.recorders
+      ~VirtualStorage.virtual
+      ~VirtualStorage.volume
+   
+   

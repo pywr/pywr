@@ -1,0 +1,58 @@
+﻿pywr.recorders.NumpyArrayAreaRecorder
+=====================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: NumpyArrayAreaRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~NumpyArrayAreaRecorder.__init__
+      ~NumpyArrayAreaRecorder.after
+      ~NumpyArrayAreaRecorder.aggregated_value
+      ~NumpyArrayAreaRecorder.before
+      ~NumpyArrayAreaRecorder.finish
+      ~NumpyArrayAreaRecorder.is_constraint_violated
+      ~NumpyArrayAreaRecorder.load
+      ~NumpyArrayAreaRecorder.register
+      ~NumpyArrayAreaRecorder.reset
+      ~NumpyArrayAreaRecorder.setup
+      ~NumpyArrayAreaRecorder.to_dataframe
+      ~NumpyArrayAreaRecorder.unregister
+      ~NumpyArrayAreaRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NumpyArrayAreaRecorder.agg_func
+      ~NumpyArrayAreaRecorder.children
+      ~NumpyArrayAreaRecorder.comment
+      ~NumpyArrayAreaRecorder.constraint_lower_bounds
+      ~NumpyArrayAreaRecorder.constraint_upper_bounds
+      ~NumpyArrayAreaRecorder.data
+      ~NumpyArrayAreaRecorder.epsilon
+      ~NumpyArrayAreaRecorder.ignore_nan
+      ~NumpyArrayAreaRecorder.is_constraint
+      ~NumpyArrayAreaRecorder.is_double_bounded_constraint
+      ~NumpyArrayAreaRecorder.is_equality_constraint
+      ~NumpyArrayAreaRecorder.is_lower_bounded_constraint
+      ~NumpyArrayAreaRecorder.is_objective
+      ~NumpyArrayAreaRecorder.is_upper_bounded_constraint
+      ~NumpyArrayAreaRecorder.model
+      ~NumpyArrayAreaRecorder.name
+      ~NumpyArrayAreaRecorder.node
+      ~NumpyArrayAreaRecorder.parents
+      ~NumpyArrayAreaRecorder.temporal_agg_func
+   
+   

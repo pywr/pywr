@@ -1,0 +1,61 @@
+﻿pywr.parameters.NodeThresholdParameter
+======================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: NodeThresholdParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~NodeThresholdParameter.__init__
+      ~NodeThresholdParameter.after
+      ~NodeThresholdParameter.before
+      ~NodeThresholdParameter.finish
+      ~NodeThresholdParameter.get_all_indices
+      ~NodeThresholdParameter.get_all_values
+      ~NodeThresholdParameter.get_double_lower_bounds
+      ~NodeThresholdParameter.get_double_upper_bounds
+      ~NodeThresholdParameter.get_double_variables
+      ~NodeThresholdParameter.get_index
+      ~NodeThresholdParameter.get_integer_lower_bounds
+      ~NodeThresholdParameter.get_integer_upper_bounds
+      ~NodeThresholdParameter.get_integer_variables
+      ~NodeThresholdParameter.get_value
+      ~NodeThresholdParameter.index
+      ~NodeThresholdParameter.load
+      ~NodeThresholdParameter.register
+      ~NodeThresholdParameter.reset
+      ~NodeThresholdParameter.set_double_variables
+      ~NodeThresholdParameter.set_integer_variables
+      ~NodeThresholdParameter.setup
+      ~NodeThresholdParameter.unregister
+      ~NodeThresholdParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NodeThresholdParameter.children
+      ~NodeThresholdParameter.comment
+      ~NodeThresholdParameter.double_size
+      ~NodeThresholdParameter.integer_size
+      ~NodeThresholdParameter.is_variable
+      ~NodeThresholdParameter.model
+      ~NodeThresholdParameter.name
+      ~NodeThresholdParameter.node
+      ~NodeThresholdParameter.parents
+      ~NodeThresholdParameter.ratchet
+      ~NodeThresholdParameter.size
+      ~NodeThresholdParameter.threshold
+   
+   

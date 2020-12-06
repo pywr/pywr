@@ -1,0 +1,61 @@
+﻿pywr.parameters.control\_curves.ControlCurvePiecewiseInterpolatedParameter
+==========================================================================
+
+.. currentmodule:: pywr.parameters.control_curves
+
+.. autoclass:: ControlCurvePiecewiseInterpolatedParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ControlCurvePiecewiseInterpolatedParameter.__init__
+      ~ControlCurvePiecewiseInterpolatedParameter.after
+      ~ControlCurvePiecewiseInterpolatedParameter.before
+      ~ControlCurvePiecewiseInterpolatedParameter.finish
+      ~ControlCurvePiecewiseInterpolatedParameter.get_all_values
+      ~ControlCurvePiecewiseInterpolatedParameter.get_double_lower_bounds
+      ~ControlCurvePiecewiseInterpolatedParameter.get_double_upper_bounds
+      ~ControlCurvePiecewiseInterpolatedParameter.get_double_variables
+      ~ControlCurvePiecewiseInterpolatedParameter.get_integer_lower_bounds
+      ~ControlCurvePiecewiseInterpolatedParameter.get_integer_upper_bounds
+      ~ControlCurvePiecewiseInterpolatedParameter.get_integer_variables
+      ~ControlCurvePiecewiseInterpolatedParameter.get_value
+      ~ControlCurvePiecewiseInterpolatedParameter.load
+      ~ControlCurvePiecewiseInterpolatedParameter.register
+      ~ControlCurvePiecewiseInterpolatedParameter.reset
+      ~ControlCurvePiecewiseInterpolatedParameter.set_double_variables
+      ~ControlCurvePiecewiseInterpolatedParameter.set_integer_variables
+      ~ControlCurvePiecewiseInterpolatedParameter.setup
+      ~ControlCurvePiecewiseInterpolatedParameter.unregister
+      ~ControlCurvePiecewiseInterpolatedParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ControlCurvePiecewiseInterpolatedParameter.children
+      ~ControlCurvePiecewiseInterpolatedParameter.comment
+      ~ControlCurvePiecewiseInterpolatedParameter.control_curves
+      ~ControlCurvePiecewiseInterpolatedParameter.double_size
+      ~ControlCurvePiecewiseInterpolatedParameter.integer_size
+      ~ControlCurvePiecewiseInterpolatedParameter.is_variable
+      ~ControlCurvePiecewiseInterpolatedParameter.maximum
+      ~ControlCurvePiecewiseInterpolatedParameter.minimum
+      ~ControlCurvePiecewiseInterpolatedParameter.model
+      ~ControlCurvePiecewiseInterpolatedParameter.name
+      ~ControlCurvePiecewiseInterpolatedParameter.parameters
+      ~ControlCurvePiecewiseInterpolatedParameter.parents
+      ~ControlCurvePiecewiseInterpolatedParameter.size
+      ~ControlCurvePiecewiseInterpolatedParameter.storage_node
+      ~ControlCurvePiecewiseInterpolatedParameter.values
+   
+   

@@ -1,0 +1,55 @@
+﻿pywr.parameters.ScenarioMonthlyProfileParameter
+===============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: ScenarioMonthlyProfileParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ScenarioMonthlyProfileParameter.__init__
+      ~ScenarioMonthlyProfileParameter.after
+      ~ScenarioMonthlyProfileParameter.before
+      ~ScenarioMonthlyProfileParameter.finish
+      ~ScenarioMonthlyProfileParameter.get_all_values
+      ~ScenarioMonthlyProfileParameter.get_double_lower_bounds
+      ~ScenarioMonthlyProfileParameter.get_double_upper_bounds
+      ~ScenarioMonthlyProfileParameter.get_double_variables
+      ~ScenarioMonthlyProfileParameter.get_integer_lower_bounds
+      ~ScenarioMonthlyProfileParameter.get_integer_upper_bounds
+      ~ScenarioMonthlyProfileParameter.get_integer_variables
+      ~ScenarioMonthlyProfileParameter.get_value
+      ~ScenarioMonthlyProfileParameter.load
+      ~ScenarioMonthlyProfileParameter.register
+      ~ScenarioMonthlyProfileParameter.reset
+      ~ScenarioMonthlyProfileParameter.set_double_variables
+      ~ScenarioMonthlyProfileParameter.set_integer_variables
+      ~ScenarioMonthlyProfileParameter.setup
+      ~ScenarioMonthlyProfileParameter.unregister
+      ~ScenarioMonthlyProfileParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ScenarioMonthlyProfileParameter.children
+      ~ScenarioMonthlyProfileParameter.comment
+      ~ScenarioMonthlyProfileParameter.double_size
+      ~ScenarioMonthlyProfileParameter.integer_size
+      ~ScenarioMonthlyProfileParameter.is_variable
+      ~ScenarioMonthlyProfileParameter.model
+      ~ScenarioMonthlyProfileParameter.name
+      ~ScenarioMonthlyProfileParameter.parents
+      ~ScenarioMonthlyProfileParameter.size
+   
+   

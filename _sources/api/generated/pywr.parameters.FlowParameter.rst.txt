@@ -1,0 +1,57 @@
+﻿pywr.parameters.FlowParameter
+=============================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: FlowParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FlowParameter.__init__
+      ~FlowParameter.after
+      ~FlowParameter.before
+      ~FlowParameter.finish
+      ~FlowParameter.get_all_values
+      ~FlowParameter.get_double_lower_bounds
+      ~FlowParameter.get_double_upper_bounds
+      ~FlowParameter.get_double_variables
+      ~FlowParameter.get_integer_lower_bounds
+      ~FlowParameter.get_integer_upper_bounds
+      ~FlowParameter.get_integer_variables
+      ~FlowParameter.get_value
+      ~FlowParameter.load
+      ~FlowParameter.register
+      ~FlowParameter.reset
+      ~FlowParameter.set_double_variables
+      ~FlowParameter.set_integer_variables
+      ~FlowParameter.setup
+      ~FlowParameter.unregister
+      ~FlowParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~FlowParameter.children
+      ~FlowParameter.comment
+      ~FlowParameter.double_size
+      ~FlowParameter.initial_value
+      ~FlowParameter.integer_size
+      ~FlowParameter.is_variable
+      ~FlowParameter.model
+      ~FlowParameter.name
+      ~FlowParameter.node
+      ~FlowParameter.parents
+      ~FlowParameter.size
+   
+   

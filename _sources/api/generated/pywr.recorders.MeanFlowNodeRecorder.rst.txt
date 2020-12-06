@@ -1,0 +1,56 @@
+﻿pywr.recorders.MeanFlowNodeRecorder
+===================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: MeanFlowNodeRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MeanFlowNodeRecorder.__init__
+      ~MeanFlowNodeRecorder.after
+      ~MeanFlowNodeRecorder.aggregated_value
+      ~MeanFlowNodeRecorder.before
+      ~MeanFlowNodeRecorder.finish
+      ~MeanFlowNodeRecorder.is_constraint_violated
+      ~MeanFlowNodeRecorder.load
+      ~MeanFlowNodeRecorder.register
+      ~MeanFlowNodeRecorder.reset
+      ~MeanFlowNodeRecorder.setup
+      ~MeanFlowNodeRecorder.unregister
+      ~MeanFlowNodeRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MeanFlowNodeRecorder.agg_func
+      ~MeanFlowNodeRecorder.children
+      ~MeanFlowNodeRecorder.comment
+      ~MeanFlowNodeRecorder.constraint_lower_bounds
+      ~MeanFlowNodeRecorder.constraint_upper_bounds
+      ~MeanFlowNodeRecorder.epsilon
+      ~MeanFlowNodeRecorder.factor
+      ~MeanFlowNodeRecorder.ignore_nan
+      ~MeanFlowNodeRecorder.is_constraint
+      ~MeanFlowNodeRecorder.is_double_bounded_constraint
+      ~MeanFlowNodeRecorder.is_equality_constraint
+      ~MeanFlowNodeRecorder.is_lower_bounded_constraint
+      ~MeanFlowNodeRecorder.is_objective
+      ~MeanFlowNodeRecorder.is_upper_bounded_constraint
+      ~MeanFlowNodeRecorder.model
+      ~MeanFlowNodeRecorder.name
+      ~MeanFlowNodeRecorder.node
+      ~MeanFlowNodeRecorder.parents
+   
+   

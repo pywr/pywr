@@ -1,0 +1,61 @@
+﻿pywr.nodes.AggregatedNode
+=========================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: AggregatedNode
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AggregatedNode.__init__
+      ~AggregatedNode.after
+      ~AggregatedNode.before
+      ~AggregatedNode.check
+      ~AggregatedNode.commit
+      ~AggregatedNode.commit_all
+      ~AggregatedNode.finish
+      ~AggregatedNode.get_cost
+      ~AggregatedNode.get_factors
+      ~AggregatedNode.get_factors_norm
+      ~AggregatedNode.get_max_flow
+      ~AggregatedNode.get_min_flow
+      ~AggregatedNode.load
+      ~AggregatedNode.load_factors
+      ~AggregatedNode.reset
+      ~AggregatedNode.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AggregatedNode.allow_isolated
+      ~AggregatedNode.comment
+      ~AggregatedNode.component_attrs
+      ~AggregatedNode.components
+      ~AggregatedNode.domain
+      ~AggregatedNode.factors
+      ~AggregatedNode.flow
+      ~AggregatedNode.flow_weights
+      ~AggregatedNode.fully_qualified_name
+      ~AggregatedNode.has_fixed_factors
+      ~AggregatedNode.max_flow
+      ~AggregatedNode.min_flow
+      ~AggregatedNode.model
+      ~AggregatedNode.name
+      ~AggregatedNode.nodes
+      ~AggregatedNode.parent
+      ~AggregatedNode.prev_flow
+      ~AggregatedNode.recorders
+      ~AggregatedNode.virtual
+   
+   

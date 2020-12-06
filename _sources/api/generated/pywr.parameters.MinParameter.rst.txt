@@ -1,0 +1,57 @@
+﻿pywr.parameters.MinParameter
+============================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: MinParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MinParameter.__init__
+      ~MinParameter.after
+      ~MinParameter.before
+      ~MinParameter.finish
+      ~MinParameter.get_all_values
+      ~MinParameter.get_double_lower_bounds
+      ~MinParameter.get_double_upper_bounds
+      ~MinParameter.get_double_variables
+      ~MinParameter.get_integer_lower_bounds
+      ~MinParameter.get_integer_upper_bounds
+      ~MinParameter.get_integer_variables
+      ~MinParameter.get_value
+      ~MinParameter.load
+      ~MinParameter.register
+      ~MinParameter.reset
+      ~MinParameter.set_double_variables
+      ~MinParameter.set_integer_variables
+      ~MinParameter.setup
+      ~MinParameter.unregister
+      ~MinParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MinParameter.children
+      ~MinParameter.comment
+      ~MinParameter.double_size
+      ~MinParameter.integer_size
+      ~MinParameter.is_variable
+      ~MinParameter.model
+      ~MinParameter.name
+      ~MinParameter.parameter
+      ~MinParameter.parents
+      ~MinParameter.size
+      ~MinParameter.threshold
+   
+   

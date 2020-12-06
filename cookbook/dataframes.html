@@ -1,0 +1,488 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Using external data &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Aggregated parameters" href="aggregated_parameter.html" />
+    <link rel="prev" title="Demand restrictions" href="demand_saving.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../json.html">JSON model format</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="cookbook.html">Cookbook</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="demand_saving.html">Demand restrictions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">External data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#supported-formats">Supported formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#timeseries">Timeseries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#constants">Constants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#monthly-profiles">Monthly profiles</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#multi-index">Multi-index</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#tables">Tables</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="aggregated_parameter.html">Aggregated parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregated_node.html">Aggregated nodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="control_curves.html">Control curves</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../extending_pywr/index.html">Extending Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/pywr.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="cookbook.html">Pywr cookbook examples</a> &raquo;</li>
+        
+      <li>Using external data</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/cookbook/dataframes.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="using-external-data">
+<h1>Using external data<a class="headerlink" href="#using-external-data" title="Permalink to this headline">¶</a></h1>
+<p>It’s not always practical or desirable to store all the data required by a model in the JSON document. This is particularly true when working with large amounts of timeseries data, but is also applicable to data better stored in a tabular format.</p>
+<p>Many parameter types support loading data from an external file using the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword. The data is loaded during the setup/reset process, before the model is run.</p>
+<div class="section" id="supported-formats">
+<h2>Supported formats<a class="headerlink" href="#supported-formats" title="Permalink to this headline">¶</a></h2>
+<p>Support for the following data formats is available via the <a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/io.html">Pandas</a> module.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Comma separated values (.csv)</p></li>
+<li><p>Excel (.xls, .xlsx)</p></li>
+<li><p>HDF5 (.h5)</p></li>
+</ul>
+</div></blockquote>
+<p><strong>Warning:</strong> When reading Excel documents formulae are supported but not re-evaluated and links are not updated; the value read is the value present when the document was last saved.</p>
+<p>When working with large amounts of timeseries data the <a class="reference external" href="https://www.hdfgroup.org/why-hdf/">HDF5 format</a> is recommended as it has superior read speeds. Data in an HDF5 file should be in the “fixed” format; this is achieved by passing the <code class="docutils literal notranslate"><span class="pre">format=&quot;fixed&quot;</span></code> argument to <code class="docutils literal notranslate"><span class="pre">DataFrame.to_hdf</span></code>. Where data access speed is critical, users are advised to look at the <code class="docutils literal notranslate"><span class="pre">TablesArrayParameter</span></code> parameter instead which supports very fast access via <cite>pytables</cite> directly (rather than indirectly via <cite>pandas</cite>).</p>
+<p>External data is read using the appropriate <code class="docutils literal notranslate"><span class="pre">pandas.read_xxx</span></code> function determined by the file extension (e.g. <code class="docutils literal notranslate"><span class="pre">pandas.read_excel</span></code> for xls/xlsx). Keywords that are not recognised by Pywr are passed on to these functions. For example, when reading timeseries data from a CSV you can parse the date strings into pandas timestamps by passing <code class="docutils literal notranslate"><span class="pre">parse_dates=True</span></code> (see example below).</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="timeseries">
+<h3>Timeseries<a class="headerlink" href="#timeseries" title="Permalink to this headline">¶</a></h3>
+<p>The most common kind of data to store in an external file is timeseries data. For example, the flow used by a <code class="docutils literal notranslate"><span class="pre">Catchment</span></code> node.</p>
+<p>An example dataset is given below with three columns: a timestamp (used as the index), rainfall and flow.</p>
+<table class="colwidths-given docutils align-default" id="id1">
+<caption><span class="caption-text">timeseries1.csv</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 43%" />
+<col style="width: 29%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Timestamp</p></th>
+<th class="head"><p>Rainfall</p></th>
+<th class="head"><p>Flow</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1910-01-01</p></td>
+<td><p>0.0</p></td>
+<td><p>23.920</p></td>
+</tr>
+<tr class="row-odd"><td><p>1910-01-02</p></td>
+<td><p>1.8</p></td>
+<td><p>22.140</p></td>
+</tr>
+<tr class="row-even"><td><p>1910-01-03</p></td>
+<td><p>5.2</p></td>
+<td><p>22.570</p></td>
+</tr>
+</tbody>
+</table>
+<p>The parameter below references the <cite>timeseries1.csv</cite> file in its <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code>. The index column is defined by <code class="docutils literal notranslate"><span class="pre">&quot;index_col&quot;</span></code> and the data column is defined by the <code class="docutils literal notranslate"><span class="pre">&quot;column&quot;</span></code> keyword (in this case, <code class="docutils literal notranslate"><span class="pre">&quot;Flow&quot;</span></code>). The <code class="docutils literal notranslate"><span class="pre">&quot;parse_dates&quot;</span></code> keyword is required in order to parse the dates from strings in the CSV file into pandas date objects.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;flow&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;timeseries1.csv&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="s2">&quot;Timestamp&quot;</span>
+    <span class="s2">&quot;parse_dates&quot;</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;Flow&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>If the index column of the dataframe is a timestamp the parameter will support automatic resampling, if required. For example, if the external data is on a daily timestep the model can still be run on a weekly timestep. In this case the data mean flow for the week is used. Only subsampling is currently supported (e.g. you can go from daily to monthly, but not monthly to daily).</p>
+</div>
+<div class="section" id="constants">
+<h3>Constants<a class="headerlink" href="#constants" title="Permalink to this headline">¶</a></h3>
+<p>Constant parameters can also load their data from an external source. This is useful when data with a common theme is stored in a table. For example, the demand for different nodes in the model.</p>
+<p>An example is given below with the population and demand for three different cities (not real data!).</p>
+<table class="colwidths-given docutils align-default" id="id2">
+<caption><span class="caption-text">demands.csv</span><a class="headerlink" href="#id2" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 43%" />
+<col style="width: 29%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>City</p></th>
+<th class="head"><p>Population</p></th>
+<th class="head"><p>Demand</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Oxford</p></td>
+<td><p>30,294</p></td>
+<td><p>20.3</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cambridge</p></td>
+<td><p>28,403</p></td>
+<td><p>19.4</p></td>
+</tr>
+<tr class="row-even"><td><p>London</p></td>
+<td><p>790,930</p></td>
+<td><p>520.9</p></td>
+</tr>
+</tbody>
+</table>
+<p>As in the previous example, the filename is passed to the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword. The <code class="docutils literal notranslate"><span class="pre">&quot;index_col&quot;</span></code> keyword defines which column should be used for the lookups, with the <code class="docutils literal notranslate"><span class="pre">&quot;index&quot;</span></code> keyword specifying the lookup key.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow_oxford&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;demands.csv&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="s2">&quot;City&quot;</span>
+    <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="s2">&quot;Oxford&quot;</span>
+    <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;Demand&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="monthly-profiles">
+<h3>Monthly profiles<a class="headerlink" href="#monthly-profiles" title="Permalink to this headline">¶</a></h3>
+<p>Monthly profiles can also be loaded from an external data source. Instead of passing a <code class="docutils literal notranslate"><span class="pre">&quot;column&quot;</span></code> keyword, the parameter expects the data source to have 12 columns (plus 1 for the index). The names of the columns are not important.</p>
+<table class="colwidths-given docutils align-default" id="id3">
+<caption><span class="caption-text">demands_monthly.csv</span><a class="headerlink" href="#id3" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>City</p></th>
+<th class="head"><p>Jan</p></th>
+<th class="head"><p>Feb</p></th>
+<th class="head"><p>Mar</p></th>
+<th class="head"><p>…</p></th>
+<th class="head"><p>Dec</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Oxford</p></td>
+<td><p>23.43</p></td>
+<td><p>25.32</p></td>
+<td><p>24.24</p></td>
+<td><p>…</p></td>
+<td><p>21.24</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cambridge</p></td>
+<td><p>11.23</p></td>
+<td><p>14.34</p></td>
+<td><p>13.23</p></td>
+<td><p>…</p></td>
+<td><p>12.23</p></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;monthlyprofile&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;demands_monthly.csv&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="s2">&quot;City&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="s2">&quot;Oxford&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="multi-index">
+<h3>Multi-index<a class="headerlink" href="#multi-index" title="Permalink to this headline">¶</a></h3>
+<p>Multi-indexing of dataframes is supported by passing a list to the <code class="docutils literal notranslate"><span class="pre">&quot;index_col&quot;</span></code> keyword. Both numeric and string indexes are valid.</p>
+<table class="colwidths-given docutils align-default" id="id4">
+<caption><span class="caption-text">multiindex_data.csv</span><a class="headerlink" href="#id4" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 33%" />
+<col style="width: 22%" />
+<col style="width: 22%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>level</p></th>
+<th class="head"><p>node</p></th>
+<th class="head"><p>max_flow</p></th>
+<th class="head"><p>cost</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>demand1</p></td>
+<td><p>10</p></td>
+<td><p>-10</p></td>
+</tr>
+<tr class="row-odd"><td><p>0</p></td>
+<td><p>demand2</p></td>
+<td><p>20</p></td>
+<td><p>-20</p></td>
+</tr>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>demand1</p></td>
+<td><p>100</p></td>
+<td><p>-100</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>demand2</p></td>
+<td><p>200</p></td>
+<td><p>-200</p></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;DC1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;multiindex_data.csv&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;max_flow&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="p">[</span><span class="mf">0</span><span class="p">,</span> <span class="s2">&quot;demand1&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="p">[</span><span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="s2">&quot;node&quot;</span><span class="p">]</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;cost&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;multiindex_data.csv&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;cost&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="p">[</span><span class="mf">1</span><span class="p">,</span> <span class="s2">&quot;demand1&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="p">[</span><span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="s2">&quot;node&quot;</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>In the example above, <em>max_flow</em> evaluates to 10 and <em>cost</em> evaluates to -100.</p>
+</div>
+</div>
+<div class="section" id="tables">
+<h2>Tables<a class="headerlink" href="#tables" title="Permalink to this headline">¶</a></h2>
+<p>Each time an external data source is referenced using the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword the data is reloaded from disk. If a dataset is going to be used multiple times in a model it can be defined in the <code class="docutils literal notranslate"><span class="pre">&quot;tables&quot;</span></code> section of the JSON document. In this way the data will only be loaded once. Parameters can then reference the data using the <code class="docutils literal notranslate"><span class="pre">&quot;table&quot;</span></code> keyword instead of the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword. Although the index column applied to the data must be defined in the <code class="docutils literal notranslate"><span class="pre">&quot;tables&quot;</span></code> section, the index used for each lookup can be different.</p>
+<p>An example is given below using the <cite>demands.csv</cite> dataset shown previously. Two constant parameters are defined referencing data in the table.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;oxford_demand&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;table&quot;</span><span class="o">:</span> <span class="s2">&quot;simple_data&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;Demand&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="s2">&quot;Oxford&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;cambridge_demand&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;table&quot;</span><span class="o">:</span> <span class="s2">&quot;simple_data&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;Demand&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="s2">&quot;Cambridge&quot;</span>
+    <span class="p">}</span>
+<span class="p">},</span>
+<span class="s2">&quot;tables&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;simple_data&quot;</span><span class="o">:</span> <span class="p">{</span>
+        <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;demands.csv&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="s2">&quot;City&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="aggregated_parameter.html" class="btn btn-neutral float-right" title="Aggregated parameters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="demand_saving.html" class="btn btn-neutral float-left" title="Demand restrictions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

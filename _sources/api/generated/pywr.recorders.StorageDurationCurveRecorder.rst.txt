@@ -1,0 +1,60 @@
+﻿pywr.recorders.StorageDurationCurveRecorder
+===========================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: StorageDurationCurveRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~StorageDurationCurveRecorder.__init__
+      ~StorageDurationCurveRecorder.after
+      ~StorageDurationCurveRecorder.aggregated_value
+      ~StorageDurationCurveRecorder.before
+      ~StorageDurationCurveRecorder.finish
+      ~StorageDurationCurveRecorder.is_constraint_violated
+      ~StorageDurationCurveRecorder.load
+      ~StorageDurationCurveRecorder.register
+      ~StorageDurationCurveRecorder.reset
+      ~StorageDurationCurveRecorder.setup
+      ~StorageDurationCurveRecorder.to_dataframe
+      ~StorageDurationCurveRecorder.unregister
+      ~StorageDurationCurveRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~StorageDurationCurveRecorder.agg_func
+      ~StorageDurationCurveRecorder.children
+      ~StorageDurationCurveRecorder.comment
+      ~StorageDurationCurveRecorder.constraint_lower_bounds
+      ~StorageDurationCurveRecorder.constraint_upper_bounds
+      ~StorageDurationCurveRecorder.data
+      ~StorageDurationCurveRecorder.epsilon
+      ~StorageDurationCurveRecorder.ignore_nan
+      ~StorageDurationCurveRecorder.is_constraint
+      ~StorageDurationCurveRecorder.is_double_bounded_constraint
+      ~StorageDurationCurveRecorder.is_equality_constraint
+      ~StorageDurationCurveRecorder.is_lower_bounded_constraint
+      ~StorageDurationCurveRecorder.is_objective
+      ~StorageDurationCurveRecorder.is_upper_bounded_constraint
+      ~StorageDurationCurveRecorder.model
+      ~StorageDurationCurveRecorder.name
+      ~StorageDurationCurveRecorder.node
+      ~StorageDurationCurveRecorder.parents
+      ~StorageDurationCurveRecorder.proportional
+      ~StorageDurationCurveRecorder.sdc
+      ~StorageDurationCurveRecorder.temporal_agg_func
+   
+   

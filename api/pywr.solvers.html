@@ -1,0 +1,662 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Solvers &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Notebook Utilities" href="pywr.notebook.html" />
+    <link rel="prev" title="pywr.recorders.TotalHydroEnergyRecorder" href="generated/pywr.recorders.TotalHydroEnergyRecorder.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../json.html">JSON model format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending_pywr/index.html">Extending Pywr</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="pywr.html">Python API reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pywr.core.html">Core classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.nodes.html">Nodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.optimisation.html">Optimisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.parameters.html">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.recorders.html">Recorders</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Solvers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pywr.solvers.cython_glpk">pywr.solvers.cython_glpk module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywr-solvers-cython-lpsolve-module">pywr.solvers.cython_lpsolve module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pywr.solvers">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.notebook.html">Notebook Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.utils.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="pywr.html">Pywr reference documentation.</a> &raquo;</li>
+        
+      <li>Solvers</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/pywr.solvers.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="solvers">
+<h1>Solvers<a class="headerlink" href="#solvers" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pywr.solvers.cython_glpk">
+<span id="pywr-solvers-cython-glpk-module"></span><h2>pywr.solvers.cython_glpk module<a class="headerlink" href="#module-pywr.solvers.cython_glpk" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="pywr.solvers.cython_glpk.AbstractNodeData">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.cython_glpk.</code><code class="sig-name descname">AbstractNodeData</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Helper class for caching node data for the solver.</p>
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.AbstractNodeData.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>id: ‘int’</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.AbstractNodeData.in_edges">
+<code class="sig-name descname">in_edges</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.in_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>in_edges: list</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.AbstractNodeData.is_link">
+<code class="sig-name descname">is_link</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.is_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>is_link: ‘bool’</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.AbstractNodeData.out_edges">
+<code class="sig-name descname">out_edges</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.out_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>out_edges: list</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pywr.solvers.cython_glpk.AggNodeFactorData">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.cython_glpk.</code><code class="sig-name descname">AggNodeFactorData</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Helper class for caching data for Aggregated Nodes that have factors defined by parameters.</p>
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.AggNodeFactorData.ind_ptr">
+<code class="sig-name descname">ind_ptr</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.ind_ptr" title="Permalink to this definition">¶</a></dt>
+<dd><p>ind_ptr: View.MemoryView.array</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.AggNodeFactorData.inds">
+<code class="sig-name descname">inds</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.inds" title="Permalink to this definition">¶</a></dt>
+<dd><p>inds: View.MemoryView.array</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.AggNodeFactorData.node_ind">
+<code class="sig-name descname">node_ind</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.node_ind" title="Permalink to this definition">¶</a></dt>
+<dd><p>node_ind: ‘int’</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.AggNodeFactorData.row">
+<code class="sig-name descname">row</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.row" title="Permalink to this definition">¶</a></dt>
+<dd><p>row: ‘int’</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.AggNodeFactorData.vals">
+<code class="sig-name descname">vals</code><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.vals" title="Permalink to this definition">¶</a></dt>
+<dd><p>vals: View.MemoryView.array</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pywr.solvers.cython_glpk.BasisManager">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.cython_glpk.</code><code class="sig-name descname">BasisManager</code><a class="headerlink" href="#pywr.solvers.cython_glpk.BasisManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.cython_glpk.</code><code class="sig-name descname">CythonGLPKEdgeSolver</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">use_presolve</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">iteration_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">message_level</span><span class="o">=</span><span class="default_value">'error'</span></em>, <em class="sig-param"><span class="n">save_routes_flows</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">retry_solve</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pywr.solvers.cython_glpk.GLPKSolver" title="pywr.solvers.cython_glpk.GLPKSolver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.cython_glpk.GLPKSolver</span></code></a></p>
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.retry_solve">
+<code class="sig-name descname">retry_solve</code><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.retry_solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>retry_solve: ‘bool’</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.route_flows_arr">
+<code class="sig-name descname">route_flows_arr</code><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.route_flows_arr" title="Permalink to this definition">¶</a></dt>
+<dd><p>route_flows_arr: View.MemoryView.array</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.save_routes_flows">
+<code class="sig-name descname">save_routes_flows</code><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.save_routes_flows" title="Permalink to this definition">¶</a></dt>
+<dd><p>save_routes_flows: ‘bool’</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.stats">
+<code class="sig-name descname">stats</code><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>stats: object</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKSolver">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.cython_glpk.</code><code class="sig-name descname">CythonGLPKSolver</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">use_presolve</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">iteration_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">message_level</span><span class="o">=</span><span class="default_value">'error'</span></em>, <em class="sig-param"><span class="n">save_routes_flows</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">retry_solve</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pywr.solvers.cython_glpk.GLPKSolver" title="pywr.solvers.cython_glpk.GLPKSolver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.cython_glpk.GLPKSolver</span></code></a></p>
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKSolver.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKSolver.retry_solve">
+<code class="sig-name descname">retry_solve</code><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.retry_solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>retry_solve: ‘bool’</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKSolver.route_flows_arr">
+<code class="sig-name descname">route_flows_arr</code><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.route_flows_arr" title="Permalink to this definition">¶</a></dt>
+<dd><p>route_flows_arr: View.MemoryView.array</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKSolver.routes">
+<code class="sig-name descname">routes</code><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.routes" title="Permalink to this definition">¶</a></dt>
+<dd><p>routes: list</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKSolver.save_routes_flows">
+<code class="sig-name descname">save_routes_flows</code><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.save_routes_flows" title="Permalink to this definition">¶</a></dt>
+<dd><p>save_routes_flows: ‘bool’</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKSolver.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKSolver.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.CythonGLPKSolver.stats">
+<code class="sig-name descname">stats</code><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>stats: object</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pywr.solvers.cython_glpk.GLPKSolver">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.cython_glpk.</code><code class="sig-name descname">GLPKSolver</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">use_presolve</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">iteration_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">message_level</span><span class="o">=</span><span class="default_value">'error'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.GLPKSolver.dump_glpk">
+<code class="sig-name descname">dump_glpk</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.dump_glpk" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.GLPKSolver.dump_lp">
+<code class="sig-name descname">dump_lp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.dump_lp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.GLPKSolver.dump_mps">
+<code class="sig-name descname">dump_mps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.dump_mps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.GLPKSolver.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.GLPKSolver.set_solver_options">
+<code class="sig-name descname">set_solver_options</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">time_limit</span></em>, <em class="sig-param"><span class="n">iteration_limit</span></em>, <em class="sig-param"><span class="n">message_level</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_solver_options" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.GLPKSolver.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.cython_glpk.GLPKSolver.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.cython_glpk.GLPKSolver.use_presolve">
+<code class="sig-name descname">use_presolve</code><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.use_presolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>use_presolve: ‘bool’</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="pywr-solvers-cython-lpsolve-module">
+<h2>pywr.solvers.cython_lpsolve module<a class="headerlink" href="#pywr-solvers-cython-lpsolve-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pywr.solvers">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pywr.solvers" title="Permalink to this headline">¶</a></h2>
+<p>This module contains a Solver baseclass and several implemented subclasses.</p>
+<p>Solvers are used to with pywr.core.Model classes to solve the network
+allocation problem every time step.</p>
+<dl class="simple">
+<dt>Currently there are only linear programme based solvers using,</dt><dd><ul class="simple">
+<li><p>GLPK</p></li>
+<li><p>LPSolve55</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.</code><code class="sig-name descname">CythonGLPKEdgeSolver</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pywr.solvers.Solver" title="pywr.solvers.Solver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.Solver</span></code></a></p>
+<p>Python wrapper of Cython GLPK solver.</p>
+<p>This is required to subclass Solver and get the metaclass magic.</p>
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver.dump_glpk">
+<code class="sig-name descname">dump_glpk</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.dump_glpk" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver.dump_lp">
+<code class="sig-name descname">dump_lp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.dump_lp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver.dump_mps">
+<code class="sig-name descname">dump_mps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.dump_mps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver.name">
+<code class="sig-name descname">name</code><em class="property"> = 'glpk-edge'</em><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver.retry_solve">
+<em class="property">property </em><code class="sig-name descname">retry_solve</code><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.retry_solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKEdgeSolver.stats">
+<em class="property">property </em><code class="sig-name descname">stats</code><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pywr.solvers.CythonGLPKSolver">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.</code><code class="sig-name descname">CythonGLPKSolver</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pywr.solvers.Solver" title="pywr.solvers.Solver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.Solver</span></code></a></p>
+<p>Python wrapper of Cython GLPK solver.</p>
+<p>This is required to subclass Solver and get the metaclass magic.</p>
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.dump_glpk">
+<code class="sig-name descname">dump_glpk</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.dump_glpk" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.dump_lp">
+<code class="sig-name descname">dump_lp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.dump_lp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.dump_mps">
+<code class="sig-name descname">dump_mps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.dump_mps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="pywr.solvers.CythonGLPKSolver.name">
+<code class="sig-name descname">name</code><em class="property"> = 'glpk'</em><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.retry_solve">
+<em class="property">property </em><code class="sig-name descname">retry_solve</code><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.retry_solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.routes">
+<em class="property">property </em><code class="sig-name descname">routes</code><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.routes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.routes_flows_array">
+<em class="property">property </em><code class="sig-name descname">routes_flows_array</code><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.routes_flows_array" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.save_routes_flows">
+<em class="property">property </em><code class="sig-name descname">save_routes_flows</code><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.save_routes_flows" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.CythonGLPKSolver.stats">
+<em class="property">property </em><code class="sig-name descname">stats</code><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pywr.solvers.NullSolver">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.</code><code class="sig-name descname">NullSolver</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pywr.solvers.Solver" title="pywr.solvers.Solver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.Solver</span></code></a></p>
+<p>A null solver that performs no allocation routine.</p>
+<p>This solver does no allocation and is mainly useful for debugging purposes.</p>
+<dl class="py attribute">
+<dt id="pywr.solvers.NullSolver.name">
+<code class="sig-name descname">name</code><em class="property"> = 'null'</em><a class="headerlink" href="#pywr.solvers.NullSolver.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.NullSolver.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver.reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.NullSolver.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.NullSolver.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pywr.solvers.Solver">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.solvers.</code><code class="sig-name descname">Solver</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Solver base class from which all solvers should inherit</p>
+<dl class="py attribute">
+<dt id="pywr.solvers.Solver.name">
+<code class="sig-name descname">name</code><em class="property"> = 'default'</em><a class="headerlink" href="#pywr.solvers.Solver.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.Solver.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver.reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.Solver.setup">
+<code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.Solver.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pywr.solvers.Solver.stats">
+<em class="property">property </em><code class="sig-name descname">stats</code><a class="headerlink" href="#pywr.solvers.Solver.stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="pywr.notebook.html" class="btn btn-neutral float-right" title="Notebook Utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="generated/pywr.recorders.TotalHydroEnergyRecorder.html" class="btn btn-neutral float-left" title="pywr.recorders.TotalHydroEnergyRecorder" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+﻿pywr.parameters.RbfProfileParameter
+===================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: RbfProfileParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RbfProfileParameter.__init__
+      ~RbfProfileParameter.after
+      ~RbfProfileParameter.before
+      ~RbfProfileParameter.finish
+      ~RbfProfileParameter.get_all_values
+      ~RbfProfileParameter.get_double_lower_bounds
+      ~RbfProfileParameter.get_double_upper_bounds
+      ~RbfProfileParameter.get_double_variables
+      ~RbfProfileParameter.get_integer_lower_bounds
+      ~RbfProfileParameter.get_integer_upper_bounds
+      ~RbfProfileParameter.get_integer_variables
+      ~RbfProfileParameter.get_value
+      ~RbfProfileParameter.load
+      ~RbfProfileParameter.register
+      ~RbfProfileParameter.reset
+      ~RbfProfileParameter.set_double_variables
+      ~RbfProfileParameter.set_integer_variables
+      ~RbfProfileParameter.setup
+      ~RbfProfileParameter.unregister
+      ~RbfProfileParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RbfProfileParameter.children
+      ~RbfProfileParameter.comment
+      ~RbfProfileParameter.days_of_year
+      ~RbfProfileParameter.double_size
+      ~RbfProfileParameter.integer_size
+      ~RbfProfileParameter.is_variable
+      ~RbfProfileParameter.model
+      ~RbfProfileParameter.name
+      ~RbfProfileParameter.parents
+      ~RbfProfileParameter.rbf
+      ~RbfProfileParameter.rbf_kwargs
+      ~RbfProfileParameter.size
+      ~RbfProfileParameter.variable_days_of_year_range
+   
+   

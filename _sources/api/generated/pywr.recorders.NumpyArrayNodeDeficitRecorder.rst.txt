@@ -1,0 +1,59 @@
+﻿pywr.recorders.NumpyArrayNodeDeficitRecorder
+============================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: NumpyArrayNodeDeficitRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~NumpyArrayNodeDeficitRecorder.__init__
+      ~NumpyArrayNodeDeficitRecorder.after
+      ~NumpyArrayNodeDeficitRecorder.aggregated_value
+      ~NumpyArrayNodeDeficitRecorder.before
+      ~NumpyArrayNodeDeficitRecorder.finish
+      ~NumpyArrayNodeDeficitRecorder.is_constraint_violated
+      ~NumpyArrayNodeDeficitRecorder.load
+      ~NumpyArrayNodeDeficitRecorder.register
+      ~NumpyArrayNodeDeficitRecorder.reset
+      ~NumpyArrayNodeDeficitRecorder.setup
+      ~NumpyArrayNodeDeficitRecorder.to_dataframe
+      ~NumpyArrayNodeDeficitRecorder.unregister
+      ~NumpyArrayNodeDeficitRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NumpyArrayNodeDeficitRecorder.agg_func
+      ~NumpyArrayNodeDeficitRecorder.children
+      ~NumpyArrayNodeDeficitRecorder.comment
+      ~NumpyArrayNodeDeficitRecorder.constraint_lower_bounds
+      ~NumpyArrayNodeDeficitRecorder.constraint_upper_bounds
+      ~NumpyArrayNodeDeficitRecorder.data
+      ~NumpyArrayNodeDeficitRecorder.epsilon
+      ~NumpyArrayNodeDeficitRecorder.factor
+      ~NumpyArrayNodeDeficitRecorder.ignore_nan
+      ~NumpyArrayNodeDeficitRecorder.is_constraint
+      ~NumpyArrayNodeDeficitRecorder.is_double_bounded_constraint
+      ~NumpyArrayNodeDeficitRecorder.is_equality_constraint
+      ~NumpyArrayNodeDeficitRecorder.is_lower_bounded_constraint
+      ~NumpyArrayNodeDeficitRecorder.is_objective
+      ~NumpyArrayNodeDeficitRecorder.is_upper_bounded_constraint
+      ~NumpyArrayNodeDeficitRecorder.model
+      ~NumpyArrayNodeDeficitRecorder.name
+      ~NumpyArrayNodeDeficitRecorder.node
+      ~NumpyArrayNodeDeficitRecorder.parents
+      ~NumpyArrayNodeDeficitRecorder.temporal_agg_func
+   
+   

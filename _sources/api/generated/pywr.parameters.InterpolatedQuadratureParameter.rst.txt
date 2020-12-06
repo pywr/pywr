@@ -1,0 +1,58 @@
+﻿pywr.parameters.InterpolatedQuadratureParameter
+===============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: InterpolatedQuadratureParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~InterpolatedQuadratureParameter.__init__
+      ~InterpolatedQuadratureParameter.after
+      ~InterpolatedQuadratureParameter.before
+      ~InterpolatedQuadratureParameter.finish
+      ~InterpolatedQuadratureParameter.get_all_values
+      ~InterpolatedQuadratureParameter.get_double_lower_bounds
+      ~InterpolatedQuadratureParameter.get_double_upper_bounds
+      ~InterpolatedQuadratureParameter.get_double_variables
+      ~InterpolatedQuadratureParameter.get_integer_lower_bounds
+      ~InterpolatedQuadratureParameter.get_integer_upper_bounds
+      ~InterpolatedQuadratureParameter.get_integer_variables
+      ~InterpolatedQuadratureParameter.get_value
+      ~InterpolatedQuadratureParameter.load
+      ~InterpolatedQuadratureParameter.register
+      ~InterpolatedQuadratureParameter.reset
+      ~InterpolatedQuadratureParameter.set_double_variables
+      ~InterpolatedQuadratureParameter.set_integer_variables
+      ~InterpolatedQuadratureParameter.setup
+      ~InterpolatedQuadratureParameter.unregister
+      ~InterpolatedQuadratureParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~InterpolatedQuadratureParameter.children
+      ~InterpolatedQuadratureParameter.comment
+      ~InterpolatedQuadratureParameter.double_size
+      ~InterpolatedQuadratureParameter.integer_size
+      ~InterpolatedQuadratureParameter.interp_kwargs
+      ~InterpolatedQuadratureParameter.is_variable
+      ~InterpolatedQuadratureParameter.lower_parameter
+      ~InterpolatedQuadratureParameter.model
+      ~InterpolatedQuadratureParameter.name
+      ~InterpolatedQuadratureParameter.parents
+      ~InterpolatedQuadratureParameter.size
+      ~InterpolatedQuadratureParameter.upper_parameter
+   
+   

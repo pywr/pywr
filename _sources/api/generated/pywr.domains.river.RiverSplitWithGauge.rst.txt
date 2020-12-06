@@ -1,0 +1,60 @@
+﻿pywr.domains.river.RiverSplitWithGauge
+======================================
+
+.. currentmodule:: pywr.domains.river
+
+.. autoclass:: RiverSplitWithGauge
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RiverSplitWithGauge.__init__
+      ~RiverSplitWithGauge.after
+      ~RiverSplitWithGauge.before
+      ~RiverSplitWithGauge.check
+      ~RiverSplitWithGauge.commit
+      ~RiverSplitWithGauge.commit_all
+      ~RiverSplitWithGauge.connect
+      ~RiverSplitWithGauge.disconnect
+      ~RiverSplitWithGauge.finish
+      ~RiverSplitWithGauge.get_conversion_factor
+      ~RiverSplitWithGauge.get_cost
+      ~RiverSplitWithGauge.get_max_flow
+      ~RiverSplitWithGauge.get_min_flow
+      ~RiverSplitWithGauge.iter_slots
+      ~RiverSplitWithGauge.load
+      ~RiverSplitWithGauge.reset
+      ~RiverSplitWithGauge.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RiverSplitWithGauge.allow_isolated
+      ~RiverSplitWithGauge.comment
+      ~RiverSplitWithGauge.component_attrs
+      ~RiverSplitWithGauge.components
+      ~RiverSplitWithGauge.conversion_factor
+      ~RiverSplitWithGauge.cost
+      ~RiverSplitWithGauge.domain
+      ~RiverSplitWithGauge.flow
+      ~RiverSplitWithGauge.fully_qualified_name
+      ~RiverSplitWithGauge.max_flow
+      ~RiverSplitWithGauge.min_flow
+      ~RiverSplitWithGauge.model
+      ~RiverSplitWithGauge.name
+      ~RiverSplitWithGauge.parent
+      ~RiverSplitWithGauge.prev_flow
+      ~RiverSplitWithGauge.recorders
+      ~RiverSplitWithGauge.virtual
+   
+   

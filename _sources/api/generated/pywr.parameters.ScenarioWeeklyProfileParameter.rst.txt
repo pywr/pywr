@@ -1,0 +1,55 @@
+﻿pywr.parameters.ScenarioWeeklyProfileParameter
+==============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: ScenarioWeeklyProfileParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ScenarioWeeklyProfileParameter.__init__
+      ~ScenarioWeeklyProfileParameter.after
+      ~ScenarioWeeklyProfileParameter.before
+      ~ScenarioWeeklyProfileParameter.finish
+      ~ScenarioWeeklyProfileParameter.get_all_values
+      ~ScenarioWeeklyProfileParameter.get_double_lower_bounds
+      ~ScenarioWeeklyProfileParameter.get_double_upper_bounds
+      ~ScenarioWeeklyProfileParameter.get_double_variables
+      ~ScenarioWeeklyProfileParameter.get_integer_lower_bounds
+      ~ScenarioWeeklyProfileParameter.get_integer_upper_bounds
+      ~ScenarioWeeklyProfileParameter.get_integer_variables
+      ~ScenarioWeeklyProfileParameter.get_value
+      ~ScenarioWeeklyProfileParameter.load
+      ~ScenarioWeeklyProfileParameter.register
+      ~ScenarioWeeklyProfileParameter.reset
+      ~ScenarioWeeklyProfileParameter.set_double_variables
+      ~ScenarioWeeklyProfileParameter.set_integer_variables
+      ~ScenarioWeeklyProfileParameter.setup
+      ~ScenarioWeeklyProfileParameter.unregister
+      ~ScenarioWeeklyProfileParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ScenarioWeeklyProfileParameter.children
+      ~ScenarioWeeklyProfileParameter.comment
+      ~ScenarioWeeklyProfileParameter.double_size
+      ~ScenarioWeeklyProfileParameter.integer_size
+      ~ScenarioWeeklyProfileParameter.is_variable
+      ~ScenarioWeeklyProfileParameter.model
+      ~ScenarioWeeklyProfileParameter.name
+      ~ScenarioWeeklyProfileParameter.parents
+      ~ScenarioWeeklyProfileParameter.size
+   
+   

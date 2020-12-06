@@ -1,0 +1,65 @@
+﻿pywr.recorders.HydropowerRecorder
+=================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: HydropowerRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~HydropowerRecorder.__init__
+      ~HydropowerRecorder.after
+      ~HydropowerRecorder.aggregated_value
+      ~HydropowerRecorder.before
+      ~HydropowerRecorder.finish
+      ~HydropowerRecorder.is_constraint_violated
+      ~HydropowerRecorder.load
+      ~HydropowerRecorder.register
+      ~HydropowerRecorder.reset
+      ~HydropowerRecorder.setup
+      ~HydropowerRecorder.to_dataframe
+      ~HydropowerRecorder.unregister
+      ~HydropowerRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~HydropowerRecorder.agg_func
+      ~HydropowerRecorder.children
+      ~HydropowerRecorder.comment
+      ~HydropowerRecorder.constraint_lower_bounds
+      ~HydropowerRecorder.constraint_upper_bounds
+      ~HydropowerRecorder.data
+      ~HydropowerRecorder.density
+      ~HydropowerRecorder.efficiency
+      ~HydropowerRecorder.energy_unit_conversion
+      ~HydropowerRecorder.epsilon
+      ~HydropowerRecorder.factor
+      ~HydropowerRecorder.flow_unit_conversion
+      ~HydropowerRecorder.ignore_nan
+      ~HydropowerRecorder.is_constraint
+      ~HydropowerRecorder.is_double_bounded_constraint
+      ~HydropowerRecorder.is_equality_constraint
+      ~HydropowerRecorder.is_lower_bounded_constraint
+      ~HydropowerRecorder.is_objective
+      ~HydropowerRecorder.is_upper_bounded_constraint
+      ~HydropowerRecorder.model
+      ~HydropowerRecorder.name
+      ~HydropowerRecorder.node
+      ~HydropowerRecorder.parents
+      ~HydropowerRecorder.temporal_agg_func
+      ~HydropowerRecorder.turbine_elevation
+      ~HydropowerRecorder.water_elevation_parameter
+   
+   

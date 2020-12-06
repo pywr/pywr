@@ -1,0 +1,60 @@
+﻿pywr.nodes.Output
+=================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: Output
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Output.__init__
+      ~Output.after
+      ~Output.before
+      ~Output.check
+      ~Output.commit
+      ~Output.commit_all
+      ~Output.connect
+      ~Output.disconnect
+      ~Output.finish
+      ~Output.get_conversion_factor
+      ~Output.get_cost
+      ~Output.get_max_flow
+      ~Output.get_min_flow
+      ~Output.iter_slots
+      ~Output.load
+      ~Output.reset
+      ~Output.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Output.allow_isolated
+      ~Output.comment
+      ~Output.component_attrs
+      ~Output.components
+      ~Output.conversion_factor
+      ~Output.cost
+      ~Output.domain
+      ~Output.flow
+      ~Output.fully_qualified_name
+      ~Output.max_flow
+      ~Output.min_flow
+      ~Output.model
+      ~Output.name
+      ~Output.parent
+      ~Output.prev_flow
+      ~Output.recorders
+      ~Output.virtual
+   
+   

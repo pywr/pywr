@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Aggregated nodes &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Dynamic behaviour and control curves" href="control_curves.html" />
+    <link rel="prev" title="Aggregated parameters" href="aggregated_parameter.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../json.html">JSON model format</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="cookbook.html">Cookbook</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="demand_saving.html">Demand restrictions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataframes.html">External data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregated_parameter.html">Aggregated parameters</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Aggregated nodes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#constraining-flow-using-a-ratio">Constraining flow using a ratio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#constraining-flow-using-a-maximum-value">Constraining flow using a maximum value</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#additional-information">Additional information</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="control_curves.html">Control curves</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../extending_pywr/index.html">Extending Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/pywr.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="cookbook.html">Pywr cookbook examples</a> &raquo;</li>
+        
+      <li>Aggregated nodes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/cookbook/aggregated_node.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="aggregated-nodes">
+<h1>Aggregated nodes<a class="headerlink" href="#aggregated-nodes" title="Permalink to this headline">¶</a></h1>
+<p>The <cite>AggregatedNode</cite> is a special node that allows constraints to be added to a model that apply to a group of (possibly disconnected) nodes, enforcing either a fixed ratio of flow and/or a total minimum or maximum flow.</p>
+<div class="section" id="constraining-flow-using-a-ratio">
+<h2>Constraining flow using a ratio<a class="headerlink" href="#constraining-flow-using-a-ratio" title="Permalink to this headline">¶</a></h2>
+<p>Aggregated nodes allows a constraint to be added that ensures the flow via two or more nodes conforms to a specific ratio. This is useful, for example, when modelling a blending constraint between multiple sources of water.</p>
+<p>In the example below the aggregated node “D” constrains the flow in nodes “A” and “B” to be equal (0.5 + 0.5 == 1). Due to the constraint the solution is flow from A = 40, B = 40, despite C demanding 100. There is no requirement that the factors sum to 1.0 this example would work with factors of 50 and 50 (or any two equal numbers) instead.</p>
+<p>Note that the aggregated node “D” is not connected to any nodes via an edge. The constraint is applied regardless. The factors must also remain a constant throughout a simulation (i.e. they can not be <cite>Parameter</cite> definitions references). This limitation could be resolved in a future version of Pywr.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;nodes&quot;</span><span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;input&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="mf">40.0</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="mf">100.0</span><span class="p">,</span>
+        <span class="s2">&quot;cost&quot;</span><span class="o">:</span> <span class="o">-</span><span class="mf">10.0</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;aggregated&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nodes&quot;</span><span class="o">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;factors&quot;</span><span class="o">:</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">],</span>
+<span class="s2">&quot;edges&quot;</span><span class="o">:</span> <span class="p">[</span>
+    <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">]</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>More than two nodes can be included in the constraint. In the example below three nodes (A, B and F) are constrained to the ratio of 20%-30%-50% respectively.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;E&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;aggregated&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;nodes&quot;</span><span class="o">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;factors&quot;</span><span class="o">:</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="constraining-flow-using-a-maximum-value">
+<h2>Constraining flow using a maximum value<a class="headerlink" href="#constraining-flow-using-a-maximum-value" title="Permalink to this headline">¶</a></h2>
+<p>The aggregated node can also be used to constrain the total flow via a group of nodes. This is useful, for example, in abstraction schemes where the combined license for a group of sources is less than the sum of their individual licences.</p>
+<p>In the example below, the aggregated node “D” ensures the total flow from A and B combined does not exceed 60. The <cite>max_flow</cite> attribute on the node “D” could also be a <cite>Parameter</cite> definition or reference.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;nodes&quot;</span><span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;input&quot;</span>
+        <span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="mf">30.0</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="mf">40.0</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;aggregated&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nodes&quot;</span><span class="o">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="mf">60.0</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="additional-information">
+<h2>Additional information<a class="headerlink" href="#additional-information" title="Permalink to this headline">¶</a></h2>
+<p>The <cite>factors</cite>, <cite>min_flow</cite> and <cite>max_flow</cite> attributes can all be specified for a single aggregated node to constrain both the ratio, minimum and maximum flow via a group of nodes.</p>
+<p>Note that the constraint enforced by aggregated nodes is a “hard” constraint; it must be satisfied. This can result in complex and sometimes unintended behaviours.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="control_curves.html" class="btn btn-neutral float-right" title="Dynamic behaviour and control curves" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="aggregated_parameter.html" class="btn btn-neutral float-left" title="Aggregated parameters" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

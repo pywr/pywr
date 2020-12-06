@@ -1,0 +1,31 @@
+﻿pywr.core.Scenario
+==================
+
+.. currentmodule:: pywr.core
+
+.. autoclass:: Scenario
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Scenario.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Scenario.ensemble_names
+      ~Scenario.name
+      ~Scenario.size
+      ~Scenario.slice
+   
+   

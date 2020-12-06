@@ -1,0 +1,38 @@
+﻿pywr.core.Timestep
+==================
+
+.. currentmodule:: pywr.core
+
+.. autoclass:: Timestep
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Timestep.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Timestep.datetime
+      ~Timestep.day
+      ~Timestep.dayofyear
+      ~Timestep.dayofyear_index
+      ~Timestep.days
+      ~Timestep.index
+      ~Timestep.is_leap_year
+      ~Timestep.month
+      ~Timestep.period
+      ~Timestep.week_index
+      ~Timestep.year
+   
+   

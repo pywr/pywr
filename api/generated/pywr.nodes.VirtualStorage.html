@@ -1,0 +1,444 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pywr.nodes.VirtualStorage &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="pywr.nodes.RollingVirtualStorage" href="pywr.nodes.RollingVirtualStorage.html" />
+    <link rel="prev" title="pywr.nodes.Storage" href="pywr.nodes.Storage.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../json.html">JSON model format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extending_pywr/index.html">Extending Pywr</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../pywr.html">Python API reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../pywr.core.html">Core classes</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../pywr.nodes.html">Nodes</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../pywr.nodes.html#nodes-classes">Nodes classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.Node.html">pywr.nodes.Node</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.Link.html">pywr.nodes.Link</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.Input.html">pywr.nodes.Input</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.Output.html">pywr.nodes.Output</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.BreakLink.html">pywr.nodes.BreakLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.PiecewiseLink.html">pywr.nodes.PiecewiseLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.MultiSplitLink.html">pywr.nodes.MultiSplitLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.Storage.html">pywr.nodes.Storage</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pywr.nodes.VirtualStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.RollingVirtualStorage.html">pywr.nodes.RollingVirtualStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.AnnualVirtualStorage.html">pywr.nodes.AnnualVirtualStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.SeasonalVirtualStorage.html">pywr.nodes.SeasonalVirtualStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.AggregatedStorage.html">pywr.nodes.AggregatedStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.AggregatedNode.html">pywr.nodes.AggregatedNode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.DelayNode.html">pywr.nodes.DelayNode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.Catchment.html">pywr.domains.river.Catchment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.Reservoir.html">pywr.domains.river.Reservoir</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.River.html">pywr.domains.river.River</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.RiverSplit.html">pywr.domains.river.RiverSplit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.RiverSplitWithGauge.html">pywr.domains.river.RiverSplitWithGauge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.RiverGauge.html">pywr.domains.river.RiverGauge</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.optimisation.html">Optimisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.parameters.html">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.recorders.html">Recorders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.notebook.html">Notebook Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.utils.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../pywr.html">Pywr reference documentation.</a> &raquo;</li>
+        
+          <li><a href="../pywr.nodes.html">Nodes</a> &raquo;</li>
+        
+      <li>pywr.nodes.VirtualStorage</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/pywr.nodes.VirtualStorage.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pywr-nodes-virtualstorage">
+<h1>pywr.nodes.VirtualStorage<a class="headerlink" href="#pywr-nodes-virtualstorage" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="pywr.nodes.VirtualStorage">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.nodes.</code><code class="sig-name descname">VirtualStorage</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.VirtualStorage" title="Permalink to this definition">¶</a></dt>
+<dd><p>A virtual storage unit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model: pywr.core.Model</strong></dt><dd></dd>
+<dt><strong>name: str</strong></dt><dd><p>The name of the virtual node</p>
+</dd>
+<dt><strong>nodes: list of nodes</strong></dt><dd><p>List of inflow/outflow nodes that affect the storage volume</p>
+</dd>
+<dt><strong>factors: list of floats</strong></dt><dd><p>List of factors to multiply node flow by. Positive factors remove
+water from the storage, negative factors remove it.</p>
+</dd>
+<dt><strong>min_volume: float or parameter</strong></dt><dd><p>The minimum volume the storage is allowed to reach.</p>
+</dd>
+<dt><strong>max_volume: float or parameter</strong></dt><dd><p>The maximum volume of the storage.</p>
+</dd>
+<dt><strong>initial_volume: float</strong></dt><dd><p>The initial storage volume.</p>
+</dd>
+<dt><strong>cost: float or parameter</strong></dt><dd><p>The cost of flow into/outfrom the storage.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>TODO: The cost property is not currently respected. See issue #242.</p>
+<dl class="py method">
+<dt id="pywr.nodes.VirtualStorage.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">nodes</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.VirtualStorage.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pywr.nodes.VirtualStorage.__init__" title="pywr.nodes.VirtualStorage.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(model, name, nodes, **kwargs)</p></td>
+<td><p>Initialize self.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">after</span></code>(self, Timestep ts, double[)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">before</span></code>(self, Timestep ts)</p></td>
+<td><p>Called at the beginning of the timestep</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">check</span></code>(self)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">commit</span></code>(self, int scenario_index, double value)</p></td>
+<td><p>Called once for each route the node is a member of</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">commit_all</span></code>(self, double[)</p></td>
+<td><p>Called once for each route the node is a member of</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">finish</span></code>(self)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_area</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_cost</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<td><p>Get the cost per unit flow at a given timestep</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_initial_pc</span></code>(self)</p></td>
+<td><p>Returns the initial volume as a proportion.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_initial_volume</span></code>(self)</p></td>
+<td><p>Returns the absolute initial volume.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_level</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_max_volume</span></code>(self, …)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_min_volume</span></code>(self, …)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code>(data, model)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>(self)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code>(self, model)</p></td>
+<td><p>Called before the first run of the model</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">active</span></code></p></td>
+<td><p>active: ‘bool’</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">allow_isolated</span></code></p></td>
+<td><p>A property to flag whether this Node can be unconnected in a network.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">area</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">comment</span></code></p></td>
+<td><p>comment: basestring</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">component_attrs</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">components</span></code></p></td>
+<td><p>Generator that returns all of the Components attached to the Node</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cost</span></code></p></td>
+<td><p>The cost per unit increased in volume stored</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_pc</span></code></p></td>
+<td><p>Current percentage full</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">domain</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">factors</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flow</span></code></p></td>
+<td><p>Total flow via this node in the current timestep</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fully_qualified_name</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initial_volume</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initial_volume_pc</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">level</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_volume</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_volume</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
+<td><p>The recorder for the node, e.g.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>Name of the node.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
+<td><p>The parent Node/Storage of this object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev_flow</span></code></p></td>
+<td><p>Total flow via this node in the previous timestep</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recorders</span></code></p></td>
+<td><p>Returns a list of <cite>pywr.recorders.Recorder</cite> objects attached to this node.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">virtual</span></code></p></td>
+<td><p>virtual: ‘bool’</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">volume</span></code></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="pywr.nodes.RollingVirtualStorage.html" class="btn btn-neutral float-right" title="pywr.nodes.RollingVirtualStorage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="pywr.nodes.Storage.html" class="btn btn-neutral float-left" title="pywr.nodes.Storage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

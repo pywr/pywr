@@ -1,0 +1,58 @@
+﻿pywr.parameters.ConstantScenarioIndexParameter
+==============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: ConstantScenarioIndexParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ConstantScenarioIndexParameter.__init__
+      ~ConstantScenarioIndexParameter.after
+      ~ConstantScenarioIndexParameter.before
+      ~ConstantScenarioIndexParameter.finish
+      ~ConstantScenarioIndexParameter.get_all_indices
+      ~ConstantScenarioIndexParameter.get_all_values
+      ~ConstantScenarioIndexParameter.get_double_lower_bounds
+      ~ConstantScenarioIndexParameter.get_double_upper_bounds
+      ~ConstantScenarioIndexParameter.get_double_variables
+      ~ConstantScenarioIndexParameter.get_index
+      ~ConstantScenarioIndexParameter.get_integer_lower_bounds
+      ~ConstantScenarioIndexParameter.get_integer_upper_bounds
+      ~ConstantScenarioIndexParameter.get_integer_variables
+      ~ConstantScenarioIndexParameter.get_value
+      ~ConstantScenarioIndexParameter.index
+      ~ConstantScenarioIndexParameter.load
+      ~ConstantScenarioIndexParameter.register
+      ~ConstantScenarioIndexParameter.reset
+      ~ConstantScenarioIndexParameter.set_double_variables
+      ~ConstantScenarioIndexParameter.set_integer_variables
+      ~ConstantScenarioIndexParameter.setup
+      ~ConstantScenarioIndexParameter.unregister
+      ~ConstantScenarioIndexParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ConstantScenarioIndexParameter.children
+      ~ConstantScenarioIndexParameter.comment
+      ~ConstantScenarioIndexParameter.double_size
+      ~ConstantScenarioIndexParameter.integer_size
+      ~ConstantScenarioIndexParameter.is_variable
+      ~ConstantScenarioIndexParameter.model
+      ~ConstantScenarioIndexParameter.name
+      ~ConstantScenarioIndexParameter.parents
+      ~ConstantScenarioIndexParameter.size
+   
+   

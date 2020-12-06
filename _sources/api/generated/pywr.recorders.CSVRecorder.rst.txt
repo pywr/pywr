@@ -1,0 +1,54 @@
+﻿pywr.recorders.CSVRecorder
+==========================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: CSVRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CSVRecorder.__init__
+      ~CSVRecorder.after
+      ~CSVRecorder.aggregated_value
+      ~CSVRecorder.before
+      ~CSVRecorder.finish
+      ~CSVRecorder.is_constraint_violated
+      ~CSVRecorder.load
+      ~CSVRecorder.register
+      ~CSVRecorder.reset
+      ~CSVRecorder.setup
+      ~CSVRecorder.unregister
+      ~CSVRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CSVRecorder.agg_func
+      ~CSVRecorder.children
+      ~CSVRecorder.comment
+      ~CSVRecorder.constraint_lower_bounds
+      ~CSVRecorder.constraint_upper_bounds
+      ~CSVRecorder.epsilon
+      ~CSVRecorder.ignore_nan
+      ~CSVRecorder.is_constraint
+      ~CSVRecorder.is_double_bounded_constraint
+      ~CSVRecorder.is_equality_constraint
+      ~CSVRecorder.is_lower_bounded_constraint
+      ~CSVRecorder.is_objective
+      ~CSVRecorder.is_upper_bounded_constraint
+      ~CSVRecorder.model
+      ~CSVRecorder.name
+      ~CSVRecorder.parents
+   
+   

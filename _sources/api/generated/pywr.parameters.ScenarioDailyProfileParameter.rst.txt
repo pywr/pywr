@@ -1,0 +1,55 @@
+﻿pywr.parameters.ScenarioDailyProfileParameter
+=============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: ScenarioDailyProfileParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ScenarioDailyProfileParameter.__init__
+      ~ScenarioDailyProfileParameter.after
+      ~ScenarioDailyProfileParameter.before
+      ~ScenarioDailyProfileParameter.finish
+      ~ScenarioDailyProfileParameter.get_all_values
+      ~ScenarioDailyProfileParameter.get_double_lower_bounds
+      ~ScenarioDailyProfileParameter.get_double_upper_bounds
+      ~ScenarioDailyProfileParameter.get_double_variables
+      ~ScenarioDailyProfileParameter.get_integer_lower_bounds
+      ~ScenarioDailyProfileParameter.get_integer_upper_bounds
+      ~ScenarioDailyProfileParameter.get_integer_variables
+      ~ScenarioDailyProfileParameter.get_value
+      ~ScenarioDailyProfileParameter.load
+      ~ScenarioDailyProfileParameter.register
+      ~ScenarioDailyProfileParameter.reset
+      ~ScenarioDailyProfileParameter.set_double_variables
+      ~ScenarioDailyProfileParameter.set_integer_variables
+      ~ScenarioDailyProfileParameter.setup
+      ~ScenarioDailyProfileParameter.unregister
+      ~ScenarioDailyProfileParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ScenarioDailyProfileParameter.children
+      ~ScenarioDailyProfileParameter.comment
+      ~ScenarioDailyProfileParameter.double_size
+      ~ScenarioDailyProfileParameter.integer_size
+      ~ScenarioDailyProfileParameter.is_variable
+      ~ScenarioDailyProfileParameter.model
+      ~ScenarioDailyProfileParameter.name
+      ~ScenarioDailyProfileParameter.parents
+      ~ScenarioDailyProfileParameter.size
+   
+   

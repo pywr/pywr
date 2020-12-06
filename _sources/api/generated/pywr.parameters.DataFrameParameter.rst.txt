@@ -1,0 +1,57 @@
+﻿pywr.parameters.DataFrameParameter
+==================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: DataFrameParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DataFrameParameter.__init__
+      ~DataFrameParameter.after
+      ~DataFrameParameter.before
+      ~DataFrameParameter.finish
+      ~DataFrameParameter.get_all_values
+      ~DataFrameParameter.get_double_lower_bounds
+      ~DataFrameParameter.get_double_upper_bounds
+      ~DataFrameParameter.get_double_variables
+      ~DataFrameParameter.get_integer_lower_bounds
+      ~DataFrameParameter.get_integer_upper_bounds
+      ~DataFrameParameter.get_integer_variables
+      ~DataFrameParameter.get_value
+      ~DataFrameParameter.load
+      ~DataFrameParameter.register
+      ~DataFrameParameter.reset
+      ~DataFrameParameter.set_double_variables
+      ~DataFrameParameter.set_integer_variables
+      ~DataFrameParameter.setup
+      ~DataFrameParameter.unregister
+      ~DataFrameParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DataFrameParameter.children
+      ~DataFrameParameter.comment
+      ~DataFrameParameter.dataframe
+      ~DataFrameParameter.double_size
+      ~DataFrameParameter.integer_size
+      ~DataFrameParameter.is_variable
+      ~DataFrameParameter.model
+      ~DataFrameParameter.name
+      ~DataFrameParameter.parents
+      ~DataFrameParameter.scenario
+      ~DataFrameParameter.size
+   
+   

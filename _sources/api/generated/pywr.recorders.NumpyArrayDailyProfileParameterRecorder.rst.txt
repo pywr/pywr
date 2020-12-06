@@ -1,0 +1,58 @@
+﻿pywr.recorders.NumpyArrayDailyProfileParameterRecorder
+======================================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: NumpyArrayDailyProfileParameterRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~NumpyArrayDailyProfileParameterRecorder.__init__
+      ~NumpyArrayDailyProfileParameterRecorder.after
+      ~NumpyArrayDailyProfileParameterRecorder.aggregated_value
+      ~NumpyArrayDailyProfileParameterRecorder.before
+      ~NumpyArrayDailyProfileParameterRecorder.finish
+      ~NumpyArrayDailyProfileParameterRecorder.is_constraint_violated
+      ~NumpyArrayDailyProfileParameterRecorder.load
+      ~NumpyArrayDailyProfileParameterRecorder.register
+      ~NumpyArrayDailyProfileParameterRecorder.reset
+      ~NumpyArrayDailyProfileParameterRecorder.setup
+      ~NumpyArrayDailyProfileParameterRecorder.to_dataframe
+      ~NumpyArrayDailyProfileParameterRecorder.unregister
+      ~NumpyArrayDailyProfileParameterRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NumpyArrayDailyProfileParameterRecorder.agg_func
+      ~NumpyArrayDailyProfileParameterRecorder.children
+      ~NumpyArrayDailyProfileParameterRecorder.comment
+      ~NumpyArrayDailyProfileParameterRecorder.constraint_lower_bounds
+      ~NumpyArrayDailyProfileParameterRecorder.constraint_upper_bounds
+      ~NumpyArrayDailyProfileParameterRecorder.data
+      ~NumpyArrayDailyProfileParameterRecorder.epsilon
+      ~NumpyArrayDailyProfileParameterRecorder.ignore_nan
+      ~NumpyArrayDailyProfileParameterRecorder.is_constraint
+      ~NumpyArrayDailyProfileParameterRecorder.is_double_bounded_constraint
+      ~NumpyArrayDailyProfileParameterRecorder.is_equality_constraint
+      ~NumpyArrayDailyProfileParameterRecorder.is_lower_bounded_constraint
+      ~NumpyArrayDailyProfileParameterRecorder.is_objective
+      ~NumpyArrayDailyProfileParameterRecorder.is_upper_bounded_constraint
+      ~NumpyArrayDailyProfileParameterRecorder.model
+      ~NumpyArrayDailyProfileParameterRecorder.name
+      ~NumpyArrayDailyProfileParameterRecorder.parameter
+      ~NumpyArrayDailyProfileParameterRecorder.parents
+      ~NumpyArrayDailyProfileParameterRecorder.temporal_agg_func
+   
+   

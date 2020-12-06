@@ -1,0 +1,459 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Extending Pywr with custom Recorders" href="extending_pywr_recorders.html" />
+    <link rel="prev" title="Extending Pywr with custom Nodes" href="extending_pywr_nodes.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../json.html">JSON model format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/cookbook.html">Cookbook</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Extending Pywr</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="extending_pywr_nodes.html">Extending nodes</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Extending parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#a-simple-parameter">A simple parameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#timesteps-and-scenarios">Timesteps and scenarios</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tracking-state-with-setup-reset-before-and-after">Tracking state with setup, reset, before and after</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dependency-on-other-parameters">Dependency on other parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#improving-performance-with-cython">Improving performance with Cython</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="extending_pywr_recorders.html">Extending recorders</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/pywr.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Extending Pywr</a> &raquo;</li>
+        
+      <li>Extending Pywr with custom Parameters</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/extending_pywr/extending_pywr_parameters.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="extending-pywr-with-custom-parameters">
+<span id="extending-pywr-parameters"></span><h1>Extending Pywr with custom Parameters<a class="headerlink" href="#extending-pywr-with-custom-parameters" title="Permalink to this headline">¶</a></h1>
+<p>Pywr provides many existing Parameters that can be used to model complex behaviours. This includes parameters that
+read data in different formats (e.g. the dataframe parameter), parameters that solve specific problems (e.g. reservoir
+control curves) and general purpose parameters (e.g. the <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code>).</p>
+<p>Custom parameters can be used to model specific behaviours otherwise not possible with the existing parameters. To
+write a custom parameter you must (as a minimim) inherit from the base <code class="docutils literal notranslate"><span class="pre">pywr.parameter.Parameter</span></code> class and implement
+the <code class="docutils literal notranslate"><span class="pre">Parameter.value</span></code> method. The arguments to this method represent the current timestep and scenario allowing the
+value of the parameter to be dynamic.</p>
+<div class="section" id="a-simple-parameter">
+<h2>A simple parameter<a class="headerlink" href="#a-simple-parameter" title="Permalink to this headline">¶</a></h2>
+<p>The example below shows a minimal parameter which returns the same value every timestep. The parameter is initialised
+with the value to return, which it stores in the <code class="docutils literal notranslate"><span class="pre">_value</span></code> attribute on the instance <a class="footnote-reference brackets" href="#id2" id="id1">*</a>. This value is returned
+whenever the <code class="docutils literal notranslate"><span class="pre">value</span></code> method is queries. The <code class="docutils literal notranslate"><span class="pre">load</span></code> class method is used to create an instance of the parameter
+from JSON.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+
+<span class="k">class</span> <span class="nc">MyParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># called once when the parameter is created</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">,</span> <span class="n">scenario_index</span><span class="p">):</span>
+        <span class="c1"># called once per timestep for each scenario</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c1"># called when the parameter is loaded from a JSON document</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+
+<span class="n">MyParameter</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>  <span class="c1"># register the name so it can be loaded from JSON</span>
+</pre></div>
+</div>
+<dl class="footnote brackets">
+<dt class="label" id="id2"><span class="brackets"><a class="fn-backref" href="#id1">*</a></span></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">_value</span></code> is used instead of <code class="docutils literal notranslate"><span class="pre">value</span></code> to avoid overloading the method of the same name.</p>
+</dd>
+</dl>
+<p>An instance of the parameter can be created from a JSON model as below. The type of the parameter is the class name,
+with the word “parameter” optionally removed (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;constant&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;constantparameter&quot;</span></code> both create an instance
+of <code class="docutils literal notranslate"><span class="pre">ConstantParameter</span></code>).</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="s">&quot;max_flow&quot;</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">{</span>
+    <span class="s">&quot;type&quot;</span><span class="p p-Indicator">:</span> <span class="s">&quot;myparameter&quot;</span><span class="p p-Indicator">,</span>
+    <span class="s">&quot;value&quot;</span><span class="p p-Indicator">:</span> <span class="nv">123.0</span>
+<span class="p p-Indicator">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="timesteps-and-scenarios">
+<h2>Timesteps and scenarios<a class="headerlink" href="#timesteps-and-scenarios" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">Parameter.value</span></code> method is called once per timestep for each scenario. The value it returns can be varied using
+the <code class="docutils literal notranslate"><span class="pre">timestep</span></code> and <code class="docutils literal notranslate"><span class="pre">scenario_index</span></code> arguments. For example, a simple version of a <code class="docutils literal notranslate"><span class="pre">MonthlyProfileParameter</span></code> could be
+created using the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MonthlyProfileParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">profile</span>  <span class="c1"># a 12-element list of floats</span>
+
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">,</span> <span class="n">scenario_index</span><span class="p">):</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">timestep</span><span class="o">.</span><span class="n">month</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># convert to zero-based index</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="nd">@dataclass</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="tracking-state-with-setup-reset-before-and-after">
+<h2>Tracking state with setup, reset, before and after<a class="headerlink" href="#tracking-state-with-setup-reset-before-and-after" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">Parameter.setup</span></code> and <code class="docutils literal notranslate"><span class="pre">Parameter.reset</span></code> methods are called once at the start of a model run before the first
+timestep. The <code class="docutils literal notranslate"><span class="pre">reset</span></code> method is called for every run, while the <cite>setup</cite> method is only called if the structure of
+the model has changed <a class="footnote-reference brackets" href="#id4" id="id3">†</a>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Parameter.before</span></code> and <code class="docutils literal notranslate"><span class="pre">Parameter.after</span></code> methods are called before and after each timestep, respectively. These
+methods can be used when a parameter needs to track state between timesteps. For example, a licence parameter needs
+to track the volume remaining in the licence. It’s important to remember that when using scenarios the model has
+multiple states. It’s good practice to write stateful parameters with this in mind, even if you aren’t using scenarios
+initially, so that you can in the future without rewriting anything. The example below shows a very simplistic licence
+parameter which has a finite volume.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LicenceParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">total_volume</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_volume</span> <span class="o">=</span> <span class="n">total_volume</span>
+
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># allocate an array to hold the parameter state</span>
+        <span class="n">num_scenarios</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">scenarios</span><span class="o">.</span><span class="n">combinations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_volume_remaining</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="n">num_scenarios</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># reset the amount remaining in all states to the initial value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_volume_remaining</span><span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_volume</span>
+
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">,</span> <span class="n">scenario_index</span><span class="p">):</span>
+        <span class="c1"># return the current volume remaining for the scenario</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_volume_remaining</span><span class="p">[</span><span class="n">scenario_index</span><span class="o">.</span><span class="n">global_id</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">after</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># update the state</span>
+        <span class="n">timestep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">timestepper</span><span class="o">.</span><span class="n">current</span>  <span class="c1"># get current timestep</span>
+        <span class="n">flow_during_timestep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">flow</span> <span class="o">*</span> <span class="n">timestep</span><span class="o">.</span><span class="n">days</span>  <span class="c1"># see explanation below</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_remaining</span> <span class="o">-=</span> <span class="n">flow_during_timestep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_remaining</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_remaining</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># volume remaining cannot be less than zero</span>
+
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">total_volume</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;total_volume&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">total_volume</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The example above uses the <cite>_node</cite> attribute of the parameter, which is automatically set when the parameter is attached
+to a node. The <cite>flow</cite> attribute of the node represents the flow (per day) via that node. To get the total flow for the
+timestep it must be multipled by the number of days in the timestep, available as <cite>timestep.days</cite>.</p>
+<dl class="footnote brackets">
+<dt class="label" id="id4"><span class="brackets"><a class="fn-backref" href="#id3">†</a></span></dt>
+<dd><p>The model is said to be “dirty” if nodes or edges are added or removed, resulting in a change to the structure
+of the linear programme used to solve the model. This usually requires Parameters which track state to
+reallocate memory, instead of just resetting values.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="dependency-on-other-parameters">
+<h2>Dependency on other parameters<a class="headerlink" href="#dependency-on-other-parameters" title="Permalink to this headline">¶</a></h2>
+<p>The value of each parameter is calculated at the start of every timestep. A dependency tree is used to ensure that
+parameters are evaluated in the correct order and that there are no circular dependencies <a class="footnote-reference brackets" href="#id6" id="id5">‡</a>. For example, the
+<code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code> returns the aggregated value of a set of parameters using a user-defined function. In the
+terminology of the dependency tree the <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code> is the parent of the other parameters, which are it’s
+children. When writing a parameter these dependencies need to be defined explicitly by modifying the
+<code class="docutils literal notranslate"><span class="pre">Parameter.parents</span></code> or <code class="docutils literal notranslate"><span class="pre">Parameter.children</span></code> attributes.</p>
+<p>To get the value of a child parameter use the <code class="docutils literal notranslate"><span class="pre">Parameter.get_value</span></code> method, or for the index use
+<code class="docutils literal notranslate"><span class="pre">Parameter.get_index</span></code>. These methods return the value/index for the current timestep and scenario. To access the
+value from previous timesteps you must manually track the state of the child parameters.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">pywr.parameters.load_parameter</span></code> function is used to load parameters from JSON. This works with both references to
+parameters and nested parameters.</p>
+<p>As an example, see a simplified version of <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code> that returns the sum value of it’s child parameters.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SumParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">parameter</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">,</span> <span class="n">scenario_index</span><span class="p">):</span>
+        <span class="n">total_value</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">parameter</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">scenario_index</span><span class="p">)</span> <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">total_value</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">load_parameter</span><span class="p">(</span><span class="n">parameter_data</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">parameter_data</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;parameters&quot;</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="footnote brackets">
+<dt class="label" id="id6"><span class="brackets"><a class="fn-backref" href="#id5">‡</a></span></dt>
+<dd><p>A circular dependency is when two (or more) parameters depend on each other. This can be direct (e.g A depends
+on B, B depends on A) or indirect (e.g. A depends on B, B depends on C, C depends on A). Pywr is unable to resolve the
+order in which to calculate these parameters and will raise an error at runtime.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="improving-performance-with-cython">
+<h2>Improving performance with Cython<a class="headerlink" href="#improving-performance-with-cython" title="Permalink to this headline">¶</a></h2>
+<p>Parameters are evaluated many times and can be a significant part of the model run time. Many of the parameters in the
+core library have been written in Cython to improve performance. Custom parameters can be written in Cython too. Cython
+can also be used to link to external C/C++ libraries.</p>
+<p>A full tutorial in Cython is beyond the scope of this documentation - see the
+<a class="reference external" href="https://cython.readthedocs.io/en/latest/">Cython Documentation</a>.</p>
+<p>The easiest way to compile and run custom parameters written in Cython is using the <code class="docutils literal notranslate"><span class="pre">pyximport</span></code> command, which
+compiles pyx modules at runtime. If the parameter is linking to a foreign library you may need to compile using a
+<code class="docutils literal notranslate"><span class="pre">setup.py</span></code> in order to pass linker arguments.</p>
+<p>The example below demonstrates a custom parameter which uses a function from a foreign library (the <code class="docutils literal notranslate"><span class="pre">pow</span></code> function
+from <code class="docutils literal notranslate"><span class="pre">libm</span></code>). There are a few differences from the Python equivalent:</p>
+<ul class="simple">
+<li><p>Use of the <code class="docutils literal notranslate"><span class="pre">cimport</span></code> statement</p></li>
+<li><p>Inherit from <code class="docutils literal notranslate"><span class="pre">pywr.parameters._parameters.Parameter</span></code></p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">value</span></code> method is defined as a cpdef function. This signature must match exactly.</p></li>
+</ul>
+<div class="literal-block-wrapper docutils container" id="id7">
+<div class="code-block-caption"><span class="caption-text">custom_parameters.pyx</span><a class="headerlink" href="#id7" title="Permalink to this code">¶</a></div>
+<div class="highlight-cython notranslate"><div class="highlight"><pre><span></span><span class="k">from</span> <span class="nn">pywr.parameters._parameters</span> <span class="k">cimport</span> <span class="n">Parameter</span>
+<span class="k">from</span> <span class="nn">pywr._core</span> <span class="k">cimport</span> <span class="n">Timestep</span><span class="p">,</span> <span class="n">ScenarioIndex</span>
+
+<span class="k">cdef</span> <span class="kr">extern</span> <span class="k">from</span> <span class="s">&quot;math.h&quot;</span><span class="p">:</span>
+    <span class="n">double</span> <span class="nb">pow</span><span class="p">(</span><span class="n">double</span> <span class="n">x</span><span class="p">,</span> <span class="n">double</span> <span class="n">y</span><span class="p">)</span>
+
+<span class="k">cdef</span> <span class="k">class</span> <span class="nf">SquaredParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">cdef</span> <span class="kt">double</span> <span class="nf">_value</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">cpdef</span> <span class="kt">double</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Timestep</span> <span class="n">ts</span><span class="p">,</span> <span class="n">ScenarioIndex</span> <span class="n">scenario_index</span><span class="p">)</span> <span class="k">except</span><span class="o">?</span> <span class="o">-</span><span class="mf">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">pow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c"># called when the parameter is loaded from a JSON document</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&quot;value&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+
+<span class="n">SquaredParameter</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id8">
+<div class="code-block-caption"><span class="caption-text">run_model.py</span><a class="headerlink" href="#id8" title="Permalink to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyximport</span>
+<span class="n">pyximport</span><span class="o">.</span><span class="n">install</span><span class="p">()</span>
+
+<span class="kn">from</span> <span class="nn">pywr.model</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">import</span> <span class="nn">custom_parameters</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;simple.json&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="extending_pywr_recorders.html" class="btn btn-neutral float-right" title="Extending Pywr with custom Recorders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="extending_pywr_nodes.html" class="btn btn-neutral float-left" title="Extending Pywr with custom Nodes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+﻿pywr.recorders.NumpyArrayNodeSuppliedRatioRecorder
+==================================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: NumpyArrayNodeSuppliedRatioRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~NumpyArrayNodeSuppliedRatioRecorder.__init__
+      ~NumpyArrayNodeSuppliedRatioRecorder.after
+      ~NumpyArrayNodeSuppliedRatioRecorder.aggregated_value
+      ~NumpyArrayNodeSuppliedRatioRecorder.before
+      ~NumpyArrayNodeSuppliedRatioRecorder.finish
+      ~NumpyArrayNodeSuppliedRatioRecorder.is_constraint_violated
+      ~NumpyArrayNodeSuppliedRatioRecorder.load
+      ~NumpyArrayNodeSuppliedRatioRecorder.register
+      ~NumpyArrayNodeSuppliedRatioRecorder.reset
+      ~NumpyArrayNodeSuppliedRatioRecorder.setup
+      ~NumpyArrayNodeSuppliedRatioRecorder.to_dataframe
+      ~NumpyArrayNodeSuppliedRatioRecorder.unregister
+      ~NumpyArrayNodeSuppliedRatioRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NumpyArrayNodeSuppliedRatioRecorder.agg_func
+      ~NumpyArrayNodeSuppliedRatioRecorder.children
+      ~NumpyArrayNodeSuppliedRatioRecorder.comment
+      ~NumpyArrayNodeSuppliedRatioRecorder.constraint_lower_bounds
+      ~NumpyArrayNodeSuppliedRatioRecorder.constraint_upper_bounds
+      ~NumpyArrayNodeSuppliedRatioRecorder.data
+      ~NumpyArrayNodeSuppliedRatioRecorder.epsilon
+      ~NumpyArrayNodeSuppliedRatioRecorder.factor
+      ~NumpyArrayNodeSuppliedRatioRecorder.ignore_nan
+      ~NumpyArrayNodeSuppliedRatioRecorder.is_constraint
+      ~NumpyArrayNodeSuppliedRatioRecorder.is_double_bounded_constraint
+      ~NumpyArrayNodeSuppliedRatioRecorder.is_equality_constraint
+      ~NumpyArrayNodeSuppliedRatioRecorder.is_lower_bounded_constraint
+      ~NumpyArrayNodeSuppliedRatioRecorder.is_objective
+      ~NumpyArrayNodeSuppliedRatioRecorder.is_upper_bounded_constraint
+      ~NumpyArrayNodeSuppliedRatioRecorder.model
+      ~NumpyArrayNodeSuppliedRatioRecorder.name
+      ~NumpyArrayNodeSuppliedRatioRecorder.node
+      ~NumpyArrayNodeSuppliedRatioRecorder.parents
+      ~NumpyArrayNodeSuppliedRatioRecorder.temporal_agg_func
+   
+   

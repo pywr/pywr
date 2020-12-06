@@ -1,0 +1,56 @@
+﻿pywr.parameters.InterpolatedVolumeParameter
+===========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: InterpolatedVolumeParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~InterpolatedVolumeParameter.__init__
+      ~InterpolatedVolumeParameter.after
+      ~InterpolatedVolumeParameter.before
+      ~InterpolatedVolumeParameter.finish
+      ~InterpolatedVolumeParameter.get_all_values
+      ~InterpolatedVolumeParameter.get_double_lower_bounds
+      ~InterpolatedVolumeParameter.get_double_upper_bounds
+      ~InterpolatedVolumeParameter.get_double_variables
+      ~InterpolatedVolumeParameter.get_integer_lower_bounds
+      ~InterpolatedVolumeParameter.get_integer_upper_bounds
+      ~InterpolatedVolumeParameter.get_integer_variables
+      ~InterpolatedVolumeParameter.get_value
+      ~InterpolatedVolumeParameter.load
+      ~InterpolatedVolumeParameter.register
+      ~InterpolatedVolumeParameter.reset
+      ~InterpolatedVolumeParameter.set_double_variables
+      ~InterpolatedVolumeParameter.set_integer_variables
+      ~InterpolatedVolumeParameter.setup
+      ~InterpolatedVolumeParameter.unregister
+      ~InterpolatedVolumeParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~InterpolatedVolumeParameter.children
+      ~InterpolatedVolumeParameter.comment
+      ~InterpolatedVolumeParameter.double_size
+      ~InterpolatedVolumeParameter.integer_size
+      ~InterpolatedVolumeParameter.interp_kwargs
+      ~InterpolatedVolumeParameter.is_variable
+      ~InterpolatedVolumeParameter.model
+      ~InterpolatedVolumeParameter.name
+      ~InterpolatedVolumeParameter.parents
+      ~InterpolatedVolumeParameter.size
+   
+   

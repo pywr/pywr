@@ -1,0 +1,55 @@
+﻿pywr.recorders.StorageRecorder
+==============================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: StorageRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~StorageRecorder.__init__
+      ~StorageRecorder.after
+      ~StorageRecorder.aggregated_value
+      ~StorageRecorder.before
+      ~StorageRecorder.finish
+      ~StorageRecorder.is_constraint_violated
+      ~StorageRecorder.load
+      ~StorageRecorder.register
+      ~StorageRecorder.reset
+      ~StorageRecorder.setup
+      ~StorageRecorder.unregister
+      ~StorageRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~StorageRecorder.agg_func
+      ~StorageRecorder.children
+      ~StorageRecorder.comment
+      ~StorageRecorder.constraint_lower_bounds
+      ~StorageRecorder.constraint_upper_bounds
+      ~StorageRecorder.epsilon
+      ~StorageRecorder.ignore_nan
+      ~StorageRecorder.is_constraint
+      ~StorageRecorder.is_double_bounded_constraint
+      ~StorageRecorder.is_equality_constraint
+      ~StorageRecorder.is_lower_bounded_constraint
+      ~StorageRecorder.is_objective
+      ~StorageRecorder.is_upper_bounded_constraint
+      ~StorageRecorder.model
+      ~StorageRecorder.name
+      ~StorageRecorder.node
+      ~StorageRecorder.parents
+   
+   

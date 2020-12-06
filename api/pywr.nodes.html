@@ -1,0 +1,346 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Nodes &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pywr.nodes.Node" href="generated/pywr.nodes.Node.html" />
+    <link rel="prev" title="pywr.core.ScenarioIndex" href="generated/pywr.core.ScenarioIndex.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../json.html">JSON model format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending_pywr/index.html">Extending Pywr</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="pywr.html">Python API reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pywr.core.html">Core classes</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Nodes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nodes-classes">Nodes classes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.Node.html">pywr.nodes.Node</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.Link.html">pywr.nodes.Link</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.Input.html">pywr.nodes.Input</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.Output.html">pywr.nodes.Output</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.BreakLink.html">pywr.nodes.BreakLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.PiecewiseLink.html">pywr.nodes.PiecewiseLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.MultiSplitLink.html">pywr.nodes.MultiSplitLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.Storage.html">pywr.nodes.Storage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.VirtualStorage.html">pywr.nodes.VirtualStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.RollingVirtualStorage.html">pywr.nodes.RollingVirtualStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.AnnualVirtualStorage.html">pywr.nodes.AnnualVirtualStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.SeasonalVirtualStorage.html">pywr.nodes.SeasonalVirtualStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.AggregatedStorage.html">pywr.nodes.AggregatedStorage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.AggregatedNode.html">pywr.nodes.AggregatedNode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.nodes.DelayNode.html">pywr.nodes.DelayNode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.domains.river.Catchment.html">pywr.domains.river.Catchment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.domains.river.Reservoir.html">pywr.domains.river.Reservoir</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.domains.river.River.html">pywr.domains.river.River</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.domains.river.RiverSplit.html">pywr.domains.river.RiverSplit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.domains.river.RiverSplitWithGauge.html">pywr.domains.river.RiverSplitWithGauge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.domains.river.RiverGauge.html">pywr.domains.river.RiverGauge</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.optimisation.html">Optimisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.parameters.html">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.recorders.html">Recorders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.notebook.html">Notebook Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pywr.utils.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="pywr.html">Pywr reference documentation.</a> &raquo;</li>
+        
+      <li>Nodes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/pywr.nodes.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nodes">
+<h1>Nodes<a class="headerlink" href="#nodes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="nodes-classes">
+<h2>Nodes classes<a class="headerlink" href="#nodes-classes" title="Permalink to this headline">¶</a></h2>
+<p>Nodes that are instantiable by the user</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.nodes.Node.html#pywr.nodes.Node" title="pywr.nodes.Node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Node</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Base object from which all other nodes inherit</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.nodes.Link.html#pywr.nodes.Link" title="pywr.nodes.Link"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Link</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A link in the supply network, such as a pipe</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.nodes.Input.html#pywr.nodes.Input" title="pywr.nodes.Input"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Input</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A general input at any point in the network</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.nodes.Output.html#pywr.nodes.Output" title="pywr.nodes.Output"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Output</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A general output at any point from the network</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.nodes.BreakLink.html#pywr.nodes.BreakLink" title="pywr.nodes.BreakLink"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BreakLink</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Compound node used to reduce the number of routes in a model</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.nodes.PiecewiseLink.html#pywr.nodes.PiecewiseLink" title="pywr.nodes.PiecewiseLink"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PiecewiseLink</span></code></a>(*args, **kwargs)</p></td>
+<td><p>An extension of Node that represents a non-linear Link with a piece wise cost function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.nodes.MultiSplitLink.html#pywr.nodes.MultiSplitLink" title="pywr.nodes.MultiSplitLink"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiSplitLink</span></code></a>(*args, **kwargs)</p></td>
+<td><p>An extension of PiecewiseLink that includes additional slots to connect from.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.nodes.Storage.html#pywr.nodes.Storage" title="pywr.nodes.Storage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Storage</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A generic storage Node</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.nodes.VirtualStorage.html#pywr.nodes.VirtualStorage" title="pywr.nodes.VirtualStorage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VirtualStorage</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A virtual storage unit</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.nodes.RollingVirtualStorage.html#pywr.nodes.RollingVirtualStorage" title="pywr.nodes.RollingVirtualStorage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RollingVirtualStorage</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A rolling virtual storage node useful for implementing rolling licences.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.nodes.AnnualVirtualStorage.html#pywr.nodes.AnnualVirtualStorage" title="pywr.nodes.AnnualVirtualStorage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnnualVirtualStorage</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A virtual storage which resets annually, useful for licences</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.nodes.SeasonalVirtualStorage.html#pywr.nodes.SeasonalVirtualStorage" title="pywr.nodes.SeasonalVirtualStorage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SeasonalVirtualStorage</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A virtual storage node that operates only for a specified period within a year.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.nodes.AggregatedStorage.html#pywr.nodes.AggregatedStorage" title="pywr.nodes.AggregatedStorage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AggregatedStorage</span></code></a>(*args, **kwargs)</p></td>
+<td><p>An aggregated sum of other <cite>Storage</cite> nodes</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.nodes.AggregatedNode.html#pywr.nodes.AggregatedNode" title="pywr.nodes.AggregatedNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AggregatedNode</span></code></a>(*args, **kwargs)</p></td>
+<td><p>An aggregated sum of other <cite>Node</cite> nodes</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.nodes.DelayNode.html#pywr.nodes.DelayNode" title="pywr.nodes.DelayNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DelayNode</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A node that delays flow for a given number of timesteps or days.</p></td>
+</tr>
+</tbody>
+</table>
+<p>River domain nodes</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.domains.river.Catchment.html#pywr.domains.river.Catchment" title="pywr.domains.river.Catchment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Catchment</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A hydrological catchment, supplying water to the river network</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.domains.river.Reservoir.html#pywr.domains.river.Reservoir" title="pywr.domains.river.Reservoir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reservoir</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A reservoir node with control curve.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.domains.river.River.html#pywr.domains.river.River" title="pywr.domains.river.River"><code class="xref py py-obj docutils literal notranslate"><span class="pre">River</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A node in the river network</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.domains.river.RiverSplit.html#pywr.domains.river.RiverSplit" title="pywr.domains.river.RiverSplit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RiverSplit</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A split in the river network</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.domains.river.RiverSplitWithGauge.html#pywr.domains.river.RiverSplitWithGauge" title="pywr.domains.river.RiverSplitWithGauge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RiverSplitWithGauge</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A split in the river network with a minimum residual flow</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.domains.river.RiverGauge.html#pywr.domains.river.RiverGauge" title="pywr.domains.river.RiverGauge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RiverGauge</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A river gauging station, with a minimum residual flow (MRF)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="generated/pywr.nodes.Node.html" class="btn btn-neutral float-right" title="pywr.nodes.Node" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="generated/pywr.core.ScenarioIndex.html" class="btn btn-neutral float-left" title="pywr.core.ScenarioIndex" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

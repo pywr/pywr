@@ -1,0 +1,55 @@
+﻿pywr.recorders.TotalDeficitNodeRecorder
+=======================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: TotalDeficitNodeRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TotalDeficitNodeRecorder.__init__
+      ~TotalDeficitNodeRecorder.after
+      ~TotalDeficitNodeRecorder.aggregated_value
+      ~TotalDeficitNodeRecorder.before
+      ~TotalDeficitNodeRecorder.finish
+      ~TotalDeficitNodeRecorder.is_constraint_violated
+      ~TotalDeficitNodeRecorder.load
+      ~TotalDeficitNodeRecorder.register
+      ~TotalDeficitNodeRecorder.reset
+      ~TotalDeficitNodeRecorder.setup
+      ~TotalDeficitNodeRecorder.unregister
+      ~TotalDeficitNodeRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TotalDeficitNodeRecorder.agg_func
+      ~TotalDeficitNodeRecorder.children
+      ~TotalDeficitNodeRecorder.comment
+      ~TotalDeficitNodeRecorder.constraint_lower_bounds
+      ~TotalDeficitNodeRecorder.constraint_upper_bounds
+      ~TotalDeficitNodeRecorder.epsilon
+      ~TotalDeficitNodeRecorder.ignore_nan
+      ~TotalDeficitNodeRecorder.is_constraint
+      ~TotalDeficitNodeRecorder.is_double_bounded_constraint
+      ~TotalDeficitNodeRecorder.is_equality_constraint
+      ~TotalDeficitNodeRecorder.is_lower_bounded_constraint
+      ~TotalDeficitNodeRecorder.is_objective
+      ~TotalDeficitNodeRecorder.is_upper_bounded_constraint
+      ~TotalDeficitNodeRecorder.model
+      ~TotalDeficitNodeRecorder.name
+      ~TotalDeficitNodeRecorder.node
+      ~TotalDeficitNodeRecorder.parents
+   
+   

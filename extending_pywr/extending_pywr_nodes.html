@@ -1,0 +1,342 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Extending Pywr with custom Nodes &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Extending Pywr with custom Parameters" href="extending_pywr_parameters.html" />
+    <link rel="prev" title="Extending Pywr" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../json.html">JSON model format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/cookbook.html">Cookbook</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Extending Pywr</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Extending nodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending_pywr_parameters.html">Extending parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending_pywr_recorders.html">Extending recorders</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/pywr.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Extending Pywr</a> &raquo;</li>
+        
+      <li>Extending Pywr with custom Nodes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/extending_pywr/extending_pywr_nodes.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="extending-pywr-with-custom-nodes">
+<span id="extending-pywr-nodes"></span><h1>Extending Pywr with custom Nodes<a class="headerlink" href="#extending-pywr-with-custom-nodes" title="Permalink to this headline">¶</a></h1>
+<p>Nodes and subclasses thereof provide the basic network structure in Pywr. There are several different types
+of node available. Two major categories exist: flow nodes and storage nodes. Flow nodes are the typical nodes
+that represent rivers, pipes and other features from, through or to which a resource can flow. These nodes are
+typically characterised by minimum and maximum flow rates. Storage nodes provide the ability to store resource
+from one time-step to another, and are characterised by minimum, maximum and initial volumes.</p>
+<p>There are three fundamental types of node in Pywr:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Input</span></code> nodes add water to the system</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Output</span></code> nodes remove water from the system</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Link</span></code> nodes do not add or remove water from the system</p></li>
+</ul>
+<p>There is a fourth node type, <code class="docutils literal notranslate"><span class="pre">Storage</span></code>, which can be considered fundamental because there are special rules for
+it’s behaviour in the linear programme used to solve the water balance:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Storage</span></code> nodes can carry water from one timestep to the next</p></li>
+</ul>
+<p>All other node types in Pywr are subclasses of these base types. For example, the <code class="docutils literal notranslate"><span class="pre">pywr.nodes.Catchment</span></code> node type
+is a special case of <code class="docutils literal notranslate"><span class="pre">Input</span></code> where the <code class="docutils literal notranslate"><span class="pre">min_flow</span></code> and <code class="docutils literal notranslate"><span class="pre">max_flow</span></code> properties are equal.</p>
+<p>The most common way to create a new node type is using a compound node. A compound node contains one or more existing
+nodes and is used to manage common or more complex arrangements of the basic node types. An example of a compound node
+is the <code class="docutils literal notranslate"><span class="pre">PiecewiseLink</span></code>. It is composed of a link (<code class="docutils literal notranslate"><span class="pre">OUT_1</span></code>) which receives water from upstream and an link
+(<code class="docutils literal notranslate"><span class="pre">IN_1</span></code>) which conveys water downstream, connected by a set of links in parallel (<code class="docutils literal notranslate"><span class="pre">LNK_1</span></code> … <code class="docutils literal notranslate"><span class="pre">LNK_N</span></code>) each with
+a different <code class="docutils literal notranslate"><span class="pre">max_flow</span></code> and <code class="docutils literal notranslate"><span class="pre">cost</span></code>, illustrated below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>                           <span class="o">/--&gt;--</span> <span class="n">LNK_1</span> <span class="o">--&gt;--</span>\
+<span class="n">UPSTREAM</span> <span class="o">--&gt;--</span> <span class="n">OUT_1</span> <span class="o">--&gt;--|---&gt;--</span>  <span class="o">...</span>  <span class="o">--&gt;---|--&gt;--</span> <span class="n">IN_1</span> <span class="o">--&gt;--</span> <span class="n">DOWNSTREAM</span>
+                           \<span class="o">--&gt;--</span> <span class="n">LNK_N</span> <span class="o">--&gt;--/</span>
+</pre></div>
+</div>
+<p>Let’s look at an example to create a new node type that represents a leaky pipe. To remove water from the system we
+need to use an output node (<code class="docutils literal notranslate"><span class="pre">LEAK</span></code>), with two links representing the boundaries of the compound node (<code class="docutils literal notranslate"><span class="pre">INFLOW</span></code> and
+<code class="docutils literal notranslate"><span class="pre">OUTFLOW</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">UPSTREAM</span> <span class="o">--&gt;--</span> <span class="n">INFLOW</span> <span class="o">--&gt;--</span> <span class="n">OUTFLOW</span> <span class="o">--&gt;--</span> <span class="n">DOWNSTREAM</span>
+                 <span class="o">|</span>
+                 \<span class="o">------&gt;--</span>  <span class="n">LEAK</span>
+</pre></div>
+</div>
+<p>This is a simple structure which represents leakage as a demand with a maximum value and a benefit to be supplied. It
+is slightly flawed as the leakage volume does not vary proportionally to flow through the link, but is sufficient as
+an example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.nodes</span> <span class="kn">import</span> <span class="n">Node</span><span class="p">,</span> <span class="n">Link</span><span class="p">,</span> <span class="n">Output</span>
+
+<span class="k">class</span> <span class="nc">LeakyPipe</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">leakage</span><span class="p">,</span> <span class="n">leakage_cost</span><span class="o">=-</span><span class="mi">99999</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allow_isolated</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># Required for compound nodes</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">LeakyPipe</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Define the internal nodes. The parent of the nodes is defined to identify them as sub-nodes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inflow</span> <span class="o">=</span> <span class="n">Link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> In&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outflow</span> <span class="o">=</span> <span class="n">Link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> Out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">leak</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> Leak&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Connect the internal nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inflow</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outflow</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inflow</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">leak</span><span class="p">)</span>
+
+        <span class="c1"># Define the properties of the leak (demand and benefit)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">leak</span><span class="o">.</span><span class="n">max_flow</span> <span class="o">=</span> <span class="n">leakage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">leak</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">leakage_cost</span>
+
+    <span class="k">def</span> <span class="nf">iter_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_connector</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># This is required so that connecting to this node actually connects to the outflow sub-node, and</span>
+        <span class="c1"># connecting from this node actually connects to the input sub-node</span>
+        <span class="k">if</span> <span class="n">is_connector</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">outflow</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">inflow</span>
+
+    <span class="k">def</span> <span class="nf">after</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">):</span>
+        <span class="c1"># Make the flow on the compound node appear as the flow _after_ the leak</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commit_all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outflow</span><span class="o">.</span><span class="n">flow</span><span class="p">)</span>
+        <span class="c1"># Make sure save is done after setting aggregated flow</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LeakyPipe</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="n">timestep</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="k">del</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">])</span>
+        <span class="n">leakage</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;leakage&quot;</span><span class="p">)</span>
+        <span class="n">leakage_cost</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;leakage_cost&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">leakage</span><span class="p">,</span> <span class="n">leakage_cost</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The custom node does not need to be “registered”, unlike <code class="docutils literal notranslate"><span class="pre">Parameters</span></code>, as this is done automatically using
+metaclasses. The new node type can be referenced from a JSON model provided that the class has been imported before
+the JSON is loaded:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.model</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">import</span> <span class="nn">leakypipe</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;leaky_pipe_model.sjon&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">{</span>
+    <span class="s">&quot;type&quot;</span><span class="p p-Indicator">:</span> <span class="s">&quot;leakypipe&quot;</span><span class="p p-Indicator">,</span>
+    <span class="s">&quot;leakage&quot;</span><span class="p p-Indicator">:</span> <span class="s">&quot;1.0&quot;</span>
+<span class="p p-Indicator">}</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">allow_isolated</span></code> attribute identifies nodes of this type as compound nodes. Without this the model would raise
+an error that the node is not connected to the rest of the network, as the connections are actually to its sub-nodes.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">after</span></code> method is not required but is useful so that recorders can be attached to the compound node. Without
+this the flow would appear to be zero as the flow doesn’t <em>actually</em> pass through the compound node.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">iter_slots</span></code> method is required so that connecting to/from the node (e.g. <code class="docutils literal notranslate"><span class="pre">upstream.connect(leaky)</span></code>) creates
+connections to the sub-nodes.</p>
+<p>A more advanced representation of the leaky pipe could use an additional <code class="docutils literal notranslate"><span class="pre">AggregatedNode</span></code> to constrain the ratio
+of flow through the <code class="docutils literal notranslate"><span class="pre">OUTFLOW</span></code> and <code class="docutils literal notranslate"><span class="pre">LEAK</span></code> nodes. <a class="footnote-reference brackets" href="#id2" id="id1">*</a></p>
+<dl class="footnote brackets">
+<dt class="label" id="id2"><span class="brackets"><a class="fn-backref" href="#id1">*</a></span></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">AggregatedNode</span></code> is actually another fundamental node type, as this behaviour requires special treatment
+in the linear programme.</p>
+</dd>
+</dl>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="extending_pywr_parameters.html" class="btn btn-neutral float-right" title="Extending Pywr with custom Parameters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Extending Pywr" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

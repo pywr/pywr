@@ -1,0 +1,60 @@
+﻿pywr.parameters.AbstractThresholdParameter
+==========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: AbstractThresholdParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AbstractThresholdParameter.__init__
+      ~AbstractThresholdParameter.after
+      ~AbstractThresholdParameter.before
+      ~AbstractThresholdParameter.finish
+      ~AbstractThresholdParameter.get_all_indices
+      ~AbstractThresholdParameter.get_all_values
+      ~AbstractThresholdParameter.get_double_lower_bounds
+      ~AbstractThresholdParameter.get_double_upper_bounds
+      ~AbstractThresholdParameter.get_double_variables
+      ~AbstractThresholdParameter.get_index
+      ~AbstractThresholdParameter.get_integer_lower_bounds
+      ~AbstractThresholdParameter.get_integer_upper_bounds
+      ~AbstractThresholdParameter.get_integer_variables
+      ~AbstractThresholdParameter.get_value
+      ~AbstractThresholdParameter.index
+      ~AbstractThresholdParameter.load
+      ~AbstractThresholdParameter.register
+      ~AbstractThresholdParameter.reset
+      ~AbstractThresholdParameter.set_double_variables
+      ~AbstractThresholdParameter.set_integer_variables
+      ~AbstractThresholdParameter.setup
+      ~AbstractThresholdParameter.unregister
+      ~AbstractThresholdParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AbstractThresholdParameter.children
+      ~AbstractThresholdParameter.comment
+      ~AbstractThresholdParameter.double_size
+      ~AbstractThresholdParameter.integer_size
+      ~AbstractThresholdParameter.is_variable
+      ~AbstractThresholdParameter.model
+      ~AbstractThresholdParameter.name
+      ~AbstractThresholdParameter.parents
+      ~AbstractThresholdParameter.ratchet
+      ~AbstractThresholdParameter.size
+      ~AbstractThresholdParameter.threshold
+   
+   

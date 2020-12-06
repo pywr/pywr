@@ -1,0 +1,55 @@
+﻿pywr.parameters.ScenarioWrapperParameter
+========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: ScenarioWrapperParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ScenarioWrapperParameter.__init__
+      ~ScenarioWrapperParameter.after
+      ~ScenarioWrapperParameter.before
+      ~ScenarioWrapperParameter.finish
+      ~ScenarioWrapperParameter.get_all_values
+      ~ScenarioWrapperParameter.get_double_lower_bounds
+      ~ScenarioWrapperParameter.get_double_upper_bounds
+      ~ScenarioWrapperParameter.get_double_variables
+      ~ScenarioWrapperParameter.get_integer_lower_bounds
+      ~ScenarioWrapperParameter.get_integer_upper_bounds
+      ~ScenarioWrapperParameter.get_integer_variables
+      ~ScenarioWrapperParameter.get_value
+      ~ScenarioWrapperParameter.load
+      ~ScenarioWrapperParameter.register
+      ~ScenarioWrapperParameter.reset
+      ~ScenarioWrapperParameter.set_double_variables
+      ~ScenarioWrapperParameter.set_integer_variables
+      ~ScenarioWrapperParameter.setup
+      ~ScenarioWrapperParameter.unregister
+      ~ScenarioWrapperParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ScenarioWrapperParameter.children
+      ~ScenarioWrapperParameter.comment
+      ~ScenarioWrapperParameter.double_size
+      ~ScenarioWrapperParameter.integer_size
+      ~ScenarioWrapperParameter.is_variable
+      ~ScenarioWrapperParameter.model
+      ~ScenarioWrapperParameter.name
+      ~ScenarioWrapperParameter.parents
+      ~ScenarioWrapperParameter.size
+   
+   

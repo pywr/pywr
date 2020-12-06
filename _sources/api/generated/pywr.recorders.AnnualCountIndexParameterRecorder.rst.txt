@@ -1,0 +1,56 @@
+﻿pywr.recorders.AnnualCountIndexParameterRecorder
+================================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: AnnualCountIndexParameterRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AnnualCountIndexParameterRecorder.__init__
+      ~AnnualCountIndexParameterRecorder.after
+      ~AnnualCountIndexParameterRecorder.aggregated_value
+      ~AnnualCountIndexParameterRecorder.before
+      ~AnnualCountIndexParameterRecorder.finish
+      ~AnnualCountIndexParameterRecorder.is_constraint_violated
+      ~AnnualCountIndexParameterRecorder.load
+      ~AnnualCountIndexParameterRecorder.register
+      ~AnnualCountIndexParameterRecorder.reset
+      ~AnnualCountIndexParameterRecorder.setup
+      ~AnnualCountIndexParameterRecorder.unregister
+      ~AnnualCountIndexParameterRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AnnualCountIndexParameterRecorder.agg_func
+      ~AnnualCountIndexParameterRecorder.children
+      ~AnnualCountIndexParameterRecorder.comment
+      ~AnnualCountIndexParameterRecorder.constraint_lower_bounds
+      ~AnnualCountIndexParameterRecorder.constraint_upper_bounds
+      ~AnnualCountIndexParameterRecorder.epsilon
+      ~AnnualCountIndexParameterRecorder.ignore_nan
+      ~AnnualCountIndexParameterRecorder.is_constraint
+      ~AnnualCountIndexParameterRecorder.is_double_bounded_constraint
+      ~AnnualCountIndexParameterRecorder.is_equality_constraint
+      ~AnnualCountIndexParameterRecorder.is_lower_bounded_constraint
+      ~AnnualCountIndexParameterRecorder.is_objective
+      ~AnnualCountIndexParameterRecorder.is_upper_bounded_constraint
+      ~AnnualCountIndexParameterRecorder.model
+      ~AnnualCountIndexParameterRecorder.name
+      ~AnnualCountIndexParameterRecorder.parameter
+      ~AnnualCountIndexParameterRecorder.parents
+      ~AnnualCountIndexParameterRecorder.threshold
+   
+   

@@ -1,0 +1,58 @@
+﻿pywr.parameters.PiecewiseIntegralParameter
+==========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: PiecewiseIntegralParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PiecewiseIntegralParameter.__init__
+      ~PiecewiseIntegralParameter.after
+      ~PiecewiseIntegralParameter.before
+      ~PiecewiseIntegralParameter.finish
+      ~PiecewiseIntegralParameter.get_all_values
+      ~PiecewiseIntegralParameter.get_double_lower_bounds
+      ~PiecewiseIntegralParameter.get_double_upper_bounds
+      ~PiecewiseIntegralParameter.get_double_variables
+      ~PiecewiseIntegralParameter.get_integer_lower_bounds
+      ~PiecewiseIntegralParameter.get_integer_upper_bounds
+      ~PiecewiseIntegralParameter.get_integer_variables
+      ~PiecewiseIntegralParameter.get_value
+      ~PiecewiseIntegralParameter.load
+      ~PiecewiseIntegralParameter.register
+      ~PiecewiseIntegralParameter.reset
+      ~PiecewiseIntegralParameter.set_double_variables
+      ~PiecewiseIntegralParameter.set_integer_variables
+      ~PiecewiseIntegralParameter.setup
+      ~PiecewiseIntegralParameter.unregister
+      ~PiecewiseIntegralParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PiecewiseIntegralParameter.children
+      ~PiecewiseIntegralParameter.comment
+      ~PiecewiseIntegralParameter.double_size
+      ~PiecewiseIntegralParameter.integer_size
+      ~PiecewiseIntegralParameter.is_variable
+      ~PiecewiseIntegralParameter.model
+      ~PiecewiseIntegralParameter.name
+      ~PiecewiseIntegralParameter.parameter
+      ~PiecewiseIntegralParameter.parents
+      ~PiecewiseIntegralParameter.size
+      ~PiecewiseIntegralParameter.x
+      ~PiecewiseIntegralParameter.y
+   
+   

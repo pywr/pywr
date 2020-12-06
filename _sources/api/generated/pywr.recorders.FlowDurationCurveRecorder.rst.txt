@@ -1,0 +1,60 @@
+﻿pywr.recorders.FlowDurationCurveRecorder
+========================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: FlowDurationCurveRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FlowDurationCurveRecorder.__init__
+      ~FlowDurationCurveRecorder.after
+      ~FlowDurationCurveRecorder.aggregated_value
+      ~FlowDurationCurveRecorder.before
+      ~FlowDurationCurveRecorder.finish
+      ~FlowDurationCurveRecorder.is_constraint_violated
+      ~FlowDurationCurveRecorder.load
+      ~FlowDurationCurveRecorder.register
+      ~FlowDurationCurveRecorder.reset
+      ~FlowDurationCurveRecorder.setup
+      ~FlowDurationCurveRecorder.to_dataframe
+      ~FlowDurationCurveRecorder.unregister
+      ~FlowDurationCurveRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~FlowDurationCurveRecorder.agg_func
+      ~FlowDurationCurveRecorder.children
+      ~FlowDurationCurveRecorder.comment
+      ~FlowDurationCurveRecorder.constraint_lower_bounds
+      ~FlowDurationCurveRecorder.constraint_upper_bounds
+      ~FlowDurationCurveRecorder.data
+      ~FlowDurationCurveRecorder.epsilon
+      ~FlowDurationCurveRecorder.factor
+      ~FlowDurationCurveRecorder.fdc
+      ~FlowDurationCurveRecorder.ignore_nan
+      ~FlowDurationCurveRecorder.is_constraint
+      ~FlowDurationCurveRecorder.is_double_bounded_constraint
+      ~FlowDurationCurveRecorder.is_equality_constraint
+      ~FlowDurationCurveRecorder.is_lower_bounded_constraint
+      ~FlowDurationCurveRecorder.is_objective
+      ~FlowDurationCurveRecorder.is_upper_bounded_constraint
+      ~FlowDurationCurveRecorder.model
+      ~FlowDurationCurveRecorder.name
+      ~FlowDurationCurveRecorder.node
+      ~FlowDurationCurveRecorder.parents
+      ~FlowDurationCurveRecorder.temporal_agg_func
+   
+   

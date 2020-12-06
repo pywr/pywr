@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Tutorial &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Problem formulation" href="formulation.html" />
+    <link rel="prev" title="Installing Pywr" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing Pywr</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#a-minimal-example">A minimal example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="json.html">JSON model format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending_pywr/index.html">Extending Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/pywr.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Tutorial</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tutorial.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="a-minimal-example">
+<h2>A minimal example<a class="headerlink" href="#a-minimal-example" title="Permalink to this headline">¶</a></h2>
+<p>The simplest example has two nodes: an <code class="xref py py-func docutils literal notranslate"><span class="pre">Input()</span></code> which adds flow to the network and an <code class="xref py py-func docutils literal notranslate"><span class="pre">Output()</span></code> which removes flow from the network.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.core</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
+
+<span class="c1"># create a model (including an empty network)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+
+<span class="c1"># create two nodes: a supply, and a demand</span>
+<span class="n">supply</span> <span class="o">=</span> <span class="n">Input</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;supply&#39;</span><span class="p">)</span>
+<span class="n">demand</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;demand&#39;</span><span class="p">)</span>
+
+<span class="c1"># create a connection from the supply to the demand</span>
+<span class="n">supply</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">demand</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>While technically valid, this model isn’t very interesting because we haven’t set any constraints or costs on flows in the network.</p>
+<p>Let’s add some flow constraints to the problem:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># set maximum flows</span>
+<span class="n">supply</span><span class="o">.</span><span class="n">max_flow</span> <span class="o">=</span> <span class="mf">10.0</span>
+<span class="n">demand</span><span class="o">.</span><span class="n">max_flow</span> <span class="o">=</span> <span class="mf">6.0</span>
+</pre></div>
+</div>
+<p>The default minimum flow for a <code class="xref py py-func docutils literal notranslate"><span class="pre">BaseNode()</span></code> is zero, so we don’t need to set it explicitly.</p>
+<p>The model still doesn’t do anything as it’s missing costs for flow through the nodes. If the cost of supply is less than the benefit received from satisfying demand, flow in the network will occur (within the models constraints).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># set cost (+ve) or benefit (-ve)</span>
+<span class="n">supply</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="mf">3.0</span>
+<span class="n">demand</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="o">-</span><span class="mf">100.0</span>
+</pre></div>
+</div>
+<p>Next we need to tell the model how long to run for. As an example, we’ll use a daily timestep for all of 2015.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">pywr.core</span> <span class="kn">import</span> <span class="n">Timestepper</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">timestepper</span> <span class="o">=</span> <span class="n">Timestepper</span><span class="p">(</span>
+    <span class="n">pandas</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="s1">&#39;2015-01-01&#39;</span><span class="p">),</span>  <span class="c1"># first day</span>
+    <span class="n">pandas</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="s1">&#39;2015-12-31&#39;</span><span class="p">),</span>  <span class="c1"># last day</span>
+    <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># interval</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>In order to capture the output from the model we need to use a recorder, such as the <a class="reference internal" href="api/generated/pywr.recorders.NumpyArrayNodeRecorder.html#pywr.recorders.NumpyArrayNodeRecorder" title="pywr.recorders.NumpyArrayNodeRecorder"><code class="xref py py-func docutils literal notranslate"><span class="pre">pywr.recorders.NumpyArrayNodeRecorder()</span></code></a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.recorders</span> <span class="kn">import</span> <span class="n">NumpyArrayNodeRecorder</span>
+
+<span class="n">recorder</span> <span class="o">=</span> <span class="n">NumpyArrayNodeRecorder</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">supply</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally we are ready to run our model:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># lets get this party started!</span>
+<span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We can check the result for the first timestep by accessing the recorder’s data property:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">scenario</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">timestep</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">recorder</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">scenario</span><span class="p">][</span><span class="n">timestep</span><span class="p">])</span>  <span class="c1"># prints 6.0</span>
+</pre></div>
+</div>
+<p>The result of this example model is trivial: the supply exceeds the demand, so the maximum flow at the demand is the limiting factor.</p>
+<p>The model defined about could equally have been defined in a JSON document:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;tutorial&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;minimum_version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.1&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;timestepper&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="s2">&quot;2015-01-01&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="s2">&quot;2015-12-31&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;timestep&quot;</span><span class="p">:</span> <span class="mi">1</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;supply&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Input&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;max_flow&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">&quot;cost&quot;</span><span class="p">:</span> <span class="mi">3</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;demand&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Output&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;max_flow&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="s2">&quot;cost&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">100</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">[</span><span class="s2">&quot;supply&quot;</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">]</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;recorders&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;recorder&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;NumpyArrayNodeRecorder&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;node&quot;</span><span class="p">:</span> <span class="s2">&quot;supply&quot;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The model can be loaded using the <code class="docutils literal notranslate"><span class="pre">Model.load</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># load the model</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;tutorial.json&quot;</span><span class="p">)</span>
+<span class="c1"># run, forest, run!</span>
+<span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>See further information in on JSON see the <a class="reference internal" href="json.html#json-model-format"><span class="std std-ref">JSON model format</span></a> section.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="formulation.html" class="btn btn-neutral float-right" title="Problem formulation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="install.html" class="btn btn-neutral float-left" title="Installing Pywr" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

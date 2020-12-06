@@ -1,0 +1,59 @@
+﻿pywr.recorders.NumpyArrayNodeCurtailmentRatioRecorder
+=====================================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: NumpyArrayNodeCurtailmentRatioRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~NumpyArrayNodeCurtailmentRatioRecorder.__init__
+      ~NumpyArrayNodeCurtailmentRatioRecorder.after
+      ~NumpyArrayNodeCurtailmentRatioRecorder.aggregated_value
+      ~NumpyArrayNodeCurtailmentRatioRecorder.before
+      ~NumpyArrayNodeCurtailmentRatioRecorder.finish
+      ~NumpyArrayNodeCurtailmentRatioRecorder.is_constraint_violated
+      ~NumpyArrayNodeCurtailmentRatioRecorder.load
+      ~NumpyArrayNodeCurtailmentRatioRecorder.register
+      ~NumpyArrayNodeCurtailmentRatioRecorder.reset
+      ~NumpyArrayNodeCurtailmentRatioRecorder.setup
+      ~NumpyArrayNodeCurtailmentRatioRecorder.to_dataframe
+      ~NumpyArrayNodeCurtailmentRatioRecorder.unregister
+      ~NumpyArrayNodeCurtailmentRatioRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NumpyArrayNodeCurtailmentRatioRecorder.agg_func
+      ~NumpyArrayNodeCurtailmentRatioRecorder.children
+      ~NumpyArrayNodeCurtailmentRatioRecorder.comment
+      ~NumpyArrayNodeCurtailmentRatioRecorder.constraint_lower_bounds
+      ~NumpyArrayNodeCurtailmentRatioRecorder.constraint_upper_bounds
+      ~NumpyArrayNodeCurtailmentRatioRecorder.data
+      ~NumpyArrayNodeCurtailmentRatioRecorder.epsilon
+      ~NumpyArrayNodeCurtailmentRatioRecorder.factor
+      ~NumpyArrayNodeCurtailmentRatioRecorder.ignore_nan
+      ~NumpyArrayNodeCurtailmentRatioRecorder.is_constraint
+      ~NumpyArrayNodeCurtailmentRatioRecorder.is_double_bounded_constraint
+      ~NumpyArrayNodeCurtailmentRatioRecorder.is_equality_constraint
+      ~NumpyArrayNodeCurtailmentRatioRecorder.is_lower_bounded_constraint
+      ~NumpyArrayNodeCurtailmentRatioRecorder.is_objective
+      ~NumpyArrayNodeCurtailmentRatioRecorder.is_upper_bounded_constraint
+      ~NumpyArrayNodeCurtailmentRatioRecorder.model
+      ~NumpyArrayNodeCurtailmentRatioRecorder.name
+      ~NumpyArrayNodeCurtailmentRatioRecorder.node
+      ~NumpyArrayNodeCurtailmentRatioRecorder.parents
+      ~NumpyArrayNodeCurtailmentRatioRecorder.temporal_agg_func
+   
+   

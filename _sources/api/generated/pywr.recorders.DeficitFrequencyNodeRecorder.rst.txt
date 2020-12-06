@@ -1,0 +1,55 @@
+﻿pywr.recorders.DeficitFrequencyNodeRecorder
+===========================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: DeficitFrequencyNodeRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DeficitFrequencyNodeRecorder.__init__
+      ~DeficitFrequencyNodeRecorder.after
+      ~DeficitFrequencyNodeRecorder.aggregated_value
+      ~DeficitFrequencyNodeRecorder.before
+      ~DeficitFrequencyNodeRecorder.finish
+      ~DeficitFrequencyNodeRecorder.is_constraint_violated
+      ~DeficitFrequencyNodeRecorder.load
+      ~DeficitFrequencyNodeRecorder.register
+      ~DeficitFrequencyNodeRecorder.reset
+      ~DeficitFrequencyNodeRecorder.setup
+      ~DeficitFrequencyNodeRecorder.unregister
+      ~DeficitFrequencyNodeRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DeficitFrequencyNodeRecorder.agg_func
+      ~DeficitFrequencyNodeRecorder.children
+      ~DeficitFrequencyNodeRecorder.comment
+      ~DeficitFrequencyNodeRecorder.constraint_lower_bounds
+      ~DeficitFrequencyNodeRecorder.constraint_upper_bounds
+      ~DeficitFrequencyNodeRecorder.epsilon
+      ~DeficitFrequencyNodeRecorder.ignore_nan
+      ~DeficitFrequencyNodeRecorder.is_constraint
+      ~DeficitFrequencyNodeRecorder.is_double_bounded_constraint
+      ~DeficitFrequencyNodeRecorder.is_equality_constraint
+      ~DeficitFrequencyNodeRecorder.is_lower_bounded_constraint
+      ~DeficitFrequencyNodeRecorder.is_objective
+      ~DeficitFrequencyNodeRecorder.is_upper_bounded_constraint
+      ~DeficitFrequencyNodeRecorder.model
+      ~DeficitFrequencyNodeRecorder.name
+      ~DeficitFrequencyNodeRecorder.node
+      ~DeficitFrequencyNodeRecorder.parents
+   
+   

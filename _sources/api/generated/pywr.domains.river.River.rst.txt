@@ -1,0 +1,60 @@
+﻿pywr.domains.river.River
+========================
+
+.. currentmodule:: pywr.domains.river
+
+.. autoclass:: River
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~River.__init__
+      ~River.after
+      ~River.before
+      ~River.check
+      ~River.commit
+      ~River.commit_all
+      ~River.connect
+      ~River.disconnect
+      ~River.finish
+      ~River.get_conversion_factor
+      ~River.get_cost
+      ~River.get_max_flow
+      ~River.get_min_flow
+      ~River.iter_slots
+      ~River.load
+      ~River.reset
+      ~River.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~River.allow_isolated
+      ~River.comment
+      ~River.component_attrs
+      ~River.components
+      ~River.conversion_factor
+      ~River.cost
+      ~River.domain
+      ~River.flow
+      ~River.fully_qualified_name
+      ~River.max_flow
+      ~River.min_flow
+      ~River.model
+      ~River.name
+      ~River.parent
+      ~River.prev_flow
+      ~River.recorders
+      ~River.virtual
+   
+   

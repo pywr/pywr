@@ -1,0 +1,65 @@
+﻿pywr.parameters.HydropowerTargetParameter
+=========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: HydropowerTargetParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~HydropowerTargetParameter.__init__
+      ~HydropowerTargetParameter.after
+      ~HydropowerTargetParameter.before
+      ~HydropowerTargetParameter.finish
+      ~HydropowerTargetParameter.get_all_values
+      ~HydropowerTargetParameter.get_double_lower_bounds
+      ~HydropowerTargetParameter.get_double_upper_bounds
+      ~HydropowerTargetParameter.get_double_variables
+      ~HydropowerTargetParameter.get_integer_lower_bounds
+      ~HydropowerTargetParameter.get_integer_upper_bounds
+      ~HydropowerTargetParameter.get_integer_variables
+      ~HydropowerTargetParameter.get_value
+      ~HydropowerTargetParameter.load
+      ~HydropowerTargetParameter.register
+      ~HydropowerTargetParameter.reset
+      ~HydropowerTargetParameter.set_double_variables
+      ~HydropowerTargetParameter.set_integer_variables
+      ~HydropowerTargetParameter.setup
+      ~HydropowerTargetParameter.unregister
+      ~HydropowerTargetParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~HydropowerTargetParameter.children
+      ~HydropowerTargetParameter.comment
+      ~HydropowerTargetParameter.density
+      ~HydropowerTargetParameter.double_size
+      ~HydropowerTargetParameter.efficiency
+      ~HydropowerTargetParameter.energy_unit_conversion
+      ~HydropowerTargetParameter.flow_unit_conversion
+      ~HydropowerTargetParameter.integer_size
+      ~HydropowerTargetParameter.is_variable
+      ~HydropowerTargetParameter.max_flow
+      ~HydropowerTargetParameter.min_flow
+      ~HydropowerTargetParameter.min_head
+      ~HydropowerTargetParameter.model
+      ~HydropowerTargetParameter.name
+      ~HydropowerTargetParameter.parents
+      ~HydropowerTargetParameter.size
+      ~HydropowerTargetParameter.target
+      ~HydropowerTargetParameter.turbine_elevation
+      ~HydropowerTargetParameter.water_elevation_parameter
+   
+   

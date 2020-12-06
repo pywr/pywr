@@ -1,0 +1,60 @@
+﻿pywr.domains.river.RiverSplit
+=============================
+
+.. currentmodule:: pywr.domains.river
+
+.. autoclass:: RiverSplit
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RiverSplit.__init__
+      ~RiverSplit.after
+      ~RiverSplit.before
+      ~RiverSplit.check
+      ~RiverSplit.commit
+      ~RiverSplit.commit_all
+      ~RiverSplit.connect
+      ~RiverSplit.disconnect
+      ~RiverSplit.finish
+      ~RiverSplit.get_conversion_factor
+      ~RiverSplit.get_cost
+      ~RiverSplit.get_max_flow
+      ~RiverSplit.get_min_flow
+      ~RiverSplit.iter_slots
+      ~RiverSplit.load
+      ~RiverSplit.reset
+      ~RiverSplit.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RiverSplit.allow_isolated
+      ~RiverSplit.comment
+      ~RiverSplit.component_attrs
+      ~RiverSplit.components
+      ~RiverSplit.conversion_factor
+      ~RiverSplit.cost
+      ~RiverSplit.domain
+      ~RiverSplit.flow
+      ~RiverSplit.fully_qualified_name
+      ~RiverSplit.max_flow
+      ~RiverSplit.min_flow
+      ~RiverSplit.model
+      ~RiverSplit.name
+      ~RiverSplit.parent
+      ~RiverSplit.prev_flow
+      ~RiverSplit.recorders
+      ~RiverSplit.virtual
+   
+   

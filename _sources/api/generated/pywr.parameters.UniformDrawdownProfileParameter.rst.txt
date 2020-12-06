@@ -1,0 +1,57 @@
+﻿pywr.parameters.UniformDrawdownProfileParameter
+===============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: UniformDrawdownProfileParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~UniformDrawdownProfileParameter.__init__
+      ~UniformDrawdownProfileParameter.after
+      ~UniformDrawdownProfileParameter.before
+      ~UniformDrawdownProfileParameter.finish
+      ~UniformDrawdownProfileParameter.get_all_values
+      ~UniformDrawdownProfileParameter.get_double_lower_bounds
+      ~UniformDrawdownProfileParameter.get_double_upper_bounds
+      ~UniformDrawdownProfileParameter.get_double_variables
+      ~UniformDrawdownProfileParameter.get_integer_lower_bounds
+      ~UniformDrawdownProfileParameter.get_integer_upper_bounds
+      ~UniformDrawdownProfileParameter.get_integer_variables
+      ~UniformDrawdownProfileParameter.get_value
+      ~UniformDrawdownProfileParameter.load
+      ~UniformDrawdownProfileParameter.register
+      ~UniformDrawdownProfileParameter.reset
+      ~UniformDrawdownProfileParameter.set_double_variables
+      ~UniformDrawdownProfileParameter.set_integer_variables
+      ~UniformDrawdownProfileParameter.setup
+      ~UniformDrawdownProfileParameter.unregister
+      ~UniformDrawdownProfileParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~UniformDrawdownProfileParameter.children
+      ~UniformDrawdownProfileParameter.comment
+      ~UniformDrawdownProfileParameter.double_size
+      ~UniformDrawdownProfileParameter.integer_size
+      ~UniformDrawdownProfileParameter.is_variable
+      ~UniformDrawdownProfileParameter.model
+      ~UniformDrawdownProfileParameter.name
+      ~UniformDrawdownProfileParameter.parents
+      ~UniformDrawdownProfileParameter.reset_day
+      ~UniformDrawdownProfileParameter.reset_month
+      ~UniformDrawdownProfileParameter.size
+   
+   

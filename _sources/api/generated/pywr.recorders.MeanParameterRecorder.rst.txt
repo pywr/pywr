@@ -1,0 +1,56 @@
+﻿pywr.recorders.MeanParameterRecorder
+====================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: MeanParameterRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MeanParameterRecorder.__init__
+      ~MeanParameterRecorder.after
+      ~MeanParameterRecorder.aggregated_value
+      ~MeanParameterRecorder.before
+      ~MeanParameterRecorder.finish
+      ~MeanParameterRecorder.is_constraint_violated
+      ~MeanParameterRecorder.load
+      ~MeanParameterRecorder.register
+      ~MeanParameterRecorder.reset
+      ~MeanParameterRecorder.setup
+      ~MeanParameterRecorder.unregister
+      ~MeanParameterRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MeanParameterRecorder.agg_func
+      ~MeanParameterRecorder.children
+      ~MeanParameterRecorder.comment
+      ~MeanParameterRecorder.constraint_lower_bounds
+      ~MeanParameterRecorder.constraint_upper_bounds
+      ~MeanParameterRecorder.epsilon
+      ~MeanParameterRecorder.factor
+      ~MeanParameterRecorder.ignore_nan
+      ~MeanParameterRecorder.is_constraint
+      ~MeanParameterRecorder.is_double_bounded_constraint
+      ~MeanParameterRecorder.is_equality_constraint
+      ~MeanParameterRecorder.is_lower_bounded_constraint
+      ~MeanParameterRecorder.is_objective
+      ~MeanParameterRecorder.is_upper_bounded_constraint
+      ~MeanParameterRecorder.model
+      ~MeanParameterRecorder.name
+      ~MeanParameterRecorder.parameter
+      ~MeanParameterRecorder.parents
+   
+   

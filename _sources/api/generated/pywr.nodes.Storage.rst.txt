@@ -1,0 +1,68 @@
+﻿pywr.nodes.Storage
+==================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: Storage
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Storage.__init__
+      ~Storage.after
+      ~Storage.before
+      ~Storage.check
+      ~Storage.commit
+      ~Storage.commit_all
+      ~Storage.connect
+      ~Storage.disconnect
+      ~Storage.finish
+      ~Storage.get_area
+      ~Storage.get_cost
+      ~Storage.get_initial_pc
+      ~Storage.get_initial_volume
+      ~Storage.get_level
+      ~Storage.get_max_volume
+      ~Storage.get_min_volume
+      ~Storage.iter_slots
+      ~Storage.load
+      ~Storage.reset
+      ~Storage.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Storage.allow_isolated
+      ~Storage.area
+      ~Storage.comment
+      ~Storage.component_attrs
+      ~Storage.components
+      ~Storage.cost
+      ~Storage.current_pc
+      ~Storage.domain
+      ~Storage.flow
+      ~Storage.fully_qualified_name
+      ~Storage.initial_volume
+      ~Storage.initial_volume_pc
+      ~Storage.level
+      ~Storage.max_volume
+      ~Storage.min_volume
+      ~Storage.model
+      ~Storage.name
+      ~Storage.parent
+      ~Storage.prev_flow
+      ~Storage.recorders
+      ~Storage.virtual
+      ~Storage.volume
+   
+   

@@ -1,0 +1,55 @@
+﻿pywr.parameters.ArrayIndexedScenarioParameter
+=============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: ArrayIndexedScenarioParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ArrayIndexedScenarioParameter.__init__
+      ~ArrayIndexedScenarioParameter.after
+      ~ArrayIndexedScenarioParameter.before
+      ~ArrayIndexedScenarioParameter.finish
+      ~ArrayIndexedScenarioParameter.get_all_values
+      ~ArrayIndexedScenarioParameter.get_double_lower_bounds
+      ~ArrayIndexedScenarioParameter.get_double_upper_bounds
+      ~ArrayIndexedScenarioParameter.get_double_variables
+      ~ArrayIndexedScenarioParameter.get_integer_lower_bounds
+      ~ArrayIndexedScenarioParameter.get_integer_upper_bounds
+      ~ArrayIndexedScenarioParameter.get_integer_variables
+      ~ArrayIndexedScenarioParameter.get_value
+      ~ArrayIndexedScenarioParameter.load
+      ~ArrayIndexedScenarioParameter.register
+      ~ArrayIndexedScenarioParameter.reset
+      ~ArrayIndexedScenarioParameter.set_double_variables
+      ~ArrayIndexedScenarioParameter.set_integer_variables
+      ~ArrayIndexedScenarioParameter.setup
+      ~ArrayIndexedScenarioParameter.unregister
+      ~ArrayIndexedScenarioParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ArrayIndexedScenarioParameter.children
+      ~ArrayIndexedScenarioParameter.comment
+      ~ArrayIndexedScenarioParameter.double_size
+      ~ArrayIndexedScenarioParameter.integer_size
+      ~ArrayIndexedScenarioParameter.is_variable
+      ~ArrayIndexedScenarioParameter.model
+      ~ArrayIndexedScenarioParameter.name
+      ~ArrayIndexedScenarioParameter.parents
+      ~ArrayIndexedScenarioParameter.size
+   
+   

@@ -1,0 +1,60 @@
+﻿pywr.nodes.BreakLink
+====================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: BreakLink
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~BreakLink.__init__
+      ~BreakLink.after
+      ~BreakLink.before
+      ~BreakLink.check
+      ~BreakLink.commit
+      ~BreakLink.commit_all
+      ~BreakLink.connect
+      ~BreakLink.disconnect
+      ~BreakLink.finish
+      ~BreakLink.get_conversion_factor
+      ~BreakLink.get_cost
+      ~BreakLink.get_max_flow
+      ~BreakLink.get_min_flow
+      ~BreakLink.iter_slots
+      ~BreakLink.load
+      ~BreakLink.reset
+      ~BreakLink.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~BreakLink.allow_isolated
+      ~BreakLink.comment
+      ~BreakLink.component_attrs
+      ~BreakLink.components
+      ~BreakLink.conversion_factor
+      ~BreakLink.cost
+      ~BreakLink.domain
+      ~BreakLink.flow
+      ~BreakLink.fully_qualified_name
+      ~BreakLink.max_flow
+      ~BreakLink.min_flow
+      ~BreakLink.model
+      ~BreakLink.name
+      ~BreakLink.parent
+      ~BreakLink.prev_flow
+      ~BreakLink.recorders
+      ~BreakLink.virtual
+   
+   

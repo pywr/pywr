@@ -1,0 +1,63 @@
+﻿pywr.parameters.TablesArrayParameter
+====================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: TablesArrayParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TablesArrayParameter.__init__
+      ~TablesArrayParameter.after
+      ~TablesArrayParameter.before
+      ~TablesArrayParameter.finish
+      ~TablesArrayParameter.get_all_indices
+      ~TablesArrayParameter.get_all_values
+      ~TablesArrayParameter.get_double_lower_bounds
+      ~TablesArrayParameter.get_double_upper_bounds
+      ~TablesArrayParameter.get_double_variables
+      ~TablesArrayParameter.get_index
+      ~TablesArrayParameter.get_integer_lower_bounds
+      ~TablesArrayParameter.get_integer_upper_bounds
+      ~TablesArrayParameter.get_integer_variables
+      ~TablesArrayParameter.get_value
+      ~TablesArrayParameter.index
+      ~TablesArrayParameter.load
+      ~TablesArrayParameter.register
+      ~TablesArrayParameter.reset
+      ~TablesArrayParameter.set_double_variables
+      ~TablesArrayParameter.set_integer_variables
+      ~TablesArrayParameter.setup
+      ~TablesArrayParameter.unregister
+      ~TablesArrayParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TablesArrayParameter.children
+      ~TablesArrayParameter.comment
+      ~TablesArrayParameter.double_size
+      ~TablesArrayParameter.h5file
+      ~TablesArrayParameter.h5store
+      ~TablesArrayParameter.integer_size
+      ~TablesArrayParameter.is_variable
+      ~TablesArrayParameter.model
+      ~TablesArrayParameter.name
+      ~TablesArrayParameter.node
+      ~TablesArrayParameter.parents
+      ~TablesArrayParameter.scenario
+      ~TablesArrayParameter.size
+      ~TablesArrayParameter.where
+   
+   

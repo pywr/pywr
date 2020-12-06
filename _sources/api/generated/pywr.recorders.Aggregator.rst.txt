@@ -1,0 +1,32 @@
+﻿pywr.recorders.Aggregator
+=========================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: Aggregator
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Aggregator.__init__
+      ~Aggregator.aggregate_1d
+      ~Aggregator.aggregate_2d
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Aggregator.func
+      ~Aggregator.func_args
+      ~Aggregator.func_kwargs
+   
+   

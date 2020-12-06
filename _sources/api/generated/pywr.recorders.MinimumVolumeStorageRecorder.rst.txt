@@ -1,0 +1,55 @@
+﻿pywr.recorders.MinimumVolumeStorageRecorder
+===========================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: MinimumVolumeStorageRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MinimumVolumeStorageRecorder.__init__
+      ~MinimumVolumeStorageRecorder.after
+      ~MinimumVolumeStorageRecorder.aggregated_value
+      ~MinimumVolumeStorageRecorder.before
+      ~MinimumVolumeStorageRecorder.finish
+      ~MinimumVolumeStorageRecorder.is_constraint_violated
+      ~MinimumVolumeStorageRecorder.load
+      ~MinimumVolumeStorageRecorder.register
+      ~MinimumVolumeStorageRecorder.reset
+      ~MinimumVolumeStorageRecorder.setup
+      ~MinimumVolumeStorageRecorder.unregister
+      ~MinimumVolumeStorageRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MinimumVolumeStorageRecorder.agg_func
+      ~MinimumVolumeStorageRecorder.children
+      ~MinimumVolumeStorageRecorder.comment
+      ~MinimumVolumeStorageRecorder.constraint_lower_bounds
+      ~MinimumVolumeStorageRecorder.constraint_upper_bounds
+      ~MinimumVolumeStorageRecorder.epsilon
+      ~MinimumVolumeStorageRecorder.ignore_nan
+      ~MinimumVolumeStorageRecorder.is_constraint
+      ~MinimumVolumeStorageRecorder.is_double_bounded_constraint
+      ~MinimumVolumeStorageRecorder.is_equality_constraint
+      ~MinimumVolumeStorageRecorder.is_lower_bounded_constraint
+      ~MinimumVolumeStorageRecorder.is_objective
+      ~MinimumVolumeStorageRecorder.is_upper_bounded_constraint
+      ~MinimumVolumeStorageRecorder.model
+      ~MinimumVolumeStorageRecorder.name
+      ~MinimumVolumeStorageRecorder.node
+      ~MinimumVolumeStorageRecorder.parents
+   
+   

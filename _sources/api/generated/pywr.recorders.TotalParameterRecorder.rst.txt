@@ -1,0 +1,57 @@
+﻿pywr.recorders.TotalParameterRecorder
+=====================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: TotalParameterRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TotalParameterRecorder.__init__
+      ~TotalParameterRecorder.after
+      ~TotalParameterRecorder.aggregated_value
+      ~TotalParameterRecorder.before
+      ~TotalParameterRecorder.finish
+      ~TotalParameterRecorder.is_constraint_violated
+      ~TotalParameterRecorder.load
+      ~TotalParameterRecorder.register
+      ~TotalParameterRecorder.reset
+      ~TotalParameterRecorder.setup
+      ~TotalParameterRecorder.unregister
+      ~TotalParameterRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TotalParameterRecorder.agg_func
+      ~TotalParameterRecorder.children
+      ~TotalParameterRecorder.comment
+      ~TotalParameterRecorder.constraint_lower_bounds
+      ~TotalParameterRecorder.constraint_upper_bounds
+      ~TotalParameterRecorder.epsilon
+      ~TotalParameterRecorder.factor
+      ~TotalParameterRecorder.ignore_nan
+      ~TotalParameterRecorder.integrate
+      ~TotalParameterRecorder.is_constraint
+      ~TotalParameterRecorder.is_double_bounded_constraint
+      ~TotalParameterRecorder.is_equality_constraint
+      ~TotalParameterRecorder.is_lower_bounded_constraint
+      ~TotalParameterRecorder.is_objective
+      ~TotalParameterRecorder.is_upper_bounded_constraint
+      ~TotalParameterRecorder.model
+      ~TotalParameterRecorder.name
+      ~TotalParameterRecorder.parameter
+      ~TotalParameterRecorder.parents
+   
+   

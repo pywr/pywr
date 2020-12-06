@@ -1,0 +1,59 @@
+﻿pywr.recorders.RollingWindowParameterRecorder
+=============================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: RollingWindowParameterRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RollingWindowParameterRecorder.__init__
+      ~RollingWindowParameterRecorder.after
+      ~RollingWindowParameterRecorder.aggregated_value
+      ~RollingWindowParameterRecorder.before
+      ~RollingWindowParameterRecorder.finish
+      ~RollingWindowParameterRecorder.is_constraint_violated
+      ~RollingWindowParameterRecorder.load
+      ~RollingWindowParameterRecorder.register
+      ~RollingWindowParameterRecorder.reset
+      ~RollingWindowParameterRecorder.setup
+      ~RollingWindowParameterRecorder.to_dataframe
+      ~RollingWindowParameterRecorder.unregister
+      ~RollingWindowParameterRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RollingWindowParameterRecorder.agg_func
+      ~RollingWindowParameterRecorder.children
+      ~RollingWindowParameterRecorder.comment
+      ~RollingWindowParameterRecorder.constraint_lower_bounds
+      ~RollingWindowParameterRecorder.constraint_upper_bounds
+      ~RollingWindowParameterRecorder.data
+      ~RollingWindowParameterRecorder.epsilon
+      ~RollingWindowParameterRecorder.ignore_nan
+      ~RollingWindowParameterRecorder.is_constraint
+      ~RollingWindowParameterRecorder.is_double_bounded_constraint
+      ~RollingWindowParameterRecorder.is_equality_constraint
+      ~RollingWindowParameterRecorder.is_lower_bounded_constraint
+      ~RollingWindowParameterRecorder.is_objective
+      ~RollingWindowParameterRecorder.is_upper_bounded_constraint
+      ~RollingWindowParameterRecorder.model
+      ~RollingWindowParameterRecorder.name
+      ~RollingWindowParameterRecorder.parameter
+      ~RollingWindowParameterRecorder.parents
+      ~RollingWindowParameterRecorder.temporal_agg_func
+      ~RollingWindowParameterRecorder.window
+   
+   

@@ -1,0 +1,29 @@
+﻿pywr.core.ScenarioIndex
+=======================
+
+.. currentmodule:: pywr.core
+
+.. autoclass:: ScenarioIndex
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ScenarioIndex.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ScenarioIndex.global_id
+      ~ScenarioIndex.indices
+   
+   

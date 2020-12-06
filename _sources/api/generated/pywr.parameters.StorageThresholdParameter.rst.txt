@@ -1,0 +1,61 @@
+﻿pywr.parameters.StorageThresholdParameter
+=========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: StorageThresholdParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~StorageThresholdParameter.__init__
+      ~StorageThresholdParameter.after
+      ~StorageThresholdParameter.before
+      ~StorageThresholdParameter.finish
+      ~StorageThresholdParameter.get_all_indices
+      ~StorageThresholdParameter.get_all_values
+      ~StorageThresholdParameter.get_double_lower_bounds
+      ~StorageThresholdParameter.get_double_upper_bounds
+      ~StorageThresholdParameter.get_double_variables
+      ~StorageThresholdParameter.get_index
+      ~StorageThresholdParameter.get_integer_lower_bounds
+      ~StorageThresholdParameter.get_integer_upper_bounds
+      ~StorageThresholdParameter.get_integer_variables
+      ~StorageThresholdParameter.get_value
+      ~StorageThresholdParameter.index
+      ~StorageThresholdParameter.load
+      ~StorageThresholdParameter.register
+      ~StorageThresholdParameter.reset
+      ~StorageThresholdParameter.set_double_variables
+      ~StorageThresholdParameter.set_integer_variables
+      ~StorageThresholdParameter.setup
+      ~StorageThresholdParameter.unregister
+      ~StorageThresholdParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~StorageThresholdParameter.children
+      ~StorageThresholdParameter.comment
+      ~StorageThresholdParameter.double_size
+      ~StorageThresholdParameter.integer_size
+      ~StorageThresholdParameter.is_variable
+      ~StorageThresholdParameter.model
+      ~StorageThresholdParameter.name
+      ~StorageThresholdParameter.parents
+      ~StorageThresholdParameter.ratchet
+      ~StorageThresholdParameter.size
+      ~StorageThresholdParameter.storage
+      ~StorageThresholdParameter.threshold
+   
+   

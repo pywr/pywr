@@ -1,0 +1,57 @@
+﻿pywr.parameters.control\_curves.BaseControlCurveParameter
+=========================================================
+
+.. currentmodule:: pywr.parameters.control_curves
+
+.. autoclass:: BaseControlCurveParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~BaseControlCurveParameter.__init__
+      ~BaseControlCurveParameter.after
+      ~BaseControlCurveParameter.before
+      ~BaseControlCurveParameter.finish
+      ~BaseControlCurveParameter.get_all_values
+      ~BaseControlCurveParameter.get_double_lower_bounds
+      ~BaseControlCurveParameter.get_double_upper_bounds
+      ~BaseControlCurveParameter.get_double_variables
+      ~BaseControlCurveParameter.get_integer_lower_bounds
+      ~BaseControlCurveParameter.get_integer_upper_bounds
+      ~BaseControlCurveParameter.get_integer_variables
+      ~BaseControlCurveParameter.get_value
+      ~BaseControlCurveParameter.load
+      ~BaseControlCurveParameter.register
+      ~BaseControlCurveParameter.reset
+      ~BaseControlCurveParameter.set_double_variables
+      ~BaseControlCurveParameter.set_integer_variables
+      ~BaseControlCurveParameter.setup
+      ~BaseControlCurveParameter.unregister
+      ~BaseControlCurveParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~BaseControlCurveParameter.children
+      ~BaseControlCurveParameter.comment
+      ~BaseControlCurveParameter.control_curves
+      ~BaseControlCurveParameter.double_size
+      ~BaseControlCurveParameter.integer_size
+      ~BaseControlCurveParameter.is_variable
+      ~BaseControlCurveParameter.model
+      ~BaseControlCurveParameter.name
+      ~BaseControlCurveParameter.parents
+      ~BaseControlCurveParameter.size
+      ~BaseControlCurveParameter.storage_node
+   
+   

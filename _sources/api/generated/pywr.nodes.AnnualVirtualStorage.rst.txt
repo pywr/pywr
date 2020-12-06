@@ -1,0 +1,68 @@
+﻿pywr.nodes.AnnualVirtualStorage
+===============================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: AnnualVirtualStorage
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AnnualVirtualStorage.__init__
+      ~AnnualVirtualStorage.after
+      ~AnnualVirtualStorage.before
+      ~AnnualVirtualStorage.check
+      ~AnnualVirtualStorage.commit
+      ~AnnualVirtualStorage.commit_all
+      ~AnnualVirtualStorage.finish
+      ~AnnualVirtualStorage.get_area
+      ~AnnualVirtualStorage.get_cost
+      ~AnnualVirtualStorage.get_initial_pc
+      ~AnnualVirtualStorage.get_initial_volume
+      ~AnnualVirtualStorage.get_level
+      ~AnnualVirtualStorage.get_max_volume
+      ~AnnualVirtualStorage.get_min_volume
+      ~AnnualVirtualStorage.load
+      ~AnnualVirtualStorage.reset
+      ~AnnualVirtualStorage.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AnnualVirtualStorage.active
+      ~AnnualVirtualStorage.allow_isolated
+      ~AnnualVirtualStorage.area
+      ~AnnualVirtualStorage.comment
+      ~AnnualVirtualStorage.component_attrs
+      ~AnnualVirtualStorage.components
+      ~AnnualVirtualStorage.cost
+      ~AnnualVirtualStorage.current_pc
+      ~AnnualVirtualStorage.domain
+      ~AnnualVirtualStorage.factors
+      ~AnnualVirtualStorage.flow
+      ~AnnualVirtualStorage.fully_qualified_name
+      ~AnnualVirtualStorage.initial_volume
+      ~AnnualVirtualStorage.initial_volume_pc
+      ~AnnualVirtualStorage.level
+      ~AnnualVirtualStorage.max_volume
+      ~AnnualVirtualStorage.min_volume
+      ~AnnualVirtualStorage.model
+      ~AnnualVirtualStorage.name
+      ~AnnualVirtualStorage.nodes
+      ~AnnualVirtualStorage.parent
+      ~AnnualVirtualStorage.prev_flow
+      ~AnnualVirtualStorage.recorders
+      ~AnnualVirtualStorage.virtual
+      ~AnnualVirtualStorage.volume
+   
+   

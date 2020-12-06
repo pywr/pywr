@@ -1,0 +1,61 @@
+﻿pywr.parameters.ParameterThresholdParameter
+===========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: ParameterThresholdParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ParameterThresholdParameter.__init__
+      ~ParameterThresholdParameter.after
+      ~ParameterThresholdParameter.before
+      ~ParameterThresholdParameter.finish
+      ~ParameterThresholdParameter.get_all_indices
+      ~ParameterThresholdParameter.get_all_values
+      ~ParameterThresholdParameter.get_double_lower_bounds
+      ~ParameterThresholdParameter.get_double_upper_bounds
+      ~ParameterThresholdParameter.get_double_variables
+      ~ParameterThresholdParameter.get_index
+      ~ParameterThresholdParameter.get_integer_lower_bounds
+      ~ParameterThresholdParameter.get_integer_upper_bounds
+      ~ParameterThresholdParameter.get_integer_variables
+      ~ParameterThresholdParameter.get_value
+      ~ParameterThresholdParameter.index
+      ~ParameterThresholdParameter.load
+      ~ParameterThresholdParameter.register
+      ~ParameterThresholdParameter.reset
+      ~ParameterThresholdParameter.set_double_variables
+      ~ParameterThresholdParameter.set_integer_variables
+      ~ParameterThresholdParameter.setup
+      ~ParameterThresholdParameter.unregister
+      ~ParameterThresholdParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ParameterThresholdParameter.children
+      ~ParameterThresholdParameter.comment
+      ~ParameterThresholdParameter.double_size
+      ~ParameterThresholdParameter.integer_size
+      ~ParameterThresholdParameter.is_variable
+      ~ParameterThresholdParameter.model
+      ~ParameterThresholdParameter.name
+      ~ParameterThresholdParameter.param
+      ~ParameterThresholdParameter.parents
+      ~ParameterThresholdParameter.ratchet
+      ~ParameterThresholdParameter.size
+      ~ParameterThresholdParameter.threshold
+   
+   

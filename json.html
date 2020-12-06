@@ -1,0 +1,463 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>JSON model format &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Pywr cookbook examples" href="cookbook/cookbook.html" />
+    <link rel="prev" title="Problem formulation" href="formulation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="formulation.html">Problem formulation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">JSON model format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview-of-document-structure">Overview of document structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metadata">Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#timestepper">Timestepper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#solver">Solver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nodes">Nodes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#non-storage-nodes">Non-storage nodes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#storage-nodes">Storage nodes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#edges">Edges</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loading-a-json-document">Loading a JSON document</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#debugging-and-syntax-errors">Debugging and syntax errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#footnotes">Footnotes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending_pywr/index.html">Extending Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/pywr.html">Python API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>JSON model format</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/json.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="json-model-format">
+<span id="id1"></span><h1>JSON model format<a class="headerlink" href="#json-model-format" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview-of-document-structure">
+<h2>Overview of document structure<a class="headerlink" href="#overview-of-document-structure" title="Permalink to this headline">¶</a></h2>
+<p>In addition to creating models programmatically using the Python API, models can be described in a JSON (JavaScript Object Notation) document <a class="footnote-reference brackets" href="#id3" id="id2">1</a>.</p>
+<p>The overall structure of the model is given below. A description of the contents of each of the first level items is given in this document. The most important are the <a class="reference internal" href="#nodes">nodes</a> and <a class="reference internal" href="#edges">edges</a> sections.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="nt">&quot;timestepper&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="nt">&quot;solver&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="nt">&quot;nodes&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="nt">&quot;edges&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Some examples of JSON models can be found in the <a class="reference external" href="https://github.com/pywr/pywr/tree/master/tests/models">tests/models</a> folder.</p>
+</div>
+<div class="section" id="metadata">
+<h2>Metadata<a class="headerlink" href="#metadata" title="Permalink to this headline">¶</a></h2>
+<p>The metadata section includes information about the model as key-value pairs. It is expected as a minimum to include a <code class="docutils literal notranslate"><span class="pre">&quot;title&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;description&quot;</span></code> and may additionally include keys such as <code class="docutils literal notranslate"><span class="pre">&quot;author&quot;</span></code>.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Example&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;An example for the documentation&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;author&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span>
+<span class="p">}}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="timestepper">
+<h2>Timestepper<a class="headerlink" href="#timestepper" title="Permalink to this headline">¶</a></h2>
+<p>The timestepper defines the period a model is run for and the timestep used. It corresponds directly to the <code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.core.Timestepper</span></code> instance on the model. It has three properties: the start date, end date and timestep.</p>
+<p>The example below describes a model that will run from 1st January 2016 to 31st December 2016 using a 7 day timestep.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;timestepper&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;start&quot;</span><span class="p">:</span> <span class="s2">&quot;2016-01-01&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;end&quot;</span><span class="p">:</span> <span class="s2">&quot;2016-12-31&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;timestep&quot;</span><span class="p">:</span> <span class="mi">7</span>
+<span class="p">}}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="solver">
+<h2>Solver<a class="headerlink" href="#solver" title="Permalink to this headline">¶</a></h2>
+<p>The solver section contains items to be passed to the solver. The only required item is the name of the solver to use. Other items will be specific to the solver.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;solver&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;glpk&quot;</span>
+<span class="p">}}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="nodes">
+<h2>Nodes<a class="headerlink" href="#nodes" title="Permalink to this headline">¶</a></h2>
+<p>The nodes section describes the nodes in the model. As a minimum a node must have a <code class="docutils literal notranslate"><span class="pre">name</span></code> and a <code class="docutils literal notranslate"><span class="pre">type</span></code>. There are two fundamental types of node in Pywr (<code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.core.Node</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.core.Storage</span></code>) which have different properties.</p>
+<p>Where a parameter can be described as a simple scalar value it is sufficient to pass the value directly (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;cost&quot;:</span> <span class="pre">10.0</span></code>). See also the <a class="reference internal" href="#parameters">parameters</a> section for details on defining non-scalar parameters.</p>
+<div class="section" id="non-storage-nodes">
+<h3>Non-storage nodes<a class="headerlink" href="#non-storage-nodes" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">Node</span></code> type and it’s subtypes have a <code class="docutils literal notranslate"><span class="pre">max_flow</span></code> and <code class="docutils literal notranslate"><span class="pre">cost</span></code> property, both of which have default values.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;groundwater&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;max_flow&quot;</span><span class="p">:</span> <span class="mf">23.0</span><span class="p">,</span>
+        <span class="nt">&quot;cost&quot;</span><span class="p">:</span> <span class="mf">10.0</span>
+    <span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>In addition to the basic <code class="docutils literal notranslate"><span class="pre">input</span></code>, <code class="docutils literal notranslate"><span class="pre">output</span></code> and <code class="docutils literal notranslate"><span class="pre">link</span></code> types, subtypes can be created by specifying the appropriate name. Some subtypes will provide additional properties; often these correspond directly to the keyword arguments of the class. For example, a river gauge which has a soft MRF constraint is demonstrated below. The <code class="docutils literal notranslate"><span class="pre">&quot;mrf&quot;</span></code> property is the minimum residual flow required, the <code class="docutils literal notranslate"><span class="pre">&quot;mrf_cost&quot;</span></code> is the cost applied to that minimum flow, and the <code class="docutils literal notranslate"><span class="pre">&quot;cost&quot;</span></code> property is the cost associated with the residual flow.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Teddington GS&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;rivergauge&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;mrf&quot;</span><span class="p">:</span> <span class="mf">200.0</span><span class="p">,</span>
+        <span class="nt">&quot;cost&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="nt">&quot;mrf_cost&quot;</span><span class="p">:</span> <span class="mf">-1000.0</span>
+    <span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="storage-nodes">
+<h3>Storage nodes<a class="headerlink" href="#storage-nodes" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">Storage</span></code> type and it’s subtypes have a <code class="docutils literal notranslate"><span class="pre">max_volume</span></code>, <code class="docutils literal notranslate"><span class="pre">min_volume</span></code> and <code class="docutils literal notranslate"><span class="pre">initial_volume</span></code>, as well as <code class="docutils literal notranslate"><span class="pre">num_inputs</span></code> and <code class="docutils literal notranslate"><span class="pre">num_outputs</span></code>. The maximum and initial volumes must be specified, whereas the others have default values.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Big Wet Lake&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;storage&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;max_volume&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="nt">&quot;initial_volume&quot;</span><span class="p">:</span> <span class="mi">700</span><span class="p">,</span>
+        <span class="nt">&quot;min_volume&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;num_inputs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="nt">&quot;num_outputs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="nt">&quot;cost&quot;</span><span class="p">:</span> <span class="mf">-10.0</span>
+    <span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>When defining a storage node with multiple inputs or outputs connections need to be made using the slot notation (discussed in the <a class="reference internal" href="#edges">edges</a> section).</p>
+</div>
+</div>
+<div class="section" id="edges">
+<h2>Edges<a class="headerlink" href="#edges" title="Permalink to this headline">¶</a></h2>
+<p>The edges section describes the connections between nodes. As a minimum an edge is defined as a two-item list containing the names of the nodes to connect (given in the order corresponding to the direction of flow), e.g.:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">[</span><span class="s2">&quot;supply&quot;</span><span class="p">,</span> <span class="s2">&quot;intermediate&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;intermediate&quot;</span><span class="p">,</span> <span class="s2">&quot;demand&quot;</span><span class="p">]</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Additionally the to and from slots can be specified. For example the code below connects <cite>reservoirA</cite> slot 2 to <cite>reservoirB</cite> slot 3.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">[</span><span class="s2">&quot;reservoirA&quot;</span><span class="p">,</span> <span class="s2">&quot;reservoirB&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes it is convenient to define a <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> used in the model in the <code class="docutils literal notranslate"><span class="pre">&quot;parameters&quot;</span></code> section instead of inside a node, for instance if the parameter is needed by more than one node.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;nodes&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;groundwater&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;max_flow&quot;</span><span class="p">:</span> <span class="s2">&quot;gw_flow&quot;</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gw_flow&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="mf">23.0</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Parameters can be more complicated than simple scalar values. For instance, a time varying parameter can be defined using a monthly or daily profile which repeats each year.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;mrf_profile&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;monthlyprofile&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Instead of defining the data inline using the <code class="docutils literal notranslate"><span class="pre">&quot;values&quot;</span></code> property, external data can be referenced as below. The URL should be relative to the JSON document <em>not</em> the current working directory.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;catchment_inflow&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;data/catchmod_outputs_v2.csv&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;column&quot;</span><span class="p">:</span> <span class="s2">&quot;Flow&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;index_col&quot;</span><span class="p">:</span> <span class="s2">&quot;Date&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;parse_dates&quot;</span><span class="p">:</span> <span class="kc">true</span>
+    <span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="loading-a-json-document">
+<h2>Loading a JSON document<a class="headerlink" href="#loading-a-json-document" title="Permalink to this headline">¶</a></h2>
+<p>A Pywr JSON document can be loaded into a <cite>Model</cite> instance by using the <cite>Model.load</cite> class-method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.model</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="n">my_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;/path/to/my_model.json&#39;</span><span class="p">)</span>
+<span class="n">my_model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Once a model is loaded if a reference to an actual node is required, using .get …</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">node</span> <span class="o">=</span> <span class="n">my_model</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;River Thames&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">node</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_flow: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">max_flow</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Not found&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>… or try-except is preferable to avoid searching twice.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s2">&quot;River Thames&quot;</span><span class="p">]</span>
+<span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Not found&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_flow: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">max_flow</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It is also possible to test for node and component membership using their names:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="s2">&quot;River Thames&quot;</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">nodes</span>
+<span class="k">assert</span> <span class="s2">&quot;Demand&quot;</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="debugging-and-syntax-errors">
+<h2>Debugging and syntax errors<a class="headerlink" href="#debugging-and-syntax-errors" title="Permalink to this headline">¶</a></h2>
+<p>The JSON format is not sensitive to white space but is otherwise quite strict. When the <cite>json</cite> module fails to parse a document an exception will be raised. The exception includes a (somewhat cryptic) description of the problem and usefully includes a line number (see example below).</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+  File <span class="nb">&quot;/Users/snorf/Desktop/pywr/pywr/core.py&quot;</span>, line <span class="m">316</span>, in <span class="n">loads</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+  File <span class="nb">&quot;/Users/snorf/miniconda3/envs/pywr/lib/python3.4/json/__init__.py&quot;</span>, line <span class="m">318</span>, in <span class="n">loads</span>
+    <span class="k">return</span> <span class="n">_default_decoder</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+  File <span class="nb">&quot;/Users/snorf/miniconda3/envs/pywr/lib/python3.4/json/decoder.py&quot;</span>, line <span class="m">343</span>, in <span class="n">decode</span>
+    <span class="n">obj</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_decode</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">_w</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">end</span><span class="p">())</span>
+  File <span class="nb">&quot;/Users/snorf/miniconda3/envs/pywr/lib/python3.4/json/decoder.py&quot;</span>, line <span class="m">359</span>, in <span class="n">raw_decode</span>
+    <span class="n">obj</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_once</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+<span class="gr">ValueError</span>: <span class="n">Expecting property name enclosed in double quotes: line 17 column 9 (char 372)</span>
+</pre></div>
+</div>
+<p>Common mistakes when writing JSON documents “by hand” include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Trailing commas at the end of a list (<code class="docutils literal notranslate"><span class="pre">[&quot;like&quot;,</span> <span class="pre">&quot;this&quot;,]</span></code>)</p></li>
+<li><p>Strings not enclosed in quotes (<code class="docutils literal notranslate"><span class="pre">name</span></code> instead of <code class="docutils literal notranslate"><span class="pre">&quot;name&quot;</span></code>)</p></li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="footnotes">
+<h2>Footnotes<a class="headerlink" href="#footnotes" title="Permalink to this headline">¶</a></h2>
+<dl class="footnote brackets">
+<dt class="label" id="id3"><span class="brackets"><a class="fn-backref" href="#id2">1</a></span></dt>
+<dd><p>In fact the model can be represented as a hierarchy of basic Python types, which can be conveniently parsed from a JSON document. Alternative formats are possible; for example, a YAML (Yet Another Markup Language) document as it can be translated to/from JSON losslessly.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="cookbook/cookbook.html" class="btn btn-neutral float-right" title="Pywr cookbook examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="formulation.html" class="btn btn-neutral float-left" title="Problem formulation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

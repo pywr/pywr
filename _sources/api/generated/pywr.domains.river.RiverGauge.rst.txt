@@ -1,0 +1,62 @@
+﻿pywr.domains.river.RiverGauge
+=============================
+
+.. currentmodule:: pywr.domains.river
+
+.. autoclass:: RiverGauge
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RiverGauge.__init__
+      ~RiverGauge.after
+      ~RiverGauge.before
+      ~RiverGauge.check
+      ~RiverGauge.commit
+      ~RiverGauge.commit_all
+      ~RiverGauge.connect
+      ~RiverGauge.disconnect
+      ~RiverGauge.finish
+      ~RiverGauge.get_conversion_factor
+      ~RiverGauge.get_cost
+      ~RiverGauge.get_max_flow
+      ~RiverGauge.get_min_flow
+      ~RiverGauge.iter_slots
+      ~RiverGauge.load
+      ~RiverGauge.reset
+      ~RiverGauge.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RiverGauge.allow_isolated
+      ~RiverGauge.comment
+      ~RiverGauge.component_attrs
+      ~RiverGauge.components
+      ~RiverGauge.conversion_factor
+      ~RiverGauge.cost
+      ~RiverGauge.domain
+      ~RiverGauge.flow
+      ~RiverGauge.fully_qualified_name
+      ~RiverGauge.max_flow
+      ~RiverGauge.min_flow
+      ~RiverGauge.model
+      ~RiverGauge.mrf
+      ~RiverGauge.mrf_cost
+      ~RiverGauge.name
+      ~RiverGauge.parent
+      ~RiverGauge.prev_flow
+      ~RiverGauge.recorders
+      ~RiverGauge.virtual
+   
+   

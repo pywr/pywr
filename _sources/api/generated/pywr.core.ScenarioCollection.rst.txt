@@ -1,0 +1,39 @@
+﻿pywr.core.ScenarioCollection
+============================
+
+.. currentmodule:: pywr.core
+
+.. autoclass:: ScenarioCollection
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ScenarioCollection.__init__
+      ~ScenarioCollection.add_scenario
+      ~ScenarioCollection.get_combinations
+      ~ScenarioCollection.get_scenario_index
+      ~ScenarioCollection.ravel_indices
+      ~ScenarioCollection.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ScenarioCollection.combination_names
+      ~ScenarioCollection.combinations
+      ~ScenarioCollection.model
+      ~ScenarioCollection.multiindex
+      ~ScenarioCollection.scenarios
+      ~ScenarioCollection.shape
+      ~ScenarioCollection.user_combinations
+   
+   

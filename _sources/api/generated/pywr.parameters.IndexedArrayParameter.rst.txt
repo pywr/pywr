@@ -1,0 +1,57 @@
+﻿pywr.parameters.IndexedArrayParameter
+=====================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: IndexedArrayParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~IndexedArrayParameter.__init__
+      ~IndexedArrayParameter.after
+      ~IndexedArrayParameter.before
+      ~IndexedArrayParameter.finish
+      ~IndexedArrayParameter.get_all_values
+      ~IndexedArrayParameter.get_double_lower_bounds
+      ~IndexedArrayParameter.get_double_upper_bounds
+      ~IndexedArrayParameter.get_double_variables
+      ~IndexedArrayParameter.get_integer_lower_bounds
+      ~IndexedArrayParameter.get_integer_upper_bounds
+      ~IndexedArrayParameter.get_integer_variables
+      ~IndexedArrayParameter.get_value
+      ~IndexedArrayParameter.load
+      ~IndexedArrayParameter.register
+      ~IndexedArrayParameter.reset
+      ~IndexedArrayParameter.set_double_variables
+      ~IndexedArrayParameter.set_integer_variables
+      ~IndexedArrayParameter.setup
+      ~IndexedArrayParameter.unregister
+      ~IndexedArrayParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~IndexedArrayParameter.children
+      ~IndexedArrayParameter.comment
+      ~IndexedArrayParameter.double_size
+      ~IndexedArrayParameter.index_parameter
+      ~IndexedArrayParameter.integer_size
+      ~IndexedArrayParameter.is_variable
+      ~IndexedArrayParameter.model
+      ~IndexedArrayParameter.name
+      ~IndexedArrayParameter.params
+      ~IndexedArrayParameter.parents
+      ~IndexedArrayParameter.size
+   
+   

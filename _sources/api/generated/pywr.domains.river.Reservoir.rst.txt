@@ -1,0 +1,68 @@
+﻿pywr.domains.river.Reservoir
+============================
+
+.. currentmodule:: pywr.domains.river
+
+.. autoclass:: Reservoir
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Reservoir.__init__
+      ~Reservoir.after
+      ~Reservoir.before
+      ~Reservoir.check
+      ~Reservoir.commit
+      ~Reservoir.commit_all
+      ~Reservoir.connect
+      ~Reservoir.disconnect
+      ~Reservoir.finish
+      ~Reservoir.get_area
+      ~Reservoir.get_cost
+      ~Reservoir.get_initial_pc
+      ~Reservoir.get_initial_volume
+      ~Reservoir.get_level
+      ~Reservoir.get_max_volume
+      ~Reservoir.get_min_volume
+      ~Reservoir.iter_slots
+      ~Reservoir.load
+      ~Reservoir.reset
+      ~Reservoir.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Reservoir.allow_isolated
+      ~Reservoir.area
+      ~Reservoir.comment
+      ~Reservoir.component_attrs
+      ~Reservoir.components
+      ~Reservoir.cost
+      ~Reservoir.current_pc
+      ~Reservoir.domain
+      ~Reservoir.flow
+      ~Reservoir.fully_qualified_name
+      ~Reservoir.initial_volume
+      ~Reservoir.initial_volume_pc
+      ~Reservoir.level
+      ~Reservoir.max_volume
+      ~Reservoir.min_volume
+      ~Reservoir.model
+      ~Reservoir.name
+      ~Reservoir.parent
+      ~Reservoir.prev_flow
+      ~Reservoir.recorders
+      ~Reservoir.virtual
+      ~Reservoir.volume
+   
+   

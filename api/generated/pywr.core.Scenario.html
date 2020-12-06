@@ -1,0 +1,321 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pywr.core.Scenario &mdash; Pywr 1.9.1.dev58+g5279621 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="pywr.core.ScenarioCollection" href="pywr.core.ScenarioCollection.html" />
+    <link rel="prev" title="pywr.core.Timestep" href="pywr.core.Timestep.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Pywr
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.9.1.dev58+g5279621
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing Pywr</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../formulation.html">Problem formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../json.html">JSON model format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extending_pywr/index.html">Extending Pywr</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../pywr.html">Python API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../pywr.core.html">Core classes</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pywr.core.Timestep.html">pywr.core.Timestep</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">pywr.core.Scenario</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pywr.core.ScenarioCollection.html">pywr.core.ScenarioCollection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pywr.core.ScenarioIndex.html">pywr.core.ScenarioIndex</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.nodes.html">Nodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.optimisation.html">Optimisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.parameters.html">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.recorders.html">Recorders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.solvers.html">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.notebook.html">Notebook Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pywr.utils.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pywr</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../pywr.html">Pywr reference documentation.</a> &raquo;</li>
+        
+          <li><a href="../pywr.core.html">Core classes</a> &raquo;</li>
+        
+      <li>pywr.core.Scenario</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/pywr.core.Scenario.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pywr-core-scenario">
+<h1>pywr.core.Scenario<a class="headerlink" href="#pywr-core-scenario" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="pywr.core.Scenario">
+<em class="property">class </em><code class="sig-prename descclassname">pywr.core.</code><code class="sig-name descname">Scenario</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">name</em>, <em class="sig-param">int size=1</em>, <em class="sig-param">slice slice=None</em>, <em class="sig-param">ensemble_names=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.core.Scenario" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a scenario in the model.</p>
+<p>Typically a scenario will be used to run many similar models simultaneously. A small
+number of <cite>Parameter</cite> objects in the model will return different values depending
+on the scenario, but many will not. Multiple scenarios can be defined such that
+some <cite>Parameter</cite> values vary with one scenario, but not another. Scenarios are defined
+with a size that represents the number of ensembles in that scenario.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>model</strong><span class="classifier"><cite>pywr.core.Model</cite></span></dt><dd><p>The model instance to attach the scenario to.</p>
+</dd>
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name of the scenario.</p>
+</dd>
+<dt><strong>size</strong><span class="classifier">int, optional</span></dt><dd><p>The number of ensembles in the scenario. The default value is 1.</p>
+</dd>
+<dt><strong>slice</strong><span class="classifier">slice, optional</span></dt><dd><dl class="simple">
+<dt>If given this defines the subset of the ensembles that are actually run</dt><dd><p>in the model. This is useful if a large number of ensembles is defined, but
+certain analysis (e.g. optimisation) can only be done on a small subset.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>ensemble_names</strong><span class="classifier">iterable of str, optional</span></dt><dd><p>User defined names describing each ensemble.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="pywr.core.ScenarioCollection.html#pywr.core.ScenarioCollection" title="pywr.core.ScenarioCollection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioCollection</span></code></a></dt><dd></dd>
+<dt><a class="reference internal" href="pywr.core.ScenarioIndex.html#pywr.core.ScenarioIndex" title="pywr.core.ScenarioIndex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioIndex</span></code></a></dt><dd></dd>
+</dl>
+</div>
+<dl class="py method">
+<dt id="pywr.core.Scenario.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.core.Scenario.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pywr.core.Scenario.__init__" title="pywr.core.Scenario.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Initialize self.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ensemble_names</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">slice</span></code></p></td>
+<td><p>slice: slice</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="pywr.core.ScenarioCollection.html" class="btn btn-neutral float-right" title="pywr.core.ScenarioCollection" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="pywr.core.Timestep.html" class="btn btn-neutral float-left" title="pywr.core.Timestep" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

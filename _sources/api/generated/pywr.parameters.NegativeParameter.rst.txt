@@ -1,0 +1,56 @@
+﻿pywr.parameters.NegativeParameter
+=================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: NegativeParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~NegativeParameter.__init__
+      ~NegativeParameter.after
+      ~NegativeParameter.before
+      ~NegativeParameter.finish
+      ~NegativeParameter.get_all_values
+      ~NegativeParameter.get_double_lower_bounds
+      ~NegativeParameter.get_double_upper_bounds
+      ~NegativeParameter.get_double_variables
+      ~NegativeParameter.get_integer_lower_bounds
+      ~NegativeParameter.get_integer_upper_bounds
+      ~NegativeParameter.get_integer_variables
+      ~NegativeParameter.get_value
+      ~NegativeParameter.load
+      ~NegativeParameter.register
+      ~NegativeParameter.reset
+      ~NegativeParameter.set_double_variables
+      ~NegativeParameter.set_integer_variables
+      ~NegativeParameter.setup
+      ~NegativeParameter.unregister
+      ~NegativeParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NegativeParameter.children
+      ~NegativeParameter.comment
+      ~NegativeParameter.double_size
+      ~NegativeParameter.integer_size
+      ~NegativeParameter.is_variable
+      ~NegativeParameter.model
+      ~NegativeParameter.name
+      ~NegativeParameter.parameter
+      ~NegativeParameter.parents
+      ~NegativeParameter.size
+   
+   

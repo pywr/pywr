@@ -1,0 +1,60 @@
+﻿pywr.nodes.PiecewiseLink
+========================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: PiecewiseLink
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PiecewiseLink.__init__
+      ~PiecewiseLink.after
+      ~PiecewiseLink.before
+      ~PiecewiseLink.check
+      ~PiecewiseLink.commit
+      ~PiecewiseLink.commit_all
+      ~PiecewiseLink.connect
+      ~PiecewiseLink.disconnect
+      ~PiecewiseLink.finish
+      ~PiecewiseLink.get_conversion_factor
+      ~PiecewiseLink.get_cost
+      ~PiecewiseLink.get_max_flow
+      ~PiecewiseLink.get_min_flow
+      ~PiecewiseLink.iter_slots
+      ~PiecewiseLink.load
+      ~PiecewiseLink.reset
+      ~PiecewiseLink.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PiecewiseLink.allow_isolated
+      ~PiecewiseLink.comment
+      ~PiecewiseLink.component_attrs
+      ~PiecewiseLink.components
+      ~PiecewiseLink.conversion_factor
+      ~PiecewiseLink.cost
+      ~PiecewiseLink.domain
+      ~PiecewiseLink.flow
+      ~PiecewiseLink.fully_qualified_name
+      ~PiecewiseLink.max_flow
+      ~PiecewiseLink.min_flow
+      ~PiecewiseLink.model
+      ~PiecewiseLink.name
+      ~PiecewiseLink.parent
+      ~PiecewiseLink.prev_flow
+      ~PiecewiseLink.recorders
+      ~PiecewiseLink.virtual
+   
+   

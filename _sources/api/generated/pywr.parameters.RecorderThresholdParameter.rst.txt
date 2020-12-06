@@ -1,0 +1,62 @@
+﻿pywr.parameters.RecorderThresholdParameter
+==========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: RecorderThresholdParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RecorderThresholdParameter.__init__
+      ~RecorderThresholdParameter.after
+      ~RecorderThresholdParameter.before
+      ~RecorderThresholdParameter.finish
+      ~RecorderThresholdParameter.get_all_indices
+      ~RecorderThresholdParameter.get_all_values
+      ~RecorderThresholdParameter.get_double_lower_bounds
+      ~RecorderThresholdParameter.get_double_upper_bounds
+      ~RecorderThresholdParameter.get_double_variables
+      ~RecorderThresholdParameter.get_index
+      ~RecorderThresholdParameter.get_integer_lower_bounds
+      ~RecorderThresholdParameter.get_integer_upper_bounds
+      ~RecorderThresholdParameter.get_integer_variables
+      ~RecorderThresholdParameter.get_value
+      ~RecorderThresholdParameter.index
+      ~RecorderThresholdParameter.load
+      ~RecorderThresholdParameter.register
+      ~RecorderThresholdParameter.reset
+      ~RecorderThresholdParameter.set_double_variables
+      ~RecorderThresholdParameter.set_integer_variables
+      ~RecorderThresholdParameter.setup
+      ~RecorderThresholdParameter.unregister
+      ~RecorderThresholdParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RecorderThresholdParameter.children
+      ~RecorderThresholdParameter.comment
+      ~RecorderThresholdParameter.double_size
+      ~RecorderThresholdParameter.initial_value
+      ~RecorderThresholdParameter.integer_size
+      ~RecorderThresholdParameter.is_variable
+      ~RecorderThresholdParameter.model
+      ~RecorderThresholdParameter.name
+      ~RecorderThresholdParameter.parents
+      ~RecorderThresholdParameter.ratchet
+      ~RecorderThresholdParameter.recorder
+      ~RecorderThresholdParameter.size
+      ~RecorderThresholdParameter.threshold
+   
+   

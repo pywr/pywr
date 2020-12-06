@@ -1,0 +1,55 @@
+﻿pywr.recorders.ParameterRecorder
+================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: ParameterRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ParameterRecorder.__init__
+      ~ParameterRecorder.after
+      ~ParameterRecorder.aggregated_value
+      ~ParameterRecorder.before
+      ~ParameterRecorder.finish
+      ~ParameterRecorder.is_constraint_violated
+      ~ParameterRecorder.load
+      ~ParameterRecorder.register
+      ~ParameterRecorder.reset
+      ~ParameterRecorder.setup
+      ~ParameterRecorder.unregister
+      ~ParameterRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ParameterRecorder.agg_func
+      ~ParameterRecorder.children
+      ~ParameterRecorder.comment
+      ~ParameterRecorder.constraint_lower_bounds
+      ~ParameterRecorder.constraint_upper_bounds
+      ~ParameterRecorder.epsilon
+      ~ParameterRecorder.ignore_nan
+      ~ParameterRecorder.is_constraint
+      ~ParameterRecorder.is_double_bounded_constraint
+      ~ParameterRecorder.is_equality_constraint
+      ~ParameterRecorder.is_lower_bounded_constraint
+      ~ParameterRecorder.is_objective
+      ~ParameterRecorder.is_upper_bounded_constraint
+      ~ParameterRecorder.model
+      ~ParameterRecorder.name
+      ~ParameterRecorder.parameter
+      ~ParameterRecorder.parents
+   
+   

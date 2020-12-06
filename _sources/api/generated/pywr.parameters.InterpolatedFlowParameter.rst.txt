@@ -1,0 +1,56 @@
+﻿pywr.parameters.InterpolatedFlowParameter
+=========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: InterpolatedFlowParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~InterpolatedFlowParameter.__init__
+      ~InterpolatedFlowParameter.after
+      ~InterpolatedFlowParameter.before
+      ~InterpolatedFlowParameter.finish
+      ~InterpolatedFlowParameter.get_all_values
+      ~InterpolatedFlowParameter.get_double_lower_bounds
+      ~InterpolatedFlowParameter.get_double_upper_bounds
+      ~InterpolatedFlowParameter.get_double_variables
+      ~InterpolatedFlowParameter.get_integer_lower_bounds
+      ~InterpolatedFlowParameter.get_integer_upper_bounds
+      ~InterpolatedFlowParameter.get_integer_variables
+      ~InterpolatedFlowParameter.get_value
+      ~InterpolatedFlowParameter.load
+      ~InterpolatedFlowParameter.register
+      ~InterpolatedFlowParameter.reset
+      ~InterpolatedFlowParameter.set_double_variables
+      ~InterpolatedFlowParameter.set_integer_variables
+      ~InterpolatedFlowParameter.setup
+      ~InterpolatedFlowParameter.unregister
+      ~InterpolatedFlowParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~InterpolatedFlowParameter.children
+      ~InterpolatedFlowParameter.comment
+      ~InterpolatedFlowParameter.double_size
+      ~InterpolatedFlowParameter.integer_size
+      ~InterpolatedFlowParameter.interp_kwargs
+      ~InterpolatedFlowParameter.is_variable
+      ~InterpolatedFlowParameter.model
+      ~InterpolatedFlowParameter.name
+      ~InterpolatedFlowParameter.parents
+      ~InterpolatedFlowParameter.size
+   
+   

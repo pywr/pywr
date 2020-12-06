@@ -1,0 +1,60 @@
+﻿pywr.nodes.DelayNode
+====================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: DelayNode
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DelayNode.__init__
+      ~DelayNode.after
+      ~DelayNode.before
+      ~DelayNode.check
+      ~DelayNode.commit
+      ~DelayNode.commit_all
+      ~DelayNode.connect
+      ~DelayNode.disconnect
+      ~DelayNode.finish
+      ~DelayNode.get_conversion_factor
+      ~DelayNode.get_cost
+      ~DelayNode.get_max_flow
+      ~DelayNode.get_min_flow
+      ~DelayNode.iter_slots
+      ~DelayNode.load
+      ~DelayNode.reset
+      ~DelayNode.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DelayNode.allow_isolated
+      ~DelayNode.comment
+      ~DelayNode.component_attrs
+      ~DelayNode.components
+      ~DelayNode.conversion_factor
+      ~DelayNode.cost
+      ~DelayNode.domain
+      ~DelayNode.flow
+      ~DelayNode.fully_qualified_name
+      ~DelayNode.max_flow
+      ~DelayNode.min_flow
+      ~DelayNode.model
+      ~DelayNode.name
+      ~DelayNode.parent
+      ~DelayNode.prev_flow
+      ~DelayNode.recorders
+      ~DelayNode.virtual
+   
+   

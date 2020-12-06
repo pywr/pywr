@@ -1,0 +1,58 @@
+﻿pywr.recorders.NumpyArrayIndexParameterRecorder
+===============================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: NumpyArrayIndexParameterRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~NumpyArrayIndexParameterRecorder.__init__
+      ~NumpyArrayIndexParameterRecorder.after
+      ~NumpyArrayIndexParameterRecorder.aggregated_value
+      ~NumpyArrayIndexParameterRecorder.before
+      ~NumpyArrayIndexParameterRecorder.finish
+      ~NumpyArrayIndexParameterRecorder.is_constraint_violated
+      ~NumpyArrayIndexParameterRecorder.load
+      ~NumpyArrayIndexParameterRecorder.register
+      ~NumpyArrayIndexParameterRecorder.reset
+      ~NumpyArrayIndexParameterRecorder.setup
+      ~NumpyArrayIndexParameterRecorder.to_dataframe
+      ~NumpyArrayIndexParameterRecorder.unregister
+      ~NumpyArrayIndexParameterRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NumpyArrayIndexParameterRecorder.agg_func
+      ~NumpyArrayIndexParameterRecorder.children
+      ~NumpyArrayIndexParameterRecorder.comment
+      ~NumpyArrayIndexParameterRecorder.constraint_lower_bounds
+      ~NumpyArrayIndexParameterRecorder.constraint_upper_bounds
+      ~NumpyArrayIndexParameterRecorder.data
+      ~NumpyArrayIndexParameterRecorder.epsilon
+      ~NumpyArrayIndexParameterRecorder.ignore_nan
+      ~NumpyArrayIndexParameterRecorder.is_constraint
+      ~NumpyArrayIndexParameterRecorder.is_double_bounded_constraint
+      ~NumpyArrayIndexParameterRecorder.is_equality_constraint
+      ~NumpyArrayIndexParameterRecorder.is_lower_bounded_constraint
+      ~NumpyArrayIndexParameterRecorder.is_objective
+      ~NumpyArrayIndexParameterRecorder.is_upper_bounded_constraint
+      ~NumpyArrayIndexParameterRecorder.model
+      ~NumpyArrayIndexParameterRecorder.name
+      ~NumpyArrayIndexParameterRecorder.parameter
+      ~NumpyArrayIndexParameterRecorder.parents
+      ~NumpyArrayIndexParameterRecorder.temporal_agg_func
+   
+   

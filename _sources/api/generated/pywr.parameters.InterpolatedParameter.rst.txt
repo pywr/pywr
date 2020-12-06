@@ -1,0 +1,57 @@
+﻿pywr.parameters.InterpolatedParameter
+=====================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: InterpolatedParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~InterpolatedParameter.__init__
+      ~InterpolatedParameter.after
+      ~InterpolatedParameter.before
+      ~InterpolatedParameter.finish
+      ~InterpolatedParameter.get_all_values
+      ~InterpolatedParameter.get_double_lower_bounds
+      ~InterpolatedParameter.get_double_upper_bounds
+      ~InterpolatedParameter.get_double_variables
+      ~InterpolatedParameter.get_integer_lower_bounds
+      ~InterpolatedParameter.get_integer_upper_bounds
+      ~InterpolatedParameter.get_integer_variables
+      ~InterpolatedParameter.get_value
+      ~InterpolatedParameter.load
+      ~InterpolatedParameter.register
+      ~InterpolatedParameter.reset
+      ~InterpolatedParameter.set_double_variables
+      ~InterpolatedParameter.set_integer_variables
+      ~InterpolatedParameter.setup
+      ~InterpolatedParameter.unregister
+      ~InterpolatedParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~InterpolatedParameter.children
+      ~InterpolatedParameter.comment
+      ~InterpolatedParameter.double_size
+      ~InterpolatedParameter.integer_size
+      ~InterpolatedParameter.interp_kwargs
+      ~InterpolatedParameter.is_variable
+      ~InterpolatedParameter.model
+      ~InterpolatedParameter.name
+      ~InterpolatedParameter.parameter
+      ~InterpolatedParameter.parents
+      ~InterpolatedParameter.size
+   
+   

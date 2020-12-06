@@ -1,0 +1,54 @@
+﻿pywr.nodes.AggregatedStorage
+============================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: AggregatedStorage
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AggregatedStorage.__init__
+      ~AggregatedStorage.after
+      ~AggregatedStorage.before
+      ~AggregatedStorage.check
+      ~AggregatedStorage.commit
+      ~AggregatedStorage.commit_all
+      ~AggregatedStorage.finish
+      ~AggregatedStorage.get_cost
+      ~AggregatedStorage.load
+      ~AggregatedStorage.reset
+      ~AggregatedStorage.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AggregatedStorage.allow_isolated
+      ~AggregatedStorage.comment
+      ~AggregatedStorage.component_attrs
+      ~AggregatedStorage.components
+      ~AggregatedStorage.current_pc
+      ~AggregatedStorage.domain
+      ~AggregatedStorage.flow
+      ~AggregatedStorage.fully_qualified_name
+      ~AggregatedStorage.initial_volume
+      ~AggregatedStorage.model
+      ~AggregatedStorage.name
+      ~AggregatedStorage.parent
+      ~AggregatedStorage.prev_flow
+      ~AggregatedStorage.recorders
+      ~AggregatedStorage.storage_nodes
+      ~AggregatedStorage.virtual
+      ~AggregatedStorage.volume
+   
+   
