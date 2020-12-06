@@ -4,8 +4,8 @@ Pywr
 
 Pywr is a generalised network resource allocation model written in Python. It aims to be fast, free, and extendable.
 
-.. image:: https://github.com/pywr/pywr/workflows/build/badge.svg
-   :target: https://travis-ci.org/pywr/pywr
+.. image:: https://github.com/pywr/pywr/workflows/Build/badge.svg?branch=master
+   :target: https://github.com/pywr/pywr/actions?query=workflow%3ABuild
 
 .. image:: https://img.shields.io/badge/chat-on%20gitter-blue.svg
    :target: https://gitter.im/pywr/pywr
@@ -64,7 +64,7 @@ Please consider citing the following paper when using Pywr:
 License
 =======
 
-Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+Copyright (C) 2014-20 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
 
 
 This program is free software; you can redistribute it and/or modify
