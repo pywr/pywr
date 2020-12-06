@@ -46,6 +46,7 @@
       ~InterpolatedParameter.comment
       ~InterpolatedParameter.double_size
       ~InterpolatedParameter.integer_size
+      ~InterpolatedParameter.interp_kwargs
       ~InterpolatedParameter.is_variable
       ~InterpolatedParameter.model
       ~InterpolatedParameter.name

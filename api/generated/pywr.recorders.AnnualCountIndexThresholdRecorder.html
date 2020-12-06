@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pywr.recorders.AnnualCountIndexThresholdRecorder &mdash; Pywr 1.9.1.dev58+gc4eb061 documentation</title>
+  <title>pywr.recorders.AnnualCountIndexThresholdRecorder &mdash; Pywr 1.9.1.dev62+g04ddaab documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                1.9.1.dev58+gc4eb061
+                1.9.1.dev62+g04ddaab
               </div>
             
           
@@ -217,6 +217,8 @@ If multiple parameters exceed in one timestep then it is only counted once.</p>
 </dd>
 <dt><strong>threshold</strong><span class="classifier">int</span></dt><dd><p>Threshold to compare parameters against</p>
 </dd>
+<dt><strong>exclude_months</strong><span class="classifier">list or None</span></dt><dd><p>Optional list of month numbers to exclude from the count.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -302,43 +304,46 @@ If multiple parameters exceed in one timestep then it is only counted once.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">epsilon</span></code></p></td>
 <td><p>epsilon: ‘double’</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ignore_nan</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">exclude_months</span></code></p></td>
+<td><p>exclude_months: list</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ignore_nan</span></code></p></td>
 <td><p>ignore_nan: ‘bool’</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_constraint</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_constraint</span></code></p></td>
 <td><p>Returns true if either upper or lower constraint bounds is defined.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_double_bounded_constraint</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_double_bounded_constraint</span></code></p></td>
 <td><p>Returns true if upper and lower constraint bounds are both defined and not-equal to one another.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_equality_constraint</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_equality_constraint</span></code></p></td>
 <td><p>Returns true if upper and lower constraint bounds are both defined and equal to one another.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_lower_bounded_constraint</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_lower_bounded_constraint</span></code></p></td>
 <td><p>Returns true if lower constraint bounds is defined and upper constraint bounds is not.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_objective</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_objective</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_upper_bounded_constraint</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_upper_bounded_constraint</span></code></p></td>
 <td><p>Returns true if upper constraint bounds is defined and lower constraint bounds is not.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code></p></td>
 <td><p>parameters: list</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parents</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parents</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">temporal_agg_func</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">temporal_agg_func</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">threshold</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">threshold</span></code></p></td>
 <td><p>threshold: ‘int’</p></td>
 </tr>
 </tbody>

@@ -46,6 +46,7 @@
       ~InterpolatedVolumeParameter.comment
       ~InterpolatedVolumeParameter.double_size
       ~InterpolatedVolumeParameter.integer_size
+      ~InterpolatedVolumeParameter.interp_kwargs
       ~InterpolatedVolumeParameter.is_variable
       ~InterpolatedVolumeParameter.model
       ~InterpolatedVolumeParameter.name

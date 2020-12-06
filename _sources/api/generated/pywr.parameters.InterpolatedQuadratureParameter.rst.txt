@@ -46,6 +46,7 @@
       ~InterpolatedQuadratureParameter.comment
       ~InterpolatedQuadratureParameter.double_size
       ~InterpolatedQuadratureParameter.integer_size
+      ~InterpolatedQuadratureParameter.interp_kwargs
       ~InterpolatedQuadratureParameter.is_variable
       ~InterpolatedQuadratureParameter.lower_parameter
       ~InterpolatedQuadratureParameter.model

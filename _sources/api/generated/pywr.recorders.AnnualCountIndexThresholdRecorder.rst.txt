@@ -42,6 +42,7 @@
       ~AnnualCountIndexThresholdRecorder.constraint_upper_bounds
       ~AnnualCountIndexThresholdRecorder.data
       ~AnnualCountIndexThresholdRecorder.epsilon
+      ~AnnualCountIndexThresholdRecorder.exclude_months
       ~AnnualCountIndexThresholdRecorder.ignore_nan
       ~AnnualCountIndexThresholdRecorder.is_constraint
       ~AnnualCountIndexThresholdRecorder.is_double_bounded_constraint
