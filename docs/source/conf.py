@@ -35,7 +35,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.mathjax',
-    'sphinx.ext.githubpages ',  # Creates a .nojekyll to allow the `_static`, etc. folders to work
+    'sphinx.ext.githubpages',  # Creates a .nojekyll to allow the `_static`, etc. folders to work
     'matplotlib.sphinxext.plot_directive',
     'numpydoc'
 ]
