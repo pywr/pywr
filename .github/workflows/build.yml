@@ -115,3 +115,12 @@ jobs:
           python setup.py install --without-lpsolve
           cd docs
           make html
+
+      - name: Deploy docs 🚀
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        # Only publish on master
+        # if: github.ref == 'refs/heads/master'  # Uncomment this before merging!
+        with:
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: docs/build/html # The folder the action should deploy.
+          CLEAN: true # Automatically remove deleted files from the deploy branc
