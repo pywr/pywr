@@ -2,6 +2,33 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.10.0
+
+### New Features
+
+- Add optional `exclude_months` to `AnnualCountIndexThresholdRecorder`. (#950)
+- Update load methods of interpolation parameters so that they accept `interp_kwargs`. (#943)
+- Allow `InterpolateVolumeParameter` to use external data. (#926)
+- Added `NumpyArrayNodeCostRecorder` to recorder a timeseries of a node's cost attribute. (#932)
+- Added `to_dataframe()` method to `AnnualCountIndexThresholdRecorder` and `AnnualTotalFlowRecorder`. (#939)
+
+### Bug Fixes
+
+- Fixed a bug with `RbfProfileParameter` where it did not pass `rbf_kwargs` to the RBF functions. (#946)
+- Fixes to save and draw graph functions to improve handling virtual and child nodes. (#938) 
+
+### Documentation
+
+- Updated installation docs. (#931)
+- Add missing parameters (`FlowParameter` and `DiscountFactorParameter`) to API docs. (#934)
+
+### Miscellaneous
+
+- Migrate continuous integration system from Travis and Appveyor to Github Actions.  (#948, #951, #952, #953)
+- Removed deprecated `PiecewiseLinearControlCurve`. (#947)
+- Apply some PEP8 compliance fixes. (#929)
+- Remove use of `basestring` which was only needed for Python 2. (#928) 
+
 ## v1.9.0
 
 ### New Features
