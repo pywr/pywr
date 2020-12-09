@@ -21,6 +21,7 @@
       ~Reservoir.commit_all
       ~Reservoir.connect
       ~Reservoir.disconnect
+      ~Reservoir.finalise_load
       ~Reservoir.finish
       ~Reservoir.get_area
       ~Reservoir.get_cost
@@ -30,7 +31,7 @@
       ~Reservoir.get_max_volume
       ~Reservoir.get_min_volume
       ~Reservoir.iter_slots
-      ~Reservoir.load
+      ~Reservoir.pre_load
       ~Reservoir.reset
       ~Reservoir.setup
    

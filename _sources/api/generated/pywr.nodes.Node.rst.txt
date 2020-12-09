@@ -21,13 +21,14 @@
       ~Node.commit_all
       ~Node.connect
       ~Node.disconnect
+      ~Node.finalise_load
       ~Node.finish
       ~Node.get_conversion_factor
       ~Node.get_cost
       ~Node.get_max_flow
       ~Node.get_min_flow
       ~Node.iter_slots
-      ~Node.load
+      ~Node.pre_load
       ~Node.reset
       ~Node.setup
    

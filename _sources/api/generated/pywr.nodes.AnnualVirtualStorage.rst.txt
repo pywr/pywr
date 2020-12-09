@@ -19,6 +19,7 @@
       ~AnnualVirtualStorage.check
       ~AnnualVirtualStorage.commit
       ~AnnualVirtualStorage.commit_all
+      ~AnnualVirtualStorage.finalise_load
       ~AnnualVirtualStorage.finish
       ~AnnualVirtualStorage.get_area
       ~AnnualVirtualStorage.get_cost
@@ -27,7 +28,7 @@
       ~AnnualVirtualStorage.get_level
       ~AnnualVirtualStorage.get_max_volume
       ~AnnualVirtualStorage.get_min_volume
-      ~AnnualVirtualStorage.load
+      ~AnnualVirtualStorage.pre_load
       ~AnnualVirtualStorage.reset
       ~AnnualVirtualStorage.setup
    

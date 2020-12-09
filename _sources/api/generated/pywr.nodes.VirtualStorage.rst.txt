@@ -19,6 +19,7 @@
       ~VirtualStorage.check
       ~VirtualStorage.commit
       ~VirtualStorage.commit_all
+      ~VirtualStorage.finalise_load
       ~VirtualStorage.finish
       ~VirtualStorage.get_area
       ~VirtualStorage.get_cost
@@ -27,7 +28,7 @@
       ~VirtualStorage.get_level
       ~VirtualStorage.get_max_volume
       ~VirtualStorage.get_min_volume
-      ~VirtualStorage.load
+      ~VirtualStorage.pre_load
       ~VirtualStorage.reset
       ~VirtualStorage.setup
    

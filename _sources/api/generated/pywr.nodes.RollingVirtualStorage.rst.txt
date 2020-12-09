@@ -19,6 +19,7 @@
       ~RollingVirtualStorage.check
       ~RollingVirtualStorage.commit
       ~RollingVirtualStorage.commit_all
+      ~RollingVirtualStorage.finalise_load
       ~RollingVirtualStorage.finish
       ~RollingVirtualStorage.get_area
       ~RollingVirtualStorage.get_cost
@@ -27,7 +28,7 @@
       ~RollingVirtualStorage.get_level
       ~RollingVirtualStorage.get_max_volume
       ~RollingVirtualStorage.get_min_volume
-      ~RollingVirtualStorage.load
+      ~RollingVirtualStorage.pre_load
       ~RollingVirtualStorage.reset
       ~RollingVirtualStorage.setup
    

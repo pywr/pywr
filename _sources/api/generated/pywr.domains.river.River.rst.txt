@@ -21,13 +21,14 @@
       ~River.commit_all
       ~River.connect
       ~River.disconnect
+      ~River.finalise_load
       ~River.finish
       ~River.get_conversion_factor
       ~River.get_cost
       ~River.get_max_flow
       ~River.get_min_flow
       ~River.iter_slots
-      ~River.load
+      ~River.pre_load
       ~River.reset
       ~River.setup
    

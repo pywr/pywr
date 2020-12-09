@@ -21,13 +21,14 @@
       ~BreakLink.commit_all
       ~BreakLink.connect
       ~BreakLink.disconnect
+      ~BreakLink.finalise_load
       ~BreakLink.finish
       ~BreakLink.get_conversion_factor
       ~BreakLink.get_cost
       ~BreakLink.get_max_flow
       ~BreakLink.get_min_flow
       ~BreakLink.iter_slots
-      ~BreakLink.load
+      ~BreakLink.pre_load
       ~BreakLink.reset
       ~BreakLink.setup
    

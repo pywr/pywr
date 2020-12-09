@@ -21,13 +21,14 @@
       ~PiecewiseLink.commit_all
       ~PiecewiseLink.connect
       ~PiecewiseLink.disconnect
+      ~PiecewiseLink.finalise_load
       ~PiecewiseLink.finish
       ~PiecewiseLink.get_conversion_factor
       ~PiecewiseLink.get_cost
       ~PiecewiseLink.get_max_flow
       ~PiecewiseLink.get_min_flow
       ~PiecewiseLink.iter_slots
-      ~PiecewiseLink.load
+      ~PiecewiseLink.pre_load
       ~PiecewiseLink.reset
       ~PiecewiseLink.setup
    
@@ -45,10 +46,12 @@
       ~PiecewiseLink.components
       ~PiecewiseLink.conversion_factor
       ~PiecewiseLink.cost
+      ~PiecewiseLink.costs
       ~PiecewiseLink.domain
       ~PiecewiseLink.flow
       ~PiecewiseLink.fully_qualified_name
       ~PiecewiseLink.max_flow
+      ~PiecewiseLink.max_flows
       ~PiecewiseLink.min_flow
       ~PiecewiseLink.model
       ~PiecewiseLink.name

@@ -21,13 +21,14 @@
       ~Link.commit_all
       ~Link.connect
       ~Link.disconnect
+      ~Link.finalise_load
       ~Link.finish
       ~Link.get_conversion_factor
       ~Link.get_cost
       ~Link.get_max_flow
       ~Link.get_min_flow
       ~Link.iter_slots
-      ~Link.load
+      ~Link.pre_load
       ~Link.reset
       ~Link.setup
    

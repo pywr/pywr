@@ -21,13 +21,14 @@
       ~MultiSplitLink.commit_all
       ~MultiSplitLink.connect
       ~MultiSplitLink.disconnect
+      ~MultiSplitLink.finalise_load
       ~MultiSplitLink.finish
       ~MultiSplitLink.get_conversion_factor
       ~MultiSplitLink.get_cost
       ~MultiSplitLink.get_max_flow
       ~MultiSplitLink.get_min_flow
       ~MultiSplitLink.iter_slots
-      ~MultiSplitLink.load
+      ~MultiSplitLink.pre_load
       ~MultiSplitLink.reset
       ~MultiSplitLink.setup
    
@@ -45,10 +46,12 @@
       ~MultiSplitLink.components
       ~MultiSplitLink.conversion_factor
       ~MultiSplitLink.cost
+      ~MultiSplitLink.costs
       ~MultiSplitLink.domain
       ~MultiSplitLink.flow
       ~MultiSplitLink.fully_qualified_name
       ~MultiSplitLink.max_flow
+      ~MultiSplitLink.max_flows
       ~MultiSplitLink.min_flow
       ~MultiSplitLink.model
       ~MultiSplitLink.name

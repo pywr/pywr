@@ -21,13 +21,14 @@
       ~DelayNode.commit_all
       ~DelayNode.connect
       ~DelayNode.disconnect
+      ~DelayNode.finalise_load
       ~DelayNode.finish
       ~DelayNode.get_conversion_factor
       ~DelayNode.get_cost
       ~DelayNode.get_max_flow
       ~DelayNode.get_min_flow
       ~DelayNode.iter_slots
-      ~DelayNode.load
+      ~DelayNode.pre_load
       ~DelayNode.reset
       ~DelayNode.setup
    

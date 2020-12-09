@@ -21,13 +21,14 @@
       ~RiverSplit.commit_all
       ~RiverSplit.connect
       ~RiverSplit.disconnect
+      ~RiverSplit.finalise_load
       ~RiverSplit.finish
       ~RiverSplit.get_conversion_factor
       ~RiverSplit.get_cost
       ~RiverSplit.get_max_flow
       ~RiverSplit.get_min_flow
       ~RiverSplit.iter_slots
-      ~RiverSplit.load
+      ~RiverSplit.pre_load
       ~RiverSplit.reset
       ~RiverSplit.setup
    
@@ -45,10 +46,12 @@
       ~RiverSplit.components
       ~RiverSplit.conversion_factor
       ~RiverSplit.cost
+      ~RiverSplit.costs
       ~RiverSplit.domain
       ~RiverSplit.flow
       ~RiverSplit.fully_qualified_name
       ~RiverSplit.max_flow
+      ~RiverSplit.max_flows
       ~RiverSplit.min_flow
       ~RiverSplit.model
       ~RiverSplit.name

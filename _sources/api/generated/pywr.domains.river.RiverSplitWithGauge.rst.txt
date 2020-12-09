@@ -21,13 +21,14 @@
       ~RiverSplitWithGauge.commit_all
       ~RiverSplitWithGauge.connect
       ~RiverSplitWithGauge.disconnect
+      ~RiverSplitWithGauge.finalise_load
       ~RiverSplitWithGauge.finish
       ~RiverSplitWithGauge.get_conversion_factor
       ~RiverSplitWithGauge.get_cost
       ~RiverSplitWithGauge.get_max_flow
       ~RiverSplitWithGauge.get_min_flow
       ~RiverSplitWithGauge.iter_slots
-      ~RiverSplitWithGauge.load
+      ~RiverSplitWithGauge.pre_load
       ~RiverSplitWithGauge.reset
       ~RiverSplitWithGauge.setup
    
@@ -45,12 +46,16 @@
       ~RiverSplitWithGauge.components
       ~RiverSplitWithGauge.conversion_factor
       ~RiverSplitWithGauge.cost
+      ~RiverSplitWithGauge.costs
       ~RiverSplitWithGauge.domain
       ~RiverSplitWithGauge.flow
       ~RiverSplitWithGauge.fully_qualified_name
       ~RiverSplitWithGauge.max_flow
+      ~RiverSplitWithGauge.max_flows
       ~RiverSplitWithGauge.min_flow
       ~RiverSplitWithGauge.model
+      ~RiverSplitWithGauge.mrf
+      ~RiverSplitWithGauge.mrf_cost
       ~RiverSplitWithGauge.name
       ~RiverSplitWithGauge.parent
       ~RiverSplitWithGauge.prev_flow

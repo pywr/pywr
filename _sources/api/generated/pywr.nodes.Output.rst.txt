@@ -21,13 +21,14 @@
       ~Output.commit_all
       ~Output.connect
       ~Output.disconnect
+      ~Output.finalise_load
       ~Output.finish
       ~Output.get_conversion_factor
       ~Output.get_cost
       ~Output.get_max_flow
       ~Output.get_min_flow
       ~Output.iter_slots
-      ~Output.load
+      ~Output.pre_load
       ~Output.reset
       ~Output.setup
    

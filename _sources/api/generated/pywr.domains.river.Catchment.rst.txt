@@ -21,6 +21,7 @@
       ~Catchment.commit_all
       ~Catchment.connect
       ~Catchment.disconnect
+      ~Catchment.finalise_load
       ~Catchment.finish
       ~Catchment.get_conversion_factor
       ~Catchment.get_cost
@@ -28,7 +29,7 @@
       ~Catchment.get_max_flow
       ~Catchment.get_min_flow
       ~Catchment.iter_slots
-      ~Catchment.load
+      ~Catchment.pre_load
       ~Catchment.reset
       ~Catchment.setup
    

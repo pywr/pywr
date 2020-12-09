@@ -21,13 +21,14 @@
       ~RiverGauge.commit_all
       ~RiverGauge.connect
       ~RiverGauge.disconnect
+      ~RiverGauge.finalise_load
       ~RiverGauge.finish
       ~RiverGauge.get_conversion_factor
       ~RiverGauge.get_cost
       ~RiverGauge.get_max_flow
       ~RiverGauge.get_min_flow
       ~RiverGauge.iter_slots
-      ~RiverGauge.load
+      ~RiverGauge.pre_load
       ~RiverGauge.reset
       ~RiverGauge.setup
    
@@ -45,10 +46,12 @@
       ~RiverGauge.components
       ~RiverGauge.conversion_factor
       ~RiverGauge.cost
+      ~RiverGauge.costs
       ~RiverGauge.domain
       ~RiverGauge.flow
       ~RiverGauge.fully_qualified_name
       ~RiverGauge.max_flow
+      ~RiverGauge.max_flows
       ~RiverGauge.min_flow
       ~RiverGauge.model
       ~RiverGauge.mrf

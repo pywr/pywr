@@ -19,6 +19,7 @@
       ~SeasonalVirtualStorage.check
       ~SeasonalVirtualStorage.commit
       ~SeasonalVirtualStorage.commit_all
+      ~SeasonalVirtualStorage.finalise_load
       ~SeasonalVirtualStorage.finish
       ~SeasonalVirtualStorage.get_area
       ~SeasonalVirtualStorage.get_cost
@@ -27,7 +28,7 @@
       ~SeasonalVirtualStorage.get_level
       ~SeasonalVirtualStorage.get_max_volume
       ~SeasonalVirtualStorage.get_min_volume
-      ~SeasonalVirtualStorage.load
+      ~SeasonalVirtualStorage.pre_load
       ~SeasonalVirtualStorage.reset
       ~SeasonalVirtualStorage.setup
    

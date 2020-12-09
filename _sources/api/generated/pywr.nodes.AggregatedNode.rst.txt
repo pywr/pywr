@@ -19,14 +19,14 @@
       ~AggregatedNode.check
       ~AggregatedNode.commit
       ~AggregatedNode.commit_all
+      ~AggregatedNode.finalise_load
       ~AggregatedNode.finish
       ~AggregatedNode.get_cost
       ~AggregatedNode.get_factors
       ~AggregatedNode.get_factors_norm
       ~AggregatedNode.get_max_flow
       ~AggregatedNode.get_min_flow
-      ~AggregatedNode.load
-      ~AggregatedNode.load_factors
+      ~AggregatedNode.pre_load
       ~AggregatedNode.reset
       ~AggregatedNode.setup
    

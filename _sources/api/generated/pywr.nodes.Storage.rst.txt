@@ -21,6 +21,7 @@
       ~Storage.commit_all
       ~Storage.connect
       ~Storage.disconnect
+      ~Storage.finalise_load
       ~Storage.finish
       ~Storage.get_area
       ~Storage.get_cost
@@ -30,7 +31,7 @@
       ~Storage.get_max_volume
       ~Storage.get_min_volume
       ~Storage.iter_slots
-      ~Storage.load
+      ~Storage.pre_load
       ~Storage.reset
       ~Storage.setup
    
