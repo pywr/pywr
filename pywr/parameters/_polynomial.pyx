@@ -87,10 +87,10 @@ cdef class Polynomial1DParameter(Parameter):
     def load(cls, model, data):
         node = None
         if 'node' in data:
-            node = model._get_node_from_ref(model, data.pop("node"))
+            node = model.nodes[data.pop("node")]
         storage_node = None
         if 'storage_node' in data:
-            storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
+            storage_node = model.nodes[data.pop("storage_node")]
         parameter = None
         if 'parameter' in data:
             parameter = load_parameter(model, data.pop("parameter"))
@@ -168,7 +168,7 @@ cdef class Polynomial2DStorageParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
+        storage_node = model.nodes[data.pop("storage_node")]
         parameter = load_parameter(model, data.pop("parameter"))
         coefficients = data.pop("coefficients")
         parameter = cls(model, coefficients, storage_node, parameter, **data)

@@ -91,7 +91,7 @@ cdef class BaseControlCurveParameter(Parameter):
     @classmethod
     def _load_storage_node(cls, model, data):
         """ Private class method to load storage node from dict. """
-        node = model._get_node_from_ref(model, data.pop("storage_node"))
+        node = model.nodes[data.pop("storage_node")]
         return node
 
 
@@ -376,7 +376,7 @@ cdef class ControlCurveIndexParameter(IndexParameter):
 
     @classmethod
     def load(cls, model, data):
-        storage_node = model._get_node_from_ref(model, data.pop("storage_node"))
+        storage_node = model.nodes[data.pop("storage_node")]
         control_curves = [load_parameter(model, d) for d in data.pop("control_curves")]
         return cls(model, storage_node, control_curves, **data)
 ControlCurveIndexParameter.register()

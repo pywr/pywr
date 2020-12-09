@@ -151,7 +151,7 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         volumes = data.pop("volumes")
         if isinstance(volumes, list):
             volumes = np.asarray(volumes, np.float64)
@@ -198,7 +198,7 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         flows = np.array(data.pop("flows"))
         values = np.array(data.pop("values"))
         interp_kwargs = data.pop("interp_kwargs", None)

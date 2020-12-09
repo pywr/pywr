@@ -16,6 +16,8 @@ class RiverDomainMixin(object):
 
 class Catchment(RiverDomainMixin, Input):
     """A hydrological catchment, supplying water to the river network"""
+    __parameter_attributes__ = ("cost", "flow")
+
     def __init__(self, *args, **kwargs):
         """Initialise a new Catchment node.
 
@@ -45,15 +47,6 @@ class Catchment(RiverDomainMixin, Input):
             self.max_flow = value
             return
         super(Catchment, self).__setattr__(name, value)
-
-    @classmethod
-    def load(cls, data, model):
-        flow = data.pop('flow', 0.0)
-        if flow is not None:
-            flow = load_parameter(model, flow)
-        node = super(Catchment, cls).load(data, model)
-        node.flow = flow
-        return node
 
 
 class Reservoir(RiverDomainMixin, Storage):
@@ -125,34 +118,19 @@ class RiverSplit(MultiSplitLink):
     pywr.nodes.MultiSplitLink
 
     """
-    def __init__(self, *args, **kwargs):
-        def _make_iterable(val):
-            try:
-                len(val)
-            except TypeError:
-                return [val]
-            return val
+    def __init__(self, model, *args, nsteps=1, **kwargs):
 
-        factors = _make_iterable(kwargs.pop('factors'))
+        factors = kwargs.pop('factors')
         extra_slots = len(factors) - 1
 
         # These are the defaults to pass to the parent class that makes this
         # class a convenience.
         # create keyword arguments for PiecewiseLink
-        kwargs['cost'] = _make_iterable(kwargs.pop('cost', 0.0))
-        kwargs['max_flow'] = _make_iterable(kwargs.pop('max_flow', None))
-        kwargs['extra_slots'] = extra_slots
-        kwargs['factors'] = factors
+        costs = kwargs.pop('costs', [0.0])
+        max_flows = kwargs.pop('max_flows', [None])
 
-        super(RiverSplit, self).__init__(*args, **kwargs)
-
-    @classmethod
-    def load(cls, data, model):
-        max_flow = load_parameter(model, data.pop('max_flow', None))
-        cost = load_parameter(model, data.pop('cost', 0.0))
-
-        del(data["type"])
-        return cls(model, max_flow=max_flow, cost=cost, **data)
+        super(RiverSplit, self).__init__(model, nsteps, *args, extra_slots=extra_slots, factors=factors, costs=costs,
+                                         max_flows=max_flows, **kwargs)
 
 
 class RiverSplitWithGauge(RiverSplit):
@@ -178,51 +156,11 @@ class RiverSplitWithGauge(RiverSplit):
         The identifiers to refer to the slots when connect from this Node. Length must be one more than
          the number of extra slots required.
     """
-    def __init__(self, model, name, mrf=0.0, cost=0.0, mrf_cost=0.0, **kwargs):
-        kwargs['cost'] = [mrf_cost, cost]
-        kwargs['max_flow'] = [mrf, None]
-        super(RiverSplitWithGauge, self).__init__(model, name, **kwargs)
+    __parameter_attributes__ = ('cost', 'mrf_cost', 'mrf')
 
-    @classmethod
-    def load(cls, data, model):
-        cost = load_parameter(model, data.pop('cost', 0.0))
-        mrf_cost = load_parameter(model, data.pop('mrf_cost', 0.0))
-        mrf = load_parameter(model, data.pop('mrf', 0.0))
-        name = data.pop("name")
-        data.pop("type", None)
-        parameter = cls(model, name, mrf=mrf, cost=cost, mrf_cost=mrf_cost, **data)
-        return parameter
-
-
-class Discharge(Catchment):
-    """An inline discharge to the river network
-
-    This node is similar to a catchment, but sits inline to the river network,
-    rather than at the head of the river.
-    """
-    pass
-
-
-class RiverGauge(RiverDomainMixin, PiecewiseLink):
-    """A river gauging station, with a minimum residual flow (MRF)
-    """
-    def __init__(self, *args, **kwargs):
-        """Initialise a new RiverGauge instance
-
-        Parameters
-        ----------
-        mrf : float
-            The minimum residual flow (MRF) at the gauge
-        mrf_cost : float
-            The cost of the route via the MRF
-        cost : float
-            The cost of the other (unconstrained) route
-        """
-        # create keyword arguments for PiecewiseLink
-        cost = kwargs.pop('cost', 0.0)
-        kwargs['cost'] = [kwargs.pop('mrf_cost', 0.0), cost]
-        kwargs['max_flow'] = [kwargs.pop('mrf', 0.0), None]
-        super(RiverGauge, self).__init__(*args, **kwargs)
+    def __init__(self, model, *args, mrf=0.0, cost=0.0, mrf_cost=0.0, **kwargs):
+        super(RiverSplitWithGauge, self).__init__(model, *args, nsteps=2, max_flows=[mrf, None], costs=[mrf_cost, cost],
+                                                  **kwargs)
 
     def mrf():
         def fget(self):
@@ -242,11 +180,72 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         return locals()
     mrf_cost = property(**mrf_cost())
 
-    @classmethod
-    def load(cls, data, model):
-        mrf = load_parameter(model, data.pop("mrf"))
-        mrf_cost = load_parameter(model, data.pop("mrf_cost"))
-        cost = load_parameter(model, data.pop("cost", 0.0))
-        del(data["type"])
-        node = cls(model, mrf=mrf, mrf_cost=mrf_cost, cost=cost, **data)
-        return node
+    def cost():
+        def fget(self):
+            return self.sublinks[1].cost
+
+        def fset(self, value):
+            self.sublinks[1].cost = value
+        return locals()
+    cost = property(**cost())
+
+
+class Discharge(Catchment):
+    """An inline discharge to the river network
+
+    This node is similar to a catchment, but sits inline to the river network,
+    rather than at the head of the river.
+    """
+    pass
+
+
+class RiverGauge(RiverDomainMixin, PiecewiseLink):
+    """A river gauging station, with a minimum residual flow (MRF)
+    """
+    __parameter_attributes__ = ('cost', 'mrf_cost', 'mrf')
+
+    def __init__(self, *args, **kwargs):
+        """Initialise a new RiverGauge instance
+
+        Parameters
+        ----------
+        mrf : float
+            The minimum residual flow (MRF) at the gauge
+        mrf_cost : float
+            The cost of the route via the MRF
+        cost : float
+            The cost of the other (unconstrained) route
+        """
+        # create keyword arguments for PiecewiseLink
+        cost = kwargs.pop('cost', 0.0)
+        kwargs['costs'] = [kwargs.pop('mrf_cost', 0.0), cost]
+        kwargs['max_flows'] = [kwargs.pop('mrf', 0.0), None]
+        super(RiverGauge, self).__init__(nsteps=2, *args, **kwargs)
+
+    def mrf():
+        def fget(self):
+            return self.sublinks[0].max_flow
+
+        def fset(self, value):
+            self.sublinks[0].max_flow = value
+        return locals()
+    mrf = property(**mrf())
+
+    def mrf_cost():
+        def fget(self):
+            return self.sublinks[0].cost
+
+        def fset(self, value):
+            self.sublinks[0].cost = value
+        return locals()
+    mrf_cost = property(**mrf_cost())
+
+    def cost():
+        def fget(self):
+            return self.sublinks[1].cost
+
+        def fset(self, value):
+            self.sublinks[1].cost = value
+        return locals()
+    cost = property(**cost())
+

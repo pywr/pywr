@@ -1810,7 +1810,7 @@ cdef class DeficitParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         return cls(model, node=node, **data)
 
 DeficitParameter.register()
@@ -1863,7 +1863,7 @@ cdef class FlowParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         return cls(model, node=node, **data)
 FlowParameter.register()
 
@@ -1981,7 +1981,7 @@ cdef class FlowDelayParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         return cls(model, node, **data)
 
 FlowDelayParameter.register()

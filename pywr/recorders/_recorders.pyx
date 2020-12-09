@@ -342,7 +342,7 @@ cdef class Recorder(Component):
         except KeyError:
             pass
         else:
-            data["node"] = model._get_node_from_ref(model, node_name)
+            data["node"] = model.nodes[node_name]
         return cls(model, **data)
 
     @classmethod
@@ -534,7 +534,7 @@ cdef class ParameterRecorder(Recorder):
             node = None
         else:
             del(data["node"])
-            node = model._get_node_from_ref(model, node_name)
+            node = model.nodes[node_name]
         from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
@@ -1584,7 +1584,7 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
     @classmethod
     def load(cls, model, data):
         name = data.get("name")
-        node = model._get_node_from_ref(model, data["node"])
+        node = model.nodes[data["node"]]
         if "timesteps" in data:
             timesteps = int(data["timesteps"])
         else:
@@ -1988,7 +1988,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        nodes = [model._get_node_from_ref(model, n) for n in data.pop("nodes")]
+        nodes = [model.nodes[n] for n in data.pop("nodes")]
         return cls(model, nodes=nodes, **data)
 AnnualTotalFlowRecorder.register()
 

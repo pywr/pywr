@@ -709,10 +709,13 @@ cdef class AggregatedNode(AbstractNode):
                 return np.asarray(self._flow_weights, np.float64)
 
         def __set__(self, values):
-            values = np.array(values, np.float64)
-            if np.any(np.abs(values) < 1e-6):
-                warnings.warn("Very small flow_weights in AggregateNode result in ill-conditioned matrix")
-            self._flow_weights = values
+            if values is None:
+                self._flow_weights = None
+            else:
+                values = np.array(values, np.float64)
+                if np.any(np.abs(values) < 1e-6):
+                    warnings.warn("Very small flow_weights in AggregateNode result in ill-conditioned matrix")
+                self._flow_weights = values
             self.model.dirty = True
 
     property min_flow:
@@ -791,40 +794,6 @@ cdef class AggregatedNode(AbstractNode):
         for i in range(len(factors)):
             factors_norm[i] = f0/factors[i]
         return factors_norm
-
-    @classmethod
-    def load_factors(cls, model, data):
-        """ Class method to load factors data from dict. """
-        from pywr.parameters import load_parameter
-
-        factors = None
-        if 'factors' in data:
-            factors = []
-            for pdata in data.pop('factors'):
-                factors.append(load_parameter(model, pdata))
-        return factors
-
-    @classmethod
-    def load(cls, data, model):
-        from pywr.parameters import load_parameter
-        name = data["name"]
-        nodes = [model._get_node_from_ref(model, node_name) for node_name in data["nodes"]]
-        agg = cls(model, name, nodes)
-        agg.factors = cls.load_factors(model, data)
-
-        try:
-            agg.flow_weights = data["flow_weights"]
-        except KeyError:
-            pass
-        try:
-            agg.min_flow = load_parameter(model, data["min_flow"])
-        except KeyError:
-            pass
-        try:
-            agg.max_flow = load_parameter(model, data["max_flow"])
-        except KeyError:
-            pass
-        return agg
 
 cdef class StorageInput(BaseInput):
     cpdef commit(self, int scenario_index, double volume):
@@ -1197,13 +1166,6 @@ cdef class AggregatedStorage(AbstractStorage):
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
-
-    @classmethod
-    def load(cls, data, model):
-        name = data["name"]
-        nodes = [model._get_node_from_ref(model, node_name) for node_name in data["storage_nodes"]]
-        agg = cls(model, name, nodes)
-        return agg
 
 
 cdef class VirtualStorage(Storage):

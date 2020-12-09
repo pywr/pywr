@@ -148,7 +148,7 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("storage_node"))
+        node = model.nodes[data.pop("storage_node")]
         threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
@@ -179,7 +179,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         threshold = load_parameter(model, data.pop("threshold"))
         values = data.pop("values", None)
         predicate = data.pop("predicate", None)
