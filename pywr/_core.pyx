@@ -477,6 +477,14 @@ cdef class AbstractNode:
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         return 0.0
 
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        if out is None:
+            out = np.zeros(len(self.model.scenarios.combinations))
+        else:
+            out[:] = 0.0
+        return out
+
+
 cdef class Node(AbstractNode):
     """ Node class from which all others inherit
     """
@@ -527,6 +535,16 @@ cdef class Node(AbstractNode):
             return self._cost
         return self._cost_param.get_value(scenario_index)
 
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._cost_param is None:
+            out[:] = self._cost
+        else:
+            out[:] = self._cost_param.get_all_values()
+        return out
+
     property min_flow:
         """The minimum flow constraint on the node
 
@@ -555,6 +573,16 @@ cdef class Node(AbstractNode):
             return self._min_flow
         return self._min_flow_param.get_value(scenario_index)
 
+    cpdef double[:] get_all_min_flow(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._min_flow_param is None:
+            out[:] = self._min_flow
+        else:
+            out[:] = self._min_flow_param.get_all_values()
+        return out
+
     property max_flow:
         """The maximum flow constraint on the node
 
@@ -582,6 +610,16 @@ cdef class Node(AbstractNode):
         if self._max_flow_param is None:
             return self._max_flow
         return self._max_flow_param.get_value(scenario_index)
+
+    cpdef double[:] get_all_max_flow(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._max_flow_param is None:
+            out[:] = self._max_flow
+        else:
+            out[:] = self._max_flow_param.get_all_values()
+        return out
 
     property conversion_factor:
         """The conversion between inflow and outflow for the node
@@ -746,6 +784,16 @@ cdef class AggregatedNode(AbstractNode):
             return self._min_flow
         return self._min_flow_param.get_value(scenario_index)
 
+    cpdef double[:] get_all_min_flow(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._min_flow_param is None:
+            out[:] = self._min_flow
+        else:
+            out[:] = self._min_flow_param.get_all_values()
+        return out
+
     property max_flow:
         """The maximum flow constraint on the node
 
@@ -773,6 +821,16 @@ cdef class AggregatedNode(AbstractNode):
         if self._max_flow_param is None:
             return self._max_flow
         return self._max_flow_param.get_value(scenario_index)
+
+    cpdef double[:] get_all_max_flow(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._max_flow_param is None:
+            out[:] = self._max_flow
+        else:
+            out[:] = self._max_flow_param.get_all_values()
+        return out
 
     cpdef double[:] get_factors(self, ScenarioIndex scenario_index):
         """Get node factors for the current timestep and given scenario index.
@@ -804,6 +862,18 @@ cdef class StorageInput(BaseInput):
         # Return negative of parent cost
         return -self.parent.get_cost(scenario_index)
 
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        """Get the cost at a given timestep for all scenario combinations
+        """
+        cdef int i
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        self.parent.get_all_cost(out=out)
+        for i in range(len(self.model.scenarios.combinations)):
+            out[i] *= -1.0
+        return out
+
 cdef class StorageOutput(BaseOutput):
     cpdef commit(self, int scenario_index, double volume):
         BaseOutput.commit(self, scenario_index, volume)
@@ -812,6 +882,15 @@ cdef class StorageOutput(BaseOutput):
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         # Return parent cost
         return self.parent.get_cost(scenario_index)
+
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        """Get the cost at a given timestep for all scenario combinations
+        """
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        self.parent.get_all_cost(out=out)
+        return out
 
 
 cdef class AbstractStorage(AbstractNode):
@@ -883,6 +962,16 @@ cdef class Storage(AbstractStorage):
         if self._cost_param is None:
             return self._cost
         return self._cost_param.get_value(scenario_index)
+
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._cost_param is None:
+            out[:] = self._cost
+        else:
+            out[:] = self._cost_param.get_all_values()
+        return out
 
     property initial_volume:
         def __get__(self, ):
@@ -968,6 +1057,16 @@ cdef class Storage(AbstractStorage):
             return self._min_volume
         return self._min_volume_param.get_value(scenario_index)
 
+    cpdef double[:] get_all_min_volume(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._min_volume_param is None:
+            out[:] = self._min_volume
+        else:
+            out[:] = self._min_volume_param.get_all_values()
+        return out
+
     property max_volume:
         def __get__(self):
             if self._max_volume_param is None:
@@ -985,6 +1084,16 @@ cdef class Storage(AbstractStorage):
         if self._max_volume_param is None:
             return self._max_volume
         return self._max_volume_param.get_value(scenario_index)
+
+    cpdef double[:] get_all_max_volume(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._max_volume_param is None:
+            out[:] = self._max_volume
+        else:
+            out[:] = self._max_volume_param.get_all_values()
+        return out
 
     property level:
         def __get__(self):
