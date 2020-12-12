@@ -858,6 +858,13 @@ cdef class StorageInput(BaseInput):
         BaseInput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, -volume)
 
+    cpdef commit_all(self, double[:] value):
+        """Called once for each route the node is a member of"""
+        cdef int i
+        for i in range(self._flow.shape[0]):
+            self._flow[i] += value[i]
+        self._parent.commit_all(-np.array(value))
+
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         # Return negative of parent cost
         return -self.parent.get_cost(scenario_index)
@@ -878,6 +885,13 @@ cdef class StorageOutput(BaseOutput):
     cpdef commit(self, int scenario_index, double volume):
         BaseOutput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, volume)
+
+    cpdef commit_all(self, double[:] value):
+        """Called once for each route the node is a member of"""
+        cdef int i
+        for i in range(self._flow.shape[0]):
+            self._flow[i] += value[i]
+        self._parent.commit_all(value)
 
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         # Return parent cost
