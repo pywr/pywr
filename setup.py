@@ -51,7 +51,17 @@ def setup_package():
         author_email="josh@snorfalorpagus.net",
         url="https://github.com/pywr/pywr",
         setup_requires=["setuptools>=18.0", "setuptools_scm", "cython", "numpy"],
-        install_requires=["pandas", "networkx", "scipy", "tables", "xlrd", "packaging", "matplotlib", "jinja2", "ipython"],
+        install_requires=[
+            "pandas",
+            "networkx",
+            "scipy",
+            "tables",
+            "xlrd<2.0",  # To be replaced with `openpyxl` once pandas-1.2.0 is released
+            "packaging",
+            "matplotlib",
+            "jinja2",
+            "ipython"
+        ],
         extras_require={
             "docs": docs_extras,
             "test": test_extras,
