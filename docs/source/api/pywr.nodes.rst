@@ -17,6 +17,7 @@ Nodes that are instantiable by the user
    Input
    Output
    BreakLink
+   LossLink
    PiecewiseLink
    MultiSplitLink
    Storage

@@ -672,6 +672,23 @@ def test_breaklink_node():
     assert_allclose(transfer.storage.volume, 0)
 
 
+def test_loss_link_node():
+    model = load_model('loss_link.json')
+
+    supply1 = model.nodes["supply1"]
+    link1 = model.nodes["link1"]
+    demand1 = model.nodes["demand1"]
+
+    model.check()
+    model.run()
+
+    # Supply must provide 10% more flow because of the loss in link1
+    assert_allclose(supply1.flow, 11)
+    # link1 records the gross flow before losses
+    assert_allclose(link1.flow, 11)
+    assert_allclose(demand1.flow, 10)
+
+
 @pytest.mark.xfail(reason="Circular dependency in the JSON definition. "
                           "See GitHub issue #380: https://github.com/pywr/pywr/issues/380")
 def test_reservoir_surface_area():
