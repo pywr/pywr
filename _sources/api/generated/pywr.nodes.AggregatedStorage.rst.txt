@@ -21,6 +21,7 @@
       ~AggregatedStorage.commit_all
       ~AggregatedStorage.finalise_load
       ~AggregatedStorage.finish
+      ~AggregatedStorage.get_all_cost
       ~AggregatedStorage.get_cost
       ~AggregatedStorage.pre_load
       ~AggregatedStorage.reset

@@ -21,6 +21,9 @@
       ~AggregatedNode.commit_all
       ~AggregatedNode.finalise_load
       ~AggregatedNode.finish
+      ~AggregatedNode.get_all_cost
+      ~AggregatedNode.get_all_max_flow
+      ~AggregatedNode.get_all_min_flow
       ~AggregatedNode.get_cost
       ~AggregatedNode.get_factors
       ~AggregatedNode.get_factors_norm

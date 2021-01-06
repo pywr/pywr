@@ -21,6 +21,9 @@
       ~SeasonalVirtualStorage.commit_all
       ~SeasonalVirtualStorage.finalise_load
       ~SeasonalVirtualStorage.finish
+      ~SeasonalVirtualStorage.get_all_cost
+      ~SeasonalVirtualStorage.get_all_max_volume
+      ~SeasonalVirtualStorage.get_all_min_volume
       ~SeasonalVirtualStorage.get_area
       ~SeasonalVirtualStorage.get_cost
       ~SeasonalVirtualStorage.get_initial_pc

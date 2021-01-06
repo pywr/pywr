@@ -23,6 +23,9 @@
       ~PiecewiseLink.disconnect
       ~PiecewiseLink.finalise_load
       ~PiecewiseLink.finish
+      ~PiecewiseLink.get_all_cost
+      ~PiecewiseLink.get_all_max_flow
+      ~PiecewiseLink.get_all_min_flow
       ~PiecewiseLink.get_conversion_factor
       ~PiecewiseLink.get_cost
       ~PiecewiseLink.get_max_flow

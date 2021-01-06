@@ -21,6 +21,9 @@
       ~AnnualVirtualStorage.commit_all
       ~AnnualVirtualStorage.finalise_load
       ~AnnualVirtualStorage.finish
+      ~AnnualVirtualStorage.get_all_cost
+      ~AnnualVirtualStorage.get_all_max_volume
+      ~AnnualVirtualStorage.get_all_min_volume
       ~AnnualVirtualStorage.get_area
       ~AnnualVirtualStorage.get_cost
       ~AnnualVirtualStorage.get_initial_pc

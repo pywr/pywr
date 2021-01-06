@@ -21,6 +21,9 @@
       ~RollingVirtualStorage.commit_all
       ~RollingVirtualStorage.finalise_load
       ~RollingVirtualStorage.finish
+      ~RollingVirtualStorage.get_all_cost
+      ~RollingVirtualStorage.get_all_max_volume
+      ~RollingVirtualStorage.get_all_min_volume
       ~RollingVirtualStorage.get_area
       ~RollingVirtualStorage.get_cost
       ~RollingVirtualStorage.get_initial_pc

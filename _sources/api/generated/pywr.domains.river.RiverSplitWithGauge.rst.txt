@@ -23,6 +23,9 @@
       ~RiverSplitWithGauge.disconnect
       ~RiverSplitWithGauge.finalise_load
       ~RiverSplitWithGauge.finish
+      ~RiverSplitWithGauge.get_all_cost
+      ~RiverSplitWithGauge.get_all_max_flow
+      ~RiverSplitWithGauge.get_all_min_flow
       ~RiverSplitWithGauge.get_conversion_factor
       ~RiverSplitWithGauge.get_cost
       ~RiverSplitWithGauge.get_max_flow

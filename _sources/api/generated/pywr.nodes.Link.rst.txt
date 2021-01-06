@@ -23,6 +23,9 @@
       ~Link.disconnect
       ~Link.finalise_load
       ~Link.finish
+      ~Link.get_all_cost
+      ~Link.get_all_max_flow
+      ~Link.get_all_min_flow
       ~Link.get_conversion_factor
       ~Link.get_cost
       ~Link.get_max_flow

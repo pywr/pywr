@@ -21,6 +21,9 @@
       ~VirtualStorage.commit_all
       ~VirtualStorage.finalise_load
       ~VirtualStorage.finish
+      ~VirtualStorage.get_all_cost
+      ~VirtualStorage.get_all_max_volume
+      ~VirtualStorage.get_all_min_volume
       ~VirtualStorage.get_area
       ~VirtualStorage.get_cost
       ~VirtualStorage.get_initial_pc

@@ -23,6 +23,9 @@
       ~Storage.disconnect
       ~Storage.finalise_load
       ~Storage.finish
+      ~Storage.get_all_cost
+      ~Storage.get_all_max_volume
+      ~Storage.get_all_min_volume
       ~Storage.get_area
       ~Storage.get_cost
       ~Storage.get_initial_pc

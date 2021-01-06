@@ -23,6 +23,9 @@
       ~River.disconnect
       ~River.finalise_load
       ~River.finish
+      ~River.get_all_cost
+      ~River.get_all_max_flow
+      ~River.get_all_min_flow
       ~River.get_conversion_factor
       ~River.get_cost
       ~River.get_max_flow

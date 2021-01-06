@@ -23,6 +23,9 @@
       ~Output.disconnect
       ~Output.finalise_load
       ~Output.finish
+      ~Output.get_all_cost
+      ~Output.get_all_max_flow
+      ~Output.get_all_min_flow
       ~Output.get_conversion_factor
       ~Output.get_cost
       ~Output.get_max_flow
