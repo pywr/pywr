@@ -1088,6 +1088,8 @@ class LossLink(Node):
         The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
         then no-losses are calculated.
     """
+    __parameter_value_attributes__ = ('loss_factor', )
+
     def __init__(self, model, name, **kwargs):
         self.allow_isolated = True
 
@@ -1101,20 +1103,28 @@ class LossLink(Node):
         assert(net_name not in model.nodes)
         assert(agg_name not in model.nodes)
 
-        loss_factor = kwargs.pop('loss_factor', 0.0)
-
         self.output = Output(model, name=output_name, parent=self)
         self.gross = Link(model, name=gross_name, parent=self)
         self.net = Link(model, name=net_name, parent=self)
         self.gross.connect(self.output)
         self.gross.connect(self.net)
 
-        if loss_factor > 0.0:
-            self.agg = AggregatedNode(model, name=agg_name, nodes=[self.net, self.output])
-            print([1.0 - loss_factor, loss_factor])
-            self.agg.factors = [1.0, loss_factor]
+        self.agg = AggregatedNode(model, name=agg_name, nodes=[self.net, self.output])
+        self.loss_factor = kwargs.pop('loss_factor', 0.0)
 
         super().__init__(model, name, **kwargs)
+
+    def loss_factor():
+        def fget(self):
+            return self.agg.factors[1]
+
+        def fset(self, value):
+            if value == 0.0:
+                self.agg.factors = None
+            else:
+                self.agg.factors = [1.0, float(value)]
+        return locals()
+    loss_factor = property(**loss_factor())
 
     def min_flow():
         def fget(self):
