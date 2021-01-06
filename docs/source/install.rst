@@ -1,7 +1,7 @@
 Installing Pywr
 ===============
 
-Pywr should work on Python 3.6 (or later) on Windows, Linux or OS X.
+Pywr should work on Python 3.7 (or later) on Windows, Linux or OS X.
 
 Building Pywr from source requires a working C compiler. It has been built successfully with MSVC on Windows, GCC on Linux and clang/LLVM on OS X.
 
@@ -71,7 +71,7 @@ Binary wheel distributions of Pywr are hosted on `Pypi <https://pypi.org/project
 Installing binary packages with Anaconda
 ----------------------------------------
 
-A binary distribution of Pywr is provided for 3.6+ (64-bit) on Windows, Linux and OS X for the `Anaconda Python distribution <https://www.continuum.io/downloads>`_. Note that this release may lag behind the development version.
+A binary distribution of Pywr is provided for 3.7+ (64-bit) on Windows, Linux and OS X for the `Anaconda Python distribution <https://www.continuum.io/downloads>`_. Note that this release may lag behind the development version.
 
 You will need to install and configure Anaconda before proceeding. The `conda 30-minute test drive <http://conda.pydata.org/docs/test-drive.html>`_ is a good place to start.
 
