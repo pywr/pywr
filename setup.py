@@ -92,6 +92,7 @@ def setup_package():
         Extension("pywr.parameters._thresholds", ["pywr/parameters/_thresholds.pyx"]),
         Extension("pywr.parameters._control_curves", ["pywr/parameters/_control_curves.pyx"]),
         Extension("pywr.parameters._hydropower", ["pywr/parameters/_hydropower.pyx"]),
+        Extension("pywr.parameters._activation_functions", ["pywr/parameters/_activation_functions.pyx"]),
         Extension("pywr.recorders._recorders", ["pywr/recorders/_recorders.pyx"]),
         Extension("pywr.recorders._thresholds", ["pywr/recorders/_thresholds.pyx"]),
         Extension("pywr.recorders._hydropower", ["pywr/recorders/_hydropower.pyx"]),
