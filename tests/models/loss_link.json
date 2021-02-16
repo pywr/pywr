@@ -18,12 +18,13 @@
         {
             "name": "link1",
             "type": "LossLink",
-            "loss_factor": 0.1
+            "max_flow": 10,
+            "loss_factor": 0.2
         },
         {
             "name": "demand1",
             "type": "Output",
-            "max_flow": 10,
+            "max_flow": 20,
             "cost": -10
         }
     ],

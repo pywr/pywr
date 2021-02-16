@@ -1077,7 +1077,9 @@ class DelayNode(Node):
 class LossLink(Node):
     """A node that has a proportional loss.
 
-    A fixed proportional loss of all flow through this node is sent to an internal output node.
+    A fixed proportional loss of all flow through this node is sent to an internal output node. Max and min flows
+    applied to this node are enforced on the net output after losses. The node itself records the net output
+    in its flow attribute (which would be used by any attached recorders).
 
     Parameters
     ----------
@@ -1128,28 +1130,28 @@ class LossLink(Node):
 
     def min_flow():
         def fget(self):
-            return self.gross.min_flow
+            return self.net.min_flow
 
         def fset(self, value):
-            self.gross.min_flow = value
+            self.net.min_flow = value
         return locals()
     min_flow = property(**min_flow())
 
     def max_flow():
         def fget(self):
-            return self.gross.max_flow
+            return self.net.max_flow
 
         def fset(self, value):
-            self.gross.max_flow = value
+            self.net.max_flow = value
         return locals()
     max_flow = property(**max_flow())
 
     def cost():
         def fget(self):
-            return self.gross.cost
+            return self.net.cost
 
         def fset(self, value):
-            self.gross.cost = value
+            self.net.cost = value
         return locals()
     cost = property(**cost())
 
@@ -1162,6 +1164,6 @@ class LossLink(Node):
     def after(self, timestep):
         super().after(timestep)
         # Gross flow is saved to the node.
-        self.commit_all(self.gross.flow)
+        self.commit_all(self.net.flow)
 
 from pywr.domains.river import *  # noqa

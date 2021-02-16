@@ -673,6 +673,7 @@ def test_breaklink_node():
 
 
 def test_loss_link_node():
+    """Test LossLink node"""
     model = load_model('loss_link.json')
 
     supply1 = model.nodes["supply1"]
@@ -682,10 +683,10 @@ def test_loss_link_node():
     model.check()
     model.run()
 
-    # Supply must provide 10% more flow because of the loss in link1
-    assert_allclose(supply1.flow, 11)
-    # link1 records the gross flow before losses
-    assert_allclose(link1.flow, 11)
+    # Supply must provide 20% more flow because of the loss in link1
+    assert_allclose(supply1.flow, 12)
+    # link1 records the net flow after losses
+    assert_allclose(link1.flow, 10)
     assert_allclose(demand1.flow, 10)
 
 
