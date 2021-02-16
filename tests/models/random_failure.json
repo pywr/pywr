@@ -12,7 +12,7 @@
     "scenarios": [
         {
             "name": "simulations",
-            "size": 100
+            "size": 1000
         }
     ],
     "nodes": [

@@ -59,10 +59,7 @@ class DistributionParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        scenario = data.pop('scenario', None)
-        if scenario is not None:
-            scenario = model.scenarios[scenario]
-
+        scenario = model.scenarios[data.pop('scenario')]
         distribution_data = data.pop('distribution')
         distribution_name = distribution_data.pop('name')
         distribution = getattr(stats, distribution_name)(**distribution_data)
@@ -97,24 +94,37 @@ class RandomFailureIndexParameter(IndexParameter):
         # Start the model with a repair just completed. i.e. current failed (1), but repair about to complete.
         # The repair will finish in the first timestep (during before), and generate a new time to failure.
         self._days_to_next_event[...] = -1
-        self._current_state[...] = 1
+        self._current_state[...] = 0
+
+    def _make_next_state(self, current_state: int):
+        """Generate the next state and days to next event."""
+        if current_state == 1:
+            new_state = 0
+            days_to_next_event = np.floor(self._repair_dist.rvs(size=1))[0]
+            if days_to_next_event < 1:
+                new_state, days_to_next_event = self._make_next_state(new_state)
+            print('next-repair', new_state, days_to_next_event)
+        elif current_state == 0:
+            new_state = 1
+            days_to_next_event = np.floor(self._failure_dist.rvs(size=1))[0]
+            if days_to_next_event < 1:
+                new_state, days_to_next_event = self._make_next_state(new_state)
+            print('next-failure', new_state, days_to_next_event)
+        else:
+            raise RuntimeError(f'Current state "{current_state}" is not 0 or 1.')
+        return new_state, days_to_next_event
 
     def before(self):
         # Progress toward next event by the size of the timestep
-        self._days_to_next_event -= self.model.timestepper.current.days
+        dt = self.model.timestepper.current.days
+        self._days_to_next_event -= dt
 
         for i in range(self._current_state.shape[0]):
             if self._days_to_next_event[i] <= 0:
                 # Event has happened; i.e. we switch state and generate a time to change state again.
-                self._current_state[i] = 1 - self._current_state[i]
-                if self._current_state[i] == 1:
-                    # Just failed; generate time to repair
-                    self._days_to_next_event[i] = self._repair_dist.rvs(size=1)
-                elif self._current_state[i] == 0:
-                    # Just repaired; generate time to fail
-                    self._days_to_next_event[i] = self._failure_dist.rvs(size=1)
-                else:
-                    raise RuntimeError(f'Current state "{self._current_state[i]}" is not 0 or 1.')
+                new_state, days_to_next_event = self._make_next_state(self._current_state[i])
+                self._current_state[i] = new_state
+                self._days_to_next_event[i] = days_to_next_event
 
     def index(self, timestep, scenario_index):
         return self._current_state[scenario_index.global_id]
