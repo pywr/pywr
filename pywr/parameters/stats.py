@@ -103,13 +103,11 @@ class RandomFailureIndexParameter(IndexParameter):
             days_to_next_event = np.floor(self._repair_dist.rvs(size=1))[0]
             if days_to_next_event < 1:
                 new_state, days_to_next_event = self._make_next_state(new_state)
-            print('next-repair', new_state, days_to_next_event)
         elif current_state == 0:
             new_state = 1
             days_to_next_event = np.floor(self._failure_dist.rvs(size=1))[0]
             if days_to_next_event < 1:
                 new_state, days_to_next_event = self._make_next_state(new_state)
-            print('next-failure', new_state, days_to_next_event)
         else:
             raise RuntimeError(f'Current state "{current_state}" is not 0 or 1.')
         return new_state, days_to_next_event
