@@ -1,0 +1,55 @@
+{
+    "metadata": {
+        "title": "Simple Monte Carlo",
+        "description": "A very simple example demonstrating Monte Carlo simulation of random parameters.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "scenarios": [
+        {
+            "name": "monte-carlo",
+            "size": 101
+        }
+    ],
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": "random_supply"
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 100,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "random_supply": {
+            "type": "distribution",
+            "scenario": "monte-carlo",
+            "random_state": 12345,
+            "sampling_method": "quantiles",
+            "lower_quantile": 0.1,
+            "upper_quantile": 0.9,
+            "distribution": {
+                "name": "norm",
+                "loc": 15.0,
+                "scale": 1.0
+            }
+        }
+
+    }
+}
