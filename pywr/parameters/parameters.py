@@ -21,6 +21,7 @@ from ._thresholds import (
     RecorderThresholdParameter, CurrentYearThresholdParameter, CurrentOrdinalDayThresholdParameter
 )
 from ._hydropower import HydropowerTargetParameter
+from ._activation_functions import BinaryStepParameter, RectifierParameter, LogisticParameter  # noqa
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad

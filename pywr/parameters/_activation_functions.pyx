@@ -59,7 +59,7 @@ cdef class RectifierParameter(Parameter):
     lower_bounds, upper_bounds : float
         The valid ranges of the internal variable for optimisation (default = [-1.0, 1.0]).
     max_output : float
-        The value to return when the internal variable is positive (default = 1.0).
+        The maximum value to return when the internal variable is at its upper bounds (default = 1.0).
     """
     def __init__(self, model, value=0.0, lower_bounds=-1.0, upper_bounds=1.0, max_output=1.0, **kwargs):
         super(RectifierParameter, self).__init__(model, **kwargs)
@@ -74,7 +74,7 @@ cdef class RectifierParameter(Parameter):
         if self._value <= 0.0:
             return 0.0
         else:
-            return self.max_output * self._upper_bounds
+            return self.max_output * self._value / self._upper_bounds
 
     cpdef set_double_variables(self, double[:] values):
         self._value = values[0]
@@ -103,7 +103,7 @@ cdef class LogisticParameter(Parameter):
     lower_bounds, upper_bounds : float
         The valid ranges of the internal variable for optimisation (default = [-1.0, 1.0]).
     max_output : float
-        The maximum value to return when the logistic function is at its highest (default = 1.0).
+        The maximum value to return when the logistic function is at its upper bounds (default = 1.0).
     growth_rate : float
         The growth rate (or steepness) of the logistic function (default = 1.0).
     """
