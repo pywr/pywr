@@ -7,12 +7,13 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.parameters.InterpolatedParameter &mdash; Pywr 1.11.0b1.dev8+g1d5a1d9 documentation</title>
+  <title>pywr.parameters.InterpolatedParameter &mdash; Pywr 1.11.1.dev1+gc50d863 documentation</title>
   
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
 
   
   
@@ -32,7 +33,6 @@
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -40,7 +40,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="pywr.parameters.InterpolatedVolumeParameter" href="pywr.parameters.InterpolatedVolumeParameter.html" />
-    <link rel="prev" title="pywr.parameters.CurrentOrdinalDayThresholdParameter" href="pywr.parameters.CurrentOrdinalDayThresholdParameter.html" /> 
+    <link rel="prev" title="pywr.parameters.LogisticParameter" href="pywr.parameters.LogisticParameter.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                1.11.0b1.dev8+g1d5a1d9
+                1.11.1.dev1+gc50d863
               </div>
             
           
@@ -109,6 +109,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#hdf5-parameter">HDF5 Parameter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#array-based-parameters">Array based parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#threshold-parameters">Threshold parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#activation-function-parameters">Activation function parameters</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="../pywr.parameters.html#interpolation-parameters">Interpolation parameters</a><ul class="current">
 <li class="toctree-l4 current"><a class="current reference internal" href="#">pywr.parameters.InterpolatedParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.parameters.InterpolatedVolumeParameter.html">pywr.parameters.InterpolatedVolumeParameter</a></li>
@@ -203,11 +204,11 @@
 <h1>pywr.parameters.InterpolatedParameter<a class="headerlink" href="#pywr-parameters-interpolatedparameter" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="pywr.parameters.InterpolatedParameter">
-<em class="property">class </em><code class="sig-prename descclassname">pywr.parameters.</code><code class="sig-name descname">InterpolatedParameter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">interp_kwargs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.InterpolatedParameter" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></code><code class="sig-name descname"><span class="pre">InterpolatedParameter</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interp_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.InterpolatedParameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parameter value is equal to the interpolation of another parameter</p>
 <dl class="py method">
 <dt id="pywr.parameters.InterpolatedParameter.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">interp_kwargs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.InterpolatedParameter.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interp_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.InterpolatedParameter.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 
@@ -333,7 +334,7 @@
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="pywr.parameters.InterpolatedVolumeParameter.html" class="btn btn-neutral float-right" title="pywr.parameters.InterpolatedVolumeParameter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="pywr.parameters.CurrentOrdinalDayThresholdParameter.html" class="btn btn-neutral float-left" title="pywr.parameters.CurrentOrdinalDayThresholdParameter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pywr.parameters.LogisticParameter.html" class="btn btn-neutral float-left" title="pywr.parameters.LogisticParameter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

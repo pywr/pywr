@@ -1,0 +1,56 @@
+﻿pywr.parameters.RectifierParameter
+==================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: RectifierParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RectifierParameter.__init__
+      ~RectifierParameter.after
+      ~RectifierParameter.before
+      ~RectifierParameter.finish
+      ~RectifierParameter.get_all_values
+      ~RectifierParameter.get_double_lower_bounds
+      ~RectifierParameter.get_double_upper_bounds
+      ~RectifierParameter.get_double_variables
+      ~RectifierParameter.get_integer_lower_bounds
+      ~RectifierParameter.get_integer_upper_bounds
+      ~RectifierParameter.get_integer_variables
+      ~RectifierParameter.get_value
+      ~RectifierParameter.load
+      ~RectifierParameter.register
+      ~RectifierParameter.reset
+      ~RectifierParameter.set_double_variables
+      ~RectifierParameter.set_integer_variables
+      ~RectifierParameter.setup
+      ~RectifierParameter.unregister
+      ~RectifierParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RectifierParameter.children
+      ~RectifierParameter.comment
+      ~RectifierParameter.double_size
+      ~RectifierParameter.integer_size
+      ~RectifierParameter.is_variable
+      ~RectifierParameter.max_output
+      ~RectifierParameter.model
+      ~RectifierParameter.name
+      ~RectifierParameter.parents
+      ~RectifierParameter.size
+   
+   

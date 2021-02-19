@@ -7,12 +7,13 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.recorders.TotalHydroEnergyRecorder &mdash; Pywr 1.11.0b1.dev8+g1d5a1d9 documentation</title>
+  <title>pywr.recorders.TotalHydroEnergyRecorder &mdash; Pywr 1.11.1.dev1+gc50d863 documentation</title>
   
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
 
   
   
@@ -64,7 +65,7 @@
             
             
               <div class="version">
-                1.11.0b1.dev8+g1d5a1d9
+                1.11.1.dev1+gc50d863
               </div>
             
           
@@ -197,7 +198,7 @@
 <h1>pywr.recorders.TotalHydroEnergyRecorder<a class="headerlink" href="#pywr-recorders-totalhydroenergyrecorder" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="pywr.recorders.TotalHydroEnergyRecorder">
-<em class="property">class </em><code class="sig-prename descclassname">pywr.recorders.</code><code class="sig-name descname">TotalHydroEnergyRecorder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">node</span></em>, <em class="sig-param"><span class="n">water_elevation_parameter</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">turbine_elevation</span><span class="o">=</span><span class="default_value">0.0</span></em>, <em class="sig-param"><span class="n">efficiency</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">density</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">flow_unit_conversion</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">energy_unit_conversion</span><span class="o">=</span><span class="default_value">1e-06</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.TotalHydroEnergyRecorder" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.recorders.</span></code><code class="sig-name descname"><span class="pre">TotalHydroEnergyRecorder</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">water_elevation_parameter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turbine_elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">efficiency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow_unit_conversion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_unit_conversion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.TotalHydroEnergyRecorder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the total energy production using the hydropower equation from a model run.</p>
 <p>This recorder saves the total energy production in each scenario during a model run. It does not save a timeseries
 or power, but rather total energy.</p>
@@ -239,7 +240,7 @@ is given then head is the difference in elevation between the water and the turb
 is <cite>None</cite> then the head is simply the turbine elevation.</p>
 <dl class="py method">
 <dt id="pywr.recorders.TotalHydroEnergyRecorder.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.TotalHydroEnergyRecorder.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.TotalHydroEnergyRecorder.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 

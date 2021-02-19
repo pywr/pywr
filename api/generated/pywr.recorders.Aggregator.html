@@ -7,12 +7,13 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.recorders.Aggregator &mdash; Pywr 1.11.0b1.dev8+g1d5a1d9 documentation</title>
+  <title>pywr.recorders.Aggregator &mdash; Pywr 1.11.1.dev1+gc50d863 documentation</title>
   
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
 
   
   
@@ -32,7 +33,6 @@
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                1.11.0b1.dev8+g1d5a1d9
+                1.11.1.dev1+gc50d863
               </div>
             
           
@@ -201,7 +201,7 @@
 <h1>pywr.recorders.Aggregator<a class="headerlink" href="#pywr-recorders-aggregator" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="pywr.recorders.Aggregator">
-<em class="property">class </em><code class="sig-prename descclassname">pywr.recorders.</code><code class="sig-name descname">Aggregator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">func</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.Aggregator" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.recorders.</span></code><code class="sig-name descname"><span class="pre">Aggregator</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.Aggregator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility class for computing aggregate values.</p>
 <p>Users are unlikely to use this class directly. Instead <cite>Recorder</cite> sub-classes will use this functionality
 to aggregate their results across different dimensions (e.g. time, scenarios, etc.).</p>
@@ -234,7 +234,7 @@ the callable function should behave in a similar fashion to the numpy functions.
 </div>
 <dl class="py method">
 <dt id="pywr.recorders.Aggregator.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.Aggregator.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.Aggregator.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 

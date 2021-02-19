@@ -7,12 +7,13 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.parameters.AnnualHarmonicSeriesParameter &mdash; Pywr 1.11.0b1.dev8+g1d5a1d9 documentation</title>
+  <title>pywr.parameters.AnnualHarmonicSeriesParameter &mdash; Pywr 1.11.1.dev1+gc50d863 documentation</title>
   
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
 
   
   
@@ -64,7 +65,7 @@
             
             
               <div class="version">
-                1.11.0b1.dev8+g1d5a1d9
+                1.11.1.dev1+gc50d863
               </div>
             
           
@@ -109,6 +110,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#hdf5-parameter">HDF5 Parameter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#array-based-parameters">Array based parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#threshold-parameters">Threshold parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#activation-function-parameters">Activation function parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#interpolation-parameters">Interpolation parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#control-curve-parameters">Control curve parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#hydropower-parameters">Hydropower parameters</a></li>
@@ -206,7 +208,7 @@
 <h1>pywr.parameters.AnnualHarmonicSeriesParameter<a class="headerlink" href="#pywr-parameters-annualharmonicseriesparameter" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="pywr.parameters.AnnualHarmonicSeriesParameter">
-<em class="property">class </em><code class="sig-prename descclassname">pywr.parameters.</code><code class="sig-name descname">AnnualHarmonicSeriesParameter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">mean</span></em>, <em class="sig-param"><span class="n">amplitudes</span></em>, <em class="sig-param"><span class="n">phases</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.AnnualHarmonicSeriesParameter" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></code><code class="sig-name descname"><span class="pre">AnnualHarmonicSeriesParameter</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amplitudes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.AnnualHarmonicSeriesParameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <cite>Parameter</cite> which returns the value from an annual harmonic series</p>
 <dl class="simple">
 <dt>This <cite>Parameter</cite> comprises a series N cosine function with a period of 365</dt><dd><p>days. The calculation is performed using the Julien day of the year minus 1
@@ -231,7 +233,7 @@ length as amplitudes.</p>
 </dl>
 <dl class="py method">
 <dt id="pywr.parameters.AnnualHarmonicSeriesParameter.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.AnnualHarmonicSeriesParameter.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.AnnualHarmonicSeriesParameter.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 

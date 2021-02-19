@@ -7,12 +7,13 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.parameters.TablesArrayParameter &mdash; Pywr 1.11.0b1.dev8+g1d5a1d9 documentation</title>
+  <title>pywr.parameters.TablesArrayParameter &mdash; Pywr 1.11.1.dev1+gc50d863 documentation</title>
   
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
 
   
   
@@ -32,7 +33,6 @@
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                1.11.0b1.dev8+g1d5a1d9
+                1.11.1.dev1+gc50d863
               </div>
             
           
@@ -112,6 +112,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#array-based-parameters">Array based parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#threshold-parameters">Threshold parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#activation-function-parameters">Activation function parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#interpolation-parameters">Interpolation parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#control-curve-parameters">Control curve parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#hydropower-parameters">Hydropower parameters</a></li>
@@ -200,10 +201,10 @@
 <h1>pywr.parameters.TablesArrayParameter<a class="headerlink" href="#pywr-parameters-tablesarrayparameter" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="pywr.parameters.TablesArrayParameter">
-<em class="property">class </em><code class="sig-prename descclassname">pywr.parameters.</code><code class="sig-name descname">TablesArrayParameter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">h5file</span></em>, <em class="sig-param"><span class="n">node</span></em>, <em class="sig-param"><span class="n">where</span><span class="o">=</span><span class="default_value">'/'</span></em>, <em class="sig-param"><span class="n">scenario</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.TablesArrayParameter" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></code><code class="sig-name descname"><span class="pre">TablesArrayParameter</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h5file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">where</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.TablesArrayParameter" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt id="pywr.parameters.TablesArrayParameter.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.TablesArrayParameter.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.TablesArrayParameter.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>This Parameter reads array data from a PyTables HDF database.</p>
 <p>The parameter reads data using the PyTables array interface and therefore
 does not require loading the entire dataset in to memory. This is useful

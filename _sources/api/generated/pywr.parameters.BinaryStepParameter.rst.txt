@@ -1,0 +1,56 @@
+﻿pywr.parameters.BinaryStepParameter
+===================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: BinaryStepParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~BinaryStepParameter.__init__
+      ~BinaryStepParameter.after
+      ~BinaryStepParameter.before
+      ~BinaryStepParameter.finish
+      ~BinaryStepParameter.get_all_values
+      ~BinaryStepParameter.get_double_lower_bounds
+      ~BinaryStepParameter.get_double_upper_bounds
+      ~BinaryStepParameter.get_double_variables
+      ~BinaryStepParameter.get_integer_lower_bounds
+      ~BinaryStepParameter.get_integer_upper_bounds
+      ~BinaryStepParameter.get_integer_variables
+      ~BinaryStepParameter.get_value
+      ~BinaryStepParameter.load
+      ~BinaryStepParameter.register
+      ~BinaryStepParameter.reset
+      ~BinaryStepParameter.set_double_variables
+      ~BinaryStepParameter.set_integer_variables
+      ~BinaryStepParameter.setup
+      ~BinaryStepParameter.unregister
+      ~BinaryStepParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~BinaryStepParameter.children
+      ~BinaryStepParameter.comment
+      ~BinaryStepParameter.double_size
+      ~BinaryStepParameter.integer_size
+      ~BinaryStepParameter.is_variable
+      ~BinaryStepParameter.model
+      ~BinaryStepParameter.name
+      ~BinaryStepParameter.output
+      ~BinaryStepParameter.parents
+      ~BinaryStepParameter.size
+   
+   

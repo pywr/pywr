@@ -7,12 +7,13 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Demand restrictions &mdash; Pywr 1.11.0b1.dev8+g1d5a1d9 documentation</title>
+  <title>Demand restrictions &mdash; Pywr 1.11.1.dev1+gc50d863 documentation</title>
   
 
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
 
   
   
@@ -64,7 +65,7 @@
             
             
               <div class="version">
-                1.11.0b1.dev8+g1d5a1d9
+                1.11.1.dev1+gc50d863
               </div>
             
           
@@ -198,7 +199,7 @@
 </div>
 <p>(<a class="reference external" href="../pyplots/top_hat.py">Source code</a>, <a class="reference external" href="../pyplots/top_hat.png">png</a>, <a class="reference external" href="../pyplots/top_hat.hires.png">hires.png</a>, <a class="reference external" href="../pyplots/top_hat.pdf">pdf</a>)</p>
 <div class="figure align-default">
-<img alt="../_images/top_hat.png" src="../_images/top_hat.png" />
+<img alt="../_images/top_hat.png" class="plot-directive" src="../_images/top_hat.png" />
 </div>
 <p>The demand restriction level describes the level of restrictions as an integer, where 0 means no demand restrictions, level 1 (L1) is some restriction (or perhaps just publicity), level 2 (L2) more severe restrictions, and so on. The specifics will depend on the system being modelled. This is represented in Pywr using the <code class="docutils literal notranslate"><span class="pre">ControlCurveIndexParameter</span></code>. <code class="docutils literal notranslate"><span class="pre">IndexParameter</span></code> return an integer to be used as an index, rather than a decimal value.</p>
 <p>The demand restriction level is often related to the storage of strategic reservoirs in relation to a control curve (the expected reservoir volume at a given time of the year). The example below two demand restriction levels are defined (and implicitly a L0) based on the volume in the <code class="docutils literal notranslate"><span class="pre">&quot;Central</span> <span class="pre">Reservoir&quot;</span></code> storage node. L1 is defined as 80% of full, L2 as 50% of full. Control curves are commonly more complicated, as the expected level of a reservoir is usually lower in the summer than it is in the winter.</p>
@@ -263,7 +264,7 @@
 <p>The final profiles are illustrated in the figure below. The actual demand value will switch between the three profiles depending on the resource state of the reservoir.</p>
 <p>(<a class="reference external" href="../pyplots/demand_saving_levels.py">Source code</a>, <a class="reference external" href="../pyplots/demand_saving_levels.png">png</a>, <a class="reference external" href="../pyplots/demand_saving_levels.hires.png">hires.png</a>, <a class="reference external" href="../pyplots/demand_saving_levels.pdf">pdf</a>)</p>
 <div class="figure align-default">
-<img alt="../_images/demand_saving_levels.png" src="../_images/demand_saving_levels.png" />
+<img alt="../_images/demand_saving_levels.png" class="plot-directive" src="../_images/demand_saving_levels.png" />
 </div>
 <p>This parameter can then be applied to the <code class="docutils literal notranslate"><span class="pre">max_flow</span></code> attribute of the demand node.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>

@@ -7,12 +7,13 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Parameters &mdash; Pywr 1.11.0b1.dev8+g1d5a1d9 documentation</title>
+  <title>Parameters &mdash; Pywr 1.11.1.dev1+gc50d863 documentation</title>
   
 
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
 
   
   
@@ -32,7 +33,6 @@
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                1.11.0b1.dev8+g1d5a1d9
+                1.11.1.dev1+gc50d863
               </div>
             
           
@@ -158,6 +158,12 @@
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.RecorderThresholdParameter.html">pywr.parameters.RecorderThresholdParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.CurrentYearThresholdParameter.html">pywr.parameters.CurrentYearThresholdParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.CurrentOrdinalDayThresholdParameter.html">pywr.parameters.CurrentOrdinalDayThresholdParameter</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#activation-function-parameters">Activation function parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.BinaryStepParameter.html">pywr.parameters.BinaryStepParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.RectifierParameter.html">pywr.parameters.RectifierParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.LogisticParameter.html">pywr.parameters.LogisticParameter</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#interpolation-parameters">Interpolation parameters</a><ul>
@@ -458,6 +464,26 @@
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.CurrentOrdinalDayThresholdParameter.html#pywr.parameters.CurrentOrdinalDayThresholdParameter" title="pywr.parameters.CurrentOrdinalDayThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CurrentOrdinalDayThresholdParameter</span></code></a></p></td>
 <td><p>Returns one of two values depending on the ordinal of the current timestep.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="activation-function-parameters">
+<h2>Activation function parameters<a class="headerlink" href="#activation-function-parameters" title="Permalink to this headline">¶</a></h2>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.BinaryStepParameter.html#pywr.parameters.BinaryStepParameter" title="pywr.parameters.BinaryStepParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BinaryStepParameter</span></code></a>(model[, value, …])</p></td>
+<td><p>An activation function that returns a constant value if its internal variable is positive.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.RectifierParameter.html#pywr.parameters.RectifierParameter" title="pywr.parameters.RectifierParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RectifierParameter</span></code></a>(model[, value, …])</p></td>
+<td><p>An activation function that follows a ramp function if its internal variable is positive.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.LogisticParameter.html#pywr.parameters.LogisticParameter" title="pywr.parameters.LogisticParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LogisticParameter</span></code></a>(model[, value, …])</p></td>
+<td><p>An activation function that follows a logistic function using its interval value.</p></td>
 </tr>
 </tbody>
 </table>
