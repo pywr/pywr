@@ -2,6 +2,12 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.12.0
+
+### New Features
+
+- Add additional "activation function" parameters: `BinaryStepParameter`, `RectifierParameter` and `LogisticParameter`. (#965)
+
 ## v1.11.0
 
 ### New Features
