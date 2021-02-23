@@ -1088,7 +1088,7 @@ class LossLink(Node):
         Name of the node.
     loss_factor : float
         The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
-        then no-losses are calculated.
+        then no-losses are calculated. The percentage is calculated as a percentage of gross flow.
     """
     __parameter_value_attributes__ = ('loss_factor', )
 
@@ -1122,7 +1122,13 @@ class LossLink(Node):
 
         def fset(self, value):
             if value == 0.0:
+                # 0% loss; no flow to the output loss node.
                 self.agg.factors = None
+                self.output.max_flow = 0.0
+            elif value == 1.0:
+                # 100% loss; all flow to the output loss node
+                self.agg.factors = None
+                self.net.max_flow = 0.0
             else:
                 self.agg.factors = [1.0, float(value)]
         return locals()
