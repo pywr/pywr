@@ -43,11 +43,12 @@ class TestConstantParameter:
         scA = Scenario(model, 'Scenario A', size=2)
         scB = Scenario(model, 'Scenario B', size=5)
 
-        p = ConstantParameter(model, np.pi, name='pi', comment='Mmmmm Pi!')
+        p = ConstantParameter(model, np.pi, name='pi', comment='Mmmmm Pi!', tags={'key': 'value'})
 
         assert not p.is_variable
         assert p.double_size == 1
         assert p.integer_size == 0
+        assert p.tags == {'key': 'value'}
 
         model.setup()
         ts = model.timestepper.current
