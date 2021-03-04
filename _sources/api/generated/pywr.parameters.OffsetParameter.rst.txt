@@ -53,5 +53,6 @@
       ~OffsetParameter.parameter
       ~OffsetParameter.parents
       ~OffsetParameter.size
+      ~OffsetParameter.tags
    
    

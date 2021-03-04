@@ -51,5 +51,6 @@
       ~ArrayIndexedParameter.name
       ~ArrayIndexedParameter.parents
       ~ArrayIndexedParameter.size
+      ~ArrayIndexedParameter.tags
    
    

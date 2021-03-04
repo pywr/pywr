@@ -55,6 +55,7 @@
       ~StorageDurationCurveRecorder.parents
       ~StorageDurationCurveRecorder.proportional
       ~StorageDurationCurveRecorder.sdc
+      ~StorageDurationCurveRecorder.tags
       ~StorageDurationCurveRecorder.temporal_agg_func
    
    

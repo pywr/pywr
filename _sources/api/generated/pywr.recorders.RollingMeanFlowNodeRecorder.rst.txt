@@ -53,6 +53,7 @@
       ~RollingMeanFlowNodeRecorder.name
       ~RollingMeanFlowNodeRecorder.node
       ~RollingMeanFlowNodeRecorder.parents
+      ~RollingMeanFlowNodeRecorder.tags
       ~RollingMeanFlowNodeRecorder.timesteps
    
    

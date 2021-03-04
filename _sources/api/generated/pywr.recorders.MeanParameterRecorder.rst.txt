@@ -52,5 +52,6 @@
       ~MeanParameterRecorder.name
       ~MeanParameterRecorder.parameter
       ~MeanParameterRecorder.parents
+      ~MeanParameterRecorder.tags
    
    

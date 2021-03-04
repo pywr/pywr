@@ -58,6 +58,7 @@
       ~TablesArrayParameter.parents
       ~TablesArrayParameter.scenario
       ~TablesArrayParameter.size
+      ~TablesArrayParameter.tags
       ~TablesArrayParameter.where
    
    

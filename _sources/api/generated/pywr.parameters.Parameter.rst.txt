@@ -51,5 +51,6 @@
       ~Parameter.name
       ~Parameter.parents
       ~Parameter.size
+      ~Parameter.tags
    
    

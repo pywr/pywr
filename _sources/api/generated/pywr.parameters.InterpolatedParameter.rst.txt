@@ -53,5 +53,6 @@
       ~InterpolatedParameter.parameter
       ~InterpolatedParameter.parents
       ~InterpolatedParameter.size
+      ~InterpolatedParameter.tags
    
    

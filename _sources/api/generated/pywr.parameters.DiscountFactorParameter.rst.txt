@@ -53,5 +53,6 @@
       ~DiscountFactorParameter.parents
       ~DiscountFactorParameter.rate
       ~DiscountFactorParameter.size
+      ~DiscountFactorParameter.tags
    
    

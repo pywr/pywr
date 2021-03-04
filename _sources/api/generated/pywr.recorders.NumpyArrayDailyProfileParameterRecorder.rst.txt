@@ -53,6 +53,7 @@
       ~NumpyArrayDailyProfileParameterRecorder.name
       ~NumpyArrayDailyProfileParameterRecorder.parameter
       ~NumpyArrayDailyProfileParameterRecorder.parents
+      ~NumpyArrayDailyProfileParameterRecorder.tags
       ~NumpyArrayDailyProfileParameterRecorder.temporal_agg_func
    
    

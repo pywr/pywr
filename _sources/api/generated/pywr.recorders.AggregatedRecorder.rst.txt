@@ -51,5 +51,6 @@
       ~AggregatedRecorder.name
       ~AggregatedRecorder.parents
       ~AggregatedRecorder.recorders
+      ~AggregatedRecorder.tags
    
    

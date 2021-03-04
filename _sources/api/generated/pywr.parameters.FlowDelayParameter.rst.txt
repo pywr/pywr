@@ -54,6 +54,7 @@
       ~FlowDelayParameter.node
       ~FlowDelayParameter.parents
       ~FlowDelayParameter.size
+      ~FlowDelayParameter.tags
       ~FlowDelayParameter.timesteps
    
    

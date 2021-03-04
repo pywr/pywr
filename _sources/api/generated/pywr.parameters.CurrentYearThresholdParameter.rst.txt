@@ -55,6 +55,7 @@
       ~CurrentYearThresholdParameter.parents
       ~CurrentYearThresholdParameter.ratchet
       ~CurrentYearThresholdParameter.size
+      ~CurrentYearThresholdParameter.tags
       ~CurrentYearThresholdParameter.threshold
    
    

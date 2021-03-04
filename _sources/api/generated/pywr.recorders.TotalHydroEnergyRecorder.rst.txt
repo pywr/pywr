@@ -55,6 +55,7 @@
       ~TotalHydroEnergyRecorder.name
       ~TotalHydroEnergyRecorder.node
       ~TotalHydroEnergyRecorder.parents
+      ~TotalHydroEnergyRecorder.tags
       ~TotalHydroEnergyRecorder.turbine_elevation
       ~TotalHydroEnergyRecorder.water_elevation_parameter
    

@@ -57,6 +57,7 @@
       ~FlowDurationCurveDeviationRecorder.node
       ~FlowDurationCurveDeviationRecorder.parents
       ~FlowDurationCurveDeviationRecorder.scenario
+      ~FlowDurationCurveDeviationRecorder.tags
       ~FlowDurationCurveDeviationRecorder.temporal_agg_func
    
    

@@ -53,5 +53,6 @@
       ~ConstantParameter.parents
       ~ConstantParameter.scale
       ~ConstantParameter.size
+      ~ConstantParameter.tags
    
    

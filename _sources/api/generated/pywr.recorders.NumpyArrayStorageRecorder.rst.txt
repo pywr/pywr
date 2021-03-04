@@ -54,6 +54,7 @@
       ~NumpyArrayStorageRecorder.node
       ~NumpyArrayStorageRecorder.parents
       ~NumpyArrayStorageRecorder.proportional
+      ~NumpyArrayStorageRecorder.tags
       ~NumpyArrayStorageRecorder.temporal_agg_func
    
    

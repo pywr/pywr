@@ -52,5 +52,6 @@
       ~BinaryStepParameter.output
       ~BinaryStepParameter.parents
       ~BinaryStepParameter.size
+      ~BinaryStepParameter.tags
    
    

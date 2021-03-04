@@ -54,6 +54,7 @@
       ~RbfProfileParameter.rbf
       ~RbfProfileParameter.rbf_kwargs
       ~RbfProfileParameter.size
+      ~RbfProfileParameter.tags
       ~RbfProfileParameter.variable_days_of_year_range
    
    

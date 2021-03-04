@@ -58,6 +58,7 @@
       ~HydropowerTargetParameter.name
       ~HydropowerTargetParameter.parents
       ~HydropowerTargetParameter.size
+      ~HydropowerTargetParameter.tags
       ~HydropowerTargetParameter.target
       ~HydropowerTargetParameter.turbine_elevation
       ~HydropowerTargetParameter.water_elevation_parameter

@@ -53,5 +53,6 @@
       ~IndexedArrayParameter.params
       ~IndexedArrayParameter.parents
       ~IndexedArrayParameter.size
+      ~IndexedArrayParameter.tags
    
    

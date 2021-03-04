@@ -51,6 +51,7 @@
       ~AnnualCountIndexParameterRecorder.name
       ~AnnualCountIndexParameterRecorder.parameter
       ~AnnualCountIndexParameterRecorder.parents
+      ~AnnualCountIndexParameterRecorder.tags
       ~AnnualCountIndexParameterRecorder.threshold
    
    

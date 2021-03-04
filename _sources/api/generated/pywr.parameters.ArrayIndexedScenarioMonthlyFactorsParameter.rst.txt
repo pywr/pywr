@@ -51,5 +51,6 @@
       ~ArrayIndexedScenarioMonthlyFactorsParameter.name
       ~ArrayIndexedScenarioMonthlyFactorsParameter.parents
       ~ArrayIndexedScenarioMonthlyFactorsParameter.size
+      ~ArrayIndexedScenarioMonthlyFactorsParameter.tags
    
    

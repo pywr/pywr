@@ -51,5 +51,6 @@
       ~ScenarioMonthlyProfileParameter.name
       ~ScenarioMonthlyProfileParameter.parents
       ~ScenarioMonthlyProfileParameter.size
+      ~ScenarioMonthlyProfileParameter.tags
    
    

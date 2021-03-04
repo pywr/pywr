@@ -54,6 +54,7 @@
       ~NumpyArrayNodeSuppliedRatioRecorder.name
       ~NumpyArrayNodeSuppliedRatioRecorder.node
       ~NumpyArrayNodeSuppliedRatioRecorder.parents
+      ~NumpyArrayNodeSuppliedRatioRecorder.tags
       ~NumpyArrayNodeSuppliedRatioRecorder.temporal_agg_func
    
    

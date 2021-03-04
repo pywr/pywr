@@ -52,5 +52,6 @@
       ~InterpolatedFlowParameter.name
       ~InterpolatedFlowParameter.parents
       ~InterpolatedFlowParameter.size
+      ~InterpolatedFlowParameter.tags
    
    

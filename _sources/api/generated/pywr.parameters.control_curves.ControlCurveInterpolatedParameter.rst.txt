@@ -54,6 +54,7 @@
       ~ControlCurveInterpolatedParameter.parents
       ~ControlCurveInterpolatedParameter.size
       ~ControlCurveInterpolatedParameter.storage_node
+      ~ControlCurveInterpolatedParameter.tags
       ~ControlCurveInterpolatedParameter.values
    
    

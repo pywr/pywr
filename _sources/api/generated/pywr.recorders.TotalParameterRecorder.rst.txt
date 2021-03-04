@@ -53,5 +53,6 @@
       ~TotalParameterRecorder.name
       ~TotalParameterRecorder.parameter
       ~TotalParameterRecorder.parents
+      ~TotalParameterRecorder.tags
    
    

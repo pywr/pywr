@@ -52,6 +52,7 @@
       ~MaxParameter.parameter
       ~MaxParameter.parents
       ~MaxParameter.size
+      ~MaxParameter.tags
       ~MaxParameter.threshold
    
    

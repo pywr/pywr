@@ -51,5 +51,6 @@
       ~ParameterRecorder.name
       ~ParameterRecorder.parameter
       ~ParameterRecorder.parents
+      ~ParameterRecorder.tags
    
    

@@ -56,5 +56,6 @@
       ~ControlCurveIndexParameter.parents
       ~ControlCurveIndexParameter.size
       ~ControlCurveIndexParameter.storage_node
+      ~ControlCurveIndexParameter.tags
    
    

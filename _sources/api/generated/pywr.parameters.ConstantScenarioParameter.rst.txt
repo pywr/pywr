@@ -51,5 +51,6 @@
       ~ConstantScenarioParameter.name
       ~ConstantScenarioParameter.parents
       ~ConstantScenarioParameter.size
+      ~ConstantScenarioParameter.tags
    
    

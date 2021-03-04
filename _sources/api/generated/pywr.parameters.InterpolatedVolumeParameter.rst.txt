@@ -52,5 +52,6 @@
       ~InterpolatedVolumeParameter.name
       ~InterpolatedVolumeParameter.parents
       ~InterpolatedVolumeParameter.size
+      ~InterpolatedVolumeParameter.tags
    
    

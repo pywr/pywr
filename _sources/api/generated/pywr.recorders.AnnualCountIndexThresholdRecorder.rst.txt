@@ -54,6 +54,7 @@
       ~AnnualCountIndexThresholdRecorder.name
       ~AnnualCountIndexThresholdRecorder.parameters
       ~AnnualCountIndexThresholdRecorder.parents
+      ~AnnualCountIndexThresholdRecorder.tags
       ~AnnualCountIndexThresholdRecorder.temporal_agg_func
       ~AnnualCountIndexThresholdRecorder.threshold
    

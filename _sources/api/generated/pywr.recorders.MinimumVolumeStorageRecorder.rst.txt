@@ -51,5 +51,6 @@
       ~MinimumVolumeStorageRecorder.name
       ~MinimumVolumeStorageRecorder.node
       ~MinimumVolumeStorageRecorder.parents
+      ~MinimumVolumeStorageRecorder.tags
    
    

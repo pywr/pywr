@@ -52,5 +52,6 @@
       ~TotalFlowNodeRecorder.name
       ~TotalFlowNodeRecorder.node
       ~TotalFlowNodeRecorder.parents
+      ~TotalFlowNodeRecorder.tags
    
    

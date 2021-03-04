@@ -53,5 +53,6 @@
       ~DivisionParameter.numerator
       ~DivisionParameter.parents
       ~DivisionParameter.size
+      ~DivisionParameter.tags
    
    

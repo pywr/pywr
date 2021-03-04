@@ -50,5 +50,6 @@
       ~Recorder.model
       ~Recorder.name
       ~Recorder.parents
+      ~Recorder.tags
    
    

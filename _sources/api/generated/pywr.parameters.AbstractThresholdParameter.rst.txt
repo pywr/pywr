@@ -55,6 +55,7 @@
       ~AbstractThresholdParameter.parents
       ~AbstractThresholdParameter.ratchet
       ~AbstractThresholdParameter.size
+      ~AbstractThresholdParameter.tags
       ~AbstractThresholdParameter.threshold
    
    

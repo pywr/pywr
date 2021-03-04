@@ -54,6 +54,7 @@
       ~NumpyArrayNodeRecorder.name
       ~NumpyArrayNodeRecorder.node
       ~NumpyArrayNodeRecorder.parents
+      ~NumpyArrayNodeRecorder.tags
       ~NumpyArrayNodeRecorder.temporal_agg_func
    
    

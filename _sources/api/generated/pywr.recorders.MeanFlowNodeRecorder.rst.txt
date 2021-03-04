@@ -52,5 +52,6 @@
       ~MeanFlowNodeRecorder.name
       ~MeanFlowNodeRecorder.node
       ~MeanFlowNodeRecorder.parents
+      ~MeanFlowNodeRecorder.tags
    
    

@@ -51,5 +51,6 @@
       ~StorageRecorder.name
       ~StorageRecorder.node
       ~StorageRecorder.parents
+      ~StorageRecorder.tags
    
    

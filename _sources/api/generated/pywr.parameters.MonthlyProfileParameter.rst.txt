@@ -52,5 +52,6 @@
       ~MonthlyProfileParameter.name
       ~MonthlyProfileParameter.parents
       ~MonthlyProfileParameter.size
+      ~MonthlyProfileParameter.tags
    
    

@@ -54,5 +54,6 @@
       ~ConstantScenarioIndexParameter.name
       ~ConstantScenarioIndexParameter.parents
       ~ConstantScenarioIndexParameter.size
+      ~ConstantScenarioIndexParameter.tags
    
    

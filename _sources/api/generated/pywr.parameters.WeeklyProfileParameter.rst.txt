@@ -51,5 +51,6 @@
       ~WeeklyProfileParameter.name
       ~WeeklyProfileParameter.parents
       ~WeeklyProfileParameter.size
+      ~WeeklyProfileParameter.tags
    
    

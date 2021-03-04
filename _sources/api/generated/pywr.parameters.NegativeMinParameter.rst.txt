@@ -52,6 +52,7 @@
       ~NegativeMinParameter.parameter
       ~NegativeMinParameter.parents
       ~NegativeMinParameter.size
+      ~NegativeMinParameter.tags
       ~NegativeMinParameter.threshold
    
    

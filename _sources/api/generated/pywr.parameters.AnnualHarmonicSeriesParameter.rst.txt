@@ -54,5 +54,6 @@
       ~AnnualHarmonicSeriesParameter.parents
       ~AnnualHarmonicSeriesParameter.phases
       ~AnnualHarmonicSeriesParameter.size
+      ~AnnualHarmonicSeriesParameter.tags
    
    

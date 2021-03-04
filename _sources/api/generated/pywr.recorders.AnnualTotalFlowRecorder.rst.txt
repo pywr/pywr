@@ -54,6 +54,7 @@
       ~AnnualTotalFlowRecorder.name
       ~AnnualTotalFlowRecorder.nodes
       ~AnnualTotalFlowRecorder.parents
+      ~AnnualTotalFlowRecorder.tags
       ~AnnualTotalFlowRecorder.temporal_agg_func
    
    

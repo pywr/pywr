@@ -54,5 +54,6 @@
       ~IndexParameter.name
       ~IndexParameter.parents
       ~IndexParameter.size
+      ~IndexParameter.tags
    
    

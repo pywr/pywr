@@ -54,6 +54,7 @@
       ~NumpyArrayNodeDeficitRecorder.name
       ~NumpyArrayNodeDeficitRecorder.node
       ~NumpyArrayNodeDeficitRecorder.parents
+      ~NumpyArrayNodeDeficitRecorder.tags
       ~NumpyArrayNodeDeficitRecorder.temporal_agg_func
    
    

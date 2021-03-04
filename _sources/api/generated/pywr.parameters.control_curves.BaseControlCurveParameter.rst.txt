@@ -53,5 +53,6 @@
       ~BaseControlCurveParameter.parents
       ~BaseControlCurveParameter.size
       ~BaseControlCurveParameter.storage_node
+      ~BaseControlCurveParameter.tags
    
    

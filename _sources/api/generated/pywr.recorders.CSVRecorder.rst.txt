@@ -50,5 +50,6 @@
       ~CSVRecorder.model
       ~CSVRecorder.name
       ~CSVRecorder.parents
+      ~CSVRecorder.tags
    
    

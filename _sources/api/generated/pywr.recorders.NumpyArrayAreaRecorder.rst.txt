@@ -53,6 +53,7 @@
       ~NumpyArrayAreaRecorder.name
       ~NumpyArrayAreaRecorder.node
       ~NumpyArrayAreaRecorder.parents
+      ~NumpyArrayAreaRecorder.tags
       ~NumpyArrayAreaRecorder.temporal_agg_func
    
    

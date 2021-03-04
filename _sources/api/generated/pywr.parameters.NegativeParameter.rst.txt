@@ -52,5 +52,6 @@
       ~NegativeParameter.parameter
       ~NegativeParameter.parents
       ~NegativeParameter.size
+      ~NegativeParameter.tags
    
    

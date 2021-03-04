@@ -52,6 +52,7 @@
       ~NegativeMaxParameter.parameter
       ~NegativeMaxParameter.parents
       ~NegativeMaxParameter.size
+      ~NegativeMaxParameter.tags
       ~NegativeMaxParameter.threshold
    
    

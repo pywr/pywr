@@ -51,6 +51,7 @@
       ~TimestepCountIndexParameterRecorder.name
       ~TimestepCountIndexParameterRecorder.parameter
       ~TimestepCountIndexParameterRecorder.parents
+      ~TimestepCountIndexParameterRecorder.tags
       ~TimestepCountIndexParameterRecorder.threshold
    
    

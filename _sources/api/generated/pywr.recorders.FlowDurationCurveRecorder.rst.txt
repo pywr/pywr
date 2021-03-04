@@ -55,6 +55,7 @@
       ~FlowDurationCurveRecorder.name
       ~FlowDurationCurveRecorder.node
       ~FlowDurationCurveRecorder.parents
+      ~FlowDurationCurveRecorder.tags
       ~FlowDurationCurveRecorder.temporal_agg_func
    
    

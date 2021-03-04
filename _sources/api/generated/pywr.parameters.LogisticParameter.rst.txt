@@ -53,5 +53,6 @@
       ~LogisticParameter.name
       ~LogisticParameter.parents
       ~LogisticParameter.size
+      ~LogisticParameter.tags
    
    

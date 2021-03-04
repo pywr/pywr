@@ -53,6 +53,7 @@
       ~NumpyArrayIndexParameterRecorder.name
       ~NumpyArrayIndexParameterRecorder.parameter
       ~NumpyArrayIndexParameterRecorder.parents
+      ~NumpyArrayIndexParameterRecorder.tags
       ~NumpyArrayIndexParameterRecorder.temporal_agg_func
    
    

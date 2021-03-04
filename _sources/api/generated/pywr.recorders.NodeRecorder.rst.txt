@@ -51,5 +51,6 @@
       ~NodeRecorder.name
       ~NodeRecorder.node
       ~NodeRecorder.parents
+      ~NodeRecorder.tags
    
    

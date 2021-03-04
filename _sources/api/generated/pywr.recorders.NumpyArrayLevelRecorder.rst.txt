@@ -53,6 +53,7 @@
       ~NumpyArrayLevelRecorder.name
       ~NumpyArrayLevelRecorder.node
       ~NumpyArrayLevelRecorder.parents
+      ~NumpyArrayLevelRecorder.tags
       ~NumpyArrayLevelRecorder.temporal_agg_func
    
    

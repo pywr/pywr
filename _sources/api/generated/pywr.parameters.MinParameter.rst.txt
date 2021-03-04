@@ -52,6 +52,7 @@
       ~MinParameter.parameter
       ~MinParameter.parents
       ~MinParameter.size
+      ~MinParameter.tags
       ~MinParameter.threshold
    
    

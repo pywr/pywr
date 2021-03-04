@@ -52,5 +52,6 @@
       ~RectifierParameter.name
       ~RectifierParameter.parents
       ~RectifierParameter.size
+      ~RectifierParameter.tags
    
    

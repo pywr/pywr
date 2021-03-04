@@ -51,5 +51,6 @@
       ~ScenarioWrapperParameter.name
       ~ScenarioWrapperParameter.parents
       ~ScenarioWrapperParameter.size
+      ~ScenarioWrapperParameter.tags
    
    

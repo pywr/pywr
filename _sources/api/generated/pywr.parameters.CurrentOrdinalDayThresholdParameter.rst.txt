@@ -55,6 +55,7 @@
       ~CurrentOrdinalDayThresholdParameter.parents
       ~CurrentOrdinalDayThresholdParameter.ratchet
       ~CurrentOrdinalDayThresholdParameter.size
+      ~CurrentOrdinalDayThresholdParameter.tags
       ~CurrentOrdinalDayThresholdParameter.threshold
    
    

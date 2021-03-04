@@ -52,6 +52,7 @@
       ~PiecewiseIntegralParameter.parameter
       ~PiecewiseIntegralParameter.parents
       ~PiecewiseIntegralParameter.size
+      ~PiecewiseIntegralParameter.tags
       ~PiecewiseIntegralParameter.x
       ~PiecewiseIntegralParameter.y
    

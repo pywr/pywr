@@ -53,6 +53,7 @@
       ~RollingWindowParameterRecorder.name
       ~RollingWindowParameterRecorder.parameter
       ~RollingWindowParameterRecorder.parents
+      ~RollingWindowParameterRecorder.tags
       ~RollingWindowParameterRecorder.temporal_agg_func
       ~RollingWindowParameterRecorder.window
    

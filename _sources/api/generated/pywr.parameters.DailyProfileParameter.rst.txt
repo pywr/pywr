@@ -51,5 +51,6 @@
       ~DailyProfileParameter.name
       ~DailyProfileParameter.parents
       ~DailyProfileParameter.size
+      ~DailyProfileParameter.tags
    
    

@@ -53,6 +53,7 @@
       ~InterpolatedQuadratureParameter.name
       ~InterpolatedQuadratureParameter.parents
       ~InterpolatedQuadratureParameter.size
+      ~InterpolatedQuadratureParameter.tags
       ~InterpolatedQuadratureParameter.upper_parameter
    
    

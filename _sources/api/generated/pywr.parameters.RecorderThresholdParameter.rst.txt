@@ -57,6 +57,7 @@
       ~RecorderThresholdParameter.ratchet
       ~RecorderThresholdParameter.recorder
       ~RecorderThresholdParameter.size
+      ~RecorderThresholdParameter.tags
       ~RecorderThresholdParameter.threshold
    
    

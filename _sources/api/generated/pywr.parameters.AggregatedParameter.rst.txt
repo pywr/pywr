@@ -55,5 +55,6 @@
       ~AggregatedParameter.parameters
       ~AggregatedParameter.parents
       ~AggregatedParameter.size
+      ~AggregatedParameter.tags
    
    

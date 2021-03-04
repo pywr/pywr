@@ -51,6 +51,7 @@
       ~MinimumThresholdVolumeStorageRecorder.name
       ~MinimumThresholdVolumeStorageRecorder.node
       ~MinimumThresholdVolumeStorageRecorder.parents
+      ~MinimumThresholdVolumeStorageRecorder.tags
       ~MinimumThresholdVolumeStorageRecorder.threshold
    
    

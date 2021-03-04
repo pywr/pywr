@@ -51,5 +51,6 @@
       ~IndexParameterRecorder.name
       ~IndexParameterRecorder.parameter
       ~IndexParameterRecorder.parents
+      ~IndexParameterRecorder.tags
    
    

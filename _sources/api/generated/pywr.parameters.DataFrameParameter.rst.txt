@@ -53,5 +53,6 @@
       ~DataFrameParameter.parents
       ~DataFrameParameter.scenario
       ~DataFrameParameter.size
+      ~DataFrameParameter.tags
    
    

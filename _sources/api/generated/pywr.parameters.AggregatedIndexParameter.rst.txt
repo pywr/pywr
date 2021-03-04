@@ -58,5 +58,6 @@
       ~AggregatedIndexParameter.parameters
       ~AggregatedIndexParameter.parents
       ~AggregatedIndexParameter.size
+      ~AggregatedIndexParameter.tags
    
    

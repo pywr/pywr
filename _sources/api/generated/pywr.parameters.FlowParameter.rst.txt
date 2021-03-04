@@ -53,5 +53,6 @@
       ~FlowParameter.node
       ~FlowParameter.parents
       ~FlowParameter.size
+      ~FlowParameter.tags
    
    

@@ -52,5 +52,6 @@
       ~DeficitParameter.node
       ~DeficitParameter.parents
       ~DeficitParameter.size
+      ~DeficitParameter.tags
    
    
