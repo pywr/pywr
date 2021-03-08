@@ -1551,6 +1551,36 @@ class TestThresholdParameters:
 
         model.run()
 
+    def test_multiple_threshold_parameter_index_parameter(self, simple_linear_model):
+
+        model = simple_linear_model
+        model.nodes["Input"].max_flow = ArrayIndexedParameter(model, np.arange(0, 20), name="max_flow")
+        model.nodes["Output"].cost = -10.0
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-15"
+        model.timestepper.delta = 1
+
+        thresholds = [10, 5, 2]
+
+        ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], name='test')
+
+        data = {
+            "type": "multiplethresholdparameterindex",
+            "parameter": "test",
+            "thresholds": thresholds
+        }
+        parameter = load_parameter(model, data)
+        parameter.name = "multiplethreshold"
+        expected_data = np.array([3, 3, 2, 2, 2, 1, 1, 1, 1, 1] + [0] * 10).astype(int)
+
+        expected_data = expected_data[:, np.newaxis]
+
+        rec = AssertionRecorder(model, parameter, expected_data=expected_data,
+                                name="assertion recorder")
+
+        model.run()
+
+
     @pytest.mark.parametrize("threshold, ratchet", [
         [5.0, False],
         [{"type": "constant", "value": 5.0}, False],

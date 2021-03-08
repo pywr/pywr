@@ -232,6 +232,53 @@ cdef class MultipleThresholdIndexParameter(IndexParameter):
 MultipleThresholdIndexParameter.register()
 
 
+cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
+    """ Multiple threshold holder returning an index based on the value in the parameter
+    against the given thresholds.
+
+    Parameters
+    ----------
+    parameter : Parameter
+    thresholds : iterable of `Parameter` instances or floats
+    """
+    def __init__(self, model, parameter, thresholds, use_max_flow=False, **kwargs):
+        super(MultipleThresholdParameterIndexParameter, self).__init__(model, **kwargs)
+        self.parameter = parameter
+        self.thresholds = thresholds
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns the index of the first threshold the node flow is above
+
+        The index is zero-based. For example, if only one threshold is
+        supplied then the index is either 0 (above) or 1 (below). For two
+        thresholds the index is either 0 (above both), 1 (in between), or 2 (below
+        both), and so on.
+        """
+        cdef double flow
+        cdef int index, j
+
+        flow = self.parameter.value(timestep, scenario_index)
+        index = len(self.thresholds)
+        for j, threshold in enumerate(self.thresholds):
+            if isinstance(threshold, (float, int)):
+                target_threshold = threshold
+            else:
+                target_threshold = threshold.get_value(scenario_index)
+            if flow >= target_threshold:
+                index = j
+                break
+        return index
+
+    @classmethod
+    def load(cls, model, data):
+        node = load_parameter(model, data.pop("parameter"))
+        thresholds = [load_parameter(model, d) for d in data.pop("thresholds")]
+        return cls(model, node, thresholds, **data)
+MultipleThresholdParameterIndexParameter.register()
+
+
+
+
 cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     """ Returns one of two values depending on the value of a Parameter
 

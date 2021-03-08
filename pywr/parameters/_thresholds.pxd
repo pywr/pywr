@@ -24,6 +24,11 @@ cdef class MultipleThresholdIndexParameter(IndexParameter):
     cdef public AbstractNode node
     cdef list thresholds
 
+cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
+    cdef public Parameter parameter
+    cdef list thresholds
+
+
 cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     cdef public Parameter param
 
