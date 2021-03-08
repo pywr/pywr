@@ -20,6 +20,10 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
 cdef class NodeThresholdParameter(AbstractThresholdParameter):
     cdef public AbstractNode node
 
+cdef class MultipleThresholdIndexParameter(IndexParameter):
+    cdef public AbstractNode node
+    cdef list thresholds
+
 cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     cdef public Parameter param
 
