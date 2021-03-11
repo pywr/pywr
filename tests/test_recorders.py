@@ -24,7 +24,9 @@ from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageR
                             TotalParameterRecorder, MeanParameterRecorder, NumpyArrayNodeCostRecorder,
                             NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning, NumpyArrayDailyProfileParameterRecorder,
-                            AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder)
+                            AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder,
+                            GaussianKDEStorageRecorder
+                            )
 
 from pywr.recorders.progress import ProgressRecorder
 
@@ -2133,3 +2135,18 @@ class TestHydroPowerRecorder:
         # Finally, check model runs with the loaded recorder.
         model.run()
 
+
+class TestGaussianKDEStorageRecorder:
+    def test_kde_recorder(self, simple_storage_model):
+        """A basic functional test of `TestGaussianKDEStorageRecorder`"""
+        model = simple_storage_model
+        res = model.nodes['Storage']
+
+        kde = GaussianKDEStorageRecorder(model, res, target_volume_pc=0.2)
+
+        model.run()
+
+        pdf = kde.to_dataframe()
+        p = kde.aggregated_value()
+        assert pdf.shape == (101, 1)
+        assert 0 < p < 1
