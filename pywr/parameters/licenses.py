@@ -90,7 +90,7 @@ class StorageLicense(License):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         amount = data.pop("amount")
         return cls(model, node, amount=amount, **data)
 

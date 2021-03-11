@@ -1,7 +1,7 @@
 from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep, Output
 from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
 from pywr.parameters.control_curves import ControlCurveParameter, ControlCurveInterpolatedParameter, \
-    PiecewiseLinearControlCurve, ControlCurvePiecewiseInterpolatedParameter
+    ControlCurvePiecewiseInterpolatedParameter
 from pywr.parameters._control_curves import _interpolate
 from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, assert_rec
 import numpy as np
@@ -25,74 +25,16 @@ def model(simple_storage_model):
     return simple_storage_model
 
 
-class TestPiecewiseLinearControlCurve:
-    def test_run(self, simple_storage_model):
-        model = simple_storage_model
-        storage_node = model.nodes["Storage"]
-        input_node = model.nodes["Input"]
-        output_node = model.nodes["Output"]
-        control_curve = ConstantParameter(model, 0.5)
-        parameter = PiecewiseLinearControlCurve(model, storage_node, control_curve, values=[(50, 100), (200, 500)], name="PLCC")
-        assert parameter.minimum == 0.0
-        assert parameter.maximum == 1.0
-
-        input_node.max_flow = 1.0
-        input_node.cost = 0
-        output_node.max_flow = 0.0
-        storage_node.initial_volume = 0.0
-        storage_node.max_volume = 100.0
-        storage_node.cost = -10
-
-        model.timestepper.start = "1920-01-01"
-        model.timestepper.delta = 1
-        model.timestepper.end = model.timestepper.start + model.timestepper.offset*100
-
-        @assert_rec(model, parameter)
-        def expected_func(timestep, scenario_index):
-            volume = timestep.index
-            control_curve = 0.5
-            current_position = volume / storage_node.max_volume
-            if current_position > control_curve:
-                factor = (volume - 50) / 50
-                value = 200 + factor * (500 - 200)
-            else:
-                factor = volume / 50
-                value = 50 + factor * (100 - 50)
-            return value
-
-        model.run()
-
-    @pytest.mark.parametrize("configuration, expected_value", [
-        ((0.0, 0.0, 1.0, 50.0, 100.0), 50.0),
-        ((1.0, 0.0, 1.0, 50.0, 100.0), 100.0),
-        ((0.5, 0.0, 1.0, 50.0, 100.0), 75.0),
-        ((0.0, 0.5, 1.0, 50.0, 100.0), 50.0),
-        ((0.75, 0.5, 1.0, 50.0, 100.0), 75.0),
-    ])
-    def test_interpolation(self, configuration, expected_value):
-        current_position, lower_bound, upper_bound, lower_value, upper_value = configuration
-        assert _interpolate(current_position, lower_bound, upper_bound, lower_value, upper_value) == expected_value
-
-    def test_json(self, simple_storage_model):
-        model = simple_storage_model
-        control_curve = ConstantParameter(model, 0.5, name="cc")
-        parameter_data = {
-            "type": "piecewiselinearcontrolcurve",
-            "storage_node": "Storage",
-            "control_curve": "cc",
-            "minimum": 0.2,
-            "maximum": 0.7,
-            "values": [[5, 10], [100, 200]]
-        }
-        parameter = load_parameter(model, parameter_data)
-        assert parameter.minimum == 0.2
-        assert parameter.maximum == 0.7
-        assert parameter.below_lower == 5
-        assert parameter.below_upper == 10
-        assert parameter.above_lower == 100
-        assert parameter.above_upper == 200
-        assert parameter.control_curve is control_curve
-        assert parameter.storage_node is model.nodes["Storage"]
+@pytest.mark.parametrize("configuration, expected_value", [
+    ((0.0, 0.0, 1.0, 50.0, 100.0), 50.0),
+    ((1.0, 0.0, 1.0, 50.0, 100.0), 100.0),
+    ((0.5, 0.0, 1.0, 50.0, 100.0), 75.0),
+    ((0.0, 0.5, 1.0, 50.0, 100.0), 50.0),
+    ((0.75, 0.5, 1.0, 50.0, 100.0), 75.0),
+])
+def test_interpolation(configuration, expected_value):
+    current_position, lower_bound, upper_bound, lower_value, upper_value = configuration
+    assert _interpolate(current_position, lower_bound, upper_bound, lower_value, upper_value) == expected_value
 
 
 class TestPiecewiseControlCurveParameter:
@@ -344,8 +286,6 @@ def test_control_curve_interpolated_json(use_parameters):
     model.run()
 
 
-@pytest.mark.xfail(reason="Circular dependency in the JSON definition. "
-                          "See GitHub issue #380: https://github.com/pywr/pywr/issues/380")
 def test_circular_control_curve_interpolated_json():
     # this is a little hack-y, as the parameters don't provide access to their
     # data once they've been initalised

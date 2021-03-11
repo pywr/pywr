@@ -102,6 +102,17 @@ Threshold parameters
     CurrentOrdinalDayThresholdParameter
 
 
+Activation function parameters
+------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    BinaryStepParameter
+    RectifierParameter
+    LogisticParameter
+
+
 Interpolation parameters
 ------------------------
 
@@ -145,6 +156,8 @@ Other parameters
    DeficitParameter
    ScenarioWrapperParameter
    PiecewiseIntegralParameter
+   FlowParameter
    FlowDelayParameter
+   DiscountFactorParameter
 
 

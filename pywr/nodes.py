@@ -1,13 +1,10 @@
 import numpy as np
-
 from pywr import _core
 from pywr._core import Node as BaseNode
-from pywr._core import (BaseInput, BaseLink, BaseOutput, StorageInput,
-    StorageOutput, Timestep, ScenarioIndex)
-
+from pywr._core import BaseInput, BaseLink, BaseOutput, StorageInput, StorageOutput
 from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values, FlowDelayParameter
-
 from pywr.domains import Domain
+import networkx as nx
 
 
 class Drawable(object):
@@ -18,6 +15,71 @@ class Drawable(object):
         self.color = kwargs.pop('color', 'black')
         self.visible = kwargs.pop('visible', True)
         super(Drawable, self).__init__(*args, **kwargs)
+
+
+class Loadable:
+    """Mixin class that laods nodes from JSON data.
+
+    Loading is performed in two stages. First a `pre_load` classmethod creates a node instance passing
+    any non-parameter arguments via keyword to the respective Node's init method. After parameters are
+    loaded (see `Model.load`) the `finalise_load` method is called on all node instances to assign
+    concrete parameter instances where needed.
+    """
+    __parameter_attributes__ = ()
+    __node_attributes__ = ()
+    __parameter_value_attributes__ = ()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__parameters_to_load = None
+
+    @classmethod
+    def _pre_load_parameter(cls, key, value, param_data, non_param_data):
+        # By default parameter references are loaded later, and no keyword is given to the `__init__`
+        param_data[key] = value
+
+    @classmethod
+    def pre_load(cls, model, data):
+        """Create a node instance from data.
+
+        Parameter data and references are stored until later, and consumed by a call to `finalise_load`.
+        """
+        # Filter non-parameter data and initialise with it only
+        param_data = {}
+        non_param_data = {}
+        for key, value in data.items():
+            if key in cls.__parameter_attributes__:
+                cls._pre_load_parameter(key, value, param_data, non_param_data)
+            elif key in cls.__node_attributes__:
+                # Node references are converted to nodes immediately.
+                if isinstance(value, list):
+                    node = [model.pre_load_node(n) for n in value]
+                else:
+                    node = model.pre_load_node(value)
+                non_param_data[key] = node
+            elif key in cls.__parameter_value_attributes__:
+                if isinstance(value, (float, int)):
+                    non_param_data[key] = value
+                else:
+                    non_param_data[key] = load_parameter_values(model, value)
+            else:
+                non_param_data[key] = value
+
+        obj = cls(model=model, **non_param_data)
+        obj.__parameters_to_load = param_data
+        return obj
+
+    def finalise_load(self):
+        """Finish loading a node by converting parameter name references to instance references."""
+        for key, parameter_data in self.__parameters_to_load.items():
+            if isinstance(parameter_data, list):
+                # List of parameter references
+                parameter = [load_parameter(self.model, d) for d in parameter_data]
+            else:
+                parameter = load_parameter(self.model, parameter_data)
+
+            setattr(self, key, parameter)
+        del self.__parameters_to_load
 
 
 class Connectable(object):
@@ -85,7 +147,7 @@ class Connectable(object):
         disconnected = False
         try:
             self.model.graph.remove_edge(self, node)
-        except:
+        except nx.exception.NetworkXError:
             for node_slot in node.iter_slots(slot_name=slot_name, is_connector=False, all_slots=all_slots):
                 try:
                     self.model.graph.remove_edge(self, node_slot)
@@ -104,11 +166,14 @@ class NodeMeta(type):
     """Node metaclass used to keep a registry of Node classes"""
     # node subclasses are stored in a dict for convenience
     node_registry = {}
+
     def __new__(meta, name, bases, dct):
         return super(NodeMeta, meta).__new__(meta, name, bases, dct)
+
     def __init__(cls, name, bases, dct):
         super(NodeMeta, cls).__init__(name, bases, dct)
         cls.node_registry[name.lower()] = cls
+
     def __call__(cls, *args, **kwargs):
         # Create new instance of Node (or subclass thereof)
         node = type.__call__(cls, *args, **kwargs)
@@ -119,7 +184,7 @@ class NodeMeta(type):
         return node
 
 
-class Node(Drawable, Connectable, BaseNode, metaclass=NodeMeta):
+class Node(Loadable, Drawable, Connectable, BaseNode, metaclass=NodeMeta):
     """Base object from which all other nodes inherit
 
     This BaseNode is not connectable by default, and the Node class should
@@ -127,6 +192,8 @@ class Node(Drawable, Connectable, BaseNode, metaclass=NodeMeta):
     class for other Node types (e.g. StorageInput) that are not directly
     Connectable.
     """
+    __parameter_attributes__ = ('cost', 'min_flow', 'max_flow')
+
     def __init__(self, model, name, **kwargs):
         """Initialise a new Node object
 
@@ -161,33 +228,6 @@ class Node(Drawable, Connectable, BaseNode, metaclass=NodeMeta):
         """
         pass
 
-    @classmethod
-    def load(cls, data, model):
-        name = data.pop('name')
-
-        cost = data.pop('cost', 0.0)
-        min_flow = data.pop('min_flow', None)
-        max_flow = data.pop('max_flow', None)
-
-        data.pop('type')
-        node = cls(model=model, name=name,
-                   **data)
-
-        cost = load_parameter(model, cost)
-        min_flow = load_parameter(model, min_flow)
-        max_flow = load_parameter(model, max_flow)
-        if cost is None:
-            cost = 0.0
-        if min_flow is None:
-            min_flow = 0.0
-        if max_flow is None:
-            max_flow = np.inf
-        node.cost = cost
-        node.min_flow = min_flow
-        node.max_flow = max_flow
-
-        return node
-
 
 class Input(Node, BaseInput):
     """A general input at any point in the network
@@ -204,7 +244,7 @@ class Input(Node, BaseInput):
             A simple maximum flow constraint for the input. Defaults to 0.0
         """
         super(Input, self).__init__(*args, **kwargs)
-        self.color = '#F26C4F' # light red
+        self.color = '#F26C4F'  # light red
 
 
 class Output(Node, BaseOutput):
@@ -245,7 +285,7 @@ class Link(Node, BaseLink):
         super(Link, self).__init__(*args, **kwargs)
 
 
-class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
+class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
     """A generic storage Node
 
     In terms of connections in the network the Storage node behaves like any
@@ -291,11 +331,10 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         Optional float or Parameter defining the area and level of the storage node. These values are
         accessible through the `get_area` and `get_level` methods respectively.
     """
-    def __init__(self, model, name, num_outputs=1, num_inputs=1, *args, **kwargs):
-        # cast number of inputs/outputs to integer
-        # this is needed if values come in as strings sometimes
-        num_outputs = int(num_outputs)
-        num_inputs = int(num_inputs)
+    __parameter_attributes__ = ('cost', 'min_volume', 'max_volume')
+    __parameter_value_attributes__ = ('initial_volume', )
+
+    def __init__(self, model, name, outputs=1, inputs=1, *args, **kwargs):
 
         min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         if min_volume is None:
@@ -310,11 +349,11 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         super(Storage, self).__init__(model, name, **kwargs)
 
         self.outputs = []
-        for n in range(0, num_outputs):
+        for n in range(0, outputs):
             self.outputs.append(StorageOutput(model, name="[output{}]".format(n), parent=self))
 
         self.inputs = []
-        for n in range(0, num_inputs):
+        for n in range(0, inputs):
             self.inputs.append(StorageInput(model, name="[input{}]".format(n), parent=self))
 
         self.min_volume = min_volume
@@ -325,7 +364,6 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
         self.level = level
         self.area = area
 
-        # TODO FIXME!
         # StorageOutput and StorageInput are Cython classes, which do not have
         # NodeMeta as their metaclass, therefore they don't get added to the
         # model graph automatically.
@@ -333,17 +371,6 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
             self.model.graph.add_node(node)
         for node in self.inputs:
             self.model.graph.add_node(node)
-
-        # TODO: keyword arguments for input and output nodes specified with prefix
-        '''
-        input_kwargs, output_kwargs = {}, {}
-        keys = list(kwargs.keys())
-        for key in keys:
-            if key.startswith('input_'):
-                input_kwargs[key.replace('input_', '')] = kwargs.pop(key)
-            elif key.startswith('output_'):
-                output_kwargs[key.replace('output_', '')] = kwargs.pop(key)
-        '''
 
     def iter_slots(self, slot_name=None, is_connector=True, all_slots=False):
         if is_connector:
@@ -375,63 +402,11 @@ class Storage(Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
     def check(self):
         pass  # TODO
 
-    @classmethod
-    def load(cls, data, model):
-        name = data.pop('name')
-        num_inputs = int(data.pop('inputs', 1))
-        num_outputs = int(data.pop('outputs', 1))
-        initial_volume = data.pop('initial_volume', None)
-        initial_volume_pc = data.pop('initial_volume_pc', None)
-        max_volume = data.pop('max_volume')
-        min_volume = data.pop('min_volume', 0.0)
-        level = data.pop('level', None)
-        area = data.pop('area', None)
-        cost = data.pop('cost', 0.0)
-
-        data.pop('type', None)
-        # Create the instance
-        node = cls(model=model, name=name, num_inputs=num_inputs, num_outputs=num_outputs, **data)
-
-        # Load the parameters after the instance has been created to prevent circular
-        # loading errors
-
-        # Try to coerce initial volume to float.
-        if initial_volume is not None:
-            try:
-                initial_volume = float(initial_volume)
-            except TypeError:
-                initial_volume = load_parameter_values(model, initial_volume)
-        node.initial_volume = initial_volume
-        node.initial_volume_pc = initial_volume_pc
-
-        max_volume = load_parameter(model, max_volume)
-        if max_volume is not None:
-            node.max_volume = max_volume
-
-        min_volume = load_parameter(model, min_volume)
-        if min_volume is not None:
-            node.min_volume = min_volume
-
-        cost = load_parameter(model, cost)
-        if cost is None:
-            cost = 0.0
-        node.cost = cost
-
-        if level is not None:
-            level = load_parameter(model, level)
-        node.level = level
-
-        if area is not None:
-            area = load_parameter(model, area)
-        node.area = area
-
-        return node
-
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
 
-class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
+class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMeta):
     """A virtual storage unit
 
     Parameters
@@ -457,6 +432,9 @@ class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
     -----
     TODO: The cost property is not currently respected. See issue #242.
     """
+    __parameter_attributes__ = ('min_volume', 'max_volume')
+    __node_attributes__ = ('nodes', )
+
     def __init__(self, model, name, nodes, **kwargs):
         min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         if min_volume is None:
@@ -489,17 +467,8 @@ class VirtualStorage(Drawable, _core.VirtualStorage, metaclass=NodeMeta):
         if self.cost not in (0.0, None):
             raise NotImplementedError("VirtualStorage does not currently support a non-zero cost.")
 
-    @classmethod
-    def load(cls, data, model):
-        del(data["type"])
-        nodes = []
-        for node_name in data.pop("nodes"):
-            nodes.append(model._get_node_from_ref(model, node_name))
-        node = cls(model, nodes=nodes, **data)
-        return node
 
-
-class RollingVirtualStorage(Drawable, _core.RollingVirtualStorage, metaclass=NodeMeta):
+class RollingVirtualStorage(Loadable, Drawable, _core.RollingVirtualStorage, metaclass=NodeMeta):
     """A rolling virtual storage node useful for implementing rolling licences.
 
     Parameters
@@ -530,6 +499,9 @@ class RollingVirtualStorage(Drawable, _core.RollingVirtualStorage, metaclass=Nod
     -----
     TODO: The cost property is not currently respected. See issue #242.
     """
+    __parameter_attributes__ = ('min_volume', 'max_volume')
+    __node_attributes__ = ('nodes', )
+
     def __init__(self, model, name, nodes, **kwargs):
         min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
         if min_volume is None:
@@ -573,15 +545,6 @@ class RollingVirtualStorage(Drawable, _core.RollingVirtualStorage, metaclass=Nod
         if self.timesteps < 1:
             raise ValueError('The number of time-steps for a RollingVirtualStorage node must be greater than one.')
         super().setup(model)
-
-    @classmethod
-    def load(cls, data, model):
-        del(data["type"])
-        nodes = []
-        for node_name in data.pop("nodes"):
-            nodes.append(model._get_node_from_ref(model, node_name))
-        node = cls(model, nodes=nodes, **data)
-        return node
 
 
 class AnnualVirtualStorage(VirtualStorage):
@@ -692,9 +655,9 @@ class PiecewiseLink(Node):
 
     Parameters
     ----------
-    max_flow : iterable
+    max_flows : iterable
         A monotonic increasing list of maximum flows for the piece wise function
-    cost : iterable
+    costs : iterable
         A list of costs corresponding to the max_flow steps
 
     Notes
@@ -716,40 +679,69 @@ class PiecewiseLink(Node):
     breaking of the route is to avoid an geometric increase in the number
     of routes when multiple PiecewiseLinks are present in the same route.
     """
-    def __init__(self, *args, **kwargs):
-        self.allow_isolated = True
-        costs = kwargs.pop('cost')
-        max_flows = kwargs.pop('max_flow')
-        super(PiecewiseLink, self).__init__(*args, **kwargs)
+    __parameter_attributes__ = ('costs', 'max_flows')
 
-        if len(costs) != len(max_flows):
-            raise ValueError("Piecewise max_flow and cost keywords must be the same length.")
+    def __init__(self, model, nsteps, *args, **kwargs):
+        self.allow_isolated = True
+        costs = kwargs.pop('costs', None)
+        max_flows = kwargs.pop('max_flows', None)
+
 
         # TODO look at the application of Domains here. Having to use
         # Input/Output instead of BaseInput/BaseOutput because of a different
         # domain is required on the sub-nodes and they need to be connected
         self.sub_domain = Domain()
-        self.input = Input(self.model, name='{} Input'.format(self.name), parent=self)
-        self.output = Output(self.model, name='{} Output'.format(self.name), parent=self)
+        self.input = Input(model, name='{} Input'.format(self.name), parent=self)
+        self.output = Output(model, name='{} Output'.format(self.name), parent=self)
 
-        self.sub_output = Output(self.model, name='{} Sub Output'.format(self.name), parent=self,
-                             domain=self.sub_domain)
+        self.sub_output = Output(model, name='{} Sub Output'.format(self.name), parent=self,
+                                 domain=self.sub_domain)
         self.sub_output.connect(self.input)
         self.sublinks = []
-        for max_flow, cost in zip(max_flows, costs):
-            self.sublinks.append(Input(self.model, name='{} Sublink {}'.format(self.name, len(self.sublinks)),
-                                      cost=cost, max_flow=max_flow, parent=self, domain=self.sub_domain))
-            self.sublinks[-1].connect(self.sub_output)
+        for i in range(nsteps):
+            sublink = Input(model, name='{} Sublink {}'.format(self.name, i), parent=self, domain=self.sub_domain)
+            self.sublinks.append(sublink)
+            sublink.connect(self.sub_output)
             self.output.connect(self.sublinks[-1])
+
+        super().__init__(model, *args, **kwargs)
+
+        if costs is not None:
+            self.costs = costs
+        if max_flows is not None:
+            self.max_flows = max_flows
+
+    def costs():
+        def fget(self):
+            return [sl.cost for sl in self.sublinks]
+
+        def fset(self, values):
+            if len(self.sublinks) != len(values):
+                raise ValueError(f"Piecewise costs must be the same length as the number of "
+                                 f"sub-links ({len(self.sublinks)}).")
+            for i, sl in enumerate(self.sublinks):
+                sl.cost = values[i]
+        return locals()
+    costs = property(**costs())
+
+    def max_flows():
+        def fget(self):
+            return [sl.max_flow for sl in self.sublinks]
+
+        def fset(self, values):
+            if len(self.sublinks) != len(values):
+                raise ValueError(f"Piecewise max_flows must be the same length as the number of "
+                                 f"sub-links ({len(self.sublinks)}).")
+            for i, sl in enumerate(self.sublinks):
+                sl.max_flow = values[i]
+        return locals()
+    max_flows = property(**max_flows())
 
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
             yield self.input
         else:
             yield self.output
-            # All sublinks are connected upstream and downstream
-            #for link in self.sublinks:
-            #    yield link
 
     def after(self, timestep):
         """
@@ -759,15 +751,6 @@ class PiecewiseLink(Node):
             self.commit_all(lnk.flow)
         # Make sure save is done after setting aggregated flow
         super(PiecewiseLink, self).after(timestep)
-
-    @classmethod
-    def load(cls, data, model):
-        # max_flow and cost should be lists of parameter definitions
-        max_flow = [load_parameter(model, p) for p in data.pop('max_flow')]
-        cost = [load_parameter(model, p) for p in data.pop('cost')]
-
-        del(data["type"])
-        return cls(model, max_flow=max_flow, cost=cost, **data)
 
 
 class MultiSplitLink(PiecewiseLink):
@@ -792,9 +775,9 @@ class MultiSplitLink(PiecewiseLink):
 
     Parameters
     ----------
-    max_flow : iterable
+    max_flows : iterable
         A monotonic increasing list of maximum flows for the piece wise function
-    cost : iterable
+    costs : iterable
         A list of costs corresponding to the max_flow steps
     extra_slots : int, optional (default 1)
         Number of additional slots (and sublinks) to provide. Must be greater
@@ -820,22 +803,14 @@ class MultiSplitLink(PiecewiseLink):
     enforced as expected.
 
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model, nsteps, *args, **kwargs):
         self.allow_isolated = True
-        costs = list(kwargs.pop('cost'))
-        max_flows = list(kwargs.pop('max_flow'))
+        costs = kwargs.pop('costs', None)
+        max_flows = kwargs.pop('max_flows', None)
 
         extra_slots = kwargs.pop('extra_slots', 1)
         if extra_slots < 1:
             raise ValueError("extra_slots must be at least 1.")
-
-        # No cost or maximum flow on the additional links
-        # The max_flows could be problematic with the aggregated node.
-        costs.extend([0.0]*extra_slots)
-        max_flows.extend([None]*extra_slots)
-        # Edit the kwargs to get the PiecewiseLink to setup as we want.
-        kwargs['cost'] = costs
-        kwargs['max_flow'] = max_flows
 
         # Default to integer names
         self.slot_names = list(kwargs.pop('slot_names', range(extra_slots+1)))
@@ -844,7 +819,7 @@ class MultiSplitLink(PiecewiseLink):
 
         factors = kwargs.pop('factors', None)
         # Finally initialise the parent.
-        super(MultiSplitLink, self).__init__(*args, **kwargs)
+        super(MultiSplitLink, self).__init__(model, nsteps + extra_slots, *args, **kwargs)
 
         self._extra_inputs = []
         self._extra_outputs = []
@@ -862,6 +837,13 @@ class MultiSplitLink(PiecewiseLink):
             self._extra_inputs.append(inpt)
             self._extra_outputs.append(otpt)
 
+        if costs is not None:
+            # No cost or maximum flow on the additional links
+            self.costs = costs + [0.0] * extra_slots
+        if max_flows is not None:
+            # The max_flows could be problematic with the aggregated node.
+            self.max_flows = max_flows + [None] * extra_slots
+
         # Now create an aggregated node for addition constraints if required.
         if factors is not None:
             if extra_slots+1 != len(factors):
@@ -877,7 +859,6 @@ class MultiSplitLink(PiecewiseLink):
             agg = AggregatedNode(self.model, "{} Agg".format(self.name), nodes)
             agg.factors = valid_factors
 
-
     def iter_slots(self, slot_name=None, is_connector=True):
         if is_connector:
             i = self.slot_names.index(slot_name)
@@ -888,18 +869,8 @@ class MultiSplitLink(PiecewiseLink):
         else:
             yield self.output
 
-    @classmethod
-    def load(cls, data, model):
-        # max_flow and cost should be lists of parameter definitions
-        max_flow = [load_parameter(model, p) for p in data.pop('max_flow')]
-        cost = [load_parameter(model, p) for p in data.pop('cost')]
-        factors = AggregatedNode.load_factors(model, data)
 
-        del(data["type"])
-        return cls(model, max_flow=max_flow, cost=cost, factors=factors, **data)
-
-
-class AggregatedStorage(Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
+class AggregatedStorage(Loadable, Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
     """ An aggregated sum of other `Storage` nodes
 
     This object should behave like `Storage` by returning current `flow`, `volume` and `current_pc`.
@@ -917,12 +888,14 @@ class AggregatedStorage(Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
     This node can not be connected to other nodes in the network.
 
     """
+    __node_attributes__ = ('storage_nodes', )
+
     def __init__(self, model, name, storage_nodes, **kwargs):
         super(AggregatedStorage, self).__init__(model, name, **kwargs)
         self.storage_nodes = storage_nodes
 
 
-class AggregatedNode(Drawable, _core.AggregatedNode, metaclass=NodeMeta):
+class AggregatedNode(Loadable, Drawable, _core.AggregatedNode, metaclass=NodeMeta):
     """ An aggregated sum of other `Node` nodes
 
     This object should behave like `Node` by returning current `flow`.
@@ -940,9 +913,13 @@ class AggregatedNode(Drawable, _core.AggregatedNode, metaclass=NodeMeta):
     This node can not be connected to other nodes in the network.
 
     """
-    def __init__(self, model, name, nodes, **kwargs):
+    __parameter_attributes__ = ('factors', 'min_flow', 'max_flow')
+    __node_attributes__ = ('nodes', )
+
+    def __init__(self, model, name, nodes, flow_weights=None, **kwargs):
         super(AggregatedNode, self).__init__(model, name, **kwargs)
         self.nodes = nodes
+        self.flow_weights = flow_weights
 
 
 class BreakLink(Node):
@@ -1003,6 +980,7 @@ class BreakLink(Node):
     def min_flow():
         def fget(self):
             return self.link.min_flow
+
         def fset(self, value):
             self.link.min_flow = value
         return locals()
@@ -1011,6 +989,7 @@ class BreakLink(Node):
     def max_flow():
         def fget(self):
             return self.link.max_flow
+
         def fset(self, value):
             self.link.max_flow = value
         return locals()
@@ -1019,6 +998,7 @@ class BreakLink(Node):
     def cost():
         def fget(self):
             return self.link.cost
+
         def fset(self, value):
             self.link.cost = value
         return locals()
@@ -1076,10 +1056,10 @@ class DelayNode(Node):
         timesteps = kwargs.pop('timesteps', 0)
         initial_flow = kwargs.pop('initial_flow', 0.0)
 
-        self.output = Output(model, name=output_name)
+        self.output = Output(model, name=output_name, parent=self)
         self.delay_param = FlowDelayParameter(model, self.output, timesteps=timesteps, days=days,
                                               initial_flow=initial_flow, name=param_name)
-        self.input = Input(model, name=input_name, min_flow=self.delay_param, max_flow=self.delay_param)
+        self.input = Input(model, name=input_name, min_flow=self.delay_param, max_flow=self.delay_param, parent=self)
         super().__init__(model, name, **kwargs)
 
     def iter_slots(self, slot_name=None, is_connector=True):
@@ -1094,4 +1074,4 @@ class DelayNode(Node):
         self.commit_all(self.input.flow)
 
 
-from pywr.domains.river import *
+from pywr.domains.river import *  # noqa

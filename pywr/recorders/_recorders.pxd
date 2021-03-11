@@ -52,6 +52,9 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
 cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
     pass
 
+cdef class NumpyArrayNodeCostRecorder(NumpyArrayNodeRecorder):
+    pass
+
 cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
     cdef public Aggregator _temporal_aggregator
     cdef double[:, :] _data
@@ -137,6 +140,7 @@ cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
 cdef class AnnualCountIndexThresholdRecorder(Recorder):
     cdef public list parameters
     cdef public int threshold
+    cdef public list exclude_months
     cdef int _num_years
     cdef int _ncomb
     cdef double[:, :] _data

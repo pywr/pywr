@@ -91,7 +91,7 @@ def test_slots_connect_disconnect():
 
     supply1 = Input(model, name='supply1')
     supply2 = Input(model, name='supply2')
-    storage = Storage(model, name='storage', num_inputs=2, num_outputs=2)
+    storage = Storage(model, name='storage', inputs=2, outputs=2)
 
     storage_inputs = [[x for x in storage.iter_slots(slot_name=n, is_connector=True)][0] for n in (0, 1)]
     storage_outputs = [[x for x in storage.iter_slots(slot_name=n, is_connector=False)][0] for n in (0, 1)]
@@ -147,13 +147,13 @@ def test_node_position():
 
     data = {
         "name": "output",
-        "type": "output",
         "position": {
             "schematic": (30, 40),
             "geographic": (-1.5, 52.2),
         }
     }
-    node2 = Node.load(data, model)
+    node2 = Output.pre_load(model, data)
+    node2.finalise_load()
 
     assert(node1.position["schematic"] == (10, 20))
     assert(node1.position["geographic"] == (-1, 52))
@@ -172,7 +172,6 @@ def test_node_position():
 
     data = {
         "name": "reservoir",
-        "type": "storage",
         "position": {
             "schematic": (99, 70),
             "geographic": (-2.5, 55.6),
@@ -181,7 +180,8 @@ def test_node_position():
         "initial_volume": 500
     }
 
-    storage = Storage.load(data, model)
+    storage = Storage.pre_load(model, data)
+    storage.finalise_load()
 
     assert(storage.position["schematic"] == (99, 70))
     assert(storage.position["geographic"] == (-2.5, 55.6))
@@ -259,7 +259,7 @@ def test_reset_initial_volume():
         end=pandas.to_datetime('2016-01-01')
     )
 
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    storage = Storage(model, 'storage', inputs=1, outputs=0)
     otpt = Output(model, 'output', max_flow=99999, cost=-99999)
     storage.connect(otpt)
 
@@ -335,7 +335,7 @@ def test_check_isolated_nodes_storage():
     model = Model()
 
     # add a storage, but don't connect it's outflow to anything
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0, initial_volume=0.0)
+    storage = Storage(model, 'storage', inputs=1, outputs=0, initial_volume=0.0)
     with pytest.raises(ModelStructureError):
         model.check()
 
@@ -354,7 +354,7 @@ def test_storage_max_volume_zero():
         end=pandas.to_datetime('2016-01-01')
     )
 
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0, initial_volume=0.0)
+    storage = Storage(model, 'storage', inputs=1, outputs=0, initial_volume=0.0)
     otpt = Output(model, 'output', max_flow=99999, cost=-99999)
     storage.connect(otpt)
 
@@ -374,7 +374,7 @@ def test_storage_max_volume_param():
         end=pandas.to_datetime('2016-01-01')
     )
 
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0)
+    storage = Storage(model, 'storage', inputs=1, outputs=0)
     otpt = Output(model, 'output', max_flow=99999, cost=-99999)
     storage.connect(otpt)
 
@@ -408,7 +408,7 @@ def test_storage_initial_volume_pc():
         end=pandas.to_datetime('2016-01-01')
     )
 
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0, initial_volume_pc=0.5, max_volume=20.0)
+    storage = Storage(model, 'storage', inputs=1, outputs=0, initial_volume_pc=0.5, max_volume=20.0)
     otpt = Output(model, 'output', max_flow=99999, cost=-99999)
     storage.connect(otpt)
 
@@ -429,7 +429,7 @@ def test_storage_initial_missing_raises():
     """
     model = Model()
 
-    storage = Storage(model, 'storage', num_inputs=1, num_outputs=0, max_volume=20.0)
+    storage = Storage(model, 'storage', inputs=1, outputs=0, max_volume=20.0)
     otpt = Output(model, 'output', max_flow=99999, cost=-99999)
     storage.connect(otpt)
 
@@ -451,7 +451,7 @@ def test_recursive_delete():
     model = Model()
     n1 = Input(model, "n1")
     n2 = Output(model, "n2")
-    s = Storage(model, "s", num_outputs=2)
+    s = Storage(model, "s", outputs=2)
     assert len(model.nodes) == 3
     assert len(model.graph.nodes()) == 6
     del(model.nodes["n1"])

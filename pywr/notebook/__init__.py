@@ -291,7 +291,8 @@ def pywr_json_to_d3_json(model, attributes=False):
     node_classes = create_node_class_trees()
     for node in model["nodes"]:
 
-        if node["type"].lower() in ["annualvirtualstorage", "virtualstorage", "aggregatednode", "aggregatedstorage"]:
+        if node["type"].lower() in ["annualvirtualstorage", "virtualstorage", "aggregatednode", "aggregatedstorage",
+                                    "seasonalvirtualstorage"]:
             # Do not add virtual nodes to the graph
             continue
 

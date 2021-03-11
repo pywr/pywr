@@ -342,7 +342,7 @@ cdef class Recorder(Component):
         except KeyError:
             pass
         else:
-            data["node"] = model._get_node_from_ref(model, node_name)
+            data["node"] = model.nodes[node_name]
         return cls(model, **data)
 
     @classmethod
@@ -534,7 +534,7 @@ cdef class ParameterRecorder(Recorder):
             node = None
         else:
             del(data["node"])
-            node = model._get_node_from_ref(model, node_name)
+            node = model.nodes[node_name]
         from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
@@ -768,6 +768,37 @@ cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
             max_flow = node.get_max_flow(scenario_index)
             self._data[ts.index,scenario_index.global_id] = 1 - node._flow[scenario_index.global_id] / max_flow
 NumpyArrayNodeCurtailmentRatioRecorder.register()
+
+
+cdef class NumpyArrayNodeCostRecorder(NumpyArrayNodeRecorder):
+    """Recorder for timeseries of cost from a `Node`.
+
+    This class stores the unit cost from a specific node for each time-step of a simulation. The data is
+    saved internally using a memory view. The data can be accessed through the `data` attribute or
+    `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used
+        to return, for example, the median flow over a simulation. For aggregation over scenarios
+        see the `agg_func` keyword argument.
+
+    See also
+    --------
+    NumpyArrayNodeRecorder
+    """
+    cpdef after(self):
+        cdef double max_flow
+        cdef ScenarioIndex scenario_index
+        cdef Timestep ts = self.model.timestepper.current
+        cdef Node node = self._node
+        for scenario_index in self.model.scenarios.combinations:
+            self._data[ts.index, scenario_index.global_id] = node.get_cost(scenario_index)
+NumpyArrayNodeCostRecorder.register()
 
 
 cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
@@ -1553,7 +1584,7 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
     @classmethod
     def load(cls, model, data):
         name = data.get("name")
-        node = model._get_node_from_ref(model, data["node"])
+        node = model.nodes[data["node"]]
         if "timesteps" in data:
             timesteps = int(data["timesteps"])
         else:
@@ -1777,8 +1808,11 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         The name of the recorder
     threshold : int
         Threshold to compare parameters against
+    exclude_months : list or None
+        Optional list of month numbers to exclude from the count.
     """
     def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
+        self.exclude_months = kwargs.pop('exclude_months', None)
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
         super().__init__(model, name=name, *args, **kwargs)
@@ -1824,6 +1858,9 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
             self._data_this_year[...] = 0
             self._current_year = ts.year
 
+        if self.exclude_months is not None and ts.month in self.exclude_months:
+            return
+
         for scenario_index in self.model.scenarios.combinations:
             for p, parameter in enumerate(self.parameters):
                 value = parameter.get_index(scenario_index)
@@ -1841,6 +1878,19 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         """Compute a value for each scenario using `temporal_agg_func`.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
+
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames.
+        """
+        start_year = self.model.timestepper.start.year
+        end_year = self.model.timestepper.end.year
+        index = pd.period_range(f'{start_year}-01-01', f'{end_year}-01-01', freq='A')
+        sc_index = self.model.scenarios.multiindex
+        return pd.DataFrame(data=np.array(self._data, dtype=int), index=index, columns=sc_index)
 
     property data:
         def __get__(self):
@@ -1923,9 +1973,22 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         def __get__(self):
             return np.array(self._data, dtype=np.float64)
 
+    def to_dataframe(self):
+        """ Return a `pandas.DataFrame` of the recorder data
+
+        This DataFrame contains a MultiIndex for the columns with the recorder name
+        as the first level and scenario combination names as the second level. This
+        allows for easy combination with multiple recorder's DataFrames.
+        """
+        start_year = self.model.timestepper.start.year
+        end_year = self.model.timestepper.end.year
+        index = pd.period_range(f'{start_year}-01-01', f'{end_year}-01-01', freq='A')
+        sc_index = self.model.scenarios.multiindex
+        return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
+
     @classmethod
     def load(cls, model, data):
-        nodes = [model._get_node_from_ref(model, n) for n in data.pop("nodes")]
+        nodes = [model.nodes[n] for n in data.pop("nodes")]
         return cls(model, nodes=nodes, **data)
 AnnualTotalFlowRecorder.register()
 

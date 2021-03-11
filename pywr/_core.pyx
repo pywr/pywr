@@ -286,7 +286,7 @@ cdef class Timestep:
         # Calculate day of year index (zero based)
         cdef int i = self.dayofyear - 1
         if not self.is_leap_year:
-            if i > 58: # 28th Feb
+            if i > 58:  # 28th Feb
                 i += 1
         self.dayofyear_index = i
 
@@ -477,6 +477,14 @@ cdef class AbstractNode:
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         return 0.0
 
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        if out is None:
+            out = np.zeros(len(self.model.scenarios.combinations))
+        else:
+            out[:] = 0.0
+        return out
+
+
 cdef class Node(AbstractNode):
     """ Node class from which all others inherit
     """
@@ -527,6 +535,16 @@ cdef class Node(AbstractNode):
             return self._cost
         return self._cost_param.get_value(scenario_index)
 
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._cost_param is None:
+            out[:] = self._cost
+        else:
+            out[:] = self._cost_param.get_all_values()
+        return out
+
     property min_flow:
         """The minimum flow constraint on the node
 
@@ -555,6 +573,16 @@ cdef class Node(AbstractNode):
             return self._min_flow
         return self._min_flow_param.get_value(scenario_index)
 
+    cpdef double[:] get_all_min_flow(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._min_flow_param is None:
+            out[:] = self._min_flow
+        else:
+            out[:] = self._min_flow_param.get_all_values()
+        return out
+
     property max_flow:
         """The maximum flow constraint on the node
 
@@ -582,6 +610,16 @@ cdef class Node(AbstractNode):
         if self._max_flow_param is None:
             return self._max_flow
         return self._max_flow_param.get_value(scenario_index)
+
+    cpdef double[:] get_all_max_flow(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._max_flow_param is None:
+            out[:] = self._max_flow
+        else:
+            out[:] = self._max_flow_param.get_all_values()
+        return out
 
     property conversion_factor:
         """The conversion between inflow and outflow for the node
@@ -709,10 +747,13 @@ cdef class AggregatedNode(AbstractNode):
                 return np.asarray(self._flow_weights, np.float64)
 
         def __set__(self, values):
-            values = np.array(values, np.float64)
-            if np.any(np.abs(values) < 1e-6):
-                warnings.warn("Very small flow_weights in AggregateNode result in ill-conditioned matrix")
-            self._flow_weights = values
+            if values is None:
+                self._flow_weights = None
+            else:
+                values = np.array(values, np.float64)
+                if np.any(np.abs(values) < 1e-6):
+                    warnings.warn("Very small flow_weights in AggregateNode result in ill-conditioned matrix")
+                self._flow_weights = values
             self.model.dirty = True
 
     property min_flow:
@@ -743,6 +784,16 @@ cdef class AggregatedNode(AbstractNode):
             return self._min_flow
         return self._min_flow_param.get_value(scenario_index)
 
+    cpdef double[:] get_all_min_flow(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._min_flow_param is None:
+            out[:] = self._min_flow
+        else:
+            out[:] = self._min_flow_param.get_all_values()
+        return out
+
     property max_flow:
         """The maximum flow constraint on the node
 
@@ -771,6 +822,16 @@ cdef class AggregatedNode(AbstractNode):
             return self._max_flow
         return self._max_flow_param.get_value(scenario_index)
 
+    cpdef double[:] get_all_max_flow(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._max_flow_param is None:
+            out[:] = self._max_flow
+        else:
+            out[:] = self._max_flow_param.get_all_values()
+        return out
+
     cpdef double[:] get_factors(self, ScenarioIndex scenario_index):
         """Get node factors for the current timestep and given scenario index.
         """
@@ -792,57 +853,58 @@ cdef class AggregatedNode(AbstractNode):
             factors_norm[i] = f0/factors[i]
         return factors_norm
 
-    @classmethod
-    def load_factors(cls, model, data):
-        """ Class method to load factors data from dict. """
-        from pywr.parameters import load_parameter
-
-        factors = None
-        if 'factors' in data:
-            factors = []
-            for pdata in data.pop('factors'):
-                factors.append(load_parameter(model, pdata))
-        return factors
-
-    @classmethod
-    def load(cls, data, model):
-        from pywr.parameters import load_parameter
-        name = data["name"]
-        nodes = [model._get_node_from_ref(model, node_name) for node_name in data["nodes"]]
-        agg = cls(model, name, nodes)
-        agg.factors = cls.load_factors(model, data)
-
-        try:
-            agg.flow_weights = data["flow_weights"]
-        except KeyError:
-            pass
-        try:
-            agg.min_flow = load_parameter(model, data["min_flow"])
-        except KeyError:
-            pass
-        try:
-            agg.max_flow = load_parameter(model, data["max_flow"])
-        except KeyError:
-            pass
-        return agg
-
 cdef class StorageInput(BaseInput):
     cpdef commit(self, int scenario_index, double volume):
         BaseInput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, -volume)
 
+    cpdef commit_all(self, double[:] value):
+        """Called once for each route the node is a member of"""
+        cdef int i
+        for i in range(self._flow.shape[0]):
+            self._flow[i] += value[i]
+        self._parent.commit_all(-np.array(value))
+
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         # Return negative of parent cost
         return -self.parent.get_cost(scenario_index)
+
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        """Get the cost at a given timestep for all scenario combinations
+        """
+        cdef int i
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        self.parent.get_all_cost(out=out)
+        for i in range(len(self.model.scenarios.combinations)):
+            out[i] *= -1.0
+        return out
 
 cdef class StorageOutput(BaseOutput):
     cpdef commit(self, int scenario_index, double volume):
         BaseOutput.commit(self, scenario_index, volume)
         self._parent.commit(scenario_index, volume)
 
+    cpdef commit_all(self, double[:] value):
+        """Called once for each route the node is a member of"""
+        cdef int i
+        for i in range(self._flow.shape[0]):
+            self._flow[i] += value[i]
+        self._parent.commit_all(value)
+
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         # Return parent cost
         return self.parent.get_cost(scenario_index)
+
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        """Get the cost at a given timestep for all scenario combinations
+        """
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        self.parent.get_all_cost(out=out)
+        return out
 
 
 cdef class AbstractStorage(AbstractNode):
@@ -914,6 +976,16 @@ cdef class Storage(AbstractStorage):
         if self._cost_param is None:
             return self._cost
         return self._cost_param.get_value(scenario_index)
+
+    cpdef double[:] get_all_cost(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._cost_param is None:
+            out[:] = self._cost
+        else:
+            out[:] = self._cost_param.get_all_values()
+        return out
 
     property initial_volume:
         def __get__(self, ):
@@ -999,6 +1071,16 @@ cdef class Storage(AbstractStorage):
             return self._min_volume
         return self._min_volume_param.get_value(scenario_index)
 
+    cpdef double[:] get_all_min_volume(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._min_volume_param is None:
+            out[:] = self._min_volume
+        else:
+            out[:] = self._min_volume_param.get_all_values()
+        return out
+
     property max_volume:
         def __get__(self):
             if self._max_volume_param is None:
@@ -1016,6 +1098,16 @@ cdef class Storage(AbstractStorage):
         if self._max_volume_param is None:
             return self._max_volume
         return self._max_volume_param.get_value(scenario_index)
+
+    cpdef double[:] get_all_max_volume(self, double[:] out=None):
+        if out is None:
+            out = np.empty(len(self.model.scenarios.combinations))
+
+        if self._max_volume_param is None:
+            out[:] = self._max_volume
+        else:
+            out[:] = self._max_volume_param.get_all_values()
+        return out
 
     property level:
         def __get__(self):
@@ -1112,7 +1204,7 @@ cdef class Storage(AbstractStorage):
             self._volume[i] = reset_volume
             self._current_pc[i] = reset_pc
 
-    cpdef after(self, Timestep ts, double[:] adjustment = None):
+    cpdef after(self, Timestep ts, double[:] adjustment=None):
         AbstractStorage.after(self, ts)
         cdef int i
         cdef double mxv, mnv
@@ -1198,13 +1290,6 @@ cdef class AggregatedStorage(AbstractStorage):
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
 
-    @classmethod
-    def load(cls, data, model):
-        name = data["name"]
-        nodes = [model._get_node_from_ref(model, node_name) for node_name in data["storage_nodes"]]
-        agg = cls(model, name, nodes)
-        return agg
-
 
 cdef class VirtualStorage(Storage):
     def __cinit__(self, ):
@@ -1231,7 +1316,7 @@ cdef class VirtualStorage(Storage):
         def __set__(self, value):
             self._factors = np.array(value, dtype=np.float64)
 
-    cpdef after(self, Timestep ts, double[:] adjustment = None):
+    cpdef after(self, Timestep ts, double[:] adjustment=None):
         cdef int i
         cdef ScenarioIndex si
         cdef AbstractNode n
@@ -1241,7 +1326,7 @@ cdef class VirtualStorage(Storage):
                 self._flow[i] = 0.0
                 for n, f in zip(self._nodes, self._factors):
                     self._flow[i] -= f*n._flow[i]
-            Storage.after(self, ts, adjustment = adjustment)
+            Storage.after(self, ts, adjustment=adjustment)
 
 
 cdef class RollingVirtualStorage(VirtualStorage):
@@ -1261,7 +1346,7 @@ cdef class RollingVirtualStorage(VirtualStorage):
         self._memory[:] = 0.0
         self._memory_pointer = 0
 
-    cpdef after(self, Timestep ts, double[:] adjustment = None):
+    cpdef after(self, Timestep ts, double[:] adjustment=None):
         cdef int i
         cdef ScenarioIndex si
 

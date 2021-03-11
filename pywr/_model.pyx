@@ -401,16 +401,20 @@ class Model(object):
                 except KeyError:
                     break
 
-                #If unable to load a node, then reraise the exception with some
-                #useful information like node name and parameter name.
+                # If unable to load a node, then reraise the exception with some
+                # useful information like node name and parameter name.
                 try:
-                      component = load_component(model, component_data, name)
+                    component = load_component(model, component_data, name)
                 except Exception as err:
                     logger.critical("Error loading component %s", name)
-                    #Reraise the exception
+                    # Reraise the exception
                     raise
 
                 yield component
+
+        # preload the nodes
+        for node_name in list(nodes_to_load.keys()):
+            node = model.pre_load_node(node_name)
 
         load_components(model._recorders_to_load, load_recorder)
         for parameter in load_components(model._parameters_to_load, load_parameter):
@@ -419,7 +423,7 @@ class Model(object):
 
         # load the remaining nodes
         for node_name in list(nodes_to_load.keys()):
-            node = cls._get_node_from_ref(model, node_name)
+            model.finalise_node(node_name)
 
         del(model._recorders_to_load)
         del(model._parameters_to_load)
@@ -442,17 +446,25 @@ class Model(object):
 
     @classmethod
     def _get_node_from_ref(cls, model, node_name):
+        import warnings
+        warnings.warn("Use of `_get_node_from_ref` is deprecated and will be removed in the future."
+                      "Please use `model.nodes[node_name] instead.", DeprecationWarning)
+        return model.nodes[node_name]
+
+    def pre_load_node(self, node_name):
         try:
-            # first check if node has already been loaded
-            node = model.nodes[node_name]
+            node = self.nodes[node_name]
         except KeyError:
             # if not, load it now
-            node_data = model._nodes_to_load[node_name]
-            node_type = node_data['type'].lower()
+            node_data = self._nodes_to_load[node_name]
+            node_type = node_data.pop('type').lower()
             cls = NodeMeta.node_registry[node_type]
-            node = cls.load(node_data, model)
-            del(model._nodes_to_load[node_name])
+            node = cls.pre_load(self, node_data)
         return node
+
+    def finalise_node(self, node_name):
+        node = self.nodes[node_name]
+        node.finalise_load()
 
     def find_all_routes(self, type1, type2, valid=None, max_length=None, domain_match='strict'):
         """Find all routes between two nodes or types of node
@@ -652,17 +664,17 @@ class Model(object):
             try:
                 node.setup(self)
             except Exception as err:
-              #reraise the exception after logging some info about source of error
-              logger.critical("An error occurred setting up node during setup %s",
-                              node.name)
-              raise
+                # reraise the exception after logging some info about source of error
+                logger.critical("An error occurred setting up node during setup %s",
+                                node.name)
+                raise
 
         components = self.flatten_component_tree(rebuild=True)
         for component in components:
             try:
                 component.setup()
             except Exception as err:
-                #reraise the exception after logging some info about source of error
+                # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred setting up component during setup %s",
                                 component.name)
                 raise
@@ -681,14 +693,14 @@ class Model(object):
                 try:
                     node.setup(self)
                 except Exception as err:
-                    #reraise the exception after logging some info about source of error
-                    logger.critical("An error occurred calling setup while resetting node %s",node.name)
+                    # reraise the exception after logging some info about source of error
+                    logger.critical("An error occurred calling setup while resetting node %s", node.name)
                     raise
             try:
                 node.reset()
             except Exception as err:
-                #reraise the exception after logging some info about source of error
-                logger.critical("An error occurred calling reset on node %s",node.name)
+                # reraise the exception after logging some info about source of error
+                logger.critical("An error occurred calling reset on node %s", node.name)
                 raise
 
         components = self.flatten_component_tree(rebuild=False)
@@ -697,7 +709,7 @@ class Model(object):
                 try:
                     component.setup()
                 except Exception as err:
-                    #reraise the exception after logging some info about source of error
+                    # reraise the exception after logging some info about source of error
                     logger.critical("An error occurred calling setup while resetting component %s",
                                     component.name)
                     raise
@@ -705,7 +717,7 @@ class Model(object):
             try:
                 component.reset()
             except Exception as err:
-                #reraise the exception after logging some info about source of error
+                # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred calling reset on component %s",
                                 component.name)
                 raise
@@ -760,7 +772,7 @@ class Model(object):
             try:
                 component.finish()
             except Exception as err:
-                #reraise the exception after logging some info about source of error
+                # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred finishing component %s", component.name)
                 raise
 
@@ -955,8 +967,8 @@ class NamedIterator(object):
 
 
 class ModelResult(object):
-    def __init__(self, num_scenarios, timestep, time_taken, time_taken_before, time_taken_after, time_taken_with_overhead,
-                 speed, solver_name, solver_stats, version):
+    def __init__(self, num_scenarios, timestep, time_taken, time_taken_before, time_taken_after,
+                 time_taken_with_overhead, speed, solver_name, solver_stats, version):
         self.timestep = timestep
         self.timesteps = timestep.index + 1
         self.time_taken = time_taken

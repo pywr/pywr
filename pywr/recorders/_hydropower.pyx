@@ -121,7 +121,7 @@ cdef class HydropowerRecorder(NumpyArrayNodeRecorder):
             if self._water_elevation_parameter:
                 self.children.remove(self._water_elevation_parameter)
             self.children.add(parameter)
-            self._water_elevation_parameter = parameter        
+            self._water_elevation_parameter = parameter
 
     cpdef after(self):
         cdef int i
@@ -154,7 +154,7 @@ cdef class HydropowerRecorder(NumpyArrayNodeRecorder):
     @classmethod
     def load(cls, model, data):
         from pywr.parameters import load_parameter
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         if "water_elevation_parameter" in data:
             water_elevation_parameter = load_parameter(model, data.pop("water_elevation_parameter"))
         else:
@@ -261,7 +261,7 @@ cdef class TotalHydroEnergyRecorder(BaseConstantNodeRecorder):
     @classmethod
     def load(cls, model, data):
         from pywr.parameters import load_parameter
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         if "water_elevation_parameter" in data:
             water_elevation_parameter = load_parameter(model, data.pop("water_elevation_parameter"))
         else:

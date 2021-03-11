@@ -11,7 +11,7 @@ from ._parameters import (
     ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
     IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
     DiscountFactorParameter, NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter,
-    NegativeMinParameter, DeficitParameter, DivisionParameter, FlowDelayParameter, OffsetParameter,
+    NegativeMinParameter, DeficitParameter, DivisionParameter, FlowParameter, FlowDelayParameter, OffsetParameter,
     RbfProfileParameter, UniformDrawdownProfileParameter, load_parameter, load_parameter_values, load_dataframe)
 
 from . import licenses
@@ -21,6 +21,7 @@ from ._thresholds import (
     RecorderThresholdParameter, CurrentYearThresholdParameter, CurrentOrdinalDayThresholdParameter
 )
 from ._hydropower import HydropowerTargetParameter
+from ._activation_functions import BinaryStepParameter, RectifierParameter, LogisticParameter  # noqa
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
@@ -73,6 +74,17 @@ class AbstractInterpolatedParameter(Parameter):
     def _value_to_interpolate(self, ts, scenario_index):
         raise NotImplementedError()
 
+    @property
+    def interp_kwargs(self):
+        return self._interp_kwargs
+
+    @interp_kwargs.setter
+    def interp_kwargs(self, data):
+        if "fill_value" in data and isinstance(data["fill_value"], list):
+            # SciPy's interp1d expects a tuple when defining fill values for the upper and lower bounds
+            data["fill_value"] = tuple(data["fill_value"])
+        self._interp_kwargs = data
+
     def setup(self):
         super(AbstractInterpolatedParameter, self).setup()
         self.interp = interp1d(self.x, self.y, **self.interp_kwargs)
@@ -108,8 +120,10 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
         parameter = load_parameter(model, data.pop("parameter"))
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
-        kind = data.pop("kind", "linear")
-        return cls(model, parameter, x, y, interp_kwargs={'kind': kind})
+        interp_kwargs = data.pop("interp_kwargs", None)
+        return cls(model, parameter, x, y, interp_kwargs=interp_kwargs)
+
+
 InterpolatedParameter.register()
 
 
@@ -121,9 +135,9 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
     ----------
     node: Node
         Storage node to provide input volume values to interpolation calculation
-    volumes: array_like
+    volumes: array_like or from file
         x coordinates of the data points for interpolation.
-    values : array_like
+    values : array_like or from file
         y coordinates of the data points for interpolation.
     interp_kwargs : dict
         Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
@@ -138,11 +152,25 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
-        volumes = np.array(data.pop("volumes"))
-        values = np.array(data.pop("values"))
-        kind = data.pop("kind", "linear")
-        return cls(model, node, volumes, values, interp_kwargs={'kind': kind})
+        node = model.nodes[data.pop("node")]
+        volumes = data.pop("volumes")
+        if isinstance(volumes, list):
+            volumes = np.asarray(volumes, np.float64)
+        elif isinstance(volumes, dict):
+            volumes = load_parameter_values(model, volumes)
+        else:
+            raise TypeError("Unexpected type for \"volumes\" in {}".format(cls.__name__))
+        values = data.pop("values")
+        if isinstance(values, list):
+            values = np.asarray(values, np.float64)
+        elif isinstance(values, dict):
+            values = load_parameter_values(model, values)
+        else:
+            raise TypeError("Unexpected type for \"values\" in {}".format(cls.__name__))
+        interp_kwargs = data.pop("interp_kwargs", None)
+        return cls(model, node, volumes, values, interp_kwargs=interp_kwargs)
+
+
 InterpolatedVolumeParameter.register()
 
 
@@ -171,11 +199,13 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
 
     @classmethod
     def load(cls, model, data):
-        node = model._get_node_from_ref(model, data.pop("node"))
+        node = model.nodes[data.pop("node")]
         flows = np.array(data.pop("flows"))
         values = np.array(data.pop("values"))
-        kind = data.pop("kind", "linear")
-        return cls(model, node, flows, values, interp_kwargs={'kind': kind})
+        interp_kwargs = data.pop("interp_kwargs", None)
+        return cls(model, node, flows, values, interp_kwargs=interp_kwargs)
+
+
 InterpolatedFlowParameter.register()
 
 
@@ -232,9 +262,11 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
         lower_parameter = load_parameter(model, data.pop("lower_parameter", None))
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
-        kind = data.pop("kind", "linear")
+        interp_kwargs = data.pop("interp_kwargs", None)
         return cls(model, upper_parameter, x, y, lower_parameter=lower_parameter,
-                   interp_kwargs={'kind': kind})
+                   interp_kwargs=interp_kwargs)
+
+
 InterpolatedQuadratureParameter.register()
 
 

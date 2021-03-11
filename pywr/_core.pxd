@@ -55,6 +55,7 @@ cdef class AbstractNode:
 
     cdef Parameter _cost_param
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1
+    cpdef double[:] get_all_cost(self, double[:] out=*)
 
     cpdef setup(self, model)
     cpdef reset(self)
@@ -75,7 +76,10 @@ cdef class Node(AbstractNode):
 
     cdef Parameter _conversion_factor_param
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1
+    cpdef double[:] get_all_min_flow(self, double[:] out=*)
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1
+    cpdef double[:] get_all_max_flow(self, double[:] out=*)
+
     cpdef double get_conversion_factor(self) except? -1
     cdef set_parameters(self, ScenarioIndex scenario_index)
 
@@ -90,7 +94,9 @@ cdef class AggregatedNode(AbstractNode):
     cdef public object __agg_factor_data
 
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1
+    cpdef double[:] get_all_min_flow(self, double[:] out=*)
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1
+    cpdef double[:] get_all_max_flow(self, double[:] out=*)
     cpdef double[:] get_factors(self, ScenarioIndex scenario_index)
     cpdef double[:] get_factors_norm(self, ScenarioIndex scenario_index)
 
@@ -115,12 +121,14 @@ cdef class Storage(AbstractStorage):
     cdef Parameter _area_param
     cpdef double get_initial_volume(self) except? -1
     cpdef double get_initial_pc(self) except? -1
-    cpdef _reset_storage_only(self, bint use_initial_volume = *)
+    cpdef _reset_storage_only(self, bint use_initial_volume=*)
     cpdef double get_min_volume(self, ScenarioIndex scenario_index) except? -1
+    cpdef double[:] get_all_min_volume(self, double[:] out=*)
     cpdef double get_max_volume(self, ScenarioIndex scenario_index) except? -1
+    cpdef double[:] get_all_max_volume(self, double[:] out=*)
     cpdef double get_level(self, ScenarioIndex scenario_index) except? -1
     cpdef double get_area(self, ScenarioIndex scenario_index) except? -1
-    cpdef after(self, Timestep ts, double[:] adjustment = *)
+    cpdef after(self, Timestep ts, double[:] adjustment=*)
 
 cdef class AggregatedStorage(AbstractStorage):
     cdef list _storage_nodes

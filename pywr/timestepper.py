@@ -83,7 +83,7 @@ class Timestepper(object):
         next_index = current.index + 1
         if next_index >= len(self._periods):
             # The final time-step is one offset beyond the end of the model.
-            # Here we compute its delta and create the object. 
+            # Here we compute its delta and create the object.
             final_period = current.period + self.offset
             delta = final_period.end_time - final_period.start_time
             delta = np.round(delta.total_seconds())

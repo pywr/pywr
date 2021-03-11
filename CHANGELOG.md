@@ -2,6 +2,52 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.12.0
+
+### New Features
+
+- Add additional "activation function" parameters: `BinaryStepParameter`, `RectifierParameter` and `LogisticParameter`. (#965)
+
+## v1.11.0
+
+### New Features
+
+- Refactor node loading into two stages to solve circular loading problems. (#945)
+- Add additional `get_all_xxx` methods to core nodes to allow fetching `min_flow`, `max_flow` and `cost`
+values for all scenarios simultaneously. (#958)
+
+### Miscellaneous
+
+- Switch to using Openpyxl for reading and writing Excel files (see changes to Pandas v1.2). (#959)
+- Dropped support for Python 3.6 following lack of support in upstream libraries (NumPy and Pandas). (#959)
+
+## v1.10.0
+
+### New Features
+
+- Add optional `exclude_months` to `AnnualCountIndexThresholdRecorder`. (#950)
+- Update load methods of interpolation parameters so that they accept `interp_kwargs`. (#943)
+- Allow `InterpolateVolumeParameter` to use external data. (#926)
+- Added `NumpyArrayNodeCostRecorder` to recorder a timeseries of a node's cost attribute. (#932)
+- Added `to_dataframe()` method to `AnnualCountIndexThresholdRecorder` and `AnnualTotalFlowRecorder`. (#939)
+
+### Bug Fixes
+
+- Fixed a bug with `RbfProfileParameter` where it did not pass `rbf_kwargs` to the RBF functions. (#946)
+- Fixes to save and draw graph functions to improve handling virtual and child nodes. (#938) 
+
+### Documentation
+
+- Updated installation docs. (#931)
+- Add missing parameters (`FlowParameter` and `DiscountFactorParameter`) to API docs. (#934)
+
+### Miscellaneous
+
+- Migrate continuous integration system from Travis and Appveyor to Github Actions.  (#948, #951, #952, #953)
+- Removed deprecated `PiecewiseLinearControlCurve`. (#947)
+- Apply some PEP8 compliance fixes. (#929)
+- Remove use of `basestring` which was only needed for Python 2. (#928) 
+
 ## v1.9.0
 
 ### New Features
