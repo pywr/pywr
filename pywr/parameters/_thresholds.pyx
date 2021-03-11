@@ -188,8 +188,8 @@ NodeThresholdParameter.register()
 
 
 cdef class MultipleThresholdIndexParameter(IndexParameter):
-    """ Multiple threshold holder returning an index based on the previous flow in a node
-    against the given thresholds.
+    """ Returns an index based on the previous days flow in a node against
+     multiple given thresholds.
 
     Parameters
     ----------
@@ -199,7 +199,16 @@ cdef class MultipleThresholdIndexParameter(IndexParameter):
     def __init__(self, model, node, thresholds, use_max_flow=False, **kwargs):
         super(MultipleThresholdIndexParameter, self).__init__(model, **kwargs)
         self.node = node
-        self.thresholds = thresholds
+
+        self.thresholds = []
+        for threshold in thresholds:
+            if not isinstance(threshold, Parameter):
+                from pywr.parameters import ConstantParameter
+                threshold = ConstantParameter(model, threshold)
+            self.thresholds.append(threshold)
+
+        for threshold in self.thresholds:
+            self.children.add(thresholds)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the index of the first threshold the node flow is above
@@ -211,14 +220,13 @@ cdef class MultipleThresholdIndexParameter(IndexParameter):
         """
         cdef double flow
         cdef int index, j
+        cdef double target_threshold
+        cdef Parameter threshold
 
         flow = self.node._prev_flow[scenario_index.global_id]
         index = len(self.thresholds)
         for j, threshold in enumerate(self.thresholds):
-            if isinstance(threshold, (float, int)):
-                target_threshold = threshold
-            else:
-                target_threshold = threshold.get_value(scenario_index)
+            target_threshold = threshold.get_value(scenario_index)
             if flow >= target_threshold:
                 index = j
                 break
@@ -233,8 +241,8 @@ MultipleThresholdIndexParameter.register()
 
 
 cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
-    """ Multiple threshold holder returning an index based on the value in the parameter
-    against the given thresholds.
+    """ Return an index based on the value in the parameter against
+    multiple given thresholds.
 
     Parameters
     ----------
@@ -244,7 +252,16 @@ cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
     def __init__(self, model, parameter, thresholds, use_max_flow=False, **kwargs):
         super(MultipleThresholdParameterIndexParameter, self).__init__(model, **kwargs)
         self.parameter = parameter
-        self.thresholds = thresholds
+
+        self.thresholds = []
+        for threshold in thresholds:
+            if not isinstance(threshold, Parameter):
+                from pywr.parameters import ConstantParameter
+                threshold = ConstantParameter(model, threshold)
+            self.thresholds.append(threshold)
+
+        for threshold in self.thresholds:
+            self.children.add(thresholds)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the index of the first threshold the node flow is above
@@ -254,29 +271,25 @@ cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
         thresholds the index is either 0 (above both), 1 (in between), or 2 (below
         both), and so on.
         """
-        cdef double flow
+        cdef double value
         cdef int index, j
+        cdef Parameter threshold
 
-        flow = self.parameter.value(timestep, scenario_index)
+        value = self.parameter.value(timestep, scenario_index)
         index = len(self.thresholds)
         for j, threshold in enumerate(self.thresholds):
-            if isinstance(threshold, (float, int)):
-                target_threshold = threshold
-            else:
-                target_threshold = threshold.get_value(scenario_index)
-            if flow >= target_threshold:
+            target_threshold = threshold.get_value(scenario_index)
+            if value >= target_threshold:
                 index = j
                 break
         return index
 
     @classmethod
     def load(cls, model, data):
-        node = load_parameter(model, data.pop("parameter"))
+        parameter = load_parameter(model, data.pop("parameter"))
         thresholds = [load_parameter(model, d) for d in data.pop("thresholds")]
-        return cls(model, node, thresholds, **data)
+        return cls(model, parameter, thresholds, **data)
 MultipleThresholdParameterIndexParameter.register()
-
-
 
 
 cdef class ParameterThresholdParameter(AbstractThresholdParameter):
