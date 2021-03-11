@@ -252,6 +252,7 @@ cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
     def __init__(self, model, parameter, thresholds, use_max_flow=False, **kwargs):
         super(MultipleThresholdParameterIndexParameter, self).__init__(model, **kwargs)
         self.parameter = parameter
+        self.children.add(parameter)
 
         self.thresholds = []
         for threshold in thresholds:
@@ -275,7 +276,7 @@ cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
         cdef int index, j
         cdef Parameter threshold
 
-        value = self.parameter.value(timestep, scenario_index)
+        value = self.parameter.get_value(scenario_index)
         index = len(self.thresholds)
         for j, threshold in enumerate(self.thresholds):
             target_threshold = threshold.get_value(scenario_index)
