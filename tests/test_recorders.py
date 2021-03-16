@@ -2150,3 +2150,4 @@ class TestGaussianKDEStorageRecorder:
         p = kde.aggregated_value()
         assert pdf.shape == (101, 1)
         assert 0 < p < 1
+        np.testing.assert_allclose(pdf.values, kde.values())

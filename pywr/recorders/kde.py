@@ -12,7 +12,7 @@ class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
     uses kernel density estimation (KDE) to estimate the probability density function of the storage time-series.
     It returns the probability of being at or below a specified target volume in the `aggregated_value()` method
     (i.e. used for optimisation). The recorder flattens data from all scenarios before computing the KDE. Therefore,
-    a single PDF is produced and return via `.to_dataframe()`.
+    a single PDF is produced and returned via `.to_dataframe()`.
 
     The user can specify an optional resampling (e.g. to create annual minimum time-series) prior to fitting
     the KDE. By default the KDE is reflected at the proportional storage bounds (0.0 and 1.0) to represent the
@@ -63,6 +63,10 @@ class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
 
         self._probability_of_target_volume = p
         self._pdf = pandas.DataFrame(data=pdf, index=x)
+
+    def values(self):
+        """Return the estimated PDF values."""
+        return self._pdf.values
 
     def to_dataframe(self):
         """ Return a `pandas.DataFrame` of the estimated PDF.
