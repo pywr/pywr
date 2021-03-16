@@ -25,7 +25,7 @@ from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageR
                             NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning, NumpyArrayDailyProfileParameterRecorder,
                             AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder,
-                            GaussianKDEStorageRecorder
+                            GaussianKDEStorageRecorder, NormalisedGaussianKDEStorageRecorder, NumpyArrayNormalisedStorageRecorder
                             )
 
 from pywr.recorders.progress import ProgressRecorder
@@ -449,6 +449,36 @@ def test_numpy_storage_recorder(simple_storage_model, proportional):
     df = rec.to_dataframe()
     assert df.shape == (5, 1)
     assert_allclose(df.values, expected, atol=1e-7)
+
+
+def test_numpy_norm_storage_recorder(simple_storage_model):
+    """
+    Test the NumpyArrayNormalisedStorageRecorder
+    """
+    model = simple_storage_model
+
+    res = model.nodes['Storage']
+    cc = ConstantParameter(model, value=0.2)
+
+    rec = NumpyArrayNormalisedStorageRecorder(model, res, parameter=cc)
+
+    model.run()
+
+    expected = np.array([[
+        3.0/16,  # 3 above control curve
+        0,  # at control curve
+        1.0/4 - 1.0,  # 75% toward empty
+        -1.0, # Empty
+        -1.0  # Empty
+    ]]).T
+
+    assert(rec.data.shape == (5, 1))
+    assert_allclose(rec.data, expected, atol=1e-7)
+
+    df = rec.to_dataframe()
+    assert df.shape == (5, 1)
+    assert_allclose(df.values, expected, atol=1e-7)
+
 
 
 def test_numpy_array_level_recorder(simple_storage_model):
@@ -2143,6 +2173,22 @@ class TestGaussianKDEStorageRecorder:
         res = model.nodes['Storage']
 
         kde = GaussianKDEStorageRecorder(model, res, target_volume_pc=0.2)
+
+        model.run()
+
+        pdf = kde.to_dataframe()
+        p = kde.aggregated_value()
+        assert pdf.shape == (101, 1)
+        assert 0 < p < 1
+        np.testing.assert_allclose(pdf.values, kde.values())
+
+    def test_norm_kde_recorder(self, simple_storage_model):
+        """A basic functional test of `NormalisedGaussianKDEStorageRecorder`"""
+        model = simple_storage_model
+        res = model.nodes['Storage']
+        cc = ConstantParameter(model, 0.2)
+
+        kde = NormalisedGaussianKDEStorageRecorder(model, res, parameter=cc)
 
         model.run()
 
