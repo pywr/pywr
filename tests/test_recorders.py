@@ -2138,7 +2138,7 @@ class TestHydroPowerRecorder:
 
 class TestGaussianKDEStorageRecorder:
     def test_kde_recorder(self, simple_storage_model):
-        """A basic functional test of `TestGaussianKDEStorageRecorder`"""
+        """A basic functional test of `GaussianKDEStorageRecorder`"""
         model = simple_storage_model
         res = model.nodes['Storage']
 
