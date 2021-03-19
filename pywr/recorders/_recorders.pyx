@@ -1142,9 +1142,9 @@ cdef class NumpyArrayNormalisedStorageRecorder(NumpyArrayAbstractStorageRecorder
     parameter : `Parameter`
         The control curve for normalisation.
     temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
+        Aggregation function used over time when computing a value per scenario. This can be used to return, for
+        example, the minimum normalised storage reached over a simulation. For aggregation over scenarios see the
+        `agg_func` keyword argument.
     """
     def __init__(self, *args, **kwargs):
         # Optional different method for aggregating across time.
