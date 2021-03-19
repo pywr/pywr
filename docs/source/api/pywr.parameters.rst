@@ -97,6 +97,8 @@ Threshold parameters
     StorageThresholdParameter
     NodeThresholdParameter
     ParameterThresholdParameter
+    MultipleThresholdIndexParameter
+    MultipleThresholdParameterIndexParameter
     RecorderThresholdParameter
     CurrentYearThresholdParameter
     CurrentOrdinalDayThresholdParameter

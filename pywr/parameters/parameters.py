@@ -18,7 +18,8 @@ from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import (
     AbstractThresholdParameter, StorageThresholdParameter, NodeThresholdParameter, ParameterThresholdParameter,
-    RecorderThresholdParameter, CurrentYearThresholdParameter, CurrentOrdinalDayThresholdParameter
+    RecorderThresholdParameter, CurrentYearThresholdParameter, CurrentOrdinalDayThresholdParameter,
+    MultipleThresholdIndexParameter, MultipleThresholdParameterIndexParameter
 )
 from ._hydropower import HydropowerTargetParameter
 from ._activation_functions import BinaryStepParameter, RectifierParameter, LogisticParameter  # noqa
