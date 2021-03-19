@@ -1,0 +1,60 @@
+﻿pywr.parameters.MultipleThresholdIndexParameter
+===============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: MultipleThresholdIndexParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MultipleThresholdIndexParameter.__init__
+      ~MultipleThresholdIndexParameter.after
+      ~MultipleThresholdIndexParameter.before
+      ~MultipleThresholdIndexParameter.finish
+      ~MultipleThresholdIndexParameter.get_all_indices
+      ~MultipleThresholdIndexParameter.get_all_values
+      ~MultipleThresholdIndexParameter.get_double_lower_bounds
+      ~MultipleThresholdIndexParameter.get_double_upper_bounds
+      ~MultipleThresholdIndexParameter.get_double_variables
+      ~MultipleThresholdIndexParameter.get_index
+      ~MultipleThresholdIndexParameter.get_integer_lower_bounds
+      ~MultipleThresholdIndexParameter.get_integer_upper_bounds
+      ~MultipleThresholdIndexParameter.get_integer_variables
+      ~MultipleThresholdIndexParameter.get_value
+      ~MultipleThresholdIndexParameter.index
+      ~MultipleThresholdIndexParameter.load
+      ~MultipleThresholdIndexParameter.register
+      ~MultipleThresholdIndexParameter.reset
+      ~MultipleThresholdIndexParameter.set_double_variables
+      ~MultipleThresholdIndexParameter.set_integer_variables
+      ~MultipleThresholdIndexParameter.setup
+      ~MultipleThresholdIndexParameter.unregister
+      ~MultipleThresholdIndexParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MultipleThresholdIndexParameter.children
+      ~MultipleThresholdIndexParameter.comment
+      ~MultipleThresholdIndexParameter.double_size
+      ~MultipleThresholdIndexParameter.integer_size
+      ~MultipleThresholdIndexParameter.is_variable
+      ~MultipleThresholdIndexParameter.model
+      ~MultipleThresholdIndexParameter.name
+      ~MultipleThresholdIndexParameter.node
+      ~MultipleThresholdIndexParameter.parents
+      ~MultipleThresholdIndexParameter.size
+      ~MultipleThresholdIndexParameter.tags
+   
+   

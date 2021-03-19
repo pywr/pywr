@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Parameters &mdash; Pywr 1.12.1.dev3+g7725f74 documentation</title>
+  <title>Parameters &mdash; Pywr 1.12.1.dev4+g648eb5a documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                1.12.1.dev3+g7725f74
+                1.12.1.dev4+g648eb5a
               </div>
             
           
@@ -155,6 +155,8 @@
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.StorageThresholdParameter.html">pywr.parameters.StorageThresholdParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.NodeThresholdParameter.html">pywr.parameters.NodeThresholdParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.ParameterThresholdParameter.html">pywr.parameters.ParameterThresholdParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.MultipleThresholdIndexParameter.html">pywr.parameters.MultipleThresholdIndexParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.MultipleThresholdParameterIndexParameter.html">pywr.parameters.MultipleThresholdParameterIndexParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.RecorderThresholdParameter.html">pywr.parameters.RecorderThresholdParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.CurrentYearThresholdParameter.html">pywr.parameters.CurrentYearThresholdParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.CurrentOrdinalDayThresholdParameter.html">pywr.parameters.CurrentOrdinalDayThresholdParameter</a></li>
@@ -455,6 +457,12 @@
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ParameterThresholdParameter.html#pywr.parameters.ParameterThresholdParameter" title="pywr.parameters.ParameterThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterThresholdParameter</span></code></a>(model, …)</p></td>
 <td><p>Returns one of two values depending on the value of a Parameter</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.MultipleThresholdIndexParameter.html#pywr.parameters.MultipleThresholdIndexParameter" title="pywr.parameters.MultipleThresholdIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultipleThresholdIndexParameter</span></code></a>(model, node, …)</p></td>
+<td><p>Returns an index based on the previous days flow in a node against multiple given thresholds.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.MultipleThresholdParameterIndexParameter.html#pywr.parameters.MultipleThresholdParameterIndexParameter" title="pywr.parameters.MultipleThresholdParameterIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultipleThresholdParameterIndexParameter</span></code></a>(…)</p></td>
+<td><p>Return an index based on the value in the parameter against multiple given thresholds.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.RecorderThresholdParameter.html#pywr.parameters.RecorderThresholdParameter" title="pywr.parameters.RecorderThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RecorderThresholdParameter</span></code></a>(model, …[, …])</p></td>
 <td><p>Returns one of two values depending on a Recorder value and a threshold</p></td>
