@@ -188,8 +188,7 @@ NodeThresholdParameter.register()
 
 
 cdef class MultipleThresholdIndexParameter(IndexParameter):
-    """ Returns an index based on the previous days flow in a node against
-     multiple given thresholds.
+    """ Returns an index based on the previous days flow in a node against multiple given thresholds.
 
     Parameters
     ----------
@@ -211,7 +210,7 @@ cdef class MultipleThresholdIndexParameter(IndexParameter):
             self.children.add(thresholds)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        """Returns the index of the first threshold the node flow is above
+        """Returns the index of the first threshold the node flow is above.
 
         The index is zero-based. For example, if only one threshold is
         supplied then the index is either 0 (above) or 1 (below). For two
@@ -241,8 +240,7 @@ MultipleThresholdIndexParameter.register()
 
 
 cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
-    """ Return an index based on the value in the parameter against
-    multiple given thresholds.
+    """ Return an index based on the value in the parameter against multiple given thresholds.
 
     Parameters
     ----------
@@ -265,7 +263,7 @@ cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
             self.children.add(thresholds)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        """Returns the index of the first threshold the node flow is above
+        """Returns the index of the first threshold the parameter value is above.
 
         The index is zero-based. For example, if only one threshold is
         supplied then the index is either 0 (above) or 1 (below). For two
