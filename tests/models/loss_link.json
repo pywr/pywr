@@ -13,7 +13,8 @@
         {
             "name": "supply1",
             "type": "Input",
-            "max_flow": 15
+            "max_flow": 100,
+            "cost": 0.1
         },
         {
             "name": "link1",

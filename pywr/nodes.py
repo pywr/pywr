@@ -1118,7 +1118,12 @@ class LossLink(Node):
 
     def loss_factor():
         def fget(self):
-            return self.agg.factors[1]
+            if self.agg.factors:
+                return self.agg.factors[1]
+            elif self.output.max_flow == 0.0:
+                return 0.0
+            else:
+                return 1.0
 
         def fset(self, value):
             if value == 0.0:
@@ -1128,8 +1133,10 @@ class LossLink(Node):
             elif value == 1.0:
                 # 100% loss; all flow to the output loss node
                 self.agg.factors = None
+                self.output.max_flow = float('inf')
                 self.net.max_flow = 0.0
             else:
+                self.output.max_flow = float('inf')
                 self.agg.factors = [1.0, float(value)]
         return locals()
     loss_factor = property(**loss_factor())
@@ -1169,7 +1176,7 @@ class LossLink(Node):
 
     def after(self, timestep):
         super().after(timestep)
-        # Gross flow is saved to the node.
+        # Net flow is saved to the node.
         self.commit_all(self.net.flow)
 
 from pywr.domains.river import *  # noqa

@@ -672,7 +672,8 @@ def test_breaklink_node():
     assert_allclose(transfer.storage.volume, 0)
 
 
-def test_loss_link_node():
+@pytest.mark.parametrize('loss_factor', [None, 0.2, 0.99, 1.0, 0.0])
+def test_loss_link_node(loss_factor):
     """Test LossLink node"""
     model = load_model('loss_link.json')
 
@@ -680,14 +681,28 @@ def test_loss_link_node():
     link1 = model.nodes["link1"]
     demand1 = model.nodes["demand1"]
 
+    if loss_factor is not None:
+        link1.loss_factor = loss_factor
+
     model.check()
     model.run()
 
+    if loss_factor is None:
+        expected_supply = 12
+        expected_demand = 10
+    elif loss_factor == 1.0:
+        # 100% loss means no flow can be provided.
+        expected_supply = 0.0
+        expected_demand = 0.0
+    else:
+        expected_supply = 10 * (1 + loss_factor)
+        expected_demand = 10
+
     # Supply must provide 20% more flow because of the loss in link1
-    assert_allclose(supply1.flow, 12)
+    assert_allclose(supply1.flow, expected_supply)
     # link1 records the net flow after losses
-    assert_allclose(link1.flow, 10)
-    assert_allclose(demand1.flow, 10)
+    assert_allclose(link1.flow, expected_demand)
+    assert_allclose(demand1.flow, expected_demand)
 
 
 @pytest.mark.xfail(reason="Circular dependency in the JSON definition. "
