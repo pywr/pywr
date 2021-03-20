@@ -331,7 +331,7 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
         Optional float or Parameter defining the area and level of the storage node. These values are
         accessible through the `get_area` and `get_level` methods respectively.
     """
-    __parameter_attributes__ = ('cost', 'min_volume', 'max_volume')
+    __parameter_attributes__ = ('cost', 'min_volume', 'max_volume', 'level', 'area')
     __parameter_value_attributes__ = ('initial_volume', )
 
     def __init__(self, model, name, outputs=1, inputs=1, *args, **kwargs):

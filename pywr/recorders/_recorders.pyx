@@ -1126,6 +1126,55 @@ cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
 NumpyArrayStorageRecorder.register()
 
 
+cdef class NumpyArrayNormalisedStorageRecorder(NumpyArrayAbstractStorageRecorder):
+    """Recorder for timeseries information normalised relative to a control curve for a `Storage` node.
+
+    This class stores normalised storage from a specific node for each time-step of a simulation. The normalisation
+    is relative to a `Parameter` which defines a control curve. The data is normalised such that values of 1, 0 and
+    -1 align with full, at control curve and empty volumes respectively. The data is saved internally using a
+     memory view. The data can be accessed through the `data` attribute or `to_dataframe()` method.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        Node instance to record.
+    parameter : `Parameter`
+        The control curve for normalisation.
+    temporal_agg_func : str or callable (default="mean")
+        Aggregation function used over time when computing a value per scenario. This can be used to return, for
+        example, the minimum normalised storage reached over a simulation. For aggregation over scenarios see the
+        `agg_func` keyword argument.
+    """
+    def __init__(self, *args, **kwargs):
+        # Optional different method for aggregating across time.
+        self.parameter = kwargs.pop('parameter')
+        super().__init__(*args, **kwargs)
+        self.children.add(self.parameter)
+
+    cpdef after(self):
+        cdef int i
+        cdef Timestep ts = self.model.timestepper.current
+        cdef double[:] values = self.parameter.get_all_values()
+        cdef double vol, cc, norm_vol
+
+        for i in range(self._data.shape[1]):
+            vol = self._node._current_pc[i]
+            cc = values[i]
+
+            if vol < cc:
+                # Lower than control curve; value between -1.0 and 0.0
+                norm_vol = vol / cc - 1.0
+            else:
+                # At or above control curve; value between 0.0 and 1.0
+                norm_vol = (vol - cc) / (1.0 - cc)
+
+            self._data[ts.index, i] = norm_vol
+
+        return 0
+NumpyArrayNormalisedStorageRecorder.register()
+
+
 cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
     """
     This recorder calculates a storage duration curve for each scenario.

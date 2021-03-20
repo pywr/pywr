@@ -67,15 +67,25 @@ cdef class Component:
      called in the correct order. E.g. that a `before` method in
      one component that is a parent of another is called first.
 
+    Parameters
+    ==========
+    name : str or None
+        The name of the component.
+    comment : str or None
+        An optional comment for the component.
+    tags : dict (default=None)
+        An optional container of key-value pairs that the user can set to help group and identify components.
+
     See also
     --------
     pywr.Model
 
     """
-    def __init__(self, model, name=None, comment=None):
+    def __init__(self, model, name=None, comment=None, tags=None):
         self.model = model
         self.name = name
         self.comment = comment
+        self.tags = tags
         model.component_graph.add_edge(ROOT_NODE, self)
         self.parents = GraphInterface(self)
         self.children = GraphInterface(self)

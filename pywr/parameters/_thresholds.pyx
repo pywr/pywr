@@ -187,6 +187,110 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
 NodeThresholdParameter.register()
 
 
+cdef class MultipleThresholdIndexParameter(IndexParameter):
+    """ Returns an index based on the previous days flow in a node against multiple given thresholds.
+
+    Parameters
+    ----------
+    node : `pywr.core.AbstractNode`
+    thresholds : iterable of `Parameter` instances or floats
+    """
+    def __init__(self, model, node, thresholds, use_max_flow=False, **kwargs):
+        super(MultipleThresholdIndexParameter, self).__init__(model, **kwargs)
+        self.node = node
+
+        self.thresholds = []
+        for threshold in thresholds:
+            if not isinstance(threshold, Parameter):
+                from pywr.parameters import ConstantParameter
+                threshold = ConstantParameter(model, threshold)
+            self.thresholds.append(threshold)
+
+        for threshold in self.thresholds:
+            self.children.add(thresholds)
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns the index of the first threshold the node flow is above.
+
+        The index is zero-based. For example, if only one threshold is
+        supplied then the index is either 0 (above) or 1 (below). For two
+        thresholds the index is either 0 (above both), 1 (in between), or 2 (below
+        both), and so on.
+        """
+        cdef double flow
+        cdef int index, j
+        cdef double target_threshold
+        cdef Parameter threshold
+
+        flow = self.node._prev_flow[scenario_index.global_id]
+        index = len(self.thresholds)
+        for j, threshold in enumerate(self.thresholds):
+            target_threshold = threshold.get_value(scenario_index)
+            if flow >= target_threshold:
+                index = j
+                break
+        return index
+
+    @classmethod
+    def load(cls, model, data):
+        node = model.nodes[data.pop("node")]
+        thresholds = [load_parameter(model, d) for d in data.pop("thresholds")]
+        return cls(model, node, thresholds, **data)
+MultipleThresholdIndexParameter.register()
+
+
+cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
+    """ Return an index based on the value in the parameter against multiple given thresholds.
+
+    Parameters
+    ----------
+    parameter : Parameter
+    thresholds : iterable of `Parameter` instances or floats
+    """
+    def __init__(self, model, parameter, thresholds, use_max_flow=False, **kwargs):
+        super(MultipleThresholdParameterIndexParameter, self).__init__(model, **kwargs)
+        self.parameter = parameter
+        self.children.add(parameter)
+
+        self.thresholds = []
+        for threshold in thresholds:
+            if not isinstance(threshold, Parameter):
+                from pywr.parameters import ConstantParameter
+                threshold = ConstantParameter(model, threshold)
+            self.thresholds.append(threshold)
+
+        for threshold in self.thresholds:
+            self.children.add(thresholds)
+
+    cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns the index of the first threshold the parameter value is above.
+
+        The index is zero-based. For example, if only one threshold is
+        supplied then the index is either 0 (above) or 1 (below). For two
+        thresholds the index is either 0 (above both), 1 (in between), or 2 (below
+        both), and so on.
+        """
+        cdef double value
+        cdef int index, j
+        cdef Parameter threshold
+
+        value = self.parameter.get_value(scenario_index)
+        index = len(self.thresholds)
+        for j, threshold in enumerate(self.thresholds):
+            target_threshold = threshold.get_value(scenario_index)
+            if value >= target_threshold:
+                index = j
+                break
+        return index
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        thresholds = [load_parameter(model, d) for d in data.pop("thresholds")]
+        return cls(model, parameter, thresholds, **data)
+MultipleThresholdParameterIndexParameter.register()
+
+
 cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     """ Returns one of two values depending on the value of a Parameter
 

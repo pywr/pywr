@@ -62,6 +62,9 @@ cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
 cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
     cdef public bint proportional
 
+cdef class NumpyArrayNormalisedStorageRecorder(NumpyArrayAbstractStorageRecorder):
+    cdef readonly Parameter parameter
+
 cdef class NumpyArrayLevelRecorder(NumpyArrayAbstractStorageRecorder):
     pass
 

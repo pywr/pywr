@@ -8,6 +8,7 @@ from ._thresholds import *
 from ._hydropower import *
 from .events import *
 from .calibration import *
+from .kde import *
 from pywr.h5tools import H5Store
 from ..parameter_property import parameter_property
 import warnings

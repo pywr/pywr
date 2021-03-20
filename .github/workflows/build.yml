@@ -8,9 +8,10 @@ env:
   CIBW_TEST_COMMAND_LINUX: "{project}/.github/workflows/run-tests.sh {project}"
   CIBW_TEST_COMMAND_WINDOWS: "{project}\\.github\\workflows\\run-tests-windows.bat {project}"
   # Only build on Python 3.7+
-  CIBW_BUILD: cp37-* cp38-*
+  CIBW_BUILD: cp37-* cp38-* cp39-*
   # Skip 32-bit builds
-  CIBW_SKIP: "*-win32 *-manylinux_i686"
+  # Skip 3.9 on Windows because of missing PyTables wheels
+  CIBW_SKIP: "*-win32 *-manylinux_i686 cp39-win_amd64"
   # Install GLPK
   CIBW_BEFORE_ALL_LINUX: yum install -y glpk-devel lpsolve-devel
   # build using the manylinux2014 image. Can link to system provided GLPk

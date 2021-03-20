@@ -2,6 +2,25 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.12.0
+
+### New Features
+
+- Add additional "activation function" parameters: `BinaryStepParameter`, `RectifierParameter` and `LogisticParameter`. (#965)
+
+## v1.11.0
+
+### New Features
+
+- Refactor node loading into two stages to solve circular loading problems. (#945)
+- Add additional `get_all_xxx` methods to core nodes to allow fetching `min_flow`, `max_flow` and `cost`
+values for all scenarios simultaneously. (#958)
+
+### Miscellaneous
+
+- Switch to using Openpyxl for reading and writing Excel files (see changes to Pandas v1.2). (#959)
+- Dropped support for Python 3.6 following lack of support in upstream libraries (NumPy and Pandas). (#959)
+
 ## v1.10.0
 
 ### New Features
