@@ -2,6 +2,24 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.13.0
+
+### New Features
+
+- Added `LossLink` node. (#960)
+- Added `MultiThresholdIndexParameter`. (#969)
+- Added two recorders that fit a KDE to time-series of storage volumes. (#970, #971) 
+- Added an optional tags dictionary to `Component` for storing user defined metadata. (#968)
+
+### Bug Fixes
+
+- Support loading "area" and "level" attributes as parameters correctly. (#972)
+
+### Miscellaneous
+
+- Added CI support for Python-3.9 on manylinux. (#954)
+
+
 ## v1.12.0
 
 ### New Features
