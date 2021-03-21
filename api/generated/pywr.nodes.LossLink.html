@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.domains.river.Reservoir &mdash; Pywr 1.12.1.dev7+ga857f2e documentation</title>
+  <title>pywr.nodes.LossLink &mdash; Pywr 1.12.1.dev7+ga857f2e documentation</title>
   
 
   
@@ -39,8 +39,8 @@
     
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pywr.domains.river.River" href="pywr.domains.river.River.html" />
-    <link rel="prev" title="pywr.domains.river.Catchment" href="pywr.domains.river.Catchment.html" /> 
+    <link rel="next" title="pywr.nodes.PiecewiseLink" href="pywr.nodes.PiecewiseLink.html" />
+    <link rel="prev" title="pywr.nodes.BreakLink" href="pywr.nodes.BreakLink.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -105,7 +105,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pywr.nodes.Input.html">pywr.nodes.Input</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.nodes.Output.html">pywr.nodes.Output</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.nodes.BreakLink.html">pywr.nodes.BreakLink</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pywr.nodes.LossLink.html">pywr.nodes.LossLink</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pywr.nodes.LossLink</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.nodes.PiecewiseLink.html">pywr.nodes.PiecewiseLink</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.nodes.MultiSplitLink.html">pywr.nodes.MultiSplitLink</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.nodes.Storage.html">pywr.nodes.Storage</a></li>
@@ -117,7 +117,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pywr.nodes.AggregatedNode.html">pywr.nodes.AggregatedNode</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.nodes.DelayNode.html">pywr.nodes.DelayNode</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.Catchment.html">pywr.domains.river.Catchment</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">pywr.domains.river.Reservoir</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.Reservoir.html">pywr.domains.river.Reservoir</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.River.html">pywr.domains.river.River</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.RiverSplit.html">pywr.domains.river.RiverSplit</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.domains.river.RiverSplitWithGauge.html">pywr.domains.river.RiverSplitWithGauge</a></li>
@@ -187,13 +187,13 @@
         
           <li><a href="../pywr.nodes.html">Nodes</a> &raquo;</li>
         
-      <li>pywr.domains.river.Reservoir</li>
+      <li>pywr.nodes.LossLink</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/api/generated/pywr.domains.river.Reservoir.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/api/generated/pywr.nodes.LossLink.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -206,22 +206,37 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="pywr-domains-river-reservoir">
-<h1>pywr.domains.river.Reservoir<a class="headerlink" href="#pywr-domains-river-reservoir" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="pywr-nodes-losslink">
+<h1>pywr.nodes.LossLink<a class="headerlink" href="#pywr-nodes-losslink" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="pywr.domains.river.Reservoir">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.domains.river.</span></code><code class="sig-name descname"><span class="pre">Reservoir</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.domains.river.Reservoir" title="Permalink to this definition">¶</a></dt>
-<dd><p>A reservoir node with control curve.</p>
-<p>The Reservoir is a subclass of Storage with additional functionality to provide a
-simple control curve. The Reservoir has above_curve_cost when it is above its curve
-and the user defined cost when it is below. Typically the costs are negative
-to represent a benefit of filling the reservoir when it is below its curve.</p>
+<dt id="pywr.nodes.LossLink">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.nodes.</span></code><code class="sig-name descname"><span class="pre">LossLink</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.LossLink" title="Permalink to this definition">¶</a></dt>
+<dd><p>A node that has a proportional loss.</p>
+<p>A fixed proportional loss of all flow through this node is sent to an internal output node. Max and min flows
+applied to this node are enforced on the net output after losses. The node itself records the net output
+in its flow attribute (which would be used by any attached recorders).</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>model</strong><span class="classifier"><cite>pywr.model.Model</cite></span></dt><dd></dd>
+<dt><strong>name</strong><span class="classifier">string</span></dt><dd><p>Name of the node.</p>
+</dd>
+<dt><strong>loss_factor</strong><span class="classifier">float</span></dt><dd><p>The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
+then no-losses are calculated. The percentage is calculated as a percentage of gross flow.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="py method">
-<dt id="pywr.domains.river.Reservoir.__init__">
-<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.domains.river.Reservoir.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>Keywords:</dt><dd><dl class="simple">
-<dt>control_curve - A Parameter object that can return the control curve position,</dt><dd><p>as a percentage of fill, for the given timestep.</p>
+<dt id="pywr.nodes.LossLink.__init__">
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.LossLink.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise a new Node object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The model the node belongs to</p>
+</dd>
+<dt><strong>name</strong><span class="classifier">string</span></dt><dd><p>A unique name for the node</p>
 </dd>
 </dl>
 </dd>
@@ -235,17 +250,17 @@ to represent a benefit of filling the reservoir when it is below its curve.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#pywr.domains.river.Reservoir.__init__" title="pywr.domains.river.Reservoir.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(model, *args, **kwargs)</p></td>
-<td><p>Keywords:</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pywr.nodes.LossLink.__init__" title="pywr.nodes.LossLink.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(model, name, **kwargs)</p></td>
+<td><p>Initialise a new Node object</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">after</span></code>(self, Timestep ts, double[)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">after</span></code>(self, Timestep ts)</p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">before</span></code>(self, Timestep ts)</p></td>
 <td><p>Called at the beginning of the timestep</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">check</span></code>(self)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">check</span></code>()</p></td>
+<td><p>Check the node is valid</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">commit</span></code>(self, int scenario_index, double value)</p></td>
 <td><p>Called once for each route the node is a member of</p></td>
@@ -268,43 +283,34 @@ to represent a benefit of filling the reservoir when it is below its curve.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_all_cost</span></code>(self, double[)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_all_max_volume</span></code>(self, double[)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_all_max_flow</span></code>(self, double[)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_all_min_volume</span></code>(self, double[)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_all_min_flow</span></code>(self, double[)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_area</span></code>(self, ScenarioIndex scenario_index)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_conversion_factor</span></code>(self)</p></td>
+<td><p>Get the conversion factor</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_cost</span></code>(self, ScenarioIndex scenario_index)</p></td>
 <td><p>Get the cost per unit flow at a given timestep</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_initial_pc</span></code>(self)</p></td>
-<td><p>Returns the initial volume as a proportion.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_max_flow</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<td><p>Get the maximum flow at a given timestep</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_initial_volume</span></code>(self)</p></td>
-<td><p>Returns the absolute initial volume.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_min_flow</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<td><p>Get the minimum flow at a given timestep</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_level</span></code>(self, ScenarioIndex scenario_index)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_max_volume</span></code>(self, …)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_min_volume</span></code>(self, …)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">iter_slots</span></code>([slot_name, is_connector, all_slots])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">iter_slots</span></code>([slot_name, is_connector])</p></td>
 <td><p>Returns the object(s) wich should be connected to given slot_name</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pre_load</span></code>(model, data)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pre_load</span></code>(model, data)</p></td>
 <td><p>Create a node instance from data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>(self)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>(self)</p></td>
 <td><p>Called at the beginning of a run</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code>(self, model)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code>(self, model)</p></td>
 <td><p>Called before the first run of the model</p></td>
 </tr>
 </tbody>
@@ -319,68 +325,56 @@ to represent a benefit of filling the reservoir when it is below its curve.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">allow_isolated</span></code></p></td>
 <td><p>A property to flag whether this Node can be unconnected in a network.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">area</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">comment</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">comment</span></code></p></td>
 <td><p>comment: basestring</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">component_attrs</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">component_attrs</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">components</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">components</span></code></p></td>
 <td><p>Generator that returns all of the Components attached to the Node</p></td>
 </tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">conversion_factor</span></code></p></td>
+<td><p>The conversion between inflow and outflow for the node</p></td>
+</tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cost</span></code></p></td>
-<td><p>The cost per unit increased in volume stored</p></td>
+<td><p>The cost per unit flow via the node</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_pc</span></code></p></td>
-<td><p>Current percentage full</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">domain</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">domain</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flow</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flow</span></code></p></td>
 <td><p>Total flow via this node in the current timestep</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fully_qualified_name</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fully_qualified_name</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initial_volume</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">loss_factor</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initial_volume_pc</span></code></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_flow</span></code></p></td>
+<td><p>The maximum flow constraint on the node</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">level</span></code></p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_flow</span></code></p></td>
+<td><p>The minimum flow constraint on the node</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_volume</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_volume</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
 <td><p>The recorder for the node, e.g.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
 <td><p>Name of the node.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
 <td><p>The parent Node/Storage of this object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev_flow</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev_flow</span></code></p></td>
 <td><p>Total flow via this node in the previous timestep</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recorders</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recorders</span></code></p></td>
 <td><p>Returns a list of <cite>pywr.recorders.Recorder</cite> objects attached to this node.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">virtual</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">virtual</span></code></p></td>
 <td><p>virtual: ‘bool’</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">volume</span></code></p></td>
-<td><p></p></td>
 </tr>
 </tbody>
 </table>
@@ -394,8 +388,8 @@ to represent a benefit of filling the reservoir when it is below its curve.</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="pywr.domains.river.River.html" class="btn btn-neutral float-right" title="pywr.domains.river.River" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="pywr.domains.river.Catchment.html" class="btn btn-neutral float-left" title="pywr.domains.river.Catchment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pywr.nodes.PiecewiseLink.html" class="btn btn-neutral float-right" title="pywr.nodes.PiecewiseLink" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pywr.nodes.BreakLink.html" class="btn btn-neutral float-left" title="pywr.nodes.BreakLink" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

@@ -1,0 +1,65 @@
+﻿pywr.nodes.LossLink
+===================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: LossLink
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LossLink.__init__
+      ~LossLink.after
+      ~LossLink.before
+      ~LossLink.check
+      ~LossLink.commit
+      ~LossLink.commit_all
+      ~LossLink.connect
+      ~LossLink.disconnect
+      ~LossLink.finalise_load
+      ~LossLink.finish
+      ~LossLink.get_all_cost
+      ~LossLink.get_all_max_flow
+      ~LossLink.get_all_min_flow
+      ~LossLink.get_conversion_factor
+      ~LossLink.get_cost
+      ~LossLink.get_max_flow
+      ~LossLink.get_min_flow
+      ~LossLink.iter_slots
+      ~LossLink.pre_load
+      ~LossLink.reset
+      ~LossLink.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~LossLink.allow_isolated
+      ~LossLink.comment
+      ~LossLink.component_attrs
+      ~LossLink.components
+      ~LossLink.conversion_factor
+      ~LossLink.cost
+      ~LossLink.domain
+      ~LossLink.flow
+      ~LossLink.fully_qualified_name
+      ~LossLink.loss_factor
+      ~LossLink.max_flow
+      ~LossLink.min_flow
+      ~LossLink.model
+      ~LossLink.name
+      ~LossLink.parent
+      ~LossLink.prev_flow
+      ~LossLink.recorders
+      ~LossLink.virtual
+   
+   
