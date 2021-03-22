@@ -1,0 +1,60 @@
+﻿pywr.recorders.GaussianKDEStorageRecorder
+=========================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: GaussianKDEStorageRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~GaussianKDEStorageRecorder.__init__
+      ~GaussianKDEStorageRecorder.after
+      ~GaussianKDEStorageRecorder.aggregated_value
+      ~GaussianKDEStorageRecorder.before
+      ~GaussianKDEStorageRecorder.finish
+      ~GaussianKDEStorageRecorder.is_constraint_violated
+      ~GaussianKDEStorageRecorder.load
+      ~GaussianKDEStorageRecorder.register
+      ~GaussianKDEStorageRecorder.reset
+      ~GaussianKDEStorageRecorder.setup
+      ~GaussianKDEStorageRecorder.to_dataframe
+      ~GaussianKDEStorageRecorder.unregister
+      ~GaussianKDEStorageRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~GaussianKDEStorageRecorder.agg_func
+      ~GaussianKDEStorageRecorder.children
+      ~GaussianKDEStorageRecorder.comment
+      ~GaussianKDEStorageRecorder.constraint_lower_bounds
+      ~GaussianKDEStorageRecorder.constraint_upper_bounds
+      ~GaussianKDEStorageRecorder.data
+      ~GaussianKDEStorageRecorder.epsilon
+      ~GaussianKDEStorageRecorder.ignore_nan
+      ~GaussianKDEStorageRecorder.is_constraint
+      ~GaussianKDEStorageRecorder.is_double_bounded_constraint
+      ~GaussianKDEStorageRecorder.is_equality_constraint
+      ~GaussianKDEStorageRecorder.is_lower_bounded_constraint
+      ~GaussianKDEStorageRecorder.is_objective
+      ~GaussianKDEStorageRecorder.is_upper_bounded_constraint
+      ~GaussianKDEStorageRecorder.model
+      ~GaussianKDEStorageRecorder.name
+      ~GaussianKDEStorageRecorder.node
+      ~GaussianKDEStorageRecorder.parents
+      ~GaussianKDEStorageRecorder.proportional
+      ~GaussianKDEStorageRecorder.tags
+      ~GaussianKDEStorageRecorder.temporal_agg_func
+   
+   

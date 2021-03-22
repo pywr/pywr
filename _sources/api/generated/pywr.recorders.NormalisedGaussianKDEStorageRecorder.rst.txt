@@ -1,0 +1,60 @@
+﻿pywr.recorders.NormalisedGaussianKDEStorageRecorder
+===================================================
+
+.. currentmodule:: pywr.recorders
+
+.. autoclass:: NormalisedGaussianKDEStorageRecorder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~NormalisedGaussianKDEStorageRecorder.__init__
+      ~NormalisedGaussianKDEStorageRecorder.after
+      ~NormalisedGaussianKDEStorageRecorder.aggregated_value
+      ~NormalisedGaussianKDEStorageRecorder.before
+      ~NormalisedGaussianKDEStorageRecorder.finish
+      ~NormalisedGaussianKDEStorageRecorder.is_constraint_violated
+      ~NormalisedGaussianKDEStorageRecorder.load
+      ~NormalisedGaussianKDEStorageRecorder.register
+      ~NormalisedGaussianKDEStorageRecorder.reset
+      ~NormalisedGaussianKDEStorageRecorder.setup
+      ~NormalisedGaussianKDEStorageRecorder.to_dataframe
+      ~NormalisedGaussianKDEStorageRecorder.unregister
+      ~NormalisedGaussianKDEStorageRecorder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NormalisedGaussianKDEStorageRecorder.agg_func
+      ~NormalisedGaussianKDEStorageRecorder.children
+      ~NormalisedGaussianKDEStorageRecorder.comment
+      ~NormalisedGaussianKDEStorageRecorder.constraint_lower_bounds
+      ~NormalisedGaussianKDEStorageRecorder.constraint_upper_bounds
+      ~NormalisedGaussianKDEStorageRecorder.data
+      ~NormalisedGaussianKDEStorageRecorder.epsilon
+      ~NormalisedGaussianKDEStorageRecorder.ignore_nan
+      ~NormalisedGaussianKDEStorageRecorder.is_constraint
+      ~NormalisedGaussianKDEStorageRecorder.is_double_bounded_constraint
+      ~NormalisedGaussianKDEStorageRecorder.is_equality_constraint
+      ~NormalisedGaussianKDEStorageRecorder.is_lower_bounded_constraint
+      ~NormalisedGaussianKDEStorageRecorder.is_objective
+      ~NormalisedGaussianKDEStorageRecorder.is_upper_bounded_constraint
+      ~NormalisedGaussianKDEStorageRecorder.model
+      ~NormalisedGaussianKDEStorageRecorder.name
+      ~NormalisedGaussianKDEStorageRecorder.node
+      ~NormalisedGaussianKDEStorageRecorder.parameter
+      ~NormalisedGaussianKDEStorageRecorder.parents
+      ~NormalisedGaussianKDEStorageRecorder.tags
+      ~NormalisedGaussianKDEStorageRecorder.temporal_agg_func
+   
+   

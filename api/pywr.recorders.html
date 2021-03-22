@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Recorders &mdash; Pywr 1.12.1.dev7+ga857f2e documentation</title>
+  <title>Recorders &mdash; Pywr 1.12.1.dev8+g0f5d858 documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                1.12.1.dev7+ga857f2e
+                1.12.1.dev8+g0f5d858
               </div>
             
           
@@ -149,6 +149,8 @@
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.recorders.TimestepCountIndexParameterRecorder.html">pywr.recorders.TimestepCountIndexParameterRecorder</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.recorders.AnnualCountIndexThresholdRecorder.html">pywr.recorders.AnnualCountIndexThresholdRecorder</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.recorders.RollingWindowParameterRecorder.html">pywr.recorders.RollingWindowParameterRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.recorders.GaussianKDEStorageRecorder.html">pywr.recorders.GaussianKDEStorageRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.recorders.NormalisedGaussianKDEStorageRecorder.html">pywr.recorders.NormalisedGaussianKDEStorageRecorder</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#index-recorders">Index recorders</a><ul>
@@ -400,6 +402,12 @@ accessed following a model run before the model instances is destroyed.</p>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.recorders.RollingWindowParameterRecorder.html#pywr.recorders.RollingWindowParameterRecorder" title="pywr.recorders.RollingWindowParameterRecorder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RollingWindowParameterRecorder</span></code></a>(model, …)</p></td>
 <td><p>Records the mean value of a Parameter for the last N timesteps.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.recorders.GaussianKDEStorageRecorder.html#pywr.recorders.GaussianKDEStorageRecorder" title="pywr.recorders.GaussianKDEStorageRecorder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GaussianKDEStorageRecorder</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A recorder that fits a KDE to a time-series of volume.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.recorders.NormalisedGaussianKDEStorageRecorder.html#pywr.recorders.NormalisedGaussianKDEStorageRecorder" title="pywr.recorders.NormalisedGaussianKDEStorageRecorder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalisedGaussianKDEStorageRecorder</span></code></a>(*args, …)</p></td>
+<td><p>A recorder that fits a KDE to a normalised time-series of volume.</p></td>
 </tr>
 </tbody>
 </table>
