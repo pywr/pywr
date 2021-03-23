@@ -4,11 +4,8 @@ Pywr
 
 Pywr is a generalised network resource allocation model written in Python. It aims to be fast, free, and extendable.
 
-.. image:: https://travis-ci.org/pywr/pywr.svg?branch=master
-   :target: https://travis-ci.org/pywr/pywr
-
-.. image:: https://ci.appveyor.com/api/projects/status/ik9u75bxfvracimh?svg=true
-   :target: https://ci.appveyor.com/project/pywr-admin/pywr
+.. image:: https://github.com/pywr/pywr/workflows/Build/badge.svg?branch=master
+   :target: https://github.com/pywr/pywr/actions?query=workflow%3ABuild
 
 .. image:: https://img.shields.io/badge/chat-on%20gitter-blue.svg
    :target: https://gitter.im/pywr/pywr
@@ -19,15 +16,17 @@ Pywr is a generalised network resource allocation model written in Python. It ai
 Overview
 ========
 
+`Documentation <https://pywr.github.io/pywr>`__
+
 Pywr is a tool for solving network resource allocation problems at discrete timesteps using a linear programming approach. It's principal application is in resource allocation in water supply networks, although other uses are conceivable. A network is represented as a directional graph using `NetworkX <https://networkx.github.io/>`__. Nodes in the network can be given constraints (e.g. minimum/maximum flows) and costs, and can be connected as required. Parameters in the model can vary time according to boundary conditions (e.g. an inflow timeseries) or based on states in the model (e.g. the current volume of a reservoir).
 
-Models can be developed using the Python API, either in a script or interactively using `IPython <https://ipython.org/>`__/`Jupyter <https://jupyter.org/>`__. Alternatively, models can be defined in a rich `JSON-based document format <https://pywr.github.io/pywr-docs/master/json.html>`__.
+Models can be developed using the Python API, either in a script or interactively using `IPython <https://ipython.org/>`__/`Jupyter <https://jupyter.org/>`__. Alternatively, models can be defined in a rich `JSON-based document format <https://pywr.github.io/pywr/json.html>`__.
 
 .. image:: https://raw.githubusercontent.com/pywr/pywr/master/docs/source/_static/pywr_d3.png
    :width: 250px
    :height: 190px
 
-New users are encouraged to read the `Pywr Tutorial <https://pywr.github.io/pywr-docs/master/tutorial.html>`__.
+New users are encouraged to read the `Pywr Tutorial <https://pywr.github.io/pywr/tutorial.html>`__.
 
 Design goals
 ============
@@ -41,11 +40,11 @@ Pywr is a tool for solving network resource allocation problems. It has many sim
 Installation
 ============
 
-Pywr should work on Python 3.6 (or later) on Windows, Linux or OS X.
+Pywr should work on Python 3.7 (or later) on Windows, Linux or OS X.
 
-See the documentation for `detailed installation instructions <https://pywr.github.io/pywr-docs/master/install.html>`__.
+See the documentation for `detailed installation instructions <https://pywr.github.io/pywr/install.html>`__.
 
-Provided that you have the required `dependencies <https://pywr.github.io/pywr-docs/master/install.html#dependencies>`__ already installed, it's as simple as:
+Provided that you have the required `dependencies <https://pywr.github.io/pywr/install.html#dependencies>`__ already installed, it's as simple as:
 
 .. code-block:: console
 
@@ -65,7 +64,7 @@ Please consider citing the following paper when using Pywr:
 License
 =======
 
-Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
+Copyright (C) 2014-20 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester
 
 
 This program is free software; you can redistribute it and/or modify

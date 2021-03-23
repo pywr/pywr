@@ -189,6 +189,12 @@ cdef class CythonLPSolveSolver:
                 storages.append(some_node)
             elif isinstance(some_node, AggregatedNode):
                 if some_node.factors is not None:
+                    # See discussion: https://github.com/pywr/pywr/pull/919
+                    # Implementing fully dynamic factors in lpsolve is complicated.
+                    if not some_node.has_fixed_factors:
+                        raise ValueError("{} has one or more factors defined by a parameter. This is not allowed \
+                                        when using the lpsolve solver. Please use the glpk or glpk-edge solver \
+                                        instead".format(some_node.name))
                     aggregated.append(some_node)
                 if some_node.min_flow > -inf or \
                    some_node.max_flow < inf:
@@ -359,7 +365,8 @@ cdef class CythonLPSolveSolver:
 
         for agg_node in aggregated:
             nodes = agg_node.nodes
-            factors = agg_node.factors
+            # NB this only works because the solver supports only fixed (i.e. ConstantParameter) factors
+            factors = [f.get_double_variables()[0] for f in agg_node.factors]
             assert(len(nodes) == len(factors))
 
             ret = resize_lp(self.prob, get_Norig_rows(self.prob)+len(agg_node.nodes)-1, get_Norig_columns(self.prob))
@@ -529,13 +536,16 @@ cdef class CythonLPSolveSolver:
 
         # update virtual storage node constraint
         for col, storage in enumerate(virtual_storages):
-            max_volume = storage.get_max_volume(scenario_index)
-            avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
-            # change in storage cannot be more than the current volume or
-            # result in maximum volume being exceeded
-            lb = -avail_volume/timestep.days
-            ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
-            set_row_bnds(self.prob, self.idx_row_virtual_storages+col, lb, ub)
+            if not storage.active:
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+col, -DBL_MAX, DBL_MAX)
+            else:
+                max_volume = storage.get_max_volume(scenario_index)
+                avail_volume = max(storage._volume[scenario_index.global_id] - storage.get_min_volume(scenario_index), 0.0)
+                # change in storage cannot be more than the current volume or
+                # result in maximum volume being exceeded
+                lb = -avail_volume/timestep.days
+                ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
+                set_row_bnds(self.prob, self.idx_row_virtual_storages+col, lb, ub)
 
         self.stats['bounds_update_storage'] += time.perf_counter() - t0
         t0 = time.perf_counter()

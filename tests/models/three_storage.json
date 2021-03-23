@@ -1,0 +1,94 @@
+{
+    "metadata": {
+        "title": "Reservoir 1",
+        "description": "A model with three reservoirs and an aggregated storage node.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+      {
+        "name": "Input 0",
+        "type": "input",
+        "max_flow": 0.0,
+        "cost": -1.0
+      },
+      {
+          "name": "Storage 0",
+          "type": "Storage",
+          "max_volume": 20,
+          "initial_volume": 10
+      },
+      {
+          "name": "Output 0",
+          "type": "Output",
+          "max_flow": 8,
+          "cost": -999
+      },
+      {
+        "name": "Input 1",
+        "type": "input",
+        "max_flow": 5.0,
+        "cost": -1.0
+      },
+      {
+          "name": "Storage 1",
+          "type": "Storage",
+          "max_volume": 20,
+          "initial_volume": 11
+      },
+      {
+          "name": "Output 1",
+          "type": "Output",
+          "max_flow": 9,
+          "cost": -999
+      },
+      {
+        "name": "Input 2",
+        "type": "input",
+        "max_flow": 10.0,
+        "cost": -1.0
+      },
+      {
+          "name": "Storage 2",
+          "type": "Storage",
+          "max_volume": 20,
+          "initial_volume": 12
+      },
+      {
+          "name": "Output 2",
+          "type": "Output",
+          "max_flow": 10,
+          "cost": -999
+      },
+      {
+        "name": "Total Storage",
+        "type": "AggregatedStorage",
+        "storage_nodes": [
+          "Storage 0",
+          "Storage 1",
+          "Storage 2"
+        ]
+      },
+      {
+        "name": "Total Output",
+        "type": "AggregatedNode",
+        "nodes": [
+          "Output 0",
+          "Output 1",
+          "Output 2"
+        ]
+      }
+    ],
+    "edges": [
+        ["Input 0", "Storage 0"],
+        ["Storage 0", "Output 0"],
+        ["Input 1", "Storage 1"],
+        ["Storage 1", "Output 1"],
+        ["Input 2", "Storage 2"],
+        ["Storage 2", "Output 2"]
+    ]
+}

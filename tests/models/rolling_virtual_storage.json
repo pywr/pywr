@@ -1,0 +1,44 @@
+{
+    "metadata": {
+        "title": "Annual virtual storage",
+        "description": "Rolling abstraction licence implemented as a rolling virtual storage",
+        "minimum_version": "1.10"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2016-01-02",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "Input",
+            "type": "Input",
+            "max_flow": 20,
+            "cost": 0
+        },
+        {
+            "name": "Link",
+            "type": "Link"
+        },
+        {
+            "name": "Output",
+            "type": "Output",
+            "max_flow": 15,
+            "cost": -10
+        },
+        {
+            "name": "Licence",
+            "type": "RollingVirtualStorage",
+            "max_volume": 30,
+            "initial_volume": 30,
+            "nodes": [
+                "Link"
+            ],
+            "days": 3
+        }
+    ],
+    "edges": [
+        ["Input", "Link"],
+        ["Link", "Output"]
+    ]
+}

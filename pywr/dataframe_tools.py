@@ -1,7 +1,7 @@
 """Utilities for working with pandas DataFrame objects."""
 import pandas
 from pandas.tseries.offsets import Tick, DateOffset
-from  pandas._libs.tslibs.period import IncompatibleFrequency
+from pandas._libs.tslibs.period import IncompatibleFrequency
 import os
 from .hashes import check_hash
 
@@ -239,7 +239,7 @@ def read_dataframe(model, data):
 
         filetype = "dict"
 
-    data.pop("comment", None) # remove kwargs from data before passing to Pandas
+    data.pop("comment", None)  # remove kwargs from data before passing to Pandas
 
     if filetype == "csv":
         df = pandas.read_csv(url, **data)  # automatically decompressed gzipped data!

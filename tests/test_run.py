@@ -89,7 +89,7 @@ def test_run_reservoir2():
 def test_empty_storage_min_flow():
 
     model = Model()
-    storage = Storage(model, "storage", initial_volume=100, max_volume=100, num_inputs=1, num_outputs=0)
+    storage = Storage(model, "storage", initial_volume=100, max_volume=100, inputs=1, outputs=0)
     otpt = Output(model, "output", min_flow=75)
     storage.connect(otpt)
     model.check()
@@ -230,7 +230,7 @@ def test_new_storage():
 
     supply1 = pywr.core.Input(model, 'supply1')
 
-    splitter = pywr.core.Storage(model, 'splitter', num_outputs=1, num_inputs=2, max_volume=10, initial_volume=5)
+    splitter = pywr.core.Storage(model, 'splitter', outputs=1, inputs=2, max_volume=10, initial_volume=5)
 
     demand1 = pywr.core.Output(model, 'demand1')
     demand2 = pywr.core.Output(model, 'demand2')
@@ -311,6 +311,93 @@ def test_virtual_storage_duplicate_route():
     assert_allclose(vs.volume, [0], atol=1e-7)
 
 
+class TestRollingVirtualStorage:
+
+    @pytest.mark.parametrize('from_json', [True, False])
+    def test_run(self, from_json):
+        """Test RollingVirtualStorage node behaviour."""
+
+        if from_json:
+            model = load_model('rolling_virtual_storage.json')
+
+            vs = model.nodes['Licence']
+            otpt = model.nodes['Output']
+        else:
+            model = pywr.core.Model()
+
+            inpt = Input(model, "Input", max_flow=20)
+            lnk = Link(model, "Link")
+            inpt.connect(lnk)
+            otpt = Output(model, "Output", max_flow=15, cost=-10.0)
+            lnk.connect(otpt)
+
+            vs = pywr.core.RollingVirtualStorage(model, "Licence", [lnk], days=3, initial_volume=30.0, max_volume=30.0)
+
+        model.setup()
+
+        assert_allclose(vs.volume, [30], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [15], atol=1e-7)
+        assert_allclose(vs.volume, [15], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [15], atol=1e-7)
+        assert_allclose(vs.volume, [0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0], atol=1e-7)
+        # End of third day the flow from the first day is return to the licence
+        assert_allclose(vs.volume, [15], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [15], atol=1e-7)
+        assert_allclose(vs.volume, [15], atol=1e-7)
+
+    def test_run_weekly(self):
+        """Test RollingVirtualStorage node behaviour with a weekly timestep."""
+
+        model = pywr.core.Model(timestep='7D')
+
+        inpt = Input(model, "Input", max_flow=20)
+        lnk = Link(model, "Link")
+        inpt.connect(lnk)
+        otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+        lnk.connect(otpt)
+
+        vs = pywr.core.RollingVirtualStorage(model, "Licence", [lnk], timesteps=3, initial_volume=100.0,
+                                             max_volume=100.0)
+
+        model.setup()
+
+        assert_allclose(vs.volume, [100.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [10.0], atol=1e-7)
+        assert_allclose(vs.volume, [30.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [30.0 / 7], atol=1e-7)
+        assert_allclose(vs.volume, [0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0], atol=1e-7)
+        # End of third day the flow from the first day is return to the licence
+        assert_allclose(vs.volume, [70.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [10.0], atol=1e-7)
+        assert_allclose(vs.volume, [30.0], atol=1e-7)
+
+
 def test_annual_virtual_storage():
     model = load_model('virtual_storage1.json')
     model.run()
@@ -340,7 +427,7 @@ def test_annual_virtual_storage_reset_to_max_volume(reset_to_initial_volume):
 
     model.timestepper.start = '2015-04-01'
     model.reset()
-    # After stepping over the reset day the volume should have been reset 
+    # After stepping over the reset day the volume should have been reset
     # before the solve to either initial volume or maximum volume.
     model.step()
     if reset_to_initial_volume:
@@ -360,6 +447,96 @@ def test_annual_virtual_storage_with_dynamic_cost():
     assert_allclose(rec.data[1], 5)  # now used slightly too much; switch to the other source
     assert_allclose(rec.data[2], 10)  # continue back and forth.
     assert_allclose(rec.data[3], 5)
+
+
+class TestSeasonalVirtualStorage:
+    def test_run(self):
+
+        model = load_model('seasonal_virtual_storage.json')
+        model.run()
+        supply_df = model.recorders["supply1"].to_dataframe()
+        licence_df = model.recorders["licence1"].to_dataframe()
+
+        # License is not constraining flow as volumne remains
+        assert_allclose(supply_df.loc["2015-01-01", :], 10)
+
+        # License is depleted and constrains flow
+        assert_allclose(supply_df.loc["2015-01-11", :], 0)
+        assert_allclose(licence_df.loc["2015-01-11", :], 0)
+
+        # License is depleted but does not constrain flow as it is not active
+        assert_allclose(supply_df.loc["2015-02-01", :], 10)
+        assert_allclose(licence_df.loc["2015-02-01", :], 0)
+
+        # check same values for second year
+        assert_allclose(supply_df.loc["2016-01-01", :], 10)
+        assert_allclose(supply_df.loc["2016-01-11", :], 0)
+        assert_allclose(licence_df.loc["2016-01-11", :], 0)
+        assert_allclose(supply_df.loc["2016-02-01", :], 10)
+        assert_allclose(licence_df.loc["2016-02-01", :], 0)
+
+    def test_year_overlap(self):
+        """test the the node works: end date < reset date < model start date. This
+        means that the node's active period extends from one year to the next
+        """
+
+        model = load_model('seasonal_virtual_storage.json')
+
+        vs = model.nodes["licence1"]
+        vs.reset_day = 1
+        vs.reset_month = 12
+        vs.end_day = 31
+        vs.end_month = 3
+        model.timestepper.start = "2015-12-15"
+        model.timestepper.end = "2016-12-02"
+
+        model.run()
+        supply_df = model.recorders["supply1"].to_dataframe()
+        licence_df = model.recorders["licence1"].to_dataframe()
+
+        # Start date is after reset data so there should be flow and volume should be reduced
+        assert_allclose(supply_df.loc["2015-12-15", :], 10)
+        assert_allclose(licence_df.loc["2015-12-15", :], 90)
+
+        # Licence is depleted but remains active so flow is 0
+        assert_allclose(supply_df.loc["2015-12-31", :], 0)
+        assert_allclose(licence_df.loc["2015-12-31", :], 0)
+
+        # License is turned off so flow is not constrained
+        assert_allclose(supply_df.loc["2016-03-31", :], 10)
+
+        # License is reset and made active
+        assert_allclose(supply_df.loc["2016-12-01", :], 10)
+        assert_allclose(licence_df.loc["2016-12-01", :], 90)
+
+    def test_start_deactivated(self):
+        """test the the node is not active when:  model start date < reset date < end date
+        """
+
+        model = load_model('seasonal_virtual_storage.json')
+
+        vs = model.nodes["licence1"]
+        vs.reset_day = 1
+        vs.reset_month = 2
+        vs.end_day = 1
+        vs.end_month = 3
+        model.timestepper.start = "2015-01-01"
+        model.timestepper.end = "2015-04-01"
+
+        model.run()
+        supply_df = model.recorders["supply1"].to_dataframe()
+        licence_df = model.recorders["licence1"].to_dataframe()
+
+        # Start date before reset date and end date so there should be flow but no reduction in node storage
+        assert_allclose(supply_df.loc["2015-01-15", :], 10)
+        assert_allclose(licence_df.loc["2015-01-15", :], 100)
+
+        # Licence active but depleted so flow is 0
+        assert_allclose(supply_df.loc["2015-2-15", :], 0)
+        assert_allclose(licence_df.loc["2015-2-15", :], 0)
+
+        # License is turned off so flow is not constrained
+        assert_allclose(supply_df.loc["2015-03-01", :], 10)
 
 
 def test_storage_spill_compensation():
@@ -495,15 +672,46 @@ def test_breaklink_node():
     assert_allclose(transfer.storage.volume, 0)
 
 
-@pytest.mark.xfail(reason="Circular dependency in the JSON definition. "
-                          "See GitHub issue #380: https://github.com/pywr/pywr/issues/380")
+@pytest.mark.parametrize('loss_factor', [None, 0.2, 0.99, 1.0, 0.0])
+def test_loss_link_node(loss_factor):
+    """Test LossLink node"""
+    model = load_model('loss_link.json')
+
+    supply1 = model.nodes["supply1"]
+    link1 = model.nodes["link1"]
+    demand1 = model.nodes["demand1"]
+
+    if loss_factor is not None:
+        link1.loss_factor = loss_factor
+
+    model.check()
+    model.run()
+
+    if loss_factor is None:
+        expected_supply = 12
+        expected_demand = 10
+    elif loss_factor == 1.0:
+        # 100% loss means no flow can be provided.
+        expected_supply = 0.0
+        expected_demand = 0.0
+    else:
+        expected_supply = 10 * (1 + loss_factor)
+        expected_demand = 10
+
+    # Supply must provide 20% more flow because of the loss in link1
+    assert_allclose(supply1.flow, expected_supply)
+    # link1 records the net flow after losses
+    assert_allclose(link1.flow, expected_demand)
+    assert_allclose(demand1.flow, expected_demand)
+
+
 def test_reservoir_surface_area():
     from pywr.parameters import InterpolatedVolumeParameter
     model = load_model('reservoir_evaporation.json')
     model.timestepper.start = "1920-01-01"
     model.timestepper.end = "1920-01-02"
     res = model.run()
-    assert (hasattr(Storage, area))
+    assert hasattr(Storage, "area")
     assert isinstance(model.nodes["reservoir1"].area, InterpolatedVolumeParameter)
     assert_allclose(model.nodes["evaporation"].flow, 2.46875)
 
@@ -515,6 +723,16 @@ def test_reservoir_surface_area_without_area_property():
     model.timestepper.end = "1920-01-02"
     res = model.run()
     assert_allclose(model.nodes["evaporation"].flow, 2.46875)
+
+def test_reservoir_surface_area_external_data():
+    """ Testing the InterpolatedVolume parameter with external data as
+    inputs of Volume and Values, in this case a .csv file. """
+    model = load_model('reservoir_evaporation_areafromfile.json')
+    model.timestepper.start = "1920-01-01"
+    model.timestepper.end = "1920-01-02"
+    res = model.run()
+    assert_allclose(model.nodes["evaporation"].flow, 2.46875)
+
 
 
 def test_run_empty():

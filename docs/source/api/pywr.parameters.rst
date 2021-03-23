@@ -97,9 +97,22 @@ Threshold parameters
     StorageThresholdParameter
     NodeThresholdParameter
     ParameterThresholdParameter
+    MultipleThresholdIndexParameter
+    MultipleThresholdParameterIndexParameter
     RecorderThresholdParameter
     CurrentYearThresholdParameter
     CurrentOrdinalDayThresholdParameter
+
+
+Activation function parameters
+------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    BinaryStepParameter
+    RectifierParameter
+    LogisticParameter
 
 
 Interpolation parameters
@@ -145,6 +158,8 @@ Other parameters
    DeficitParameter
    ScenarioWrapperParameter
    PiecewiseIntegralParameter
+   FlowParameter
    FlowDelayParameter
+   DiscountFactorParameter
 
 

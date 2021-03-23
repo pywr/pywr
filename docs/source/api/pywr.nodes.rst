@@ -17,22 +17,25 @@ Nodes that are instantiable by the user
    Input
    Output
    BreakLink
+   LossLink
    PiecewiseLink
    MultiSplitLink
    Storage
    VirtualStorage
+   RollingVirtualStorage
    AnnualVirtualStorage
+   SeasonalVirtualStorage
    AggregatedStorage
    AggregatedNode
    DelayNode
 
 .. currentmodule:: pywr.domains.river
 
-River domain nodes 
+River domain nodes
 
 .. autosummary::
    :toctree: generated/
-   
+
    Catchment
    Reservoir
    River

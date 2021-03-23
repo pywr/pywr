@@ -36,7 +36,8 @@ class H5Store(object):
             self.filename = self.file.filename
             self._opened = False
         else:
-            raise TypeError("{} must be initalised with a filename to open or an open tables.File".format(self.__class__.__name__))
+            raise TypeError(f"{self.__class__.__name__} must be initialised with a filename to open or "
+                            f"an open tables.File")
 
         # now update metadata if given
         if metadata is not None and self.file.mode != 'r':

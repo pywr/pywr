@@ -2,6 +2,92 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.13.0
+
+### New Features
+
+- Added `LossLink` node. (#960)
+- Added `MultiThresholdIndexParameter`. (#969)
+- Added two recorders that fit a KDE to time-series of storage volumes. (#970, #971) 
+- Added an optional tags dictionary to `Component` for storing user defined metadata. (#968)
+
+### Bug Fixes
+
+- Support loading "area" and "level" attributes as parameters correctly. (#972)
+
+### Miscellaneous
+
+- Added CI support for Python-3.9 on manylinux. (#954)
+
+
+## v1.12.0
+
+### New Features
+
+- Add additional "activation function" parameters: `BinaryStepParameter`, `RectifierParameter` and `LogisticParameter`. (#965)
+
+## v1.11.0
+
+### New Features
+
+- Refactor node loading into two stages to solve circular loading problems. (#945)
+- Add additional `get_all_xxx` methods to core nodes to allow fetching `min_flow`, `max_flow` and `cost`
+values for all scenarios simultaneously. (#958)
+
+### Miscellaneous
+
+- Switch to using Openpyxl for reading and writing Excel files (see changes to Pandas v1.2). (#959)
+- Dropped support for Python 3.6 following lack of support in upstream libraries (NumPy and Pandas). (#959)
+
+## v1.10.0
+
+### New Features
+
+- Add optional `exclude_months` to `AnnualCountIndexThresholdRecorder`. (#950)
+- Update load methods of interpolation parameters so that they accept `interp_kwargs`. (#943)
+- Allow `InterpolateVolumeParameter` to use external data. (#926)
+- Added `NumpyArrayNodeCostRecorder` to recorder a timeseries of a node's cost attribute. (#932)
+- Added `to_dataframe()` method to `AnnualCountIndexThresholdRecorder` and `AnnualTotalFlowRecorder`. (#939)
+
+### Bug Fixes
+
+- Fixed a bug with `RbfProfileParameter` where it did not pass `rbf_kwargs` to the RBF functions. (#946)
+- Fixes to save and draw graph functions to improve handling virtual and child nodes. (#938) 
+
+### Documentation
+
+- Updated installation docs. (#931)
+- Add missing parameters (`FlowParameter` and `DiscountFactorParameter`) to API docs. (#934)
+
+### Miscellaneous
+
+- Migrate continuous integration system from Travis and Appveyor to Github Actions.  (#948, #951, #952, #953)
+- Removed deprecated `PiecewiseLinearControlCurve`. (#947)
+- Apply some PEP8 compliance fixes. (#929)
+- Remove use of `basestring` which was only needed for Python 2. (#928) 
+
+## v1.9.0
+
+### New Features
+
+- Added `BisectionSearchModel` that performs a bisectional search on a single parameter instead of a 
+standard simulation. (#915)
+- Allow `AggregatedNode` factors to be time-varying using `Parameter`s. (#919)
+- Added `RollingVirtualStorage` node intended for modelling rolling licenses. (#891)
+- Added `SeasonalVirtualStorage` node intended for modelling licenses that apply for limited periods. (#923)
+
+### Bug Fixes
+
+- Ensure `RollingMeanFlowNodeRecorder`'s internal memory pointer is reset correctly. (#893)
+- Fix a bug where `AggregatedNode` would warn about small factors with any negative value. (#921)
+- Fixed `AggreagtedNode` initial volume being incorrectly calculated when its dependent nodes used a proportional
+initial volume. (#922)
+
+### Miscellaneous
+
+- Added `NullSolver` that performs no allocation and is intended for debugging purposes. (#924)
+- Added a small tolerance for equality checking of fixed bounds in the GLPK solvers. (#925)
+
 ## v1.8.0
 
 ### New Features

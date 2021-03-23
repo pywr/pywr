@@ -1,0 +1,127 @@
+name: Build
+
+on: [push, pull_request]
+
+env:
+  CIBW_TEST_REQUIRES: pytest platypus-opt
+  CIBW_BEFORE_TEST_LINUX: "chmod +x {project}/.github/workflows/run-tests.sh"
+  CIBW_TEST_COMMAND_LINUX: "{project}/.github/workflows/run-tests.sh {project}"
+  CIBW_TEST_COMMAND_WINDOWS: "{project}\\.github\\workflows\\run-tests-windows.bat {project}"
+  # Only build on Python 3.7+
+  CIBW_BUILD: cp37-* cp38-* cp39-*
+  # Skip 32-bit builds
+  # Skip 3.9 on Windows because of missing PyTables wheels
+  CIBW_SKIP: "*-win32 *-manylinux_i686 cp39-win_amd64"
+  # Install GLPK
+  CIBW_BEFORE_ALL_LINUX: yum install -y glpk-devel lpsolve-devel
+  # build using the manylinux2014 image. Can link to system provided GLPk
+  CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+  CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+
+  # Windows binary paths to allow linking
+  CIBW_ENVIRONMENT_WINDOWS: LIB="c://glpk//w64;c://lpsolve" INCLUDE="c://glpk//src;c://"
+  # Custom repair script that moves the required DLLs to the pywr/.libs folder
+  CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python .github/workflows/repair-wheel-windows.py {wheel} {dest_dir} c:\glpk\w64\glpk_4_65.dll c:\lpsolve\lpsolve55.dll
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0   # This is required for setuptools_scm: https://github.com/pypa/setuptools_scm/issues/480
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: '3.7'
+
+      - name: Install cibuildwheel
+        run: |
+          python -m pip install cibuildwheel==1.6.4
+
+      - name: Install WinGLPK (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          WINGLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-4.65/winglpk-4.65.zip/download"
+        run: |
+          curl -L $WINGLPK_URL --output glpk.zip
+          7z x glpk.zip -o/c/
+          mv /c/glpk-4.65 /c/glpk
+          cp /c/glpk/w64/glpk_4_65.lib /c/glpk/w64/glpk.lib
+          cp /c/glpk/w64/glpk_4_65.dll /c/glpk/w64/glpk.dll
+
+      - name: Install LpSolve (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          LPSOLVE_URL: "https://sourceforge.net/projects/lpsolve/files/lpsolve/5.5.2.5/lp_solve_5.5.2.5_dev_win64.zip/download"
+        run: |
+          curl -L $LPSOLVE_URL --output lpsolve.zip
+          7z x lpsolve.zip -o/c/lpsolve
+
+      - name: Build wheels
+        run: |
+          python -m cibuildwheel --output-dir wheelhouse
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0   # This is required for setuptools_scm: https://github.com/pypa/setuptools_scm/issues/480
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: '3.7'
+
+      - name: Build sdist
+        run: python setup.py sdist
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: dist/*.tar.gz
+
+  build_docs:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0   # This is required for setuptools_scm: https://github.com/pypa/setuptools_scm/issues/480
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: '3.7'
+
+      - name: Build docs
+        # lpsolve doesn't compile on Ubuntu without building the library from source - disable for the time being.
+        # This doesn't really matter for the documentation builds.
+        run: |
+          sudo apt-get install libglpk-dev
+          pip install sphinx sphinx_rtd_theme numpydoc
+          python setup.py install --without-lpsolve
+          cd docs
+          make html
+
+      - name: Deploy docs 🚀
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        # Only publish on master
+        if: github.ref == 'refs/heads/master'
+        with:
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: docs/build/html # The folder the action should deploy.
+          CLEAN: true # Automatically remove deleted files from the deploy branc

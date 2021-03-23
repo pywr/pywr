@@ -21,15 +21,17 @@ from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageR
                             EventRecorder, Event, StorageThresholdRecorder, NodeThresholdRecorder, EventDurationRecorder, EventStatisticRecorder,
                             FlowDurationCurveRecorder, FlowDurationCurveDeviationRecorder, StorageDurationCurveRecorder,
                             HydropowerRecorder, TotalHydroEnergyRecorder,
-                            TotalParameterRecorder, MeanParameterRecorder,
+                            TotalParameterRecorder, MeanParameterRecorder, NumpyArrayNodeCostRecorder,
                             NumpyArrayNodeDeficitRecorder, NumpyArrayNodeSuppliedRatioRecorder, NumpyArrayNodeCurtailmentRatioRecorder,
                             SeasonalFlowDurationCurveRecorder, load_recorder, ParameterNameWarning, NumpyArrayDailyProfileParameterRecorder,
-                            AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder)
+                            AnnualTotalFlowRecorder, AnnualCountIndexThresholdRecorder, TimestepCountIndexParameterRecorder,
+                            GaussianKDEStorageRecorder, NormalisedGaussianKDEStorageRecorder, NumpyArrayNormalisedStorageRecorder
+                            )
 
 from pywr.recorders.progress import ProgressRecorder
 
 from pywr.parameters import (DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter,
-                             InterpolatedVolumeParameter)
+                             InterpolatedVolumeParameter, ConstantScenarioParameter)
 from helpers import load_model
 import os
 import sys
@@ -198,6 +200,72 @@ def test_numpy_recorder_factored(simple_linear_model):
 
     assert rec_fact.data.shape == (365, 1)
     assert_allclose(20, rec_fact.data, atol=1e-7)
+
+
+class TestNumpyArrayCostRecorder:
+    def test_simple(self, simple_linear_model):
+        """Test NumpyArrayCostRecorder with fixed cost"""
+        model = simple_linear_model
+        model.nodes['Input'].max_flow = 10.0
+        otpt = model.nodes['Output']
+        otpt.cost = -2.0
+
+        cost_rec = NumpyArrayNodeCostRecorder(model, otpt)
+        # test retrieval of recorder
+        assert model.recorders['numpyarraynodecostrecorder.Output'] == cost_rec
+        model.run()
+
+        assert cost_rec.data.shape == (365, 1)
+        np.testing.assert_allclose(cost_rec.data, np.ones_like(cost_rec.data) * -2.0)
+
+        df = cost_rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(df.values, np.ones_like(cost_rec.data) * -2.0)
+
+    def test_scenarios(self, simple_linear_model):
+        """Test NumpyArrayNodeCostRecorder with scenario varying costs."""
+        model = simple_linear_model
+        model.nodes['Input'].max_flow = 10.0
+        otpt = model.nodes['Output']
+        scenario = Scenario(model, name='A', size=2)
+        otpt.cost = ConstantScenarioParameter(model, values=[-2, -10], scenario=scenario)
+
+        cost_rec = NumpyArrayNodeCostRecorder(model, otpt)
+        # test retrieval of recorder
+        assert model.recorders['numpyarraynodecostrecorder.Output'] == cost_rec
+        model.run()
+
+        assert cost_rec.data.shape == (365, 2)
+        expected = np.empty_like(cost_rec.data)
+        expected[:, 0] = -2.0
+        expected[:, 1] = -10.0
+        np.testing.assert_allclose(cost_rec.data, expected)
+
+        df = cost_rec.to_dataframe()
+        assert df.shape == (365, 2)
+        np.testing.assert_allclose(df.values, expected)
+
+    def test_time_varying(self, simple_linear_model):
+        """Test NumpyArrayNodeCostRecorder with time varying costs."""
+        model = simple_linear_model
+        model.nodes['Input'].max_flow = 10.0
+        otpt = model.nodes['Output']
+
+        costs = -2.0 - np.arange(365) * 0.1
+        otpt.cost = ArrayIndexedParameter(model, costs)
+
+        cost_rec = NumpyArrayNodeCostRecorder(model, otpt)
+        # test retrieval of recorder
+        assert model.recorders['numpyarraynodecostrecorder.Output'] == cost_rec
+        model.run()
+
+        assert cost_rec.data.shape == (365, 1)
+        np.testing.assert_allclose(cost_rec.data, costs[:, np.newaxis])
+
+        df = cost_rec.to_dataframe()
+        assert df.shape == (365, 1)
+        np.testing.assert_allclose(df.values, costs[:, np.newaxis])
+
 
 class TestFlowDurationCurveRecorders:
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "sum": np.sum}
@@ -381,6 +449,36 @@ def test_numpy_storage_recorder(simple_storage_model, proportional):
     df = rec.to_dataframe()
     assert df.shape == (5, 1)
     assert_allclose(df.values, expected, atol=1e-7)
+
+
+def test_numpy_norm_storage_recorder(simple_storage_model):
+    """
+    Test the NumpyArrayNormalisedStorageRecorder
+    """
+    model = simple_storage_model
+
+    res = model.nodes['Storage']
+    cc = ConstantParameter(model, value=0.2)
+
+    rec = NumpyArrayNormalisedStorageRecorder(model, res, parameter=cc)
+
+    model.run()
+
+    expected = np.array([[
+        3.0/16,  # 3 above control curve
+        0,  # at control curve
+        1.0/4 - 1.0,  # 75% toward empty
+        -1.0, # Empty
+        -1.0  # Empty
+    ]]).T
+
+    assert(rec.data.shape == (5, 1))
+    assert_allclose(rec.data, expected, atol=1e-7)
+
+    df = rec.to_dataframe()
+    assert df.shape == (5, 1)
+    assert_allclose(df.values, expected, atol=1e-7)
+
 
 
 def test_numpy_array_level_recorder(simple_storage_model):
@@ -1419,8 +1517,12 @@ def test_timestep_count_index_parameter_recorder(simple_storage_model):
     assert_allclose([0, 183 + 365 + 365], rec.values(), atol=1e-7)
 
 
-@pytest.mark.parametrize("params", [1, 2])
-def test_annual_count_index_threshold_recorder(simple_storage_model, params):
+@pytest.mark.parametrize(("params", "exclude_months"), [
+    [1, None],
+    [2, None],
+    [1, [1, 2, 12]],
+])
+def test_annual_count_index_threshold_recorder(simple_storage_model, params, exclude_months):
     """
     The test sets uses a simple reservoir model with different inputs that
     trigger a control curve failure after different numbers of years.
@@ -1444,17 +1546,23 @@ def test_annual_count_index_threshold_recorder(simple_storage_model, params):
     model.nodes['Output'].max_flow = demand
 
     # Create the recorder with a threshold of 1
-    rec = AnnualCountIndexThresholdRecorder(model, [param] * params, 'TestRec', 1)
+    rec = AnnualCountIndexThresholdRecorder(model, [param] * params, 'TestRec', 1, exclude_months=exclude_months)
 
     model.run()
 
     # We expect no failures in the first ensemble, the reservoir starts failing halfway through
     # the 3rd year
-    assert_allclose([[0, 0],
-                     [0, 0],
-                     [0, 183],
-                     [0, 365],
-                     [0, 365]], rec.data, atol=1e-7)
+    if exclude_months is None:
+        expected_data = [[0, 0], [0, 0], [0, 183], [0, 365],[0, 365]]
+    else:
+        # Ignore counts for Jan, Feb and Dec
+        assert exclude_months == [1, 2, 12]  # Test is hard-coded for these exclusion months.
+        expected_data = [[0, 0], [0, 0], [0, 183 - 31], [0, 365 - 31 - 28 - 31], [0, 365 - 31 - 28 - 31]]
+
+    assert_allclose(expected_data, rec.data, atol=1e-7)
+    df = rec.to_dataframe()
+    assert_allclose(expected_data, df.values, atol=1e-7)
+
 
 class TestAnnualTotalFlowRecorder:
 
@@ -1473,6 +1581,8 @@ class TestAnnualTotalFlowRecorder:
         model.run()
 
         assert_allclose(3650.0, rec.data, atol=1e-7)
+        df = rec.to_dataframe()
+        assert_allclose([[3650.0]], df.values)
 
     def test_annual_total_flow_recorder_factored(self, simple_linear_model):
         """
@@ -1491,6 +1601,8 @@ class TestAnnualTotalFlowRecorder:
         model.run()
 
         assert_allclose(3650.0*3, rec_fact.data, atol=1e-7)
+        df = rec_fact.to_dataframe()
+        assert_allclose([[3650.0*3]], df.values)
 
 
 def test_total_flow_node_recorder(simple_linear_model):
@@ -2053,3 +2165,35 @@ class TestHydroPowerRecorder:
         # Finally, check model runs with the loaded recorder.
         model.run()
 
+
+class TestGaussianKDEStorageRecorder:
+    def test_kde_recorder(self, simple_storage_model):
+        """A basic functional test of `GaussianKDEStorageRecorder`"""
+        model = simple_storage_model
+        res = model.nodes['Storage']
+
+        kde = GaussianKDEStorageRecorder(model, res, target_volume_pc=0.2)
+
+        model.run()
+
+        pdf = kde.to_dataframe()
+        p = kde.aggregated_value()
+        assert pdf.shape == (101, 1)
+        assert 0 < p < 1
+        np.testing.assert_allclose(pdf.values, kde.values())
+
+    def test_norm_kde_recorder(self, simple_storage_model):
+        """A basic functional test of `NormalisedGaussianKDEStorageRecorder`"""
+        model = simple_storage_model
+        res = model.nodes['Storage']
+        cc = ConstantParameter(model, 0.2)
+
+        kde = NormalisedGaussianKDEStorageRecorder(model, res, parameter=cc)
+
+        model.run()
+
+        pdf = kde.to_dataframe()
+        p = kde.aggregated_value()
+        assert pdf.shape == (101, 1)
+        assert 0 < p < 1
+        np.testing.assert_allclose(pdf.values, kde.values())
