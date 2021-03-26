@@ -2,6 +2,12 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.13.1
+
+### Bug Fixes
+
+- Allow loading normalised KDE and `NumpyArrayNormalisedStorageRecorder` recorder from JSON. (#974)
+
 ## v1.13.0
 
 ### New Features
