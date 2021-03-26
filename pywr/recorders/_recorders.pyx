@@ -1172,6 +1172,13 @@ cdef class NumpyArrayNormalisedStorageRecorder(NumpyArrayAbstractStorageRecorder
             self._data[ts.index, i] = norm_vol
 
         return 0
+
+    @classmethod
+    def load(cls, model, data):
+        from pywr.parameters import load_parameter
+        node = model.nodes[data.pop("node")]
+        parameter = load_parameter(model, data.pop("parameter"))
+        return cls(model, node=node, parameter=parameter, **data)
 NumpyArrayNormalisedStorageRecorder.register()
 
 

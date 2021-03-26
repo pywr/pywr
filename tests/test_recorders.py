@@ -2182,6 +2182,24 @@ class TestGaussianKDEStorageRecorder:
         assert 0 < p < 1
         np.testing.assert_allclose(pdf.values, kde.values())
 
+    def test_kde_from_json(self, simple_storage_model):
+        """Test loading KDE recorder from JSON data."""
+        model = simple_storage_model
+
+        kde = load_recorder(model, {
+            'type': 'GaussianKDEStorageRecorder',
+            'node': 'Storage',
+            'target_volume_pc': 0.2
+        })
+
+        model.run()
+
+        pdf = kde.to_dataframe()
+        p = kde.aggregated_value()
+        assert pdf.shape == (101, 1)
+        assert 0 < p < 1
+        np.testing.assert_allclose(pdf.values, kde.values())
+
     def test_norm_kde_recorder(self, simple_storage_model):
         """A basic functional test of `NormalisedGaussianKDEStorageRecorder`"""
         model = simple_storage_model
@@ -2189,6 +2207,25 @@ class TestGaussianKDEStorageRecorder:
         cc = ConstantParameter(model, 0.2)
 
         kde = NormalisedGaussianKDEStorageRecorder(model, res, parameter=cc)
+
+        model.run()
+
+        pdf = kde.to_dataframe()
+        p = kde.aggregated_value()
+        assert pdf.shape == (101, 1)
+        assert 0 < p < 1
+        np.testing.assert_allclose(pdf.values, kde.values())
+
+    def test_norm_kde_from_json(self, simple_storage_model):
+        """Test loading normalised KDE recorder from JSON data."""
+        model = simple_storage_model
+        cc = ConstantParameter(model, 0.2, name='my-parameter')
+
+        kde = load_recorder(model, {
+            'type': 'NormalisedGaussianKDEStorageRecorder',
+            'node': 'Storage',
+            'parameter': 'my-parameter'
+        })
 
         model.run()
 
