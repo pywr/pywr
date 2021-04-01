@@ -1,0 +1,36 @@
+{
+    "metadata": {
+        "title": "Simple 1",
+        "description": "A very simple example with losses.",
+        "minimum_version": "1.11.0"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 100,
+            "cost": 0.1
+        },
+        {
+            "name": "link1",
+            "type": "LossLink",
+            "max_flow": 10,
+            "loss_factor": 0.2
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 20,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ]
+}

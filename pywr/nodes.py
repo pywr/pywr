@@ -331,7 +331,7 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
         Optional float or Parameter defining the area and level of the storage node. These values are
         accessible through the `get_area` and `get_level` methods respectively.
     """
-    __parameter_attributes__ = ('cost', 'min_volume', 'max_volume')
+    __parameter_attributes__ = ('cost', 'min_volume', 'max_volume', 'level', 'area')
     __parameter_value_attributes__ = ('initial_volume', )
 
     def __init__(self, model, name, outputs=1, inputs=1, *args, **kwargs):
@@ -1073,5 +1073,110 @@ class DelayNode(Node):
         # delayed flow is saved to the DelayNode
         self.commit_all(self.input.flow)
 
+
+class LossLink(Node):
+    """A node that has a proportional loss.
+
+    A fixed proportional loss of all flow through this node is sent to an internal output node. Max and min flows
+    applied to this node are enforced on the net output after losses. The node itself records the net output
+    in its flow attribute (which would be used by any attached recorders).
+
+    Parameters
+    ----------
+    model : `pywr.model.Model`
+    name : string
+        Name of the node.
+    loss_factor : float
+        The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
+        then no-losses are calculated. The percentage is calculated as a percentage of gross flow.
+    """
+    __parameter_value_attributes__ = ('loss_factor', )
+
+    def __init__(self, model, name, **kwargs):
+        self.allow_isolated = True
+
+        output_name = "{} Output".format(name)
+        gross_name = "{} Gross".format(name)
+        net_name = "{} Net".format(name)
+        agg_name = "{} Aggregated".format(name)
+
+        assert(output_name not in model.nodes)
+        assert(gross_name not in model.nodes)
+        assert(net_name not in model.nodes)
+        assert(agg_name not in model.nodes)
+
+        self.output = Output(model, name=output_name, parent=self)
+        self.gross = Link(model, name=gross_name, parent=self)
+        self.net = Link(model, name=net_name, parent=self)
+        self.gross.connect(self.output)
+        self.gross.connect(self.net)
+
+        self.agg = AggregatedNode(model, name=agg_name, nodes=[self.net, self.output])
+        self.loss_factor = kwargs.pop('loss_factor', 0.0)
+
+        super().__init__(model, name, **kwargs)
+
+    def loss_factor():
+        def fget(self):
+            if self.agg.factors:
+                return self.agg.factors[1]
+            elif self.output.max_flow == 0.0:
+                return 0.0
+            else:
+                return 1.0
+
+        def fset(self, value):
+            if value == 0.0:
+                # 0% loss; no flow to the output loss node.
+                self.agg.factors = None
+                self.output.max_flow = 0.0
+            elif value == 1.0:
+                # 100% loss; all flow to the output loss node
+                self.agg.factors = None
+                self.output.max_flow = float('inf')
+                self.net.max_flow = 0.0
+            else:
+                self.output.max_flow = float('inf')
+                self.agg.factors = [1.0, float(value)]
+        return locals()
+    loss_factor = property(**loss_factor())
+
+    def min_flow():
+        def fget(self):
+            return self.net.min_flow
+
+        def fset(self, value):
+            self.net.min_flow = value
+        return locals()
+    min_flow = property(**min_flow())
+
+    def max_flow():
+        def fget(self):
+            return self.net.max_flow
+
+        def fset(self, value):
+            self.net.max_flow = value
+        return locals()
+    max_flow = property(**max_flow())
+
+    def cost():
+        def fget(self):
+            return self.net.cost
+
+        def fset(self, value):
+            self.net.cost = value
+        return locals()
+    cost = property(**cost())
+
+    def iter_slots(self, slot_name=None, is_connector=True):
+        if is_connector:
+            yield self.net
+        else:
+            yield self.gross
+
+    def after(self, timestep):
+        super().after(timestep)
+        # Net flow is saved to the node.
+        self.commit_all(self.net.flow)
 
 from pywr.domains.river import *  # noqa

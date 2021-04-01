@@ -672,15 +672,46 @@ def test_breaklink_node():
     assert_allclose(transfer.storage.volume, 0)
 
 
-@pytest.mark.xfail(reason="Circular dependency in the JSON definition. "
-                          "See GitHub issue #380: https://github.com/pywr/pywr/issues/380")
+@pytest.mark.parametrize('loss_factor', [None, 0.2, 0.99, 1.0, 0.0])
+def test_loss_link_node(loss_factor):
+    """Test LossLink node"""
+    model = load_model('loss_link.json')
+
+    supply1 = model.nodes["supply1"]
+    link1 = model.nodes["link1"]
+    demand1 = model.nodes["demand1"]
+
+    if loss_factor is not None:
+        link1.loss_factor = loss_factor
+
+    model.check()
+    model.run()
+
+    if loss_factor is None:
+        expected_supply = 12
+        expected_demand = 10
+    elif loss_factor == 1.0:
+        # 100% loss means no flow can be provided.
+        expected_supply = 0.0
+        expected_demand = 0.0
+    else:
+        expected_supply = 10 * (1 + loss_factor)
+        expected_demand = 10
+
+    # Supply must provide 20% more flow because of the loss in link1
+    assert_allclose(supply1.flow, expected_supply)
+    # link1 records the net flow after losses
+    assert_allclose(link1.flow, expected_demand)
+    assert_allclose(demand1.flow, expected_demand)
+
+
 def test_reservoir_surface_area():
     from pywr.parameters import InterpolatedVolumeParameter
     model = load_model('reservoir_evaporation.json')
     model.timestepper.start = "1920-01-01"
     model.timestepper.end = "1920-01-02"
     res = model.run()
-    assert (hasattr(Storage, area))
+    assert hasattr(Storage, "area")
     assert isinstance(model.nodes["reservoir1"].area, InterpolatedVolumeParameter)
     assert_allclose(model.nodes["evaporation"].flow, 2.46875)
 

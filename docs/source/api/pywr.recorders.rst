@@ -77,6 +77,8 @@ Statistical recorders
    TimestepCountIndexParameterRecorder
    AnnualCountIndexThresholdRecorder
    RollingWindowParameterRecorder
+   GaussianKDEStorageRecorder
+   NormalisedGaussianKDEStorageRecorder
 
 
 Index recorders
