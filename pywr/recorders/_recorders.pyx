@@ -1042,6 +1042,19 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         else:
             return df
 
+    @classmethod
+    def load(cls, model, data):
+        node = model.nodes[data.pop("node")]
+        percentiles = data.pop("percentiles")
+        from pywr.parameters import load_parameter_values
+        upper_target_fdc = data.pop("upper_target_fdc")
+        if isinstance(upper_target_fdc, dict):
+            upper_target_fdc = load_parameter_values(model, upper_target_fdc)
+        lower_target_fdc = data.pop("lower_target_fdc")
+        if isinstance(lower_target_fdc, dict):
+            lower_target_fdc = load_parameter_values(model, lower_target_fdc)
+        return cls(model, node, percentiles, upper_target_fdc, lower_target_fdc, **data)
+
 FlowDurationCurveDeviationRecorder.register()
 
 
