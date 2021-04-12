@@ -920,9 +920,9 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     percentiles : array
         The percentiles to use in the calculation of the flow duration curve.
         Values must be in the range 0-100.
-    lower_target_fdc : array
+    lower_target_fdc : array, optional
         The lower FDC against which the scenario FDCs are compared
-    upper_target_fdc : array
+    upper_target_fdc : array, optional
         The upper FDC against which the scenario FDCs are compared
     agg_func: str, optional
         Function used for aggregating the FDC deviations across percentiles.
@@ -931,14 +931,20 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         Optional different function for aggregating across scenarios.
 
     """
-    def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc, upper_target_fdc, scenario=None, **kwargs):
+    def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc=None, upper_target_fdc=None, scenario=None, **kwargs):
         super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, **kwargs)
 
-        lower_target = np.array(lower_target_fdc, dtype=np.float64)
+        if lower_target_fdc is None:
+            lower_target = np.full(np.shape(upper_target_fdc), np.nan, dtype=np.float64)
+        else:
+            lower_target = np.array(lower_target_fdc, dtype=np.float64)
         if lower_target.ndim < 2:
             lower_target = lower_target[:, np.newaxis]
 
-        upper_target = np.array(upper_target_fdc, dtype=np.float64)
+        if upper_target_fdc is None:
+            upper_target = np.full(np.shape(lower_target_fdc), np.nan, dtype=np.float64)
+        else:
+            upper_target = np.array(upper_target_fdc, dtype=np.float64)
         if upper_target.ndim < 2:
             upper_target = upper_target[:, np.newaxis]
 
@@ -1005,9 +1011,15 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             for k in range(ltrgt_fdc.shape[0]):
                 try:
                     # upper deviation (+ve when flow higher than upper target)
-                    udev = (self._fdc[k, i] - utrgt_fdc[k])  / utrgt_fdc[k]
+                    if not np.isnan(utrgt_fdc[k]):
+                        udev = (self._fdc[k, i] - utrgt_fdc[k])  / utrgt_fdc[k]
+                    else:
+                        udev = 0.0
                     # lower deviation (+ve when flow less than lower target)
-                    ldev = (ltrgt_fdc[k] - self._fdc[k, i])  / ltrgt_fdc[k]
+                    if not np.isnan(ltrgt_fdc[k]):
+                        ldev = (ltrgt_fdc[k] - self._fdc[k, i])  / ltrgt_fdc[k]
+                    else:
+                        ldev = 0.0
                     # Overall deviation is the worst of upper and lower, but if both
                     # are negative (i.e. FDC is between upper and lower) there is zero deviation
                     self._fdc_deviations[k, i] = max(udev, ldev, 0.0)
@@ -1047,10 +1059,10 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         node = model.nodes[data.pop("node")]
         percentiles = data.pop("percentiles")
         from pywr.parameters import load_parameter_values
-        upper_target_fdc = data.pop("upper_target_fdc")
+        upper_target_fdc = data.pop("upper_target_fdc", None)
         if isinstance(upper_target_fdc, dict):
             upper_target_fdc = load_parameter_values(model, upper_target_fdc)
-        lower_target_fdc = data.pop("lower_target_fdc")
+        lower_target_fdc = data.pop("lower_target_fdc", None)
         if isinstance(lower_target_fdc, dict):
             lower_target_fdc = load_parameter_values(model, lower_target_fdc)
         return cls(model, node, percentiles, upper_target_fdc, lower_target_fdc, **data)
