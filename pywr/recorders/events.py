@@ -1,4 +1,4 @@
-from ._recorders import Recorder
+from ._recorders import Recorder, load_recorder
 import numpy as np
 import pandas
 
@@ -178,6 +178,22 @@ class EventRecorder(Recorder):
 
         return pandas.DataFrame(df_dict)
 
+    @classmethod
+    def load(cls, model, data):
+        from pywr.parameters import load_parameter
+        threshold = data.pop("threshold")
+        try:
+            threshold = load_parameter(model, threshold)
+        except KeyError:
+            threshold = load_recorder(model, threshold)
+        tracked_param = data.pop("tracked_parameter", None)
+        if tracked_param:
+            tracked_param = load_parameter(model, tracked_param)
+        return cls(model, threshold, tracked_parameter=tracked_param, **data)
+
+
+EventRecorder.register()
+
 
 class EventDurationRecorder(Recorder):
     """ Recorder for the duration of events found by an EventRecorder
@@ -238,6 +254,14 @@ class EventDurationRecorder(Recorder):
         # ... and update the internal values
         for index, row in grouped.iterrows():
             self._values[index] = row['duration']
+
+    @classmethod
+    def load(cls, model, data):
+        event_rec = load_recorder(model, data.pop("event_recorder"))
+        return cls(model, event_rec, **data)
+
+
+EventDurationRecorder.register()
 
 
 class EventStatisticRecorder(Recorder):
@@ -310,3 +334,10 @@ class EventStatisticRecorder(Recorder):
         # ... and update the internal values
         for index, row in grouped.iterrows():
             self._values[index] = row['value']
+
+    @classmethod
+    def load(cls, model, data):
+        event_rec = load_recorder(model, data.pop("event_recorder"))
+        return cls(model, event_rec, **data)
+
+EventStatisticRecorder.register()
