@@ -110,9 +110,11 @@ jobs:
       - name: Build docs
         # lpsolve doesn't compile on Ubuntu without building the library from source - disable for the time being.
         # This doesn't really matter for the documentation builds.
+        # Pin decorator<5 until networkx updates.
+        # https://github.com/networkx/networkx/issues/4732
         run: |
           sudo apt-get install libglpk-dev
-          pip install sphinx sphinx_rtd_theme numpydoc
+          pip install sphinx sphinx_rtd_theme numpydoc "decorator<5"
           python setup.py install --without-lpsolve
           cd docs
           make html
