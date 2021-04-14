@@ -1889,8 +1889,8 @@ class TestEventRecorder:
         strg = m.nodes['Storage']
         param = threshold_component(m, strg, 4.0, predicate='<=', name="trigger")
         EventRecorder.load(m, {"name": "event_rec", "threshold": "trigger", "tracked_parameter": "inpt_flow"})
-        EventDurationRecorder.load(m, {"event_recorder": "event_rec", "recorder_agg_func": "max"})
-        EventStatisticRecorder.load(m, {"event_recorder": "event_rec", "recorder_agg_func": "max", "agg_func": "max"})
+        EventDurationRecorder.load(m, {"event_recorder": "event_rec"})
+        EventStatisticRecorder.load(m, {"event_recorder": "event_rec"})
         m.run()
         
     @pytest.mark.parametrize("recorder_agg_func", ["min", "max", "mean", "median", "sum"])
