@@ -922,10 +922,12 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         Values must be in the range 0-100.
     lower_target_fdc : array, optional
         The lower FDC against which the scenario FDCs are compared. If values are not provided then deviations from a
-        lower target FDC are recorded as 0.0.
+        lower target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
+        the percentile values.
     upper_target_fdc : array, optional
         The upper FDC against which the scenario FDCs are compared. If values are not provided then deviations from a
-        upper target FDC are recorded as 0.0.
+        upper target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
+        the percentile values.
     agg_func: str, optional
         Function used for aggregating the FDC deviations across percentiles.
         Numpy style functions that support an axis argument are supported.
@@ -1082,7 +1084,8 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         if isinstance(lower_target_fdc, dict):
             lower_target_fdc.update({"indexes": percentiles})
             lower_target_fdc = load_parameter_values(model, lower_target_fdc)
-        return cls(model, node, percentiles, upper_target_fdc, lower_target_fdc, **data)
+        return cls(model, node, percentiles, lower_target_fdc=lower_target_fdc, upper_target_fdc=upper_target_fdc,
+                   **data)
 
 FlowDurationCurveDeviationRecorder.register()
 
