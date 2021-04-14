@@ -340,4 +340,5 @@ class EventStatisticRecorder(Recorder):
         event_rec = load_recorder(model, data.pop("event_recorder"))
         return cls(model, event_rec, **data)
 
+
 EventStatisticRecorder.register()

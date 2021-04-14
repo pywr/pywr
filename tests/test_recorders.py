@@ -31,7 +31,7 @@ from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageR
 from pywr.recorders.progress import ProgressRecorder
 
 from pywr.parameters import (DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter,
-                             InterpolatedVolumeParameter, ConstantScenarioParameter)
+                             InterpolatedVolumeParameter, ConstantScenarioParameter, StorageThresholdParameter)
 from helpers import load_model
 import os
 import sys
@@ -1882,16 +1882,17 @@ class TestEventRecorder:
     """ Tests for EventRecorder """
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "median": np.median, "sum": np.sum}
 
-    def test_load(self, cyclical_storage_model):
+    @pytest.mark.parametrize("threshold_component", [StorageThresholdRecorder, StorageThresholdParameter])
+    def test_load(self, cyclical_storage_model, threshold_component):
         """Test load method""" 
         m = cyclical_storage_model
         strg = m.nodes['Storage']
-        param = StorageThresholdRecorder(m, strg, 4.0, predicate='<=', name="trigger")
-        EventRecorder.load(m, {"name": "event_rec", "threshold": "trigger", "tracked_parameter":"inpt_flow"})
-        EventDurationRecorder.load(m, {"event_recorder": "event_rec"})
-        EventStatisticRecorder.load(m, {"event_recorder": "event_rec"})
-        m.step()
-
+        param = threshold_component(m, strg, 4.0, predicate='<=', name="trigger")
+        EventRecorder.load(m, {"name": "event_rec", "threshold": "trigger", "tracked_parameter": "inpt_flow"})
+        EventDurationRecorder.load(m, {"event_recorder": "event_rec", "recorder_agg_func": "max"})
+        EventStatisticRecorder.load(m, {"event_recorder": "event_rec", "recorder_agg_func": "max", "agg_func": "max"})
+        m.run()
+        
     @pytest.mark.parametrize("recorder_agg_func", ["min", "max", "mean", "median", "sum"])
     def test_event_capture_with_storage(self, cyclical_storage_model, recorder_agg_func):
         """ Test Storage events using a StorageThresholdRecorder """
