@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.recorders.FlowDurationCurveDeviationRecorder &mdash; Pywr 1.13.2.dev2+ge6fd42d documentation</title>
+  <title>pywr.recorders.FlowDurationCurveDeviationRecorder &mdash; Pywr 1.13.2.dev3+g6b15d74 documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                1.13.2.dev2+ge6fd42d
+                1.13.2.dev3+g6b15d74
               </div>
             
           
@@ -199,7 +199,7 @@
 <h1>pywr.recorders.FlowDurationCurveDeviationRecorder<a class="headerlink" href="#pywr-recorders-flowdurationcurvedeviationrecorder" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="pywr.recorders.FlowDurationCurveDeviationRecorder">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.recorders.</span></code><code class="sig-name descname"><span class="pre">FlowDurationCurveDeviationRecorder</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">model</span></em>, <em class="sig-param"><span class="pre">AbstractNode</span> <span class="pre">node</span></em>, <em class="sig-param"><span class="pre">percentiles</span></em>, <em class="sig-param"><span class="pre">lower_target_fdc</span></em>, <em class="sig-param"><span class="pre">upper_target_fdc</span></em>, <em class="sig-param"><span class="pre">scenario=None</span></em>, <em class="sig-param"><span class="pre">**kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.FlowDurationCurveDeviationRecorder" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.recorders.</span></code><code class="sig-name descname"><span class="pre">FlowDurationCurveDeviationRecorder</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">model</span></em>, <em class="sig-param"><span class="pre">AbstractNode</span> <span class="pre">node</span></em>, <em class="sig-param"><span class="pre">percentiles</span></em>, <em class="sig-param"><span class="pre">lower_target_fdc=None</span></em>, <em class="sig-param"><span class="pre">upper_target_fdc=None</span></em>, <em class="sig-param"><span class="pre">scenario=None</span></em>, <em class="sig-param"><span class="pre">**kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.FlowDurationCurveDeviationRecorder" title="Permalink to this definition">¶</a></dt>
 <dd><p>This recorder calculates a Flow Duration Curve (FDC) for each scenario and then
 calculates their deviation from upper and lower target FDCs. The 2nd dimension of the target
 duration curves and percentiles list must be of the same length and have the same
@@ -215,9 +215,13 @@ target. If actual FDC falls between the upper and lower targets zero deviation i
 <dt><strong>percentiles</strong><span class="classifier">array</span></dt><dd><p>The percentiles to use in the calculation of the flow duration curve.
 Values must be in the range 0-100.</p>
 </dd>
-<dt><strong>lower_target_fdc</strong><span class="classifier">array</span></dt><dd><p>The lower FDC against which the scenario FDCs are compared</p>
+<dt><strong>lower_target_fdc</strong><span class="classifier">array, optional</span></dt><dd><p>The lower FDC against which the scenario FDCs are compared. If values are not provided then deviations from a
+lower target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
+the percentile values.</p>
 </dd>
-<dt><strong>upper_target_fdc</strong><span class="classifier">array</span></dt><dd><p>The upper FDC against which the scenario FDCs are compared</p>
+<dt><strong>upper_target_fdc</strong><span class="classifier">array, optional</span></dt><dd><p>The upper FDC against which the scenario FDCs are compared. If values are not provided then deviations from a
+upper target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
+the percentile values.</p>
 </dd>
 <dt><strong>agg_func: str, optional</strong></dt><dd><p>Function used for aggregating the FDC deviations across percentiles.
 Numpy style functions that support an axis argument are supported.</p>
