@@ -163,6 +163,8 @@ def load_dataframe(model, data):
         # Cast multiindex to a tuple to ensure .loc works correctly
         index = tuple(index)
 
+    indexes = data.pop("indexes", None)
+
     table_ref = data.pop('table', None)
     if table_ref is not None:
         name = table_ref
@@ -183,6 +185,12 @@ def load_dataframe(model, data):
             df = df.loc[index]
         except KeyError:
             raise KeyError('Index "{}" not found in dataset "{}"'.format(index, name))
+
+    if indexes is not None:
+        try:
+            df = df.loc[indexes, :]
+        except KeyError:
+            raise KeyError('Indexes "{}" not found in dataset "{}"'.format(index, name))
 
     try:
         if isinstance(df.index, pandas.DatetimeIndex):

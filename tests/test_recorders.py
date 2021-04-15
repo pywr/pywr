@@ -382,7 +382,64 @@ class TestFlowDurationCurveRecorders:
         df = rec.to_dataframe()
         assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
+    def test_deviation_single_target_lower(self):
+        """Test deviation recorder with a lower target and no upper target"""
+
+        model = load_model("timeseries2.json")
+        input = model.nodes['catchment1']
+        term = model.nodes['term1']
+        scenarioA = model.scenarios['scenario A']
+
+        natural_flow = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries2.csv'),
+                                       parse_dates=True, dayfirst=True, index_col=0)
+        percentiles = np.linspace(20., 100., 5)
+
+        natural_fdc = np.percentile(natural_flow, percentiles, axis=0)
+
+        # Lower target is 20% below natural
+        lower_input_fdc = natural_fdc * 0.8
+
+        rec = FlowDurationCurveDeviationRecorder(model, term, percentiles, lower_target_fdc=lower_input_fdc,
+                                                 scenario=scenarioA)
+
+        model.run()
+
+        actual_fdc = np.maximum(natural_fdc - 23, 0.0)
+
+        lower_deviation = (lower_input_fdc - actual_fdc) / lower_input_fdc
+        deviation = np.maximum(lower_deviation, np.zeros_like(lower_deviation))
+        assert_allclose(rec.fdc_deviations[:, 0], deviation[:, 0])
+
+    def test_deviation_single_target_upper(self):
+        """Test deviation recorder with an upper target and no lower target"""
+
+        model = load_model("timeseries2.json")
+        input = model.nodes['catchment1']
+        term = model.nodes['term1']
+        scenarioA = model.scenarios['scenario A']
+
+        natural_flow = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries2.csv'),
+                                       parse_dates=True, dayfirst=True, index_col=0)
+        percentiles = np.linspace(20., 100., 5)
+
+        natural_fdc = np.percentile(natural_flow, percentiles, axis=0)
+
+        # Upper is 10% above
+        upper_input_fdc = natural_fdc * 1.1
+
+        rec = FlowDurationCurveDeviationRecorder(model, term, percentiles, upper_target_fdc=upper_input_fdc,
+                                                 scenario=scenarioA)
+
+        model.run()
+
+        actual_fdc = np.maximum(natural_fdc - 23, 0.0)
+
+        upper_deviation = (actual_fdc - upper_input_fdc) / upper_input_fdc
+        deviation = np.maximum(upper_deviation, np.zeros_like(upper_deviation))
+        assert_allclose(rec.fdc_deviations[:, 0], deviation[:, 0])
+
     def test_fdc_dev_from_json(self):
+        """Test loading deviation recorder from json"""
 
         model = load_model("timeseries2_with_fdc.json")
         model.run()
