@@ -383,6 +383,7 @@ class TestFlowDurationCurveRecorders:
         assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
     def test_deviation_single_target_lower(self):
+        """Test deviation recorder with a lower target and no upper target"""
 
         model = load_model("timeseries2.json")
         input = model.nodes['catchment1']
@@ -410,6 +411,7 @@ class TestFlowDurationCurveRecorders:
         assert_allclose(rec.fdc_deviations[:, 0], deviation[:, 0])
 
     def test_deviation_single_target_upper(self):
+        """Test deviation recorder with an upper target and no lower target"""
 
         model = load_model("timeseries2.json")
         input = model.nodes['catchment1']
@@ -437,6 +439,7 @@ class TestFlowDurationCurveRecorders:
         assert_allclose(rec.fdc_deviations[:, 0], deviation[:, 0])
 
     def test_fdc_dev_from_json(self):
+        """Test loading deviation recorder from json"""
 
         model = load_model("timeseries2_with_fdc.json")
         model.run()
