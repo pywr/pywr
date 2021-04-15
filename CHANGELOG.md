@@ -2,6 +2,17 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.14.0
+
+### New Features
+
+- Allow target flow-duration curves to be supplied in an external file for `FlowDurationDeviationRecorder`. (#977)
+- Allow only one of upper or lower targets to be specified in `FlowDurationDeviationRecorder`. (#977)
+
+### Bug Fixes
+
+- Fix bug where event recorders were not registered and could not be loaded from JSON. (#976)
+
 ## v1.13.1
 
 ### Bug Fixes
