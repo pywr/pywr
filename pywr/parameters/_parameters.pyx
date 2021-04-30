@@ -193,6 +193,7 @@ cdef class DataFrameParameter(Parameter):
         self.scenario = scenario
 
     cpdef setup(self):
+        cdef Py_ssize_t i
         super(DataFrameParameter, self).setup()
         # align and resample the dataframe
         dataframe_resampled = align_and_resample_dataframe(self.dataframe, self.model.timestepper.datetime_index)
@@ -208,16 +209,47 @@ cdef class DataFrameParameter(Parameter):
             if self.scenario.size != dataframe_resampled.shape[1]:
                 raise ValueError("Scenario size ({}) is different to the number of columns ({}) "
                                  "in the DataFrame input.".format(self.scenario.size, dataframe_resampled.shape[1]))
+
+        if self.scenario:
+            # if possible, only load the data required
+            scenario_indices = None
+            # Default to index that is just out of bounds to cause IndexError if something goes wrong
+            self._scenario_ids = np.ones(self.scenario.size, dtype=np.int32) * self.scenario.size
+
+            # Calculate the scenario indices to load dependning on how scenario combinations are defined.
+            if self.model.scenarios.user_combinations:
+                scenario_indices = set()
+                for user_combination in self.model.scenarios.user_combinations:
+                    scenario_indices.add(user_combination[self._scenario_index])
+                scenario_indices = sorted(list(scenario_indices))
+            elif self.scenario.slice:
+                scenario_indices = range(*self.scenario.slice.indices(self.scenario.slice.stop))
+            else:
+                # scenario is defined, but all data required
+                self._scenario_ids = None
+
+            if scenario_indices is not None:
+                # Now load only the required data
+                for n, i in enumerate(scenario_indices):
+                    self._scenario_ids[i] = n
+                dataframe_resampled = dataframe_resampled.iloc[:, scenario_indices]
+
         self._values = dataframe_resampled.values.astype(np.float64)
         if self.scenario is not None:
             self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef double value
+        cdef Py_ssize_t i = timestep.index
+        cdef Py_ssize_t j
+
         if self.scenario is not None:
-            value = self._values[<int>(timestep.index), <int>(scenario_index._indices[self._scenario_index])]
+            j = scenario_index._indices[self._scenario_index]
+            if self._scenario_ids is not None:
+                j = self._scenario_ids[j]
+            value = self._values[i, j]
         else:
-            value = self._values[<int>(timestep.index), 0]
+            value = self._values[i, 0]
         return value
 
     @classmethod
