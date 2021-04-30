@@ -31,7 +31,7 @@ from pywr.recorders import (Recorder, NumpyArrayNodeRecorder, NumpyArrayStorageR
 from pywr.recorders.progress import ProgressRecorder
 
 from pywr.parameters import (DailyProfileParameter, FunctionParameter, ArrayIndexedParameter, ConstantParameter,
-                             InterpolatedVolumeParameter, ConstantScenarioParameter)
+                             InterpolatedVolumeParameter, ConstantScenarioParameter, StorageThresholdParameter)
 from helpers import load_model
 import os
 import sys
@@ -382,7 +382,64 @@ class TestFlowDurationCurveRecorders:
         df = rec.to_dataframe()
         assert df.shape == (len(percentiles), len(model.scenarios.combinations))
 
+    def test_deviation_single_target_lower(self):
+        """Test deviation recorder with a lower target and no upper target"""
+
+        model = load_model("timeseries2.json")
+        input = model.nodes['catchment1']
+        term = model.nodes['term1']
+        scenarioA = model.scenarios['scenario A']
+
+        natural_flow = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries2.csv'),
+                                       parse_dates=True, dayfirst=True, index_col=0)
+        percentiles = np.linspace(20., 100., 5)
+
+        natural_fdc = np.percentile(natural_flow, percentiles, axis=0)
+
+        # Lower target is 20% below natural
+        lower_input_fdc = natural_fdc * 0.8
+
+        rec = FlowDurationCurveDeviationRecorder(model, term, percentiles, lower_target_fdc=lower_input_fdc,
+                                                 scenario=scenarioA)
+
+        model.run()
+
+        actual_fdc = np.maximum(natural_fdc - 23, 0.0)
+
+        lower_deviation = (lower_input_fdc - actual_fdc) / lower_input_fdc
+        deviation = np.maximum(lower_deviation, np.zeros_like(lower_deviation))
+        assert_allclose(rec.fdc_deviations[:, 0], deviation[:, 0])
+
+    def test_deviation_single_target_upper(self):
+        """Test deviation recorder with an upper target and no lower target"""
+
+        model = load_model("timeseries2.json")
+        input = model.nodes['catchment1']
+        term = model.nodes['term1']
+        scenarioA = model.scenarios['scenario A']
+
+        natural_flow = pandas.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'timeseries2.csv'),
+                                       parse_dates=True, dayfirst=True, index_col=0)
+        percentiles = np.linspace(20., 100., 5)
+
+        natural_fdc = np.percentile(natural_flow, percentiles, axis=0)
+
+        # Upper is 10% above
+        upper_input_fdc = natural_fdc * 1.1
+
+        rec = FlowDurationCurveDeviationRecorder(model, term, percentiles, upper_target_fdc=upper_input_fdc,
+                                                 scenario=scenarioA)
+
+        model.run()
+
+        actual_fdc = np.maximum(natural_fdc - 23, 0.0)
+
+        upper_deviation = (actual_fdc - upper_input_fdc) / upper_input_fdc
+        deviation = np.maximum(upper_deviation, np.zeros_like(upper_deviation))
+        assert_allclose(rec.fdc_deviations[:, 0], deviation[:, 0])
+
     def test_fdc_dev_from_json(self):
+        """Test loading deviation recorder from json"""
 
         model = load_model("timeseries2_with_fdc.json")
         model.run()
@@ -1850,7 +1907,7 @@ def cyclical_storage_model(simple_storage_model):
     m.timestepper.delta = 5
 
     inpt = m.nodes['Input']
-    inpt.max_flow = AnnualHarmonicSeriesParameter(m, 5, [0.1, 0.0, 0.25], [0.0, 0.0, 0.0])
+    inpt.max_flow = AnnualHarmonicSeriesParameter(m, 5, [0.1, 0.0, 0.25], [0.0, 0.0, 0.0], name="inpt_flow")
 
     otpt = m.nodes['Output']
     otpt.max_flow = ConstantScenarioParameter(m, s, [5, 6, 2])
@@ -1882,6 +1939,17 @@ class TestEventRecorder:
     """ Tests for EventRecorder """
     funcs = {"min": np.min, "max": np.max, "mean": np.mean, "median": np.median, "sum": np.sum}
 
+    @pytest.mark.parametrize("threshold_component", [StorageThresholdRecorder, StorageThresholdParameter])
+    def test_load(self, cyclical_storage_model, threshold_component):
+        """Test load method""" 
+        m = cyclical_storage_model
+        strg = m.nodes['Storage']
+        param = threshold_component(m, strg, 4.0, predicate='<=', name="trigger")
+        EventRecorder.load(m, {"name": "event_rec", "threshold": "trigger", "tracked_parameter": "inpt_flow"})
+        EventDurationRecorder.load(m, {"event_recorder": "event_rec"})
+        EventStatisticRecorder.load(m, {"event_recorder": "event_rec"})
+        m.run()
+        
     @pytest.mark.parametrize("recorder_agg_func", ["min", "max", "mean", "median", "sum"])
     def test_event_capture_with_storage(self, cyclical_storage_model, recorder_agg_func):
         """ Test Storage events using a StorageThresholdRecorder """
@@ -2182,6 +2250,24 @@ class TestGaussianKDEStorageRecorder:
         assert 0 < p < 1
         np.testing.assert_allclose(pdf.values, kde.values())
 
+    def test_kde_from_json(self, simple_storage_model):
+        """Test loading KDE recorder from JSON data."""
+        model = simple_storage_model
+
+        kde = load_recorder(model, {
+            'type': 'GaussianKDEStorageRecorder',
+            'node': 'Storage',
+            'target_volume_pc': 0.2
+        })
+
+        model.run()
+
+        pdf = kde.to_dataframe()
+        p = kde.aggregated_value()
+        assert pdf.shape == (101, 1)
+        assert 0 < p < 1
+        np.testing.assert_allclose(pdf.values, kde.values())
+
     def test_norm_kde_recorder(self, simple_storage_model):
         """A basic functional test of `NormalisedGaussianKDEStorageRecorder`"""
         model = simple_storage_model
@@ -2189,6 +2275,25 @@ class TestGaussianKDEStorageRecorder:
         cc = ConstantParameter(model, 0.2)
 
         kde = NormalisedGaussianKDEStorageRecorder(model, res, parameter=cc)
+
+        model.run()
+
+        pdf = kde.to_dataframe()
+        p = kde.aggregated_value()
+        assert pdf.shape == (101, 1)
+        assert 0 < p < 1
+        np.testing.assert_allclose(pdf.values, kde.values())
+
+    def test_norm_kde_from_json(self, simple_storage_model):
+        """Test loading normalised KDE recorder from JSON data."""
+        model = simple_storage_model
+        cc = ConstantParameter(model, 0.2, name='my-parameter')
+
+        kde = load_recorder(model, {
+            'type': 'NormalisedGaussianKDEStorageRecorder',
+            'node': 'Storage',
+            'parameter': 'my-parameter'
+        })
 
         model.run()
 

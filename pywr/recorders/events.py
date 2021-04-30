@@ -1,4 +1,4 @@
-from ._recorders import Recorder
+from ._recorders import Recorder, load_recorder
 import numpy as np
 import pandas
 
@@ -178,6 +178,22 @@ class EventRecorder(Recorder):
 
         return pandas.DataFrame(df_dict)
 
+    @classmethod
+    def load(cls, model, data):
+        from pywr.parameters import load_parameter
+        threshold = data.pop("threshold")
+        try:
+            threshold = load_parameter(model, threshold)
+        except KeyError:
+            threshold = load_recorder(model, threshold)
+        tracked_param = data.pop("tracked_parameter", None)
+        if tracked_param:
+            tracked_param = load_parameter(model, tracked_param)
+        return cls(model, threshold, tracked_parameter=tracked_param, **data)
+
+
+EventRecorder.register()
+
 
 class EventDurationRecorder(Recorder):
     """ Recorder for the duration of events found by an EventRecorder
@@ -194,15 +210,15 @@ class EventDurationRecorder(Recorder):
         EventRecorder instance to calculate the events.
     agg_func - string, callable
         Function used for aggregating across the recorders. Numpy style functions that
-        support an axis argument are supported.
+        support an axis argument are supported. Defulat value is 'mean'.
     recorder_agg_func - string, callable
         Optional aggregating function for all events in each scenario. The function
-        must be supported by the `DataFrame.group_by` method.
-
+        must be supported by the `DataFrame.group_by` method.  If no value is provided
+        then the value of 'agg_func' is used.
     """
     def __init__(self, model, event_recorder, **kwargs):
         # Optional different method for aggregating across self.recorders scenarios
-        agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func'))
+        agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func', 'mean'))
         self.recorder_agg_func = agg_func
 
         super(EventDurationRecorder, self).__init__(model, **kwargs)
@@ -239,6 +255,14 @@ class EventDurationRecorder(Recorder):
         for index, row in grouped.iterrows():
             self._values[index] = row['duration']
 
+    @classmethod
+    def load(cls, model, data):
+        event_rec = load_recorder(model, data.pop("event_recorder"))
+        return cls(model, event_rec, **data)
+
+
+EventDurationRecorder.register()
+
 
 class EventStatisticRecorder(Recorder):
     """ Recorder for the duration of events found by an EventRecorder
@@ -258,19 +282,21 @@ class EventStatisticRecorder(Recorder):
         EventRecorder instance to calculate the events.
     agg_func - string, callable
         Function used for aggregating across the recorders. Numpy style functions that
-        support an axis argument are supported.
+        support an axis argument are supported. Default value is 'mean'.
     recorder_agg_func - string, callable
         Optional aggregating function for all events in each scenario. The function
-        must be supported by the `DataFrame.group_by` method.
+        must be supported by the `DataFrame.group_by` method. If no value is provided
+        then the value of 'agg_func' is used.
     event_agg_func - string, callable
         Optional different function for aggregating the `tracked_parameter` across events.
         If given this aggregation will be added as a `value` column in the `to_dataframe` method.
+        If no value is provided then the value of 'agg_func' is used.
     """
     def __init__(self, model, event_recorder, **kwargs):
         # Optional different method for aggregating across self.recorders scenarios
-        agg_func = kwargs.pop('event_agg_func', kwargs.get('agg_func'))
+        agg_func = kwargs.pop('event_agg_func', kwargs.get('agg_func', "mean"))
         self.event_agg_func = agg_func
-        agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func'))
+        agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func', "mean"))
         self.recorder_agg_func = agg_func
 
         super(EventStatisticRecorder, self).__init__(model, **kwargs)
@@ -310,3 +336,11 @@ class EventStatisticRecorder(Recorder):
         # ... and update the internal values
         for index, row in grouped.iterrows():
             self._values[index] = row['value']
+
+    @classmethod
+    def load(cls, model, data):
+        event_rec = load_recorder(model, data.pop("event_recorder"))
+        return cls(model, event_rec, **data)
+
+
+EventStatisticRecorder.register()
