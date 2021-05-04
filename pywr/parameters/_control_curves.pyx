@@ -490,7 +490,7 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
         def __get__(self):
             return np.array(self._variable_indices)
         def __set__(self, values):
-            self._variable_indices = np.array(values, dtype=np.int)
+            self._variable_indices = np.array(values, dtype=np.int32)
 
     @classmethod
     def load(cls, model, data):

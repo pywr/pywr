@@ -83,11 +83,11 @@ class EventRecorder(Recorder):
         from pywr.parameters import Parameter, IndexParameter
 
         if isinstance(self.threshold, Recorder):
-            all_triggered = np.array(self.threshold.values(), dtype=np.int)
+            all_triggered = np.array(self.threshold.values(), dtype=int)
         elif isinstance(self.threshold, IndexParameter):
             all_triggered = self.threshold.get_all_indices()
         elif isinstance(self.threshold, Parameter):
-            all_triggered = np.array(self.threshold.get_all_values(), dtype=np.int)
+            all_triggered = np.array(self.threshold.get_all_values(), dtype=int)
         else:
             raise TypeError("Threshold must be either a Recorder or Parameter instance.")
 
@@ -160,7 +160,7 @@ class EventRecorder(Recorder):
         if len(self.events) == 0:
             return pandas.DataFrame(columns=['scenario_id', 'start', 'end'])
 
-        scen_id = np.empty(len(self.events), dtype=np.int)
+        scen_id = np.empty(len(self.events), dtype=int)
         start = np.empty_like(scen_id, dtype=object)
         end = np.empty_like(scen_id, dtype=object)
         values = np.empty_like(scen_id, dtype=float)
@@ -322,7 +322,7 @@ class EventStatisticRecorder(Recorder):
         if len(events) == 0:
             return
 
-        scen_id = np.empty(len(events), dtype=np.int)
+        scen_id = np.empty(len(events), dtype=int)
         values = np.empty_like(scen_id, dtype=np.float64)
 
         for i, evt in enumerate(events):
