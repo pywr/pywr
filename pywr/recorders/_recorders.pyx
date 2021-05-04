@@ -920,10 +920,14 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     percentiles : array
         The percentiles to use in the calculation of the flow duration curve.
         Values must be in the range 0-100.
-    lower_target_fdc : array
-        The lower FDC against which the scenario FDCs are compared
-    upper_target_fdc : array
-        The upper FDC against which the scenario FDCs are compared
+    lower_target_fdc : array, optional
+        The lower FDC against which the scenario FDCs are compared. If values are not provided then deviations from a
+        lower target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
+        the percentile values.
+    upper_target_fdc : array, optional
+        The upper FDC against which the scenario FDCs are compared. If values are not provided then deviations from a
+        upper target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
+        the percentile values.
     agg_func: str, optional
         Function used for aggregating the FDC deviations across percentiles.
         Numpy style functions that support an axis argument are supported.
@@ -931,41 +935,56 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         Optional different function for aggregating across scenarios.
 
     """
-    def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc, upper_target_fdc, scenario=None, **kwargs):
+    def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc=None, upper_target_fdc=None, scenario=None, **kwargs):
         super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, **kwargs)
 
-        lower_target = np.array(lower_target_fdc, dtype=np.float64)
-        if lower_target.ndim < 2:
-            lower_target = lower_target[:, np.newaxis]
+        if lower_target_fdc is None and upper_target_fdc is None:
+            raise ValueError("At least one of the 'lower_target_fdc' and 'lower_target_fdc' arguments should be provided")
 
-        upper_target = np.array(upper_target_fdc, dtype=np.float64)
-        if upper_target.ndim < 2:
-            upper_target = upper_target[:, np.newaxis]
+        if lower_target_fdc is None:
+            lower_target = None
+        else:
+            lower_target = np.array(lower_target_fdc, dtype=np.float64)
+            if lower_target.ndim < 2:
+                lower_target = lower_target[:, np.newaxis]
+
+        if upper_target_fdc is None:
+            upper_target = None
+        else:
+            upper_target = np.array(upper_target_fdc, dtype=np.float64)
+            if upper_target.ndim < 2:
+                upper_target = upper_target[:, np.newaxis]
 
         self._lower_target_fdc = lower_target
         self._upper_target_fdc = upper_target
         self.scenario = scenario
-        if len(self._percentiles) != self._lower_target_fdc.shape[0]:
-            raise ValueError("The lengths of the lower target FDC and the percentiles list do not match")
-        if len(self._percentiles) != self._upper_target_fdc.shape[0]:
-            raise ValueError("The lengths of the upper target FDC and the percentiles list do not match")
+        if self._lower_target_fdc is not None:
+            if len(self._percentiles) != self._lower_target_fdc.shape[0]:
+                raise ValueError("The lengths of the lower target FDC and the percentiles list do not match")
+        if self._upper_target_fdc is not None:
+            if len(self._percentiles) != self._upper_target_fdc.shape[0]:
+                raise ValueError("The lengths of the upper target FDC and the percentiles list do not match")
 
     cpdef setup(self):
         super(FlowDurationCurveDeviationRecorder, self).setup()
         # Check target FDC is the correct size; this is done in setup rather than __init__
         # because the scenarios might change after the Recorder is created.
         if self.scenario is not None:
-            if self._lower_target_fdc.shape[1] != self.scenario.size:
-                raise ValueError('The number of lower target FDCs does not match the size ({}) of scenario "{}"'.format(self.scenario.size, self.scenario.name))
-            if self._upper_target_fdc.shape[1] != self.scenario.size:
-                raise ValueError('The number of upper target FDCs does not match the size ({}) of scenario "{}"'.format(self.scenario.size, self.scenario.name))
+            if self._lower_target_fdc is not None:
+                if self._lower_target_fdc.shape[1] != self.scenario.size:
+                    raise ValueError('The number of lower target FDCs does not match the size ({}) of scenario "{}"'.format(self.scenario.size, self.scenario.name))
+            if self._upper_target_fdc is not None:
+                if self._upper_target_fdc.shape[1] != self.scenario.size:
+                    raise ValueError('The number of upper target FDCs does not match the size ({}) of scenario "{}"'.format(self.scenario.size, self.scenario.name))
         else:
-            if self._lower_target_fdc.shape[1] > 1 and \
-                    self._lower_target_fdc.shape[1] != len(self.model.scenarios.combinations):
-                raise ValueError("The number of lower target FDCs does not match the number of scenarios")
-            if self._upper_target_fdc.shape[1] > 1 and \
-                    self._upper_target_fdc.shape[1] != len(self.model.scenarios.combinations):
-                raise ValueError("The number of upper target FDCs does not match the number of scenarios")
+            if self._lower_target_fdc is not None:
+                if self._lower_target_fdc.shape[1] > 1 and \
+                        self._lower_target_fdc.shape[1] != len(self.model.scenarios.combinations):
+                    raise ValueError("The number of lower target FDCs does not match the number of scenarios")
+            if self._upper_target_fdc is not None:
+                if self._upper_target_fdc.shape[1] > 1 and \
+                        self._upper_target_fdc.shape[1] != len(self.model.scenarios.combinations):
+                    raise ValueError("The number of upper target FDCs does not match the number of scenarios")
 
     cpdef finish(self):
         super(FlowDurationCurveDeviationRecorder, self).finish()
@@ -979,7 +998,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         if self.scenario is not None:
             sc_index = self.model.scenarios.get_scenario_index(self.scenario)
 
-        self._fdc_deviations = np.empty((self._lower_target_fdc.shape[0], len(self.model.scenarios.combinations)), dtype=np.float64)
+        self._fdc_deviations = np.empty((len(self._percentiles), len(self.model.scenarios.combinations)), dtype=np.float64)
         for i, scenario_index in enumerate(self.model.scenarios.combinations):
 
             if self.scenario is not None:
@@ -988,26 +1007,36 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             else:
                 j = scenario_index.global_id
 
-            if self._lower_target_fdc.shape[1] == 1:
-                jl = 0
-            else:
-                jl = j
+            if self._lower_target_fdc is not None:
+                if self._lower_target_fdc.shape[1] == 1:
+                    jl = 0
+                else:
+                    jl = j
+                # Cache the target FDC to use in this combination
+                ltrgt_fdc = self._lower_target_fdc[:, jl]
 
-            if self._upper_target_fdc.shape[1] == 1:
-                ju = 0
-            else:
-                ju = j
 
-            # Cache the target FDC to use in this combination
-            ltrgt_fdc = self._lower_target_fdc[:, jl]
-            utrgt_fdc = self._upper_target_fdc[:, ju]
+            if self._upper_target_fdc is not None:
+                if self._upper_target_fdc.shape[1] == 1:
+                    ju = 0
+                else:
+                    ju = j
+                # Cache the target FDC to use in this combination    
+                utrgt_fdc = self._upper_target_fdc[:, ju]
+
             # Finally calculate deviation
-            for k in range(ltrgt_fdc.shape[0]):
+            for k in range(len(self._percentiles)):
                 try:
                     # upper deviation (+ve when flow higher than upper target)
-                    udev = (self._fdc[k, i] - utrgt_fdc[k])  / utrgt_fdc[k]
+                    if self._upper_target_fdc is not None:
+                        udev = (self._fdc[k, i] - utrgt_fdc[k])  / utrgt_fdc[k]
+                    else:
+                        udev = 0.0
                     # lower deviation (+ve when flow less than lower target)
-                    ldev = (ltrgt_fdc[k] - self._fdc[k, i])  / ltrgt_fdc[k]
+                    if self._lower_target_fdc is not None:
+                        ldev = (ltrgt_fdc[k] - self._fdc[k, i])  / ltrgt_fdc[k]
+                    else:
+                        ldev = 0.0
                     # Overall deviation is the worst of upper and lower, but if both
                     # are negative (i.e. FDC is between upper and lower) there is zero deviation
                     self._fdc_deviations[k, i] = max(udev, ldev, 0.0)
@@ -1041,6 +1070,22 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             return df, super(FlowDurationCurveDeviationRecorder, self).to_dataframe()
         else:
             return df
+
+    @classmethod
+    def load(cls, model, data):
+        node = model.nodes[data.pop("node")]
+        percentiles = data.pop("percentiles")
+        from pywr.parameters import load_parameter_values
+        upper_target_fdc = data.pop("upper_target_fdc", None)
+        if isinstance(upper_target_fdc, dict):
+            upper_target_fdc.update({"indexes": percentiles})
+            upper_target_fdc = load_parameter_values(model, upper_target_fdc)
+        lower_target_fdc = data.pop("lower_target_fdc", None)
+        if isinstance(lower_target_fdc, dict):
+            lower_target_fdc.update({"indexes": percentiles})
+            lower_target_fdc = load_parameter_values(model, lower_target_fdc)
+        return cls(model, node, percentiles, lower_target_fdc=lower_target_fdc, upper_target_fdc=upper_target_fdc,
+                   **data)
 
 FlowDurationCurveDeviationRecorder.register()
 
