@@ -51,6 +51,10 @@ class Solver(object):
     def stats(self):
         return {}
 
+    @property
+    def settings(self):
+        return {}
+
 
 # Attempt to import solvers. These will only be successful if they are built correctly.
 try:
@@ -67,6 +71,8 @@ else:
 
         def __init__(self, *args, **kwargs):
             super(CythonGLPKSolver, self).__init__(*args, **kwargs)
+            kwargs = _parse_env_kwarg(kwargs, 'set_fixed_flows_once', 'PYWR_SOLVER_GLPK_FIXED_FLOWS_ONCE', bool)
+            kwargs = _parse_env_kwarg(kwargs, 'set_fixed_costs_once', 'PYWR_SOLVER_GLPK_FIXED_COSTS_ONCE', bool)
             self._cy_solver = cy_CythonGLPKSolver(**kwargs)
 
         def setup(self, model):
@@ -118,6 +124,28 @@ else:
         @property
         def stats(self):
             return self._cy_solver.stats
+
+        @property
+        def use_presolve(self):
+            return self._cy_solver.use_presolve
+
+        @property
+        def set_fixed_flows_once(self):
+            return self._cy_solver.set_fixed_flows_once
+
+        @property
+        def set_fixed_costs_once(self):
+            return self._cy_solver.set_fixed_costs_once
+
+        @property
+        def settings(self):
+            return {
+                'use_presolve': self.use_presolve,
+                'save_routes_flows': self.save_routes_flows,
+                'retry_solve': self.retry_solve,
+                'set_fixed_flows_once': self.set_fixed_flows_once,
+                'set_fixed_costs_once': self.set_fixed_costs_once
+            }
     solver_registry.append(CythonGLPKSolver)
 
 
@@ -170,6 +198,27 @@ else:
         @property
         def stats(self):
             return self._cy_solver.stats
+
+        @property
+        def use_presolve(self):
+            return self._cy_solver.use_presolve
+
+        @property
+        def set_fixed_flows_once(self):
+            return self._cy_solver.set_fixed_flows_once
+
+        @property
+        def set_fixed_costs_once(self):
+            return self._cy_solver.set_fixed_costs_once
+
+        @property
+        def settings(self):
+            return {
+                'use_presolve': self.use_presolve,
+                'retry_solve': self.retry_solve,
+                'set_fixed_flows_once': self.set_fixed_flows_once,
+                'set_fixed_costs_once': self.set_fixed_costs_once
+            }
     solver_registry.append(CythonGLPKEdgeSolver)
 
 
@@ -217,6 +266,12 @@ else:
         @property
         def stats(self):
             return self._cy_solver.stats
+
+        @property
+        def settings(self):
+            return {
+                'save_routes_flows': self.save_routes_flows,
+            }
     solver_registry.append(CythonLPSolveSolver)
 
 

@@ -83,6 +83,7 @@ def test_keating_aquifer():
     catchment.min_flow = 0
     catchment.max_flow = 0
     abstraction.max_flow = A_VERY_LARGE_NUMBER
+    model.setup()
     model.run()
     assert(rec_volume.data[1, 0] == 0)
     abs_flow = rec_abstraction.data[1, 0]

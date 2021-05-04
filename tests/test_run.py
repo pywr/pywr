@@ -171,6 +171,7 @@ def test_run_cost1():
     # increase demand to more than supply1 can provide on it's own
     # and check that supply2 is used to pick up the slack
     demand1.max_flow = 20.0
+    model.setup()
     result = model.step()
     assert_allclose(supply1.flow, 15.0, atol=1e-7)
     assert_allclose(supply2.flow, 5.0, atol=1e-7)
@@ -178,6 +179,7 @@ def test_run_cost1():
 
     # supply as much as possible, even if it isn't enough
     demand1.max_flow = 40.0
+    model.setup()
     result = model.step()
     assert_allclose(supply1.flow, 15.0, atol=1e-7)
     assert_allclose(supply2.flow, 15.0, atol=1e-7)
@@ -636,6 +638,7 @@ def test_reservoir_circle():
 
     # limited by mrf
     catchment.min_flow = catchment.max_flow = 100
+    model.setup()
     model.step()
     assert_allclose(waste.flow, 50)
     assert_allclose(compensation.flow, 0)
@@ -644,6 +647,7 @@ def test_reservoir_circle():
 
     # reservoir can support mrf, but doesn't need to
     compensation.cost = 200
+    model.setup()
     model.step()
     assert_allclose(waste.flow, 50)
     assert_allclose(compensation.flow, 0)
@@ -652,6 +656,7 @@ def test_reservoir_circle():
 
     # reservoir supporting mrf
     catchment.min_flow = catchment.max_flow = 0
+    model.setup()
     model.step()
     assert_allclose(waste.flow, 50)
     assert_allclose(compensation.flow, 50)

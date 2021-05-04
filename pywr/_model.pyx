@@ -647,6 +647,7 @@ class Model(object):
             time_taken_with_overhead=time_taken_with_overhead,
             speed=speed,
             solver_name=self.solver.name,
+            solver_settings=self.solver.settings,
             solver_stats=self.solver.stats,
             version=pywr.__version__,
         )
@@ -968,7 +969,7 @@ class NamedIterator(object):
 
 class ModelResult(object):
     def __init__(self, num_scenarios, timestep, time_taken, time_taken_before, time_taken_after,
-                 time_taken_with_overhead, speed, solver_name, solver_stats, version):
+                 time_taken_with_overhead, speed, solver_name, solver_settings, solver_stats, version):
         self.timestep = timestep
         self.timesteps = timestep.index + 1
         self.time_taken = time_taken
@@ -978,6 +979,7 @@ class ModelResult(object):
         self.speed = speed
         self.num_scenarios = num_scenarios
         self.solver_name = solver_name
+        self.solver_settings = solver_settings
         self.solver_stats = solver_stats
         self.version = version
 
@@ -988,6 +990,10 @@ class ModelResult(object):
         d = self.to_dict()
         # Update timestep to use the underlying pandas Timestamp
         d['timestep'] = d['timestep'].datetime
+        # Must flatten the solver settings dict before passing to pandas
+        solver_settings = d.pop('solver_settings')
+        for k, v in solver_settings.items():
+            d['solver_settings.{}'.format(k)] = v
         # Must flatten the solver stats dict before passing to pandas
         solver_stats = d.pop('solver_stats')
         for k, v in solver_stats.items():
