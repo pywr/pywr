@@ -1941,7 +1941,7 @@ class TestEventRecorder:
 
     @pytest.mark.parametrize("threshold_component", [StorageThresholdRecorder, StorageThresholdParameter])
     def test_load(self, cyclical_storage_model, threshold_component):
-        """Test load method""" 
+        """Test load method"""
         m = cyclical_storage_model
         strg = m.nodes['Storage']
         param = threshold_component(m, strg, 4.0, predicate='<=', name="trigger")
@@ -1949,7 +1949,7 @@ class TestEventRecorder:
         EventDurationRecorder.load(m, {"event_recorder": "event_rec"})
         EventStatisticRecorder.load(m, {"event_recorder": "event_rec"})
         m.run()
-        
+
     @pytest.mark.parametrize("recorder_agg_func", ["min", "max", "mean", "median", "sum"])
     def test_event_capture_with_storage(self, cyclical_storage_model, recorder_agg_func):
         """ Test Storage events using a StorageThresholdRecorder """
@@ -1969,7 +1969,7 @@ class TestEventRecorder:
         assert evt_rec.events
 
         # Build a timeseries of when the events say an event is active
-        triggered = np.zeros_like(arry.data, dtype=np.int)
+        triggered = np.zeros_like(arry.data, dtype=np.int32)
         for evt in evt_rec.events:
             triggered[evt.start.index:evt.end.index, evt.scenario_index.global_id] = 1
 
@@ -2020,7 +2020,7 @@ class TestEventRecorder:
         assert evt_rec.events
 
         # Build a timeseries of when the events say an event is active
-        triggered = np.zeros_like(arry.data, dtype=np.int)
+        triggered = np.zeros_like(arry.data, dtype=np.int32)
         for evt in evt_rec.events:
             triggered[evt.start.index:evt.end.index, evt.scenario_index.global_id] = 1
 
