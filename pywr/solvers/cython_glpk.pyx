@@ -1080,10 +1080,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         cross_domain_row = 0
         for row, node in enumerate(non_storages):
             node.__data.row = row
-            # Differentiate betwen the node type.
+            # Differentiate between the node type.
             # Input and other nodes use the outgoing edge flows to apply the flow constraint on
             # This requires the mass balance constraints to ensure the inflow and outflow are equal
-            # The Output nodes, in contrast, apply the constraint to the incoming flow (because there is no out going flow)
+            # The Output nodes, in contrast, apply the constraint to the incoming flow (because there is no outgoing flow)
             if isinstance(node, BaseInput):
                 cols = node.__data.out_edges
                 if len(node.__data.in_edges) != 0:
