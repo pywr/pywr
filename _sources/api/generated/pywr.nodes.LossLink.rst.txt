@@ -52,6 +52,8 @@
       ~LossLink.domain
       ~LossLink.flow
       ~LossLink.fully_qualified_name
+      ~LossLink.has_fixed_cost
+      ~LossLink.has_fixed_flows
       ~LossLink.loss_factor
       ~LossLink.max_flow
       ~LossLink.min_flow

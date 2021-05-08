@@ -52,6 +52,8 @@
       ~Node.domain
       ~Node.flow
       ~Node.fully_qualified_name
+      ~Node.has_fixed_cost
+      ~Node.has_fixed_flows
       ~Node.max_flow
       ~Node.min_flow
       ~Node.model

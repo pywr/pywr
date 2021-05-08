@@ -53,6 +53,8 @@
       ~PiecewiseLink.domain
       ~PiecewiseLink.flow
       ~PiecewiseLink.fully_qualified_name
+      ~PiecewiseLink.has_fixed_cost
+      ~PiecewiseLink.has_fixed_flows
       ~PiecewiseLink.max_flow
       ~PiecewiseLink.max_flows
       ~PiecewiseLink.min_flow

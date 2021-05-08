@@ -53,6 +53,8 @@
       ~Catchment.domain
       ~Catchment.flow
       ~Catchment.fully_qualified_name
+      ~Catchment.has_fixed_cost
+      ~Catchment.has_fixed_flows
       ~Catchment.max_flow
       ~Catchment.min_flow
       ~Catchment.model

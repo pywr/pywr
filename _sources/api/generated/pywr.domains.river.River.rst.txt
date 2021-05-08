@@ -52,6 +52,8 @@
       ~River.domain
       ~River.flow
       ~River.fully_qualified_name
+      ~River.has_fixed_cost
+      ~River.has_fixed_flows
       ~River.max_flow
       ~River.min_flow
       ~River.model

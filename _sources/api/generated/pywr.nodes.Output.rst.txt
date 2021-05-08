@@ -52,6 +52,8 @@
       ~Output.domain
       ~Output.flow
       ~Output.fully_qualified_name
+      ~Output.has_fixed_cost
+      ~Output.has_fixed_flows
       ~Output.max_flow
       ~Output.min_flow
       ~Output.model

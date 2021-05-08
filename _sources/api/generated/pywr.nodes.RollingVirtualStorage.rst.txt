@@ -55,6 +55,7 @@
       ~RollingVirtualStorage.factors
       ~RollingVirtualStorage.flow
       ~RollingVirtualStorage.fully_qualified_name
+      ~RollingVirtualStorage.has_fixed_cost
       ~RollingVirtualStorage.initial_volume
       ~RollingVirtualStorage.initial_volume_pc
       ~RollingVirtualStorage.level

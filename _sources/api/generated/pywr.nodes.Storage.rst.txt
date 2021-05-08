@@ -56,6 +56,7 @@
       ~Storage.domain
       ~Storage.flow
       ~Storage.fully_qualified_name
+      ~Storage.has_fixed_cost
       ~Storage.initial_volume
       ~Storage.initial_volume_pc
       ~Storage.level

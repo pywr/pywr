@@ -52,6 +52,8 @@
       ~DelayNode.domain
       ~DelayNode.flow
       ~DelayNode.fully_qualified_name
+      ~DelayNode.has_fixed_cost
+      ~DelayNode.has_fixed_flows
       ~DelayNode.max_flow
       ~DelayNode.min_flow
       ~DelayNode.model

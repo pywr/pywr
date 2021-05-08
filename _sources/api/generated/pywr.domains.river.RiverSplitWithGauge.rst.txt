@@ -53,6 +53,8 @@
       ~RiverSplitWithGauge.domain
       ~RiverSplitWithGauge.flow
       ~RiverSplitWithGauge.fully_qualified_name
+      ~RiverSplitWithGauge.has_fixed_cost
+      ~RiverSplitWithGauge.has_fixed_flows
       ~RiverSplitWithGauge.max_flow
       ~RiverSplitWithGauge.max_flows
       ~RiverSplitWithGauge.min_flow

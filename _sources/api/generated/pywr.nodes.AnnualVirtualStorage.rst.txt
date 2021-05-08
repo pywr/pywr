@@ -55,6 +55,7 @@
       ~AnnualVirtualStorage.factors
       ~AnnualVirtualStorage.flow
       ~AnnualVirtualStorage.fully_qualified_name
+      ~AnnualVirtualStorage.has_fixed_cost
       ~AnnualVirtualStorage.initial_volume
       ~AnnualVirtualStorage.initial_volume_pc
       ~AnnualVirtualStorage.level

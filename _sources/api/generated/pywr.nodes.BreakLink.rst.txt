@@ -52,6 +52,8 @@
       ~BreakLink.domain
       ~BreakLink.flow
       ~BreakLink.fully_qualified_name
+      ~BreakLink.has_fixed_cost
+      ~BreakLink.has_fixed_flows
       ~BreakLink.max_flow
       ~BreakLink.min_flow
       ~BreakLink.model

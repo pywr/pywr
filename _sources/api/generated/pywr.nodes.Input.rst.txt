@@ -52,6 +52,8 @@
       ~Input.domain
       ~Input.flow
       ~Input.fully_qualified_name
+      ~Input.has_fixed_cost
+      ~Input.has_fixed_flows
       ~Input.max_flow
       ~Input.min_flow
       ~Input.model

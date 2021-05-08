@@ -52,6 +52,8 @@
       ~Link.domain
       ~Link.flow
       ~Link.fully_qualified_name
+      ~Link.has_fixed_cost
+      ~Link.has_fixed_flows
       ~Link.max_flow
       ~Link.min_flow
       ~Link.model

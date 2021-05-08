@@ -53,6 +53,8 @@
       ~MultiSplitLink.domain
       ~MultiSplitLink.flow
       ~MultiSplitLink.fully_qualified_name
+      ~MultiSplitLink.has_fixed_cost
+      ~MultiSplitLink.has_fixed_flows
       ~MultiSplitLink.max_flow
       ~MultiSplitLink.max_flows
       ~MultiSplitLink.min_flow

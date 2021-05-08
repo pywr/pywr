@@ -53,6 +53,8 @@
       ~RiverSplit.domain
       ~RiverSplit.flow
       ~RiverSplit.fully_qualified_name
+      ~RiverSplit.has_fixed_cost
+      ~RiverSplit.has_fixed_flows
       ~RiverSplit.max_flow
       ~RiverSplit.max_flows
       ~RiverSplit.min_flow

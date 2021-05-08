@@ -55,6 +55,7 @@
       ~VirtualStorage.factors
       ~VirtualStorage.flow
       ~VirtualStorage.fully_qualified_name
+      ~VirtualStorage.has_fixed_cost
       ~VirtualStorage.initial_volume
       ~VirtualStorage.initial_volume_pc
       ~VirtualStorage.level

@@ -55,6 +55,7 @@
       ~SeasonalVirtualStorage.factors
       ~SeasonalVirtualStorage.flow
       ~SeasonalVirtualStorage.fully_qualified_name
+      ~SeasonalVirtualStorage.has_fixed_cost
       ~SeasonalVirtualStorage.initial_volume
       ~SeasonalVirtualStorage.initial_volume_pc
       ~SeasonalVirtualStorage.level
