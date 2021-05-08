@@ -528,6 +528,11 @@ cdef class Node(AbstractNode):
                 self._cost_param = None
                 self._cost = value
 
+    property has_fixed_cost:
+        """Returns true if cost is not a Parameter."""
+        def __get__(self):
+            return self._cost_param is None
+
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         """Get the cost per unit flow at a given timestep
         """
@@ -603,6 +608,11 @@ cdef class Node(AbstractNode):
             else:
                 self._max_flow_param = None
                 self._max_flow = value
+
+    property has_fixed_flows:
+        """Returns true if both min_flow and max_flow are not Parameters."""
+        def __get__(self):
+            return self._max_flow_param is None and self._min_flow_param is None
 
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1:
         """Get the maximum flow at a given timestep
@@ -865,6 +875,11 @@ cdef class StorageInput(BaseInput):
             self._flow[i] += value[i]
         self._parent.commit_all(-np.array(value))
 
+    property has_fixed_cost:
+        """Returns true if cost is not a Parameter."""
+        def __get__(self):
+            return self.parent.has_fixed_cost
+
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         # Return negative of parent cost
         return -self.parent.get_cost(scenario_index)
@@ -881,6 +896,7 @@ cdef class StorageInput(BaseInput):
             out[i] *= -1.0
         return out
 
+
 cdef class StorageOutput(BaseOutput):
     cpdef commit(self, int scenario_index, double volume):
         BaseOutput.commit(self, scenario_index, volume)
@@ -892,6 +908,11 @@ cdef class StorageOutput(BaseOutput):
         for i in range(self._flow.shape[0]):
             self._flow[i] += value[i]
         self._parent.commit_all(value)
+
+    property has_fixed_cost:
+        """Returns true if cost is not a Parameter."""
+        def __get__(self):
+            return self.parent.has_fixed_cost
 
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         # Return parent cost
@@ -969,6 +990,11 @@ cdef class Storage(AbstractStorage):
             else:
                 self._cost_param = None
                 self._cost = value
+
+    property has_fixed_cost:
+        """Returns true if cost is not a Parameter."""
+        def __get__(self):
+            return self._cost_param is None
 
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
         """Get the cost per unit flow at a given timestep

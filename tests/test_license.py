@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime
-from pywr.core import Timestep, ScenarioIndex
+from pywr.core import Timestep, ScenarioIndex, Model
 from pywr.parameters.licenses import License, TimestepLicense, AnnualLicense, AnnualExponentialLicense, AnnualHyperbolaLicense
 from pywr.recorders import NumpyArrayNodeRecorder
 from fixtures import simple_linear_model
@@ -28,6 +28,8 @@ def test_daily_license(simple_linear_model):
     assert(lic.resource_state(Timestep(pandas.Period('2015-1-1'), 0, 1)) is None)
 
 
+@pytest.mark.skipif(Model().solver.name.startswith("glpk") and Model().solver.set_fixed_flows_once,
+                    reason="This test changes constant constraints between steps.")
 def test_simple_model_with_annual_licence(simple_linear_model):
     m = simple_linear_model
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
@@ -65,6 +67,7 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     # Licence should now be on track for an expected value of 1.0
     remaining -= remaining / (365 - 2)
     assert_allclose(lic.value(m.timestepper._next, si), remaining / (365 - 3))
+
 
 def test_annual_license_json():
     """
@@ -126,6 +129,8 @@ def test_simple_model_with_annual_licence_multi_year(simple_linear_model):
         assert_allclose(m.nodes["Output"].flow, annual_total/days_in_year)
 
 
+@pytest.mark.skipif(Model().solver.name.startswith("glpk") and Model().solver.set_fixed_flows_once,
+                    reason="This test changes constant constraints between steps.")
 def test_simple_model_with_exponential_license(simple_linear_model):
     m = simple_linear_model
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
@@ -166,6 +171,8 @@ def test_simple_model_with_exponential_license(simple_linear_model):
     assert_allclose(lic.value(m.timestepper._next, si), np.exp(-remaining / (365 - 3) + 1))
 
 
+@pytest.mark.skipif(Model().solver.name.startswith("glpk") and Model().solver.set_fixed_flows_once,
+                    reason="This test changes constant constraints between steps.")
 def test_simple_model_with_hyperbola_license(simple_linear_model):
     m = simple_linear_model
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
