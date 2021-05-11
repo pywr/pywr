@@ -26,15 +26,15 @@ cdef class BinaryStepParameter(Parameter):
         self._upper_bounds = upper_bounds
         self.is_constant = True
 
-    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_constant_value(self):
         if self._value <= 0.0:
             return 0.0
         else:
             return self.output
 
-    cpdef double get_constant_value(self):
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is fine because value doesn't depend on timestep or scenario
-        return self.value(None, None)
+        return self.get_constant_value()
 
     cpdef set_double_variables(self, double[:] values):
         self._value = values[0]
@@ -76,15 +76,15 @@ cdef class RectifierParameter(Parameter):
         self._upper_bounds = upper_bounds
         self.is_constant = True
 
-    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_constant_value(self):
         if self._value <= 0.0:
             return 0.0
         else:
             return self.max_output * self._value / self._upper_bounds
 
-    cpdef double get_constant_value(self):
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is fine because value doesn't depend on timestep or scenario
-        return self.value(None, None)
+        return self.get_constant_value()
 
     cpdef set_double_variables(self, double[:] values):
         self._value = values[0]
@@ -129,12 +129,12 @@ cdef class LogisticParameter(Parameter):
         self._upper_bounds = upper_bounds
         self.is_constant = True
 
-    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_constant_value(self):
         return self.max_output / (1 + np.exp(-self.growth_rate*self._value))
 
-    cpdef double get_constant_value(self):
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is fine because value doesn't depend on timestep or scenario
-        return self.value(None, None)
+        return self.get_constant_value()
 
     cpdef set_double_variables(self, double[:] values):
         self._value = values[0]
