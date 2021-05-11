@@ -158,13 +158,13 @@ cdef class ConstantParameter(Parameter):
 
     cdef calc_values(self, Timestep timestep):
         # constant parameter can just set the entire array to one value
-        self.__values[...] = self.offset + self._value * self.scale
+        self.__values[...] = self.get_constant_value()
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return self._value
+        return self.get_constant_value()
 
     cpdef double get_constant_value(self):
-        return self._value
+        return self.offset + self._value * self.scale
 
     cpdef set_double_variables(self, double[:] values):
         self._value = values[0]
