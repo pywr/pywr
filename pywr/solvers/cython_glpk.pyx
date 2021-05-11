@@ -1110,8 +1110,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             free(ind)
             free(val)
 
-            # Now test whether this node has fixed flow constraints
-            if self.set_fixed_flows_once and node.has_fixed_flows:
+            # Now test whether this node has constant flow constraints
+            if self.set_fixed_flows_once and node.has_constant_flows:
                 non_storages_with_constant_bounds.append(node)
             else:
                 non_storages_with_dynamic_bounds.append(node)
@@ -1333,10 +1333,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         # update non-storage constraints with constant bounds
         for node in self.non_storages_with_constant_bounds:
             row = node.__data.row
-            min_flow = inf_to_dbl_max(node.get_min_flow(None))
+            min_flow = inf_to_dbl_max(node.get_constant_min_flow())
             if abs(min_flow) < 1e-8:
                 min_flow = 0.0
-            max_flow = inf_to_dbl_max(node.get_max_flow(None))
+            max_flow = inf_to_dbl_max(node.get_constant_max_flow())
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
 

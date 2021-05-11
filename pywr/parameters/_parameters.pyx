@@ -46,6 +46,7 @@ cdef class Parameter(Component):
         self.is_variable = is_variable
         self.double_size = 0
         self.integer_size = 0
+        self.is_constant = False
 
     @classmethod
     def register(cls):
@@ -79,6 +80,13 @@ cdef class Parameter(Component):
 
     cpdef double[:] get_all_values(self):
         return self.__values
+
+    cpdef double get_constant_value(self):
+        """Return a constant value.
+        
+        This method should only be implemented and called if `is_constant` is True. 
+        """
+        raise NotImplementedError()
 
     cpdef set_double_variables(self, double[:] values):
         raise NotImplementedError()
@@ -144,6 +152,7 @@ cdef class ConstantParameter(Parameter):
         self.offset = offset
         self.double_size = 1
         self.integer_size = 0
+        self.is_constant = True
         self._lower_bounds = np.ones(self.double_size) * lower_bounds
         self._upper_bounds = np.ones(self.double_size) * upper_bounds
 
@@ -152,6 +161,9 @@ cdef class ConstantParameter(Parameter):
         self.__values[...] = self.offset + self._value * self.scale
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self._value
+
+    cpdef double get_constant_value(self):
         return self._value
 
     cpdef set_double_variables(self, double[:] values):
