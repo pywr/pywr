@@ -572,13 +572,13 @@ cdef class Node(AbstractNode):
                 self._min_flow = value
 
     cpdef double get_fixed_min_flow(self):
-        """Returns min_flow if `has_fixed_flows` is True otherwise returns NaN."""
+        """Returns min_flow value if it is a fixed value otherwise returns NaN."""
         if self.has_fixed_flows:
             return self._min_flow
         return float('nan')
 
     cpdef double get_constant_min_flow(self):
-        """Returns min_flow if `has_constant_flows` is True otherwise returns NaN."""
+        """Returns min_flow value if it is a constant parameter or fixed value otherwise returns NaN."""
         if self._min_flow_param is None:
             return self._min_flow
         elif self._min_flow_param.is_constant:
@@ -635,13 +635,13 @@ cdef class Node(AbstractNode):
                    (self._min_flow_param is None or self._min_flow_param.is_constant)
 
     cpdef double get_fixed_max_flow(self):
-        """Returns max_flow if `has_fixed_flows` is True otherwise returns NaN."""
+        """Returns max_flow value if it is fixed value otherwise returns NaN."""
         if self.has_fixed_flows:
             return self._max_flow
         return float('nan')
 
     cpdef double get_constant_max_flow(self):
-        """Returns max_flow if `has_constant_flows` is True otherwise returns NaN."""
+        """Returns max_flow value if it is a constant parameter or fixed value otherwise returns NaN."""
         if self._max_flow_param is None:
             return self._max_flow
         elif self._max_flow_param.is_constant:

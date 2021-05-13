@@ -353,8 +353,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
         nodes_with_dynamic_cost = []  # Only these nodes' costs are updated each timestep
         non_storages = []
-        non_storages_with_dynamic_bounds = []
-        non_storages_with_constant_bounds = []  # Only these nodes' constraints are updated each timestep
+        non_storages_with_dynamic_bounds = []  # These nodes' constraints are updated each timestep
+        non_storages_with_constant_bounds = []  # These nodes' constraints are updated each timestep
         storages = []
         virtual_storages = []
         aggregated_with_factors = []
