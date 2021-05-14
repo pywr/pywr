@@ -18,6 +18,7 @@
       ~DailyProfileParameter.before
       ~DailyProfileParameter.finish
       ~DailyProfileParameter.get_all_values
+      ~DailyProfileParameter.get_constant_value
       ~DailyProfileParameter.get_double_lower_bounds
       ~DailyProfileParameter.get_double_upper_bounds
       ~DailyProfileParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~DailyProfileParameter.comment
       ~DailyProfileParameter.double_size
       ~DailyProfileParameter.integer_size
+      ~DailyProfileParameter.is_constant
       ~DailyProfileParameter.is_variable
       ~DailyProfileParameter.model
       ~DailyProfileParameter.name

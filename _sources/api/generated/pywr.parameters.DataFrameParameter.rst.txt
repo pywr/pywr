@@ -18,6 +18,7 @@
       ~DataFrameParameter.before
       ~DataFrameParameter.finish
       ~DataFrameParameter.get_all_values
+      ~DataFrameParameter.get_constant_value
       ~DataFrameParameter.get_double_lower_bounds
       ~DataFrameParameter.get_double_upper_bounds
       ~DataFrameParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~DataFrameParameter.dataframe
       ~DataFrameParameter.double_size
       ~DataFrameParameter.integer_size
+      ~DataFrameParameter.is_constant
       ~DataFrameParameter.is_variable
       ~DataFrameParameter.model
       ~DataFrameParameter.name

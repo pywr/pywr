@@ -19,6 +19,7 @@
       ~MultipleThresholdIndexParameter.finish
       ~MultipleThresholdIndexParameter.get_all_indices
       ~MultipleThresholdIndexParameter.get_all_values
+      ~MultipleThresholdIndexParameter.get_constant_value
       ~MultipleThresholdIndexParameter.get_double_lower_bounds
       ~MultipleThresholdIndexParameter.get_double_upper_bounds
       ~MultipleThresholdIndexParameter.get_double_variables
@@ -49,6 +50,7 @@
       ~MultipleThresholdIndexParameter.comment
       ~MultipleThresholdIndexParameter.double_size
       ~MultipleThresholdIndexParameter.integer_size
+      ~MultipleThresholdIndexParameter.is_constant
       ~MultipleThresholdIndexParameter.is_variable
       ~MultipleThresholdIndexParameter.model
       ~MultipleThresholdIndexParameter.name

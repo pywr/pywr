@@ -18,6 +18,7 @@
       ~ArrayIndexedScenarioParameter.before
       ~ArrayIndexedScenarioParameter.finish
       ~ArrayIndexedScenarioParameter.get_all_values
+      ~ArrayIndexedScenarioParameter.get_constant_value
       ~ArrayIndexedScenarioParameter.get_double_lower_bounds
       ~ArrayIndexedScenarioParameter.get_double_upper_bounds
       ~ArrayIndexedScenarioParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~ArrayIndexedScenarioParameter.comment
       ~ArrayIndexedScenarioParameter.double_size
       ~ArrayIndexedScenarioParameter.integer_size
+      ~ArrayIndexedScenarioParameter.is_constant
       ~ArrayIndexedScenarioParameter.is_variable
       ~ArrayIndexedScenarioParameter.model
       ~ArrayIndexedScenarioParameter.name

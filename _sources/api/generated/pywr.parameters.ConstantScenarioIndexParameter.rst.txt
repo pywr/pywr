@@ -19,6 +19,7 @@
       ~ConstantScenarioIndexParameter.finish
       ~ConstantScenarioIndexParameter.get_all_indices
       ~ConstantScenarioIndexParameter.get_all_values
+      ~ConstantScenarioIndexParameter.get_constant_value
       ~ConstantScenarioIndexParameter.get_double_lower_bounds
       ~ConstantScenarioIndexParameter.get_double_upper_bounds
       ~ConstantScenarioIndexParameter.get_double_variables
@@ -49,6 +50,7 @@
       ~ConstantScenarioIndexParameter.comment
       ~ConstantScenarioIndexParameter.double_size
       ~ConstantScenarioIndexParameter.integer_size
+      ~ConstantScenarioIndexParameter.is_constant
       ~ConstantScenarioIndexParameter.is_variable
       ~ConstantScenarioIndexParameter.model
       ~ConstantScenarioIndexParameter.name

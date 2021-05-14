@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.nodes.AggregatedNode &mdash; Pywr 1.14.1.dev2+g5e4859b documentation</title>
+  <title>pywr.nodes.AggregatedNode &mdash; Pywr 1.14.1.dev3+g86865bd documentation</title>
   
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
@@ -64,7 +67,7 @@
             
             
               <div class="version">
-                1.14.1.dev2+g5e4859b
+                1.14.1.dev3+g86865bd
               </div>
             
           
@@ -209,8 +212,8 @@
   <div class="section" id="pywr-nodes-aggregatednode">
 <h1>pywr.nodes.AggregatedNode<a class="headerlink" href="#pywr-nodes-aggregatednode" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="pywr.nodes.AggregatedNode">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.nodes.</span></code><code class="sig-name descname"><span class="pre">AggregatedNode</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.AggregatedNode" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="pywr.nodes.AggregatedNode">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.nodes.</span></span><span class="sig-name descname"><span class="pre">AggregatedNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.AggregatedNode" title="Permalink to this definition">¶</a></dt>
 <dd><p>An aggregated sum of other <cite>Node</cite> nodes</p>
 <p>This object should behave like <cite>Node</cite> by returning current <cite>flow</cite>.
 However this object can not be connected to others within the network.</p>
@@ -227,8 +230,8 @@ However this object can not be connected to others within the network.</p>
 <p class="rubric">Notes</p>
 <p>This node can not be connected to other nodes in the network.</p>
 <dl class="py method">
-<dt id="pywr.nodes.AggregatedNode.__init__">
-<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.AggregatedNode.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="pywr.nodes.AggregatedNode.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.AggregatedNode.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 

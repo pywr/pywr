@@ -18,6 +18,7 @@
       ~FlowParameter.before
       ~FlowParameter.finish
       ~FlowParameter.get_all_values
+      ~FlowParameter.get_constant_value
       ~FlowParameter.get_double_lower_bounds
       ~FlowParameter.get_double_upper_bounds
       ~FlowParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~FlowParameter.double_size
       ~FlowParameter.initial_value
       ~FlowParameter.integer_size
+      ~FlowParameter.is_constant
       ~FlowParameter.is_variable
       ~FlowParameter.model
       ~FlowParameter.name

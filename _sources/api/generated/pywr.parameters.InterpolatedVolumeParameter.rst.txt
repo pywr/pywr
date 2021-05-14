@@ -18,6 +18,7 @@
       ~InterpolatedVolumeParameter.before
       ~InterpolatedVolumeParameter.finish
       ~InterpolatedVolumeParameter.get_all_values
+      ~InterpolatedVolumeParameter.get_constant_value
       ~InterpolatedVolumeParameter.get_double_lower_bounds
       ~InterpolatedVolumeParameter.get_double_upper_bounds
       ~InterpolatedVolumeParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~InterpolatedVolumeParameter.double_size
       ~InterpolatedVolumeParameter.integer_size
       ~InterpolatedVolumeParameter.interp_kwargs
+      ~InterpolatedVolumeParameter.is_constant
       ~InterpolatedVolumeParameter.is_variable
       ~InterpolatedVolumeParameter.model
       ~InterpolatedVolumeParameter.name

@@ -18,6 +18,7 @@
       ~UniformDrawdownProfileParameter.before
       ~UniformDrawdownProfileParameter.finish
       ~UniformDrawdownProfileParameter.get_all_values
+      ~UniformDrawdownProfileParameter.get_constant_value
       ~UniformDrawdownProfileParameter.get_double_lower_bounds
       ~UniformDrawdownProfileParameter.get_double_upper_bounds
       ~UniformDrawdownProfileParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~UniformDrawdownProfileParameter.comment
       ~UniformDrawdownProfileParameter.double_size
       ~UniformDrawdownProfileParameter.integer_size
+      ~UniformDrawdownProfileParameter.is_constant
       ~UniformDrawdownProfileParameter.is_variable
       ~UniformDrawdownProfileParameter.model
       ~UniformDrawdownProfileParameter.name

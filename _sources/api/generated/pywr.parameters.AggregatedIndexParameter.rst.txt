@@ -20,6 +20,7 @@
       ~AggregatedIndexParameter.finish
       ~AggregatedIndexParameter.get_all_indices
       ~AggregatedIndexParameter.get_all_values
+      ~AggregatedIndexParameter.get_constant_value
       ~AggregatedIndexParameter.get_double_lower_bounds
       ~AggregatedIndexParameter.get_double_upper_bounds
       ~AggregatedIndexParameter.get_double_variables
@@ -52,6 +53,7 @@
       ~AggregatedIndexParameter.comment
       ~AggregatedIndexParameter.double_size
       ~AggregatedIndexParameter.integer_size
+      ~AggregatedIndexParameter.is_constant
       ~AggregatedIndexParameter.is_variable
       ~AggregatedIndexParameter.model
       ~AggregatedIndexParameter.name

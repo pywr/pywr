@@ -19,6 +19,7 @@
       ~CurrentOrdinalDayThresholdParameter.finish
       ~CurrentOrdinalDayThresholdParameter.get_all_indices
       ~CurrentOrdinalDayThresholdParameter.get_all_values
+      ~CurrentOrdinalDayThresholdParameter.get_constant_value
       ~CurrentOrdinalDayThresholdParameter.get_double_lower_bounds
       ~CurrentOrdinalDayThresholdParameter.get_double_upper_bounds
       ~CurrentOrdinalDayThresholdParameter.get_double_variables
@@ -49,6 +50,7 @@
       ~CurrentOrdinalDayThresholdParameter.comment
       ~CurrentOrdinalDayThresholdParameter.double_size
       ~CurrentOrdinalDayThresholdParameter.integer_size
+      ~CurrentOrdinalDayThresholdParameter.is_constant
       ~CurrentOrdinalDayThresholdParameter.is_variable
       ~CurrentOrdinalDayThresholdParameter.model
       ~CurrentOrdinalDayThresholdParameter.name

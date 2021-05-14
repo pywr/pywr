@@ -19,6 +19,7 @@
       ~NodeThresholdParameter.finish
       ~NodeThresholdParameter.get_all_indices
       ~NodeThresholdParameter.get_all_values
+      ~NodeThresholdParameter.get_constant_value
       ~NodeThresholdParameter.get_double_lower_bounds
       ~NodeThresholdParameter.get_double_upper_bounds
       ~NodeThresholdParameter.get_double_variables
@@ -49,6 +50,7 @@
       ~NodeThresholdParameter.comment
       ~NodeThresholdParameter.double_size
       ~NodeThresholdParameter.integer_size
+      ~NodeThresholdParameter.is_constant
       ~NodeThresholdParameter.is_variable
       ~NodeThresholdParameter.model
       ~NodeThresholdParameter.name

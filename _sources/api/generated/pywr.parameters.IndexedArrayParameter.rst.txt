@@ -18,6 +18,7 @@
       ~IndexedArrayParameter.before
       ~IndexedArrayParameter.finish
       ~IndexedArrayParameter.get_all_values
+      ~IndexedArrayParameter.get_constant_value
       ~IndexedArrayParameter.get_double_lower_bounds
       ~IndexedArrayParameter.get_double_upper_bounds
       ~IndexedArrayParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~IndexedArrayParameter.double_size
       ~IndexedArrayParameter.index_parameter
       ~IndexedArrayParameter.integer_size
+      ~IndexedArrayParameter.is_constant
       ~IndexedArrayParameter.is_variable
       ~IndexedArrayParameter.model
       ~IndexedArrayParameter.name

@@ -18,6 +18,7 @@
       ~OffsetParameter.before
       ~OffsetParameter.finish
       ~OffsetParameter.get_all_values
+      ~OffsetParameter.get_constant_value
       ~OffsetParameter.get_double_lower_bounds
       ~OffsetParameter.get_double_upper_bounds
       ~OffsetParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~OffsetParameter.comment
       ~OffsetParameter.double_size
       ~OffsetParameter.integer_size
+      ~OffsetParameter.is_constant
       ~OffsetParameter.is_variable
       ~OffsetParameter.model
       ~OffsetParameter.name

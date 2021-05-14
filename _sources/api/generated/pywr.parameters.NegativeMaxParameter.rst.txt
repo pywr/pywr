@@ -18,6 +18,7 @@
       ~NegativeMaxParameter.before
       ~NegativeMaxParameter.finish
       ~NegativeMaxParameter.get_all_values
+      ~NegativeMaxParameter.get_constant_value
       ~NegativeMaxParameter.get_double_lower_bounds
       ~NegativeMaxParameter.get_double_upper_bounds
       ~NegativeMaxParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~NegativeMaxParameter.comment
       ~NegativeMaxParameter.double_size
       ~NegativeMaxParameter.integer_size
+      ~NegativeMaxParameter.is_constant
       ~NegativeMaxParameter.is_variable
       ~NegativeMaxParameter.model
       ~NegativeMaxParameter.name

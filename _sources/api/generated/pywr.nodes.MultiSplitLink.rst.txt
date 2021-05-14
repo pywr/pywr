@@ -26,8 +26,12 @@
       ~MultiSplitLink.get_all_cost
       ~MultiSplitLink.get_all_max_flow
       ~MultiSplitLink.get_all_min_flow
+      ~MultiSplitLink.get_constant_max_flow
+      ~MultiSplitLink.get_constant_min_flow
       ~MultiSplitLink.get_conversion_factor
       ~MultiSplitLink.get_cost
+      ~MultiSplitLink.get_fixed_max_flow
+      ~MultiSplitLink.get_fixed_min_flow
       ~MultiSplitLink.get_max_flow
       ~MultiSplitLink.get_min_flow
       ~MultiSplitLink.iter_slots
@@ -53,6 +57,7 @@
       ~MultiSplitLink.domain
       ~MultiSplitLink.flow
       ~MultiSplitLink.fully_qualified_name
+      ~MultiSplitLink.has_constant_flows
       ~MultiSplitLink.has_fixed_cost
       ~MultiSplitLink.has_fixed_flows
       ~MultiSplitLink.max_flow

@@ -26,8 +26,12 @@
       ~RiverGauge.get_all_cost
       ~RiverGauge.get_all_max_flow
       ~RiverGauge.get_all_min_flow
+      ~RiverGauge.get_constant_max_flow
+      ~RiverGauge.get_constant_min_flow
       ~RiverGauge.get_conversion_factor
       ~RiverGauge.get_cost
+      ~RiverGauge.get_fixed_max_flow
+      ~RiverGauge.get_fixed_min_flow
       ~RiverGauge.get_max_flow
       ~RiverGauge.get_min_flow
       ~RiverGauge.iter_slots
@@ -53,6 +57,7 @@
       ~RiverGauge.domain
       ~RiverGauge.flow
       ~RiverGauge.fully_qualified_name
+      ~RiverGauge.has_constant_flows
       ~RiverGauge.has_fixed_cost
       ~RiverGauge.has_fixed_flows
       ~RiverGauge.max_flow

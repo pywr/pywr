@@ -18,6 +18,7 @@
       ~BaseControlCurveParameter.before
       ~BaseControlCurveParameter.finish
       ~BaseControlCurveParameter.get_all_values
+      ~BaseControlCurveParameter.get_constant_value
       ~BaseControlCurveParameter.get_double_lower_bounds
       ~BaseControlCurveParameter.get_double_upper_bounds
       ~BaseControlCurveParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~BaseControlCurveParameter.control_curves
       ~BaseControlCurveParameter.double_size
       ~BaseControlCurveParameter.integer_size
+      ~BaseControlCurveParameter.is_constant
       ~BaseControlCurveParameter.is_variable
       ~BaseControlCurveParameter.model
       ~BaseControlCurveParameter.name

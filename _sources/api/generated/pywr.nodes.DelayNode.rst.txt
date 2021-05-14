@@ -26,8 +26,12 @@
       ~DelayNode.get_all_cost
       ~DelayNode.get_all_max_flow
       ~DelayNode.get_all_min_flow
+      ~DelayNode.get_constant_max_flow
+      ~DelayNode.get_constant_min_flow
       ~DelayNode.get_conversion_factor
       ~DelayNode.get_cost
+      ~DelayNode.get_fixed_max_flow
+      ~DelayNode.get_fixed_min_flow
       ~DelayNode.get_max_flow
       ~DelayNode.get_min_flow
       ~DelayNode.iter_slots
@@ -52,6 +56,7 @@
       ~DelayNode.domain
       ~DelayNode.flow
       ~DelayNode.fully_qualified_name
+      ~DelayNode.has_constant_flows
       ~DelayNode.has_fixed_cost
       ~DelayNode.has_fixed_flows
       ~DelayNode.max_flow

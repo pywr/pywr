@@ -18,6 +18,7 @@
       ~RbfProfileParameter.before
       ~RbfProfileParameter.finish
       ~RbfProfileParameter.get_all_values
+      ~RbfProfileParameter.get_constant_value
       ~RbfProfileParameter.get_double_lower_bounds
       ~RbfProfileParameter.get_double_upper_bounds
       ~RbfProfileParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~RbfProfileParameter.days_of_year
       ~RbfProfileParameter.double_size
       ~RbfProfileParameter.integer_size
+      ~RbfProfileParameter.is_constant
       ~RbfProfileParameter.is_variable
       ~RbfProfileParameter.model
       ~RbfProfileParameter.name

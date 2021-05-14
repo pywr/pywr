@@ -18,6 +18,7 @@
       ~MinParameter.before
       ~MinParameter.finish
       ~MinParameter.get_all_values
+      ~MinParameter.get_constant_value
       ~MinParameter.get_double_lower_bounds
       ~MinParameter.get_double_upper_bounds
       ~MinParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~MinParameter.comment
       ~MinParameter.double_size
       ~MinParameter.integer_size
+      ~MinParameter.is_constant
       ~MinParameter.is_variable
       ~MinParameter.model
       ~MinParameter.name

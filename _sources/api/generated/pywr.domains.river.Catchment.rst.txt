@@ -26,8 +26,12 @@
       ~Catchment.get_all_cost
       ~Catchment.get_all_max_flow
       ~Catchment.get_all_min_flow
+      ~Catchment.get_constant_max_flow
+      ~Catchment.get_constant_min_flow
       ~Catchment.get_conversion_factor
       ~Catchment.get_cost
+      ~Catchment.get_fixed_max_flow
+      ~Catchment.get_fixed_min_flow
       ~Catchment.get_flow
       ~Catchment.get_max_flow
       ~Catchment.get_min_flow
@@ -53,6 +57,7 @@
       ~Catchment.domain
       ~Catchment.flow
       ~Catchment.fully_qualified_name
+      ~Catchment.has_constant_flows
       ~Catchment.has_fixed_cost
       ~Catchment.has_fixed_flows
       ~Catchment.max_flow

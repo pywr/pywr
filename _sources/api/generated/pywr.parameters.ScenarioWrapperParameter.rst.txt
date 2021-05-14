@@ -18,6 +18,7 @@
       ~ScenarioWrapperParameter.before
       ~ScenarioWrapperParameter.finish
       ~ScenarioWrapperParameter.get_all_values
+      ~ScenarioWrapperParameter.get_constant_value
       ~ScenarioWrapperParameter.get_double_lower_bounds
       ~ScenarioWrapperParameter.get_double_upper_bounds
       ~ScenarioWrapperParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~ScenarioWrapperParameter.comment
       ~ScenarioWrapperParameter.double_size
       ~ScenarioWrapperParameter.integer_size
+      ~ScenarioWrapperParameter.is_constant
       ~ScenarioWrapperParameter.is_variable
       ~ScenarioWrapperParameter.model
       ~ScenarioWrapperParameter.name

@@ -18,6 +18,7 @@
       ~InterpolatedParameter.before
       ~InterpolatedParameter.finish
       ~InterpolatedParameter.get_all_values
+      ~InterpolatedParameter.get_constant_value
       ~InterpolatedParameter.get_double_lower_bounds
       ~InterpolatedParameter.get_double_upper_bounds
       ~InterpolatedParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~InterpolatedParameter.double_size
       ~InterpolatedParameter.integer_size
       ~InterpolatedParameter.interp_kwargs
+      ~InterpolatedParameter.is_constant
       ~InterpolatedParameter.is_variable
       ~InterpolatedParameter.model
       ~InterpolatedParameter.name

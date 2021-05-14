@@ -26,8 +26,12 @@
       ~BreakLink.get_all_cost
       ~BreakLink.get_all_max_flow
       ~BreakLink.get_all_min_flow
+      ~BreakLink.get_constant_max_flow
+      ~BreakLink.get_constant_min_flow
       ~BreakLink.get_conversion_factor
       ~BreakLink.get_cost
+      ~BreakLink.get_fixed_max_flow
+      ~BreakLink.get_fixed_min_flow
       ~BreakLink.get_max_flow
       ~BreakLink.get_min_flow
       ~BreakLink.iter_slots
@@ -52,6 +56,7 @@
       ~BreakLink.domain
       ~BreakLink.flow
       ~BreakLink.fully_qualified_name
+      ~BreakLink.has_constant_flows
       ~BreakLink.has_fixed_cost
       ~BreakLink.has_fixed_flows
       ~BreakLink.max_flow

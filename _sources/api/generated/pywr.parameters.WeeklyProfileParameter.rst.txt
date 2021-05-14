@@ -18,6 +18,7 @@
       ~WeeklyProfileParameter.before
       ~WeeklyProfileParameter.finish
       ~WeeklyProfileParameter.get_all_values
+      ~WeeklyProfileParameter.get_constant_value
       ~WeeklyProfileParameter.get_double_lower_bounds
       ~WeeklyProfileParameter.get_double_upper_bounds
       ~WeeklyProfileParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~WeeklyProfileParameter.comment
       ~WeeklyProfileParameter.double_size
       ~WeeklyProfileParameter.integer_size
+      ~WeeklyProfileParameter.is_constant
       ~WeeklyProfileParameter.is_variable
       ~WeeklyProfileParameter.model
       ~WeeklyProfileParameter.name

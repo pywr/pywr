@@ -18,6 +18,7 @@
       ~HydropowerTargetParameter.before
       ~HydropowerTargetParameter.finish
       ~HydropowerTargetParameter.get_all_values
+      ~HydropowerTargetParameter.get_constant_value
       ~HydropowerTargetParameter.get_double_lower_bounds
       ~HydropowerTargetParameter.get_double_upper_bounds
       ~HydropowerTargetParameter.get_double_variables
@@ -50,6 +51,7 @@
       ~HydropowerTargetParameter.energy_unit_conversion
       ~HydropowerTargetParameter.flow_unit_conversion
       ~HydropowerTargetParameter.integer_size
+      ~HydropowerTargetParameter.is_constant
       ~HydropowerTargetParameter.is_variable
       ~HydropowerTargetParameter.max_flow
       ~HydropowerTargetParameter.min_flow

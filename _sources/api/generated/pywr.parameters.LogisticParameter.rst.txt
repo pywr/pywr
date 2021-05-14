@@ -18,6 +18,7 @@
       ~LogisticParameter.before
       ~LogisticParameter.finish
       ~LogisticParameter.get_all_values
+      ~LogisticParameter.get_constant_value
       ~LogisticParameter.get_double_lower_bounds
       ~LogisticParameter.get_double_upper_bounds
       ~LogisticParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~LogisticParameter.double_size
       ~LogisticParameter.growth_rate
       ~LogisticParameter.integer_size
+      ~LogisticParameter.is_constant
       ~LogisticParameter.is_variable
       ~LogisticParameter.max_output
       ~LogisticParameter.model

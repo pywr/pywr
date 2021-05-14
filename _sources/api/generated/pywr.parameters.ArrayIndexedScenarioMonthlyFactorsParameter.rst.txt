@@ -18,6 +18,7 @@
       ~ArrayIndexedScenarioMonthlyFactorsParameter.before
       ~ArrayIndexedScenarioMonthlyFactorsParameter.finish
       ~ArrayIndexedScenarioMonthlyFactorsParameter.get_all_values
+      ~ArrayIndexedScenarioMonthlyFactorsParameter.get_constant_value
       ~ArrayIndexedScenarioMonthlyFactorsParameter.get_double_lower_bounds
       ~ArrayIndexedScenarioMonthlyFactorsParameter.get_double_upper_bounds
       ~ArrayIndexedScenarioMonthlyFactorsParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~ArrayIndexedScenarioMonthlyFactorsParameter.comment
       ~ArrayIndexedScenarioMonthlyFactorsParameter.double_size
       ~ArrayIndexedScenarioMonthlyFactorsParameter.integer_size
+      ~ArrayIndexedScenarioMonthlyFactorsParameter.is_constant
       ~ArrayIndexedScenarioMonthlyFactorsParameter.is_variable
       ~ArrayIndexedScenarioMonthlyFactorsParameter.model
       ~ArrayIndexedScenarioMonthlyFactorsParameter.name

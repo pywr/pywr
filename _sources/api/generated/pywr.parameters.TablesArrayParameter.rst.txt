@@ -19,6 +19,7 @@
       ~TablesArrayParameter.finish
       ~TablesArrayParameter.get_all_indices
       ~TablesArrayParameter.get_all_values
+      ~TablesArrayParameter.get_constant_value
       ~TablesArrayParameter.get_double_lower_bounds
       ~TablesArrayParameter.get_double_upper_bounds
       ~TablesArrayParameter.get_double_variables
@@ -51,6 +52,7 @@
       ~TablesArrayParameter.h5file
       ~TablesArrayParameter.h5store
       ~TablesArrayParameter.integer_size
+      ~TablesArrayParameter.is_constant
       ~TablesArrayParameter.is_variable
       ~TablesArrayParameter.model
       ~TablesArrayParameter.name

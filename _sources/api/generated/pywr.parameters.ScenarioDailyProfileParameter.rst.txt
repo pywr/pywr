@@ -18,6 +18,7 @@
       ~ScenarioDailyProfileParameter.before
       ~ScenarioDailyProfileParameter.finish
       ~ScenarioDailyProfileParameter.get_all_values
+      ~ScenarioDailyProfileParameter.get_constant_value
       ~ScenarioDailyProfileParameter.get_double_lower_bounds
       ~ScenarioDailyProfileParameter.get_double_upper_bounds
       ~ScenarioDailyProfileParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~ScenarioDailyProfileParameter.comment
       ~ScenarioDailyProfileParameter.double_size
       ~ScenarioDailyProfileParameter.integer_size
+      ~ScenarioDailyProfileParameter.is_constant
       ~ScenarioDailyProfileParameter.is_variable
       ~ScenarioDailyProfileParameter.model
       ~ScenarioDailyProfileParameter.name

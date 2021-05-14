@@ -19,6 +19,7 @@
       ~IndexParameter.finish
       ~IndexParameter.get_all_indices
       ~IndexParameter.get_all_values
+      ~IndexParameter.get_constant_value
       ~IndexParameter.get_double_lower_bounds
       ~IndexParameter.get_double_upper_bounds
       ~IndexParameter.get_double_variables
@@ -49,6 +50,7 @@
       ~IndexParameter.comment
       ~IndexParameter.double_size
       ~IndexParameter.integer_size
+      ~IndexParameter.is_constant
       ~IndexParameter.is_variable
       ~IndexParameter.model
       ~IndexParameter.name

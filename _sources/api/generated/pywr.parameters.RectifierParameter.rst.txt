@@ -18,6 +18,7 @@
       ~RectifierParameter.before
       ~RectifierParameter.finish
       ~RectifierParameter.get_all_values
+      ~RectifierParameter.get_constant_value
       ~RectifierParameter.get_double_lower_bounds
       ~RectifierParameter.get_double_upper_bounds
       ~RectifierParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~RectifierParameter.comment
       ~RectifierParameter.double_size
       ~RectifierParameter.integer_size
+      ~RectifierParameter.is_constant
       ~RectifierParameter.is_variable
       ~RectifierParameter.max_output
       ~RectifierParameter.model

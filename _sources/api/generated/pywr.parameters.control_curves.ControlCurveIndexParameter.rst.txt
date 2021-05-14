@@ -19,6 +19,7 @@
       ~ControlCurveIndexParameter.finish
       ~ControlCurveIndexParameter.get_all_indices
       ~ControlCurveIndexParameter.get_all_values
+      ~ControlCurveIndexParameter.get_constant_value
       ~ControlCurveIndexParameter.get_double_lower_bounds
       ~ControlCurveIndexParameter.get_double_upper_bounds
       ~ControlCurveIndexParameter.get_double_variables
@@ -50,6 +51,7 @@
       ~ControlCurveIndexParameter.control_curves
       ~ControlCurveIndexParameter.double_size
       ~ControlCurveIndexParameter.integer_size
+      ~ControlCurveIndexParameter.is_constant
       ~ControlCurveIndexParameter.is_variable
       ~ControlCurveIndexParameter.model
       ~ControlCurveIndexParameter.name

@@ -18,6 +18,7 @@
       ~MaxParameter.before
       ~MaxParameter.finish
       ~MaxParameter.get_all_values
+      ~MaxParameter.get_constant_value
       ~MaxParameter.get_double_lower_bounds
       ~MaxParameter.get_double_upper_bounds
       ~MaxParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~MaxParameter.comment
       ~MaxParameter.double_size
       ~MaxParameter.integer_size
+      ~MaxParameter.is_constant
       ~MaxParameter.is_variable
       ~MaxParameter.model
       ~MaxParameter.name

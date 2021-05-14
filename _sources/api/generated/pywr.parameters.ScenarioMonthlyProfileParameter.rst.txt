@@ -18,6 +18,7 @@
       ~ScenarioMonthlyProfileParameter.before
       ~ScenarioMonthlyProfileParameter.finish
       ~ScenarioMonthlyProfileParameter.get_all_values
+      ~ScenarioMonthlyProfileParameter.get_constant_value
       ~ScenarioMonthlyProfileParameter.get_double_lower_bounds
       ~ScenarioMonthlyProfileParameter.get_double_upper_bounds
       ~ScenarioMonthlyProfileParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~ScenarioMonthlyProfileParameter.comment
       ~ScenarioMonthlyProfileParameter.double_size
       ~ScenarioMonthlyProfileParameter.integer_size
+      ~ScenarioMonthlyProfileParameter.is_constant
       ~ScenarioMonthlyProfileParameter.is_variable
       ~ScenarioMonthlyProfileParameter.model
       ~ScenarioMonthlyProfileParameter.name

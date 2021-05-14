@@ -19,6 +19,7 @@
       ~AggregatedParameter.before
       ~AggregatedParameter.finish
       ~AggregatedParameter.get_all_values
+      ~AggregatedParameter.get_constant_value
       ~AggregatedParameter.get_double_lower_bounds
       ~AggregatedParameter.get_double_upper_bounds
       ~AggregatedParameter.get_double_variables
@@ -49,6 +50,7 @@
       ~AggregatedParameter.comment
       ~AggregatedParameter.double_size
       ~AggregatedParameter.integer_size
+      ~AggregatedParameter.is_constant
       ~AggregatedParameter.is_variable
       ~AggregatedParameter.model
       ~AggregatedParameter.name

@@ -18,6 +18,7 @@
       ~PiecewiseIntegralParameter.before
       ~PiecewiseIntegralParameter.finish
       ~PiecewiseIntegralParameter.get_all_values
+      ~PiecewiseIntegralParameter.get_constant_value
       ~PiecewiseIntegralParameter.get_double_lower_bounds
       ~PiecewiseIntegralParameter.get_double_upper_bounds
       ~PiecewiseIntegralParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~PiecewiseIntegralParameter.comment
       ~PiecewiseIntegralParameter.double_size
       ~PiecewiseIntegralParameter.integer_size
+      ~PiecewiseIntegralParameter.is_constant
       ~PiecewiseIntegralParameter.is_variable
       ~PiecewiseIntegralParameter.model
       ~PiecewiseIntegralParameter.name

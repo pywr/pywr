@@ -18,6 +18,7 @@
       ~MonthlyProfileParameter.before
       ~MonthlyProfileParameter.finish
       ~MonthlyProfileParameter.get_all_values
+      ~MonthlyProfileParameter.get_constant_value
       ~MonthlyProfileParameter.get_double_lower_bounds
       ~MonthlyProfileParameter.get_double_upper_bounds
       ~MonthlyProfileParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~MonthlyProfileParameter.double_size
       ~MonthlyProfileParameter.integer_size
       ~MonthlyProfileParameter.interp_day
+      ~MonthlyProfileParameter.is_constant
       ~MonthlyProfileParameter.is_variable
       ~MonthlyProfileParameter.model
       ~MonthlyProfileParameter.name

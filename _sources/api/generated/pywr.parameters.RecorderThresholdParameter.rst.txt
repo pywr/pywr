@@ -19,6 +19,7 @@
       ~RecorderThresholdParameter.finish
       ~RecorderThresholdParameter.get_all_indices
       ~RecorderThresholdParameter.get_all_values
+      ~RecorderThresholdParameter.get_constant_value
       ~RecorderThresholdParameter.get_double_lower_bounds
       ~RecorderThresholdParameter.get_double_upper_bounds
       ~RecorderThresholdParameter.get_double_variables
@@ -50,6 +51,7 @@
       ~RecorderThresholdParameter.double_size
       ~RecorderThresholdParameter.initial_value
       ~RecorderThresholdParameter.integer_size
+      ~RecorderThresholdParameter.is_constant
       ~RecorderThresholdParameter.is_variable
       ~RecorderThresholdParameter.model
       ~RecorderThresholdParameter.name

@@ -18,6 +18,7 @@
       ~DeficitParameter.before
       ~DeficitParameter.finish
       ~DeficitParameter.get_all_values
+      ~DeficitParameter.get_constant_value
       ~DeficitParameter.get_double_lower_bounds
       ~DeficitParameter.get_double_upper_bounds
       ~DeficitParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~DeficitParameter.comment
       ~DeficitParameter.double_size
       ~DeficitParameter.integer_size
+      ~DeficitParameter.is_constant
       ~DeficitParameter.is_variable
       ~DeficitParameter.model
       ~DeficitParameter.name

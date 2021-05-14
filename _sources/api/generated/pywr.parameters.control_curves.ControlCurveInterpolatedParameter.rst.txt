@@ -18,6 +18,7 @@
       ~ControlCurveInterpolatedParameter.before
       ~ControlCurveInterpolatedParameter.finish
       ~ControlCurveInterpolatedParameter.get_all_values
+      ~ControlCurveInterpolatedParameter.get_constant_value
       ~ControlCurveInterpolatedParameter.get_double_lower_bounds
       ~ControlCurveInterpolatedParameter.get_double_upper_bounds
       ~ControlCurveInterpolatedParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~ControlCurveInterpolatedParameter.control_curves
       ~ControlCurveInterpolatedParameter.double_size
       ~ControlCurveInterpolatedParameter.integer_size
+      ~ControlCurveInterpolatedParameter.is_constant
       ~ControlCurveInterpolatedParameter.is_variable
       ~ControlCurveInterpolatedParameter.model
       ~ControlCurveInterpolatedParameter.name

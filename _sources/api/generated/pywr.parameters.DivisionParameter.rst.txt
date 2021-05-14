@@ -18,6 +18,7 @@
       ~DivisionParameter.before
       ~DivisionParameter.finish
       ~DivisionParameter.get_all_values
+      ~DivisionParameter.get_constant_value
       ~DivisionParameter.get_double_lower_bounds
       ~DivisionParameter.get_double_upper_bounds
       ~DivisionParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~DivisionParameter.denominator
       ~DivisionParameter.double_size
       ~DivisionParameter.integer_size
+      ~DivisionParameter.is_constant
       ~DivisionParameter.is_variable
       ~DivisionParameter.model
       ~DivisionParameter.name

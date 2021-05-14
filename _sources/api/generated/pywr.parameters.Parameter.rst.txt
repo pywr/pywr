@@ -18,6 +18,7 @@
       ~Parameter.before
       ~Parameter.finish
       ~Parameter.get_all_values
+      ~Parameter.get_constant_value
       ~Parameter.get_double_lower_bounds
       ~Parameter.get_double_upper_bounds
       ~Parameter.get_double_variables
@@ -46,6 +47,7 @@
       ~Parameter.comment
       ~Parameter.double_size
       ~Parameter.integer_size
+      ~Parameter.is_constant
       ~Parameter.is_variable
       ~Parameter.model
       ~Parameter.name

@@ -26,8 +26,12 @@
       ~Output.get_all_cost
       ~Output.get_all_max_flow
       ~Output.get_all_min_flow
+      ~Output.get_constant_max_flow
+      ~Output.get_constant_min_flow
       ~Output.get_conversion_factor
       ~Output.get_cost
+      ~Output.get_fixed_max_flow
+      ~Output.get_fixed_min_flow
       ~Output.get_max_flow
       ~Output.get_min_flow
       ~Output.iter_slots
@@ -52,6 +56,7 @@
       ~Output.domain
       ~Output.flow
       ~Output.fully_qualified_name
+      ~Output.has_constant_flows
       ~Output.has_fixed_cost
       ~Output.has_fixed_flows
       ~Output.max_flow

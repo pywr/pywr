@@ -18,6 +18,7 @@
       ~NegativeParameter.before
       ~NegativeParameter.finish
       ~NegativeParameter.get_all_values
+      ~NegativeParameter.get_constant_value
       ~NegativeParameter.get_double_lower_bounds
       ~NegativeParameter.get_double_upper_bounds
       ~NegativeParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~NegativeParameter.comment
       ~NegativeParameter.double_size
       ~NegativeParameter.integer_size
+      ~NegativeParameter.is_constant
       ~NegativeParameter.is_variable
       ~NegativeParameter.model
       ~NegativeParameter.name

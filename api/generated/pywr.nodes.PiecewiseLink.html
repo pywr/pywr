@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.nodes.PiecewiseLink &mdash; Pywr 1.14.1.dev2+g5e4859b documentation</title>
+  <title>pywr.nodes.PiecewiseLink &mdash; Pywr 1.14.1.dev3+g86865bd documentation</title>
   
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
@@ -64,7 +67,7 @@
             
             
               <div class="version">
-                1.14.1.dev2+g5e4859b
+                1.14.1.dev3+g86865bd
               </div>
             
           
@@ -209,8 +212,8 @@
   <div class="section" id="pywr-nodes-piecewiselink">
 <h1>pywr.nodes.PiecewiseLink<a class="headerlink" href="#pywr-nodes-piecewiselink" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="pywr.nodes.PiecewiseLink">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pywr.nodes.</span></code><code class="sig-name descname"><span class="pre">PiecewiseLink</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.PiecewiseLink" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="pywr.nodes.PiecewiseLink">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.nodes.</span></span><span class="sig-name descname"><span class="pre">PiecewiseLink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.PiecewiseLink" title="Permalink to this definition">¶</a></dt>
 <dd><p>An extension of Node that represents a non-linear Link with a piece wise cost function.</p>
 <p>This object is intended to model situations where there is a benefit of supplying certain flow rates
 but beyond a fixed limit there is a change in (or zero) cost.</p>
@@ -239,8 +242,8 @@ the sublinks and connections to the Output/Input node. The reason for this
 breaking of the route is to avoid an geometric increase in the number
 of routes when multiple PiecewiseLinks are present in the same route.</p>
 <dl class="py method">
-<dt id="pywr.nodes.PiecewiseLink.__init__">
-<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.PiecewiseLink.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="pywr.nodes.PiecewiseLink.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.PiecewiseLink.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialise a new Node object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -300,11 +303,23 @@ of routes when multiple PiecewiseLinks are present in the same route.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_all_min_flow</span></code>(self, double[)</p></td>
 <td><p></p></td>
 </tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_constant_max_flow</span></code>(self)</p></td>
+<td><p>Returns max_flow value if it is a constant parameter or fixed value otherwise returns NaN.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_constant_min_flow</span></code>(self)</p></td>
+<td><p>Returns min_flow value if it is a constant parameter or fixed value otherwise returns NaN.</p></td>
+</tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_conversion_factor</span></code>(self)</p></td>
 <td><p>Get the conversion factor</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_cost</span></code>(self, ScenarioIndex scenario_index)</p></td>
 <td><p>Get the cost per unit flow at a given timestep</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_fixed_max_flow</span></code>(self)</p></td>
+<td><p>Returns max_flow value if it is fixed value otherwise returns NaN.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_fixed_min_flow</span></code>(self)</p></td>
+<td><p>Returns min_flow value if it is a fixed value otherwise returns NaN.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_max_flow</span></code>(self, ScenarioIndex scenario_index)</p></td>
 <td><p>Get the maximum flow at a given timestep</p></td>
@@ -363,37 +378,40 @@ of routes when multiple PiecewiseLinks are present in the same route.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fully_qualified_name</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_fixed_cost</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_constant_flows</span></code></p></td>
+<td><p>Returns true if both min_flow and max_flow are literal constants or “constant” Parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_fixed_cost</span></code></p></td>
 <td><p>Returns true if cost is not a Parameter.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_fixed_flows</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_fixed_flows</span></code></p></td>
 <td><p>Returns true if both min_flow and max_flow are not Parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_flow</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_flow</span></code></p></td>
 <td><p>The maximum flow constraint on the node</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_flows</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_flows</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_flow</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_flow</span></code></p></td>
 <td><p>The minimum flow constraint on the node</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
 <td><p>The recorder for the node, e.g.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
 <td><p>Name of the node.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
 <td><p>The parent Node/Storage of this object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev_flow</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev_flow</span></code></p></td>
 <td><p>Total flow via this node in the previous timestep</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recorders</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recorders</span></code></p></td>
 <td><p>Returns a list of <cite>pywr.recorders.Recorder</cite> objects attached to this node.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">virtual</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">virtual</span></code></p></td>
 <td><p>virtual: ‘bool’</p></td>
 </tr>
 </tbody>

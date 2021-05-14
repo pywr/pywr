@@ -18,6 +18,7 @@
       ~AnnualHarmonicSeriesParameter.before
       ~AnnualHarmonicSeriesParameter.finish
       ~AnnualHarmonicSeriesParameter.get_all_values
+      ~AnnualHarmonicSeriesParameter.get_constant_value
       ~AnnualHarmonicSeriesParameter.get_double_lower_bounds
       ~AnnualHarmonicSeriesParameter.get_double_upper_bounds
       ~AnnualHarmonicSeriesParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~AnnualHarmonicSeriesParameter.comment
       ~AnnualHarmonicSeriesParameter.double_size
       ~AnnualHarmonicSeriesParameter.integer_size
+      ~AnnualHarmonicSeriesParameter.is_constant
       ~AnnualHarmonicSeriesParameter.is_variable
       ~AnnualHarmonicSeriesParameter.mean
       ~AnnualHarmonicSeriesParameter.model

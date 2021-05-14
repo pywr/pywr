@@ -18,6 +18,7 @@
       ~BinaryStepParameter.before
       ~BinaryStepParameter.finish
       ~BinaryStepParameter.get_all_values
+      ~BinaryStepParameter.get_constant_value
       ~BinaryStepParameter.get_double_lower_bounds
       ~BinaryStepParameter.get_double_upper_bounds
       ~BinaryStepParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~BinaryStepParameter.comment
       ~BinaryStepParameter.double_size
       ~BinaryStepParameter.integer_size
+      ~BinaryStepParameter.is_constant
       ~BinaryStepParameter.is_variable
       ~BinaryStepParameter.model
       ~BinaryStepParameter.name

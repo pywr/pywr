@@ -26,8 +26,12 @@
       ~RiverSplitWithGauge.get_all_cost
       ~RiverSplitWithGauge.get_all_max_flow
       ~RiverSplitWithGauge.get_all_min_flow
+      ~RiverSplitWithGauge.get_constant_max_flow
+      ~RiverSplitWithGauge.get_constant_min_flow
       ~RiverSplitWithGauge.get_conversion_factor
       ~RiverSplitWithGauge.get_cost
+      ~RiverSplitWithGauge.get_fixed_max_flow
+      ~RiverSplitWithGauge.get_fixed_min_flow
       ~RiverSplitWithGauge.get_max_flow
       ~RiverSplitWithGauge.get_min_flow
       ~RiverSplitWithGauge.iter_slots
@@ -53,6 +57,7 @@
       ~RiverSplitWithGauge.domain
       ~RiverSplitWithGauge.flow
       ~RiverSplitWithGauge.fully_qualified_name
+      ~RiverSplitWithGauge.has_constant_flows
       ~RiverSplitWithGauge.has_fixed_cost
       ~RiverSplitWithGauge.has_fixed_flows
       ~RiverSplitWithGauge.max_flow

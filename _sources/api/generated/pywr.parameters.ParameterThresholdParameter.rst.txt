@@ -19,6 +19,7 @@
       ~ParameterThresholdParameter.finish
       ~ParameterThresholdParameter.get_all_indices
       ~ParameterThresholdParameter.get_all_values
+      ~ParameterThresholdParameter.get_constant_value
       ~ParameterThresholdParameter.get_double_lower_bounds
       ~ParameterThresholdParameter.get_double_upper_bounds
       ~ParameterThresholdParameter.get_double_variables
@@ -49,6 +50,7 @@
       ~ParameterThresholdParameter.comment
       ~ParameterThresholdParameter.double_size
       ~ParameterThresholdParameter.integer_size
+      ~ParameterThresholdParameter.is_constant
       ~ParameterThresholdParameter.is_variable
       ~ParameterThresholdParameter.model
       ~ParameterThresholdParameter.name

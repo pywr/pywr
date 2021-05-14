@@ -18,6 +18,7 @@
       ~FlowDelayParameter.before
       ~FlowDelayParameter.finish
       ~FlowDelayParameter.get_all_values
+      ~FlowDelayParameter.get_constant_value
       ~FlowDelayParameter.get_double_lower_bounds
       ~FlowDelayParameter.get_double_upper_bounds
       ~FlowDelayParameter.get_double_variables
@@ -48,6 +49,7 @@
       ~FlowDelayParameter.double_size
       ~FlowDelayParameter.initial_flow
       ~FlowDelayParameter.integer_size
+      ~FlowDelayParameter.is_constant
       ~FlowDelayParameter.is_variable
       ~FlowDelayParameter.model
       ~FlowDelayParameter.name

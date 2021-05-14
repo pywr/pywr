@@ -18,6 +18,7 @@
       ~InterpolatedFlowParameter.before
       ~InterpolatedFlowParameter.finish
       ~InterpolatedFlowParameter.get_all_values
+      ~InterpolatedFlowParameter.get_constant_value
       ~InterpolatedFlowParameter.get_double_lower_bounds
       ~InterpolatedFlowParameter.get_double_upper_bounds
       ~InterpolatedFlowParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~InterpolatedFlowParameter.double_size
       ~InterpolatedFlowParameter.integer_size
       ~InterpolatedFlowParameter.interp_kwargs
+      ~InterpolatedFlowParameter.is_constant
       ~InterpolatedFlowParameter.is_variable
       ~InterpolatedFlowParameter.model
       ~InterpolatedFlowParameter.name

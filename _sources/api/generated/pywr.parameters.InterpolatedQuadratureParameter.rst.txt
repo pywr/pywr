@@ -18,6 +18,7 @@
       ~InterpolatedQuadratureParameter.before
       ~InterpolatedQuadratureParameter.finish
       ~InterpolatedQuadratureParameter.get_all_values
+      ~InterpolatedQuadratureParameter.get_constant_value
       ~InterpolatedQuadratureParameter.get_double_lower_bounds
       ~InterpolatedQuadratureParameter.get_double_upper_bounds
       ~InterpolatedQuadratureParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~InterpolatedQuadratureParameter.double_size
       ~InterpolatedQuadratureParameter.integer_size
       ~InterpolatedQuadratureParameter.interp_kwargs
+      ~InterpolatedQuadratureParameter.is_constant
       ~InterpolatedQuadratureParameter.is_variable
       ~InterpolatedQuadratureParameter.lower_parameter
       ~InterpolatedQuadratureParameter.model

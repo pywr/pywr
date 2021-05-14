@@ -18,6 +18,7 @@
       ~ScenarioWeeklyProfileParameter.before
       ~ScenarioWeeklyProfileParameter.finish
       ~ScenarioWeeklyProfileParameter.get_all_values
+      ~ScenarioWeeklyProfileParameter.get_constant_value
       ~ScenarioWeeklyProfileParameter.get_double_lower_bounds
       ~ScenarioWeeklyProfileParameter.get_double_upper_bounds
       ~ScenarioWeeklyProfileParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~ScenarioWeeklyProfileParameter.comment
       ~ScenarioWeeklyProfileParameter.double_size
       ~ScenarioWeeklyProfileParameter.integer_size
+      ~ScenarioWeeklyProfileParameter.is_constant
       ~ScenarioWeeklyProfileParameter.is_variable
       ~ScenarioWeeklyProfileParameter.model
       ~ScenarioWeeklyProfileParameter.name

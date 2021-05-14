@@ -19,6 +19,7 @@
       ~CurrentYearThresholdParameter.finish
       ~CurrentYearThresholdParameter.get_all_indices
       ~CurrentYearThresholdParameter.get_all_values
+      ~CurrentYearThresholdParameter.get_constant_value
       ~CurrentYearThresholdParameter.get_double_lower_bounds
       ~CurrentYearThresholdParameter.get_double_upper_bounds
       ~CurrentYearThresholdParameter.get_double_variables
@@ -49,6 +50,7 @@
       ~CurrentYearThresholdParameter.comment
       ~CurrentYearThresholdParameter.double_size
       ~CurrentYearThresholdParameter.integer_size
+      ~CurrentYearThresholdParameter.is_constant
       ~CurrentYearThresholdParameter.is_variable
       ~CurrentYearThresholdParameter.model
       ~CurrentYearThresholdParameter.name

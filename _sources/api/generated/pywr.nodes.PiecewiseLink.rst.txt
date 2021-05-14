@@ -26,8 +26,12 @@
       ~PiecewiseLink.get_all_cost
       ~PiecewiseLink.get_all_max_flow
       ~PiecewiseLink.get_all_min_flow
+      ~PiecewiseLink.get_constant_max_flow
+      ~PiecewiseLink.get_constant_min_flow
       ~PiecewiseLink.get_conversion_factor
       ~PiecewiseLink.get_cost
+      ~PiecewiseLink.get_fixed_max_flow
+      ~PiecewiseLink.get_fixed_min_flow
       ~PiecewiseLink.get_max_flow
       ~PiecewiseLink.get_min_flow
       ~PiecewiseLink.iter_slots
@@ -53,6 +57,7 @@
       ~PiecewiseLink.domain
       ~PiecewiseLink.flow
       ~PiecewiseLink.fully_qualified_name
+      ~PiecewiseLink.has_constant_flows
       ~PiecewiseLink.has_fixed_cost
       ~PiecewiseLink.has_fixed_flows
       ~PiecewiseLink.max_flow

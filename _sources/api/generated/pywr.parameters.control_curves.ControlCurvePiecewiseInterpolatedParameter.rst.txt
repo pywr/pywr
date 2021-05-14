@@ -18,6 +18,7 @@
       ~ControlCurvePiecewiseInterpolatedParameter.before
       ~ControlCurvePiecewiseInterpolatedParameter.finish
       ~ControlCurvePiecewiseInterpolatedParameter.get_all_values
+      ~ControlCurvePiecewiseInterpolatedParameter.get_constant_value
       ~ControlCurvePiecewiseInterpolatedParameter.get_double_lower_bounds
       ~ControlCurvePiecewiseInterpolatedParameter.get_double_upper_bounds
       ~ControlCurvePiecewiseInterpolatedParameter.get_double_variables
@@ -47,6 +48,7 @@
       ~ControlCurvePiecewiseInterpolatedParameter.control_curves
       ~ControlCurvePiecewiseInterpolatedParameter.double_size
       ~ControlCurvePiecewiseInterpolatedParameter.integer_size
+      ~ControlCurvePiecewiseInterpolatedParameter.is_constant
       ~ControlCurvePiecewiseInterpolatedParameter.is_variable
       ~ControlCurvePiecewiseInterpolatedParameter.maximum
       ~ControlCurvePiecewiseInterpolatedParameter.minimum

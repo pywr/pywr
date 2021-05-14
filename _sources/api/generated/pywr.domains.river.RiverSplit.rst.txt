@@ -26,8 +26,12 @@
       ~RiverSplit.get_all_cost
       ~RiverSplit.get_all_max_flow
       ~RiverSplit.get_all_min_flow
+      ~RiverSplit.get_constant_max_flow
+      ~RiverSplit.get_constant_min_flow
       ~RiverSplit.get_conversion_factor
       ~RiverSplit.get_cost
+      ~RiverSplit.get_fixed_max_flow
+      ~RiverSplit.get_fixed_min_flow
       ~RiverSplit.get_max_flow
       ~RiverSplit.get_min_flow
       ~RiverSplit.iter_slots
@@ -53,6 +57,7 @@
       ~RiverSplit.domain
       ~RiverSplit.flow
       ~RiverSplit.fully_qualified_name
+      ~RiverSplit.has_constant_flows
       ~RiverSplit.has_fixed_cost
       ~RiverSplit.has_fixed_flows
       ~RiverSplit.max_flow

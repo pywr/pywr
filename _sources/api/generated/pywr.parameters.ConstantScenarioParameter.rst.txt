@@ -18,6 +18,7 @@
       ~ConstantScenarioParameter.before
       ~ConstantScenarioParameter.finish
       ~ConstantScenarioParameter.get_all_values
+      ~ConstantScenarioParameter.get_constant_value
       ~ConstantScenarioParameter.get_double_lower_bounds
       ~ConstantScenarioParameter.get_double_upper_bounds
       ~ConstantScenarioParameter.get_double_variables
@@ -46,6 +47,7 @@
       ~ConstantScenarioParameter.comment
       ~ConstantScenarioParameter.double_size
       ~ConstantScenarioParameter.integer_size
+      ~ConstantScenarioParameter.is_constant
       ~ConstantScenarioParameter.is_variable
       ~ConstantScenarioParameter.model
       ~ConstantScenarioParameter.name
