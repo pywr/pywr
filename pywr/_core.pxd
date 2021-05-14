@@ -75,8 +75,14 @@ cdef class Node(AbstractNode):
     cdef Parameter _max_flow_param
 
     cdef Parameter _conversion_factor_param
+
+    cpdef double get_fixed_min_flow(self)
+    cpdef double get_constant_min_flow(self)
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1
     cpdef double[:] get_all_min_flow(self, double[:] out=*)
+
+    cpdef double get_fixed_max_flow(self)
+    cpdef double get_constant_max_flow(self)
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1
     cpdef double[:] get_all_max_flow(self, double[:] out=*)
 

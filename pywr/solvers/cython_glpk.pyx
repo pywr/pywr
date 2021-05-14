@@ -275,7 +275,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
     cdef public list routes
     cdef list non_storages
-    cdef list non_storages_to_update
+    cdef list non_storages_with_dynamic_bounds
+    cdef list non_storages_with_constant_bounds
     cdef list nodes_with_dynamic_cost
     cdef list storages
     cdef list virtual_storages
@@ -352,7 +353,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
         nodes_with_dynamic_cost = []  # Only these nodes' costs are updated each timestep
         non_storages = []
-        non_storages_to_update = []  # Only these nodes' constraints are updated each timestep
+        non_storages_with_dynamic_bounds = []  # These nodes' constraints are updated each timestep
+        non_storages_with_constant_bounds = []  # These nodes' constraints are updated only at reset
         storages = []
         virtual_storages = []
         aggregated_with_factors = []
@@ -452,23 +454,16 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 ind[1+n] = 1+c
                 val[1+n] = 1
             set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
-
-            # Now test whether this node has fixed flow constraints
-            if self.set_fixed_flows_once and node.has_fixed_flows:
-                min_flow = inf_to_dbl_max(node.get_min_flow(None))
-                if abs(min_flow) < 1e-8:
-                    min_flow = 0.0
-                max_flow = inf_to_dbl_max(node.get_max_flow(None))
-                if abs(max_flow) < 1e-8:
-                    max_flow = 0.0
-
-                set_row_bnds(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow), min_flow, max_flow)
-            else:
-                set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
-                non_storages_to_update.append(node)
+            set_row_bnds(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
 
             free(ind)
             free(val)
+
+            # Now test whether this node has fixed flow constraints
+            if self.set_fixed_flows_once and node.has_constant_flows:
+                non_storages_with_constant_bounds.append(node)
+            else:
+                non_storages_with_dynamic_bounds.append(node)
 
             # Add constraint for cross-domain routes
             # i.e. those from a demand to a supply
@@ -621,7 +616,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
         self.routes = routes
         self.non_storages = non_storages
-        self.non_storages_to_update = non_storages_to_update
+        self.non_storages_with_constant_bounds = non_storages_with_constant_bounds
+        self.non_storages_with_dynamic_bounds = non_storages_with_dynamic_bounds
         self.nodes_with_dynamic_cost = nodes_with_dynamic_cost
         self.storages = storages
         self.virtual_storages = virtual_storages
@@ -650,6 +646,31 @@ cdef class CythonGLPKSolver(GLPKSolver):
     def reset(self):
         # Resetting this triggers a crashing of a new basis in each scenario
         self.is_first_solve = True
+        self._update_nonstorage_constant_bounds()
+
+    cdef _update_nonstorage_constant_bounds(self):
+        """Update the bounds of non-storage where they are constants.
+
+        These bounds do not need updating every time-step.
+        """
+        cdef Node node
+        cdef double min_flow
+        cdef double max_flow
+        cdef int row
+        if self.non_storages_with_constant_bounds is None:
+            return
+        # update non-storage constraints with constant bounds
+        for node in self.non_storages_with_constant_bounds:
+            row = node.__data.row
+            min_flow = inf_to_dbl_max(node.get_constant_min_flow())
+            if abs(min_flow) < 1e-8:
+                min_flow = 0.0
+            max_flow = inf_to_dbl_max(node.get_constant_max_flow())
+            if abs(max_flow) < 1e-8:
+                max_flow = 0.0
+
+            set_row_bnds(self.prob, self.idx_row_non_storages + row, constraint_type(min_flow, max_flow),
+                         min_flow, max_flow)
 
     cpdef object solve(self, model):
         GLPKSolver.solve(self, model)
@@ -700,7 +721,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         cdef list routes = self.routes
         nroutes = len(routes)
         cdef list non_storages = self.non_storages
-        cdef list non_storages_to_update = self.non_storages_to_update
+        cdef list non_storages_with_dynamic_bounds = self.non_storages_with_dynamic_bounds
         cdef list storages = self.storages
         cdef list virtual_storages = self.virtual_storages
         cdef list aggregated = self.aggregated
@@ -756,7 +777,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         t0 = time.perf_counter()
 
         # update non-storage properties
-        for node in non_storages_to_update:
+        for node in non_storages_with_dynamic_bounds:
             row = node.__data.row
             min_flow = inf_to_dbl_max(node.get_min_flow(scenario_index))
             if abs(min_flow) < 1e-8:
@@ -901,7 +922,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
     cdef int idx_row_aggregated_min_max
 
     cdef list non_storages
-    cdef list non_storages_to_update
+    cdef list non_storages_with_dynamic_bounds
+    cdef list non_storages_with_constant_bounds
     cdef list nodes_with_dynamic_cost
     cdef list storages
     cdef list virtual_storages
@@ -985,7 +1007,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         nodes_with_dynamic_cost = []
         link_nodes = []
         non_storages = []
-        non_storages_to_update = []
+        non_storages_with_dynamic_bounds = []  # These nodes' constraints are updated each timestep
+        non_storages_with_constant_bounds = []  # These nodes' constraints are updated only at reset
         storages = []
         virtual_storages = []
         aggregated_with_factors = []
@@ -1104,23 +1127,15 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 ind[1+n] = 1+c
                 val[1+n] = 1
             set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
-
-            # Now test whether this node has fixed flow constraints
-            if self.set_fixed_flows_once and node.has_fixed_flows:
-                min_flow = inf_to_dbl_max(node.get_min_flow(None))
-                if abs(min_flow) < 1e-8:
-                    min_flow = 0.0
-                max_flow = inf_to_dbl_max(node.get_max_flow(None))
-                if abs(max_flow) < 1e-8:
-                    max_flow = 0.0
-
-                set_row_bnds(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow), min_flow, max_flow)
-            else:
-                set_row_bnds(self.prob, self.idx_row_non_storages+row, GLP_FX, 0.0, 0.0)
-                non_storages_to_update.append(node)
-
+            set_row_bnds(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
             free(ind)
             free(val)
+
+            # Now test whether this node has constant flow constraints
+            if self.set_fixed_flows_once and node.has_constant_flows:
+                non_storages_with_constant_bounds.append(node)
+            else:
+                non_storages_with_dynamic_bounds.append(node)
 
             # Add constraint for cross-domain routes
             # i.e. those from a demand to a supply
@@ -1293,7 +1308,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             free(val)
 
         self.non_storages = non_storages
-        self.non_storages_to_update = non_storages_to_update
+        self.non_storages_with_dynamic_bounds = non_storages_with_dynamic_bounds
+        self.non_storages_with_constant_bounds = non_storages_with_constant_bounds
         self.nodes_with_dynamic_cost = nodes_with_dynamic_cost
         self.storages = storages
         self.virtual_storages = virtual_storages
@@ -1322,6 +1338,31 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
     def reset(self):
         # Resetting this triggers a crashing of a new basis in each scenario
         self.is_first_solve = True
+        self._update_nonstorage_constant_bounds()
+
+    cdef _update_nonstorage_constant_bounds(self):
+        """Update the bounds of non-storage where they are constants.
+        
+        These bounds do not need updating every time-step.
+        """
+        cdef Node node
+        cdef double min_flow
+        cdef double max_flow
+        cdef int row
+        if self.non_storages_with_constant_bounds is None:
+            return
+        # update non-storage constraints with constant bounds
+        for node in self.non_storages_with_constant_bounds:
+            row = node.__data.row
+            min_flow = inf_to_dbl_max(node.get_constant_min_flow())
+            if abs(min_flow) < 1e-8:
+                min_flow = 0.0
+            max_flow = inf_to_dbl_max(node.get_constant_max_flow())
+            if abs(max_flow) < 1e-8:
+                max_flow = 0.0
+
+            set_row_bnds(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
+                         min_flow, max_flow)
 
     cpdef object solve(self, model):
         GLPKSolver.solve(self, model)
@@ -1374,7 +1415,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         cdef list edges = self.all_edges
         nedges = self.num_edges
         cdef list non_storages = self.non_storages
-        cdef list non_storages_to_update = self.non_storages_to_update
+        cdef list non_storages_with_dynamic_bounds = self.non_storages_with_dynamic_bounds
         cdef list storages = self.storages
         cdef list virtual_storages = self.virtual_storages
         cdef list aggregated = self.aggregated
@@ -1439,7 +1480,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         t0 = time.perf_counter()
 
         # update non-storage properties
-        for node in non_storages_to_update:
+        for node in non_storages_with_dynamic_bounds:
             row = node.__data.row
             min_flow = inf_to_dbl_max(node.get_min_flow(scenario_index))
             if abs(min_flow) < 1e-8:

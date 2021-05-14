@@ -571,6 +571,20 @@ cdef class Node(AbstractNode):
                 self._min_flow_param = None
                 self._min_flow = value
 
+    cpdef double get_fixed_min_flow(self):
+        """Returns min_flow value if it is a fixed value otherwise returns NaN."""
+        if self.has_fixed_flows:
+            return self._min_flow
+        return float('nan')
+
+    cpdef double get_constant_min_flow(self):
+        """Returns min_flow value if it is a constant parameter or fixed value otherwise returns NaN."""
+        if self._min_flow_param is None:
+            return self._min_flow
+        elif self._min_flow_param.is_constant:
+            return self._min_flow_param.get_constant_value()
+        return float('nan')
+
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1:
         """Get the minimum flow at a given timestep
         """
@@ -613,6 +627,26 @@ cdef class Node(AbstractNode):
         """Returns true if both min_flow and max_flow are not Parameters."""
         def __get__(self):
             return self._max_flow_param is None and self._min_flow_param is None
+
+    property has_constant_flows:
+        """Returns true if both min_flow and max_flow are literal constants or "constant" Parameters."""
+        def __get__(self):
+            return (self._max_flow_param is None or self._max_flow_param.is_constant) and \
+                   (self._min_flow_param is None or self._min_flow_param.is_constant)
+
+    cpdef double get_fixed_max_flow(self):
+        """Returns max_flow value if it is fixed value otherwise returns NaN."""
+        if self.has_fixed_flows:
+            return self._max_flow
+        return float('nan')
+
+    cpdef double get_constant_max_flow(self):
+        """Returns max_flow value if it is a constant parameter or fixed value otherwise returns NaN."""
+        if self._max_flow_param is None:
+            return self._max_flow
+        elif self._max_flow_param.is_constant:
+            return self._max_flow_param.get_constant_value()
+        return float('nan')
 
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1:
         """Get the maximum flow at a given timestep

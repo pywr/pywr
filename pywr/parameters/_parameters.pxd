@@ -7,12 +7,14 @@ cdef class Parameter(Component):
     cdef public int integer_size
     cdef int _size
     cdef public bint is_variable
+    cdef readonly bint is_constant
     cdef AbstractNode _node
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1
     cdef double[:] __values
     cdef calc_values(self, Timestep ts)
     cpdef double get_value(self, ScenarioIndex scenario_index)
     cpdef double[:] get_all_values(self)
+    cpdef double get_constant_value(self)
 
     # New variable API
     cpdef set_double_variables(self, double[:] values)
