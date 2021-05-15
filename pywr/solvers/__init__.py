@@ -73,6 +73,7 @@ else:
             super(CythonGLPKSolver, self).__init__(*args, **kwargs)
             kwargs = _parse_env_kwarg(kwargs, 'set_fixed_flows_once', 'PYWR_SOLVER_GLPK_FIXED_FLOWS_ONCE', bool)
             kwargs = _parse_env_kwarg(kwargs, 'set_fixed_costs_once', 'PYWR_SOLVER_GLPK_FIXED_COSTS_ONCE', bool)
+            kwargs = _parse_env_kwarg(kwargs, 'set_fixed_factors_once', 'PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE', bool)
             self._cy_solver = cy_CythonGLPKSolver(**kwargs)
 
         def setup(self, model):
@@ -165,6 +166,7 @@ else:
             super(CythonGLPKEdgeSolver, self).__init__(*args, **kwargs)
             kwargs = _parse_env_kwarg(kwargs, 'set_fixed_flows_once', 'PYWR_SOLVER_GLPK_FIXED_FLOWS_ONCE', bool)
             kwargs = _parse_env_kwarg(kwargs, 'set_fixed_costs_once', 'PYWR_SOLVER_GLPK_FIXED_COSTS_ONCE', bool)
+            kwargs = _parse_env_kwarg(kwargs, 'set_fixed_factors_once', 'PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE', bool)
             self._cy_solver = cy_CythonGLPKEdgeSolver(**kwargs)
 
         def setup(self, model):

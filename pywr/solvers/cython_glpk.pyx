@@ -117,6 +117,7 @@ cdef class GLPKSolver:
     cdef bint has_presolved
     cdef public bint set_fixed_flows_once
     cdef public bint set_fixed_costs_once
+    cdef public bint set_fixed_factors_once
 
     def __cinit__(self):
         self.prob = glp_create_prob()
@@ -125,13 +126,14 @@ cdef class GLPKSolver:
         glp_delete_prob(self.prob)
 
     def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level="error",
-                 set_fixed_flows_once=False, set_fixed_costs_once=False):
+                 set_fixed_flows_once=False, set_fixed_costs_once=False, set_fixed_factors_once=False):
         self.use_presolve = use_presolve
         self.set_solver_options(time_limit, iteration_limit, message_level)
         glp_term_hook(term_hook, NULL)
         self.has_presolved = False
         self.set_fixed_flows_once = set_fixed_flows_once
         self.set_fixed_costs_once = set_fixed_costs_once
+        self.set_fixed_factors_once = set_fixed_factors_once
 
     def set_solver_options(self, time_limit, iteration_limit, message_level):
         glp_init_smcp(&self.smcp)
@@ -282,6 +284,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
     cdef list virtual_storages
     cdef list aggregated
     cdef list aggregated_with_factors
+    cdef list aggregated_with_dynamic_factors
+    cdef list aggregated_with_constant_factors
 
     cdef int[:] routes_cost
     cdef int[:] routes_cost_indptr
@@ -358,6 +362,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
         storages = []
         virtual_storages = []
         aggregated_with_factors = []
+        aggregated_with_dynamic_factors = []
+        aggregated_with_constant_factors = []
         aggregated = []
 
         for some_node in self.all_nodes:
@@ -568,6 +574,12 @@ cdef class CythonGLPKSolver(GLPKSolver):
             for n in range(len(nodes)-1):
                 set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
 
+            # Determine whether the factors should be updated in reset or at each time-step
+            if self.set_fixed_factors_once and agg_node.has_constant_factors:
+                aggregated_with_constant_factors.append(agg_node)
+            else:
+                aggregated_with_dynamic_factors.append(agg_node)
+
         # aggregated node min/max flow constraints
         if aggregated:
             self.idx_row_aggregated_min_max = glp_add_rows(self.prob, len(aggregated))
@@ -623,6 +635,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
         self.virtual_storages = virtual_storages
         self.aggregated = aggregated
         self.aggregated_with_factors = aggregated_with_factors
+        self.aggregated_with_dynamic_factors = aggregated_with_dynamic_factors
+        self.aggregated_with_constant_factors = aggregated_with_constant_factors
 
         self.basis_manager.init_basis(self.prob, len(model.scenarios.combinations))
         self.is_first_solve = True
@@ -647,6 +661,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         # Resetting this triggers a crashing of a new basis in each scenario
         self.is_first_solve = True
         self._update_nonstorage_constant_bounds()
+        self._update_constant_agg_factors()
 
     cdef _update_nonstorage_constant_bounds(self):
         """Update the bounds of non-storage where they are constants.
@@ -671,6 +686,40 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
             set_row_bnds(self.prob, self.idx_row_non_storages + row, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
+
+    cdef _update_constant_agg_factors(self):
+        cdef AggregatedNode agg_node
+        cdef AggNodeFactorData agg_data
+        cdef int n, i, ptr
+        cdef Py_ssize_t length
+        cdef int[::1] inds
+        cdef double[::1] vals
+        cdef int[:] indptr_array
+        if self.aggregated_with_constant_factors is None:
+            return
+
+        # Update constraint matrix values for aggregated nodes that have factors defined as parameters
+        for agg_node in self.aggregated_with_constant_factors:
+            factors_norm = agg_node.get_factors_norm(None)
+
+            agg_data = agg_node.__agg_factor_data
+            inds = agg_data.inds
+            vals = agg_data.vals
+            indptr_array = agg_data.ind_ptr
+
+            for n in range(len(agg_node.nodes)-1):
+
+                ptr = indptr_array[n]
+                length = indptr_array[n+1] - ptr
+
+                # only update factors for second node of each row, factor values for first node are already 1.0
+                for i in range(ptr + agg_data.node_ind, ptr + length):
+                    vals[i] = -factors_norm[n+1]
+
+                # 'length - 1' is used here because the ind and val slices start with a padded zero value.
+                # This is required by 'set_mat_row'.
+                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
+
 
     cpdef object solve(self, model):
         GLPKSolver.solve(self, model)
@@ -929,6 +978,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
     cdef list virtual_storages
     cdef list aggregated
     cdef list aggregated_with_factors
+    cdef list aggregated_with_dynamic_factors
+    cdef list aggregated_with_constant_factors
 
     cdef list all_nodes
     cdef list all_edges
@@ -1012,6 +1063,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         storages = []
         virtual_storages = []
         aggregated_with_factors = []
+        aggregated_with_dynamic_factors = []
+        aggregated_with_constant_factors = []
         aggregated = []
 
         for some_node in self.all_nodes:
@@ -1274,6 +1327,12 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             for n in range(len(nodes)-1):
                 set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
 
+            # Determine whether the factors should be updated in reset or at each time-step
+            if self.set_fixed_factors_once and agg_node.has_constant_factors:
+                aggregated_with_constant_factors.append(agg_node)
+            else:
+                aggregated_with_dynamic_factors.append(agg_node)
+
         # aggregated node min/max flow constraints
         if aggregated:
             self.idx_row_aggregated_min_max = glp_add_rows(self.prob, len(aggregated))
@@ -1315,6 +1374,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         self.virtual_storages = virtual_storages
         self.aggregated = aggregated
         self.aggregated_with_factors = aggregated_with_factors
+        self.aggregated_with_dynamic_factors = aggregated_with_dynamic_factors
+        self.aggregated_with_constant_factors = aggregated_with_constant_factors
 
         self.basis_manager.init_basis(self.prob, len(model.scenarios.combinations))
         self.is_first_solve = True
@@ -1339,6 +1400,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         # Resetting this triggers a crashing of a new basis in each scenario
         self.is_first_solve = True
         self._update_nonstorage_constant_bounds()
+        self._update_constant_agg_factors()
 
     cdef _update_nonstorage_constant_bounds(self):
         """Update the bounds of non-storage where they are constants.
@@ -1363,6 +1425,39 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
             set_row_bnds(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
+
+    cdef _update_constant_agg_factors(self):
+        cdef AggregatedNode agg_node
+        cdef AggNodeFactorData agg_data
+        cdef int n, i, ptr
+        cdef Py_ssize_t length
+        cdef int[::1] inds
+        cdef double[::1] vals
+        cdef int[:] indptr_array
+        if self.aggregated_with_constant_factors is None:
+            return
+
+        # Update constraint matrix values for aggregated nodes that have factors defined as parameters
+        for agg_node in self.aggregated_with_constant_factors:
+            factors_norm = agg_node.get_factors_norm(None)
+
+            agg_data = agg_node.__agg_factor_data
+            inds = agg_data.inds
+            vals = agg_data.vals
+            indptr_array = agg_data.ind_ptr
+
+            for n in range(len(agg_node.nodes)-1):
+
+                ptr = indptr_array[n]
+                length = indptr_array[n+1] - ptr
+
+                # only update factors for second node of each row, factor values for first node are already 1.0
+                for i in range(ptr + agg_data.node_ind, ptr + length):
+                    vals[i] = -factors_norm[n+1]
+
+                # 'length - 1' is used here because the ind and val slices start with a padded zero value.
+                # This is required by 'set_mat_row'.
+                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
     cpdef object solve(self, model):
         GLPKSolver.solve(self, model)
@@ -1454,7 +1549,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         t0 = time.perf_counter()
 
         # Update constraint matrix values for aggregated nodes that have factors defined as parameters
-        for agg_node in self.aggregated_with_factors:
+        for agg_node in self.aggregated_with_dynamic_factors:
 
             factors_norm = agg_node.get_factors_norm(scenario_index)
 
