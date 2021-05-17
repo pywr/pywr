@@ -800,7 +800,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         t0 = time.perf_counter()
 
         # Update constraint matrix values for aggregated nodes that have factors defined as parameters
-        for agg_node in self.aggregated_with_factors:
+        for agg_node in self.aggregated_with_dynamic_factors:
 
             factors_norm = agg_node.get_factors_norm(scenario_index)
 
