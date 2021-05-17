@@ -139,13 +139,18 @@ else:
             return self._cy_solver.set_fixed_costs_once
 
         @property
+        def set_fixed_factors_once(self):
+            return self._cy_solver.set_fixed_factors_once
+
+        @property
         def settings(self):
             return {
                 'use_presolve': self.use_presolve,
                 'save_routes_flows': self.save_routes_flows,
                 'retry_solve': self.retry_solve,
                 'set_fixed_flows_once': self.set_fixed_flows_once,
-                'set_fixed_costs_once': self.set_fixed_costs_once
+                'set_fixed_costs_once': self.set_fixed_costs_once,
+                'set_fixed_factors_once': self.set_fixed_factors_once
             }
     solver_registry.append(CythonGLPKSolver)
 
@@ -214,12 +219,17 @@ else:
             return self._cy_solver.set_fixed_costs_once
 
         @property
+        def set_fixed_factors_once(self):
+            return self._cy_solver.set_fixed_factors_once
+
+        @property
         def settings(self):
             return {
                 'use_presolve': self.use_presolve,
                 'retry_solve': self.retry_solve,
                 'set_fixed_flows_once': self.set_fixed_flows_once,
-                'set_fixed_costs_once': self.set_fixed_costs_once
+                'set_fixed_costs_once': self.set_fixed_costs_once,
+                'set_fixed_factors_once': self.set_fixed_factors_once
             }
     solver_registry.append(CythonGLPKEdgeSolver)
 
