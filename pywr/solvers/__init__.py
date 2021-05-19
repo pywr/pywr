@@ -73,6 +73,7 @@ else:
             super(CythonGLPKSolver, self).__init__(*args, **kwargs)
             kwargs = _parse_env_kwarg(kwargs, 'set_fixed_flows_once', 'PYWR_SOLVER_GLPK_FIXED_FLOWS_ONCE', bool)
             kwargs = _parse_env_kwarg(kwargs, 'set_fixed_costs_once', 'PYWR_SOLVER_GLPK_FIXED_COSTS_ONCE', bool)
+            kwargs = _parse_env_kwarg(kwargs, 'set_fixed_factors_once', 'PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE', bool)
             self._cy_solver = cy_CythonGLPKSolver(**kwargs)
 
         def setup(self, model):
@@ -138,13 +139,18 @@ else:
             return self._cy_solver.set_fixed_costs_once
 
         @property
+        def set_fixed_factors_once(self):
+            return self._cy_solver.set_fixed_factors_once
+
+        @property
         def settings(self):
             return {
                 'use_presolve': self.use_presolve,
                 'save_routes_flows': self.save_routes_flows,
                 'retry_solve': self.retry_solve,
                 'set_fixed_flows_once': self.set_fixed_flows_once,
-                'set_fixed_costs_once': self.set_fixed_costs_once
+                'set_fixed_costs_once': self.set_fixed_costs_once,
+                'set_fixed_factors_once': self.set_fixed_factors_once
             }
     solver_registry.append(CythonGLPKSolver)
 
@@ -165,6 +171,7 @@ else:
             super(CythonGLPKEdgeSolver, self).__init__(*args, **kwargs)
             kwargs = _parse_env_kwarg(kwargs, 'set_fixed_flows_once', 'PYWR_SOLVER_GLPK_FIXED_FLOWS_ONCE', bool)
             kwargs = _parse_env_kwarg(kwargs, 'set_fixed_costs_once', 'PYWR_SOLVER_GLPK_FIXED_COSTS_ONCE', bool)
+            kwargs = _parse_env_kwarg(kwargs, 'set_fixed_factors_once', 'PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE', bool)
             self._cy_solver = cy_CythonGLPKEdgeSolver(**kwargs)
 
         def setup(self, model):
@@ -212,12 +219,17 @@ else:
             return self._cy_solver.set_fixed_costs_once
 
         @property
+        def set_fixed_factors_once(self):
+            return self._cy_solver.set_fixed_factors_once
+
+        @property
         def settings(self):
             return {
                 'use_presolve': self.use_presolve,
                 'retry_solve': self.retry_solve,
                 'set_fixed_flows_once': self.set_fixed_flows_once,
-                'set_fixed_costs_once': self.set_fixed_costs_once
+                'set_fixed_costs_once': self.set_fixed_costs_once,
+                'set_fixed_factors_once': self.set_fixed_factors_once
             }
     solver_registry.append(CythonGLPKEdgeSolver)
 

@@ -783,6 +783,11 @@ cdef class AggregatedNode(AbstractNode):
             from pywr.parameters import ConstantParameter
             return all([isinstance(p, ConstantParameter) for p in self.factors])
 
+    property has_constant_factors:
+        """Returns true if all factors are `is_constant==True`"""
+        def __get__(self):
+            return all([p.is_constant for p in self.factors])
+
     property flow_weights:
         def __get__(self):
             if self._flow_weights is None:
@@ -882,20 +887,34 @@ cdef class AggregatedNode(AbstractNode):
         cdef Parameter p
         return np.array([p.get_value(scenario_index) for p in self.factors], np.float64)
 
+    cpdef double[:] get_constant_factors(self):
+        """Get constant factors.
+
+        Will return an array of `NaN` if the factors are no `is_constant`. 
+        """
+        cdef Parameter p
+        return np.array([p.get_constant_value() for p in self.factors], np.float64)
+
     cpdef double[:] get_factors_norm(self, ScenarioIndex scenario_index):
-        """Get node factors normalised by the factor of the first node
+        """Get node factors normalised by the factor of the first node.
+        
+        If `scenario_index` is `None` assumed to be constant factors.
         """
         cdef double f0, f
         cdef int i
         cdef double[:] factors_norm, factors
 
-        factors = self.get_factors(scenario_index)
+        if scenario_index is None:
+            factors = self.get_constant_factors()
+        else:
+            factors = self.get_factors(scenario_index)
         f0 = factors[0]
         factors_norm = np.empty(len(factors), np.float64)
 
         for i in range(len(factors)):
             factors_norm[i] = f0/factors[i]
         return factors_norm
+
 
 cdef class StorageInput(BaseInput):
     cpdef commit(self, int scenario_index, double volume):
