@@ -24,6 +24,7 @@
       ~AggregatedNode.get_all_cost
       ~AggregatedNode.get_all_max_flow
       ~AggregatedNode.get_all_min_flow
+      ~AggregatedNode.get_constant_factors
       ~AggregatedNode.get_cost
       ~AggregatedNode.get_factors
       ~AggregatedNode.get_factors_norm
@@ -50,6 +51,7 @@
       ~AggregatedNode.flow
       ~AggregatedNode.flow_weights
       ~AggregatedNode.fully_qualified_name
+      ~AggregatedNode.has_constant_factors
       ~AggregatedNode.has_fixed_factors
       ~AggregatedNode.max_flow
       ~AggregatedNode.min_flow

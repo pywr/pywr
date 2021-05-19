@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.nodes.AggregatedNode &mdash; Pywr 1.14.1.dev3+g86865bd documentation</title>
+  <title>pywr.nodes.AggregatedNode &mdash; Pywr 1.14.1.dev4+gfe0b5927 documentation</title>
   
 
   
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.14.1.dev3+g86865bd
+                1.14.1.dev4+gfe0b5927
               </div>
             
           
@@ -275,28 +275,31 @@ However this object can not be connected to others within the network.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_all_min_flow</span></code>(self, double[)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_cost</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_constant_factors</span></code>(self)</p></td>
+<td><p>Get constant factors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_cost</span></code>(self, ScenarioIndex scenario_index)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_factors</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_factors</span></code>(self, ScenarioIndex scenario_index)</p></td>
 <td><p>Get node factors for the current timestep and given scenario index.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_factors_norm</span></code>(self, …)</p></td>
-<td><p>Get node factors normalised by the factor of the first node</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_factors_norm</span></code>(self, …)</p></td>
+<td><p>Get node factors normalised by the factor of the first node.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_max_flow</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_max_flow</span></code>(self, ScenarioIndex scenario_index)</p></td>
 <td><p>Get the maximum flow at a given timestep</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_min_flow</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_min_flow</span></code>(self, ScenarioIndex scenario_index)</p></td>
 <td><p>Get the minimum flow at a given timestep</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pre_load</span></code>(model, data)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pre_load</span></code>(model, data)</p></td>
 <td><p>Create a node instance from data.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>(self)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>(self)</p></td>
 <td><p>Called at the beginning of a run</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code>(self, model)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code>(self, model)</p></td>
 <td><p>Called before the first run of the model</p></td>
 </tr>
 </tbody>
@@ -335,34 +338,37 @@ However this object can not be connected to others within the network.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fully_qualified_name</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_fixed_factors</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_constant_factors</span></code></p></td>
+<td><p>Returns true if all factors are <cite>is_constant==True</cite></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_fixed_factors</span></code></p></td>
 <td><p>Returns true if all factors are of type <cite>ConstantParameter</cite></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_flow</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_flow</span></code></p></td>
 <td><p>The maximum flow constraint on the node</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_flow</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_flow</span></code></p></td>
 <td><p>The minimum flow constraint on the node</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
 <td><p>The recorder for the node, e.g.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
 <td><p>Name of the node.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
 <td><p>The parent Node/Storage of this object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev_flow</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev_flow</span></code></p></td>
 <td><p>Total flow via this node in the previous timestep</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recorders</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recorders</span></code></p></td>
 <td><p>Returns a list of <cite>pywr.recorders.Recorder</cite> objects attached to this node.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">virtual</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">virtual</span></code></p></td>
 <td><p>virtual: ‘bool’</p></td>
 </tr>
 </tbody>

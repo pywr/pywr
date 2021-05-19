@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Solvers &mdash; Pywr 1.14.1.dev3+g86865bd documentation</title>
+  <title>Solvers &mdash; Pywr 1.14.1.dev4+gfe0b5927 documentation</title>
   
 
   
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.14.1.dev3+g86865bd
+                1.14.1.dev4+gfe0b5927
               </div>
             
           
@@ -365,7 +365,7 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">GLPKSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_presolve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_flows_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_costs_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">GLPKSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_presolve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_flows_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_costs_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_factors_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.dump_glpk">
@@ -391,6 +391,12 @@
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.set_fixed_costs_once">
 <span class="sig-name descname"><span class="pre">set_fixed_costs_once</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_fixed_costs_once" title="Permalink to this definition">¶</a></dt>
 <dd><p>set_fixed_costs_once: ‘bool’</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.set_fixed_factors_once">
+<span class="sig-name descname"><span class="pre">set_fixed_factors_once</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_fixed_factors_once" title="Permalink to this definition">¶</a></dt>
+<dd><p>set_fixed_factors_once: ‘bool’</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -480,6 +486,11 @@ allocation problem every time step.</p>
 <dd></dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.set_fixed_factors_once">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_factors_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.set_fixed_factors_once" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.set_fixed_flows_once">
 <em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_flows_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.set_fixed_flows_once" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -565,6 +576,11 @@ allocation problem every time step.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.set_fixed_costs_once">
 <em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_costs_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.set_fixed_costs_once" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.set_fixed_factors_once">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_factors_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.set_fixed_factors_once" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
