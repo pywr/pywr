@@ -625,10 +625,14 @@ cdef class MonthlyProfileParameter(Parameter):
     ----------
     values : iterable, array
         The 12 values that represent the monthly profile.
-    lower_bounds : float (default=0.0)
+    lower_bounds : float (default=0.0) or list
         The lower bounds of the monthly profile values when used during optimisation.
-    upper_bounds : float (default=np.inf)
+            If float given, same bound applied for every month.
+            If list of 12 values given, bound for each month applied explicitly.
+    upper_bounds : float (default=np.inf) or list
         The upper bounds of the monthly profile values when used during optimisation.
+            If float given, same bound applied for every month.
+            If list of 12 values given, bound for each month applied explicitly.
     inter_day : str or None (default=None)
         If `interp_day` is None then no interpolation is undertaken, and the parameter
          returns values representing a piecewise monthly profile. Otherwise `interp_day`
@@ -650,8 +654,21 @@ cdef class MonthlyProfileParameter(Parameter):
             raise ValueError("12 values must be given for a monthly profile.")
         self._values = np.array(values)
         self.interp_day = interp_day
-        self._lower_bounds = np.ones(self.double_size)*lower_bounds
-        self._upper_bounds = np.ones(self.double_size)*upper_bounds
+
+        if isinstance(lower_bounds, list):
+            if len(lower_bounds) != self.double_size:
+                raise ValueError("if lower bound is list, 12 values must be given for a monthly profile.")
+            self._lower_bounds = np.array(lower_bounds)
+        else:
+            self._lower_bounds = np.ones(self.double_size)*lower_bounds
+
+        if isinstance(upper_bounds, list):
+            if len(upper_bounds) != self.double_size:
+                raise ValueError("if upper bound is list, 12 values must be given for a monthly profile.")
+            self._upper_bounds = np.array(upper_bounds)
+        else:
+            self._upper_bounds = np.ones(self.double_size)*upper_bounds
+
 
     cpdef reset(self):
         Parameter.reset(self)
@@ -916,10 +933,14 @@ cdef class RbfProfileParameter(Parameter):
         value should be one.
     values : iterable, float
         Values to use for interpolation corresponding to the `days_of_year`.
-    lower_bounds : float (default=0.0)
+    lower_bounds : float (default=0.0) or list
         The lower bounds of the values when used during optimisation.
-    upper_bounds : float (default=np.inf)
+            If float given, same bound applied for every value.
+            If list of values given, bound for each value applied explicitly.
+    upper_bounds : float (default=np.inf) or list
         The upper bounds of the values when used during optimisation.
+            If float given, same bound applied for every value.
+            If list of values given, bound for each value applied explicitly.
     variable_days_of_year_range : int (default=0)
         The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
         will cause the days of the year values to be exposed as integer variables (except the first value which
@@ -945,8 +966,16 @@ cdef class RbfProfileParameter(Parameter):
         self.days_of_year = days_of_year
         self.min_value = min_value
         self.max_value = max_value
-        self._lower_bounds = np.ones(self.double_size)*lower_bounds
-        self._upper_bounds = np.ones(self.double_size)*upper_bounds
+
+        if isinstance(lower_bounds, list):
+            self._lower_bounds = np.array(lower_bounds)
+        else:
+            self._lower_bounds = np.ones(self.double_size)*lower_bounds
+
+        if isinstance(upper_bounds, list):
+            self._upper_bounds = np.array(upper_bounds)
+        else:
+            self._upper_bounds = np.ones(self.double_size)*upper_bounds
 
         if self.variable_days_of_year_range > 0:
             if np.any(np.diff(self.days_of_year) <= 2*self.variable_days_of_year_range):
