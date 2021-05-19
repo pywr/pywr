@@ -38,6 +38,7 @@ cdef class DataFrameParameter(Parameter):
     cdef double[:,:] _values
     cdef public Scenario scenario
     cdef int _scenario_index
+    cdef int[:] _scenario_ids
     cdef public object dataframe
 
 cdef class ArrayIndexedParameter(Parameter):

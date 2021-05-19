@@ -1,6 +1,8 @@
 """
 Test for individual Parameter classes
 """
+from pyparsing import col
+
 from pywr.core import Model, Timestep, Scenario, ScenarioIndex, Storage, Link, Input, Output, Catchment
 from pywr.parameters import (Parameter, ArrayIndexedParameter, ConstantScenarioParameter,
     ArrayIndexedScenarioMonthlyFactorsParameter, MonthlyProfileParameter, DailyProfileParameter,
@@ -791,6 +793,24 @@ def test_parameter_df_upsampling_multiple_columns(model):
     p = DataFrameParameter(model, df, scenario=scB)
     with pytest.raises(ValueError):
         p.setup()
+
+
+def test_parameter_df_subsample():
+    """Test dataframe parameter loads correct data for a sub-sample of the scenarios."""
+    model = load_model("timeseries3_subsample.json")
+
+    flow_parameter = model.parameters['inflow']
+    raw_data = pd.read_csv(os.path.join(TEST_DIR, 'models', 'timeseries2.csv'), index_col=0, parse_dates=True)
+    # This the list of sub-samples provided in the model definition.
+    # Test out-of-order and repeats.
+    scenario_indices_map = [0, 9, 1, 0]
+
+    @assert_rec(model, flow_parameter)
+    def expected_func(timestep, scenario_index):
+        col_idx = scenario_indices_map[scenario_index.global_id]
+        return raw_data.iloc[timestep.index, col_idx]
+
+    model.run()
 
 
 def test_parameter_df_json_load(model, tmpdir):
