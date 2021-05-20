@@ -2,6 +2,25 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.15.0
+
+### New Features
+
+- Performance improvements for the GLPK solvers. Several new options have been added to the GLPK solvers that
+  reduce the number of linear programme updates required each time-step. These options are currently off by default,
+  but can be enabled by either passing keyword arguments to the solver instances or via environment variables.
+  (#912, #983, #985)
+  - Update constant and fixed flows only once during reset (`PYWR_SOLVER_GLPK_FIXED_FLOWS_ONCE=True`)
+  - Update constant and fixed costs only once during reset (`PYWR_SOLVER_GLPK_FIXED_COSTS_ONCE=True`)
+  - Update constant and fixed aggregated node factors only once during reset (`PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE=True`)
+- Improve memory usage in `DataFrameParameter` when running a subset of the defined scenarios. The parameter now only
+  retains the data for the subset of scenarios required for the simulation instead of all scenarios. (#981)
+- Update `MonthlyProfileParameter` and `RbfProfileParameter` to allow variable lower and upper bounds to be defined. (#986)
+
+### Bug Fixes
+
+- Fix use of deprecated `np.int` and `np.float` types. (#982)
+
 ## v1.14.0
 
 ### New Features
