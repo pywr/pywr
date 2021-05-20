@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.parameters.RbfProfileParameter &mdash; Pywr 1.14.1.dev5+gb7bdcdb8 documentation</title>
+  <title>pywr.parameters.RbfProfileParameter &mdash; Pywr 1.14.1.dev6+g3994aab4 documentation</title>
   
 
   
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.14.1.dev5+gb7bdcdb8
+                1.14.1.dev6+g3994aab4
               </div>
             
           
@@ -230,9 +230,11 @@ value should be one.</p>
 </dd>
 <dt><strong>values</strong><span class="classifier">iterable, float</span></dt><dd><p>Values to use for interpolation corresponding to the <cite>days_of_year</cite>.</p>
 </dd>
-<dt><strong>lower_bounds</strong><span class="classifier">float (default=0.0)</span></dt><dd><p>The lower bounds of the values when used during optimisation.</p>
+<dt><strong>lower_bounds</strong><span class="classifier">float or array_like (default=0.0)</span></dt><dd><p>Defines the lower bounds when using optimisation. If a float given, same bound applied for every day of the
+year. Otherwise an array like object of length equal to the number of days of the year should be given.</p>
 </dd>
-<dt><strong>upper_bounds</strong><span class="classifier">float (default=np.inf)</span></dt><dd><p>The upper bounds of the values when used during optimisation.</p>
+<dt><strong>upper_bounds</strong><span class="classifier">float or array_like (default=np.inf)</span></dt><dd><p>Defines the upper bounds when using optimisation. If a float given, same bound applied for every day of the
+year. Otherwise an array like object of length equal to the number of days of the year should be given.</p>
 </dd>
 <dt><strong>variable_days_of_year_range</strong><span class="classifier">int (default=0)</span></dt><dd><p>The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
 will cause the days of the year values to be exposed as integer variables (except the first value which
