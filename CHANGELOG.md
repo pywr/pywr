@@ -8,7 +8,7 @@ All issue numbers are relative to https://github.com/pywr/pywr/issues unless oth
 
 - Performance improvements for the GLPK solvers. Several new options have been added to the GLPK solvers that
   reduce the number of linear programme updates required each time-step. These options are currently off by default,
-  but can be enabled be either passing keyword arguments to the solver instances or via environment variables.
+  but can be enabled by either passing keyword arguments to the solver instances or via environment variables.
   (#912, #983, #985)
   - Update constant and fixed flows only once during reset (`PYWR_SOLVER_GLPK_FIXED_FLOWS_ONCE=True`)
   - Update constant and fixed costs only once during reset (`PYWR_SOLVER_GLPK_FIXED_COSTS_ONCE=True`)
