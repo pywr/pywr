@@ -286,6 +286,39 @@ class TestMonthlyProfileParameter:
             return values[(imth - 1) % 12] * (1 - x) + values[imth] * x
         model.run()
 
+    @pytest.mark.parametrize('lower_bounds, upper_bounds', [
+        [0.0, 1.0],
+        [[0.1]*3 + [0.2]*3 + [0.3]*3 + [0.4]*3, [1.0]*3 + [0.9]*3 + [0.8]*3 + [0.7]*3]
+    ])
+    def test_variable_api(self, simple_linear_model, lower_bounds, upper_bounds):
+        """Test using variable API implementation on MonthlyProfileParameter."""
+
+        data = {
+            'type': 'monthlyprofile',
+            "values": [0.1]*12,
+            "lower_bounds": lower_bounds,
+            "upper_bounds": upper_bounds
+        }
+
+        p = load_parameter(simple_linear_model, data)
+        assert p.double_size == 12
+        assert p.integer_size == 0
+
+        new_values = np.random.rand(p.double_size)
+        p.set_double_variables(new_values)
+        np.testing.assert_allclose(p.get_double_variables(), new_values)
+
+        if isinstance(lower_bounds, float):
+            expected_lower_bounds = np.ones(p.double_size) * lower_bounds
+        else:
+            expected_lower_bounds = np.array(lower_bounds)
+        np.testing.assert_allclose(p.get_double_lower_bounds(), expected_lower_bounds)
+        if isinstance(upper_bounds, float):
+            expected_upper_bounds = np.ones(p.double_size) * upper_bounds
+        else:
+            expected_upper_bounds = np.array(upper_bounds)
+        np.testing.assert_allclose(p.get_double_upper_bounds(), expected_upper_bounds)
+
 
 class TestScenarioMonthlyProfileParameter:
 
@@ -1881,13 +1914,19 @@ class TestRbfProfileParameter:
         with pytest.raises(ValueError):
             load_parameter(simple_linear_model, data)
 
-    def test_variable_api(self, simple_linear_model):
+    @pytest.mark.parametrize('lower_bounds, upper_bounds', [
+        [0.1, 1.0],
+        [[0.1, 0.2, 0.3, 0.4], [1.0, 0.9, 0.8, 0.7]]
+    ])
+    def test_variable_api(self, simple_linear_model, lower_bounds, upper_bounds):
         """Test using variable API implementation on RbfParameter."""
 
         data = {
             'type': 'rbfprofile',
             "days_of_year": [1, 100, 200, 300],
-            "values": [0.5, 0.7, 0.5, 0.2]
+            "values": [0.5, 0.7, 0.5, 0.2],
+            "lower_bounds": lower_bounds,
+            "upper_bounds": upper_bounds
         }
 
         p = load_parameter(simple_linear_model, data)
@@ -1897,6 +1936,17 @@ class TestRbfProfileParameter:
         new_values = np.random.rand(p.double_size)
         p.set_double_variables(new_values)
         np.testing.assert_allclose(p.get_double_variables(), new_values)
+
+        if isinstance(lower_bounds, float):
+            expected_lower_bounds = np.ones(p.double_size) * lower_bounds
+        else:
+            expected_lower_bounds = np.array(lower_bounds)
+        np.testing.assert_allclose(p.get_double_lower_bounds(), expected_lower_bounds)
+        if isinstance(upper_bounds, float):
+            expected_upper_bounds = np.ones(p.double_size) * upper_bounds
+        else:
+            expected_upper_bounds = np.array(upper_bounds)
+        np.testing.assert_allclose(p.get_double_upper_bounds(), expected_upper_bounds)
 
     def test_variable_doys_api(self, simple_linear_model):
         """Test using the variable API when optimising the days of the year. """
