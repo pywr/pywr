@@ -625,14 +625,14 @@ cdef class MonthlyProfileParameter(Parameter):
     ----------
     values : iterable, array
         The 12 values that represent the monthly profile.
-    lower_bounds : float (default=0.0) or list
-        The lower bounds of the monthly profile values when used during optimisation.
-            If float given, same bound applied for every month.
-            If list of 12 values given, bound for each month applied explicitly.
-    upper_bounds : float (default=np.inf) or list
-        The upper bounds of the monthly profile values when used during optimisation.
-            If float given, same bound applied for every month.
-            If list of 12 values given, bound for each month applied explicitly.
+    lower_bounds : float or array_like (default=0.0)
+        Defines the lower bounds when using optimisation.
+        If a float given, same bound applied for every month.
+        Otherwise an array like object of length 12 should be given for as separate value each month.
+    upper_bounds : float or array_like (default=np.inf)
+        Defines the upper bounds when using optimisation.
+        If a float given, same bound applied for every month.
+        Otherwise an array like object of length 12 should be given for as separate value each month.
     inter_day : str or None (default=None)
         If `interp_day` is None then no interpolation is undertaken, and the parameter
          returns values representing a piecewise monthly profile. Otherwise `interp_day`
@@ -655,19 +655,21 @@ cdef class MonthlyProfileParameter(Parameter):
         self._values = np.array(values)
         self.interp_day = interp_day
 
-        if isinstance(lower_bounds, list):
-            if len(lower_bounds) != self.double_size:
-                raise ValueError("if lower bound is list, 12 values must be given for a monthly profile.")
-            self._lower_bounds = np.array(lower_bounds)
+        if np.isscalar(lower_bounds):
+            lb = np.ones(self.double_size) * lower_bounds
         else:
-            self._lower_bounds = np.ones(self.double_size)*lower_bounds
+            lb = np.array(lower_bounds)
+            if len(lb) != self.double_size:
+                raise ValueError("Lower bounds must be a scalar or array like of 12 values.")
+        self._lower_bounds = lb
 
-        if isinstance(upper_bounds, list):
-            if len(upper_bounds) != self.double_size:
-                raise ValueError("if upper bound is list, 12 values must be given for a monthly profile.")
-            self._upper_bounds = np.array(upper_bounds)
+        if np.isscalar(upper_bounds):
+            ub = np.ones(self.double_size) * upper_bounds
         else:
-            self._upper_bounds = np.ones(self.double_size)*upper_bounds
+            ub = np.array(upper_bounds)
+            if len(ub) != self.double_size:
+                raise ValueError("Upper bounds must be a scalar or array like of 12 values.")
+        self._upper_bounds = ub
 
 
     cpdef reset(self):
@@ -933,14 +935,14 @@ cdef class RbfProfileParameter(Parameter):
         value should be one.
     values : iterable, float
         Values to use for interpolation corresponding to the `days_of_year`.
-    lower_bounds : float (default=0.0) or list
-        The lower bounds of the values when used during optimisation.
-            If float given, same bound applied for every value.
-            If list of values given, bound for each value applied explicitly.
-    upper_bounds : float (default=np.inf) or list
-        The upper bounds of the values when used during optimisation.
-            If float given, same bound applied for every value.
-            If list of values given, bound for each value applied explicitly.
+    lower_bounds : float or array_like (default=0.0)
+        Defines the lower bounds when using optimisation.
+        If a float given, same bound applied for every month.
+        Otherwise an array like object of length 12 should be given for as separate value each month.
+    lower_bounds : float or array_like (default=np.inf)
+        Defines the upper bounds when using optimisation.
+        If a float given, same bound applied for every month.
+        Otherwise an array like object of length 12 should be given for as separate value each month.
     variable_days_of_year_range : int (default=0)
         The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
         will cause the days of the year values to be exposed as integer variables (except the first value which
@@ -967,15 +969,22 @@ cdef class RbfProfileParameter(Parameter):
         self.min_value = min_value
         self.max_value = max_value
 
-        if isinstance(lower_bounds, list):
-            self._lower_bounds = np.array(lower_bounds)
+        if np.isscalar(lower_bounds):
+            lb = np.ones(self.double_size) * lower_bounds
         else:
-            self._lower_bounds = np.ones(self.double_size)*lower_bounds
+            lb = np.array(lower_bounds)
+            if len(lb) != self.double_size:
+                raise ValueError("Lower bounds must be a scalar or array like with length equivalent to rbf values")
+        self._lower_bounds = lb
 
-        if isinstance(upper_bounds, list):
-            self._upper_bounds = np.array(upper_bounds)
+        if np.isscalar(upper_bounds):
+            ub = np.ones(self.double_size) * upper_bounds
         else:
-            self._upper_bounds = np.ones(self.double_size)*upper_bounds
+            ub = np.array(upper_bounds)
+            if len(ub) != self.double_size:
+               raise ValueError("Upper bounds must be a scalar or array like with length equivalent to rbf values")
+        self._upper_bounds = ub
+
 
         if self.variable_days_of_year_range > 0:
             if np.any(np.diff(self.days_of_year) <= 2*self.variable_days_of_year_range):
