@@ -1075,6 +1075,9 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     def load(cls, model, data):
         node = model.nodes[data.pop("node")]
         percentiles = data.pop("percentiles")
+        scenario = data.pop('scenario', None)
+        if scenario is not None:
+            scenario = model.scenarios[scenario]
         from pywr.parameters import load_parameter_values
         upper_target_fdc = data.pop("upper_target_fdc", None)
         if isinstance(upper_target_fdc, dict):
