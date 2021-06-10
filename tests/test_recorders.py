@@ -348,8 +348,15 @@ class TestFlowDurationCurveRecorders:
             upper_input_fdc = upper_input_fdc.mean(axis=1)
             scenarioA = None
 
-        rec = FlowDurationCurveDeviationRecorder(model, term, percentiles, lower_input_fdc, upper_input_fdc,
-                                                 temporal_agg_func=agg_func, agg_func="mean", scenario=scenarioA)
+        rec = FlowDurationCurveDeviationRecorder.load(model, {
+            "node": "term1",
+            "percentiles": percentiles,
+            "lower_target_fdc": lower_input_fdc,
+            "upper_target_fdc": upper_input_fdc,
+            "temporal_agg_func": agg_func,
+            "agg_func": "mean",
+            "scenario": "scenario A"
+        })
 
         # test retrieval of recorder
         assert model.recorders['flowdurationcurvedeviationrecorder.term1'] == rec
