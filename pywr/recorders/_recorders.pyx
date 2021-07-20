@@ -724,7 +724,11 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
         cdef Node node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
-            self._data[ts.index,scenario_index.global_id] = node._flow[scenario_index.global_id] / max_flow
+            if max_flow > 0:
+                self._data[ts.index,scenario_index.global_id] = node._flow[scenario_index.global_id] / max_flow
+            else:
+                self._data[ts.index,scenario_index.global_id] = 1 
+                
         return 0
 NumpyArrayNodeSuppliedRatioRecorder.register()
 
