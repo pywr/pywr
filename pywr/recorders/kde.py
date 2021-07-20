@@ -148,11 +148,11 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         df = super().to_dataframe()
         # Apply resampling if defined
         if self.resample_func is not None and self.resample_freq is not None:
-            df = df.resample(self.resample_freq).agg(self.resample_func)
+            df = df.resample(self.resample_freq).agg(self.resample_func).ffill()
 
         x = np.linspace(0.0, 1.0, self.num_pdf)
 
-        # Compute the probability for the target volume
+        # Compute the probability for the target volume      
         p, pdf = self._estimate_pdf_and_target_probability(df.values.flatten(), x)
 
         self._probability_of_target_volume = p
@@ -160,7 +160,11 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
 
     def values(self):
         """Return the estimated PDF values."""
-        return self._pdf.values
+
+        values=np.zeros(len(self.model.scenarios.combinations))
+        values[:]=self._probability_of_target_volume
+        
+        return values
 
     def to_dataframe(self):
         """ Return a `pandas.DataFrame` of the estimated PDF.
@@ -168,7 +172,7 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         return self._pdf
 
     def aggregated_value(self):
-        return self._probability_of_target_volume
+        return float(self._probability_of_target_volume)
 
     def _estimate_pdf_and_target_probability(self, values, x) -> Tuple[float, np.ndarray]:
         """Return a probability of being at below `self.target_volume_pc` and a estimate of the PDF
@@ -177,6 +181,14 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         to stop the PDF leaking in to infeasible space.
         """
         # Fit a Gaussian KDE
+        
+        #See if all values are the same (no variance, so no gaussian PDF is posssible)
+        val=set(values)
+        
+        if len(val)==1:
+            #If all values are the same, change first value to be slightly different to prevent numpy.linalg.LinAlgError: singular matrix
+            values[0]=values[0]*0.999
+            
         kernel = stats.gaussian_kde(values)
         p = kernel.integrate_box_1d(-1.0, 0.0)
         pdf = kernel(x)
@@ -184,11 +196,12 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         if self.use_reflection:
             # Reflection at the lower boundary
             kernel_lb = stats.gaussian_kde(-2.0 - values)
-            p += kernel_lb.integrate_box_1d(-1.0, 0.0)
-            pdf += kernel_lb(x)
 
-            # Reflection at the upper boundary
+            p += kernel_lb.integrate_box_1d(-1.0, 0.0)            
+            pdf += kernel_lb(x)
             kernel_ub = stats.gaussian_kde(2.0 - values)
+            
+            # Reflection at the upper boundary
             p += kernel_ub.integrate_box_1d(-1.0, 0.0)
             pdf += kernel_ub(x)
 
