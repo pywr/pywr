@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.recorders.NumpyArrayNodeCurtailmentRatioRecorder &mdash; Pywr 1.15.1.dev2+g870f022b documentation</title>
+  <title>pywr.recorders.NumpyArrayNodeCurtailmentRatioRecorder &mdash; Pywr 1.15.1.dev3+g8bb82919 documentation</title>
   
 
   
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.15.1.dev2+g870f022b
+                1.15.1.dev3+g8bb82919
               </div>
             
           
@@ -207,7 +207,8 @@
 <dd><p>Recorder for timeseries of curtailment ratio from a <cite>Node</cite>.</p>
 <p>This class stores curtailment ratio from a specific node for each time-step of a simulation. The
 data is saved internally using a memory view. The data can be accessed through the <cite>data</cite>
-attribute or <cite>to_dataframe()</cite> method.</p>
+attribute or <cite>to_dataframe()</cite> method. If the node’s max_flow returns zero then the curtailment ratio
+is recorded as 0.0.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl>
@@ -238,8 +239,7 @@ see the <cite>agg_func</cite> keyword argument.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.recorders.NumpyArrayNodeCurtailmentRatioRecorder.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.NumpyArrayNodeCurtailmentRatioRecorder.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
-</dd></dl>
+<dd></dd></dl>
 
 <p class="rubric">Methods</p>
 <table class="longtable docutils align-default">
@@ -249,7 +249,7 @@ see the <cite>agg_func</cite> keyword argument.</p>
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#pywr.recorders.NumpyArrayNodeCurtailmentRatioRecorder.__init__" title="pywr.recorders.NumpyArrayNodeCurtailmentRatioRecorder.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Initialize self.</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">after</span></code>(self)</p></td>
 <td><p></p></td>
