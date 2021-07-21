@@ -1450,23 +1450,24 @@ class TestTablesRecorder:
 
 class TestDeficitRecorders:
 
-    def test_total_deficit_node_recorder(self, simple_linear_model):
+    @pytest.mark.parametrize('demand', [30.0, 0.0])
+    def test_total_deficit_node_recorder(self, simple_linear_model, demand):
         """
         Test TotalDeficitNodeRecorder
         """
         model = simple_linear_model
         model.timestepper.delta = 5
         otpt = model.nodes['Output']
-        otpt.max_flow = 30.0
+        otpt.max_flow = demand
         model.nodes['Input'].max_flow = 10.0
         otpt.cost = -2.0
         rec = TotalDeficitNodeRecorder(model, otpt)
 
         model.step()
-        assert_allclose(20.0*5, rec.aggregated_value(), atol=1e-7)
+        assert_allclose(max(demand - 10.0, 0.0)*5, rec.aggregated_value(), atol=1e-7)
 
         model.step()
-        assert_allclose(40.0*5, rec.aggregated_value(), atol=1e-7)
+        assert_allclose(2*max(demand - 10.0, 0.0)*5, rec.aggregated_value(), atol=1e-7)
 
     def test_array_deficit_recoder(self, simple_linear_model):
         """Test `NumpyArrayNodeDeficitRecorder` """
@@ -1495,21 +1496,25 @@ class TestDeficitRecorders:
         assert df.shape == (365, 1)
         np.testing.assert_allclose(expected_deficit[:, np.newaxis], df.values)
 
-    def test_array_supplied_ratio_recoder(self, simple_linear_model):
+    @pytest.mark.parametrize('demand_factor', [30.0, 0.0])
+    def test_array_supplied_ratio_recoder(self, simple_linear_model, demand_factor):
         """Test `NumpyArrayNodeSuppliedRatioRecorder` """
         model = simple_linear_model
         model.timestepper.delta = 1
         otpt = model.nodes['Output']
 
         inflow = np.arange(365) * 0.1
-        demand = np.ones_like(inflow) * 30.0
+        demand = np.ones_like(inflow) * demand_factor
 
         model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
         otpt.max_flow = ArrayIndexedParameter(model, demand)
         otpt.cost = -2.0
 
         expected_supply = np.minimum(inflow, demand)
-        expected_ratio = expected_supply / demand
+        if demand_factor == 0.0:
+            expected_ratio = np.ones_like(expected_supply)
+        else:
+            expected_ratio = expected_supply / demand
 
         rec = NumpyArrayNodeSuppliedRatioRecorder(model, otpt)
 
@@ -1522,21 +1527,25 @@ class TestDeficitRecorders:
         assert df.shape == (365, 1)
         np.testing.assert_allclose(expected_ratio[:, np.newaxis], df.values)
 
-    def test_array_curtailment_ratio_recoder(self, simple_linear_model):
+    @pytest.mark.parametrize('demand_factor', [30.0, 0.0])
+    def test_array_curtailment_ratio_recoder(self, simple_linear_model, demand_factor):
         """Test `NumpyArrayNodeCurtailmentRatioRecorder` """
         model = simple_linear_model
         model.timestepper.delta = 1
         otpt = model.nodes['Output']
 
         inflow = np.arange(365) * 0.1
-        demand = np.ones_like(inflow) * 30.0
+        demand = np.ones_like(inflow) * demand_factor
 
         model.nodes['Input'].max_flow = ArrayIndexedParameter(model, inflow)
         otpt.max_flow = ArrayIndexedParameter(model, demand)
         otpt.cost = -2.0
 
         expected_supply = np.minimum(inflow, demand)
-        expected_curtailment_ratio = 1 - expected_supply / demand
+        if demand_factor == 0.0:
+            expected_curtailment_ratio = np.zeros_like(expected_supply)
+        else:
+            expected_curtailment_ratio = 1 - expected_supply / demand
 
         rec = NumpyArrayNodeCurtailmentRatioRecorder(model, otpt)
 
