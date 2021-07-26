@@ -692,7 +692,8 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
 
     This class stores supply ratio from a specific node for each time-step of a simulation. The
     data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
+    attribute or `to_dataframe()` method. If the node's max_flow returns zero then the ratio
+    is recorded as 1.0.
 
     Parameters
     ----------
@@ -724,11 +725,10 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
         cdef Node node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
-            if max_flow > 0:
+            try:
                 self._data[ts.index,scenario_index.global_id] = node._flow[scenario_index.global_id] / max_flow
-            else:
-                self._data[ts.index,scenario_index.global_id] = 1 
-                
+            except ZeroDivisionError:
+                self._data[ts.index,scenario_index.global_id] = 1.0
         return 0
 NumpyArrayNodeSuppliedRatioRecorder.register()
 
@@ -738,7 +738,8 @@ cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
 
     This class stores curtailment ratio from a specific node for each time-step of a simulation. The
     data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
+    attribute or `to_dataframe()` method. If the node's max_flow returns zero then the curtailment ratio
+    is recorded as 0.0.
 
     Parameters
     ----------
@@ -770,7 +771,10 @@ cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
         cdef Node node = self._node
         for scenario_index in self.model.scenarios.combinations:
             max_flow = node.get_max_flow(scenario_index)
-            self._data[ts.index,scenario_index.global_id] = 1 - node._flow[scenario_index.global_id] / max_flow
+            try:
+                self._data[ts.index,scenario_index.global_id] = 1.0 - node._flow[scenario_index.global_id] / max_flow
+            except ZeroDivisionError:
+                self._data[ts.index,scenario_index.global_id] = 0.0
 NumpyArrayNodeCurtailmentRatioRecorder.register()
 
 
@@ -1025,7 +1029,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
                     ju = 0
                 else:
                     ju = j
-                # Cache the target FDC to use in this combination    
+                # Cache the target FDC to use in this combination
                 utrgt_fdc = self._upper_target_fdc[:, ju]
 
             # Finally calculate deviation
