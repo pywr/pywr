@@ -1677,6 +1677,26 @@ class TestAnnualTotalFlowRecorder:
         df = rec_fact.to_dataframe()
         assert_allclose([[3650.0*3]], df.values)
 
+    @pytest.mark.parametrize("end_date, expected", [("2013-01-04", [30.0, 40.0]), ("2012-12-31", [30.0]),])
+    def test_annual_total_flow_recorder_year_end(self, simple_linear_model, end_date, expected):
+        """
+        Test AnnualTotalFlowRecorder when timestep crosses year end
+        """
+        model = simple_linear_model
+        simple_linear_model.timestepper.start = "2012-12-29"
+        simple_linear_model.timestepper.end = end_date
+        simple_linear_model.timestepper.delta = "7D"
+
+        otpt = model.nodes['Output']
+        otpt.max_flow = 30.0
+        model.nodes['Input'].max_flow = 10.0
+        otpt.cost = -2
+        rec = AnnualTotalFlowRecorder(model, 'Total Flow', [otpt])
+
+        model.run()
+
+        assert_allclose(expected, rec.data.flatten())
+
 
 def test_total_flow_node_recorder(simple_linear_model):
     """
