@@ -305,6 +305,19 @@ cdef class Timestep:
     def __repr__(self):
         return "<Timestep date=\"{}\">".format(self.period.strftime("%Y-%m-%d"))
 
+    cpdef double days_in_current_year(self):
+        """Returns the number of days of the current timestep that fall in the current year"""
+        if self.period.start_time.year != self.period.end_time.year:
+            # end time of period is in the next year
+            return 366 + self.period.is_leap_year - self.period.start_time.day_of_year
+        return self.days
+
+    cpdef double days_in_next_year(self):
+        """Returns the number of days of the current timestep that fall in the next year"""
+        if self.period.start_time.year != self.period.end_time.year:
+            return self.period.end_time.day_of_year
+        return 0
+
 cdef class Domain:
     """ Domain class which all Node objects must have. """
     def __init__(self, name):

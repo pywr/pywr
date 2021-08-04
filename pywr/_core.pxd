@@ -36,6 +36,8 @@ cdef class Timestep:
     cdef readonly int day
     cdef readonly int month
     cdef readonly int year
+    cpdef public double days_in_current_year(self)
+    cpdef public double days_in_next_year(self)
 
 cdef class Domain:
     cdef object name
