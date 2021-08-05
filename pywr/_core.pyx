@@ -282,6 +282,7 @@ cdef class Timestep:
         self.month = period.month
         self.year = period.year
         self.is_leap_year = is_leap_year(self.year)
+        self.end_year = self.period.end_time.year
 
         # Calculate day of year index (zero based)
         cdef int i = self.dayofyear - 1
@@ -307,14 +308,14 @@ cdef class Timestep:
 
     cpdef double days_in_current_year(self):
         """Returns the number of days of the current timestep that fall in the current year"""
-        if self.period.start_time.year != self.period.end_time.year:
+        if self.year != self.end_year:
             # end time of period is in the next year
-            return 366 + self.period.is_leap_year - self.period.start_time.day_of_year
+            return 366 + self.is_leap_year - self.dayofyear
         return self.days
 
     cpdef double days_in_next_year(self):
         """Returns the number of days of the current timestep that fall in the next year"""
-        if self.period.start_time.year != self.period.end_time.year:
+        if self.year != self.end_year:
             return self.period.end_time.day_of_year
         return 0
 
