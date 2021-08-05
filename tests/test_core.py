@@ -564,3 +564,27 @@ def test_timestep_greater_than_zero_days():
     with pytest.raises(ValueError):
         # Test setting days <= 0 raises an error
         Timestep(pandas.Period('2019-01-01', freq='D'), 0, 0)
+
+
+@pytest.mark.parametrize("freq, start_date, days_in_current_year, days_in_next_year", [("1D", "2012-12-31", 1, 0),
+                                                                                       ("1D", "2011-12-31", 1, 0),
+                                                                                       ("3D", "2012-12-31", 1, 2),
+                                                                                       (7, "2012-12-29", 3, 4),])
+def test_timestep_days_in_year_methods(simple_linear_model, freq, start_date, days_in_current_year, days_in_next_year):
+    """Test the `days_in_current_year` and `days_in_next_year` methods of the timestep object"""
+
+    simple_linear_model.timestepper.start = start_date
+    simple_linear_model.timestepper.end = "2013-01-30"
+    simple_linear_model.timestepper.delta = freq
+
+    simple_linear_model.setup()
+    simple_linear_model.step()
+
+    ts = simple_linear_model.timestepper.current
+
+    assert days_in_current_year == ts.days_in_current_year()
+    assert days_in_next_year == ts.days_in_next_year()
+
+    simple_linear_model.step()
+
+    #assert ts.days() == ts.days_in_current_year()
