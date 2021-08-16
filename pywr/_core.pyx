@@ -306,14 +306,14 @@ cdef class Timestep:
     def __repr__(self):
         return "<Timestep date=\"{}\">".format(self.period.strftime("%Y-%m-%d"))
 
-    cpdef double days_in_current_year(self):
+    cpdef int days_in_current_year(self):
         """Returns the number of days of the current timestep that fall in the current year"""
         if self.year != self.end_year:
             # end time of period is in the next year
             return 366 + self.is_leap_year - self.dayofyear
-        return self.days
+        return int(self.days)
 
-    cpdef double days_in_next_year(self):
+    cpdef int days_in_next_year(self):
         """Returns the number of days of the current timestep that fall in the next year"""
         if self.year != self.end_year:
             return self.period.end_time.day_of_year

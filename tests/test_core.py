@@ -584,7 +584,3 @@ def test_timestep_days_in_year_methods(simple_linear_model, freq, start_date, da
 
     assert days_in_current_year == ts.days_in_current_year()
     assert days_in_next_year == ts.days_in_next_year()
-
-    simple_linear_model.step()
-
-    #assert ts.days() == ts.days_in_current_year()
