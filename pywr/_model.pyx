@@ -651,7 +651,7 @@ class Model(object):
             solver_stats=self.solver.stats,
             version=pywr.__version__,
         )
-        logger.info('Model run complete!')
+        logger.info('Model run complete in %s s at %s timeteps per second', time_taken, speed)
         return result
 
     def setup(self, ):
