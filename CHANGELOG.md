@@ -2,6 +2,15 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.15.1
+
+### Bug Fixes
+
+- Fix `AnnualTotalFlowRecorder`'s accounting of flow when a timestep ends in the following year. (#992)
+- Fix divide by zero errors in `NumpyArrayNodeSuppliedRatioRecorder` and `NumpyArrayNodeCurtailmentRatioRecorder`
+when the max flow of the parameter they monitor returned zero. (#993)
+- Fix the load method of `FlowDurationCurveDeviationRecorder` to handle scenario data correctly. (#989)
+
 ## v1.15.0
 
 ### New Features
