@@ -14,6 +14,8 @@
    .. autosummary::
    
       ~Timestep.__init__
+      ~Timestep.days_in_current_year
+      ~Timestep.days_in_next_year
    
    
 
@@ -28,6 +30,7 @@
       ~Timestep.dayofyear
       ~Timestep.dayofyear_index
       ~Timestep.days
+      ~Timestep.end_year
       ~Timestep.index
       ~Timestep.is_leap_year
       ~Timestep.month
