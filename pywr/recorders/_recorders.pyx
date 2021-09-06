@@ -2080,7 +2080,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
                 if days_in_current_year != ts.days and idx+1 < self._data.shape[0]:
                     # Timestep cross into the next year.
                     self._data[idx + 1, i] += node._flow[i] * days_in_next_year * self._factors[j]
-                    
+
     cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
         """

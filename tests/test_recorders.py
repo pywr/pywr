@@ -1680,7 +1680,14 @@ class TestAnnualTotalFlowRecorder:
     @pytest.mark.parametrize("end_date, expected", [("2013-01-04", [30.0, 40.0]), ("2012-12-31", [30.0]),])
     def test_annual_total_flow_recorder_year_end(self, simple_linear_model, end_date, expected):
         """
-        Test AnnualTotalFlowRecorder when timestep crosses year end
+        Test AnnualTotalFlowRecorder when timestep crosses year end.
+
+        The two parameterisations of this test run a single timestep of 7 days that crosses into the next year. In the
+        first, the model end date is set to the end of the timestep, so flow for the recorder is assigned to each year
+        according to the numbers of days of the timestep that are in each year (3 in the current, 4 in the next). In the
+        second parameterisation, the model end date is set to the end of year, so flow for the recorder is only assigned
+        for the first 3 days of the timestep that are in the current year. The subsequent 4 days of the timestep are not
+        recorded because they are beyond the model end date.
         """
         model = simple_linear_model
         simple_linear_model.timestepper.start = "2012-12-29"
