@@ -2,6 +2,14 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+
+## v1.15.2
+
+### Bug Fixes
+
+- Fix bug with `AggregatedParameter.remove()` and `AggregatedIndexParameter.remove()` methods using the
+wrong method internally. (#997)
+
 ## v1.15.1
 
 ### Bug Fixes

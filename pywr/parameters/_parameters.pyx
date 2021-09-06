@@ -1428,7 +1428,7 @@ cdef class AggregatedParameter(Parameter):
 
     cpdef remove(self, Parameter parameter):
         self.parameters.remove(parameter)
-        parameter.parent.remove(self)
+        parameter.parents.remove(self)
 
     def __len__(self):
         return len(self.parameters)
@@ -1548,7 +1548,7 @@ cdef class AggregatedIndexParameter(IndexParameter):
 
     cpdef remove(self, Parameter parameter):
         self.parameters.remove(parameter)
-        parameter.parent.remove(self)
+        parameter.parents.remove(self)
 
     def __len__(self):
         return len(self.parameters)
