@@ -308,15 +308,21 @@ cdef class Timestep:
 
     cpdef double days_in_current_year(self):
         """Returns the number of days of the current timestep that fall in the current year"""
+        cdef double year_end, ts_start
         if self.year != self.end_year:
             # end time of period is in the next year
-            return 366 + self.is_leap_year - self.dayofyear
+            year_end = pd.Timestamp(f"{self.end_year}-01-01").value
+            ts_start = self.period.start_time.value
+            return (year_end - ts_start) / 8.64e+13
         return self.days
 
     cpdef double days_in_next_year(self):
         """Returns the number of days of the current timestep that fall in the next year"""
+        cdef double year_end, ts_end
         if self.year != self.end_year:
-            return self.period.end_time.day_of_year
+            year_end = pd.Timestamp(f"{self.end_year}-01-01").value
+            ts_end = self.period.end_time.value
+            return (ts_end - year_end) / 8.64e+13
         return 0
 
 cdef class Domain:
