@@ -1,78 +1,38 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Solvers &mdash; Pywr 1.15.2.dev2+g2bd04066 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+  <title>Solvers &mdash; Pywr 1.15.3.dev1+gbe45b516 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Notebook Utilities" href="pywr.notebook.html" />
     <link rel="prev" title="pywr.recorders.TotalHydroEnergyRecorder" href="generated/pywr.recorders.TotalHydroEnergyRecorder.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../index.html" class="icon icon-home"> Pywr
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
-                1.15.2.dev2+g2bd04066
+                1.15.3.dev1+gbe45b516
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -80,18 +40,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
@@ -119,112 +68,70 @@
 <li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Pywr</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="pywr.html">Pywr reference documentation.</a> &raquo;</li>
-        
       <li>Solvers</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../_sources/api/pywr.solvers.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="solvers">
-<h1>Solvers<a class="headerlink" href="#solvers" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="module-pywr.solvers.cython_glpk">
-<span id="pywr-solvers-cython-glpk-module"></span><h2>pywr.solvers.cython_glpk module<a class="headerlink" href="#module-pywr.solvers.cython_glpk" title="Permalink to this headline">¶</a></h2>
+             
+  <section id="solvers">
+<h1>Solvers<a class="headerlink" href="#solvers" title="Permalink to this headline"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-pywr.solvers.cython_glpk">
+<span id="pywr-solvers-cython-glpk-module"></span><h2>pywr.solvers.cython_glpk module<a class="headerlink" href="#module-pywr.solvers.cython_glpk" title="Permalink to this headline"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AbstractNodeData">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">AbstractNodeData</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">AbstractNodeData</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Helper class for caching node data for the solver.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AbstractNodeData.id">
-<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.id" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.id" title="Permalink to this definition"></a></dt>
 <dd><p>id: ‘int’</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AbstractNodeData.in_edges">
-<span class="sig-name descname"><span class="pre">in_edges</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.in_edges" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">in_edges</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.in_edges" title="Permalink to this definition"></a></dt>
 <dd><p>in_edges: list</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AbstractNodeData.is_link">
-<span class="sig-name descname"><span class="pre">is_link</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.is_link" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">is_link</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.is_link" title="Permalink to this definition"></a></dt>
 <dd><p>is_link: ‘bool’</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AbstractNodeData.out_edges">
-<span class="sig-name descname"><span class="pre">out_edges</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.out_edges" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">out_edges</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.out_edges" title="Permalink to this definition"></a></dt>
 <dd><p>out_edges: list</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AbstractNodeData.row">
-<span class="sig-name descname"><span class="pre">row</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.row" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">row</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AbstractNodeData.row" title="Permalink to this definition"></a></dt>
 <dd><p>row: ‘int’</p>
 </dd></dl>
 
@@ -232,36 +139,36 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AggNodeFactorData">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">AggNodeFactorData</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">AggNodeFactorData</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Helper class for caching data for Aggregated Nodes that have factors defined by parameters.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AggNodeFactorData.ind_ptr">
-<span class="sig-name descname"><span class="pre">ind_ptr</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.ind_ptr" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">ind_ptr</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.ind_ptr" title="Permalink to this definition"></a></dt>
 <dd><p>ind_ptr: View.MemoryView.array</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AggNodeFactorData.inds">
-<span class="sig-name descname"><span class="pre">inds</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.inds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">inds</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.inds" title="Permalink to this definition"></a></dt>
 <dd><p>inds: View.MemoryView.array</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AggNodeFactorData.node_ind">
-<span class="sig-name descname"><span class="pre">node_ind</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.node_ind" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">node_ind</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.node_ind" title="Permalink to this definition"></a></dt>
 <dd><p>node_ind: ‘int’</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AggNodeFactorData.row">
-<span class="sig-name descname"><span class="pre">row</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.row" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">row</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.row" title="Permalink to this definition"></a></dt>
 <dd><p>row: ‘int’</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.AggNodeFactorData.vals">
-<span class="sig-name descname"><span class="pre">vals</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.vals" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">vals</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.AggNodeFactorData.vals" title="Permalink to this definition"></a></dt>
 <dd><p>vals: View.MemoryView.array</p>
 </dd></dl>
 
@@ -269,44 +176,44 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.BasisManager">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">BasisManager</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.BasisManager" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">BasisManager</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.BasisManager" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">CythonGLPKEdgeSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_presolve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_routes_flows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_solve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">CythonGLPKEdgeSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_presolve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_routes_flows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_solve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywr.solvers.cython_glpk.GLPKSolver" title="pywr.solvers.cython_glpk.GLPKSolver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.cython_glpk.GLPKSolver</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.reset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.reset" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.retry_solve">
-<span class="sig-name descname"><span class="pre">retry_solve</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.retry_solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">retry_solve</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.retry_solve" title="Permalink to this definition"></a></dt>
 <dd><p>retry_solve: ‘bool’</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.route_flows_arr">
-<span class="sig-name descname"><span class="pre">route_flows_arr</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.route_flows_arr" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">route_flows_arr</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.route_flows_arr" title="Permalink to this definition"></a></dt>
 <dd><p>route_flows_arr: View.MemoryView.array</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.setup" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.setup" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.solve">
-<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.solve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.stats">
-<span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.stats" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver.stats" title="Permalink to this definition"></a></dt>
 <dd><p>stats: object</p>
 </dd></dl>
 
@@ -314,50 +221,50 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKSolver">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">CythonGLPKSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_presolve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_routes_flows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_solve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">CythonGLPKSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_presolve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_routes_flows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_solve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywr.solvers.cython_glpk.GLPKSolver" title="pywr.solvers.cython_glpk.GLPKSolver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.cython_glpk.GLPKSolver</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKSolver.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.reset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.reset" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKSolver.retry_solve">
-<span class="sig-name descname"><span class="pre">retry_solve</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.retry_solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">retry_solve</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.retry_solve" title="Permalink to this definition"></a></dt>
 <dd><p>retry_solve: ‘bool’</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKSolver.route_flows_arr">
-<span class="sig-name descname"><span class="pre">route_flows_arr</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.route_flows_arr" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">route_flows_arr</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.route_flows_arr" title="Permalink to this definition"></a></dt>
 <dd><p>route_flows_arr: View.MemoryView.array</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKSolver.routes">
-<span class="sig-name descname"><span class="pre">routes</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.routes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">routes</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.routes" title="Permalink to this definition"></a></dt>
 <dd><p>routes: list</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKSolver.save_routes_flows">
-<span class="sig-name descname"><span class="pre">save_routes_flows</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.save_routes_flows" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">save_routes_flows</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.save_routes_flows" title="Permalink to this definition"></a></dt>
 <dd><p>save_routes_flows: ‘bool’</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKSolver.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.setup" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.setup" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKSolver.solve">
-<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.solve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.CythonGLPKSolver.stats">
-<span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.stats" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.CythonGLPKSolver.stats" title="Permalink to this definition"></a></dt>
 <dd><p>stats: object</p>
 </dd></dl>
 
@@ -365,75 +272,75 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">GLPKSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_presolve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_flows_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_costs_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_factors_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.cython_glpk.</span></span><span class="sig-name descname"><span class="pre">GLPKSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_presolve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_flows_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_costs_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_fixed_factors_once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.dump_glpk">
-<span class="sig-name descname"><span class="pre">dump_glpk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.dump_glpk" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dump_glpk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.dump_glpk" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.dump_lp">
-<span class="sig-name descname"><span class="pre">dump_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.dump_lp" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dump_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.dump_lp" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.dump_mps">
-<span class="sig-name descname"><span class="pre">dump_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.dump_mps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dump_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.dump_mps" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.reset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.reset" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.set_fixed_costs_once">
-<span class="sig-name descname"><span class="pre">set_fixed_costs_once</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_fixed_costs_once" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_fixed_costs_once</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_fixed_costs_once" title="Permalink to this definition"></a></dt>
 <dd><p>set_fixed_costs_once: ‘bool’</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.set_fixed_factors_once">
-<span class="sig-name descname"><span class="pre">set_fixed_factors_once</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_fixed_factors_once" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_fixed_factors_once</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_fixed_factors_once" title="Permalink to this definition"></a></dt>
 <dd><p>set_fixed_factors_once: ‘bool’</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.set_fixed_flows_once">
-<span class="sig-name descname"><span class="pre">set_fixed_flows_once</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_fixed_flows_once" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_fixed_flows_once</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_fixed_flows_once" title="Permalink to this definition"></a></dt>
 <dd><p>set_fixed_flows_once: ‘bool’</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.set_solver_options">
-<span class="sig-name descname"><span class="pre">set_solver_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_solver_options" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_solver_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration_limit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_level</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.set_solver_options" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.setup" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.setup" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.solve">
-<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.solve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.cython_glpk.GLPKSolver.use_presolve">
-<span class="sig-name descname"><span class="pre">use_presolve</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.use_presolve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">use_presolve</span></span><a class="headerlink" href="#pywr.solvers.cython_glpk.GLPKSolver.use_presolve" title="Permalink to this definition"></a></dt>
 <dd><p>use_presolve: ‘bool’</p>
 </dd></dl>
 
 </dd></dl>
 
-</div>
-<div class="section" id="pywr-solvers-cython-lpsolve-module">
-<h2>pywr.solvers.cython_lpsolve module<a class="headerlink" href="#pywr-solvers-cython-lpsolve-module" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="module-pywr.solvers">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pywr.solvers" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pywr-solvers-cython-lpsolve-module">
+<h2>pywr.solvers.cython_lpsolve module<a class="headerlink" href="#pywr-solvers-cython-lpsolve-module" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-pywr.solvers">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pywr.solvers" title="Permalink to this headline"></a></h2>
 <p>This module contains a Solver baseclass and several implemented subclasses.</p>
 <p>Solvers are used to with pywr.core.Model classes to solve the network
 allocation problem every time step.</p>
@@ -446,289 +353,272 @@ allocation problem every time step.</p>
 </dl>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.</span></span><span class="sig-name descname"><span class="pre">CythonGLPKEdgeSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.</span></span><span class="sig-name descname"><span class="pre">CythonGLPKEdgeSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywr.solvers.Solver" title="pywr.solvers.Solver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.Solver</span></code></a></p>
 <p>Python wrapper of Cython GLPK solver.</p>
 <p>This is required to subclass Solver and get the metaclass magic.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.dump_glpk">
-<span class="sig-name descname"><span class="pre">dump_glpk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.dump_glpk" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dump_glpk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.dump_glpk" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.dump_lp">
-<span class="sig-name descname"><span class="pre">dump_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.dump_lp" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dump_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.dump_lp" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.dump_mps">
-<span class="sig-name descname"><span class="pre">dump_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.dump_mps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dump_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.dump_mps" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.name">
-<span class="sig-name descname"><span class="pre">name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'glpk-edge'</span></em><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.name" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'glpk-edge'</span></em><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.name" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.reset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.reset" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.retry_solve">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">retry_solve</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.retry_solve" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">retry_solve</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.retry_solve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.set_fixed_costs_once">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_costs_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.set_fixed_costs_once" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_costs_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.set_fixed_costs_once" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.set_fixed_factors_once">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_factors_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.set_fixed_factors_once" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_factors_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.set_fixed_factors_once" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.set_fixed_flows_once">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_flows_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.set_fixed_flows_once" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_flows_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.set_fixed_flows_once" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.settings">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">settings</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.settings" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">settings</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.settings" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.setup" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.setup" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.solve">
-<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.solve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.stats">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.stats" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.stats" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKEdgeSolver.use_presolve">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">use_presolve</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.use_presolve" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">use_presolve</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKEdgeSolver.use_presolve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.</span></span><span class="sig-name descname"><span class="pre">CythonGLPKSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.</span></span><span class="sig-name descname"><span class="pre">CythonGLPKSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywr.solvers.Solver" title="pywr.solvers.Solver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.Solver</span></code></a></p>
 <p>Python wrapper of Cython GLPK solver.</p>
 <p>This is required to subclass Solver and get the metaclass magic.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.dump_glpk">
-<span class="sig-name descname"><span class="pre">dump_glpk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.dump_glpk" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dump_glpk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.dump_glpk" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.dump_lp">
-<span class="sig-name descname"><span class="pre">dump_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.dump_lp" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dump_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.dump_lp" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.dump_mps">
-<span class="sig-name descname"><span class="pre">dump_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.dump_mps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dump_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.dump_mps" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.name">
-<span class="sig-name descname"><span class="pre">name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'glpk'</span></em><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.name" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'glpk'</span></em><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.name" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.reset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.reset" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.retry_solve">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">retry_solve</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.retry_solve" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">retry_solve</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.retry_solve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.routes">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">routes</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.routes" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">routes</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.routes" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.routes_flows_array">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">routes_flows_array</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.routes_flows_array" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">routes_flows_array</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.routes_flows_array" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.save_routes_flows">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">save_routes_flows</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.save_routes_flows" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">save_routes_flows</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.save_routes_flows" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.set_fixed_costs_once">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_costs_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.set_fixed_costs_once" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_costs_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.set_fixed_costs_once" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.set_fixed_factors_once">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_factors_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.set_fixed_factors_once" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_factors_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.set_fixed_factors_once" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.set_fixed_flows_once">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_flows_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.set_fixed_flows_once" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">set_fixed_flows_once</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.set_fixed_flows_once" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.settings">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">settings</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.settings" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">settings</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.settings" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.setup" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.setup" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.solve">
-<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.solve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.stats">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.stats" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.stats" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.CythonGLPKSolver.use_presolve">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">use_presolve</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.use_presolve" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">use_presolve</span></span><a class="headerlink" href="#pywr.solvers.CythonGLPKSolver.use_presolve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.NullSolver">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.</span></span><span class="sig-name descname"><span class="pre">NullSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.</span></span><span class="sig-name descname"><span class="pre">NullSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pywr.solvers.Solver" title="pywr.solvers.Solver"><code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.solvers.Solver</span></code></a></p>
 <p>A null solver that performs no allocation routine.</p>
 <p>This solver does no allocation and is mainly useful for debugging purposes.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.NullSolver.name">
-<span class="sig-name descname"><span class="pre">name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'null'</span></em><a class="headerlink" href="#pywr.solvers.NullSolver.name" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'null'</span></em><a class="headerlink" href="#pywr.solvers.NullSolver.name" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.NullSolver.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver.reset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver.reset" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.NullSolver.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver.setup" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver.setup" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.NullSolver.solve">
-<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver.solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.NullSolver.solve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.solvers.Solver">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.</span></span><span class="sig-name descname"><span class="pre">Solver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pywr.solvers.</span></span><span class="sig-name descname"><span class="pre">Solver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Solver base class from which all solvers should inherit</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pywr.solvers.Solver.name">
-<span class="sig-name descname"><span class="pre">name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'default'</span></em><a class="headerlink" href="#pywr.solvers.Solver.name" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'default'</span></em><a class="headerlink" href="#pywr.solvers.Solver.name" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.Solver.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver.reset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver.reset" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.Solver.settings">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">settings</span></span><a class="headerlink" href="#pywr.solvers.Solver.settings" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">settings</span></span><a class="headerlink" href="#pywr.solvers.Solver.settings" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.Solver.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver.setup" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver.setup" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.solvers.Solver.solve">
-<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver.solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.solvers.Solver.solve" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pywr.solvers.Solver.stats">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.Solver.stats" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">stats</span></span><a class="headerlink" href="#pywr.solvers.Solver.stats" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="pywr.notebook.html" class="btn btn-neutral float-right" title="Notebook Utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="generated/pywr.recorders.TotalHydroEnergyRecorder.html" class="btn btn-neutral float-left" title="pywr.recorders.TotalHydroEnergyRecorder" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pywr.notebook.html" class="btn btn-neutral float-right" title="Notebook Utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.
-
-    </p>
+    <p>&#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

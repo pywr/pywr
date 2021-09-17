@@ -1,78 +1,38 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Installing Pywr &mdash; Pywr 1.15.2.dev2+g2bd04066 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+  <title>Installing Pywr &mdash; Pywr 1.15.3.dev1+gbe45b516 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Tutorial" href="tutorial.html" />
     <link rel="prev" title="Welcome to Pywr’s documentation!" href="index.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="index.html" class="icon icon-home"> Pywr
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
-                1.15.2.dev2+g2bd04066
+                1.15.3.dev1+gbe45b516
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -80,18 +40,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installing Pywr</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
@@ -120,78 +69,37 @@
 <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">Pywr</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
       <li>Installing Pywr</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="installing-pywr">
-<h1>Installing Pywr<a class="headerlink" href="#installing-pywr" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="installing-pywr">
+<h1>Installing Pywr<a class="headerlink" href="#installing-pywr" title="Permalink to this headline"></a></h1>
 <p>Pywr should work on Python 3.7 (or later) on Windows, Linux or OS X.</p>
 <p>Building Pywr from source requires a working C compiler. It has been built successfully with MSVC on Windows, GCC on Linux and clang/LLVM on OS X.</p>
 <p>The easiest way to install Pywr is using the <a class="reference external" href="https://www.continuum.io/downloads">Anaconda Python distribution</a>. See instructions below on <a class="reference internal" href="#installing-binary-packages-with-anaconda">Installing binary packages with Anaconda</a>.</p>
-<div class="section" id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline"></a></h2>
 <p>Pywr has several external dependencies, listed below.</p>
 <blockquote>
 <div><ul class="simple">
@@ -222,9 +130,9 @@
 </li>
 </ul>
 </div></blockquote>
-</div>
-<div class="section" id="installing-in-general">
-<h2>Installing (in general)<a class="headerlink" href="#installing-in-general" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="installing-in-general">
+<h2>Installing (in general)<a class="headerlink" href="#installing-in-general" title="Permalink to this headline"></a></h2>
 <p>When installing Pywr you must specific which solvers to build. This is done by passing <code class="docutils literal notranslate"><span class="pre">--with-&lt;solver&gt;</span></code> as an argument to <code class="docutils literal notranslate"><span class="pre">setup.py</span></code>. The following command will build and install Pywr with both the GLPK and lpsolve solvers:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python setup.py install --with-glpk --with-lpsolve
 </pre></div>
@@ -233,16 +141,16 @@
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python setup.py develop --with-glpk --with-lpsolve
 </pre></div>
 </div>
-</div>
-<div class="section" id="installing-binary-wheels-with-pip">
-<h2>Installing binary wheels with pip<a class="headerlink" href="#installing-binary-wheels-with-pip" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="installing-binary-wheels-with-pip">
+<h2>Installing binary wheels with pip<a class="headerlink" href="#installing-binary-wheels-with-pip" title="Permalink to this headline"></a></h2>
 <p>Binary wheel distributions of Pywr are hosted on <a class="reference external" href="https://pypi.org/project/pywr/">Pypi</a> for Windows and Linux.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip install pywr
 </pre></div>
 </div>
-</div>
-<div class="section" id="installing-binary-packages-with-anaconda">
-<h2>Installing binary packages with Anaconda<a class="headerlink" href="#installing-binary-packages-with-anaconda" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="installing-binary-packages-with-anaconda">
+<h2>Installing binary packages with Anaconda<a class="headerlink" href="#installing-binary-packages-with-anaconda" title="Permalink to this headline"></a></h2>
 <p>A binary distribution of Pywr is provided for 3.7+ (64-bit) on Windows, Linux and OS X for the <a class="reference external" href="https://www.continuum.io/downloads">Anaconda Python distribution</a>. Note that this release may lag behind the development version.</p>
 <p>You will need to install and configure Anaconda before proceeding. The <a class="reference external" href="http://conda.pydata.org/docs/test-drive.html">conda 30-minute test drive</a> is a good place to start.</p>
 <p>Pywr is hosted on the conda-forge channel.</p>
@@ -250,9 +158,9 @@
 conda install pywr
 </pre></div>
 </div>
-</div>
-<div class="section" id="installing-from-source-with-anaconda">
-<h2>Installing from source with Anaconda<a class="headerlink" href="#installing-from-source-with-anaconda" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="installing-from-source-with-anaconda">
+<h2>Installing from source with Anaconda<a class="headerlink" href="#installing-from-source-with-anaconda" title="Permalink to this headline"></a></h2>
 <p>It’s possible to install the dependencies as Anaconda packages, but still build from source. This is only required if you want to keep up with development versions, rather than using the binaries done for releases. In this case you need to specify the include and library paths in your environment as the libraries will be installed in a non-standard location. This can be done by passing the relevant flags to setup.py. As an example, the following batch script should work on Windows (with a similar approach taken on Linux/macOS)</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span> <span class="nv">LIBRARY</span><span class="o">=</span>%CONDA_PREFIX%<span class="se">\L</span>ibrary
 <span class="nb">set</span> <span class="nv">LIBRARY_INC</span><span class="o">=</span>%LIBRARY%<span class="se">\i</span>nclude
@@ -260,18 +168,18 @@ conda install pywr
 python setup.py build_ext -I<span class="s2">&quot;%LIBRARY_INC%&quot;</span> -L<span class="s2">&quot;%LIBRARY_LIB%&quot;</span> --inplace --with-glpk --with-lpsolve install
 </pre></div>
 </div>
-</div>
-<div class="section" id="installing-on-windows">
-<h2>Installing on Windows<a class="headerlink" href="#installing-on-windows" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="installing-on-windows">
+<h2>Installing on Windows<a class="headerlink" href="#installing-on-windows" title="Permalink to this headline"></a></h2>
 <p>To build Pywr from source on Windows you must first install and configure the MSVC compiler. See the <a class="reference external" href="https://blog.ionelmc.ro/2014/12/21/compiling-python-extensions-on-windows/">instructions on this blog</a>. It is important that you install the correct version of MSVC to correspond with your Python version.</p>
 <p>Binaries for GLPK are available from the <a class="reference external" href="http://winglpk.sourceforge.net/">WinGLPK project</a>. This includes the MSVC solution files if you want to build GLPK yourself on Windows, although the prebuilt binaries are fine.</p>
 <p>Binaries for lpsolve are available from the <a class="reference external" href="https://sourceforge.net/projects/lpsolve/">lpsolve sourceforge website</a>.</p>
-</div>
-<div class="section" id="installing-on-linux">
-<h2>Installing on Linux<a class="headerlink" href="#installing-on-linux" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="installing-on-linux">
+<h2>Installing on Linux<a class="headerlink" href="#installing-on-linux" title="Permalink to this headline"></a></h2>
 <p>No special instructions required. Follow instructions as for <a class="reference internal" href="#installing-in-general">installing (in general)</a> to build from source. A conda package is also available.</p>
-<div class="section" id="ubuntu">
-<h3>Ubuntu<a class="headerlink" href="#ubuntu" title="Permalink to this headline">¶</a></h3>
+<section id="ubuntu">
+<h3>Ubuntu<a class="headerlink" href="#ubuntu" title="Permalink to this headline"></a></h3>
 <p>The following commands should install the GLPK and lpsolve libraries:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo apt-get install libgmp3-dev libglpk-dev glpk
 sudo apt-get install liblpsolve55-dev lp-solve
@@ -282,10 +190,10 @@ sudo apt-get install liblpsolve55-dev lp-solve
 sudo ln -s /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="installing-on-os-x">
-<h2>Installing on OS X<a class="headerlink" href="#installing-on-os-x" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="installing-on-os-x">
+<h2>Installing on OS X<a class="headerlink" href="#installing-on-os-x" title="Permalink to this headline"></a></h2>
 <p>Follow instructions as for <a class="reference internal" href="#installing-in-general">installing (in general)</a> to build from source. A conda package is also available.</p>
 <p>If external libraries are located in a non-standard location you either need to set the <cite>DYLD_LIBRARY_PATH</cite> environment variable at runtime:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">DYLD_LIBRARY_PATH</span><span class="o">=</span>/path/to/library/directory
@@ -301,9 +209,9 @@ sudo ln -s /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
 </div>
 <p>Examples of the above can be seen in the conda recipe (see <cite>conda-recipe/build.sh</cite>).</p>
 <p>The dependencies (GLPK and/or lpsolve) can be built from source manually, or installed using <a class="reference external" href="http://brew.sh/">Homebrew</a>.</p>
-</div>
-<div class="section" id="development-and-testing">
-<h2>Development and testing<a class="headerlink" href="#development-and-testing" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="development-and-testing">
+<h2>Development and testing<a class="headerlink" href="#development-and-testing" title="Permalink to this headline"></a></h2>
 <p>The source code for Pywr is managed using Git and is hosted on GitHub: <a class="reference external" href="https://github.com/pywr/pywr/">https://github.com/pywr/pywr/</a> .</p>
 <p>There are a collection of unit tests for Pywr written using <code class="docutils literal notranslate"><span class="pre">pytest</span></code>. These can be run using:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pytest tests
@@ -313,63 +221,46 @@ sudo ln -s /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nv">PYWR_SOLVER</span><span class="o">=</span>lpsolve pytest tests
 </pre></div>
 </div>
-<div class="section" id="continuous-integration">
-<h3>Continuous Integration<a class="headerlink" href="#continuous-integration" title="Permalink to this headline">¶</a></h3>
+<section id="continuous-integration">
+<h3>Continuous Integration<a class="headerlink" href="#continuous-integration" title="Permalink to this headline"></a></h3>
 <p>Pywr is automatically built and tested on Linux and Windows using Travis-CI and AppVeyor (respectively).</p>
 <p>Creating a pull request on GitHub will automatically trigger a build.</p>
 <p><a class="reference external" href="https://travis-ci.org/pywr/pywr">https://travis-ci.org/pywr/pywr</a></p>
 <p><a class="reference external" href="https://ci.appveyor.com/project/pywr-admin/pywr">https://ci.appveyor.com/project/pywr-admin/pywr</a></p>
 <p>Both services install Pywr using the Anaconda Python distribution, as this was the easiest way to install all the dependencies.</p>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Pywr’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.
-
-    </p>
+    <p>&#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

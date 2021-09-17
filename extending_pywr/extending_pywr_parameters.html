@@ -1,78 +1,38 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.15.2.dev2+g2bd04066 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.15.3.dev1+gbe45b516 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Extending Pywr with custom Recorders" href="extending_pywr_recorders.html" />
     <link rel="prev" title="Extending Pywr with custom Nodes" href="extending_pywr_nodes.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../index.html" class="icon icon-home"> Pywr
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
-                1.15.2.dev2+g2bd04066
+                1.15.3.dev1+gbe45b516
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -80,18 +40,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
@@ -115,75 +64,33 @@
 <li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Pywr</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="index.html">Extending Pywr</a> &raquo;</li>
-        
       <li>Extending Pywr with custom Parameters</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../_sources/extending_pywr/extending_pywr_parameters.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="extending-pywr-with-custom-parameters">
-<span id="extending-pywr-parameters"></span><h1>Extending Pywr with custom Parameters<a class="headerlink" href="#extending-pywr-with-custom-parameters" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="extending-pywr-with-custom-parameters">
+<span id="extending-pywr-parameters"></span><h1>Extending Pywr with custom Parameters<a class="headerlink" href="#extending-pywr-with-custom-parameters" title="Permalink to this headline"></a></h1>
 <p>Pywr provides many existing Parameters that can be used to model complex behaviours. This includes parameters that
 read data in different formats (e.g. the dataframe parameter), parameters that solve specific problems (e.g. reservoir
 control curves) and general purpose parameters (e.g. the <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code>).</p>
@@ -191,8 +98,8 @@ control curves) and general purpose parameters (e.g. the <code class="docutils l
 write a custom parameter you must (as a minimim) inherit from the base <code class="docutils literal notranslate"><span class="pre">pywr.parameter.Parameter</span></code> class and implement
 the <code class="docutils literal notranslate"><span class="pre">Parameter.value</span></code> method. The arguments to this method represent the current timestep and scenario allowing the
 value of the parameter to be dynamic.</p>
-<div class="section" id="a-simple-parameter">
-<h2>A simple parameter<a class="headerlink" href="#a-simple-parameter" title="Permalink to this headline">¶</a></h2>
+<section id="a-simple-parameter">
+<h2>A simple parameter<a class="headerlink" href="#a-simple-parameter" title="Permalink to this headline"></a></h2>
 <p>The example below shows a minimal parameter which returns the same value every timestep. The parameter is initialised
 with the value to return, which it stores in the <code class="docutils literal notranslate"><span class="pre">_value</span></code> attribute on the instance <a class="footnote-reference brackets" href="#id2" id="id1">*</a>. This value is returned
 whenever the <code class="docutils literal notranslate"><span class="pre">value</span></code> method is queries. The <code class="docutils literal notranslate"><span class="pre">load</span></code> class method is used to create an instance of the parameter
@@ -232,9 +139,9 @@ of <code class="docutils literal notranslate"><span class="pre">ConstantParamete
 <span class="p p-Indicator">}</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="timesteps-and-scenarios">
-<h2>Timesteps and scenarios<a class="headerlink" href="#timesteps-and-scenarios" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="timesteps-and-scenarios">
+<h2>Timesteps and scenarios<a class="headerlink" href="#timesteps-and-scenarios" title="Permalink to this headline"></a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">Parameter.value</span></code> method is called once per timestep for each scenario. The value it returns can be varied using
 the <code class="docutils literal notranslate"><span class="pre">timestep</span></code> and <code class="docutils literal notranslate"><span class="pre">scenario_index</span></code> arguments. For example, a simple version of a <code class="docutils literal notranslate"><span class="pre">MonthlyProfileParameter</span></code> could be
 created using the following:</p>
@@ -253,9 +160,9 @@ created using the following:</p>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="tracking-state-with-setup-reset-before-and-after">
-<h2>Tracking state with setup, reset, before and after<a class="headerlink" href="#tracking-state-with-setup-reset-before-and-after" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="tracking-state-with-setup-reset-before-and-after">
+<h2>Tracking state with setup, reset, before and after<a class="headerlink" href="#tracking-state-with-setup-reset-before-and-after" title="Permalink to this headline"></a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">Parameter.setup</span></code> and <code class="docutils literal notranslate"><span class="pre">Parameter.reset</span></code> methods are called once at the start of a model run before the first
 timestep. The <code class="docutils literal notranslate"><span class="pre">reset</span></code> method is called for every run, while the <cite>setup</cite> method is only called if the structure of
 the model has changed <a class="footnote-reference brackets" href="#id4" id="id3">†</a>.</p>
@@ -305,9 +212,9 @@ of the linear programme used to solve the model. This usually requires Parameter
 reallocate memory, instead of just resetting values.</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="dependency-on-other-parameters">
-<h2>Dependency on other parameters<a class="headerlink" href="#dependency-on-other-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="dependency-on-other-parameters">
+<h2>Dependency on other parameters<a class="headerlink" href="#dependency-on-other-parameters" title="Permalink to this headline"></a></h2>
 <p>The value of each parameter is calculated at the start of every timestep. A dependency tree is used to ensure that
 parameters are evaluated in the correct order and that there are no circular dependencies <a class="footnote-reference brackets" href="#id6" id="id5">‡</a>. For example, the
 <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code> returns the aggregated value of a set of parameters using a user-defined function. In the
@@ -345,9 +252,9 @@ on B, B depends on A) or indirect (e.g. A depends on B, B depends on C, C depend
 order in which to calculate these parameters and will raise an error at runtime.</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="improving-performance-with-cython">
-<h2>Improving performance with Cython<a class="headerlink" href="#improving-performance-with-cython" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="improving-performance-with-cython">
+<h2>Improving performance with Cython<a class="headerlink" href="#improving-performance-with-cython" title="Permalink to this headline"></a></h2>
 <p>Parameters are evaluated many times and can be a significant part of the model run time. Many of the parameters in the
 core library have been written in Cython to improve performance. Custom parameters can be written in Cython too. Cython
 can also be used to link to external C/C++ libraries.</p>
@@ -364,7 +271,7 @@ from <code class="docutils literal notranslate"><span class="pre">libm</span></c
 <li><p>The <code class="docutils literal notranslate"><span class="pre">value</span></code> method is defined as a cpdef function. This signature must match exactly.</p></li>
 </ul>
 <div class="literal-block-wrapper docutils container" id="id7">
-<div class="code-block-caption"><span class="caption-text">custom_parameters.pyx</span><a class="headerlink" href="#id7" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">custom_parameters.pyx</span><a class="headerlink" href="#id7" title="Permalink to this code"></a></div>
 <div class="highlight-cython notranslate"><div class="highlight"><pre><span></span><span class="k">from</span> <span class="nn">pywr.parameters._parameters</span> <span class="k">cimport</span> <span class="n">Parameter</span>
 <span class="k">from</span> <span class="nn">pywr._core</span> <span class="k">cimport</span> <span class="n">Timestep</span><span class="p">,</span> <span class="n">ScenarioIndex</span>
 
@@ -392,7 +299,7 @@ from <code class="docutils literal notranslate"><span class="pre">libm</span></c
 </div>
 </div>
 <div class="literal-block-wrapper docutils container" id="id8">
-<div class="code-block-caption"><span class="caption-text">run_model.py</span><a class="headerlink" href="#id8" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">run_model.py</span><a class="headerlink" href="#id8" title="Permalink to this code"></a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyximport</span>
 <span class="n">pyximport</span><span class="o">.</span><span class="n">install</span><span class="p">()</span>
 
@@ -404,55 +311,38 @@ from <code class="docutils literal notranslate"><span class="pre">libm</span></c
 </pre></div>
 </div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="extending_pywr_recorders.html" class="btn btn-neutral float-right" title="Extending Pywr with custom Recorders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="extending_pywr_nodes.html" class="btn btn-neutral float-left" title="Extending Pywr with custom Nodes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="extending_pywr_recorders.html" class="btn btn-neutral float-right" title="Extending Pywr with custom Recorders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.
-
-    </p>
+    <p>&#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

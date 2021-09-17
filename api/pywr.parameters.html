@@ -1,78 +1,38 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Parameters &mdash; Pywr 1.15.2.dev2+g2bd04066 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+  <title>Parameters &mdash; Pywr 1.15.3.dev1+gbe45b516 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="pywr.parameters.Parameter" href="generated/pywr.parameters.Parameter.html" />
     <link rel="prev" title="Optimisation" href="pywr.optimisation.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../index.html" class="icon icon-home"> Pywr
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
-                1.15.2.dev2+g2bd04066
+                1.15.3.dev1+gbe45b516
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -80,18 +40,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
@@ -210,77 +159,35 @@
 <li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Pywr</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="pywr.html">Pywr reference documentation.</a> &raquo;</li>
-        
       <li>Parameters</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../_sources/api/pywr.parameters.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="parameters">
-<h1>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="base-parameter-class">
-<h2>Base Parameter class<a class="headerlink" href="#base-parameter-class" title="Permalink to this headline">¶</a></h2>
+             
+  <section id="parameters">
+<h1>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline"></a></h1>
+<section id="base-parameter-class">
+<h2>Base Parameter class<a class="headerlink" href="#base-parameter-class" title="Permalink to this headline"></a></h2>
 <p>All the <cite>Parameter</cite> subclasses in <cite>pywr</cite> are descended from a common base class.</p>
 <table class="longtable docutils align-default">
 <colgroup>
@@ -296,45 +203,45 @@
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="simple-parameters">
-<h2>Simple parameters<a class="headerlink" href="#simple-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="simple-parameters">
+<h2>Simple parameters<a class="headerlink" href="#simple-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ConstantParameter.html#pywr.parameters.ConstantParameter" title="pywr.parameters.ConstantParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstantParameter</span></code></a>(model, value[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ConstantParameter.html#pywr.parameters.ConstantParameter" title="pywr.parameters.ConstantParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstantParameter</span></code></a>(model, value[, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ConstantScenarioParameter.html#pywr.parameters.ConstantScenarioParameter" title="pywr.parameters.ConstantScenarioParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstantScenarioParameter</span></code></a>(model, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ConstantScenarioParameter.html#pywr.parameters.ConstantScenarioParameter" title="pywr.parameters.ConstantScenarioParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstantScenarioParameter</span></code></a>(model, ...)</p></td>
 <td><p>A Scenario varying Parameter</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ConstantScenarioIndexParameter.html#pywr.parameters.ConstantScenarioIndexParameter" title="pywr.parameters.ConstantScenarioIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstantScenarioIndexParameter</span></code></a>(model, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ConstantScenarioIndexParameter.html#pywr.parameters.ConstantScenarioIndexParameter" title="pywr.parameters.ConstantScenarioIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstantScenarioIndexParameter</span></code></a>(model, ...)</p></td>
 <td><p>A Scenario varying IndexParameter</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="combining-multiple-parameters">
-<h2>Combining multiple parameters<a class="headerlink" href="#combining-multiple-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="combining-multiple-parameters">
+<h2>Combining multiple parameters<a class="headerlink" href="#combining-multiple-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.AggregatedParameter.html#pywr.parameters.AggregatedParameter" title="pywr.parameters.AggregatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AggregatedParameter</span></code></a>(model, parameters[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.AggregatedParameter.html#pywr.parameters.AggregatedParameter" title="pywr.parameters.AggregatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AggregatedParameter</span></code></a>(model, parameters[, ...])</p></td>
 <td><p>A collection of IndexParameters</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.AggregatedIndexParameter.html#pywr.parameters.AggregatedIndexParameter" title="pywr.parameters.AggregatedIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AggregatedIndexParameter</span></code></a>(model, parameters)</p></td>
 <td><p>A collection of IndexParameters</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.DivisionParameter.html#pywr.parameters.DivisionParameter" title="pywr.parameters.DivisionParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DivisionParameter</span></code></a>(model, numerator, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.DivisionParameter.html#pywr.parameters.DivisionParameter" title="pywr.parameters.DivisionParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DivisionParameter</span></code></a>(model, numerator, ...)</p></td>
 <td><p>Parameter that divides one <cite>Parameter</cite> by another.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.NegativeParameter.html#pywr.parameters.NegativeParameter" title="pywr.parameters.NegativeParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NegativeParameter</span></code></a>(model, parameter, *args, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.NegativeParameter.html#pywr.parameters.NegativeParameter" title="pywr.parameters.NegativeParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NegativeParameter</span></code></a>(model, parameter, *args, ...)</p></td>
 <td><p>Parameter that takes negative of another <cite>Parameter</cite></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.MaxParameter.html#pywr.parameters.MaxParameter" title="pywr.parameters.MaxParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaxParameter</span></code></a>(model, parameter[, threshold])</p></td>
@@ -349,42 +256,42 @@
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.NegativeMinParameter.html#pywr.parameters.NegativeMinParameter" title="pywr.parameters.NegativeMinParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NegativeMinParameter</span></code></a></p></td>
 <td><p>Parameter that takes minimum of the negative of a <cite>Parameter</cite> and constant value (threshold)</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.OffsetParameter.html#pywr.parameters.OffsetParameter" title="pywr.parameters.OffsetParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OffsetParameter</span></code></a>(model, parameter[, offset, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.OffsetParameter.html#pywr.parameters.OffsetParameter" title="pywr.parameters.OffsetParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OffsetParameter</span></code></a>(model, parameter[, offset, ...])</p></td>
 <td><p>Parameter that offsets another <cite>Parameter</cite> by a constant value.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="annual-profile-parameters">
-<h2>Annual profile parameters<a class="headerlink" href="#annual-profile-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="annual-profile-parameters">
+<h2>Annual profile parameters<a class="headerlink" href="#annual-profile-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.DailyProfileParameter.html#pywr.parameters.DailyProfileParameter" title="pywr.parameters.DailyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DailyProfileParameter</span></code></a>(model, values, *args, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.DailyProfileParameter.html#pywr.parameters.DailyProfileParameter" title="pywr.parameters.DailyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DailyProfileParameter</span></code></a>(model, values, *args, ...)</p></td>
 <td><p>An annual profile consisting of daily values.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.WeeklyProfileParameter.html#pywr.parameters.WeeklyProfileParameter" title="pywr.parameters.WeeklyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeeklyProfileParameter</span></code></a>(model, values, *args, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.WeeklyProfileParameter.html#pywr.parameters.WeeklyProfileParameter" title="pywr.parameters.WeeklyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeeklyProfileParameter</span></code></a>(model, values, *args, ...)</p></td>
 <td><p>Weekly profile (52-week year)</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.MonthlyProfileParameter.html#pywr.parameters.MonthlyProfileParameter" title="pywr.parameters.MonthlyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MonthlyProfileParameter</span></code></a>(model, values[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.MonthlyProfileParameter.html#pywr.parameters.MonthlyProfileParameter" title="pywr.parameters.MonthlyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MonthlyProfileParameter</span></code></a>(model, values[, ...])</p></td>
 <td><p>Parameter which provides a monthly profile.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.UniformDrawdownProfileParameter.html#pywr.parameters.UniformDrawdownProfileParameter" title="pywr.parameters.UniformDrawdownProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UniformDrawdownProfileParameter</span></code></a>(model[, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.UniformDrawdownProfileParameter.html#pywr.parameters.UniformDrawdownProfileParameter" title="pywr.parameters.UniformDrawdownProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UniformDrawdownProfileParameter</span></code></a>(model[, ...])</p></td>
 <td><p>Parameter which provides a uniformly reducing value from one to zero.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ScenarioDailyProfileParameter.html#pywr.parameters.ScenarioDailyProfileParameter" title="pywr.parameters.ScenarioDailyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioDailyProfileParameter</span></code></a>(model, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ScenarioDailyProfileParameter.html#pywr.parameters.ScenarioDailyProfileParameter" title="pywr.parameters.ScenarioDailyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioDailyProfileParameter</span></code></a>(model, ...)</p></td>
 <td><p>Parameter which provides a daily profile per scenario.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ScenarioWeeklyProfileParameter.html#pywr.parameters.ScenarioWeeklyProfileParameter" title="pywr.parameters.ScenarioWeeklyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioWeeklyProfileParameter</span></code></a>(model, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ScenarioWeeklyProfileParameter.html#pywr.parameters.ScenarioWeeklyProfileParameter" title="pywr.parameters.ScenarioWeeklyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioWeeklyProfileParameter</span></code></a>(model, ...)</p></td>
 <td><p>Parameter that provides a weekly profile per scenario</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ScenarioMonthlyProfileParameter.html#pywr.parameters.ScenarioMonthlyProfileParameter" title="pywr.parameters.ScenarioMonthlyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioMonthlyProfileParameter</span></code></a>(model, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ScenarioMonthlyProfileParameter.html#pywr.parameters.ScenarioMonthlyProfileParameter" title="pywr.parameters.ScenarioMonthlyProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioMonthlyProfileParameter</span></code></a>(model, ...)</p></td>
 <td><p>Parameter that provides a monthly profile per scenario</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ArrayIndexedScenarioMonthlyFactorsParameter.html#pywr.parameters.ArrayIndexedScenarioMonthlyFactorsParameter" title="pywr.parameters.ArrayIndexedScenarioMonthlyFactorsParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArrayIndexedScenarioMonthlyFactorsParameter</span></code></a>(…)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ArrayIndexedScenarioMonthlyFactorsParameter.html#pywr.parameters.ArrayIndexedScenarioMonthlyFactorsParameter" title="pywr.parameters.ArrayIndexedScenarioMonthlyFactorsParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArrayIndexedScenarioMonthlyFactorsParameter</span></code></a>(...)</p></td>
 <td><p>Time varying parameter using an array and Timestep.index with multiplicative factors per Scenario</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.RbfProfileParameter.html#pywr.parameters.RbfProfileParameter" title="pywr.parameters.RbfProfileParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RbfProfileParameter</span></code></a>(model, days_of_year, values)</p></td>
@@ -392,9 +299,9 @@
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="dataframe-parameter">
-<h2>Dataframe parameter<a class="headerlink" href="#dataframe-parameter" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="dataframe-parameter">
+<h2>Dataframe parameter<a class="headerlink" href="#dataframe-parameter" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
@@ -406,43 +313,43 @@
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="hdf5-parameter">
-<h2>HDF5 Parameter<a class="headerlink" href="#hdf5-parameter" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="hdf5-parameter">
+<h2>HDF5 Parameter<a class="headerlink" href="#hdf5-parameter" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.TablesArrayParameter.html#pywr.parameters.TablesArrayParameter" title="pywr.parameters.TablesArrayParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TablesArrayParameter</span></code></a>(model, h5file, node[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.TablesArrayParameter.html#pywr.parameters.TablesArrayParameter" title="pywr.parameters.TablesArrayParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TablesArrayParameter</span></code></a>(model, h5file, node[, ...])</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="array-based-parameters">
-<h2>Array based parameters<a class="headerlink" href="#array-based-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="array-based-parameters">
+<h2>Array based parameters<a class="headerlink" href="#array-based-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ArrayIndexedParameter.html#pywr.parameters.ArrayIndexedParameter" title="pywr.parameters.ArrayIndexedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArrayIndexedParameter</span></code></a>(model, values, *args, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ArrayIndexedParameter.html#pywr.parameters.ArrayIndexedParameter" title="pywr.parameters.ArrayIndexedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArrayIndexedParameter</span></code></a>(model, values, *args, ...)</p></td>
 <td><p>Time varying parameter using an array and Timestep.index</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ArrayIndexedScenarioParameter.html#pywr.parameters.ArrayIndexedScenarioParameter" title="pywr.parameters.ArrayIndexedScenarioParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArrayIndexedScenarioParameter</span></code></a>(model, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ArrayIndexedScenarioParameter.html#pywr.parameters.ArrayIndexedScenarioParameter" title="pywr.parameters.ArrayIndexedScenarioParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArrayIndexedScenarioParameter</span></code></a>(model, ...)</p></td>
 <td><p>A Scenario varying Parameter</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.IndexedArrayParameter.html#pywr.parameters.IndexedArrayParameter" title="pywr.parameters.IndexedArrayParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IndexedArrayParameter</span></code></a>(model, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.IndexedArrayParameter.html#pywr.parameters.IndexedArrayParameter" title="pywr.parameters.IndexedArrayParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IndexedArrayParameter</span></code></a>(model, ...)</p></td>
 <td><p>Parameter which uses an IndexParameter to index an array of Parameters</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="threshold-parameters">
-<h2>Threshold parameters<a class="headerlink" href="#threshold-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="threshold-parameters">
+<h2>Threshold parameters<a class="headerlink" href="#threshold-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
@@ -452,22 +359,22 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.AbstractThresholdParameter.html#pywr.parameters.AbstractThresholdParameter" title="pywr.parameters.AbstractThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractThresholdParameter</span></code></a>(model, threshold)</p></td>
 <td><p>Base class for parameters returning one of two values depending on other state.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.StorageThresholdParameter.html#pywr.parameters.StorageThresholdParameter" title="pywr.parameters.StorageThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StorageThresholdParameter</span></code></a>(model, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.StorageThresholdParameter.html#pywr.parameters.StorageThresholdParameter" title="pywr.parameters.StorageThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StorageThresholdParameter</span></code></a>(model, ...)</p></td>
 <td><p>Returns one of two values depending on current volume in a Storage node</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.NodeThresholdParameter.html#pywr.parameters.NodeThresholdParameter" title="pywr.parameters.NodeThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NodeThresholdParameter</span></code></a>(model, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.NodeThresholdParameter.html#pywr.parameters.NodeThresholdParameter" title="pywr.parameters.NodeThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NodeThresholdParameter</span></code></a>(model, ...)</p></td>
 <td><p>Returns one of two values depending on previous flow in a node</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ParameterThresholdParameter.html#pywr.parameters.ParameterThresholdParameter" title="pywr.parameters.ParameterThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterThresholdParameter</span></code></a>(model, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.ParameterThresholdParameter.html#pywr.parameters.ParameterThresholdParameter" title="pywr.parameters.ParameterThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterThresholdParameter</span></code></a>(model, ...)</p></td>
 <td><p>Returns one of two values depending on the value of a Parameter</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.MultipleThresholdIndexParameter.html#pywr.parameters.MultipleThresholdIndexParameter" title="pywr.parameters.MultipleThresholdIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultipleThresholdIndexParameter</span></code></a>(model, node, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.MultipleThresholdIndexParameter.html#pywr.parameters.MultipleThresholdIndexParameter" title="pywr.parameters.MultipleThresholdIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultipleThresholdIndexParameter</span></code></a>(model, node, ...)</p></td>
 <td><p>Returns an index based on the previous days flow in a node against multiple given thresholds.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.MultipleThresholdParameterIndexParameter.html#pywr.parameters.MultipleThresholdParameterIndexParameter" title="pywr.parameters.MultipleThresholdParameterIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultipleThresholdParameterIndexParameter</span></code></a>(…)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.MultipleThresholdParameterIndexParameter.html#pywr.parameters.MultipleThresholdParameterIndexParameter" title="pywr.parameters.MultipleThresholdParameterIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultipleThresholdParameterIndexParameter</span></code></a>(...)</p></td>
 <td><p>Return an index based on the value in the parameter against multiple given thresholds.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.RecorderThresholdParameter.html#pywr.parameters.RecorderThresholdParameter" title="pywr.parameters.RecorderThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RecorderThresholdParameter</span></code></a>(model, …[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.RecorderThresholdParameter.html#pywr.parameters.RecorderThresholdParameter" title="pywr.parameters.RecorderThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RecorderThresholdParameter</span></code></a>(model, ...[, ...])</p></td>
 <td><p>Returns one of two values depending on a Recorder value and a threshold</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.CurrentYearThresholdParameter.html#pywr.parameters.CurrentYearThresholdParameter" title="pywr.parameters.CurrentYearThresholdParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CurrentYearThresholdParameter</span></code></a></p></td>
@@ -478,29 +385,29 @@
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="activation-function-parameters">
-<h2>Activation function parameters<a class="headerlink" href="#activation-function-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="activation-function-parameters">
+<h2>Activation function parameters<a class="headerlink" href="#activation-function-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.BinaryStepParameter.html#pywr.parameters.BinaryStepParameter" title="pywr.parameters.BinaryStepParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BinaryStepParameter</span></code></a>(model[, value, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.BinaryStepParameter.html#pywr.parameters.BinaryStepParameter" title="pywr.parameters.BinaryStepParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BinaryStepParameter</span></code></a>(model[, value, ...])</p></td>
 <td><p>An activation function that returns a constant value if its internal variable is positive.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.RectifierParameter.html#pywr.parameters.RectifierParameter" title="pywr.parameters.RectifierParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RectifierParameter</span></code></a>(model[, value, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.RectifierParameter.html#pywr.parameters.RectifierParameter" title="pywr.parameters.RectifierParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RectifierParameter</span></code></a>(model[, value, ...])</p></td>
 <td><p>An activation function that follows a ramp function if its internal variable is positive.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.LogisticParameter.html#pywr.parameters.LogisticParameter" title="pywr.parameters.LogisticParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LogisticParameter</span></code></a>(model[, value, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.LogisticParameter.html#pywr.parameters.LogisticParameter" title="pywr.parameters.LogisticParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LogisticParameter</span></code></a>(model[, value, ...])</p></td>
 <td><p>An activation function that follows a logistic function using its interval value.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="interpolation-parameters">
-<h2>Interpolation parameters<a class="headerlink" href="#interpolation-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="interpolation-parameters">
+<h2>Interpolation parameters<a class="headerlink" href="#interpolation-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
@@ -510,73 +417,73 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.InterpolatedParameter.html#pywr.parameters.InterpolatedParameter" title="pywr.parameters.InterpolatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolatedParameter</span></code></a>(model, parameter, x, y)</p></td>
 <td><p>Parameter value is equal to the interpolation of another parameter</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.InterpolatedVolumeParameter.html#pywr.parameters.InterpolatedVolumeParameter" title="pywr.parameters.InterpolatedVolumeParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolatedVolumeParameter</span></code></a>(model, node, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.InterpolatedVolumeParameter.html#pywr.parameters.InterpolatedVolumeParameter" title="pywr.parameters.InterpolatedVolumeParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolatedVolumeParameter</span></code></a>(model, node, ...)</p></td>
 <td><p>Generic interpolation parameter calculated from current volume</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.InterpolatedQuadratureParameter.html#pywr.parameters.InterpolatedQuadratureParameter" title="pywr.parameters.InterpolatedQuadratureParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolatedQuadratureParameter</span></code></a>(model, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.InterpolatedQuadratureParameter.html#pywr.parameters.InterpolatedQuadratureParameter" title="pywr.parameters.InterpolatedQuadratureParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolatedQuadratureParameter</span></code></a>(model, ...)</p></td>
 <td><p>Parameter value is equal to the quadrature of the interpolation of another parameter</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.InterpolatedFlowParameter.html#pywr.parameters.InterpolatedFlowParameter" title="pywr.parameters.InterpolatedFlowParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolatedFlowParameter</span></code></a>(model, node, …)</p></td>
-<td><p>Generic interpolation parameter that uses a node’s flow at the previous time-step for interpolation.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.InterpolatedFlowParameter.html#pywr.parameters.InterpolatedFlowParameter" title="pywr.parameters.InterpolatedFlowParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolatedFlowParameter</span></code></a>(model, node, ...)</p></td>
+<td><p>Generic interpolation parameter that uses a node's flow at the previous time-step for interpolation.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="control-curve-parameters">
-<h2>Control curve parameters<a class="headerlink" href="#control-curve-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="control-curve-parameters">
+<h2>Control curve parameters<a class="headerlink" href="#control-curve-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.BaseControlCurveParameter.html#pywr.parameters.control_curves.BaseControlCurveParameter" title="pywr.parameters.control_curves.BaseControlCurveParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.BaseControlCurveParameter</span></code></a>(…)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.BaseControlCurveParameter.html#pywr.parameters.control_curves.BaseControlCurveParameter" title="pywr.parameters.control_curves.BaseControlCurveParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.BaseControlCurveParameter</span></code></a>(...)</p></td>
 <td><p>Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveInterpolatedParameter.html#pywr.parameters.control_curves.ControlCurveInterpolatedParameter" title="pywr.parameters.control_curves.ControlCurveInterpolatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurveInterpolatedParameter</span></code></a>(…)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveInterpolatedParameter.html#pywr.parameters.control_curves.ControlCurveInterpolatedParameter" title="pywr.parameters.control_curves.ControlCurveInterpolatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurveInterpolatedParameter</span></code></a>(...)</p></td>
 <td><p>A control curve Parameter that interpolates between three or more values</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveIndexParameter.html#pywr.parameters.control_curves.ControlCurveIndexParameter" title="pywr.parameters.control_curves.ControlCurveIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurveIndexParameter</span></code></a>(…)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveIndexParameter.html#pywr.parameters.control_curves.ControlCurveIndexParameter" title="pywr.parameters.control_curves.ControlCurveIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurveIndexParameter</span></code></a>(...)</p></td>
 <td><p>Multiple control curve holder which returns an index not a value</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter.html#pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter" title="pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurvePiecewiseInterpolatedParameter</span></code></a>(…)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter.html#pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter" title="pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurvePiecewiseInterpolatedParameter</span></code></a>(...)</p></td>
 <td><p>A control curve Parameter that interpolates between two or more pairs of values.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="hydropower-parameters">
-<h2>Hydropower parameters<a class="headerlink" href="#hydropower-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="hydropower-parameters">
+<h2>Hydropower parameters<a class="headerlink" href="#hydropower-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.HydropowerTargetParameter.html#pywr.parameters.HydropowerTargetParameter" title="pywr.parameters.HydropowerTargetParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HydropowerTargetParameter</span></code></a>(model, target[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.HydropowerTargetParameter.html#pywr.parameters.HydropowerTargetParameter" title="pywr.parameters.HydropowerTargetParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HydropowerTargetParameter</span></code></a>(model, target[, ...])</p></td>
 <td><p>A parameter that returns flow from a hydropower generation target.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="other-parameters">
-<h2>Other parameters<a class="headerlink" href="#other-parameters" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="other-parameters">
+<h2>Other parameters<a class="headerlink" href="#other-parameters" title="Permalink to this headline"></a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.AnnualHarmonicSeriesParameter.html#pywr.parameters.AnnualHarmonicSeriesParameter" title="pywr.parameters.AnnualHarmonicSeriesParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnnualHarmonicSeriesParameter</span></code></a>(model, mean, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.AnnualHarmonicSeriesParameter.html#pywr.parameters.AnnualHarmonicSeriesParameter" title="pywr.parameters.AnnualHarmonicSeriesParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnnualHarmonicSeriesParameter</span></code></a>(model, mean, ...)</p></td>
 <td><p>A <cite>Parameter</cite> which returns the value from an annual harmonic series</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.DeficitParameter.html#pywr.parameters.DeficitParameter" title="pywr.parameters.DeficitParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeficitParameter</span></code></a>(model, node, *args, **kwargs)</p></td>
 <td><p>Parameter track the deficit (max_flow - actual flow) of a Node</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ScenarioWrapperParameter.html#pywr.parameters.ScenarioWrapperParameter" title="pywr.parameters.ScenarioWrapperParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioWrapperParameter</span></code></a>(model, scenario, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.ScenarioWrapperParameter.html#pywr.parameters.ScenarioWrapperParameter" title="pywr.parameters.ScenarioWrapperParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScenarioWrapperParameter</span></code></a>(model, scenario, ...)</p></td>
 <td><p>Parameter that utilises a different child parameter in each scenario ensemble.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.PiecewiseIntegralParameter.html#pywr.parameters.PiecewiseIntegralParameter" title="pywr.parameters.PiecewiseIntegralParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PiecewiseIntegralParameter</span></code></a>(model, parameter, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.PiecewiseIntegralParameter.html#pywr.parameters.PiecewiseIntegralParameter" title="pywr.parameters.PiecewiseIntegralParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PiecewiseIntegralParameter</span></code></a>(model, parameter, ...)</p></td>
 <td><p>Parameter that integrates a piecewise function.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.FlowParameter.html#pywr.parameters.FlowParameter" title="pywr.parameters.FlowParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlowParameter</span></code></a>(model, node, *args, **kwargs)</p></td>
@@ -585,60 +492,43 @@
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.FlowDelayParameter.html#pywr.parameters.FlowDelayParameter" title="pywr.parameters.FlowDelayParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlowDelayParameter</span></code></a>(model, node, *args, **kwargs)</p></td>
 <td><p>Parameter that returns the delayed flow for a node after a given number of timesteps or days</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.DiscountFactorParameter.html#pywr.parameters.DiscountFactorParameter" title="pywr.parameters.DiscountFactorParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DiscountFactorParameter</span></code></a>(model, rate, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.DiscountFactorParameter.html#pywr.parameters.DiscountFactorParameter" title="pywr.parameters.DiscountFactorParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DiscountFactorParameter</span></code></a>(model, rate, ...)</p></td>
 <td><p>Parameter that returns the current discount factor based on discount rate and a base year.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="generated/pywr.parameters.Parameter.html" class="btn btn-neutral float-right" title="pywr.parameters.Parameter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="pywr.optimisation.html" class="btn btn-neutral float-left" title="Optimisation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="generated/pywr.parameters.Parameter.html" class="btn btn-neutral float-right" title="pywr.parameters.Parameter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.
-
-    </p>
+    <p>&#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

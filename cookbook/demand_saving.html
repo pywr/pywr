@@ -1,79 +1,39 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Demand restrictions &mdash; Pywr 1.15.2.dev2+g2bd04066 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+  <title>Demand restrictions &mdash; Pywr 1.15.3.dev1+gbe45b516 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Using external data" href="dataframes.html" />
     <link rel="prev" title="Pywr cookbook examples" href="cookbook.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../index.html" class="icon icon-home"> Pywr
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
-                1.15.2.dev2+g2bd04066
+                1.15.3.dev1+gbe45b516
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -81,18 +41,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installing Pywr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
@@ -111,75 +60,33 @@
 <li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Pywr</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="cookbook.html">Pywr cookbook examples</a> &raquo;</li>
-        
       <li>Demand restrictions</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../_sources/cookbook/demand_saving.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="demand-restrictions">
-<span id="demand-saving"></span><h1>Demand restrictions<a class="headerlink" href="#demand-restrictions" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="demand-restrictions">
+<span id="demand-saving"></span><h1>Demand restrictions<a class="headerlink" href="#demand-restrictions" title="Permalink to this headline"></a></h1>
 <p>Demand restrictions are a common concept in water resource models. When the state of a water resource is poor (for example, lower than normal reservoir levels) demand restrictions may be imposed on customers in order to reduce the likelihood of a failure to supply.</p>
 <p>The demand at a given timestep can be represented using the equation below,</p>
 <div class="math notranslate nohighlight">
@@ -201,9 +108,9 @@
 </pre></div>
 </div>
 <p>(<a class="reference external" href="../pyplots/top_hat.py">Source code</a>, <a class="reference external" href="../pyplots/top_hat.png">png</a>, <a class="reference external" href="../pyplots/top_hat.hires.png">hires.png</a>, <a class="reference external" href="../pyplots/top_hat.pdf">pdf</a>)</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/top_hat.png" class="plot-directive" src="../_images/top_hat.png" />
-</div>
+</figure>
 <p>The demand restriction level describes the level of restrictions as an integer, where 0 means no demand restrictions, level 1 (L1) is some restriction (or perhaps just publicity), level 2 (L2) more severe restrictions, and so on. The specifics will depend on the system being modelled. This is represented in Pywr using the <code class="docutils literal notranslate"><span class="pre">ControlCurveIndexParameter</span></code>. <code class="docutils literal notranslate"><span class="pre">IndexParameter</span></code> return an integer to be used as an index, rather than a decimal value.</p>
 <p>The demand restriction level is often related to the storage of strategic reservoirs in relation to a control curve (the expected reservoir volume at a given time of the year). The example below two demand restriction levels are defined (and implicitly a L0) based on the volume in the <code class="docutils literal notranslate"><span class="pre">&quot;Central</span> <span class="pre">Reservoir&quot;</span></code> storage node. L1 is defined as 80% of full, L2 as 50% of full. Control curves are commonly more complicated, as the expected level of a reservoir is usually lower in the summer than it is in the winter.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;demand_restriction_level&quot;</span><span class="o">:</span> <span class="p">{</span>
@@ -266,9 +173,9 @@
 </div>
 <p>The final profiles are illustrated in the figure below. The actual demand value will switch between the three profiles depending on the resource state of the reservoir.</p>
 <p>(<a class="reference external" href="../pyplots/demand_saving_levels.py">Source code</a>, <a class="reference external" href="../pyplots/demand_saving_levels.png">png</a>, <a class="reference external" href="../pyplots/demand_saving_levels.hires.png">hires.png</a>, <a class="reference external" href="../pyplots/demand_saving_levels.pdf">pdf</a>)</p>
-<div class="figure align-default">
+<figure class="align-default">
 <img alt="../_images/demand_saving_levels.png" class="plot-directive" src="../_images/demand_saving_levels.png" />
-</div>
+</figure>
 <p>This parameter can then be applied to the <code class="docutils literal notranslate"><span class="pre">max_flow</span></code> attribute of the demand node.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
     <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;output&quot;</span><span class="p">,</span>
@@ -279,54 +186,37 @@
 </pre></div>
 </div>
 <p>When a model has more than one demand node it is OK to re-use the demand restriction level/factor for each demand node. Pywr will only calculate the index once for each parameter. Therefore, it is more efficient to share <code class="docutils literal notranslate"><span class="pre">IndexParameter</span></code> where possible.</p>
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="dataframes.html" class="btn btn-neutral float-right" title="Using external data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="cookbook.html" class="btn btn-neutral float-left" title="Pywr cookbook examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dataframes.html" class="btn btn-neutral float-right" title="Using external data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.
-
-    </p>
+    <p>&#169; Copyright Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
