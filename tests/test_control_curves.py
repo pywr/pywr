@@ -177,6 +177,11 @@ class TestPiecewiseControlCurveParameter:
         s = m.nodes['Storage']
 
         l = Link(m, 'Link')
+        # Connect the link node to the network to create a valid model
+        o = m.nodes['Output']
+        s.connect(l)
+        l.connect(o)
+
         cc = ConstantParameter(model, 0.8)
         l.cost = ControlCurveParameter(model, s, cc, [10.0, 0.0])
 
@@ -193,12 +198,15 @@ class TestPiecewiseControlCurveParameter:
             s.initial_volume = initial_volume
             m.run()
 
-
     def test_with_nonstorage_load(self, model):
         """ Test load from dict with 'storage_node' key. """
         m = model
         s = m.nodes['Storage']
         l = Link(m, 'Link')
+        # Connect the link node to the network to create a valid model
+        o = m.nodes['Output']
+        s.connect(l)
+        l.connect(o)
 
         data = {
             "type": "controlcurve",

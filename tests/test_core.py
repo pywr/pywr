@@ -232,6 +232,8 @@ def test_dirty_model():
 
     # add a new node, dirty
     supply2 = Input(model, 'supply2')
+    demand2 = Output(model, 'demand2')
+    supply2.connect(demand2)
 
     # run the model, clean
     result = model.step()

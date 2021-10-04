@@ -256,6 +256,9 @@ cdef set_col_bnds(glp_prob *P, int i, int type, double lb, double ub):
 
 
 cdef set_mat_row(glp_prob *P, int i, int len, int* ind, double* val):
+    assert len > 0, "Attempting to set a constraint row with zero entries. This should not happen. It is likely caused" \
+                    "by invalid or unsupported network configuration, but should generally be caught earlier by Pywr. " \
+                    "If you experience this error please report it to the Pywr developers."
     IF SOLVER_DEBUG:
         cdef int j
         for j in range(len):

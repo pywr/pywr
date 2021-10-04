@@ -451,6 +451,40 @@ def test_annual_virtual_storage_with_dynamic_cost():
     assert_allclose(rec.data[3], 5)
 
 
+@pytest.mark.xfail(raises=AssertionError, reason="See issue #1001: https://github.com/pywr/pywr/issues/1001")
+def test_annual_virtual_storage_with_piecewise_link():
+    """Test `AnnualVirtualStorage` works with `PiecewiseLink`"""
+    model = load_model('virtual_storage3.json')
+    # This should fail before #1001 is fixed properly. Once fixed the assertions about the licence and
+    # flow should be uncommented and pass.
+    model.run()
+
+    # node = model.nodes["supply1"]
+    # rec = node.recorders[0]
+    # assert_allclose(rec.data[0], 10) # licence is not a constraint
+    # assert_allclose(rec.data[19], 10)
+    # assert_allclose(rec.data[20], 5) # licence is constraint
+    # assert_allclose(rec.data[21], 0) # licence is exhausted
+    # assert_allclose(rec.data[365], 10) # licence is refreshed
+
+
+@pytest.mark.xfail(raises=AssertionError, reason="See issue #1001: https://github.com/pywr/pywr/issues/1001")
+def test_annual_virtual_storage_with_aggregated_node():
+    """Test `AnnualVirtualStorage` works with `AggregatedNode`"""
+    model = load_model('virtual_storage4.json')
+    # This should fail before #1001 is fixed properly. Once fixed the assertions about the licence and
+    # flow should be uncommented and pass.
+    model.run()
+
+    # node = model.nodes["supply1"]
+    # rec = node.recorders[0]
+    # assert_allclose(rec.data[0], 10) # licence is not a constraint
+    # assert_allclose(rec.data[19], 10)
+    # assert_allclose(rec.data[20], 5) # licence is constraint
+    # assert_allclose(rec.data[21], 0) # licence is exhausted
+    # assert_allclose(rec.data[365], 10) # licence is refreshed
+
+
 class TestSeasonalVirtualStorage:
     def test_run(self):
 
