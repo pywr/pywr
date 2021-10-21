@@ -3,6 +3,16 @@
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
 
+=======
+## v1.15.3
+
+### Bug Fixes
+
+- Fix bug where constraints are not applied between `VirtualStorage` and some complex node types (e.g
+`PiecewiseLink` and `AggregatedNode`). Previously models would run and silently ignore constraints
+that users might reasonably expect to be applied. Now these models will error until a proper fix
+is implemented. See issue #1001 to see details and track progress. (#1002)
+
 ## v1.15.2
 
 ### Bug Fixes
