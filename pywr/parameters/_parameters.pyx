@@ -898,10 +898,11 @@ cdef class UniformDrawdownProfileParameter(Parameter):
     --------
     AnnualVirtualStorage
     """
-    def __init__(self, model, reset_day=1, reset_month=1, **kwargs):
+    def __init__(self, model, reset_day=1, reset_month=1, residual_days=0, **kwargs):
         super().__init__(model, **kwargs)
         self.reset_day = reset_day
         self.reset_month = reset_month
+        self.residual_days = residual_days
 
     cpdef reset(self):
         super(UniformDrawdownProfileParameter, self).reset()
@@ -914,6 +915,7 @@ cdef class UniformDrawdownProfileParameter(Parameter):
         cdef int total_days_in_period
         cdef int days_into_period
         cdef int year = ts.year
+        cdef double residual_proportion, propotion_complete
 
         days_into_period = current_idoy - self._reset_idoy
         if days_into_period < 0:
@@ -938,7 +940,9 @@ cdef class UniformDrawdownProfileParameter(Parameter):
             if not is_leap_year(ts.year) and current_idoy > 59:
                 days_into_period -= 1
 
-        return 1.0 - days_into_period / total_days_in_period
+        residual_proportion = self.residual_days / total_days_in_period
+        propotion_complete = days_into_period / total_days_in_period
+        return (1.0 - propotion_complete) + (residual_proportion * propotion_complete)
 
     @classmethod
     def load(cls, model, data):

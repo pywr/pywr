@@ -1864,6 +1864,23 @@ class TestUniformDrawdownProfileParameter:
 
         m.run()
 
+    def test_residual_days(self):
+        from pywr.recorders import NumpyArrayStorageRecorder
+
+        model = load_model('virtual_storage5.json')
+
+        rec = NumpyArrayStorageRecorder(model, model.nodes["licence1"])
+
+        expected_values = np.linspace(1, 11/365, 365)
+
+        p = model.parameters["drawdown"]
+
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            return expected_values[timestep.index]
+    
+        model.run()        
+
 
 class TestRbfProfileParameter:
     """Tests for RbfParameter."""
