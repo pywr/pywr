@@ -86,7 +86,7 @@ The examples below compare the "max" aggregation function in ``AggregatedParamet
 
     {
         "type": "max",
-        "parameter": "another_parameter"
+        "parameter": "another_parameter",
         "threshold": 0.0
     }
 
@@ -98,7 +98,7 @@ An example use of these functions is to handle the net inflow timeseries for a r
 
     "inflow": {
         "type": "max",
-        "parameter": "original"
+        "parameter": "original",
         "threshold": 0.0
     }
     
@@ -107,7 +107,6 @@ An example use of these functions is to handle the net inflow timeseries for a r
         "parameter": {
             "type": "negative",
             "parameter": "original"
-            "threshold": 0.0
         }
         "threshold": 0.0
     }
