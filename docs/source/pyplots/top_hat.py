@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas
 
-profile =[0.9, 0.9, 0.9, 0.9, 1.2, 1.2, 1.2, 1.2, 0.9, 0.9, 0.9, 0.9]
+profile = [0.9, 0.9, 0.9, 0.9, 1.2, 1.2, 1.2, 1.2, 0.9, 0.9, 0.9, 0.9]
 
 dates = pandas.date_range("2015-01-01", "2015-12-31")
-values = [profile[d.month-1] for d in dates]
+values = [profile[d.month - 1] for d in dates]
 
 fig = plt.figure(figsize=(8, 5))
 
