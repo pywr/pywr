@@ -915,7 +915,7 @@ cdef class UniformDrawdownProfileParameter(Parameter):
         cdef int total_days_in_period
         cdef int days_into_period
         cdef int year = ts.year
-        cdef double residual_proportion, propotion_complete
+        cdef double residual_proportion, slope
 
         days_into_period = current_idoy - self._reset_idoy
         if days_into_period < 0:
@@ -941,8 +941,9 @@ cdef class UniformDrawdownProfileParameter(Parameter):
                 days_into_period -= 1
 
         residual_proportion = self.residual_days / total_days_in_period
-        propotion_complete = days_into_period / total_days_in_period
-        return (1.0 - propotion_complete) + (residual_proportion * propotion_complete)
+        slope = (residual_proportion - 1.0) / total_days_in_period
+
+        return 1 + (slope * days_into_period)
 
     @classmethod
     def load(cls, model, data):

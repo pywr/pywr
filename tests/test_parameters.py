@@ -1864,22 +1864,27 @@ class TestUniformDrawdownProfileParameter:
 
         m.run()
 
-    def test_residual_days(self):
-        from pywr.recorders import NumpyArrayStorageRecorder
+    @pytest.mark.parametrize(['year'], [("2015",), ("2016",)])
+    def test_residual_days(self, year):
 
         model = load_model('virtual_storage5.json')
+        model.timestepper.start = pd.Timestamp(f"{year}-01-01")
+        model.timestepper.end = pd.Timestamp(f"{year}-12-31")
 
-        rec = NumpyArrayStorageRecorder(model, model.nodes["licence1"])
-
-        expected_values = np.linspace(1, 11/365, 365)
+        if year == "2015":
+            expected_values = np.linspace(1, 10/365, 366)
+            # remove leap year val
+            expected_values = np.append(expected_values[:59], expected_values[60:])
+        else:
+            expected_values = np.linspace(1, 10/366, 367)
 
         p = model.parameters["drawdown"]
 
         @assert_rec(model, p)
         def expected_func(timestep, scenario_index):
-            return expected_values[timestep.index]
+           return expected_values[timestep.index]
     
-        model.run()        
+        model.run()
 
 
 class TestRbfProfileParameter:
