@@ -13,8 +13,10 @@ from pywr.h5tools import H5Store
 from ..parameter_property import parameter_property
 import warnings
 
+
 class ParameterNameWarning(UserWarning):
     pass
+
 
 def assert_rec(model, parameter, name=None, get_index=False):
     """Decorator for creating AssertionRecorder objects
@@ -25,14 +27,28 @@ def assert_rec(model, parameter, name=None, get_index=False):
     def expected_func(timestep, scenario_index):
         return timestep.dayofyear * 2.0
     """
+
     def assert_rec_(f):
-        rec = AssertionRecorder(model, parameter, expected_func=f, name=name, get_index=get_index)
+        rec = AssertionRecorder(
+            model, parameter, expected_func=f, name=name, get_index=get_index
+        )
         return f
+
     return assert_rec_
+
 
 class AssertionRecorder(Recorder):
     """A recorder that asserts the value of a parameter for testing purposes"""
-    def __init__(self, model, parameter, expected_data=None, expected_func=None, get_index=False, **kwargs):
+
+    def __init__(
+        self,
+        model,
+        parameter,
+        expected_data=None,
+        expected_func=None,
+        get_index=False,
+        **kwargs,
+    ):
         """
         Parameters
         ----------
@@ -66,7 +82,9 @@ class AssertionRecorder(Recorder):
             if self.expected_func:
                 expected_value = self.expected_func(timestep, scenario_index)
             elif self.expected_data is not None:
-                expected_value = self.expected_data[timestep.index, scenario_index.global_id]
+                expected_value = self.expected_data[
+                    timestep.index, scenario_index.global_id
+                ]
             if self.get_index:
                 value = self._parameter.get_index(scenario_index)
             else:
@@ -74,7 +92,15 @@ class AssertionRecorder(Recorder):
             try:
                 np.testing.assert_allclose(value, expected_value)
             except AssertionError:
-                raise AssertionError("Expected {}, got {} from \"{}\" [timestep={}, scenario={}]".format(expected_value, value, self._parameter.name, timestep.index, scenario_index.global_id))
+                raise AssertionError(
+                    'Expected {}, got {} from "{}" [timestep={}, scenario={}]'.format(
+                        expected_value,
+                        value,
+                        self._parameter.name,
+                        timestep.index,
+                        scenario_index.global_id,
+                    )
+                )
 
     def finish(self):
         super(AssertionRecorder, self).finish()
@@ -106,12 +132,22 @@ class CSVRecorder(Recorder):
     kwargs : Additional keyword arguments to pass to the `csv.writer` object
 
     """
-    def __init__(self, model, csvfile, scenario_index=0, nodes=None, complib=None, complevel=9, **kwargs):
+
+    def __init__(
+        self,
+        model,
+        csvfile,
+        scenario_index=0,
+        nodes=None,
+        complib=None,
+        complevel=9,
+        **kwargs,
+    ):
         super(CSVRecorder, self).__init__(model, **kwargs)
         self.csvfile = csvfile
         self.scenario_index = scenario_index
         self.nodes = nodes
-        self.csv_kwargs = kwargs.pop('csv_kwargs', {})
+        self.csv_kwargs = kwargs.pop("csv_kwargs", {})
         self._node_names = None
         self._fh = None
         self._writer = None
@@ -121,6 +157,7 @@ class CSVRecorder(Recorder):
     @classmethod
     def load(cls, model, data):
         import os
+
         url = data.pop("url")
         if not os.path.isabs(url) and model.path is not None:
             url = os.path.join(model.path, url)
@@ -146,14 +183,17 @@ class CSVRecorder(Recorder):
 
     def reset(self):
         import csv
+
         kwargs = {"newline": "", "encoding": "utf-8"}
         mode = "wt"
 
         if self.complib == "gzip":
             import gzip
+
             self._fh = gzip.open(self.csvfile, mode, self.complevel, **kwargs)
         elif self.complib in ("bz2", "bzip2"):
             import bz2
+
             self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
         elif self.complib is None:
             self._fh = open(self.csvfile, mode, **kwargs)
@@ -176,13 +216,17 @@ class CSVRecorder(Recorder):
             elif isinstance(node, AbstractNode):
                 values.append(node.flow[self.scenario_index])
             else:
-                raise ValueError("Unrecognised Node type '{}' for CSV writer".format(type(node)))
+                raise ValueError(
+                    "Unrecognised Node type '{}' for CSV writer".format(type(node))
+                )
 
         self._writer.writerow(values)
 
     def finish(self):
         if self._fh:
             self._fh.close()
+
+
 CSVRecorder.register()
 
 
@@ -194,8 +238,20 @@ class TablesRecorder(Recorder):
     Each CArray stores the data for all scenarios on the specific node. This
     is useful for analysis of Node statistics across multiple scenarios.
     """
-    def __init__(self, model, h5file, nodes=None, parameters=None, where='/', time='/time',
-                 routes_flows=None, routes='/routes', scenarios='/scenarios', **kwargs):
+
+    def __init__(
+        self,
+        model,
+        h5file,
+        nodes=None,
+        parameters=None,
+        where="/",
+        time="/time",
+        routes_flows=None,
+        routes="/routes",
+        scenarios="/scenarios",
+        **kwargs,
+    ):
         """
 
         Parameters
@@ -234,17 +290,17 @@ class TablesRecorder(Recorder):
             If a file path is given and create_directories is True then attempt to make the intermediate
             directories. This uses os.makedirs() underneath.
         """
-        self.filter_kwds = kwargs.pop('filter_kwds', {})
-        self.mode = kwargs.pop('mode', 'w')
-        self.metadata = kwargs.pop('metadata', {})
-        self.create_directories = kwargs.pop('create_directories', False)
+        self.filter_kwds = kwargs.pop("filter_kwds", {})
+        self.mode = kwargs.pop("mode", "w")
+        self.metadata = kwargs.pop("metadata", {})
+        self.create_directories = kwargs.pop("create_directories", False)
 
-        title = kwargs.pop('title', None)
+        title = kwargs.pop("title", None)
         if title is None:
             try:
-                title = model.metadata['title']
+                title = model.metadata["title"]
             except KeyError:
-                title = ''
+                title = ""
         self.title = title
         super(TablesRecorder, self).__init__(model, **kwargs)
 
@@ -279,6 +335,7 @@ class TablesRecorder(Recorder):
             param = parameter
         if isinstance(param, str):
             from ..parameters import load_parameter
+
             param = load_parameter(self.model, param)
         if not param.name:
             raise ValueError("Can only record named Parameter objects")
@@ -286,8 +343,10 @@ class TablesRecorder(Recorder):
             name = param.name.replace("/", "_")
             if name != param.name:
                 warnings.warn(
-                    "Recorded parameter has \"/\" in name, replaced with \"_\" to avoid creation of subgroup: {}".format(param.name),
-                    ParameterNameWarning
+                    'Recorded parameter has "/" in name, replaced with "_" to avoid creation of subgroup: {}'.format(
+                        param.name
+                    ),
+                    ParameterNameWarning,
                 )
             where = self.where + "/" + name
         where = where.replace("//", "/")
@@ -309,6 +368,7 @@ class TablesRecorder(Recorder):
     @classmethod
     def load(cls, model, data):
         import os
+
         url = data.pop("url")
         if not os.path.isabs(url) and model.path is not None:
             url = os.path.join(model.path, url)
@@ -326,15 +386,24 @@ class TablesRecorder(Recorder):
         scenario_shape = list(self.model.scenarios.shape)
         shape = [len(self.model.timestepper)] + scenario_shape
 
-        self.h5store = H5Store(self.h5file, self.filter_kwds, self.mode, title=self.title, metadata=self.metadata,
-                               create_directories=self.create_directories)
+        self.h5store = H5Store(
+            self.h5file,
+            self.filter_kwds,
+            self.mode,
+            title=self.title,
+            metadata=self.metadata,
+            create_directories=self.create_directories,
+        )
 
         # Create a CArray for each node
         self._arrays = {}
 
         # Default to all nodes if None given.
         if self.nodes is None:
-            nodes = [((self.where + "/" + n.name).replace("//", "/"), n) for n in self.model.nodes.values()]
+            nodes = [
+                ((self.where + "/" + n.name).replace("//", "/"), n)
+                for n in self.model.nodes.values()
+            ]
         else:
             nodes = []
             for n in self.nodes:
@@ -366,30 +435,38 @@ class TablesRecorder(Recorder):
             group_name, node_name = where.rsplit("/", 1)
             if group_name == "":
                 group_name = "/"
-            self.h5store.file.create_carray(group_name, node_name, atom, shape, createparents=True)
+            self.h5store.file.create_carray(
+                group_name, node_name, atom, shape, createparents=True
+            )
 
         # Create scenario tables
         if self.scenarios is not None:
-            group_name, node_name = self.scenarios.rsplit('/', 1)
+            group_name, node_name = self.scenarios.rsplit("/", 1)
             if group_name == "":
                 group_name = "/"
             description = {
                 # TODO make string length configurable
-                'name': tables.StringCol(1024),
-                'size': tables.Int64Col()
+                "name": tables.StringCol(1024),
+                "size": tables.Int64Col(),
             }
-            tbl = self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
+            tbl = self.h5store.file.create_table(
+                group_name, node_name, description=description, createparents=True
+            )
             # Now add the scenarios
             entry = tbl.row
             for scenario in self.model.scenarios.scenarios:
-                entry['name'] = scenario.name.encode('utf-8')
-                entry['size'] = scenario.size
+                entry["name"] = scenario.name.encode("utf-8")
+                entry["size"] = scenario.size
                 entry.append()
             tbl.flush()
 
             if self.model.scenarios.user_combinations is not None:
-                description = {s.name: tables.Int64Col() for s in self.model.scenarios.scenarios}
-                tbl = self.h5store.file.create_table(group_name, 'scenario_combinations', description=description)
+                description = {
+                    s.name: tables.Int64Col() for s in self.model.scenarios.scenarios
+                }
+                tbl = self.h5store.file.create_table(
+                    group_name, "scenario_combinations", description=description
+                )
                 entry = tbl.row
                 for comb in self.model.scenarios.user_combinations:
                     for s, i in zip(self.model.scenarios.scenarios, comb):
@@ -412,19 +489,21 @@ class TablesRecorder(Recorder):
         # Create time table
         # This is created in reset so that the table is always recreated
         if self.time is not None:
-            group_name, node_name = self.time.rsplit('/', 1)
+            group_name, node_name = self.time.rsplit("/", 1)
             if group_name == "":
                 group_name = "/"
-            description = {c: tables.Int64Col() for c in ('year', 'month', 'day', 'index')}
+            description = {
+                c: tables.Int64Col() for c in ("year", "month", "day", "index")
+            }
 
             try:
                 self.h5store.file.remove_node(group_name, node_name)
             except tables.NoSuchNodeError:
                 pass
             finally:
-                self._time_table = self.h5store.file.create_table(group_name, node_name,
-                                                                  description=description,
-                                                                  createparents=True)
+                self._time_table = self.h5store.file.create_table(
+                    group_name, node_name, description=description, createparents=True
+                )
 
         self._routes_flow_array = None
         if self.routes_flows is not None:
@@ -433,7 +512,10 @@ class TablesRecorder(Recorder):
             # The second dimension is the number of routes
             # The following dimensions are sized per scenario
             scenario_shape = list(self.model.scenarios.shape)
-            shape = [len(self.model.timestepper), len(self.model.solver.routes)] + scenario_shape
+            shape = [
+                len(self.model.timestepper),
+                len(self.model.solver.routes),
+            ] + scenario_shape
             atom = tables.Float64Atom()
 
             try:
@@ -441,25 +523,32 @@ class TablesRecorder(Recorder):
             except tables.NoSuchNodeError:
                 pass
             finally:
-                self._routes_flow_array = self.h5store.file.create_carray(self.where, self.routes_flows, atom, shape, createparents=True)
+                self._routes_flow_array = self.h5store.file.create_carray(
+                    self.where, self.routes_flows, atom, shape, createparents=True
+                )
 
             # Create routes table. This must be done in reset
             if self.routes is not None:
-                group_name, node_name = self.routes.rsplit('/', 1)
+                group_name, node_name = self.routes.rsplit("/", 1)
                 if group_name == "":
                     group_name = "/"
 
                 description = {
                     # TODO make string length configurable
-                    'start': tables.StringCol(1024),
-                    'end': tables.StringCol(1024),
+                    "start": tables.StringCol(1024),
+                    "end": tables.StringCol(1024),
                 }
                 try:
                     self.h5store.file.remove_node(group_name, node_name)
                 except tables.NoSuchNodeError:
                     pass
                 finally:
-                    tbl = self.h5store.file.create_table(group_name, node_name, description=description, createparents=True)
+                    tbl = self.h5store.file.create_table(
+                        group_name,
+                        node_name,
+                        description=description,
+                        createparents=True,
+                    )
 
                 entry = tbl.row
                 for route in self.model.solver.routes:
@@ -471,8 +560,8 @@ class TablesRecorder(Recorder):
                     if node_last.parent is not None:
                         node_last = node_last.parent
 
-                    entry['start'] = node_first.name.encode('utf-8')
-                    entry['end'] = node_last.name.encode('utf-8')
+                    entry["start"] = node_first.name.encode("utf-8")
+                    entry["end"] = node_last.name.encode("utf-8")
                     entry.append()
 
                 tbl.flush()
@@ -483,16 +572,17 @@ class TablesRecorder(Recorder):
         """
         from pywr._core import AbstractNode, AbstractStorage
         from pywr.parameters import Parameter, IndexParameter
+
         scenario_shape = list(self.model.scenarios.shape)
         ts = self.model.timestepper.current
         idx = ts.index
 
         if self._time_table is not None:
             entry = self._time_table.row
-            entry['year'] = ts.year
-            entry['month'] = ts.month
-            entry['day'] = ts.day
-            entry['index'] = idx
+            entry["year"] = ts.year
+            entry["month"] = ts.month
+            entry["day"] = ts.day
+            entry["index"] = idx
             entry.append()
 
         for node, ca in self._arrays.items():
@@ -507,11 +597,17 @@ class TablesRecorder(Recorder):
                 a = node.get_all_values()
                 ca[idx, :] = np.reshape(a, scenario_shape)
             else:
-                raise ValueError("Unrecognised Node type '{}' for TablesRecorder".format(type(node)))
+                raise ValueError(
+                    "Unrecognised Node type '{}' for TablesRecorder".format(type(node))
+                )
 
         if self._routes_flow_array is not None:
-            routes_shape = [len(self.model.solver.routes), ] + scenario_shape
-            self._routes_flow_array[idx, ...] = np.reshape(self.model.solver.routes_flows_array.T, routes_shape)
+            routes_shape = [
+                len(self.model.solver.routes),
+            ] + scenario_shape
+            self._routes_flow_array[idx, ...] = np.reshape(
+                self.model.solver.routes_flows_array.T, routes_shape
+            )
 
     def finish(self):
         if self._time_table is not None:
@@ -521,7 +617,7 @@ class TablesRecorder(Recorder):
         self._routes_flow_array = None
 
     @staticmethod
-    def generate_dataframes(h5file, time='/time', scenarios='/scenarios'):
+    def generate_dataframes(h5file, time="/time", scenarios="/scenarios"):
         """Helper function to generate pandas dataframes from `TablesRecorder` data.
 
         Parameters
@@ -532,30 +628,35 @@ class TablesRecorder(Recorder):
         scenarios : str
             The internal table that contains the scenario information (default "/scenarios")
         """
-        store = H5Store(h5file, mode='r')
+        store = H5Store(h5file, mode="r")
 
         # Get the time information
         if time:
             time_table = store.file.get_node(time)
-            index = pandas.to_datetime({k: time_table.col(k) for k in ('year', 'month', 'day')})
+            index = pandas.to_datetime(
+                {k: time_table.col(k) for k in ("year", "month", "day")}
+            )
         else:
             index = None
 
         # Get the scenario information
         if scenarios:
             scenarios_table = store.file.get_node(scenarios)
-            scenarios = pandas.DataFrame({k: scenarios_table.col(k) for k in ('name', 'size')})
+            scenarios = pandas.DataFrame(
+                {k: scenarios_table.col(k) for k in ("name", "size")}
+            )
             columns = pandas.MultiIndex.from_product(
-                [range(row['size']) for _, row in scenarios.iterrows()],
-                names=[row['name'].decode() for _, row in scenarios.iterrows()]
+                [range(row["size"]) for _, row in scenarios.iterrows()],
+                names=[row["name"].decode() for _, row in scenarios.iterrows()],
             )
         else:
             columns = None
 
-        for node in store.file.walk_nodes('/', 'CArray'):
+        for node in store.file.walk_nodes("/", "CArray"):
             data = node.read()
             data = data.reshape((data.shape[0], -1))
             df = pandas.DataFrame(data, index=index, columns=columns)
             yield node._v_name, df
+
 
 TablesRecorder.register()
