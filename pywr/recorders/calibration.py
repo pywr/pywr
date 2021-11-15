@@ -12,7 +12,7 @@ Several different evaluation metrics are implemented in this module. Many are
 
 
 """
-from .recorders import NumpyArrayNodeRecorder
+from ._recorders import NumpyArrayNodeRecorder
 import numpy as np
 
 
