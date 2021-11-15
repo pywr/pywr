@@ -2,9 +2,11 @@ import pytest
 
 from pywr.model import NamedIterator
 
+
 class Item:
     def __init__(self, name):
         self.name = name
+
 
 @pytest.fixture
 def items():
@@ -13,6 +15,7 @@ def items():
         Item("World"),
         Item("River Thames"),
     ]
+
 
 @pytest.fixture
 def iterator(items):

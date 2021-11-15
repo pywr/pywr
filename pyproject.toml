@@ -3,3 +3,9 @@ requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4", "cython", "n
 
 # enable version inference
 [tool.setuptools_scm]
+
+
+[tool.black]
+line-length = 88
+target-version = ['py37']
+include = '\.pyi?$'
