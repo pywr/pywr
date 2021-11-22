@@ -439,8 +439,11 @@ class TestRollingVirtualStorage:
         assert_allclose(vs.volume, [30.0], atol=1e-7)
 
 
-def test_annual_virtual_storage():
-    model = load_model("virtual_storage1.json")
+@pytest.mark.parametrize(
+    "test_model", ["virtual_storage1", "virtual_storage6", "virtual_storage7"]
+)
+def test_annual_virtual_storage(test_model):
+    model = load_model(f"{test_model}.json")
     model.run()
     node = model.nodes["supply1"]
     rec = node.recorders[0]

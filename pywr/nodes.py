@@ -442,8 +442,10 @@ class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMet
         The minimum volume the storage is allowed to reach.
     max_volume: float or parameter
         The maximum volume of the storage.
-    initial_volume: float
-        The initial storage volume.
+    initial_volume, initial_volume_pc : float (optional)
+        Specify initial volume in either absolute or proportional terms. Both are required if `max_volume`
+        is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+        and `max_volume` is not a Parameter, then the absolute value is ignored.
     cost: float or parameter
         The cost of flow into/outfrom the storage.
 
@@ -460,11 +462,8 @@ class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMet
         if min_volume is None:
             min_volume = 0.0
         max_volume = pop_kwarg_parameter(kwargs, "max_volume", 0.0)
-        if "volume" in kwargs:
-            # support older API where volume kwarg was the initial volume
-            initial_volume = kwargs.pop("volume")
-        else:
-            initial_volume = kwargs.pop("initial_volume", 0.0)
+        initial_volume = kwargs.pop("initial_volume", None)
+        initial_volume_pc = kwargs.pop("initial_volume_pc", None)
         cost = pop_kwarg_parameter(kwargs, "cost", 0.0)
 
         factors = kwargs.pop("factors", None)
@@ -474,6 +473,7 @@ class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMet
         self.min_volume = min_volume
         self.max_volume = max_volume
         self.initial_volume = initial_volume
+        self.initial_volume_pc = initial_volume_pc
         self.cost = cost
         self.nodes = nodes
 
@@ -616,10 +616,14 @@ class AnnualVirtualStorage(VirtualStorage):
             if ts.month > self.reset_month or (
                 ts.month == self.reset_month and ts.day >= self.reset_day
             ):
-                # Reset to maximum volume (i.e. full capacity. )
-                self._reset_storage_only(
-                    use_initial_volume=self.reset_to_initial_volume
-                )
+                # Reset maximum volume depending on user preference ...
+                use_initial_volume = self.reset_to_initial_volume
+                if ts.index == 0 and isinstance(self.max_volume, Parameter):
+                    # ... if it is the first timestep and max volume is a parameter, then we can only reset to
+                    # initial volume because the max volume would not be evaluated
+                    use_initial_volume = True
+
+                self._reset_storage_only(use_initial_volume=use_initial_volume)
                 self._last_reset_year = ts.year
                 self.active = True
 
