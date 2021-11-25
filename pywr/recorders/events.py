@@ -62,14 +62,15 @@ class EventRecorder(Recorder):
             raise ValueError('Keyword "minimum_event_length" must be >= 1')
         self.minimum_event_length = minimum_event_length
         self.events = None
-        self._current_events = None
+        self._current_events = []
         # TODO make this more generic to track components or  nodes (e.g. storage volume)
         self.tracked_parameter = tracked_parameter
         if self.tracked_parameter is not None:
             self.tracked_parameter.parents.add(self)
 
     def setup(self):
-        pass
+        self.events = []
+        self._current_events = [None for si in self.model.scenarios.combinations]
 
     def reset(self):
         self.events = []
@@ -146,7 +147,7 @@ class EventRecorder(Recorder):
                 # Unfinished event
                 current_event.end = ts
                 self.events.append(current_event)
-                self._current_events[si.global_id] = None
+                self._current_events[si.global_id] = []
 
     def to_dataframe(self):
         """ Returns a `pandas.DataFrame` containing all of the events.

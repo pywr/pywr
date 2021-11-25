@@ -7,17 +7,14 @@ from ._recorders import NumpyArrayStorageRecorder, NumpyArrayNormalisedStorageRe
 
 class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
     """A recorder that fits a KDE to a time-series of volume.
-
     This recorder is an extension to `NumpyArrayStorageRecorder` which, at the end of a simulation,
     uses kernel density estimation (KDE) to estimate the probability density function of the storage time-series.
     It returns the probability of being at or below a specified target volume in the `aggregated_value()` method
     (i.e. used for optimisation). The recorder flattens data from all scenarios before computing the KDE. Therefore,
     a single PDF is produced and returned via `.to_dataframe()`.
-
     The user can specify an optional resampling (e.g. to create annual minimum time-series) prior to fitting
     the KDE. By default the KDE is reflected at the proportional storage bounds (0.0 and 1.0) to represent the
     boundedness of the distribution. This can be disabled if required.
-
     Parameters
     ==========
     resample_freq : str or None
@@ -78,7 +75,6 @@ class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
 
     def _estimate_pdf_and_target_probability(self, values, x) -> Tuple[float, np.ndarray]:
         """Return a probability of being at below `self.target_volume_pc` and a estimate of the PDF
-
         This method can (if `self.use_reflection` is truthy) reflect the PDF at the lower and upper boundaries
         to stop the PDF leaking in to infeasible space.
         """
@@ -104,17 +100,14 @@ GaussianKDEStorageRecorder.register()
 
 class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
     """A recorder that fits a KDE to a normalised time-series of volume.
-
     This recorder is an extension to `NumpyArrayNormalisedStorageRecorder` which, at the end of a simulation,
     uses kernel density estimation (KDE) to estimate the probability density function of the storage time-series.
     It returns the probability of being at or below zero of the normalised values in the `aggregated_value()` method
     (i.e. used for optimisation). The recorder flattens data from all scenarios before computing the KDE. Therefore,
     a single PDF is produced and returned via `.to_dataframe()`.
-
     The user can specify an optional resampling (e.g. to create annual minimum time-series) prior to fitting
     the KDE. By default the KDE is reflected at the normalised storage bounds (-1.0 and 1.0) to represent the
     boundedness of the distribution. This can be disabled if required.
-
     Parameters
     ==========
     resample_freq : str or None
@@ -148,11 +141,11 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         df = super().to_dataframe()
         # Apply resampling if defined
         if self.resample_func is not None and self.resample_freq is not None:
-            df = df.resample(self.resample_freq).agg(self.resample_func)
+            df = df.resample(self.resample_freq).agg(self.resample_func).ffill()
 
         x = np.linspace(0.0, 1.0, self.num_pdf)
 
-        # Compute the probability for the target volume
+        # Compute the probability for the target volume      
         p, pdf = self._estimate_pdf_and_target_probability(df.values.flatten(), x)
 
         self._probability_of_target_volume = p
@@ -160,7 +153,11 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
 
     def values(self):
         """Return the estimated PDF values."""
-        return self._pdf.values
+
+        values=np.zeros(len(self.model.scenarios.combinations))
+        values[:]=self._probability_of_target_volume
+        
+        return values
 
     def to_dataframe(self):
         """ Return a `pandas.DataFrame` of the estimated PDF.
@@ -168,15 +165,25 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         return self._pdf
 
     def aggregated_value(self):
-        return self._probability_of_target_volume
+        return float(self._probability_of_target_volume)
 
     def _estimate_pdf_and_target_probability(self, values, x) -> Tuple[float, np.ndarray]:
         """Return a probability of being at below `self.target_volume_pc` and a estimate of the PDF
-
         This method can (if `self.use_reflection` is truthy) reflect the PDF at the lower and upper boundaries
         to stop the PDF leaking in to infeasible space.
         """
         # Fit a Gaussian KDE
+        
+        #See if all values are the same (no variance, so no gaussian PDF is posssible)
+        val=set(values)
+        
+        if len(val)==1:
+            #If all values are the same, change first value to be slightly different to prevent numpy.linalg.LinAlgError: singular matrix
+            if values[0] > 0:
+                values[0]=values[0]*0.999
+            elif values[0] == 0:
+                values[0] = 0.00001
+                
         kernel = stats.gaussian_kde(values)
         p = kernel.integrate_box_1d(-1.0, 0.0)
         pdf = kernel(x)
@@ -184,13 +191,14 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         if self.use_reflection:
             # Reflection at the lower boundary
             kernel_lb = stats.gaussian_kde(-2.0 - values)
-            p += kernel_lb.integrate_box_1d(-1.0, 0.0)
-            pdf += kernel_lb(x)
 
-            # Reflection at the upper boundary
+            p += kernel_lb.integrate_box_1d(-1.0, 0.0)            
+            pdf += kernel_lb(x)
             kernel_ub = stats.gaussian_kde(2.0 - values)
+            
+            # Reflection at the upper boundary
             p += kernel_ub.integrate_box_1d(-1.0, 0.0)
             pdf += kernel_ub(x)
 
         return p, pdf
-NormalisedGaussianKDEStorageRecorder.register()
+NormalisedGaussianKDEStorageRecorder.register()        
