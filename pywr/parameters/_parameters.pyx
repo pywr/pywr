@@ -893,15 +893,18 @@ cdef class UniformDrawdownProfileParameter(Parameter):
         The day of the month (1-31) to reset the volume to the initial value.
     reset_month: int
         The month of the year (1-12) to reset the volume to the initial value.
+    residual_days: int
+        The number of days of residual licence to target for the end of the year.
 
     See also
     --------
     AnnualVirtualStorage
     """
-    def __init__(self, model, reset_day=1, reset_month=1, **kwargs):
+    def __init__(self, model, reset_day=1, reset_month=1, residual_days=0, **kwargs):
         super().__init__(model, **kwargs)
         self.reset_day = reset_day
         self.reset_month = reset_month
+        self.residual_days = residual_days
 
     cpdef reset(self):
         super(UniformDrawdownProfileParameter, self).reset()
@@ -914,6 +917,7 @@ cdef class UniformDrawdownProfileParameter(Parameter):
         cdef int total_days_in_period
         cdef int days_into_period
         cdef int year = ts.year
+        cdef double residual_proportion, slope
 
         days_into_period = current_idoy - self._reset_idoy
         if days_into_period < 0:
@@ -938,7 +942,10 @@ cdef class UniformDrawdownProfileParameter(Parameter):
             if not is_leap_year(ts.year) and current_idoy > 59:
                 days_into_period -= 1
 
-        return 1.0 - days_into_period / total_days_in_period
+        residual_proportion = self.residual_days / total_days_in_period
+        slope = (residual_proportion - 1.0) / total_days_in_period
+
+        return 1 + (slope * days_into_period)
 
     @classmethod
     def load(cls, model, data):
