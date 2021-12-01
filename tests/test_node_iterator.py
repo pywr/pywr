@@ -22,7 +22,7 @@ def test_contains(model):
 
 
 def test_delete(model):
-    del(model.nodes["Output"])
+    del model.nodes["Output"]
     assert len(model.nodes) == 2
     assert {node.name for node in model.nodes} == {"Input", "Link"}
 
@@ -30,6 +30,6 @@ def test_delete(model):
 def test_delete_compound_node(simple_storage_model):
     """Removal of a compound node removes child nodes also"""
     assert len(list(simple_storage_model.nodes._nodes(hide_children=False))) == 5
-    del(simple_storage_model.nodes["Storage"])
+    del simple_storage_model.nodes["Storage"]
     assert len(list(simple_storage_model.nodes._nodes(hide_children=False))) == 2
     assert {node.name for node in simple_storage_model.nodes} == {"Input", "Output"}

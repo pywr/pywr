@@ -7,11 +7,21 @@ from scipy.interpolate import interp1d
 
 
 class KeatingAquifer(Storage):
-    def __init__(self, model, name,
-                 num_streams, num_additional_inputs,
-                 stream_flow_levels, transmissivity, coefficient,
-                 levels, volumes=None, area=None, storativity=None,
-                 **kwargs):
+    def __init__(
+        self,
+        model,
+        name,
+        num_streams,
+        num_additional_inputs,
+        stream_flow_levels,
+        transmissivity,
+        coefficient,
+        levels,
+        volumes=None,
+        area=None,
+        storativity=None,
+        **kwargs,
+    ):
         """Storage node with one or more Keating outflows
 
         Parameters
@@ -50,7 +60,9 @@ class KeatingAquifer(Storage):
 
         See also documentation for the `KeatingStreamFlowParameter`.
         """
-        super(KeatingAquifer, self).__init__(model, name, inputs=(num_streams + num_additional_inputs), **kwargs)
+        super(KeatingAquifer, self).__init__(
+            model, name, inputs=(num_streams + num_additional_inputs), **kwargs
+        )
 
         if not (num_streams > 0):
             raise ValueError("Keating aquifer must have at least one stream outflow")
@@ -58,7 +70,9 @@ class KeatingAquifer(Storage):
             raise ValueError("Stream flow levels must have `num_streams` items")
         for i in stream_flow_levels:
             if len(i) != len(transmissivity):
-                raise ValueError("Items in stream flow levels should have the same length as transmissivity")
+                raise ValueError(
+                    "Items in stream flow levels should have the same length as transmissivity"
+                )
         if not isinstance(coefficient, numbers.Number):
             raise ValueError("Coefficient must be a scalar")
 
@@ -67,7 +81,7 @@ class KeatingAquifer(Storage):
                 raise ValueError("Area must be a scalar")
             if len(storativity) != (len(levels) - 1):
                 raise ValueError("Storativity must have one less item than levels")
-            heights = [levels[n+1] - levels[n] for n in range(0, len(levels)-1)]
+            heights = [levels[n + 1] - levels[n] for n in range(0, len(levels) - 1)]
             volumes = [0.0]
             for n, (s, h) in enumerate(zip(storativity, heights)):
                 volumes.append(volumes[-1] + area * s * h * 0.001)
@@ -92,9 +106,9 @@ class KeatingAquifer(Storage):
 
         # initialise streamflow parameters
         for n, node in enumerate(self.inputs[0:num_streams]):
-            parameter = KeatingStreamFlowParameter(model, self, stream_flow_levels[n],
-                                                   transmissivity,
-                                                   coefficient)
+            parameter = KeatingStreamFlowParameter(
+                model, self, stream_flow_levels[n], transmissivity, coefficient
+            )
             node.max_flow = parameter
             node.min_flow = parameter
 
@@ -102,9 +116,12 @@ class KeatingAquifer(Storage):
         def fget(self):
             # get the initial level from the volume
             return self.level.interp(self.initial_volume)
+
         def fset(self, value):
             # actually sets the initial volume
             volume = self._level_to_volume(value)
             self.initial_volume = volume
+
         return locals()
+
     initial_level = property(**initial_level())

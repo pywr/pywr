@@ -1,21 +1,27 @@
 from pywr.nodes import Domain, Input, Link, Storage, PiecewiseLink, MultiSplitLink
-from pywr.parameters import pop_kwarg_parameter, ConstantParameter, Parameter, load_parameter
+from pywr.parameters import (
+    pop_kwarg_parameter,
+    ConstantParameter,
+    Parameter,
+    load_parameter,
+)
 from pywr.parameters.control_curves import ControlCurveParameter
 
-DEFAULT_RIVER_DOMAIN = Domain(name='river', color='#33CCFF')
+DEFAULT_RIVER_DOMAIN = Domain(name="river", color="#33CCFF")
 
 
 class RiverDomainMixin(object):
     def __init__(self, *args, **kwargs):
         # if 'domain' not in kwargs:
         #     kwargs['domain'] = DEFAULT_RIVER_DOMAIN
-        if 'color' not in kwargs:
-            self.color = '#6ECFF6'  # blue
+        if "color" not in kwargs:
+            self.color = "#6ECFF6"  # blue
         super(RiverDomainMixin, self).__init__(*args, **kwargs)
 
 
 class Catchment(RiverDomainMixin, Input):
     """A hydrological catchment, supplying water to the river network"""
+
     __parameter_attributes__ = ("cost", "flow")
 
     def __init__(self, *args, **kwargs):
@@ -30,19 +36,19 @@ class Catchment(RiverDomainMixin, Input):
         flow : float or function
             The amount of water supplied by the catchment each timestep
         """
-        self.color = '#82CA9D'  # green
+        self.color = "#82CA9D"  # green
         # Grab flow from kwargs
-        flow = kwargs.pop('flow', 0.0)
+        flow = kwargs.pop("flow", 0.0)
         # Min/max flow set in super inits
         super(Catchment, self).__init__(*args, **kwargs)
         self.flow = flow
 
     def get_flow(self, timestep):
-        """ flow is ensured that both min_flow and max_flow are the same. """
+        """flow is ensured that both min_flow and max_flow are the same."""
         return self.get_min_flow(timestep)
 
     def __setattr__(self, name, value):
-        if name == 'flow':
+        if name == "flow":
             self.min_flow = value
             self.max_flow = value
             return
@@ -57,6 +63,7 @@ class Reservoir(RiverDomainMixin, Storage):
     and the user defined cost when it is below. Typically the costs are negative
     to represent a benefit of filling the reservoir when it is below its curve.
     """
+
     def __init__(self, model, *args, **kwargs):
         """
 
@@ -64,9 +71,9 @@ class Reservoir(RiverDomainMixin, Storage):
             control_curve - A Parameter object that can return the control curve position,
                 as a percentage of fill, for the given timestep.
         """
-        control_curve = pop_kwarg_parameter(kwargs, 'control_curve', None)
-        above_curve_cost = kwargs.pop('above_curve_cost', None)
-        cost = kwargs.pop('cost', 0.0)
+        control_curve = pop_kwarg_parameter(kwargs, "control_curve", None)
+        above_curve_cost = kwargs.pop("above_curve_cost", None)
+        cost = kwargs.pop("cost", 0.0)
         if above_curve_cost is not None:
             if control_curve is None:
                 # Make a default control curve at 100% capacity
@@ -78,12 +85,16 @@ class Reservoir(RiverDomainMixin, Storage):
             if not isinstance(cost, Parameter):
                 # In the case where an above_curve_cost is given and cost is not a Parameter
                 # a default cost Parameter is created.
-                kwargs['cost'] = ControlCurveParameter(model, self, control_curve, [above_curve_cost, cost])
+                kwargs["cost"] = ControlCurveParameter(
+                    model, self, control_curve, [above_curve_cost, cost]
+                )
             else:
-                raise ValueError('If an above_curve_cost is given cost must not be a Parameter.')
+                raise ValueError(
+                    "If an above_curve_cost is given cost must not be a Parameter."
+                )
         else:
             # reinstate the given cost parameter to pass to the parent constructors
-            kwargs['cost'] = cost
+            kwargs["cost"] = cost
         super(Reservoir, self).__init__(model, *args, **kwargs)
 
 
@@ -93,6 +104,7 @@ class River(RiverDomainMixin, Link):
     This node may have multiple upstream nodes (i.e. a confluence) but only
     one downstream node.
     """
+
     def __init__(self, *args, **kwargs):
         super(River, self).__init__(*args, **kwargs)
 
@@ -118,19 +130,28 @@ class RiverSplit(MultiSplitLink):
     pywr.nodes.MultiSplitLink
 
     """
+
     def __init__(self, model, *args, nsteps=1, **kwargs):
 
-        factors = kwargs.pop('factors')
+        factors = kwargs.pop("factors")
         extra_slots = len(factors) - 1
 
         # These are the defaults to pass to the parent class that makes this
         # class a convenience.
         # create keyword arguments for PiecewiseLink
-        costs = kwargs.pop('costs', [0.0])
-        max_flows = kwargs.pop('max_flows', [None])
+        costs = kwargs.pop("costs", [0.0])
+        max_flows = kwargs.pop("max_flows", [None])
 
-        super(RiverSplit, self).__init__(model, nsteps, *args, extra_slots=extra_slots, factors=factors, costs=costs,
-                                         max_flows=max_flows, **kwargs)
+        super(RiverSplit, self).__init__(
+            model,
+            nsteps,
+            *args,
+            extra_slots=extra_slots,
+            factors=factors,
+            costs=costs,
+            max_flows=max_flows,
+            **kwargs,
+        )
 
 
 class RiverSplitWithGauge(RiverSplit):
@@ -156,11 +177,18 @@ class RiverSplitWithGauge(RiverSplit):
         The identifiers to refer to the slots when connect from this Node. Length must be one more than
          the number of extra slots required.
     """
-    __parameter_attributes__ = ('cost', 'mrf_cost', 'mrf')
+
+    __parameter_attributes__ = ("cost", "mrf_cost", "mrf")
 
     def __init__(self, model, *args, mrf=0.0, cost=0.0, mrf_cost=0.0, **kwargs):
-        super(RiverSplitWithGauge, self).__init__(model, *args, nsteps=2, max_flows=[mrf, None], costs=[mrf_cost, cost],
-                                                  **kwargs)
+        super(RiverSplitWithGauge, self).__init__(
+            model,
+            *args,
+            nsteps=2,
+            max_flows=[mrf, None],
+            costs=[mrf_cost, cost],
+            **kwargs,
+        )
 
     def mrf():
         def fget(self):
@@ -168,7 +196,9 @@ class RiverSplitWithGauge(RiverSplit):
 
         def fset(self, value):
             self.sublinks[0].max_flow = value
+
         return locals()
+
     mrf = property(**mrf())
 
     def mrf_cost():
@@ -177,7 +207,9 @@ class RiverSplitWithGauge(RiverSplit):
 
         def fset(self, value):
             self.sublinks[0].cost = value
+
         return locals()
+
     mrf_cost = property(**mrf_cost())
 
     def cost():
@@ -186,7 +218,9 @@ class RiverSplitWithGauge(RiverSplit):
 
         def fset(self, value):
             self.sublinks[1].cost = value
+
         return locals()
+
     cost = property(**cost())
 
 
@@ -196,13 +230,14 @@ class Discharge(Catchment):
     This node is similar to a catchment, but sits inline to the river network,
     rather than at the head of the river.
     """
+
     pass
 
 
 class RiverGauge(RiverDomainMixin, PiecewiseLink):
-    """A river gauging station, with a minimum residual flow (MRF)
-    """
-    __parameter_attributes__ = ('cost', 'mrf_cost', 'mrf')
+    """A river gauging station, with a minimum residual flow (MRF)"""
+
+    __parameter_attributes__ = ("cost", "mrf_cost", "mrf")
 
     def __init__(self, *args, **kwargs):
         """Initialise a new RiverGauge instance
@@ -217,9 +252,9 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
             The cost of the other (unconstrained) route
         """
         # create keyword arguments for PiecewiseLink
-        cost = kwargs.pop('cost', 0.0)
-        kwargs['costs'] = [kwargs.pop('mrf_cost', 0.0), cost]
-        kwargs['max_flows'] = [kwargs.pop('mrf', 0.0), None]
+        cost = kwargs.pop("cost", 0.0)
+        kwargs["costs"] = [kwargs.pop("mrf_cost", 0.0), cost]
+        kwargs["max_flows"] = [kwargs.pop("mrf", 0.0), None]
         super(RiverGauge, self).__init__(nsteps=2, *args, **kwargs)
 
     def mrf():
@@ -228,7 +263,9 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
 
         def fset(self, value):
             self.sublinks[0].max_flow = value
+
         return locals()
+
     mrf = property(**mrf())
 
     def mrf_cost():
@@ -237,7 +274,9 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
 
         def fset(self, value):
             self.sublinks[0].cost = value
+
         return locals()
+
     mrf_cost = property(**mrf_cost())
 
     def cost():
@@ -246,6 +285,7 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
 
         def fset(self, value):
             self.sublinks[1].cost = value
-        return locals()
-    cost = property(**cost())
 
+        return locals()
+
+    cost = property(**cost())

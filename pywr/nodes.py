@@ -2,18 +2,23 @@ import numpy as np
 from pywr import _core
 from pywr._core import Node as BaseNode
 from pywr._core import BaseInput, BaseLink, BaseOutput, StorageInput, StorageOutput
-from pywr.parameters import pop_kwarg_parameter, load_parameter, load_parameter_values, FlowDelayParameter
+from pywr.parameters import (
+    pop_kwarg_parameter,
+    load_parameter,
+    load_parameter_values,
+    FlowDelayParameter,
+)
 from pywr.domains import Domain
 import networkx as nx
 
 
 class Drawable(object):
-    """Mixin class for objects that are drawable on a diagram of the network.
-    """
+    """Mixin class for objects that are drawable on a diagram of the network."""
+
     def __init__(self, *args, **kwargs):
-        self.position = kwargs.pop('position', {})
-        self.color = kwargs.pop('color', 'black')
-        self.visible = kwargs.pop('visible', True)
+        self.position = kwargs.pop("position", {})
+        self.color = kwargs.pop("color", "black")
+        self.visible = kwargs.pop("visible", True)
         super(Drawable, self).__init__(*args, **kwargs)
 
 
@@ -25,6 +30,7 @@ class Loadable:
     loaded (see `Model.load`) the `finalise_load` method is called on all node instances to assign
     concrete parameter instances where needed.
     """
+
     __parameter_attributes__ = ()
     __node_attributes__ = ()
     __parameter_value_attributes__ = ()
@@ -84,8 +90,9 @@ class Loadable:
 
 class Connectable(object):
     """A mixin class providing methods for connecting nodes in the model graph"""
+
     def iter_slots(self, slot_name=None, is_connector=True):
-        """ Returns the object(s) wich should be connected to given slot_name
+        """Returns the object(s) wich should be connected to given slot_name
 
         Overload this method when implementing compound nodes which have
         multiple slots and may return something other than self.
@@ -96,7 +103,7 @@ class Connectable(object):
         the actual connection rather than self.
         """
         if slot_name is not None:
-            raise ValueError('{} does not have slot: {}'.format(self, slot_name))
+            raise ValueError("{} does not have slot: {}".format(self, slot_name))
         yield self
 
     def connect(self, node, from_slot=None, to_slot=None):
@@ -148,7 +155,9 @@ class Connectable(object):
         try:
             self.model.graph.remove_edge(self, node)
         except nx.exception.NetworkXError:
-            for node_slot in node.iter_slots(slot_name=slot_name, is_connector=False, all_slots=all_slots):
+            for node_slot in node.iter_slots(
+                slot_name=slot_name, is_connector=False, all_slots=all_slots
+            ):
                 try:
                     self.model.graph.remove_edge(self, node_slot)
                 except nx.exception.NetworkXError:
@@ -158,12 +167,15 @@ class Connectable(object):
         else:
             disconnected = True
         if not disconnected:
-            raise nx.exception.NetworkXError('{} is not connected to {}'.format(self, node))
+            raise nx.exception.NetworkXError(
+                "{} is not connected to {}".format(self, node)
+            )
         self.model.dirty = True
 
 
 class NodeMeta(type):
     """Node metaclass used to keep a registry of Node classes"""
+
     # node subclasses are stored in a dict for convenience
     node_registry = {}
 
@@ -192,7 +204,8 @@ class Node(Loadable, Drawable, Connectable, BaseNode, metaclass=NodeMeta):
     class for other Node types (e.g. StorageInput) that are not directly
     Connectable.
     """
-    __parameter_attributes__ = ('cost', 'min_flow', 'max_flow')
+
+    __parameter_attributes__ = ("cost", "min_flow", "max_flow")
 
     def __init__(self, model, name, **kwargs):
         """Initialise a new Node object
@@ -204,13 +217,13 @@ class Node(Loadable, Drawable, Connectable, BaseNode, metaclass=NodeMeta):
         name : string
             A unique name for the node
         """
-        color = kwargs.pop('color', 'black')
-        min_flow = pop_kwarg_parameter(kwargs, 'min_flow', 0.0)
+        color = kwargs.pop("color", "black")
+        min_flow = pop_kwarg_parameter(kwargs, "min_flow", 0.0)
         if min_flow is None:
             min_flow = 0.0
-        max_flow = pop_kwarg_parameter(kwargs, 'max_flow', float('inf'))
-        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
-        conversion_factor = pop_kwarg_parameter(kwargs, 'conversion_factor', 1.0)
+        max_flow = pop_kwarg_parameter(kwargs, "max_flow", float("inf"))
+        cost = pop_kwarg_parameter(kwargs, "cost", 0.0)
+        conversion_factor = pop_kwarg_parameter(kwargs, "conversion_factor", 1.0)
 
         super(Node, self).__init__(model, name, **kwargs)
 
@@ -230,9 +243,8 @@ class Node(Loadable, Drawable, Connectable, BaseNode, metaclass=NodeMeta):
 
 
 class Input(Node, BaseInput):
-    """A general input at any point in the network
+    """A general input at any point in the network"""
 
-    """
     def __init__(self, *args, **kwargs):
         """Initialise a new Input node
 
@@ -244,13 +256,12 @@ class Input(Node, BaseInput):
             A simple maximum flow constraint for the input. Defaults to 0.0
         """
         super(Input, self).__init__(*args, **kwargs)
-        self.color = '#F26C4F'  # light red
+        self.color = "#F26C4F"  # light red
 
 
 class Output(Node, BaseOutput):
-    """A general output at any point from the network
+    """A general output at any point from the network"""
 
-    """
     def __init__(self, *args, **kwargs):
         """Initialise a new Output node
 
@@ -261,7 +272,7 @@ class Output(Node, BaseOutput):
         max_flow : float (optional)
             A simple maximum flow constraint for the output. Defaults to None
         """
-        kwargs['color'] = kwargs.pop('color', '#FFF467')  # light yellow
+        kwargs["color"] = kwargs.pop("color", "#FFF467")  # light yellow
         super(Output, self).__init__(*args, **kwargs)
 
 
@@ -273,6 +284,7 @@ class Link(Node, BaseLink):
     hold constraints (e.g. a maximum flow constraint). In this instance a Link
     node should be used.
     """
+
     def __init__(self, *args, **kwargs):
         """Initialise a new Link node
 
@@ -281,7 +293,7 @@ class Link(Node, BaseLink):
         max_flow : float or function (optional)
             A maximum flow constraint on the link, e.g. 5.0
         """
-        kwargs['color'] = kwargs.pop('color', '#A0A0A0')  # 45% grey
+        kwargs["color"] = kwargs.pop("color", "#A0A0A0")  # 45% grey
         super(Link, self).__init__(*args, **kwargs)
 
 
@@ -331,30 +343,35 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
         Optional float or Parameter defining the area and level of the storage node. These values are
         accessible through the `get_area` and `get_level` methods respectively.
     """
-    __parameter_attributes__ = ('cost', 'min_volume', 'max_volume', 'level', 'area')
-    __parameter_value_attributes__ = ('initial_volume', )
+
+    __parameter_attributes__ = ("cost", "min_volume", "max_volume", "level", "area")
+    __parameter_value_attributes__ = ("initial_volume",)
 
     def __init__(self, model, name, outputs=1, inputs=1, *args, **kwargs):
 
-        min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        min_volume = pop_kwarg_parameter(kwargs, "min_volume", 0.0)
         if min_volume is None:
             min_volume = 0.0
-        max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        initial_volume = kwargs.pop('initial_volume', None)
-        initial_volume_pc = kwargs.pop('initial_volume_pc', None)
-        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
-        level = pop_kwarg_parameter(kwargs, 'level', None)
-        area = pop_kwarg_parameter(kwargs, 'area', None)
+        max_volume = pop_kwarg_parameter(kwargs, "max_volume", 0.0)
+        initial_volume = kwargs.pop("initial_volume", None)
+        initial_volume_pc = kwargs.pop("initial_volume_pc", None)
+        cost = pop_kwarg_parameter(kwargs, "cost", 0.0)
+        level = pop_kwarg_parameter(kwargs, "level", None)
+        area = pop_kwarg_parameter(kwargs, "area", None)
 
         super(Storage, self).__init__(model, name, **kwargs)
 
         self.outputs = []
         for n in range(0, outputs):
-            self.outputs.append(StorageOutput(model, name="[output{}]".format(n), parent=self))
+            self.outputs.append(
+                StorageOutput(model, name="[output{}]".format(n), parent=self)
+            )
 
         self.inputs = []
         for n in range(0, inputs):
-            self.inputs.append(StorageInput(model, name="[input{}]".format(n), parent=self))
+            self.inputs.append(
+                StorageInput(model, name="[input{}]".format(n), parent=self)
+            )
 
         self.min_volume = min_volume
         self.max_volume = max_volume
@@ -386,7 +403,9 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
                 try:
                     yield self.inputs[slot_name]
                 except IndexError:
-                    raise IndexError('{} does not have slot: {}'.format(self, slot_name))
+                    raise IndexError(
+                        "{} does not have slot: {}".format(self, slot_name)
+                    )
         else:
             if not self.outputs:
                 raise StopIteration
@@ -432,22 +451,23 @@ class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMet
     -----
     TODO: The cost property is not currently respected. See issue #242.
     """
-    __parameter_attributes__ = ('min_volume', 'max_volume')
-    __node_attributes__ = ('nodes', )
+
+    __parameter_attributes__ = ("min_volume", "max_volume")
+    __node_attributes__ = ("nodes",)
 
     def __init__(self, model, name, nodes, **kwargs):
-        min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        min_volume = pop_kwarg_parameter(kwargs, "min_volume", 0.0)
         if min_volume is None:
             min_volume = 0.0
-        max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        if 'volume' in kwargs:
+        max_volume = pop_kwarg_parameter(kwargs, "max_volume", 0.0)
+        if "volume" in kwargs:
             # support older API where volume kwarg was the initial volume
-            initial_volume = kwargs.pop('volume')
+            initial_volume = kwargs.pop("volume")
         else:
-            initial_volume = kwargs.pop('initial_volume', 0.0)
-        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
+            initial_volume = kwargs.pop("initial_volume", 0.0)
+        cost = pop_kwarg_parameter(kwargs, "cost", 0.0)
 
-        factors = kwargs.pop('factors', None)
+        factors = kwargs.pop("factors", None)
 
         super(VirtualStorage, self).__init__(model, name, **kwargs)
 
@@ -465,10 +485,14 @@ class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMet
     def check(self):
         super(VirtualStorage, self).check()
         if self.cost not in (0.0, None):
-            raise NotImplementedError("VirtualStorage does not currently support a non-zero cost.")
+            raise NotImplementedError(
+                "VirtualStorage does not currently support a non-zero cost."
+            )
 
 
-class RollingVirtualStorage(Loadable, Drawable, _core.RollingVirtualStorage, metaclass=NodeMeta):
+class RollingVirtualStorage(
+    Loadable, Drawable, _core.RollingVirtualStorage, metaclass=NodeMeta
+):
     """A rolling virtual storage node useful for implementing rolling licences.
 
     Parameters
@@ -499,19 +523,20 @@ class RollingVirtualStorage(Loadable, Drawable, _core.RollingVirtualStorage, met
     -----
     TODO: The cost property is not currently respected. See issue #242.
     """
-    __parameter_attributes__ = ('min_volume', 'max_volume')
-    __node_attributes__ = ('nodes', )
+
+    __parameter_attributes__ = ("min_volume", "max_volume")
+    __node_attributes__ = ("nodes",)
 
     def __init__(self, model, name, nodes, **kwargs):
-        min_volume = pop_kwarg_parameter(kwargs, 'min_volume', 0.0)
+        min_volume = pop_kwarg_parameter(kwargs, "min_volume", 0.0)
         if min_volume is None:
             min_volume = 0.0
-        max_volume = pop_kwarg_parameter(kwargs, 'max_volume', 0.0)
-        initial_volume = kwargs.pop('initial_volume', 0.0)
-        cost = pop_kwarg_parameter(kwargs, 'cost', 0.0)
-        factors = kwargs.pop('factors', None)
-        days = kwargs.pop('days', None)
-        timesteps = kwargs.pop('timesteps', 0)
+        max_volume = pop_kwarg_parameter(kwargs, "max_volume", 0.0)
+        initial_volume = kwargs.pop("initial_volume", 0.0)
+        cost = pop_kwarg_parameter(kwargs, "cost", 0.0)
+        factors = kwargs.pop("factors", None)
+        days = kwargs.pop("days", None)
+        timesteps = kwargs.pop("timesteps", 0)
 
         if not timesteps and not days:
             raise ValueError("Either `timesteps` or `days` must be specified.")
@@ -534,16 +559,22 @@ class RollingVirtualStorage(Loadable, Drawable, _core.RollingVirtualStorage, met
     def check(self):
         super().check()
         if self.cost not in (0.0, None):
-            raise NotImplementedError("RollingVirtualStorage does not currently support a non-zero cost.")
+            raise NotImplementedError(
+                "RollingVirtualStorage does not currently support a non-zero cost."
+            )
 
     def setup(self, model):
         if self.days is not None and self.days > 0:
             try:
                 self.timesteps = self.days // self.model.timestepper.delta
             except TypeError:
-                raise TypeError('A rolling period defined as a number of days is only valid with daily time-steps.')
+                raise TypeError(
+                    "A rolling period defined as a number of days is only valid with daily time-steps."
+                )
         if self.timesteps < 1:
-            raise ValueError('The number of time-steps for a RollingVirtualStorage node must be greater than one.')
+            raise ValueError(
+                "The number of time-steps for a RollingVirtualStorage node must be greater than one."
+            )
         super().setup(model)
 
 
@@ -562,10 +593,11 @@ class AnnualVirtualStorage(VirtualStorage):
         Reset the volume to the initial volume instead of maximum volume each year (default is False).
 
     """
+
     def __init__(self, *args, **kwargs):
-        self.reset_day = kwargs.pop('reset_day', 1)
-        self.reset_month = kwargs.pop('reset_month', 1)
-        self.reset_to_initial_volume = kwargs.pop('reset_to_initial_volume', False)
+        self.reset_day = kwargs.pop("reset_day", 1)
+        self.reset_month = kwargs.pop("reset_month", 1)
+        self.reset_to_initial_volume = kwargs.pop("reset_to_initial_volume", False)
         self._last_reset_year = None
 
         super(AnnualVirtualStorage, self).__init__(*args, **kwargs)
@@ -581,10 +613,13 @@ class AnnualVirtualStorage(VirtualStorage):
         if ts.year != self._last_reset_year:
             # I.e. we're in a new year and ...
             # ... we're at or past the reset month/day
-            if ts.month > self.reset_month or \
-                    (ts.month == self.reset_month and ts.day >= self.reset_day):
+            if ts.month > self.reset_month or (
+                ts.month == self.reset_month and ts.day >= self.reset_day
+            ):
                 # Reset to maximum volume (i.e. full capacity. )
-                self._reset_storage_only(use_initial_volume=self.reset_to_initial_volume)
+                self._reset_storage_only(
+                    use_initial_volume=self.reset_to_initial_volume
+                )
                 self._last_reset_year = ts.year
                 self.active = True
 
@@ -618,8 +653,8 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
     """
 
     def __init__(self, *args, **kwargs):
-        self.end_day = kwargs.pop('end_day', 31)
-        self.end_month = kwargs.pop('end_month', 12)
+        self.end_day = kwargs.pop("end_day", 31)
+        self.end_month = kwargs.pop("end_month", 12)
         self._last_active_year = None
 
         super().__init__(*args, **kwargs)
@@ -631,24 +666,29 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
             if ts.index == 0:
                 if self._last_reset_year == ts.year:
                     # First timestep is later in year than reset date
-                    if self.end_month < self.reset_month or \
-                            (self.end_month == self.reset_month and self.end_day <= self.reset_day):
+                    if self.end_month < self.reset_month or (
+                        self.end_month == self.reset_month
+                        and self.end_day <= self.reset_day
+                    ):
                         # end date is earlier in year than reset date so do not deactivate node in first year
                         self._last_active_year = ts.year
                 else:
                     # First timestep is earlier in year than reset date
-                    if self.end_month > self.reset_month or \
-                            (self.end_month == self.reset_month and self.end_day >= self.reset_day):
+                    if self.end_month > self.reset_month or (
+                        self.end_month == self.reset_month
+                        and self.end_day >= self.reset_day
+                    ):
                         # end date is later in year than reset date so node needs to be deactivated
                         self.active = False
-            elif ts.month > self.end_month or \
-                    (ts.month == self.end_month and ts.day >= self.end_day):
+            elif ts.month > self.end_month or (
+                ts.month == self.end_month and ts.day >= self.end_day
+            ):
                 self._last_active_year = ts.year
                 self.active = False
 
 
 class PiecewiseLink(Node):
-    """ An extension of Node that represents a non-linear Link with a piece wise cost function.
+    """An extension of Node that represents a non-linear Link with a piece wise cost function.
 
     This object is intended to model situations where there is a benefit of supplying certain flow rates
     but beyond a fixed limit there is a change in (or zero) cost.
@@ -679,27 +719,36 @@ class PiecewiseLink(Node):
     breaking of the route is to avoid an geometric increase in the number
     of routes when multiple PiecewiseLinks are present in the same route.
     """
-    __parameter_attributes__ = ('costs', 'max_flows')
+
+    __parameter_attributes__ = ("costs", "max_flows")
 
     def __init__(self, model, nsteps, *args, **kwargs):
         self.allow_isolated = True
-        costs = kwargs.pop('costs', None)
-        max_flows = kwargs.pop('max_flows', None)
-
+        costs = kwargs.pop("costs", None)
+        max_flows = kwargs.pop("max_flows", None)
 
         # TODO look at the application of Domains here. Having to use
         # Input/Output instead of BaseInput/BaseOutput because of a different
         # domain is required on the sub-nodes and they need to be connected
         self.sub_domain = Domain()
-        self.input = Input(model, name='{} Input'.format(self.name), parent=self)
-        self.output = Output(model, name='{} Output'.format(self.name), parent=self)
+        self.input = Input(model, name="{} Input".format(self.name), parent=self)
+        self.output = Output(model, name="{} Output".format(self.name), parent=self)
 
-        self.sub_output = Output(model, name='{} Sub Output'.format(self.name), parent=self,
-                                 domain=self.sub_domain)
+        self.sub_output = Output(
+            model,
+            name="{} Sub Output".format(self.name),
+            parent=self,
+            domain=self.sub_domain,
+        )
         self.sub_output.connect(self.input)
         self.sublinks = []
         for i in range(nsteps):
-            sublink = Input(model, name='{} Sublink {}'.format(self.name, i), parent=self, domain=self.sub_domain)
+            sublink = Input(
+                model,
+                name="{} Sublink {}".format(self.name, i),
+                parent=self,
+                domain=self.sub_domain,
+            )
             self.sublinks.append(sublink)
             sublink.connect(self.sub_output)
             self.output.connect(self.sublinks[-1])
@@ -717,11 +766,15 @@ class PiecewiseLink(Node):
 
         def fset(self, values):
             if len(self.sublinks) != len(values):
-                raise ValueError(f"Piecewise costs must be the same length as the number of "
-                                 f"sub-links ({len(self.sublinks)}).")
+                raise ValueError(
+                    f"Piecewise costs must be the same length as the number of "
+                    f"sub-links ({len(self.sublinks)})."
+                )
             for i, sl in enumerate(self.sublinks):
                 sl.cost = values[i]
+
         return locals()
+
     costs = property(**costs())
 
     def max_flows():
@@ -730,11 +783,15 @@ class PiecewiseLink(Node):
 
         def fset(self, values):
             if len(self.sublinks) != len(values):
-                raise ValueError(f"Piecewise max_flows must be the same length as the number of "
-                                 f"sub-links ({len(self.sublinks)}).")
+                raise ValueError(
+                    f"Piecewise max_flows must be the same length as the number of "
+                    f"sub-links ({len(self.sublinks)})."
+                )
             for i, sl in enumerate(self.sublinks):
                 sl.max_flow = values[i]
+
         return locals()
+
     max_flows = property(**max_flows())
 
     def iter_slots(self, slot_name=None, is_connector=True):
@@ -803,23 +860,28 @@ class MultiSplitLink(PiecewiseLink):
     enforced as expected.
 
     """
+
     def __init__(self, model, nsteps, *args, **kwargs):
         self.allow_isolated = True
-        costs = kwargs.pop('costs', None)
-        max_flows = kwargs.pop('max_flows', None)
+        costs = kwargs.pop("costs", None)
+        max_flows = kwargs.pop("max_flows", None)
 
-        extra_slots = kwargs.pop('extra_slots', 1)
+        extra_slots = kwargs.pop("extra_slots", 1)
         if extra_slots < 1:
             raise ValueError("extra_slots must be at least 1.")
 
         # Default to integer names
-        self.slot_names = list(kwargs.pop('slot_names', range(extra_slots+1)))
-        if extra_slots+1 != len(self.slot_names):
-            raise ValueError("slot_names must be one more than the number of extra_slots.")
+        self.slot_names = list(kwargs.pop("slot_names", range(extra_slots + 1)))
+        if extra_slots + 1 != len(self.slot_names):
+            raise ValueError(
+                "slot_names must be one more than the number of extra_slots."
+            )
 
-        factors = kwargs.pop('factors', None)
+        factors = kwargs.pop("factors", None)
         # Finally initialise the parent.
-        super(MultiSplitLink, self).__init__(model, nsteps + extra_slots, *args, **kwargs)
+        super(MultiSplitLink, self).__init__(
+            model, nsteps + extra_slots, *args, **kwargs
+        )
 
         self._extra_inputs = []
         self._extra_outputs = []
@@ -827,12 +889,18 @@ class MultiSplitLink(PiecewiseLink):
         for i in range(extra_slots):
             # create a new input inside the piecewise link which only has access
             # to flow travelling via the last sublink (X2)
-            otpt = Output(self.model, '{} Extra Output {}'.format(self.name, i),
-                          domain=self.sub_domain, parent=self)
-            inpt = Input(self.model, '{} Extra Input {}'.format(self.name, i), parent=self)
+            otpt = Output(
+                self.model,
+                "{} Extra Output {}".format(self.name, i),
+                domain=self.sub_domain,
+                parent=self,
+            )
+            inpt = Input(
+                self.model, "{} Extra Input {}".format(self.name, i), parent=self
+            )
 
             otpt.connect(inpt)
-            self.sublinks[n+i].connect(otpt)
+            self.sublinks[n + i].connect(otpt)
 
             self._extra_inputs.append(inpt)
             self._extra_outputs.append(otpt)
@@ -846,12 +914,12 @@ class MultiSplitLink(PiecewiseLink):
 
         # Now create an aggregated node for addition constraints if required.
         if factors is not None:
-            if extra_slots+1 != len(factors):
+            if extra_slots + 1 != len(factors):
                 raise ValueError("factors must have a length equal to extra_slots.")
 
             nodes = []
             valid_factors = []
-            for r, nd in zip(factors, self.sublinks[n-1:]):
+            for r, nd in zip(factors, self.sublinks[n - 1 :]):
                 if r is not None:
                     nodes.append(nd)
                     valid_factors.append(r)
@@ -865,13 +933,15 @@ class MultiSplitLink(PiecewiseLink):
             if i == 0:
                 yield self.input
             else:
-                yield self._extra_inputs[i-1]
+                yield self._extra_inputs[i - 1]
         else:
             yield self.output
 
 
-class AggregatedStorage(Loadable, Drawable, _core.AggregatedStorage, metaclass=NodeMeta):
-    """ An aggregated sum of other `Storage` nodes
+class AggregatedStorage(
+    Loadable, Drawable, _core.AggregatedStorage, metaclass=NodeMeta
+):
+    """An aggregated sum of other `Storage` nodes
 
     This object should behave like `Storage` by returning current `flow`, `volume` and `current_pc`.
     However this object can not be connected to others within the network.
@@ -888,7 +958,8 @@ class AggregatedStorage(Loadable, Drawable, _core.AggregatedStorage, metaclass=N
     This node can not be connected to other nodes in the network.
 
     """
-    __node_attributes__ = ('storage_nodes', )
+
+    __node_attributes__ = ("storage_nodes",)
 
     def __init__(self, model, name, storage_nodes, **kwargs):
         super(AggregatedStorage, self).__init__(model, name, **kwargs)
@@ -896,7 +967,7 @@ class AggregatedStorage(Loadable, Drawable, _core.AggregatedStorage, metaclass=N
 
 
 class AggregatedNode(Loadable, Drawable, _core.AggregatedNode, metaclass=NodeMeta):
-    """ An aggregated sum of other `Node` nodes
+    """An aggregated sum of other `Node` nodes
 
     This object should behave like `Node` by returning current `flow`.
     However this object can not be connected to others within the network.
@@ -913,8 +984,9 @@ class AggregatedNode(Loadable, Drawable, _core.AggregatedNode, metaclass=NodeMet
     This node can not be connected to other nodes in the network.
 
     """
-    __parameter_attributes__ = ('factors', 'min_flow', 'max_flow')
-    __node_attributes__ = ('nodes', )
+
+    __parameter_attributes__ = ("factors", "min_flow", "max_flow")
+    __node_attributes__ = ("nodes",)
 
     def __init__(self, model, name, nodes, flow_weights=None, **kwargs):
         super(AggregatedNode, self).__init__(model, name, **kwargs)
@@ -953,13 +1025,14 @@ class BreakLink(Node):
     with the benefit that it reduces the number of routes in the model (in
     the situation described above). The resulting LP is easier to solve.
     """
+
     allow_isolated = True
 
     def __init__(self, model, name, **kwargs):
         storage_name = "{} (storage)".format(name)
         link_name = "{} (link)".format(name)
-        assert(storage_name not in model.nodes)
-        assert(link_name not in model.nodes)
+        assert storage_name not in model.nodes
+        assert link_name not in model.nodes
         self.storage = Storage(
             model,
             name=storage_name,
@@ -968,10 +1041,7 @@ class BreakLink(Node):
             initial_volume=0,
             cost=0,
         )
-        self.link = Link(
-            model,
-            name=link_name
-        )
+        self.link = Link(model, name=link_name)
 
         self.storage.connect(self.link)
 
@@ -983,7 +1053,9 @@ class BreakLink(Node):
 
         def fset(self, value):
             self.link.min_flow = value
+
         return locals()
+
     min_flow = property(**min_flow())
 
     def max_flow():
@@ -992,7 +1064,9 @@ class BreakLink(Node):
 
         def fset(self, value):
             self.link.max_flow = value
+
         return locals()
+
     max_flow = property(**max_flow())
 
     def cost():
@@ -1001,7 +1075,9 @@ class BreakLink(Node):
 
         def fset(self, value):
             self.link.cost = value
+
         return locals()
+
     cost = property(**cost())
 
     def iter_slots(self, slot_name=None, is_connector=True):
@@ -1019,7 +1095,7 @@ class BreakLink(Node):
 
 
 class DelayNode(Node):
-    """ A node that delays flow for a given number of timesteps or days.
+    """A node that delays flow for a given number of timesteps or days.
 
     This is a composite node consisting internally of an Input and an Output node. A
     `FlowDelayParameter` is used to delay the flow of the output node for a given period prior
@@ -1048,18 +1124,30 @@ class DelayNode(Node):
         output_name = "{} Output".format(name)
         input_name = "{} Input".format(name)
         param_name = "{} - delay parameter".format(name)
-        assert(output_name not in model.nodes)
-        assert(input_name not in model.nodes)
-        assert(param_name not in model.parameters)
+        assert output_name not in model.nodes
+        assert input_name not in model.nodes
+        assert param_name not in model.parameters
 
-        days = kwargs.pop('days', 0)
-        timesteps = kwargs.pop('timesteps', 0)
-        initial_flow = kwargs.pop('initial_flow', 0.0)
+        days = kwargs.pop("days", 0)
+        timesteps = kwargs.pop("timesteps", 0)
+        initial_flow = kwargs.pop("initial_flow", 0.0)
 
         self.output = Output(model, name=output_name, parent=self)
-        self.delay_param = FlowDelayParameter(model, self.output, timesteps=timesteps, days=days,
-                                              initial_flow=initial_flow, name=param_name)
-        self.input = Input(model, name=input_name, min_flow=self.delay_param, max_flow=self.delay_param, parent=self)
+        self.delay_param = FlowDelayParameter(
+            model,
+            self.output,
+            timesteps=timesteps,
+            days=days,
+            initial_flow=initial_flow,
+            name=param_name,
+        )
+        self.input = Input(
+            model,
+            name=input_name,
+            min_flow=self.delay_param,
+            max_flow=self.delay_param,
+            parent=self,
+        )
         super().__init__(model, name, **kwargs)
 
     def iter_slots(self, slot_name=None, is_connector=True):
@@ -1090,7 +1178,8 @@ class LossLink(Node):
         The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
         then no-losses are calculated. The percentage is calculated as a percentage of gross flow.
     """
-    __parameter_value_attributes__ = ('loss_factor', )
+
+    __parameter_value_attributes__ = ("loss_factor",)
 
     def __init__(self, model, name, **kwargs):
         self.allow_isolated = True
@@ -1100,10 +1189,10 @@ class LossLink(Node):
         net_name = "{} Net".format(name)
         agg_name = "{} Aggregated".format(name)
 
-        assert(output_name not in model.nodes)
-        assert(gross_name not in model.nodes)
-        assert(net_name not in model.nodes)
-        assert(agg_name not in model.nodes)
+        assert output_name not in model.nodes
+        assert gross_name not in model.nodes
+        assert net_name not in model.nodes
+        assert agg_name not in model.nodes
 
         self.output = Output(model, name=output_name, parent=self)
         self.gross = Link(model, name=gross_name, parent=self)
@@ -1112,7 +1201,7 @@ class LossLink(Node):
         self.gross.connect(self.net)
 
         self.agg = AggregatedNode(model, name=agg_name, nodes=[self.net, self.output])
-        self.loss_factor = kwargs.pop('loss_factor', 0.0)
+        self.loss_factor = kwargs.pop("loss_factor", 0.0)
 
         super().__init__(model, name, **kwargs)
 
@@ -1133,12 +1222,14 @@ class LossLink(Node):
             elif value == 1.0:
                 # 100% loss; all flow to the output loss node
                 self.agg.factors = None
-                self.output.max_flow = float('inf')
+                self.output.max_flow = float("inf")
                 self.net.max_flow = 0.0
             else:
-                self.output.max_flow = float('inf')
+                self.output.max_flow = float("inf")
                 self.agg.factors = [1.0, float(value)]
+
         return locals()
+
     loss_factor = property(**loss_factor())
 
     def min_flow():
@@ -1147,7 +1238,9 @@ class LossLink(Node):
 
         def fset(self, value):
             self.net.min_flow = value
+
         return locals()
+
     min_flow = property(**min_flow())
 
     def max_flow():
@@ -1156,7 +1249,9 @@ class LossLink(Node):
 
         def fset(self, value):
             self.net.max_flow = value
+
         return locals()
+
     max_flow = property(**max_flow())
 
     def cost():
@@ -1165,7 +1260,9 @@ class LossLink(Node):
 
         def fset(self, value):
             self.net.cost = value
+
         return locals()
+
     cost = property(**cost())
 
     def iter_slots(self, slot_name=None, is_connector=True):
@@ -1178,5 +1275,6 @@ class LossLink(Node):
         super().after(timestep)
         # Net flow is saved to the node.
         self.commit_all(self.net.flow)
+
 
 from pywr.domains.river import *  # noqa

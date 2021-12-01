@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import pywr
-from pywr.core import Model, Input, Output, Link, Storage, AggregatedStorage, AggregatedNode
+from pywr.core import (
+    Model,
+    Input,
+    Output,
+    Link,
+    Storage,
+    AggregatedStorage,
+    AggregatedNode,
+)
 
 import pandas
 import datetime
@@ -42,13 +50,15 @@ def simple_storage_model(request):
     """
 
     model = pywr.core.Model(
-        start=pandas.to_datetime('2016-01-01'),
-        end=pandas.to_datetime('2016-01-05'),
+        start=pandas.to_datetime("2016-01-01"),
+        end=pandas.to_datetime("2016-01-05"),
         timestep=datetime.timedelta(1),
     )
 
     inpt = Input(model, name="Input", max_flow=5.0, cost=-1)
-    res = Storage(model, name="Storage", outputs=1, inputs=1, max_volume=20, initial_volume=10)
+    res = Storage(
+        model, name="Storage", outputs=1, inputs=1, max_volume=20, initial_volume=10
+    )
     otpt = Output(model, name="Output", max_flow=8, cost=-999)
 
     inpt.connect(res)

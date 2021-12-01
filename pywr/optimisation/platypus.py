@@ -1,16 +1,22 @@
 import numpy as np
 import platypus
-from . import cache_constraints, cache_objectives, cache_variable_parameters, BaseOptimisationWrapper
+from . import (
+    cache_constraints,
+    cache_objectives,
+    cache_variable_parameters,
+    BaseOptimisationWrapper,
+)
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 def count_constraints(constraints):
     """Count the number of constraints.
 
-     Recorders that are doubled bounded will create two constraints in the platypus problem.
-     """
+    Recorders that are doubled bounded will create two constraints in the platypus problem.
+    """
     count = 0
     for c in constraints:
         if c.is_double_bounded_constraint:
@@ -23,8 +29,8 @@ def count_constraints(constraints):
 
 
 class PlatypusWrapper(BaseOptimisationWrapper):
-    """ A helper class for running pywr optimisations with platypus.
-    """
+    """A helper class for running pywr optimisations with platypus."""
+
     def __init__(self, *args, **kwargs):
         super(PlatypusWrapper, self).__init__(*args, **kwargs)
 
@@ -37,12 +43,14 @@ class PlatypusWrapper(BaseOptimisationWrapper):
         constraints = cache_constraints(m)
 
         if len(variables) < 1:
-            raise ValueError('At least one variable must be defined.')
+            raise ValueError("At least one variable must be defined.")
 
         if len(objectives) < 1:
-            raise ValueError('At least one objective must be defined.')
+            raise ValueError("At least one objective must be defined.")
 
-        self.problem = platypus.Problem(variable_map[-1], len(objectives), count_constraints(constraints))
+        self.problem = platypus.Problem(
+            variable_map[-1], len(objectives), count_constraints(constraints)
+        )
         self.problem.function = self.evaluate
         self.problem.wrapper = self
 
@@ -51,7 +59,7 @@ class PlatypusWrapper(BaseOptimisationWrapper):
         self._make_constraints(constraints)
 
     def _make_variables(self, variables):
-        """Setup the variable types. """
+        """Setup the variable types."""
 
         ix = 0
         for var in variables:
@@ -71,48 +79,60 @@ class PlatypusWrapper(BaseOptimisationWrapper):
                     ix += 1
 
     def _make_constraints(self, constraints):
-        """ Setup the constraints. """
+        """Setup the constraints."""
 
         ic = 0  # platypus constraint index
         for c in constraints:
             if c.is_double_bounded_constraint:
                 # Need to create two constraints
-                self.problem.constraints[ic] = platypus.Constraint('>=', value=c.constraint_lower_bounds)
-                self.problem.constraints[ic + 1] = platypus.Constraint('<=', value=c.constraint_upper_bounds)
+                self.problem.constraints[ic] = platypus.Constraint(
+                    ">=", value=c.constraint_lower_bounds
+                )
+                self.problem.constraints[ic + 1] = platypus.Constraint(
+                    "<=", value=c.constraint_upper_bounds
+                )
                 ic += 2
             elif c.is_equality_constraint:
-                self.problem.constraints[ic] = platypus.Constraint('==', value=c.constraint_lower_bounds)
+                self.problem.constraints[ic] = platypus.Constraint(
+                    "==", value=c.constraint_lower_bounds
+                )
                 ic += 1
             elif c.is_lower_bounded_constraint:
-                self.problem.constraints[ic] = platypus.Constraint('>=', value=c.constraint_lower_bounds)
+                self.problem.constraints[ic] = platypus.Constraint(
+                    ">=", value=c.constraint_lower_bounds
+                )
                 ic += 1
             elif c.is_upper_bounded_constraint:
-                self.problem.constraints[ic] = platypus.Constraint('<=', value=c.constraint_upper_bounds)
+                self.problem.constraints[ic] = platypus.Constraint(
+                    "<=", value=c.constraint_upper_bounds
+                )
                 ic += 1
             else:
-                raise RuntimeError(f'The bounds of constraint "{c.name}" could not be identified correctly.')
+                raise RuntimeError(
+                    f'The bounds of constraint "{c.name}" could not be identified correctly.'
+                )
 
     def evaluate(self, solution):
-        logger.info('Evaluating solution ...')
+        logger.info("Evaluating solution ...")
 
         for ivar, var in enumerate(self.model_variables):
-            j = slice(self.model_variable_map[ivar], self.model_variable_map[ivar+1])
+            j = slice(self.model_variable_map[ivar], self.model_variable_map[ivar + 1])
             x = np.array(solution[j])
             assert len(x) == var.double_size + var.integer_size
             if var.double_size > 0:
-                var.set_double_variables(np.array(x[:var.double_size]))
+                var.set_double_variables(np.array(x[: var.double_size]))
 
             if var.integer_size > 0:
-                ints = np.round(np.array(x[-var.integer_size:])).astype(np.int32)
+                ints = np.round(np.array(x[-var.integer_size :])).astype(np.int32)
                 var.set_integer_variables(ints)
 
         self.run_stats = self.model.run()
 
         objectives = []
         for r in self.model_objectives:
-            sign = 1.0 if r.is_objective == 'minimise' else -1.0
+            sign = 1.0 if r.is_objective == "minimise" else -1.0
             value = r.aggregated_value()
-            objectives.append(sign*value)
+            objectives.append(sign * value)
 
         constraints = []
         for c in self.model_constraints:
@@ -124,8 +144,10 @@ class PlatypusWrapper(BaseOptimisationWrapper):
                 constraints.append(x)
 
         # Return values to the solution
-        logger.info(f'Evaluation completed in {self.run_stats.time_taken:.2f} seconds '
-                    f'({self.run_stats.speed:.2f} ts/s).')
+        logger.info(
+            f"Evaluation completed in {self.run_stats.time_taken:.2f} seconds "
+            f"({self.run_stats.speed:.2f} ts/s)."
+        )
         if len(constraints) > 0:
             return objectives, constraints
         else:
@@ -155,10 +177,11 @@ class PywrRandomGenerator(platypus.RandomGenerator):
         dictionary container keys "doubles" and/or "integers" to provide the appropriate values as
         dictated by the Parameter's type.
     """
+
     def __init__(self, *args, **kwargs):
-        self.wrapper = kwargs.pop('wrapper', None)
-        self.use_current = kwargs.pop('use_current', True)
-        self.solutions = kwargs.pop('solutions', None)
+        self.wrapper = kwargs.pop("wrapper", None)
+        self.use_current = kwargs.pop("use_current", True)
+        self.solutions = kwargs.pop("solutions", None)
         super().__init__(*args, **kwargs)
         self._wrapped_generated = False
         self._solution_pointer = 0
@@ -172,23 +195,41 @@ class PywrRandomGenerator(platypus.RandomGenerator):
                 variables = []
                 for ivar, var in enumerate(self.wrapper.model_variables):
                     if var.double_size > 0:
-                        variables.extend(np.array(var.get_double_variables(), dtype=np.float64))
+                        variables.extend(
+                            np.array(var.get_double_variables(), dtype=np.float64)
+                        )
                     if var.integer_size > 0:
-                        variables.extend(np.array(var.get_integer_variables(), dtype=np.int32))
+                        variables.extend(
+                            np.array(var.get_integer_variables(), dtype=np.int32)
+                        )
                 solution.variables = variables
-                self._wrapped_generated = True  # Only include one solution with the current config.
-            elif self.solutions is not None and self._solution_pointer < len(self.solutions):
+                self._wrapped_generated = (
+                    True  # Only include one solution with the current config.
+                )
+            elif self.solutions is not None and self._solution_pointer < len(
+                self.solutions
+            ):
                 # Use one of the given solutions
                 solution = platypus.Solution(problem)
                 given_solution = self.solutions[self._solution_pointer]
                 variables = []
                 for ivar, var in enumerate(self.wrapper.model_variables):
                     if var.double_size > 0:
-                        variables.extend(np.array(given_solution[var.name]['doubles'], dtype=np.float64))
+                        variables.extend(
+                            np.array(
+                                given_solution[var.name]["doubles"], dtype=np.float64
+                            )
+                        )
                     if var.integer_size > 0:
-                        variables.extend(np.array(given_solution[var.name]['integers'], dtype=np.int32))
+                        variables.extend(
+                            np.array(
+                                given_solution[var.name]["integers"], dtype=np.int32
+                            )
+                        )
                 solution.variables = variables
-                self._solution_pointer += 1  # Increment the internal pointer to return the next solution
+                self._solution_pointer += (
+                    1  # Increment the internal pointer to return the next solution
+                )
 
         if solution is None:
             # Default to behaviour of RandomGenerator
