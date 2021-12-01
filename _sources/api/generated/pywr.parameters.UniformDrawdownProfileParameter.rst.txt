@@ -54,6 +54,7 @@
       ~UniformDrawdownProfileParameter.parents
       ~UniformDrawdownProfileParameter.reset_day
       ~UniformDrawdownProfileParameter.reset_month
+      ~UniformDrawdownProfileParameter.residual_days
       ~UniformDrawdownProfileParameter.size
       ~UniformDrawdownProfileParameter.tags
    

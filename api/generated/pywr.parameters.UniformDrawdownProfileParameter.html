@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.parameters.UniformDrawdownProfileParameter &mdash; Pywr 1.15.4.dev4+g373cf489 documentation</title>
+  <title>pywr.parameters.UniformDrawdownProfileParameter &mdash; Pywr 1.15.4.dev5+ge6b9a58e documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
@@ -31,7 +31,7 @@
             <a href="../../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.15.4.dev4+g373cf489
+                1.15.4.dev5+ge6b9a58e
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -118,7 +118,7 @@
 <h1>pywr.parameters.UniformDrawdownProfileParameter<a class="headerlink" href="#pywr-parameters-uniformdrawdownprofileparameter" title="Permalink to this headline"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.parameters.UniformDrawdownProfileParameter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">UniformDrawdownProfileParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_day</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_month</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.UniformDrawdownProfileParameter" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">UniformDrawdownProfileParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_day</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_month</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual_days</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.UniformDrawdownProfileParameter" title="Permalink to this definition"></a></dt>
 <dd><p>Parameter which provides a uniformly reducing value from one to zero.</p>
 <blockquote>
 <div><p>This parameter is intended to be used with an <cite>AnnualVirtualStorage</cite> node to provide a profile
@@ -131,6 +131,8 @@ reset day, and subsequently reduces by 1/366 every day afterward.</p>
 <dt><strong>reset_day: int</strong></dt><dd><p>The day of the month (1-31) to reset the volume to the initial value.</p>
 </dd>
 <dt><strong>reset_month: int</strong></dt><dd><p>The month of the year (1-12) to reset the volume to the initial value.</p>
+</dd>
+<dt><strong>residual_days: int</strong></dt><dd><p>The number of days of residual licence to target for the end of the year.</p>
 </dd>
 </dl>
 </dd>
@@ -258,10 +260,13 @@ reset day, and subsequently reduces by 1/366 every day afterward.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset_month</span></code></p></td>
 <td><p>reset_month: 'int'</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">residual_days</span></code></p></td>
+<td><p>residual_days: 'int'</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tags</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tags</span></code></p></td>
 <td><p>tags: dict</p></td>
 </tr>
 </tbody>
