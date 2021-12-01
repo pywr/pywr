@@ -893,6 +893,8 @@ cdef class UniformDrawdownProfileParameter(Parameter):
         The day of the month (1-31) to reset the volume to the initial value.
     reset_month: int
         The month of the year (1-12) to reset the volume to the initial value.
+    residual_days: int
+        The number of days of residual licence to target for the end of the year.
 
     See also
     --------

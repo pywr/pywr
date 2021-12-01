@@ -1866,6 +1866,7 @@ class TestUniformDrawdownProfileParameter:
 
     @pytest.mark.parametrize(['year'], [("2015",), ("2016",)])
     def test_residual_days(self, year):
+        """Test the residual_days arg for leap and non-leap years"""
 
         model = load_model('virtual_storage5.json')
         model.timestepper.start = pd.Timestamp(f"{year}-01-01")
