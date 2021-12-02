@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.nodes.VirtualStorage &mdash; Pywr 1.15.4.dev5+ge6b9a58e documentation</title>
+  <title>pywr.nodes.VirtualStorage &mdash; Pywr 1.15.4.dev6+g55c96811 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
@@ -31,7 +31,7 @@
             <a href="../../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.15.4.dev5+ge6b9a58e
+                1.15.4.dev6+g55c96811
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -136,7 +136,9 @@ water from the storage, negative factors remove it.</p>
 </dd>
 <dt><strong>max_volume: float or parameter</strong></dt><dd><p>The maximum volume of the storage.</p>
 </dd>
-<dt><strong>initial_volume: float</strong></dt><dd><p>The initial storage volume.</p>
+<dt><strong>initial_volume, initial_volume_pc</strong><span class="classifier">float (optional)</span></dt><dd><p>Specify initial volume in either absolute or proportional terms. Both are required if <cite>max_volume</cite>
+is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+and <cite>max_volume</cite> is not a Parameter, then the absolute value is ignored.</p>
 </dd>
 <dt><strong>cost: float or parameter</strong></dt><dd><p>The cost of flow into/outfrom the storage.</p>
 </dd>
