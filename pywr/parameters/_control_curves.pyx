@@ -5,10 +5,6 @@ from .parameters import parameter_registry, ConstantParameter, parameter_propert
 from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter
 import warnings
 
-# http://stackoverflow.com/a/20031818/1300519
-cdef extern from "numpy/npy_math.h":
-    bint npy_isnan(double x)
-
 
 @cython.cdivision(True)
 cpdef double _interpolate(double current_position, double lower_bound, double upper_bound, double lower_value, double upper_value):
@@ -176,7 +172,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         cdef Parameter cc_param, value_param
         cdef double cc, cc_prev
         # return the interpolated value for the current level.
-        cdef double current_pc = self._storage_node._current_pc[scenario_index.global_id]
+        cdef double current_pc = self._storage_node.get_current_pc(scenario_index)
         cdef double weight
         cdef double[:] values  # y values to interpolate between in this time-step
 
@@ -189,14 +185,6 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             # Otherwise use the given array of floats.
             # This makes a reference rather than a copy.
             values = self._values
-
-        # Bounds check the current pc storage.
-        # Always return the first value if storage above 100% or NaN
-        if current_pc > 1.0 or npy_isnan(current_pc):
-            return values[0]
-        # Always return last value is storage less than 0%
-        if current_pc < 0.0:
-            return values[-1]
 
         # Assumes control_curves is sorted highest to lowest
         # First level 100%
@@ -289,7 +277,7 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
         cdef Parameter cc_param
         cdef double cc, cc_prev, val
         # return the interpolated value for the current level.
-        cdef double current_pc = self._storage_node._current_pc[scenario_index.global_id]
+        cdef double current_pc = self._storage_node.get_current_pc(scenario_index)
 
         cc_prev = self.maximum
         for j, cc_param in enumerate(self._control_curves):
@@ -365,7 +353,7 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         cdef double target_percentage
         cdef int index, j
         cdef Parameter control_curve
-        current_percentage = self.storage_node._current_pc[scenario_index.global_id]
+        current_percentage = self.storage_node.get_current_pc(scenario_index)
         index = len(self.control_curves)
         for j, control_curve in enumerate(self.control_curves):
             target_percentage = control_curve.get_value(scenario_index)
@@ -511,18 +499,18 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
         return cls(model, storage_node, control_curves, values=values, parameters=parameters)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = scenario_index.global_id
         cdef int j
         cdef AbstractStorage node
         cdef double cc
         cdef Parameter param, cc_param
         node = self.node if self.storage_node is None else self.storage_node
+        cdef double current_pc = node.get_current_pc(scenario_index)
 
         # Assumes control_curves is sorted highest to lowest
         for j, cc_param in enumerate(self.control_curves):
             cc = cc_param.get_value(scenario_index)
             # If level above control curve then return this level's value
-            if node._current_pc[i] >= cc:
+            if current_pc >= cc:
                 if self.parameters is not None:
                     param = self.parameters[j]
                     return param.get_value(scenario_index)
