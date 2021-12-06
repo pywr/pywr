@@ -220,8 +220,11 @@ def parse_optional_arguments():
 
     if "--enable-debug" in sys.argv:
         import warnings
-        warnings.warn("--enable-debug has been deprecated. Its functionality is now enabled by default. To disable"
-                      "GLPK error handling please use the `--glpk-unsafe` option.")
+
+        warnings.warn(
+            "--enable-debug has been deprecated. Its functionality is now enabled by default. To disable"
+            "GLPK error handling please use the `--glpk-unsafe` option."
+        )
         sys.argv.remove("--enable-debug")
 
     if "--glpk-unsafe" in sys.argv:
