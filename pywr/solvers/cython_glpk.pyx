@@ -279,7 +279,7 @@ ELSE:
             raise GLPKInternalError("An error occurred in `glp_simplex`." + glpk_error_msg)
 
 
-    cdef int set_obj_coef(glp_prob *P, int j, double coef) except? -1:
+    cdef int set_obj_coef(glp_prob *P, int j, double coef) except -1:
         """Wrapped call to `glp_set_obj_coef`"""
         if isnan(coef):
             raise GLPKError(f"NaN detected in objective coefficient of column {j}")
@@ -290,7 +290,7 @@ ELSE:
             raise GLPKInternalError("An error occurred in `glp_set_obj_coef`." + glpk_error_msg)
 
 
-    cdef int set_row_bnds(glp_prob *P, int i, int type, double lb, double ub) except? -1:
+    cdef int set_row_bnds(glp_prob *P, int i, int type, double lb, double ub) except -1:
         """Wrapped call to `glp_set_row_bnds`"""
         if isnan(lb):
             raise GLPKError(f"NaN detected in lower bounds of row {i}")
@@ -317,8 +317,8 @@ ELSE:
     cdef int set_mat_row(glp_prob *P, int i, int len, int* ind, double* val) except -1:
         """Wrapped call to `glp_set_mat_row`"""
         if len == 0:
-            raise GLPKError("Attempting to set a constraint row with zero entries. This should not happen. It is likely caused" \
-                            "by invalid or unsupported network configuration, but should generally be caught earlier by Pywr. " \
+            raise GLPKError("Attempting to set a constraint row with zero entries. This should not happen. It is likely caused "
+                            "by invalid or unsupported network configuration, but should generally be caught earlier by Pywr. "
                             "If you experience this error please report it to the Pywr developers.")
 
         for j in range(len):
