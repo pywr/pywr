@@ -145,7 +145,7 @@ def setup_package():
 
     if config["glpk_unsafe"]:
         compile_time_env["GLPK_UNSAFE"] = True
-    print(compile_time_env)
+
     setup(**metadata)
 
 
@@ -230,7 +230,7 @@ def parse_optional_arguments():
     if "--glpk-unsafe" in sys.argv:
         config["glpk_unsafe"] = True
         sys.argv.remove("--glpk-unsafe")
-    print(config)
+
     return config
 
 
