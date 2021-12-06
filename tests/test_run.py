@@ -929,7 +929,9 @@ class NanParameter(Parameter):
 
 
 class TestGlpkErrorHandling:
-    @pytest.mark.skipif(Model().solver.name == "lpsolve", reason="NaN not checked for lpsolve.")
+    @pytest.mark.skipif(
+        Model().solver.name == "lpsolve", reason="NaN not checked for lpsolve."
+    )
     def test_nan_constraint_error(self):
         """Test a NaN in a row constraint causes an error"""
         # parse the JSON into a model
@@ -944,7 +946,9 @@ class TestGlpkErrorHandling:
         with pytest.raises(pywr.solvers.GLPKError):
             model.run()
 
-    @pytest.mark.skipif(Model().solver.name == "lpsolve", reason="NaN not checked for lpsolve.")
+    @pytest.mark.skipif(
+        Model().solver.name == "lpsolve", reason="NaN not checked for lpsolve."
+    )
     def test_nan_cost_error(self):
         """Test a NaN in a node cost causes an error"""
         # parse the JSON into a model
