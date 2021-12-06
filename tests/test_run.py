@@ -903,7 +903,7 @@ def test_solver_unrecognised():
         model = load_model(data=data)
 
 
-@pytest.mark.skipif(Model().solver.name != "glpk", reason="only valid for glpk")
+@pytest.mark.skipif(not Model().solver.name.startswith("glpk"), reason="only valid for glpk")
 @pytest.mark.parametrize("use_presolve", ["true", "false"])
 def test_select_glpk_presolve(use_presolve):
     """Test specifying the solver in JSON"""
