@@ -1,7 +1,8 @@
 from cpython cimport array
 import array
 from libc.stdlib cimport malloc, free
-from libc.math cimport abs
+from libc.math cimport abs, isnan
+from libc.setjmp cimport setjmp, longjmp, jmp_buf
 from libc.float cimport DBL_MAX
 from cython.view cimport array as cvarray
 import numpy as np
@@ -91,6 +92,25 @@ cdef inline double inf_to_dbl_max(double a):
         return -DBL_MAX
     return a
 
+# Error handling
+# ==============
+class GLPKError(Exception):
+    pass
+class GLPKInternalError(Exception):
+    pass
+
+
+cdef jmp_buf error_ctx
+cdef bint has_glpk_errored = 0
+
+cdef void error_hook(void *info):
+    # Free GLPK memory; this will destroy the entire GLPK environment for this process
+    # Potentially invalidating other models.
+    global has_glpk_errored
+    has_glpk_errored = True;
+    glp_free_env();
+    longjmp((<jmp_buf*>info)[0], <int>1)
+
 
 cdef class AbstractNodeData:
     """Helper class for caching node data for the solver."""
@@ -123,7 +143,9 @@ cdef class GLPKSolver:
         self.prob = glp_create_prob()
 
     def __dealloc__(self):
-        glp_delete_prob(self.prob)
+        # If there's been an error the GLPK environment is destroyed and the pointer is invalid.
+        if not has_glpk_errored:
+            glp_delete_prob(self.prob)
 
     def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level="error",
                  set_fixed_flows_once=False, set_fixed_costs_once=False, set_fixed_factors_once=False):
@@ -134,6 +156,8 @@ cdef class GLPKSolver:
         self.set_fixed_flows_once = set_fixed_flows_once
         self.set_fixed_costs_once = set_fixed_costs_once
         self.set_fixed_factors_once = set_fixed_factors_once
+        # Register the error hook
+        glp_error_hook(error_hook, &error_ctx)
 
     def set_solver_options(self, time_limit, iteration_limit, message_level):
         glp_init_smcp(&self.smcp)
@@ -217,55 +241,94 @@ cdef int term_hook(void *info, const char *s):
     return 1
 
 
-cdef int simplex(glp_prob *P, glp_smcp parm):
-    return glp_simplex(P, &parm)
+IF GLPK_UNSAFE:
+    # Unsafe interface to GLPK
+    # This interface performs no checks or error handling
+    cdef simplex(glp_prob *P, glp_smcp parm):
+        """Unsafe wrapped call to `glp_simplex`"""
+        glp_simplex(P, &parm)
+
+    cdef set_obj_coef(glp_prob *P, int j, double coef):
+        """Unsafe wrapped call to `glp_set_obj_coef`"""
+        glp_set_obj_coef(P, j, coef)
+
+    cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
+        """Wrapped call to `glp_set_row_bnds`"""
+        glp_set_row_bnds(P, i, type, lb, ub)
+
+    cdef set_col_bnds(glp_prob *P, int i, int type, double lb, double ub):
+        """Wrapped call to `glp_set_col_bnds`"""
+        glp_set_col_bnds(P, i, type, lb, ub)
+
+    cdef set_mat_row(glp_prob *P, int i, int len, int * ind, double * val):
+        """Wrapped call to `glp_set_mat_row`"""
+        glp_set_mat_row(P, i, len, ind, val)
+ELSE:
+    # Safe interface to GLPK
+    # This interface checks for NaNs and uses setjmp to catch GLPK errors
+
+    glpk_error_msg = "This is an internal GLPK error and will have invalidated the entire GLPK environment. " \
+                     "All models will need to be recreated to continue. " \
+                     "This error should be resolved and the model re-run."
+
+    cdef int simplex(glp_prob *P, glp_smcp parm) except? -1:
+        """Wrapped call to `glp_simplex`"""
+        if not setjmp(error_ctx):
+            return glp_simplex(P, &parm)
+        else:
+            raise GLPKInternalError("An error occurred in `glp_simplex`." + glpk_error_msg)
 
 
-cdef set_obj_coef(glp_prob *P, int j, double coef):
-    IF SOLVER_DEBUG:
-        assert np.isfinite(coef)
-        if abs(coef) < 1e-9:
-            if abs(coef) != 0.0:
-                print(j, coef)
-                assert False
-    glp_set_obj_coef(P, j, coef)
+    cdef int set_obj_coef(glp_prob *P, int j, double coef) except? -1:
+        """Wrapped call to `glp_set_obj_coef`"""
+        if isnan(coef):
+            raise GLPKError(f"NaN detected in objective coefficient of column {j}")
+
+        if not setjmp(error_ctx):
+            glp_set_obj_coef(P, j, coef)
+        else:
+            raise GLPKInternalError("An error occurred in `glp_set_obj_coef`." + glpk_error_msg)
 
 
-cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
-    IF SOLVER_DEBUG:
-        assert np.isfinite(lb)
-        assert np.isfinite(ub)
-        assert lb <= ub
-        if abs(lb) < 1e-9:
-            if abs(lb) != 0.0:
-                print(i, type, lb, ub)
-                assert False
-        if abs(ub) < 1e-9:
-            if abs(ub) != 0.0:
-                print(i, type, lb, ub)
-                assert False
-    glp_set_row_bnds(P, i, type, lb, ub)
+    cdef int set_row_bnds(glp_prob *P, int i, int type, double lb, double ub) except? -1:
+        """Wrapped call to `glp_set_row_bnds`"""
+        if isnan(lb):
+            raise GLPKError(f"NaN detected in lower bounds of row {i}")
+        if isnan(ub):
+            raise GLPKError(f"NaN detected in upper bounds of row {i}")
+        if not setjmp(error_ctx):
+            glp_set_row_bnds(P, i, type, lb, ub)
+        else:
+            raise GLPKInternalError("An error occurred in `glp_set_row_bnds`." + glpk_error_msg)
 
 
-cdef set_col_bnds(glp_prob *P, int i, int type, double lb, double ub):
-    IF SOLVER_DEBUG:
-        assert np.isfinite(lb)
-        assert np.isfinite(ub)
-        assert lb <= ub
-    glp_set_col_bnds(P, i, type, lb, ub)
+    cdef int set_col_bnds(glp_prob *P, int i, int type, double lb, double ub) except -1:
+        """Wrapped call to `glp_set_col_bnds`"""
+        if isnan(lb):
+            raise GLPKError(f"NaN detected in lower bounds of column {i}")
+        if isnan(ub):
+            raise GLPKError(f"NaN detected in upper bounds of column {i}")
+        if not setjmp(error_ctx):
+            glp_set_col_bnds(P, i, type, lb, ub)
+        else:
+            raise GLPKInternalError("An error occurred in `glp_set_col_bnds`." + glpk_error_msg)
 
 
-cdef set_mat_row(glp_prob *P, int i, int len, int* ind, double* val):
-    assert len > 0, "Attempting to set a constraint row with zero entries. This should not happen. It is likely caused" \
-                    "by invalid or unsupported network configuration, but should generally be caught earlier by Pywr. " \
-                    "If you experience this error please report it to the Pywr developers."
-    IF SOLVER_DEBUG:
-        cdef int j
+    cdef int set_mat_row(glp_prob *P, int i, int len, int* ind, double* val) except -1:
+        """Wrapped call to `glp_set_mat_row`"""
+        if len == 0:
+            raise GLPKError("Attempting to set a constraint row with zero entries. This should not happen. It is likely caused" \
+                            "by invalid or unsupported network configuration, but should generally be caught earlier by Pywr. " \
+                            "If you experience this error please report it to the Pywr developers.")
+
         for j in range(len):
-            assert np.isfinite(val[j+1])
-            assert abs(val[j+1]) > 1e-6
-            assert ind[j+1] > 0
-    glp_set_mat_row(P, i, len, ind, val)
+            if isnan(val[j+1]):
+                raise GLPKError(f"NaN detected in matrix coefficient of row {i} and column {ind[j+1]}")
+
+        if not setjmp(error_ctx):
+            glp_set_mat_row(P, i, len, ind, val)
+        else:
+            raise GLPKInternalError(f"An error occurred in `glp_set_mat_row` for row {i}." + glpk_error_msg)
 
 
 cdef class CythonGLPKSolver(GLPKSolver):

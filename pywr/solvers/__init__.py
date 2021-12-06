@@ -62,7 +62,11 @@ class Solver(object):
 
 # Attempt to import solvers. These will only be successful if they are built correctly.
 try:
-    from .cython_glpk import CythonGLPKSolver as cy_CythonGLPKSolver
+    from .cython_glpk import (
+        CythonGLPKSolver as cy_CythonGLPKSolver,
+        GLPKError,
+        GLPKInternalError,
+    )
 except ImportError:
     pass
 else:
