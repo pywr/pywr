@@ -1,16 +1,13 @@
 from pywr._core cimport *
 from pywr._component cimport Component
 import itertools
+from libc.math cimport isnan
 import numpy as np
 cimport numpy as np
 import pandas as pd
 import warnings
 
 cdef double inf = float('inf')
-
-# http://stackoverflow.com/a/20031818/1300519
-cdef extern from "numpy/npy_math.h":
-    bint npy_isnan(double x)
 
 
 cdef class Scenario:
@@ -1034,7 +1031,7 @@ cdef class AbstractStorage(AbstractNode):
         this method in Parameter calculations to avoid dealing with NaN or out of range values.
         """
         cdef double current_pc = self._current_pc[scenario_index.global_id]
-        if current_pc > 1.0 or npy_isnan(current_pc):
+        if current_pc > 1.0 or isnan(current_pc):
             current_pc = 1.0
         elif current_pc < 0.0:
             current_pc = 0.0
