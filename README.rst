@@ -42,15 +42,15 @@ Installation
 
 Pywr should work on Python 3.7 (or later) on Windows, Linux or OS X.
 
-See the documentation for `detailed installation instructions <https://pywr.github.io/pywr/install.html>`__.
+See the documentation for `detailed installation instructions <https://pywr.github.io/pywr/install.html>`_.
 
-Provided that you have the required `dependencies <https://pywr.github.io/pywr/install.html#dependencies>`__ already installed, it's as simple as:
+For a quick start use pip:
 
 .. code-block:: console
 
-    python setup.py install --with-glpk --with-lpsolve
+    pip install pywr
 
-For most users it will be easier to install the `binary packages made available for the Anaconda Python distribution <https://anaconda.org/pywr/pywr>`__. See install docs for more information. Note that these packages may lag behind the development version.
+For most users it will be easier to install the binary packages made available from `PyPi <https://pypi.org/project/pywr/>`_ or the `Anaconda Python distribution <https://anaconda.org/conda-forge/pywr>`__. Note that these packages may lag behind the development version.
 
 Citation
 ========
