@@ -131,7 +131,7 @@ cdef class Storage(AbstractStorage):
     cdef Parameter _level_param
     cdef Parameter _area_param
     cpdef double get_initial_volume(self) except? -1
-    cpdef double get_initial_pc(self) except? -1    
+    cpdef double get_initial_pc(self) except? -1
     cpdef _reset_storage_only(self, bint use_initial_volume=*)
     cpdef double get_min_volume(self, ScenarioIndex scenario_index) except? -1
     cpdef double[:] get_all_min_volume(self, double[:] out=*)

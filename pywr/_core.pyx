@@ -1018,7 +1018,7 @@ cdef class AbstractStorage(AbstractNode):
         """ Current proportion full.
          
         Note that this property is the raw internal value of the current_pc and may contain `NaN` values. Prefer
-        use of the `get_current_pc` method to return a guaranteed a finite value between 0.0 and 1.0.
+        use of the `get_current_pc` method to return a guaranteed finite value between 0.0 and 1.0.
         """
         def __get__(self, ):
             return np.asarray(self._current_pc)
@@ -1027,7 +1027,7 @@ cdef class AbstractStorage(AbstractNode):
         """Return the current proportion of full of the storage node.
         
         This method will always return a finite value between 0.0 and 1.0. If the current proportion is `NaN` 
-        (usually because max_volume is zero) it is assumed full (i.e. returns 1.0). It is preferrable to use
+        (usually because max_volume is zero) it is assumed full (i.e. returns 1.0). It is preferable to use
         this method in Parameter calculations to avoid dealing with NaN or out of range values.
         """
         cdef double current_pc = self._current_pc[scenario_index.global_id]
