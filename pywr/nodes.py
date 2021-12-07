@@ -728,6 +728,7 @@ class PiecewiseLink(Node):
 
     def __init__(self, model, nsteps, *args, **kwargs):
         self.allow_isolated = True
+        name = kwargs.pop("name")
         costs = kwargs.pop("costs", None)
         max_flows = kwargs.pop("max_flows", None)
 
@@ -735,12 +736,12 @@ class PiecewiseLink(Node):
         # Input/Output instead of BaseInput/BaseOutput because of a different
         # domain is required on the sub-nodes and they need to be connected
         self.sub_domain = Domain()
-        self.input = Input(model, name="{} Input".format(self.name), parent=self)
-        self.output = Output(model, name="{} Output".format(self.name), parent=self)
+        self.input = Input(model, name="{} Input".format(name), parent=self)
+        self.output = Output(model, name="{} Output".format(name), parent=self)
 
         self.sub_output = Output(
             model,
-            name="{} Sub Output".format(self.name),
+            name="{} Sub Output".format(name),
             parent=self,
             domain=self.sub_domain,
         )
@@ -749,7 +750,7 @@ class PiecewiseLink(Node):
         for i in range(nsteps):
             sublink = Input(
                 model,
-                name="{} Sublink {}".format(self.name, i),
+                name="{} Sublink {}".format(name, i),
                 parent=self,
                 domain=self.sub_domain,
             )
@@ -757,7 +758,7 @@ class PiecewiseLink(Node):
             sublink.connect(self.sub_output)
             self.output.connect(self.sublinks[-1])
 
-        super().__init__(model, *args, **kwargs)
+        super().__init__(model, *args, name=name, **kwargs)
 
         if costs is not None:
             self.costs = costs
