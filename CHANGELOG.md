@@ -2,6 +2,12 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.16.1
+
+### Bug Fixes
+
+- Fix internal node names for `PiecewiseLink`. (#1024) 
+
 ## v1.16.0
 
 ### New Features
