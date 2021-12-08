@@ -2,7 +2,7 @@ GLPK error handling and performance
 ===================================
 
 In complex models it may be possible to create combinations of nodes, custom parameter outputs and other data that
-does translate in to a sensible linear programme. GLPK's C interface by default performs little check of input values
+does not translate in to a sensible linear programme. GLPK's C interface by default performs little check of input values
 (e.g. NaNs are unchecked). Since v1.17 Pywr has enabled additional data checking and error handling by default.
 
 Version 1.17 and above
@@ -18,9 +18,10 @@ from. In general if either of these errors occur users are recommended to debug 
 an new process) the models. It is *not* recommended to attempt to catch these exceptions, recover and continue with
 a simulation.
 
-The addition of the data checking and error handling is not zero cost in terms of runtime performance. Since version
-1.17 a new compile time option has been added, `--glpk-unsafe`, which uses GLPK without any data checks or error
-handling. This should be comparable with Pywr's default behaviour prior to version 1.17.
+The addition of the data checking and error handling is not zero cost in terms of runtime performance. Benchmarks on
+random test models and real world models have shown the cost is minimal in the context of an entire simulation.
+However, since version 1.17 a new compile time option has been added, `--glpk-unsafe`, which uses GLPK without any data
+checks or error handling. This should be comparable with Pywr's default behaviour prior to version 1.17.
 
 
 Older versions
