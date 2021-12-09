@@ -425,8 +425,7 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
 
     See also
     --------
-    `BaseControlCurveParameter`
-
+    BaseControlCurveParameter
     """
     def __init__(self, model, storage_node, control_curves, values=None, parameters=None,
                  variable_indices=None, upper_bounds=None, lower_bounds=None, **kwargs):
