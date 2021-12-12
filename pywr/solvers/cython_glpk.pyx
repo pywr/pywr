@@ -15,6 +15,8 @@ from pywr.core import ModelStructureError
 import time
 
 from .libglpk cimport *
+import logging
+logger = logging.getLogger(__name__)
 
 # Constants and message strings
 # =============================
@@ -525,12 +527,15 @@ cdef class CythonGLPKSolver(GLPKSolver):
             for n, c in enumerate(cols):
                 ind[1+n] = 1+c
                 val[1+n] = 1
-            set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
-            set_row_bnds(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
-
-            free(ind)
-            free(val)
-
+            try:
+                set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
+                set_row_bnds(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of flow constraints for node: {node}")
+                raise
+            finally:
+                free(ind)
+                free(val)
             # Now test whether this node has fixed flow constraints
             if self.set_fixed_flows_once and node.has_constant_flows:
                 non_storages_with_constant_bounds.append(node)
@@ -549,12 +554,16 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 for n, (c, v) in enumerate(col_vals):
                     ind[1+n+len(cols)] = 1+c
                     val[1+n+len(cols)] = 1./v
-                set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
-                set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
-                # glp_set_row_name(self.prob, self.idx_row_cross_domain+cross_domain_row,
-                #                  b'cd.'+some_node.fully_qualified_name.encode('utf-8'))
-                free(ind)
-                free(val)
+
+                try:
+                    set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
+                    set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
+                except GLPKError, GLPKInternalError:
+                    logger.error(f"A GLPK error occurred during creation of cross-domain constraints for node: {node}")
+                    raise
+                finally:
+                    free(ind)
+                    free(val)
                 cross_domain_row += 1
 
         # storage
@@ -573,11 +582,14 @@ cdef class CythonGLPKSolver(GLPKSolver):
             for n, c in enumerate(cols_input):
                 ind[1+len(cols_output)+n] = self.idx_col_routes+c
                 val[1+len(cols_output)+n] = -1
-            set_mat_row(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_storages+row,
-            #                  b's.'+storage.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                set_mat_row(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of storage constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # virtual storage
         if len(virtual_storages):
@@ -603,11 +615,14 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 ind[1+n] = self.idx_col_routes+c
                 val[1+n] = -f
 
-            set_mat_row(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_virtual_storages+row,
-            #                  b'vs.'+storage.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                set_mat_row(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of virtual storage constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # Add constraint rows for aggregated nodes with dynamics factors and
         # cache data so row values can be updated in solve
@@ -668,11 +683,15 @@ cdef class CythonGLPKSolver(GLPKSolver):
             for i, col in enumerate(sorted(matrix)):
                 ind[1+i] = 1+col
                 val[1+i] = matrix[col]
-            set_mat_row(self.prob, row, length, ind, val)
-            set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
-            # glp_set_row_name(self.prob, row, b'ag.'+agg_node.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                set_mat_row(self.prob, row, length, ind, val)
+                set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of aggregated node constraints for node: {agg_node}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # update route properties
         routes_cost = []
@@ -1245,10 +1264,15 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             for n, c in enumerate(cols):
                 ind[1+n] = 1+c
                 val[1+n] = 1
-            set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
-            set_row_bnds(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
-            free(ind)
-            free(val)
+            try:
+                set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
+                set_row_bnds(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of flow constraints for node: {node}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
             # Now test whether this node has constant flow constraints
             if self.set_fixed_flows_once and node.has_constant_flows:
@@ -1268,12 +1292,15 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 for n, (c, v) in enumerate(col_vals):
                     ind[1+n+len(cols)] = 1+c
                     val[1+n+len(cols)] = 1./v
-                set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
-                set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
-                # glp_set_row_name(self.prob, self.idx_row_cross_domain+cross_domain_row,
-                #                  b'cd.'+some_node.fully_qualified_name.encode('utf-8'))
-                free(ind)
-                free(val)
+                try:
+                    set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
+                    set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
+                except GLPKError, GLPKInternalError:
+                    logger.error(f"A GLPK error occurred during creation of cross-domain constraints for node: {node}")
+                    raise
+                finally:
+                    free(ind)
+                    free(val)
                 cross_domain_row += 1
 
         # Add mass balance constraints
@@ -1291,11 +1318,16 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             for n, c in enumerate(out_cols):
                 ind[1+len(in_cols)+n] = 1+c
                 val[1+len(in_cols)+n] = -1
-            set_mat_row(self.prob, self.idx_row_link_mass_bal+row, len(in_cols)+len(out_cols), ind, val)
-            set_row_bnds(self.prob, self.idx_row_link_mass_bal+row, GLP_FX, 0.0, 0.0)
 
-            free(ind)
-            free(val)
+            try:
+                set_mat_row(self.prob, self.idx_row_link_mass_bal+row, len(in_cols)+len(out_cols), ind, val)
+                set_row_bnds(self.prob, self.idx_row_link_mass_bal+row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of mass-balance constraints for node: {some_node}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # storage
         if len(storages):
@@ -1318,11 +1350,14 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 ind[1+len(cols_output)+n] = self.idx_col_edges+c
                 val[1+len(cols_output)+n] = -1
 
-            set_mat_row(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_storages+row,
-            #                  b's.'+storage.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                set_mat_row(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of storage constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # virtual storage
         if len(virtual_storages):
@@ -1349,11 +1384,14 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 ind[1+n] = self.idx_col_edges+c
                 val[1+n] = -f
 
-            set_mat_row(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_virtual_storages+row,
-            #                  b'vs.'+storage.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                set_mat_row(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of virtual-storage constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # Add constraint rows for aggregated nodes with dynamics factors and
         # cache data so row values can be updated in solve
@@ -1426,11 +1464,15 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             for i, col in enumerate(sorted(matrix)):
                 ind[1+i] = 1+col
                 val[1+i] = matrix[col]
-            set_mat_row(self.prob, row, length, ind, val)
-            set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
-            # glp_set_row_name(self.prob, row, b'ag.'+agg_node.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                set_mat_row(self.prob, row, length, ind, val)
+                set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of aggregated node constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         self.non_storages = non_storages
         self.non_storages_with_dynamic_bounds = non_storages_with_dynamic_bounds
