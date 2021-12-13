@@ -31,7 +31,7 @@ data can become problematic.
 To address this `DataFrameParameter` and `TablesArrayParameter` support validating external file checksums before reading
 the external data. The example below shows how to define a checksum in the JSON definition of a `DataFrameParameter`.
 If the local file does not match the checksum in the JSON definition a `HashMismatchError` is raised. Pywr uses
-`hashlib <https://docs.python.org/3/library/hashlib.html>`_ and supports any its algorithms.
+`hashlib <https://docs.python.org/3/library/hashlib.html>`_ and supports all of its algorithms.
 
 **Note:** The example shows checksums for two different algorithms, but usually one is sufficient.
 
