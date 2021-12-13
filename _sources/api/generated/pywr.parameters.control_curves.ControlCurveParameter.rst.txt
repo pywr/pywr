@@ -1,0 +1,63 @@
+﻿pywr.parameters.control\_curves.ControlCurveParameter
+=====================================================
+
+.. currentmodule:: pywr.parameters.control_curves
+
+.. autoclass:: ControlCurveParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ControlCurveParameter.__init__
+      ~ControlCurveParameter.after
+      ~ControlCurveParameter.before
+      ~ControlCurveParameter.finish
+      ~ControlCurveParameter.get_all_values
+      ~ControlCurveParameter.get_constant_value
+      ~ControlCurveParameter.get_double_lower_bounds
+      ~ControlCurveParameter.get_double_upper_bounds
+      ~ControlCurveParameter.get_double_variables
+      ~ControlCurveParameter.get_integer_lower_bounds
+      ~ControlCurveParameter.get_integer_upper_bounds
+      ~ControlCurveParameter.get_integer_variables
+      ~ControlCurveParameter.get_value
+      ~ControlCurveParameter.load
+      ~ControlCurveParameter.register
+      ~ControlCurveParameter.reset
+      ~ControlCurveParameter.set_double_variables
+      ~ControlCurveParameter.set_integer_variables
+      ~ControlCurveParameter.setup
+      ~ControlCurveParameter.unregister
+      ~ControlCurveParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ControlCurveParameter.children
+      ~ControlCurveParameter.comment
+      ~ControlCurveParameter.control_curves
+      ~ControlCurveParameter.double_size
+      ~ControlCurveParameter.integer_size
+      ~ControlCurveParameter.is_constant
+      ~ControlCurveParameter.is_variable
+      ~ControlCurveParameter.model
+      ~ControlCurveParameter.name
+      ~ControlCurveParameter.parameters
+      ~ControlCurveParameter.parents
+      ~ControlCurveParameter.size
+      ~ControlCurveParameter.storage_node
+      ~ControlCurveParameter.tags
+      ~ControlCurveParameter.values
+      ~ControlCurveParameter.variable_indices
+   
+   
