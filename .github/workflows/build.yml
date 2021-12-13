@@ -107,7 +107,7 @@ jobs:
       - uses: actions/setup-python@v2
         name: Install Python
         with:
-          python-version: '3.7'
+          python-version: '3.9'
 
       - name: Build docs
         # lpsolve doesn't compile on Ubuntu without building the library from source - disable for the time being.
