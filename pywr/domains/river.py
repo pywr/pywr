@@ -113,8 +113,8 @@ class RiverSplit(MultiSplitLink):
     """A split in the river network
 
     RiverSplit is a specialised version of `pywr.nodes.MultiSplitLink` with a more convenient init method.
-     It is intended for a simple case of where fixed ratio of flow is required to be distributed
-     to multiple downstream routes.
+    It is intended for a simple case of where fixed ratio of flow is required to be distributed
+    to multiple downstream routes.
 
     Parameters
     ----------
@@ -155,12 +155,22 @@ class RiverSplit(MultiSplitLink):
 
 
 class RiverSplitWithGauge(RiverSplit):
-    """A split in the river network with a minimum residual flow
+    """A split in the river network with a minimum residual flow.
 
     As per `RiverSplit` but by default creates another route in the underlying object
-     to model a MRF. This route is such that the MRF is not part of forced ratios. The
-     intent of this object is to model the case where a proportion of flow can be
-     abstracted above the MRF (e.g. 90% of flow above MRF).
+    to model an MRF. This route is such that the MRF is not part of forced ratios. The
+    intent of this object is to model the case where a proportion of flow can be
+    abstracted above the MRF (e.g. 90% of flow above MRF).
+
+    ::
+
+                 /  -->-- X0 {max_flow: mrf,  cost: mrf_cost} -->-- \\
+        A -->-- Xo  -->-- X1 {max_flow: None, cost: cost}     -->-- Xi -->-- C
+                 \\  -->-- X2 {max_flow: None, cost: 0.0}      -->-- /
+                           |
+                           Bo -->-- Bi --> D
+
+        Ag {nodes: [X1, X2], factors: factors}
 
     Parameters
     ----------
