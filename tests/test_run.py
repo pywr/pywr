@@ -930,7 +930,8 @@ class NanParameter(Parameter):
 
 class TestGlpkErrorHandling:
     @pytest.mark.skipif(
-        Model().solver.name == "lpsolve", reason="NaN not checked for lpsolve."
+        Model().solver.name == "lpsolve" or Model().solver.use_unsafe_api,
+        reason="NaN not checked for lpsolve or unsafe GLPK API.",
     )
     def test_nan_constraint_error(self):
         """Test a NaN in a row constraint causes an error"""
@@ -947,7 +948,8 @@ class TestGlpkErrorHandling:
             model.run()
 
     @pytest.mark.skipif(
-        Model().solver.name == "lpsolve", reason="NaN not checked for lpsolve."
+        Model().solver.name == "lpsolve" or Model().solver.use_unsafe_api,
+        reason="NaN not checked for lpsolve or unsafe GLPK API.",
     )
     def test_nan_cost_error(self):
         """Test a NaN in a node cost causes an error"""

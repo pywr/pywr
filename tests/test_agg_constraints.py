@@ -227,7 +227,8 @@ def test_aggregated_constraint_json():
 
 
 @pytest.mark.skipif(
-    Model().solver.name != "glpk", reason="Only valid for GLPK route based solver."
+    Model().solver.name != "glpk" or Model().solver.use_unsafe_api,
+    reason="Only valid for GLPK route based solver using safe API.",
 )
 def test_aggregated_constraint_with_two_nodes_in_same_route_json():
     """Test the case where an aggregated node contains two nodes in the same route.

@@ -248,9 +248,9 @@ cdef int term_hook(void *info, const char *s):
 
 # Unsafe interface to GLPK
 # This interface performs no checks or error handling
-cdef simplex_unsafe(glp_prob *P, glp_smcp parm):
+cdef int simplex_unsafe(glp_prob *P, glp_smcp parm):
     """Unsafe wrapped call to `glp_simplex`"""
-    glp_simplex(P, &parm)
+    return glp_simplex(P, &parm)
 
 cdef set_obj_coef_unsafe(glp_prob *P, int j, double coef):
     """Unsafe wrapped call to `glp_set_obj_coef`"""
@@ -488,10 +488,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
         # explicitly set bounds on route and demand columns
         for col, route in enumerate(routes):
-            if self.use_unsafe_api:
-                set_col_bnds_unsafe(self.prob, self.idx_col_routes+col, GLP_LO, 0.0, DBL_MAX)
-            else:
-                set_col_bnds_safe(self.prob, self.idx_col_routes+col, GLP_LO, 0.0, DBL_MAX)
+            set_col_bnds_safe(self.prob, self.idx_col_routes+col, GLP_LO, 0.0, DBL_MAX)
 
         # constrain supply minimum and maximum flow
         self.idx_row_non_storages = glp_add_rows(self.prob, len(non_storages))

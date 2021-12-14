@@ -164,6 +164,10 @@ else:
             return self._cy_solver.use_presolve
 
         @property
+        def use_unsafe_api(self):
+            return self._cy_solver.use_unsafe_api
+
+        @property
         def set_fixed_flows_once(self):
             return self._cy_solver.set_fixed_flows_once
 
@@ -267,6 +271,10 @@ else:
         @property
         def use_presolve(self):
             return self._cy_solver.use_presolve
+
+        @property
+        def use_unsafe_api(self):
+            return self._cy_solver.use_unsafe_api
 
         @property
         def set_fixed_flows_once(self):
