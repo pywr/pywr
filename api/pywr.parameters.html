@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parameters &mdash; Pywr 1.16.2.dev1+gebe8c03b documentation</title>
+  <title>Parameters &mdash; Pywr 1.16.2.dev3+g02f54af1 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
@@ -31,7 +31,7 @@
             <a href="../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.16.2.dev1+gebe8c03b
+                1.16.2.dev3+g02f54af1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -129,6 +129,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#control-curve-parameters">Control curve parameters</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.control_curves.BaseControlCurveParameter.html">pywr.parameters.control_curves.BaseControlCurveParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveParameter.html">pywr.parameters.control_curves.ControlCurveParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveInterpolatedParameter.html">pywr.parameters.control_curves.ControlCurveInterpolatedParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveIndexParameter.html">pywr.parameters.control_curves.ControlCurveIndexParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter.html">pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter</a></li>
@@ -440,13 +441,16 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.BaseControlCurveParameter.html#pywr.parameters.control_curves.BaseControlCurveParameter" title="pywr.parameters.control_curves.BaseControlCurveParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.BaseControlCurveParameter</span></code></a>(...)</p></td>
 <td><p>Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveInterpolatedParameter.html#pywr.parameters.control_curves.ControlCurveInterpolatedParameter" title="pywr.parameters.control_curves.ControlCurveInterpolatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurveInterpolatedParameter</span></code></a>(...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveParameter.html#pywr.parameters.control_curves.ControlCurveParameter" title="pywr.parameters.control_curves.ControlCurveParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurveParameter</span></code></a>(model, ...)</p></td>
+<td><p>A generic multi-levelled control curve Parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveInterpolatedParameter.html#pywr.parameters.control_curves.ControlCurveInterpolatedParameter" title="pywr.parameters.control_curves.ControlCurveInterpolatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurveInterpolatedParameter</span></code></a>(...)</p></td>
 <td><p>A control curve Parameter that interpolates between three or more values</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveIndexParameter.html#pywr.parameters.control_curves.ControlCurveIndexParameter" title="pywr.parameters.control_curves.ControlCurveIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurveIndexParameter</span></code></a>(...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurveIndexParameter.html#pywr.parameters.control_curves.ControlCurveIndexParameter" title="pywr.parameters.control_curves.ControlCurveIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurveIndexParameter</span></code></a>(...)</p></td>
 <td><p>Multiple control curve holder which returns an index not a value</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter.html#pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter" title="pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurvePiecewiseInterpolatedParameter</span></code></a>(...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter.html#pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter" title="pywr.parameters.control_curves.ControlCurvePiecewiseInterpolatedParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">control_curves.ControlCurvePiecewiseInterpolatedParameter</span></code></a>(...)</p></td>
 <td><p>A control curve Parameter that interpolates between two or more pairs of values.</p></td>
 </tr>
 </tbody>
