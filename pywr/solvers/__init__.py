@@ -99,6 +99,12 @@ else:
                 "PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE",
                 bool,
             )
+            kwargs = _parse_env_kwarg(
+                kwargs,
+                "use_safe_api",
+                "PYWR_SOLVER_GLPK_UNSAFE_API",
+                bool,
+            )
             self._cy_solver = cy_CythonGLPKSolver(**kwargs)
 
         def setup(self, model):
@@ -215,6 +221,12 @@ else:
                 kwargs,
                 "set_fixed_factors_once",
                 "PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE",
+                bool,
+            )
+            kwargs = _parse_env_kwarg(
+                kwargs,
+                "use_safe_api",
+                "PYWR_SOLVER_GLPK_UNSAFE_API",
                 bool,
             )
             self._cy_solver = cy_CythonGLPKEdgeSolver(**kwargs)
