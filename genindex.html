@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; Pywr 1.16.2.dev4+g0b2a45e0 documentation</title>
+  <title>Index &mdash; Pywr 1.16.2.dev5+g3d6356e7 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
@@ -28,7 +28,7 @@
             <a href="index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.16.2.dev4+g0b2a45e0
+                1.16.2.dev5+g3d6356e7
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -43,6 +43,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="formulation.html">Problem formulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="json.html">JSON model format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="err_perf.html">GLPK error handling and performance</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cookbook/cookbook.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="extending_pywr/index.html">Extending Pywr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/pywr.html">Python API reference</a></li>
@@ -543,11 +544,15 @@
 </li>
       <li><a href="api/pywr.optimisation.html#pywr.optimisation.pygmo.PygmoWrapper.get_nec">get_nec() (pywr.optimisation.pygmo.PygmoWrapper method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/pywr.optimisation.html#pywr.optimisation.pygmo.PygmoWrapper.get_nic">get_nic() (pywr.optimisation.pygmo.PygmoWrapper method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/pywr.optimisation.html#pywr.optimisation.pygmo.PygmoWrapper.get_nobj">get_nobj() (pywr.optimisation.pygmo.PygmoWrapper method)</a>
+</li>
+      <li><a href="api/pywr.solvers.html#pywr.solvers.cython_glpk.GLPKError">GLPKError</a>
+</li>
+      <li><a href="api/pywr.solvers.html#pywr.solvers.cython_glpk.GLPKInternalError">GLPKInternalError</a>
 </li>
       <li><a href="api/pywr.solvers.html#pywr.solvers.cython_glpk.GLPKSolver">GLPKSolver (class in pywr.solvers.cython_glpk)</a>
 </li>
@@ -1035,6 +1040,16 @@
         <li><a href="api/pywr.solvers.html#pywr.solvers.CythonGLPKEdgeSolver.use_presolve">(pywr.solvers.CythonGLPKEdgeSolver property)</a>
 </li>
         <li><a href="api/pywr.solvers.html#pywr.solvers.CythonGLPKSolver.use_presolve">(pywr.solvers.CythonGLPKSolver property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pywr.solvers.html#pywr.solvers.cython_glpk.GLPKSolver.use_unsafe_api">use_unsafe_api (pywr.solvers.cython_glpk.GLPKSolver attribute)</a>
+
+      <ul>
+        <li><a href="api/pywr.solvers.html#pywr.solvers.CythonGLPKEdgeSolver.use_unsafe_api">(pywr.solvers.CythonGLPKEdgeSolver property)</a>
+</li>
+        <li><a href="api/pywr.solvers.html#pywr.solvers.CythonGLPKSolver.use_unsafe_api">(pywr.solvers.CythonGLPKSolver property)</a>
 </li>
       </ul></li>
   </ul></td>

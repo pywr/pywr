@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>License &mdash; Pywr 1.16.2.dev5+g3d6356e7 documentation</title>
+  <title>GLPK error handling and performance &mdash; Pywr 1.16.2.dev5+g3d6356e7 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
@@ -19,7 +19,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Utilities" href="api/pywr.utils.html" /> 
+    <link rel="next" title="Pywr cookbook examples" href="cookbook/cookbook.html" />
+    <link rel="prev" title="JSON model format" href="json.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,16 +46,15 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="formulation.html">Problem formulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="json.html">JSON model format</a></li>
-<li class="toctree-l1"><a class="reference internal" href="err_perf.html">GLPK error handling and performance</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">GLPK error handling and performance</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#version-1-17-and-above">Version 1.17 and above</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#older-versions">Older versions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="cookbook/cookbook.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="extending_pywr/index.html">Extending Pywr</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/pywr.html">Python API reference</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">License</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#software">Software</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#citation">Citation</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 </ul>
 
         </div>
@@ -71,9 +71,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>License</li>
+      <li>GLPK error handling and performance</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/license.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/err_perf.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -81,26 +81,32 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="license">
-<h1>License<a class="headerlink" href="#license" title="Permalink to this headline"></a></h1>
-<section id="software">
-<h2>Software<a class="headerlink" href="#software" title="Permalink to this headline"></a></h2>
-<p>Pywr is licensed under the <a class="reference external" href="http://www.gnu.org/licenses/gpl-3.0.en.html">GNU General Public License, Version 3.0 or later</a>.</p>
-<p>Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester</p>
-<p>This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 1, or (at your option) any later version.</p>
-<p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
-<p>You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301 USA.</p>
+  <section id="glpk-error-handling-and-performance">
+<h1>GLPK error handling and performance<a class="headerlink" href="#glpk-error-handling-and-performance" title="Permalink to this headline"></a></h1>
+<p>In complex models it may be possible to create combinations of nodes, custom parameter outputs and other data that
+does not translate in to a sensible linear programme. GLPK’s C interface by default performs little check of input values
+(e.g. NaNs are unchecked). Since v1.17 Pywr has enabled additional data checking and error handling by default.</p>
+<section id="version-1-17-and-above">
+<h2>Version 1.17 and above<a class="headerlink" href="#version-1-17-and-above" title="Permalink to this headline"></a></h2>
+<p>Since version v1.17 Pywr has included additional value checking and error handling by default. These checks will
+ensure that NaN values are caught before they reach GLPK. The error handling ensures that any internal errors within
+GLPK are caught gracefully and translated to Python exceptions. Two exceptions <cite>GLPKError</cite> and <cite>GLPKInternalError</cite>
+are raised for these cases respectively.</p>
+<p>Internal errors (i.e. <cite>GLPKInternalError</cite>) will invalidate the entire GLPK environment and is very difficult to recover
+from. In general if either of these errors occur users are recommended to debug their causes and re-load (ideally with
+an new process) the models. It is <em>not</em> recommended to attempt to catch these exceptions, recover and continue with
+a simulation.</p>
+<p>The addition of the data checking and error handling is not zero cost in terms of runtime performance. Benchmarks on
+random test models and real world models have shown the cost is minimal in the context of an entire simulation.
+However, since version 1.17 a new compile time option has been added, <cite>–glpk-unsafe</cite>, which uses GLPK without any data
+checks or error handling. This should be comparable with Pywr’s default behaviour prior to version 1.17.</p>
 </section>
-<section id="documentation">
-<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline"></a></h2>
-<p>This documentation is licensed under the <a class="reference external" href="http://www.gnu.org/licenses/fdl-1.3.en.html">GNU Free Documentation License, Version 1.3 or later</a>.</p>
-<p>Copyright (C) 2014-19 Joshua Arnott, James E. Tomlinson, Atkins, University of Manchester</p>
-<p>Permission is granted to copy, distribute and/or modify this document under the terms of the GNU Free Documentation License, Version 1.3 or any later version published by the Free Software Foundation; with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included in the section entitled “GNU Free Documentation License”.</p>
-</section>
-<section id="citation">
-<h2>Citation<a class="headerlink" href="#citation" title="Permalink to this headline"></a></h2>
-<p>Please consider citing the following paper when using Pywr:</p>
-<p>&gt; Tomlinson, J.E., Arnott, J.H. and Harou, J.J., 2020. A water resource simulator in Python. Environmental Modelling &amp; Software. <a class="reference external" href="https://doi.org/10.1016/j.envsoft.2020.104635">https://doi.org/10.1016/j.envsoft.2020.104635</a></p>
+<section id="older-versions">
+<h2>Older versions<a class="headerlink" href="#older-versions" title="Permalink to this headline"></a></h2>
+<p>Prior to version v1.17 checks of NaN values could be enabled using the <cite>–enabled-debug</cite> option at build time. Any
+errors would result in an <cite>AssertionError</cite> from the GLPK solver interface. Internal GLPK errors are not handled in
+earlier versions of Pywr. If an error occurs within GLPK it is very likely that this will result in a segmentation
+fault of the calling Python process.</p>
 </section>
 </section>
 
@@ -108,7 +114,8 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="api/pywr.utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="json.html" class="btn btn-neutral float-left" title="JSON model format" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cookbook/cookbook.html" class="btn btn-neutral float-right" title="Pywr cookbook examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

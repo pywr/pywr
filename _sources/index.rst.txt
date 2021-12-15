@@ -16,6 +16,7 @@ Contents:
    tutorial.rst
    formulation.rst
    json.rst
+   err_perf.rst
    Cookbook <cookbook/cookbook.rst>
    Extending Pywr <extending_pywr/index.rst>
    Python API reference <api/pywr.rst>
