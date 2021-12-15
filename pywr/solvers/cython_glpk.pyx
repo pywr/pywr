@@ -151,9 +151,9 @@ cdef class GLPKSolver:
             glp_delete_prob(self.prob)
 
     def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level="error",
-                 set_fixed_flows_once=False, set_fixed_costs_once=False, set_fixed_factors_once=False, use_safe_api=False):
+                 set_fixed_flows_once=False, set_fixed_costs_once=False, set_fixed_factors_once=False, use_unsafe_api=False):
         self.use_presolve = use_presolve
-        self.use_unsafe_api = use_safe_api
+        self.use_unsafe_api = use_unsafe_api
         self.set_solver_options(time_limit, iteration_limit, message_level)
         glp_term_hook(term_hook, NULL)
         self.has_presolved = False

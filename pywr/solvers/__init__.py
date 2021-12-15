@@ -101,7 +101,7 @@ else:
             )
             kwargs = _parse_env_kwarg(
                 kwargs,
-                "use_safe_api",
+                "use_unsafe_api",
                 "PYWR_SOLVER_GLPK_UNSAFE_API",
                 bool,
             )
@@ -229,7 +229,7 @@ else:
             )
             kwargs = _parse_env_kwarg(
                 kwargs,
-                "use_safe_api",
+                "use_unsafe_api",
                 "PYWR_SOLVER_GLPK_UNSAFE_API",
                 bool,
             )
