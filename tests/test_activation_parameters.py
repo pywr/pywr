@@ -88,18 +88,21 @@ class TestBinaryStepParameter:
 
 class TestRectifierParameter:
     @pytest.mark.parametrize(
-        ["internal_value", "max_output", "upper_bounds"],
+        ["internal_value", "max_output", "upper_bounds", "min_output"],
         [
-            (-1.0, 1.0, 1.0),
-            (0.0, 1.0, 1.0),
-            (0.5, 1.0, 1.0),
-            (0.5, 10.0, 1.0),
-            (0.5, 10.0, 5.0),
-            (1.0, 10.0, 1.0),
+            (-1.0, 1.0, 1.0, 0.0),
+            (0.0, 1.0, 1.0, 0.0),
+            (0.5, 1.0, 1.0, 0.0),
+            (0.5, 10.0, 1.0, 0.0),
+            (0.5, 10.0, 5.0, 0.0),
+            (1.0, 10.0, 1.0, 0.0),
+            (0.0, 10.0, 1.0, 5.0),
+            (0.5, 10.0, 1.0, 5.0),
+            (1.0, 10.0, 1.0, 5.0),
         ],
     )
     def test_binary_step(
-        self, simple_linear_model, internal_value, max_output, upper_bounds
+        self, simple_linear_model, internal_value, max_output, upper_bounds, min_output
     ):
         """Test the binary step profile parameter."""
 
@@ -110,12 +113,14 @@ class TestRectifierParameter:
         if internal_value <= 0.0:
             expected_values = np.zeros(365)
         else:
-            expected_values = np.ones(365) * max_output * internal_value / upper_bounds
+            range = max_output - min_output
+            expected_values = np.ones(365) * (min_output + range * internal_value / upper_bounds)
 
         data = {
             "type": "rectifier",
             "value": internal_value,
             "max_output": max_output,
+            "min_output": min_output,
             "upper_bounds": upper_bounds,
         }
 
