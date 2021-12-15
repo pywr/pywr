@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.domains.river.RiverSplitWithGauge &mdash; Pywr 1.16.2.dev3+g02f54af1 documentation</title>
+  <title>pywr.domains.river.RiverSplitWithGauge &mdash; Pywr 1.16.2.dev4+g0b2a45e0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
@@ -31,7 +31,7 @@
             <a href="../../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.16.2.dev3+g02f54af1
+                1.16.2.dev4+g0b2a45e0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -120,13 +120,20 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.domains.river.RiverSplitWithGauge">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.domains.river.</span></span><span class="sig-name descname"><span class="pre">RiverSplitWithGauge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.domains.river.RiverSplitWithGauge" title="Permalink to this definition"></a></dt>
-<dd><p>A split in the river network with a minimum residual flow</p>
-<dl class="simple">
-<dt>As per <cite>RiverSplit</cite> but by default creates another route in the underlying object</dt><dd><p>to model a MRF. This route is such that the MRF is not part of forced ratios. The
+<dd><p>A split in the river network with a minimum residual flow.</p>
+<p>As per <cite>RiverSplit</cite> but by default creates another route in the underlying object
+to model an MRF. This route is such that the MRF is not part of forced ratios. The
 intent of this object is to model the case where a proportion of flow can be
 abstracted above the MRF (e.g. 90% of flow above MRF).</p>
-</dd>
-</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>         <span class="o">/</span>  <span class="o">--&gt;--</span> <span class="n">X0</span> <span class="p">{</span><span class="n">max_flow</span><span class="p">:</span> <span class="n">mrf</span><span class="p">,</span>  <span class="n">cost</span><span class="p">:</span> <span class="n">mrf_cost</span><span class="p">}</span> <span class="o">--&gt;--</span> \
+<span class="n">A</span> <span class="o">--&gt;--</span> <span class="n">Xo</span>  <span class="o">--&gt;--</span> <span class="n">X1</span> <span class="p">{</span><span class="n">max_flow</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cost</span><span class="p">:</span> <span class="n">cost</span><span class="p">}</span>     <span class="o">--&gt;--</span> <span class="n">Xi</span> <span class="o">--&gt;--</span> <span class="n">C</span>
+         \  <span class="o">--&gt;--</span> <span class="n">X2</span> <span class="p">{</span><span class="n">max_flow</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cost</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>      <span class="o">--&gt;--</span> <span class="o">/</span>
+                   <span class="o">|</span>
+                   <span class="n">Bo</span> <span class="o">--&gt;--</span> <span class="n">Bi</span> <span class="o">--&gt;</span> <span class="n">D</span>
+
+<span class="n">Ag</span> <span class="p">{</span><span class="n">nodes</span><span class="p">:</span> <span class="p">[</span><span class="n">X1</span><span class="p">,</span> <span class="n">X2</span><span class="p">],</span> <span class="n">factors</span><span class="p">:</span> <span class="n">factors</span><span class="p">}</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
