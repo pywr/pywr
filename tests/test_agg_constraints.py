@@ -1,3 +1,4 @@
+import pywr.solvers
 from pywr.core import (
     Model,
     Input,
@@ -221,6 +222,38 @@ def test_aggregated_constraint_json():
 
     assert_allclose(agg.max_flow, 30.0)
     assert_allclose(agg.min_flow, 5.0)
+
+    model.run()
+
+
+@pytest.mark.skipif(
+    Model().solver.name != "glpk" or Model().solver.use_unsafe_api,
+    reason="Only valid for GLPK route based solver using safe API.",
+)
+def test_aggregated_constraint_with_two_nodes_in_same_route_json():
+    """Test the case where an aggregated node contains two nodes in the same route.
+
+    In the route based solver this is not currently possible.
+    """
+    model = load_model("aggregated_with_two_nodes_same_route.json")
+
+    agg = model.nodes["agg"]
+    assert agg.nodes == [
+        model.nodes["A"],
+        model.nodes["B"],
+        model.nodes["C"],
+        model.nodes["X"],
+    ]
+
+    for f, v in zip(agg.factors, [1.0, 1.0, 1.0, 1.0]):
+        assert isinstance(f, ConstantParameter)
+        assert_allclose(f.get_double_variables(), v)
+
+    assert_allclose(agg.max_flow, 30.0)
+    assert_allclose(agg.min_flow, 5.0)
+
+    with pytest.raises(pywr.solvers.GLPKInternalError):
+        model.run()
 
 
 @pytest.mark.parametrize("flow", (100.0, 200.0, 300.0))

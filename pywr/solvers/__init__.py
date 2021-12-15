@@ -62,7 +62,11 @@ class Solver(object):
 
 # Attempt to import solvers. These will only be successful if they are built correctly.
 try:
-    from .cython_glpk import CythonGLPKSolver as cy_CythonGLPKSolver
+    from .cython_glpk import (
+        CythonGLPKSolver as cy_CythonGLPKSolver,
+        GLPKError,
+        GLPKInternalError,
+    )
 except ImportError:
     pass
 else:
@@ -93,6 +97,12 @@ else:
                 kwargs,
                 "set_fixed_factors_once",
                 "PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE",
+                bool,
+            )
+            kwargs = _parse_env_kwarg(
+                kwargs,
+                "use_unsafe_api",
+                "PYWR_SOLVER_GLPK_UNSAFE_API",
                 bool,
             )
             self._cy_solver = cy_CythonGLPKSolver(**kwargs)
@@ -154,6 +164,10 @@ else:
             return self._cy_solver.use_presolve
 
         @property
+        def use_unsafe_api(self):
+            return self._cy_solver.use_unsafe_api
+
+        @property
         def set_fixed_flows_once(self):
             return self._cy_solver.set_fixed_flows_once
 
@@ -213,6 +227,12 @@ else:
                 "PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE",
                 bool,
             )
+            kwargs = _parse_env_kwarg(
+                kwargs,
+                "use_unsafe_api",
+                "PYWR_SOLVER_GLPK_UNSAFE_API",
+                bool,
+            )
             self._cy_solver = cy_CythonGLPKEdgeSolver(**kwargs)
 
         def setup(self, model):
@@ -251,6 +271,10 @@ else:
         @property
         def use_presolve(self):
             return self._cy_solver.use_presolve
+
+        @property
+        def use_unsafe_api(self):
+            return self._cy_solver.use_unsafe_api
 
         @property
         def set_fixed_flows_once(self):

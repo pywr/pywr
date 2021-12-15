@@ -11,10 +11,7 @@ def setup_package():
     }
 
     define_macros = []
-
-    compile_time_env = {
-        "SOLVER_DEBUG": False,
-    }
+    compile_time_env = {}
 
     annotate = False
 
@@ -143,9 +140,6 @@ def setup_package():
             ]
         )
 
-    if config["debug"]:
-        compile_time_env["SOLVER_DEBUG"] = True
-
     setup(**metadata)
 
 
@@ -174,7 +168,6 @@ def parse_optional_arguments():
         "annotate": False,
         "profile": False,
         "trace": False,
-        "debug": False,
     }
 
     if "--with-glpk" in sys.argv:
@@ -219,7 +212,12 @@ def parse_optional_arguments():
         )
 
     if "--enable-debug" in sys.argv:
-        config["debug"] = True
+        import warnings
+
+        warnings.warn(
+            "--enable-debug has been deprecated. Its functionality is now enabled by default. To disable"
+            "GLPK error handling please use the `use_unsafe_api` option in the GLPK solvers."
+        )
         sys.argv.remove("--enable-debug")
 
     return config

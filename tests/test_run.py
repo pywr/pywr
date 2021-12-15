@@ -3,6 +3,8 @@
 
 import os
 import datetime
+
+import numpy as np
 import pytest
 import pandas
 from numpy.testing import assert_allclose
@@ -14,6 +16,7 @@ import pywr.solvers
 import pywr.parameters.licenses
 import pywr.domains.river
 from pywr.recorders import assert_rec
+from pywr.parameters import Parameter
 from helpers import load_model
 
 import pywr.parameters
@@ -495,7 +498,7 @@ def test_annual_virtual_storage_with_dynamic_cost():
 
 
 @pytest.mark.xfail(
-    raises=AssertionError,
+    raises=pywr.solvers.GLPKError,
     reason="See issue #1001: https://github.com/pywr/pywr/issues/1001",
 )
 def test_annual_virtual_storage_with_piecewise_link():
@@ -515,7 +518,7 @@ def test_annual_virtual_storage_with_piecewise_link():
 
 
 @pytest.mark.xfail(
-    raises=AssertionError,
+    raises=pywr.solvers.GLPKError,
     reason="See issue #1001: https://github.com/pywr/pywr/issues/1001",
 )
 def test_annual_virtual_storage_with_aggregated_node():
@@ -918,3 +921,48 @@ def test_select_glpk_presolve(use_presolve):
         model = load_model(data=data)
         assert model.solver.name.lower() == solver_name
         assert model.solver._cy_solver.use_presolve == (use_presolve == "true")
+
+
+class NanParameter(Parameter):
+    """A parameter that returns a NaN for testing error handling"""
+
+    def value(self, ts, si):
+        return np.NAN
+
+
+class TestGlpkErrorHandling:
+    @pytest.mark.skipif(
+        Model().solver.name == "lpsolve" or Model().solver.use_unsafe_api,
+        reason="NaN not checked for lpsolve or unsafe GLPK API.",
+    )
+    def test_nan_constraint_error(self):
+        """Test a NaN in a row constraint causes an error"""
+        # parse the JSON into a model
+        model = load_model("simple1.json")
+
+        nan_param = NanParameter(model)
+        inpt = model.nodes["supply1"]
+        inpt.max_flow = nan_param
+
+        model.setup()
+
+        with pytest.raises(pywr.solvers.GLPKError):
+            model.run()
+
+    @pytest.mark.skipif(
+        Model().solver.name == "lpsolve" or Model().solver.use_unsafe_api,
+        reason="NaN not checked for lpsolve or unsafe GLPK API.",
+    )
+    def test_nan_cost_error(self):
+        """Test a NaN in a node cost causes an error"""
+        # parse the JSON into a model
+        model = load_model("simple1.json")
+
+        nan_param = NanParameter(model)
+        inpt = model.nodes["supply1"]
+        inpt.cost = nan_param
+
+        model.setup()
+
+        with pytest.raises(pywr.solvers.GLPKError):
+            model.run()
