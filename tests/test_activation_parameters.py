@@ -114,7 +114,9 @@ class TestRectifierParameter:
             expected_values = np.zeros(365)
         else:
             range = max_output - min_output
-            expected_values = np.ones(365) * (min_output + range * internal_value / upper_bounds)
+            expected_values = np.ones(365) * (
+                min_output + range * internal_value / upper_bounds
+            )
 
         data = {
             "type": "rectifier",
