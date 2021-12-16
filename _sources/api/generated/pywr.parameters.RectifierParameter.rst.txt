@@ -50,6 +50,7 @@
       ~RectifierParameter.is_constant
       ~RectifierParameter.is_variable
       ~RectifierParameter.max_output
+      ~RectifierParameter.min_output
       ~RectifierParameter.model
       ~RectifierParameter.name
       ~RectifierParameter.parents
