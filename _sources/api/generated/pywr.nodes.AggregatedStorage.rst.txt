@@ -23,6 +23,7 @@
       ~AggregatedStorage.finish
       ~AggregatedStorage.get_all_cost
       ~AggregatedStorage.get_cost
+      ~AggregatedStorage.get_current_pc
       ~AggregatedStorage.pre_load
       ~AggregatedStorage.reset
       ~AggregatedStorage.setup

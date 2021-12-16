@@ -28,6 +28,7 @@
       ~Storage.get_all_min_volume
       ~Storage.get_area
       ~Storage.get_cost
+      ~Storage.get_current_pc
       ~Storage.get_initial_pc
       ~Storage.get_initial_volume
       ~Storage.get_level

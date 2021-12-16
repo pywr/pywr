@@ -26,6 +26,7 @@
       ~VirtualStorage.get_all_min_volume
       ~VirtualStorage.get_area
       ~VirtualStorage.get_cost
+      ~VirtualStorage.get_current_pc
       ~VirtualStorage.get_initial_pc
       ~VirtualStorage.get_initial_volume
       ~VirtualStorage.get_level
