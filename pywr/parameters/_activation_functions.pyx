@@ -83,7 +83,7 @@ cdef class RectifierParameter(Parameter):
         if self._value <= 0.0:
             return 0.0
         else:
-            return (self.max_output - self.min_output) * self._value / self._upper_bounds
+            return self.min_output + (self.max_output - self.min_output) * self._value / self._upper_bounds
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is fine because value doesn't depend on timestep or scenario
