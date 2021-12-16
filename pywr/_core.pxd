@@ -116,6 +116,7 @@ cdef class BaseInput(Node):
 cdef class AbstractStorage(AbstractNode):
     cdef public double[:] _volume
     cdef public double[:] _current_pc
+    cpdef double get_current_pc(self, ScenarioIndex scenario_index)
 
 cdef class Storage(AbstractStorage):
     cdef double _cost
