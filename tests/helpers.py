@@ -5,7 +5,7 @@ from pywr.core import Model, Timestep
 import pandas
 
 
-def load_model(filename=None, data=None, solver=None, model_klass=None):
+def load_model(filename=None, data=None, solver=None, model_klass=None, check=True):
     """Load a test model and check it"""
     if data is None:
         path = os.path.join(os.path.dirname(__file__), "models")
@@ -18,7 +18,8 @@ def load_model(filename=None, data=None, solver=None, model_klass=None):
         model_klass = Model
 
     model = model_klass.loads(data, path=path, solver=solver)
-    model.check()
+    if check:
+        model.check()
     return model
 
 

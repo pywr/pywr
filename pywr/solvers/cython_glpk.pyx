@@ -524,6 +524,10 @@ cdef class CythonGLPKSolver(GLPKSolver):
             else:
                 # Other nodes apply their flow constraints to all routes passing through them
                 cols = [n for n, route in enumerate(routes) if node in route]
+
+            if len(cols) == 0:
+                raise ModelStructureError(f'{node.__class__.__name__} node "{node.name}" is not part of any routes.')
+
             ind = <int*>malloc((1+len(cols)) * sizeof(int))
             val = <double*>malloc((1+len(cols)) * sizeof(double))
             for n, c in enumerate(cols):
@@ -1306,6 +1310,9 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             else:
                 # Other nodes apply their flow constraints to all routes passing through them
                 cols = node.__data.out_edges
+
+            if len(cols) == 0:
+                raise ModelStructureError(f'{node.__class__.__name__} node "{node.name}" does not have any valid connections.')
 
             ind = <int*>malloc((1+len(cols)) * sizeof(int))
             val = <double*>malloc((1+len(cols)) * sizeof(double))

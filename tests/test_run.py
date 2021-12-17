@@ -839,6 +839,17 @@ def test_run_empty():
         model.run()
 
 
+@pytest.mark.parametrize(
+    "filename", ["simple1_broken.json", "simple1_semi_broken.json"]
+)
+def test_broken_model(filename):
+    """Model with no valid routes should not work."""
+    # Load, but don't trigger a `Model.check()` to make sure that the solver gives a useful error message
+    model = load_model(filename, check=False)
+    with pytest.raises(ModelStructureError):
+        model.run()
+
+
 def test_run():
     model = load_model("simple1.json")
 
