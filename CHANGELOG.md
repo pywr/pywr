@@ -2,6 +2,29 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+
+## v1.17.0
+
+### New Features
+
+- Networks with missing connections will now more reliably raise `ModelStructureError`. (#1025)
+- Improve GLPK API (#1021): 
+  - GLPK errors are now handled by default by raising `GLPKInternalError`.
+  - Performs NaN are checked for by default.
+  - Added runtime option to use "unsafe" API with no error or NaN handling (see new documentation).
+  - Added documentation describing error handling changes.
+- Improve handling of NaN values in `Storage.current_pc` (i.e. when `max_volume` is zero). 
+  - Added a new method `Storage.get_current_pc` to guarantee a finite value. 
+- Added `min_output` to `RectifierParameter`
+
+### Miscellaneous
+
+- Documentation improvements:
+  - `RiverSplitWithGauge` docstring. (#1030)
+  - Added section describing how to use Dataframe checksums. (#1028)
+  - Added `ControlCurveParameter` to API docs. (#1027)
+
+
 ## v1.16.1
 
 ### Bug Fixes
