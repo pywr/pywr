@@ -20,8 +20,10 @@ a simulation.
 
 The addition of the data checking and error handling is not zero cost in terms of runtime performance. Benchmarks on
 random test models and real world models have shown the cost is minimal in the context of an entire simulation.
-However, since version 1.17 a new compile time option has been added, `--glpk-unsafe`, which uses GLPK without any data
-checks or error handling. This should be comparable with Pywr's default behaviour prior to version 1.17.
+However, since version 1.17 a new runtime time option has been added which uses GLPK without any data
+checks or error handling. This should be comparable with Pywr's default behaviour prior to version 1.17. This option
+can be enabled with the `use_unsafe_api=True` keyword argument to a GLPK solver, or via the environment variable
+`PYWR_SOLVER_GLPK_UNSAFE_API`
 
 
 Older versions
