@@ -1352,8 +1352,8 @@ class TestTablesRecorder:
             model.run()
 
             max_volume = model.nodes["Reservoir"].max_volume
-            rec_demand = h5f.get_node("/outputs/demand", "Demand").read()
-            rec_storage = h5f.get_node("/storage/reservoir", "Reservoir").read()
+            rec_demand = h5f.get_node("/outputs/demand").read()
+            rec_storage = h5f.get_node("/storage/reservoir").read()
 
             # model starts with no demand saving
             demand_baseline = 50.0
@@ -1377,7 +1377,7 @@ class TestTablesRecorder:
                 rec_demand[12, 0], demand_baseline * demand_factor * demand_saving
             )
 
-    def test_demand_saving_with_indexed_array(self, tmpdir):
+    def test_demand_saving_with_indexed_array_from_json(self, tmpdir):
         """Test recording various items from demand saving example.
 
         This time the TablesRecorder is defined in JSON.
