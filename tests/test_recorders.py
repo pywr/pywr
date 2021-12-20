@@ -1377,7 +1377,7 @@ class TestTablesRecorder:
                 rec_demand[12, 0], demand_baseline * demand_factor * demand_saving
             )
 
-    def test_demand_saving_with_indexed_array(self, tmpdir):
+    def test_demand_saving_with_indexed_array_from_json(self, tmpdir):
         """Test recording various items from demand saving example.
 
         This time the TablesRecorder is defined in JSON.
