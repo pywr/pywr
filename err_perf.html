@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GLPK error handling and performance &mdash; Pywr 1.16.2.dev9+ga34acf93 documentation</title>
+  <title>GLPK error handling and performance &mdash; Pywr 1.16.2.dev10+gaaa25e96 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.16.2.dev9+ga34acf93
+                1.16.2.dev10+gaaa25e96
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -98,8 +98,10 @@ an new process) the models. It is <em>not</em> recommended to attempt to catch t
 a simulation.</p>
 <p>The addition of the data checking and error handling is not zero cost in terms of runtime performance. Benchmarks on
 random test models and real world models have shown the cost is minimal in the context of an entire simulation.
-However, since version 1.17 a new compile time option has been added, <cite>–glpk-unsafe</cite>, which uses GLPK without any data
-checks or error handling. This should be comparable with Pywr’s default behaviour prior to version 1.17.</p>
+However, since version 1.17 a new runtime time option has been added which uses GLPK without any data
+checks or error handling. This should be comparable with Pywr’s default behaviour prior to version 1.17. This option
+can be enabled with the <cite>use_unsafe_api=True</cite> keyword argument to a GLPK solver, or via the environment variable
+<cite>PYWR_SOLVER_GLPK_UNSAFE_API</cite></p>
 </section>
 <section id="older-versions">
 <h2>Older versions<a class="headerlink" href="#older-versions" title="Permalink to this headline"></a></h2>
