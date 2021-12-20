@@ -1352,8 +1352,8 @@ class TestTablesRecorder:
             model.run()
 
             max_volume = model.nodes["Reservoir"].max_volume
-            rec_demand = h5f.get_node("/outputs/demand", "Demand").read()
-            rec_storage = h5f.get_node("/storage/reservoir", "Reservoir").read()
+            rec_demand = h5f.get_node("/outputs/demand").read()
+            rec_storage = h5f.get_node("/storage/reservoir").read()
 
             # model starts with no demand saving
             demand_baseline = 50.0
