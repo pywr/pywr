@@ -3,6 +3,12 @@
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
 
+## v1.17.1
+
+### Miscellaneous
+
+- Release wheels for Python 3.9 (Windows) and Python 3.10 (Linux and Windows).
+
 ## v1.17.0
 
 ### New Features
