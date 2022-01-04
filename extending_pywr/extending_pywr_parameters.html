@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.16.2.dev10+gaaa25e96 documentation</title>
+  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.17.1.dev1+g0d836b34 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
@@ -31,7 +31,7 @@
             <a href="../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.16.2.dev10+gaaa25e96
+                1.17.1.dev1+g0d836b34
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -134,10 +134,10 @@ from JSON.</p>
 <p>An instance of the parameter can be created from a JSON model as below. The type of the parameter is the class name,
 with the word “parameter” optionally removed (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;constant&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;constantparameter&quot;</span></code> both create an instance
 of <code class="docutils literal notranslate"><span class="pre">ConstantParameter</span></code>).</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="s">&quot;max_flow&quot;</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">{</span>
-    <span class="s">&quot;type&quot;</span><span class="p p-Indicator">:</span> <span class="s">&quot;myparameter&quot;</span><span class="p p-Indicator">,</span>
-    <span class="s">&quot;value&quot;</span><span class="p p-Indicator">:</span> <span class="nv">123.0</span>
-<span class="p p-Indicator">}</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="s">&quot;max_flow&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;type&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;myparameter&quot;</span><span class="p p-Indicator">,</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;value&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">123.0</span><span class="w"></span>
+<span class="p p-Indicator">}</span><span class="w"></span>
 </pre></div>
 </div>
 </section>
