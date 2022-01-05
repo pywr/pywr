@@ -145,7 +145,8 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
 
         x = np.linspace(0.0, 1.0, self.num_pdf)
 
-        # Compute the probability for the target volume      
+        # Compute the probability for the target volume  
+        
         p, pdf = self._estimate_pdf_and_target_probability(df.values.flatten(), x)
 
         self._probability_of_target_volume = p
@@ -176,12 +177,14 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         
         #See if all values are the same (no variance, so no gaussian PDF is posssible)
         val=set(values)
-        
+        #print(values)
         if len(val)==1:
             #If all values are the same, change first value to be slightly different to prevent numpy.linalg.LinAlgError: singular matrix
             if values[0] > 0:
                 values[0]=values[0]*0.999
-            elif values[0] == 0:
+            elif values[0] < 0:
+                values[0]=values[0]*0.999                
+            else:
                 values[0] = 0.00001
                 
         kernel = stats.gaussian_kde(values)
