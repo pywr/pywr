@@ -94,6 +94,7 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
 cdef class UniformDrawdownProfileParameter(Parameter):
     cdef public int reset_day
     cdef public int reset_month
+    cdef public int residual_days
     cdef int _reset_idoy
 
 cdef class RbfProfileParameter(Parameter):

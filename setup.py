@@ -3,6 +3,7 @@ import sys
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 
+
 def setup_package():
     compiler_directives = {
         "language_level": 3,
@@ -10,10 +11,7 @@ def setup_package():
     }
 
     define_macros = []
-
-    compile_time_env = {
-        "SOLVER_DEBUG": False,
-    }
+    compile_time_env = {}
 
     annotate = False
 
@@ -60,13 +58,13 @@ def setup_package():
             "packaging",
             "matplotlib",
             "jinja2",
-            "ipython"
+            "ipython",
         ],
         extras_require={
             "docs": docs_extras,
             "test": test_extras,
             "dev": dev_extras,
-            "optimisation": opt_extras
+            "optimisation": opt_extras,
         },
         cmdclass={"build_ext": new_build_ext},
         packages=[
@@ -90,9 +88,14 @@ def setup_package():
         Extension("pywr.parameters._parameters", ["pywr/parameters/_parameters.pyx"]),
         Extension("pywr.parameters._polynomial", ["pywr/parameters/_polynomial.pyx"]),
         Extension("pywr.parameters._thresholds", ["pywr/parameters/_thresholds.pyx"]),
-        Extension("pywr.parameters._control_curves", ["pywr/parameters/_control_curves.pyx"]),
+        Extension(
+            "pywr.parameters._control_curves", ["pywr/parameters/_control_curves.pyx"]
+        ),
         Extension("pywr.parameters._hydropower", ["pywr/parameters/_hydropower.pyx"]),
-        Extension("pywr.parameters._activation_functions", ["pywr/parameters/_activation_functions.pyx"]),
+        Extension(
+            "pywr.parameters._activation_functions",
+            ["pywr/parameters/_activation_functions.pyx"],
+        ),
         Extension("pywr.recorders._recorders", ["pywr/recorders/_recorders.pyx"]),
         Extension("pywr.recorders._thresholds", ["pywr/recorders/_thresholds.pyx"]),
         Extension("pywr.recorders._hydropower", ["pywr/recorders/_hydropower.pyx"]),
@@ -102,7 +105,11 @@ def setup_package():
 
     if config["glpk"]:
         ext_modules.append(
-                Extension("pywr.solvers.cython_glpk", ["pywr/solvers/cython_glpk.pyx"], libraries=["glpk"],)
+            Extension(
+                "pywr.solvers.cython_glpk",
+                ["pywr/solvers/cython_glpk.pyx"],
+                libraries=["glpk"],
+            )
         )
 
     if config["lpsolve"]:
@@ -127,11 +134,11 @@ def setup_package():
     if config["trace"]:
         compiler_directives["linetrace"] = True
         define_macros.extend(
-            [("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1"),]
+            [
+                ("CYTHON_TRACE", "1"),
+                ("CYTHON_TRACE_NOGIL", "1"),
+            ]
         )
-
-    if config["debug"]:
-        compile_time_env["SOLVER_DEBUG"] = True
 
     setup(**metadata)
 
@@ -144,10 +151,10 @@ def long_description():
 def package_data():
     pkg_data = {
         "pywr.notebook": ["*.js", "*.css", "*.html"],
-        'pywr': ['*.pxd'],
-        'pywr.parameters': ['*.pxd'],
-        'pywr.recorders': ['*.pxd'],
-        'pywr.solvers': ['*.pxd'],
+        "pywr": ["*.pxd"],
+        "pywr.parameters": ["*.pxd"],
+        "pywr.recorders": ["*.pxd"],
+        "pywr.solvers": ["*.pxd"],
     }
     if os.environ.get("PACKAGE_DATA", "false").lower() == "true":
         pkg_data["pywr"].extend([".libs/*", ".libs/licenses/*"])
@@ -161,14 +168,16 @@ def parse_optional_arguments():
         "annotate": False,
         "profile": False,
         "trace": False,
-        "debug": False,
     }
 
     if "--with-glpk" in sys.argv:
         config["glpk"] = True
         sys.argv.remove("--with-glpk")
     elif "PYWR_BUILD_GLPK" in os.environ:
-        config["glpk"] = os.environ["PYWR_BUILD_GLPK"].lower() in ("true", "1",)
+        config["glpk"] = os.environ["PYWR_BUILD_GLPK"].lower() in (
+            "true",
+            "1",
+        )
     elif "--without-glpk" in sys.argv:
         config["glpk"] = False
         sys.argv.remove("--without-glpk")
@@ -177,7 +186,10 @@ def parse_optional_arguments():
         config["lpsolve"] = True
         sys.argv.remove("--with-lpsolve")
     elif "PYWR_BUILD_LPSOLVE" in os.environ:
-        config["lpsolve"] = os.environ["PYWR_BUILD_LPSOLVE"].lower() in ("true", "1",)
+        config["lpsolve"] = os.environ["PYWR_BUILD_LPSOLVE"].lower() in (
+            "true",
+            "1",
+        )
     elif "--without-lpsolve" in sys.argv:
         config["lpsolve"] = False
         sys.argv.remove("--without-lpsolve")
@@ -194,10 +206,18 @@ def parse_optional_arguments():
         config["trace"] = True
         sys.argv.remove("--enable-trace")
     elif "PYWR_BUILD_TRACE" in os.environ:
-        config["trace"] = os.environ["PYWR_BUILD_TRACE"].lower() in ("true", "1",)
+        config["trace"] = os.environ["PYWR_BUILD_TRACE"].lower() in (
+            "true",
+            "1",
+        )
 
     if "--enable-debug" in sys.argv:
-        config["debug"] = True
+        import warnings
+
+        warnings.warn(
+            "--enable-debug has been deprecated. Its functionality is now enabled by default. To disable"
+            "GLPK error handling please use the `use_unsafe_api` option in the GLPK solvers."
+        )
         sys.argv.remove("--enable-debug")
 
     return config

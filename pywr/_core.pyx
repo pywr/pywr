@@ -1,12 +1,14 @@
 from pywr._core cimport *
 from pywr._component cimport Component
 import itertools
+from libc.math cimport isnan
 import numpy as np
 cimport numpy as np
 import pandas as pd
 import warnings
 
 cdef double inf = float('inf')
+
 
 cdef class Scenario:
     """Represents a scenario in the model.
@@ -1013,9 +1015,27 @@ cdef class AbstractStorage(AbstractNode):
             return np.asarray(self._volume)
 
     property current_pc:
-        """ Current percentage full """
+        """ Current proportion full.
+         
+        Note that this property is the raw internal value of the current_pc and may contain `NaN` values. Prefer
+        use of the `get_current_pc` method to return a guaranteed finite value between 0.0 and 1.0.
+        """
         def __get__(self, ):
             return np.asarray(self._current_pc)
+
+    cpdef double get_current_pc(self, ScenarioIndex scenario_index):
+        """Return the current proportion of full of the storage node.
+        
+        This method will always return a finite value between 0.0 and 1.0. If the current proportion is `NaN` 
+        (usually because max_volume is zero) it is assumed full (i.e. returns 1.0). It is preferable to use
+        this method in Parameter calculations to avoid dealing with NaN or out of range values.
+        """
+        cdef double current_pc = self._current_pc[scenario_index.global_id]
+        if current_pc > 1.0 or isnan(current_pc):
+            current_pc = 1.0
+        elif current_pc < 0.0:
+            current_pc = 0.0
+        return current_pc
 
     cpdef setup(self, model):
         """ Called before the first run of the model"""

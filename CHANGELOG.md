@@ -3,7 +3,58 @@
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
 
-=======
+## v1.17.1
+
+### Miscellaneous
+
+- Release wheels for Python 3.9 (Windows) and Python 3.10 (Linux and Windows).
+
+## v1.17.0
+
+### New Features
+
+- Networks with missing connections will now more reliably raise `ModelStructureError`. (#1025)
+- Improve GLPK API (#1021): 
+  - GLPK errors are now handled by default by raising `GLPKInternalError`.
+  - NaN checks are performed by default.
+  - Added runtime option to use "unsafe" API with no error or NaN handling (see new documentation).
+  - Added documentation describing error handling changes.
+- Improve handling of NaN values in `Storage.current_pc` (i.e. when `max_volume` is zero). 
+  - Added a new method `Storage.get_current_pc` to guarantee a finite value. 
+- Added `min_output` to `RectifierParameter`
+
+### Miscellaneous
+
+- Documentation improvements:
+  - `RiverSplitWithGauge` docstring. (#1030)
+  - Added section describing how to use Dataframe checksums. (#1028)
+  - Added `ControlCurveParameter` to API docs. (#1027)
+
+
+## v1.16.1
+
+### Bug Fixes
+
+- Fix internal node names for `PiecewiseLink`. (#1024) 
+
+## v1.16.0
+
+### New Features
+
+- Supply `initial_volume_pc` in `VirtualStorage` and its subclasses. (#1015)
+- Add `residual_days` option to `UniformDrawdownProfileParameter`. (#1013)
+
+### Bug Fixes
+
+- Fix a JSON formatting error in the documentation. (#1009)
+- Removed a circular import in `pywr.recorders.calibration`. (#1012)
+
+### Miscellaneous
+
+- Removed some older folders related to Travis. (#1016)
+- Re-formatted the Python code using the Black formatter and enforced this for future modifications. (#1010)
+
+
 ## v1.15.3
 
 ### Bug Fixes

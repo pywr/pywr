@@ -4,7 +4,8 @@ import calendar, datetime
 from ._parameters import Parameter as BaseParameter
 import numpy as np
 
-inf = float('inf')
+inf = float("inf")
+
 
 class License(BaseParameter):
     """Base license class from which others inherit
@@ -12,9 +13,10 @@ class License(BaseParameter):
     This class should not be instantiated directly. Instead, use one of the
     subclasses (e.g. DailyLicense).
     """
+
     def __new__(cls, *args, **kwargs):
         if cls is License:
-            raise TypeError('License cannot be instantiated directly')
+            raise TypeError("License cannot be instantiated directly")
         else:
             return BaseParameter.__new__(cls)
 
@@ -33,6 +35,7 @@ class TimestepLicense(License):
     is a fixed value. There is no resource state, as use today does not
     impact availability tomorrow.
     """
+
     def __init__(self, model, node, amount, **kwargs):
         """Initialise a new TimestepLicense
 
@@ -49,6 +52,8 @@ class TimestepLicense(License):
 
     def resource_state(self, timestep):
         return None
+
+
 TimestepLicense.register()
 
 
@@ -56,6 +61,7 @@ TimestepLicense.register()
 # in the future this will need to be more clever
 class DailyLicense(TimestepLicense):
     pass
+
 
 class StorageLicense(License):
     def __init__(self, model, node, amount, **kwargs):
@@ -75,7 +81,7 @@ class StorageLicense(License):
     def setup(self):
         super(StorageLicense, self).setup()
         # Create a state array for the remaining licence volume.
-        self._remaining = np.ones(len(self.model.scenarios.combinations))*self._amount
+        self._remaining = np.ones(len(self.model.scenarios.combinations)) * self._amount
 
     def value(self, timestep, scenario_index):
         return self._remaining[scenario_index.global_id]
@@ -94,6 +100,7 @@ class StorageLicense(License):
         amount = data.pop("amount")
         return cls(model, node, amount=amount, **data)
 
+
 StorageLicense.register()
 
 
@@ -109,6 +116,7 @@ class AnnualLicense(StorageLicense):
     amount : float
         The total annual volume for this license
     """
+
     def __init__(self, *args, **kwargs):
         super(AnnualLicense, self).__init__(*args, **kwargs)
         # Record year ready to reset licence when the year changes.
@@ -134,14 +142,16 @@ class AnnualLicense(StorageLicense):
             days_before_reset = timestep.dayofyear - 1
             # Adjust the license by the rate in previous timestep. This is needed for timesteps greater
             # than 1 day where the license reset is not exactly on the anniversary
-            self._remaining[...] -= days_before_reset*self._node.prev_flow
+            self._remaining[...] -= days_before_reset * self._node.prev_flow
 
             self._prev_year = timestep.year
+
+
 AnnualLicense.register()
 
 
 class AnnualExponentialLicense(AnnualLicense):
-    """ An annual license that returns a value based on an exponential function of the license's current state.
+    """An annual license that returns a value based on an exponential function of the license's current state.
 
     The exponential function takes the form,
 
@@ -151,6 +161,7 @@ class AnnualExponentialLicense(AnnualLicense):
     Where :math:`x` is the ratio of actual daily averaged remaining license (as calculated by AnnualLicense) to the
     expected daily averaged remaining licence. I.e. if the license is on track the ratio is 1.0.
     """
+
     def __init__(self, model, node, amount, max_value, k=1.0, **kwargs):
         """
 
@@ -168,15 +179,19 @@ class AnnualExponentialLicense(AnnualLicense):
         self._k = k
 
     def value(self, timestep, scenario_index):
-        remaining = super(AnnualExponentialLicense, self).value(timestep, scenario_index)
+        remaining = super(AnnualExponentialLicense, self).value(
+            timestep, scenario_index
+        )
         expected = self._amount / (365 + int(calendar.isleap(timestep.year)))
         x = remaining / expected
         return self._max_value * np.exp(-x / self._k)
+
+
 AnnualExponentialLicense.register()
 
 
 class AnnualHyperbolaLicense(AnnualLicense):
-    """ An annual license that returns a value based on an hyperbola (1/x) function of the license's current state.
+    """An annual license that returns a value based on an hyperbola (1/x) function of the license's current state.
 
     The hyperbola function takes the form,
 
@@ -186,6 +201,7 @@ class AnnualHyperbolaLicense(AnnualLicense):
     Where :math:`x` is the ratio of actual daily averaged remaining license (as calculated by AnnualLicense) to the
     expected daily averaged remaining licence. I.e. if the license is on track the ratio is 1.0.
     """
+
     def __init__(self, model, node, amount, value, **kwargs):
         """
 
@@ -207,4 +223,6 @@ class AnnualHyperbolaLicense(AnnualLicense):
             return self._value / x
         except ZeroDivisionError:
             return inf
+
+
 AnnualHyperbolaLicense.register()

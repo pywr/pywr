@@ -32,12 +32,13 @@ class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
         Whether to reflect the PDF at the upper and lower bounds (i.e. 0% and 100% volume) to account for
         the boundedness of the distribution. Defaults to true.
     """
+
     def __init__(self, *args, **kwargs):
-        self.resample_freq = kwargs.pop('resample_freq', None)
-        self.resample_func = kwargs.pop('resample_func', None)
-        self.target_volume_pc = kwargs.pop('target_volume_pc')
-        self.use_reflection = kwargs.pop('use_reflection', True)
-        self.num_pdf = kwargs.pop('num_pdf', 101)
+        self.resample_freq = kwargs.pop("resample_freq", None)
+        self.resample_func = kwargs.pop("resample_func", None)
+        self.target_volume_pc = kwargs.pop("target_volume_pc")
+        self.use_reflection = kwargs.pop("use_reflection", True)
+        self.num_pdf = kwargs.pop("num_pdf", 101)
 
         super().__init__(*args, proportional=True, **kwargs)
         self._probability_of_target_volume = None
@@ -69,14 +70,15 @@ class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
         return self._pdf.values
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the estimated PDF.
-        """
+        """Return a `pandas.DataFrame` of the estimated PDF."""
         return self._pdf
 
     def aggregated_value(self):
         return self._probability_of_target_volume
 
-    def _estimate_pdf_and_target_probability(self, values, x) -> Tuple[float, np.ndarray]:
+    def _estimate_pdf_and_target_probability(
+        self, values, x
+    ) -> Tuple[float, np.ndarray]:
         """Return a probability of being at below `self.target_volume_pc` and a estimate of the PDF
 
         This method can (if `self.use_reflection` is truthy) reflect the PDF at the lower and upper boundaries
@@ -99,6 +101,8 @@ class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
             pdf += kernel_ub(x)
 
         return p, pdf
+
+
 GaussianKDEStorageRecorder.register()
 
 
@@ -127,11 +131,12 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         Whether to reflect the PDF at the upper and lower normalised bounds (i.e. -1.0 and 1.0 volume) to account for
         the boundedness of the distribution. Defaults to true.
     """
+
     def __init__(self, *args, **kwargs):
-        self.resample_freq = kwargs.pop('resample_freq', None)
-        self.resample_func = kwargs.pop('resample_func', None)
-        self.use_reflection = kwargs.pop('use_reflection', True)
-        self.num_pdf = kwargs.pop('num_pdf', 101)
+        self.resample_freq = kwargs.pop("resample_freq", None)
+        self.resample_func = kwargs.pop("resample_func", None)
+        self.use_reflection = kwargs.pop("use_reflection", True)
+        self.num_pdf = kwargs.pop("num_pdf", 101)
 
         super().__init__(*args, **kwargs)
         self._probability_of_target_volume = None
@@ -167,14 +172,15 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         return values
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the estimated PDF.
-        """
+        """Return a `pandas.DataFrame` of the estimated PDF."""
         return self._pdf
 
     def aggregated_value(self):
         return float(self._probability_of_target_volume)
 
-    def _estimate_pdf_and_target_probability(self, values, x) -> Tuple[float, np.ndarray]:
+    def _estimate_pdf_and_target_probability(
+        self, values, x
+    ) -> Tuple[float, np.ndarray]:
         """Return a probability of being at below `self.target_volume_pc` and a estimate of the PDF
 
         This method can (if `self.use_reflection` is truthy) reflect the PDF at the lower and upper boundaries
@@ -206,4 +212,6 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
             pdf += kernel_ub(x)
 
         return p, pdf
+
+
 NormalisedGaussianKDEStorageRecorder.register()

@@ -21,10 +21,14 @@ class Timestepper(object):
         self.reset()
         self._dirty = True
 
-    def __iter__(self, ):
+    def __iter__(
+        self,
+    ):
         return self
 
-    def __len__(self, ):
+    def __len__(
+        self,
+    ):
         return len(self._periods)
 
     @property
@@ -35,7 +39,7 @@ class Timestepper(object):
         periods = self.datetime_index
 
         # Compute length of each period
-        deltas = periods.to_timestamp(how='e') - periods.to_timestamp(how='s')
+        deltas = periods.to_timestamp(how="e") - periods.to_timestamp(how="s")
         # Round to nearest second
         deltas = np.round(deltas.total_seconds())
         # Convert to days
@@ -46,7 +50,7 @@ class Timestepper(object):
         self._dirty = False
 
     def reset(self, start=None):
-        """ Reset the timestepper
+        """Reset the timestepper
 
         If start is None it resets to the original self.start, otherwise
         start is used as the new starting point.
@@ -63,17 +67,25 @@ class Timestepper(object):
                     current_index = index
                     break
             else:
-                raise ValueError('New starting position is outside the range of the model timesteps.')
+                raise ValueError(
+                    "New starting position is outside the range of the model timesteps."
+                )
 
-        self._next = _core.Timestep(self._periods[current_index], current_index, self._deltas[current_index])
+        self._next = _core.Timestep(
+            self._periods[current_index], current_index, self._deltas[current_index]
+        )
         length_changed = self._last_length != current_length
         self._last_length = current_length
         return length_changed
 
-    def __next__(self, ):
+    def __next__(
+        self,
+    ):
         return self.next()
 
-    def next(self, ):
+    def next(
+        self,
+    ):
         self._current = current = self._next
 
         if current.index >= len(self._periods):
@@ -90,7 +102,9 @@ class Timestepper(object):
             delta = delta / SECONDS_IN_DAY
             self._next = _core.Timestep(final_period, next_index, delta)
         else:
-            self._next = _core.Timestep(self._periods[next_index], next_index, self._deltas[next_index])
+            self._next = _core.Timestep(
+                self._periods[next_index], next_index, self._deltas[next_index]
+            )
 
         # Return this timestep
         return current
@@ -140,9 +154,9 @@ class Timestepper(object):
     def freq(self):
         d = self._delta
         if isinstance(d, int):
-            freq = '{}D'.format(d)
+            freq = "{}D".format(d)
         elif isinstance(d, datetime.timedelta):
-            freq = '{}D'.format(d.days)
+            freq = "{}D".format(d.days)
         else:
             freq = d
         return freq
@@ -161,7 +175,7 @@ class Timestepper(object):
 
     @property
     def datetime_index(self):
-        """ Return a `pandas.DatetimeIndex` using the start, end and delta of this object
+        """Return a `pandas.DatetimeIndex` using the start, end and delta of this object
 
         This is useful for creating `pandas.DataFrame` objects from Model results
         """
@@ -170,6 +184,6 @@ class Timestepper(object):
     def __repr__(self):
         start = self.start.strftime("%Y-%m-%d")
         end = self.end.strftime("%Y-%m-%d")
-        return "<Timestepper start=\"{}\" end=\"{}\" freq=\"{}\">".format(
+        return '<Timestepper start="{}" end="{}" freq="{}">'.format(
             start, end, self.freq
         )

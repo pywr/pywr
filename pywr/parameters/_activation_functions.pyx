@@ -65,10 +65,13 @@ cdef class RectifierParameter(Parameter):
         The valid ranges of the internal variable for optimisation (default = [-1.0, 1.0]).
     max_output : float
         The maximum value to return when the internal variable is at its upper bounds (default = 1.0).
+    min_output : float
+        The value to return when the internal variable is at 0.0.
     """
-    def __init__(self, model, value=0.0, lower_bounds=-1.0, upper_bounds=1.0, max_output=1.0, **kwargs):
+    def __init__(self, model, value=0.0, lower_bounds=-1.0, upper_bounds=1.0, min_output=0.0, max_output=1.0, **kwargs):
         super(RectifierParameter, self).__init__(model, **kwargs)
         self._value = value
+        self.min_output = min_output
         self.max_output = max_output
         self.double_size = 1
         self.integer_size = 0
@@ -80,7 +83,7 @@ cdef class RectifierParameter(Parameter):
         if self._value <= 0.0:
             return 0.0
         else:
-            return self.max_output * self._value / self._upper_bounds
+            return self.min_output + (self.max_output - self.min_output) * self._value / self._upper_bounds
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         # This is fine because value doesn't depend on timestep or scenario

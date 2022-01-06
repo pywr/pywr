@@ -1,6 +1,7 @@
 from ..model import Model
 import numpy as np
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,24 +27,27 @@ class BisectionSearchModel(Model):
         no error is raised if there is no feasible solution, and a solution using the lower bounds of the
         bisection parameter is the final result.
     """
+
     def __init__(self, **kwargs):
-        self.bisect_parameter = kwargs.pop('bisect_parameter', None)
-        self.bisect_epsilon = kwargs.pop('bisect_epsilon', None)
-        self.error_on_infeasible = kwargs.pop('error_on_infeasible', True)
+        self.bisect_parameter = kwargs.pop("bisect_parameter", None)
+        self.bisect_epsilon = kwargs.pop("bisect_epsilon", None)
+        self.error_on_infeasible = kwargs.pop("error_on_infeasible", True)
         super().__init__(**kwargs)
 
     @classmethod
     def _load_from_dict(cls, data, model=None, path=None, solver=None, **kwargs):
-        model = super()._load_from_dict(data, model=None, path=None, solver=None, **kwargs)
+        model = super()._load_from_dict(
+            data, model=None, path=None, solver=None, **kwargs
+        )
 
         try:
-            bisect_data = data['bisection']
+            bisect_data = data["bisection"]
         except KeyError:
             pass
         else:
-            model.bisect_parameter = bisect_data.get('parameter', None)
-            model.bisect_epsilon = bisect_data.get('epsilon', None)
-            model.error_on_infeasible = bisect_data.get('error_on_infeasible', True)
+            model.bisect_parameter = bisect_data.get("parameter", None)
+            model.bisect_epsilon = bisect_data.get("epsilon", None)
+            model.error_on_infeasible = bisect_data.get("error_on_infeasible", True)
         return model
 
     def run(self):
@@ -58,27 +62,35 @@ class BisectionSearchModel(Model):
         # Get the bisection parameter
         param = self.parameters[self.bisect_parameter]
         if param.double_size != 1 or param.integer_size != 0:
-            raise ValueError("Bisection is only supported using a parameter with only a single double variable "
-                             "(e.g ConstantParameter).")
+            raise ValueError(
+                "Bisection is only supported using a parameter with only a single double variable "
+                "(e.g ConstantParameter)."
+            )
         # Use the bounds of the parameter for the bisection search space
         min_value = param.get_double_lower_bounds()[0]
         max_value = param.get_double_upper_bounds()[0]
         if min_value >= max_value:
-            raise ValueError("Minimum bounds of the bisection parameter must be strictly greater than its "
-                             "maximum bounds.")
+            raise ValueError(
+                "Minimum bounds of the bisection parameter must be strictly greater than its "
+                "maximum bounds."
+            )
 
         if self.bisect_epsilon <= 0.0:
             raise ValueError("Bisection epsilon value must be greater than zero.")
 
-        logger.info(f'Starting bisection using parameter "{self.bisect_parameter}" with epsilon of '
-                    f'{self.bisect_epsilon:.4f}.')
+        logger.info(
+            f'Starting bisection using parameter "{self.bisect_parameter}" with epsilon of '
+            f"{self.bisect_epsilon:.4f}."
+        )
 
         best_feasible = -np.inf
         while (max_value - min_value) > self.bisect_epsilon:
             # Compute the current value to try as the middle of the bounds
             current_value = (max_value + min_value) / 2
-            logger.debug(f"Performing bisection run with value: {current_value:.4f}; "
-                         f"bounds [{min_value:.4f}, {max_value:.4f}]")
+            logger.debug(
+                f"Performing bisection run with value: {current_value:.4f}; "
+                f"bounds [{min_value:.4f}, {max_value:.4f}]"
+            )
             # Update parameter & perform the simulation
             param.set_double_variables(np.array([current_value]))
             super().run()
@@ -94,8 +106,10 @@ class BisectionSearchModel(Model):
         # Ensure a feasible solution is found.
         if np.isneginf(best_feasible):
             if self.error_on_infeasible:
-                raise ValueError("No feasible solutions found during bisection. Trying lowering the bounds on the "
-                                 "bisection parameter.")
+                raise ValueError(
+                    "No feasible solutions found during bisection. Trying lowering the bounds on the "
+                    "bisection parameter."
+                )
             else:
                 # If no feasible the "best" value is the lower bounds.
                 best_feasible = min_value
@@ -104,6 +118,8 @@ class BisectionSearchModel(Model):
         # value's results at the end of the simulation.
         param.set_double_variables(np.array([best_feasible]))
         ret = super().run()
-        logger.info(f'Bisection complete! Highest feasible value of "{self.bisect_parameter}" '
-                    f'found: {best_feasible:.4f}')
+        logger.info(
+            f'Bisection complete! Highest feasible value of "{self.bisect_parameter}" '
+            f"found: {best_feasible:.4f}"
+        )
         return ret
