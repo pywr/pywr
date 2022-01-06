@@ -441,6 +441,76 @@ class TestRollingVirtualStorage:
         assert_allclose(otpt.flow, [10.0], atol=1e-7)
         assert_allclose(vs.volume, [30.0], atol=1e-7)
 
+    def test_initial_volume(self):
+        """Test RollingVirtualStorage node behaviour when initial volume is less than max volume"""
+
+        model = pywr.core.Model(timestep="1D")
+
+        inpt = Input(model, "Input", max_flow=0.0)
+        lnk = Link(model, "Link")
+        inpt.connect(lnk)
+        otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+        lnk.connect(otpt)
+
+        vs = pywr.core.RollingVirtualStorage(
+            model, "Licence", [lnk], timesteps=3, initial_volume=70.0, max_volume=100.0
+        )
+
+        model.setup()
+
+        assert_allclose(vs.volume, [70.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0.0], atol=1e-7)
+        assert_allclose(vs.volume, [85.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0.0], atol=1e-7)
+        assert_allclose(vs.volume, [100.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0.0], atol=1e-7)
+        assert_allclose(vs.volume, [100.0], atol=1e-7)
+
+    def test_initial_pc(self):
+        """Test RollingVirtualStorage node behaviour when initial volume percentage is less than 1.0"""
+
+        model = pywr.core.Model(timestep="1D")
+
+        inpt = Input(model, "Input", max_flow=0.0)
+        lnk = Link(model, "Link")
+        inpt.connect(lnk)
+        otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+        lnk.connect(otpt)
+
+        from pywr.parameters import ConstantParameter
+        mx_vol = ConstantParameter(model, 100)
+        vs = pywr.core.RollingVirtualStorage(
+            model, "Licence", [lnk], timesteps=3, initial_volume=70.0, initial_volume_pc=0.7, max_volume=mx_vol
+        )
+
+        model.setup()
+
+        assert_allclose(vs.volume, [70.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0.0], atol=1e-7)
+        assert_allclose(vs.volume, [85.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0.0], atol=1e-7)
+        assert_allclose(vs.volume, [100.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0.0], atol=1e-7)
+        assert_allclose(vs.volume, [100.0], atol=1e-7)
+
 
 @pytest.mark.parametrize(
     "test_model", ["virtual_storage1", "virtual_storage6", "virtual_storage7"]

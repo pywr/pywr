@@ -495,6 +495,9 @@ class RollingVirtualStorage(
 ):
     """A rolling virtual storage node useful for implementing rolling licences.
 
+    If the initial volume of the storage is less than the maximum volume then the parameter will calculate
+    an initial utilisation value. This is set equal to: (max volume - initial volume) / timesteps - 1.
+
     Parameters
     ----------
     model: pywr.core.Model
@@ -509,8 +512,10 @@ class RollingVirtualStorage(
         The minimum volume the storage is allowed to reach.
     max_volume: float or parameter
         The maximum volume of the storage.
-    initial_volume: float
-        The initial storage volume.
+    initial_volume, initial_volume_pc : float (optional)
+        Specify initial volume in either absolute or proportional terms. Both are required if `max_volume`
+        is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+        and `max_volume` is not a Parameter, then the absolute value is ignored.
     timesteps : int
         The number of timesteps to apply to the rolling storage over.
     days : int
@@ -533,6 +538,7 @@ class RollingVirtualStorage(
             min_volume = 0.0
         max_volume = pop_kwarg_parameter(kwargs, "max_volume", 0.0)
         initial_volume = kwargs.pop("initial_volume", 0.0)
+        initial_volume_pc = kwargs.pop("initial_volume_pc", None)
         cost = pop_kwarg_parameter(kwargs, "cost", 0.0)
         factors = kwargs.pop("factors", None)
         days = kwargs.pop("days", None)
@@ -546,6 +552,7 @@ class RollingVirtualStorage(
         self.min_volume = min_volume
         self.max_volume = max_volume
         self.initial_volume = initial_volume
+        self.initial_volume_pc = initial_volume_pc
         self.cost = cost
         self.nodes = nodes
         self.days = days

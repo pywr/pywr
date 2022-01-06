@@ -153,3 +153,4 @@ cdef class RollingVirtualStorage(VirtualStorage):
     cdef public int timesteps
     cdef double[:, :] _memory
     cdef int _memory_pointer
+    cdef double _initial_utilisation
