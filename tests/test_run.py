@@ -16,7 +16,7 @@ import pywr.solvers
 import pywr.parameters.licenses
 import pywr.domains.river
 from pywr.recorders import assert_rec
-from pywr.parameters import Parameter
+from pywr.parameters import Parameter, ConstantParameter
 from helpers import load_model
 
 import pywr.parameters
@@ -486,8 +486,6 @@ class TestRollingVirtualStorage:
         otpt = Output(model, "Output", max_flow=10, cost=-10.0)
         lnk.connect(otpt)
 
-        from pywr.parameters import ConstantParameter
-
         mx_vol = ConstantParameter(model, 100)
         vs = pywr.core.RollingVirtualStorage(
             model,
@@ -517,6 +515,68 @@ class TestRollingVirtualStorage:
 
         assert_allclose(otpt.flow, [0.0], atol=1e-7)
         assert_allclose(vs.volume, [100.0], atol=1e-7)
+
+    def test_initial_volume_zero(self):
+        """Test RollingVirtualStorage node behaviour when initial volume is zero"""
+
+        model = pywr.core.Model(timestep="1D")
+
+        inpt = Input(model, "Input", max_flow=0.0)
+        lnk = Link(model, "Link")
+        inpt.connect(lnk)
+        otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+        lnk.connect(otpt)
+
+        vs = pywr.core.RollingVirtualStorage(
+            model,
+            "Licence",
+            [lnk],
+            timesteps=3,
+            initial_volume=0.0,
+            max_volume=100.0,
+        )
+
+        model.setup()
+
+        assert_allclose(vs.volume, [0.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0.0], atol=1e-7)
+        assert_allclose(vs.volume, [50.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0.0], atol=1e-7)
+        assert_allclose(vs.volume, [100.0], atol=1e-7)
+
+        model.step()
+
+        assert_allclose(otpt.flow, [0.0], atol=1e-7)
+        assert_allclose(vs.volume, [100.0], atol=1e-7)
+
+    def test_max_vol_param_zero_initial_vol(self):
+        """Test RollingVirtualStorage node behaviour when initial volume is zero"""
+
+        model = pywr.core.Model(timestep="1D")
+
+        inpt = Input(model, "Input", max_flow=0.0)
+        lnk = Link(model, "Link")
+        inpt.connect(lnk)
+        otpt = Output(model, "Output", max_flow=10, cost=-10.0)
+        lnk.connect(otpt)
+
+        mx_vol = ConstantParameter(model, 100)
+        with pytest.raises(ValueError):
+            vs = pywr.core.RollingVirtualStorage(
+                model,
+                "Licence",
+                [lnk],
+                timesteps=3,
+                initial_volume=0.0,
+                initial_volume_pc=0.0,
+                max_volume=mx_vol,
+            )
 
 
 @pytest.mark.parametrize(

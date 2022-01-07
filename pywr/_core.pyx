@@ -1459,7 +1459,11 @@ cdef class RollingVirtualStorage(VirtualStorage):
             raise ValueError('The number of time-steps for a RollingVirtualStorage node must be greater than one.')
         cdef double initial_vol = self.get_initial_volume()
         cdef double initial_pc = self.get_initial_pc()
-        self._initial_utilisation = ((initial_vol / initial_pc) - initial_vol) / (self.timesteps - 1)
+        
+        if initial_pc == 0.0:
+            self._initial_utilisation = self._max_volume / (self.timesteps - 1)
+        else:
+            self._initial_utilisation = ((initial_vol / initial_pc) - initial_vol) / (self.timesteps - 1)
         self._memory = np.full((self.timesteps-1, ncomb), self._initial_utilisation, dtype=np.float64)
         self._memory_pointer = 0
 

@@ -495,8 +495,17 @@ class RollingVirtualStorage(
 ):
     """A rolling virtual storage node useful for implementing rolling licences.
 
+    The volume of the node is updated each timestep with the volume of water utilised in the timestep immediately
+    prior to the rolling period.
+
     If the initial volume of the storage is less than the maximum volume then the parameter will calculate
-    an initial utilisation value. This is set equal to: (max volume - initial volume) / timesteps - 1.
+    an initial utilisation value. This is set equal to: (max volume - initial volume) / (timesteps - 1). This
+    utilisation is assumed to occurred equally across each timestep of the rolling period. The storage is replenished
+    by this value for each timestep until a full rolling period is completed. At this point, replenishment will
+    be based on the previous utilisation of the storage during the model run. Note that this changes the previous
+    default behaviour of the node up to Pywr version 1.17.1, where no initial utilisation was calculated. This meant
+    that it was impossible for the storage volume to be higher than the initial volume even if this was lower than the
+    max volume.
 
     Parameters
     ----------
@@ -557,6 +566,11 @@ class RollingVirtualStorage(
         self.nodes = nodes
         self.days = days
         self.timesteps = timesteps
+
+        if self.get_initial_volume() == 0.0 and isinstance(self.max_volume, Parameter):
+            raise ValueError(
+                "`max_volume` cannot be a parameter if `initial_volume` or `initial_volume_pc` is 0.0"
+            )
 
         if factors is None:
             self.factors = [1.0 for i in range(len(nodes))]
