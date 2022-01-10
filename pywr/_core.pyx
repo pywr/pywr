@@ -1461,6 +1461,8 @@ cdef class RollingVirtualStorage(VirtualStorage):
         cdef double initial_pc = self.get_initial_pc()
         
         if initial_pc == 0.0:
+            if isinstance(self.max_volume, Parameter):
+                raise ValueError("`max_volume` cannot be a parameter if `initial_volume` or `initial_volume_pc` is 0.0")
             self._initial_utilisation = self._max_volume / (self.timesteps - 1)
         else:
             self._initial_utilisation = ((initial_vol / initial_pc) - initial_vol) / (self.timesteps - 1)

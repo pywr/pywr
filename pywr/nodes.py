@@ -567,11 +567,6 @@ class RollingVirtualStorage(
         self.days = days
         self.timesteps = timesteps
 
-        if self.get_initial_volume() == 0.0 and isinstance(self.max_volume, Parameter):
-            raise ValueError(
-                "`max_volume` cannot be a parameter if `initial_volume` or `initial_volume_pc` is 0.0"
-            )
-
         if factors is None:
             self.factors = [1.0 for i in range(len(nodes))]
         else:

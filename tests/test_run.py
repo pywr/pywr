@@ -567,16 +567,18 @@ class TestRollingVirtualStorage:
         lnk.connect(otpt)
 
         mx_vol = ConstantParameter(model, 100)
+        pywr.core.RollingVirtualStorage(
+            model,
+            "Licence",
+            [lnk],
+            timesteps=3,
+            initial_volume=0.0,
+            initial_volume_pc=0.0,
+            max_volume=mx_vol,
+        )
+
         with pytest.raises(ValueError):
-            vs = pywr.core.RollingVirtualStorage(
-                model,
-                "Licence",
-                [lnk],
-                timesteps=3,
-                initial_volume=0.0,
-                initial_volume_pc=0.0,
-                max_volume=mx_vol,
-            )
+            model.setup()
 
 
 @pytest.mark.parametrize(
