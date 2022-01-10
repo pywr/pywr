@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.nodes.RollingVirtualStorage &mdash; Pywr 1.17.2.dev1+g390d41ba documentation</title>
+  <title>pywr.nodes.RollingVirtualStorage &mdash; Pywr 1.17.2.dev2+gf160be81 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
@@ -31,7 +31,7 @@
             <a href="../../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.17.2.dev1+g390d41ba
+                1.17.2.dev2+gf160be81
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -122,6 +122,16 @@
 <dt class="sig sig-object py" id="pywr.nodes.RollingVirtualStorage">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.nodes.</span></span><span class="sig-name descname"><span class="pre">RollingVirtualStorage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.RollingVirtualStorage" title="Permalink to this definition"></a></dt>
 <dd><p>A rolling virtual storage node useful for implementing rolling licences.</p>
+<p>The volume of the node is updated each timestep with the volume of water utilised in the timestep immediately
+prior to the rolling period.</p>
+<p>If the initial volume of the storage is less than the maximum volume then the parameter will calculate
+an initial utilisation value. This is set equal to: (max volume - initial volume) / (timesteps - 1). This
+utilisation is assumed to occurred equally across each timestep of the rolling period. The storage is replenished
+by this value for each timestep until a full rolling period is completed. At this point, replenishment will
+be based on the previous utilisation of the storage during the model run. Note that this changes the previous
+default behaviour of the node up to Pywr version 1.17.1, where no initial utilisation was calculated. This meant
+that it was impossible for the storage volume to be higher than the initial volume even if this was lower than the
+max volume.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -137,7 +147,9 @@ water from the storage, negative factors remove it.</p>
 </dd>
 <dt><strong>max_volume: float or parameter</strong></dt><dd><p>The maximum volume of the storage.</p>
 </dd>
-<dt><strong>initial_volume: float</strong></dt><dd><p>The initial storage volume.</p>
+<dt><strong>initial_volume, initial_volume_pc</strong><span class="classifier">float (optional)</span></dt><dd><p>Specify initial volume in either absolute or proportional terms. Both are required if <cite>max_volume</cite>
+is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+and <cite>max_volume</cite> is not a Parameter, then the absolute value is ignored.</p>
 </dd>
 <dt><strong>timesteps</strong><span class="classifier">int</span></dt><dd><p>The number of timesteps to apply to the rolling storage over.</p>
 </dd>
