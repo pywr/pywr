@@ -516,7 +516,7 @@ class Model(object):
         all_routes = []
         for node1 in type1_nodes:
             for node2 in type2_nodes:
-                for route in nx.all_simple_paths(self.graph, node1, node2):
+                for route in nx.all_simple_paths(self.graph, node1, node2, cutoff=max_length):
                     is_valid = True
                     # Check valid intermediate nodes
                     if valid is not None and len(route) > 2:
