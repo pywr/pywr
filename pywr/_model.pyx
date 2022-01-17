@@ -1015,3 +1015,10 @@ def listify(f):
     def wrapper(*args, **kwargs):
         return list(f(*args, **kwargs))
     return wrapper
+
+
+def collect_components(data, key):
+    components_data = data.get(key, {})
+    for name, component_data in components_data.items():
+        component_data["name"] = name
+    return components_data
