@@ -748,7 +748,7 @@ cdef class AggregatedNode(AbstractNode):
         self._min_flow_param = None
         self._max_flow_param = None
 
-    component_attrs = ["min_flow", "max_flow"]
+    component_attrs = ["min_flow", "max_flow", "factors"]
 
     property nodes:
         def __get__(self):
@@ -1457,12 +1457,21 @@ cdef class RollingVirtualStorage(VirtualStorage):
         cdef int ncomb = len(model.scenarios.combinations)
         if self.timesteps < 2:
             raise ValueError('The number of time-steps for a RollingVirtualStorage node must be greater than one.')
-        self._memory = np.zeros((self.timesteps-1, ncomb), dtype=np.float64)
+        cdef double initial_vol = self.get_initial_volume()
+        cdef double initial_pc = self.get_initial_pc()
+        
+        if initial_pc == 0.0:
+            if isinstance(self.max_volume, Parameter):
+                raise ValueError("`max_volume` cannot be a parameter if `initial_volume` or `initial_volume_pc` is 0.0")
+            self._initial_utilisation = self._max_volume / (self.timesteps - 1)
+        else:
+            self._initial_utilisation = ((initial_vol / initial_pc) - initial_vol) / (self.timesteps - 1)
+        self._memory = np.full((self.timesteps-1, ncomb), self._initial_utilisation, dtype=np.float64)
         self._memory_pointer = 0
 
     cpdef reset(self):
         VirtualStorage.reset(self)
-        self._memory[:] = 0.0
+        self._memory[:] = self._initial_utilisation
         self._memory_pointer = 0
 
     cpdef after(self, Timestep ts, double[:] adjustment=None):
