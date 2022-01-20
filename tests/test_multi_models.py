@@ -66,10 +66,11 @@ def test_run_two_dependent_models_from_json():
 
     sub_model2 = multi_model.models["model2"]
     supply2 = sub_model2.nodes["supply2"]
+    demand2 = sub_model2.nodes["demand2"]
     assert isinstance(supply2.max_flow, OtherModelParameterValue)
 
     # Add recorder for flow
-    demand2_rec = NumpyArrayNodeRecorder(sub_model2, supply2)
+    demand2_rec = NumpyArrayNodeRecorder(sub_model2, demand2)
     # Demand should equal the inflow the model1
     expected_flow = pandas.read_csv(path / "timeseries1.csv", index_col=0)
 
