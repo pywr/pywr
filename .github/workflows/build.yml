@@ -90,7 +90,7 @@ jobs:
 
       - name: Build sdist
         run: |
-          python setup.py build_ext --inplace
+          pip install -e .
           python setup.py sdist
 
       - uses: actions/upload-artifact@v2
@@ -117,7 +117,7 @@ jobs:
         run: |
           sudo apt-get install libglpk-dev
           pip install sphinx sphinx_rtd_theme numpydoc
-          python setup.py build_ext --inplace
+          pip install -e .
           python setup.py install --without-lpsolve
           cd docs
           make html
