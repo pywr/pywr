@@ -90,7 +90,7 @@ jobs:
 
       - name: Build sdist
         run: |
-          pip install cython
+          pip install cython numpy
           python setup.py sdist
 
       - uses: actions/upload-artifact@v2
@@ -116,7 +116,7 @@ jobs:
         # This doesn't really matter for the documentation builds.
         run: |
           sudo apt-get install libglpk-dev
-          pip install sphinx sphinx_rtd_theme numpydoc cython
+          pip install sphinx sphinx_rtd_theme numpydoc cython numpy
           python setup.py install --without-lpsolve
           cd docs
           make html
