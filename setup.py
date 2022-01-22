@@ -34,7 +34,6 @@ def setup_package():
             self.include_dirs.append(numpy.get_include())
             super().finalize_options()
 
-
     # Extra optional dependencies
     docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc"]
     test_extras = ["pytest"]
