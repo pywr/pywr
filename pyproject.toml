@@ -9,21 +9,3 @@ requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4", "cython", "n
 line-length = 88
 target-version = ['py37']
 include = '\.pyi?$'
-
-
-[project]
-dependencies = [
-    "pandas",
-    "networkx",
-    "scipy",
-    "tables",
-    "openpyxl",
-    "packaging",
-]
-
-[project.optional-dependencies]
-docs = ["sphinx", "sphinx_rtd_theme", "numpydoc"]
-tests = ["pytest"]
-dev = ["sphinx", "sphinx_rtd_theme", "numpydoc", "pytest"]
-optimisation = ["platypus-opt", "pygmo"]
-notebook = ["jupyter", "jinja2", "matplotlib"]
