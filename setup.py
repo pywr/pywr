@@ -41,7 +41,6 @@ def setup_package():
     test_extras = ["pytest"] + notebook_extras + opt_extras
     dev_extras = docs_extras + test_extras
 
-
     metadata = dict(
         name="pywr",
         description="Python Water Resource model",
@@ -50,6 +49,7 @@ def setup_package():
         author="Joshua Arnott",
         author_email="josh@snorfalorpagus.net",
         url="https://github.com/pywr/pywr",
+        setup_requires=["setuptools>=18.0", "setuptools_scm", "cython", "numpy"],
         install_requires=[
             "pandas",
             "networkx",
