@@ -36,10 +36,11 @@ def setup_package():
 
     # Extra optional dependencies
     docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc"]
-    test_extras = ["pytest"]
-    dev_extras = docs_extras + test_extras
+    notebook_extras = ["ipython", "jinja2", "matplotlib"]
     opt_extras = ["platypus-opt", "pygmo"]
-    notebook_extras = ["jupyter", "jinja2", "matplotlib"]
+    test_extras = ["pytest"] + notebook_extras + opt_extras
+    dev_extras = docs_extras + test_extras
+
 
     metadata = dict(
         name="pywr",
