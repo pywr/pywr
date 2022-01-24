@@ -35,7 +35,7 @@ def setup_package():
             super().finalize_options()
 
     # Extra optional dependencies
-    docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc"]
+    docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc", "matplotlib"]
     notebook_extras = ["ipython", "jinja2", "matplotlib"]
     opt_extras = ["platypus-opt", "pygmo"]
     test_extras = ["pytest"] + notebook_extras + opt_extras
