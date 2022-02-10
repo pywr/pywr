@@ -192,7 +192,7 @@ class Model(object):
         return self.graph.edges()
 
     @classmethod
-    def loads(cls, data, model=None, path=None, solver=None, **kwargs):
+    def loads(cls, data, model=None, path=None, **kwargs):
         """Read JSON data from a string and parse it as a model document"""
         try:
             data = json.loads(data)
@@ -202,7 +202,7 @@ class Model(object):
                 e.args = ("{} [{}]".format(e.args[0], os.path.basename(path)),)
             raise(e)
         cls._load_includes(data, path)
-        return cls.load(data, model, path, solver, **kwargs)
+        return cls.load(data, model, path, **kwargs)
 
     @classmethod
     def _load_includes(cls, data, path=None):
@@ -262,7 +262,7 @@ class Model(object):
         return None  # data modified in-place
 
     @classmethod
-    def load(cls, data, model=None, path=None, solver=None, **kwargs):
+    def load(cls, data, model=None, path=None, **kwargs):
         """Load an existing model
 
         Parameters
@@ -284,18 +284,18 @@ class Model(object):
             path = data
             with open(path, "r") as f:
                 data = f.read()
-            return cls.loads(data, model, path, solver)
+            return cls.loads(data, model, path, **kwargs)
 
         if hasattr(data, 'read'):
             logger.info('Loading model from file-like object.')
             # argument is a file-like object
             data = data.read()
-            return cls.loads(data, model, path, solver)
+            return cls.loads(data, model, path, **kwargs)
 
-        return cls._load_from_dict(data, model=model, path=path, solver=None, **kwargs)
+        return cls._load_from_dict(data, model=model, path=path, **kwargs)
 
     @classmethod
-    def _load_from_dict(cls, data, model=None, path=None, solver=None, **kwargs):
+    def _load_from_dict(cls, data, model=None, path=None, solver=None, solver_args=None):
         """Load data from a dictionary."""
         # data is a dictionary, make a copy to avoid modify the input
         data = copy.deepcopy(data)
@@ -314,14 +314,14 @@ class Model(object):
 
         cls._load_includes(data, path)
 
-        try:
-            solver_data = data['solver']
-        except KeyError:
-            solver_name = solver
-            solver_args = kwargs.pop('solver_args', {})
-        else:
-            solver_name = data["solver"].pop("name")
-            solver_args = data["solver"]
+        if solver_args is None:
+            solver_args = {}
+
+        if solver is None:
+            if 'solver' in data:
+                solver_data = data.pop('solver')
+                solver_name = solver_data.pop("name")
+                solver_args = solver_data
 
         try:
             timestepper_data = data['timestepper']

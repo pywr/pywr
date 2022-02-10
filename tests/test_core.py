@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import json
+
 import pytest
+
+import pywr.solvers
 from fixtures import *
 from helpers import *
 from pywr._core import Timestep, ScenarioIndex
@@ -631,3 +635,107 @@ def test_timestep_days_in_year_methods(
     ts = simple_linear_model.timestepper.current
     assert days_in_current_year == ts.days_in_current_year()
     assert days_in_next_year == ts.days_in_next_year()
+
+
+class SpecifyingSolver:
+    @pytest.mark.parametrize("solver", ["null", "glpk", "glpk-edge"])
+    def test_load_with_solver(self, solver):
+        """Specify the solver from the .load method."""
+
+        filename = os.path.join(TEST_FOLDER, "models", "simple1.json")
+        model = Model.load(filename, solver=solver)
+
+        for solver_class in pywr.solvers.solver_registry:
+            if solver_class.name == solver:
+                expected_solver = solver_class
+                break
+        else:
+            raise RuntimeError(f"Could not find solver with name: {solver}")
+
+        assert isinstance(model.solver, expected_solver)
+
+    @pytest.mark.parametrize("solver", ["null", "glpk", "glpk-edge"])
+    def test_load_with_solver_in_json(self, solver):
+        """Specify the solver in the JSON file."""
+
+        filename = os.path.join(TEST_FOLDER, "models", "simple1.json")
+        with open(filename) as fh:
+            data = json.load(fh)
+
+        data["solver"] = {
+            "solver": solver,
+        }
+
+        model = Model.load(data)
+
+        for solver_class in pywr.solvers.solver_registry:
+            if solver_class.name == solver:
+                expected_solver = solver_class
+                break
+        else:
+            raise RuntimeError(f"Could not find solver with name: {solver}")
+
+        assert isinstance(model.solver, expected_solver)
+
+    @pytest.mark.parametrize("solver", ["null", "glpk", "glpk-edge"])
+    def test_load_override_solver_in_json(self, solver):
+        """Override the JSON definition with a keyword argument."""
+
+        filename = os.path.join(TEST_FOLDER, "models", "simple1.json")
+        with open(filename) as fh:
+            data = json.load(fh)
+
+        data["solver"] = {
+            "solver": "glpk",
+        }
+
+        model = Model.load(data, solver=solver)
+
+        for solver_class in pywr.solvers.solver_registry:
+            if solver_class.name == solver:
+                expected_solver = solver_class
+                break
+        else:
+            raise RuntimeError(f"Could not find solver with name: {solver}")
+
+        assert isinstance(model.solver, expected_solver)
+
+    @pytest.mark.parametrize("solver", ["null", "glpk", "glpk-edge"])
+    def test_load_solver_in_env(self, solver):
+        """Specify the solver in an environment variable."""
+        filename = os.path.join(TEST_FOLDER, "models", "simple1.json")
+        with open(filename) as fh:
+            data = json.load(fh)
+
+        os.environ["PYWR_SOLVER"] = solver
+
+        model = Model.load(data)
+
+        for solver_class in pywr.solvers.solver_registry:
+            if solver_class.name == solver:
+                expected_solver = solver_class
+                break
+        else:
+            raise RuntimeError(f"Could not find solver with name: {solver}")
+
+        assert isinstance(model.solver, expected_solver)
+
+    @pytest.mark.parametrize("solver", ["null", "glpk", "glpk-edge"])
+    def test_load_override_solver_in_env(self, solver):
+        """Override the environment variables with a keyword argument."""
+        filename = os.path.join(TEST_FOLDER, "models", "simple1.json")
+        with open(filename) as fh:
+            data = json.load(fh)
+
+        os.environ["PYWR_SOLVER"] = "glpk"
+
+        model = Model.load(data, solver=solver)
+
+        for solver_class in pywr.solvers.solver_registry:
+            if solver_class.name == solver:
+                expected_solver = solver_class
+                break
+        else:
+            raise RuntimeError(f"Could not find solver with name: {solver}")
+
+        assert isinstance(model.solver, expected_solver)
