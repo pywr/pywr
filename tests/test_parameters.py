@@ -547,7 +547,7 @@ def test_weekly_profile(simple_linear_model):
     @assert_rec(model, p)
     def expected_func(timestep, scenario_index):
         week = int(min((timestep.dayofyear - 1) // 7, 51))
-        value = week ** 2 + 27.5
+        value = week**2 + 27.5
         return value
 
     model.run()
@@ -629,7 +629,7 @@ class TestAnnualHarmonicSeriesParameter:
 
 
 def custom_test_func(array, axis=None):
-    return np.sum(array ** 2, axis=axis)
+    return np.sum(array**2, axis=axis)
 
 
 class TestAggregatedParameter:
@@ -1195,7 +1195,7 @@ class Test1DPolynomialParameter:
 
         @assert_rec(model, p1)
         def expected_func(timestep, scenario_index):
-            return 0.5 + np.pi * x + 3.0 * x ** 2
+            return 0.5 + np.pi * x + 3.0 * x**2
 
         model.run()
 
@@ -1329,7 +1329,7 @@ class TestInterpolatedQuadratureParameter:
             if i < 0:
                 value = 0
             elif i < 6:
-                value = 2 * i ** 2 / 2
+                value = 2 * i**2 / 2
             elif i < 11:
                 value = 25 + 4 * (i - 5) ** 2 / 2 + (i - 5) * 10
             else:
@@ -1368,7 +1368,7 @@ class TestInterpolatedQuadratureParameter:
         def expected_func(timestep, scenario_index):
             i = timestep.index
             if i < 6:
-                value = 2 * i ** 2 / 2
+                value = 2 * i**2 / 2
             elif i < 11:
                 value = 25 + 4 * (i - 5) ** 2 / 2 + (i - 5) * 10
             else:
@@ -1632,7 +1632,7 @@ def test_ocptt(simple_linear_model):
     s2 = Scenario(model, "scenario 1", size=2)
     x = np.arange(len(model.timestepper)).reshape([len(model.timestepper), 1]) + 5
     y = np.arange(s1.size).reshape([1, s1.size])
-    z = x * y ** 2
+    z = x * y**2
     p = ArrayIndexedScenarioParameter(model, s1, z)
     inpt.max_flow = p
     model.setup()

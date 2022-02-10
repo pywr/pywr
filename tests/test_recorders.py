@@ -1964,7 +1964,7 @@ def test_mean_flow_node_recorder(simple_linear_model):
 
 
 def custom_test_func(array, axis=None):
-    return np.sum(array ** 2, axis=axis)
+    return np.sum(array**2, axis=axis)
 
 
 class TestAggregatedRecorder:
