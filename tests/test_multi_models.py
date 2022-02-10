@@ -9,7 +9,8 @@ from pywr.model import MultiModel, Model
 
 # def load_multi_model(filename: Path):
 from pywr.nodes import Input, Link, Output
-from pywr.parameters.multi_model_parameters import OtherModelParameterValue
+from pywr.parameters.multi_model_parameters import OtherModelParameterValueParameter, OtherModelNodeFlowParameter, \
+    OtherModelNodeStorageParameter
 from pywr.recorders import NumpyArrayNodeRecorder
 
 
@@ -67,7 +68,7 @@ def test_run_two_dependent_models_from_json():
     sub_model2 = multi_model.models["model2"]
     supply2 = sub_model2.nodes["supply2"]
     demand2 = sub_model2.nodes["demand2"]
-    assert isinstance(supply2.max_flow, OtherModelParameterValue)
+    assert isinstance(supply2.max_flow, OtherModelParameterValueParameter)
 
     # Add recorder for flow
     demand2_rec = NumpyArrayNodeRecorder(sub_model2, demand2)
@@ -80,3 +81,45 @@ def test_run_two_dependent_models_from_json():
         multi_model.models["model1"].nodes["demand1"].flow[0], 10.0
     )
     np.testing.assert_allclose(demand2_rec.data, expected_flow)
+
+
+def test_run_two_dependent_models_with_flow_transfer_from_json():
+    """Test two simple but dependent models."""
+
+    path = Path(os.path.dirname(__file__)) / "models" / "two-dependent-sub-models-flow-transfer"
+    multi_model = MultiModel.load(path / "integrated-model.json")
+
+    sub_model2 = multi_model.models["model2"]
+    supply2 = sub_model2.nodes["supply2"]
+    demand2 = sub_model2.nodes["demand2"]
+    assert isinstance(supply2.max_flow, OtherModelNodeFlowParameter)
+
+    # Add recorder for flow
+    demand2_rec = NumpyArrayNodeRecorder(sub_model2, demand2)
+    # Demand should equal the flow supplied in model1
+    expected_flow = pandas.read_csv(path / "timeseries1.csv", index_col=0)
+
+    multi_model.run()
+
+    np.testing.assert_allclose(
+        multi_model.models["model1"].nodes["demand1"].flow[0], 21.92
+    )
+    np.testing.assert_allclose(demand2_rec.data, expected_flow)
+
+
+def test_run_three_dependent_storage_sub_models():
+    """Test three dependent models."""
+
+    path = Path(os.path.dirname(__file__)) / "models" / "three-dependent-storage-sub-models"
+    multi_model = MultiModel.load(path / "integrated-model.json")
+
+    sub_model0 = multi_model.models["model0"]
+    sub_model1 = multi_model.models["model1"]
+    sub_model2 = multi_model.models["model2"]
+
+    multi_model.setup()
+
+    assert isinstance(sub_model0.parameters["storage1-volume"], OtherModelNodeStorageParameter)
+    assert isinstance(sub_model0.parameters["storage1-volume"]._other_model, sub_model1)
+
+    # TODO complete this test

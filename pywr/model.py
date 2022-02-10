@@ -77,41 +77,6 @@ class MultiModel:
             sub_model = Model.load(sub_model_path, path=path, solver=solver)
             model.add_model(sub_model_name, sub_model)
 
-        @listify
-        def load_components(components_to_load, load_component):
-            while True:
-                try:
-                    name, component_data = components_to_load.popitem()
-                except KeyError:
-                    break
-
-                # Determine which sub-model to apply the component to
-                apply_to = component_data.pop("apply_to")
-                sub_model = model.models[apply_to["model"]]
-
-                # If unable to load a node, then reraise the exception with some
-                # useful information like node name and parameter name.
-                try:
-                    component = load_component(sub_model, component_data, name)
-                except Exception as err:
-                    logger.critical("Error loading component %s", name)
-                    # Reraise the exception
-                    raise
-
-                # Apply to a node attribute if requested
-                apply_to_node = apply_to.get("node", None)
-                apply_to_attribute = apply_to.get("attribute", None)
-                if apply_to_node is not None and apply_to_attribute is not None:
-                    setattr(
-                        sub_model.nodes[apply_to_node], apply_to_attribute, component
-                    )
-
-                yield component
-
-        # Load the parameters
-        parameters_to_load = collect_components(data, "parameters")
-        load_components(parameters_to_load, load_parameter)
-
         return model
 
     @property
@@ -129,16 +94,25 @@ class MultiModel:
         for model in self.models.values():
             model.reset()
 
+    # def _step(self):
+    #     for model in self.models.values():
+    #         model.before()
+    #     # solve the current timestep for all models
+    #     rets = []
+    #     for model in self.models.values():
+    #         ret = model.solve()
+    #         rets.append(ret)
+    #
+    #     for model in self.models.values():
+    #         model.after()
+    #     return rets
+
     def _step(self):
-        for model in self.models.values():
-            model.before()
-        # solve the current timestep for all models
         rets = []
         for model in self.models.values():
+            model.before()
             ret = model.solve()
             rets.append(ret)
-
-        for model in self.models.values():
             model.after()
         return rets
 

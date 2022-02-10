@@ -11,30 +11,32 @@
     },
     "nodes": [
         {
-            "name": "supply2",
+            "name": "supply1",
             "type": "Input",
-            "max_flow": "timeseries2"
+            "max_flow": "timeseries1"
         },
         {
-            "name": "link2",
+            "name": "link1",
             "type": "Link"
         },
         {
-            "name": "demand2",
+            "name": "demand1",
             "type": "Output",
-            "max_flow": 50,
+            "max_flow": 100,
             "cost": -10
         }
     ],
     "edges": [
-        ["supply2", "link2"],
-        ["link2", "demand2"]
+        ["supply1", "link1"],
+        ["link1", "demand1"]
     ],
     "parameters": {
-        "timeseries2": {
-            "type": "OtherModelParameterValue",
-            "other_model": "model1",
-            "parameter": "timeseries1"
+        "timeseries1": {
+            "type": "dataframe",
+            "url" : "timeseries1.csv",
+            "parse_dates": true,
+            "dayfirst": true,
+            "index_col": 0
         }
     }
 }

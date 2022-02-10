@@ -1,0 +1,50 @@
+{
+    "metadata": {
+        "title": "Simple 1",
+        "description": "A very simple example.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-01-31",
+        "timestep": 1
+    },
+    "nodes": [],
+    "edges": [],
+    "parameters": {
+        "timeseries1": {
+            "type": "dataframe",
+            "url" : "timeseries1.csv",
+            "parse_dates": true,
+            "dayfirst": true,
+            "index_col": 0
+        },
+        "total-volume": {
+            "type": "aggregated",
+            "agg_func": "sum",
+            "parameters": [
+                "storage1-volume",
+                "storage2-volume"
+            ],
+            "comment": "The current storage volumes are provided by sub-models."
+        },
+        "storage1-volume": {
+            "type": "OtherModelNodeStorage",
+            "other_model": "model1",
+            "node": "storage1"
+        },
+        "storage2-volume": {
+            "type": "OtherModelNodeStorage",
+            "other_model": "model2",
+            "node": "storage2"
+        },
+        "storage1-release": {
+            "type": "parameterthreshold",
+            "parameter": "total-volume",
+            "threshold": 1000,
+            "predicate": ">",
+            "values": [0, 10],
+            "comment": "Storage1 release if total volume > 1000.0"
+        }
+    }
+}

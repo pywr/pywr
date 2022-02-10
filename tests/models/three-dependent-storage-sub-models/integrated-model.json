@@ -11,6 +11,11 @@
   },
   "models": [
     {
+      "name": "model0",
+      "path": "sub-model0.json",
+      "solver": "null"
+    },
+    {
       "name": "model1",
       "path": "sub-model1.json"
     },
@@ -20,6 +25,15 @@
     }
   ],
   "parameters": {
-
+    "timeseries2": {
+      "apply_to": {
+        "model": "model2",
+        "node": "supply2",
+        "attribute": "max_flow"
+      },
+      "type": "OtherModelParameterValue",
+      "other_model": "model1",
+      "parameter": "timeseries1"
+    }
   }
 }

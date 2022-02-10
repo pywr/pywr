@@ -13,11 +13,13 @@
         {
             "name": "supply2",
             "type": "Input",
-            "max_flow": "timeseries2"
+            "max_flow": 15
         },
         {
-            "name": "link2",
-            "type": "Link"
+            "name": "storage2",
+            "type": "Storage",
+            "max_volume": 1000,
+            "initial_volume": 1000
         },
         {
             "name": "demand2",
@@ -27,14 +29,7 @@
         }
     ],
     "edges": [
-        ["supply2", "link2"],
-        ["link2", "demand2"]
-    ],
-    "parameters": {
-        "timeseries2": {
-            "type": "OtherModelParameterValue",
-            "other_model": "model1",
-            "parameter": "timeseries1"
-        }
-    }
+        ["supply2", "storage2"],
+        ["storage2", "demand2"]
+    ]
 }

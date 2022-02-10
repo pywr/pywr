@@ -32,9 +32,9 @@
     ],
     "parameters": {
         "timeseries2": {
-            "type": "OtherModelParameterValue",
+            "type": "OtherModelNodeFlow",
             "other_model": "model1",
-            "parameter": "timeseries1"
+            "node": "demand1"
         }
     }
 }
