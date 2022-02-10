@@ -637,7 +637,7 @@ def test_timestep_days_in_year_methods(
     assert days_in_next_year == ts.days_in_next_year()
 
 
-class SpecifyingSolver:
+class TestSpecifyingSolver:
     @pytest.mark.parametrize("solver", ["null", "glpk", "glpk-edge"])
     def test_load_with_solver(self, solver):
         """Specify the solver from the .load method."""
@@ -663,7 +663,7 @@ class SpecifyingSolver:
             data = json.load(fh)
 
         data["solver"] = {
-            "solver": solver,
+            "name": solver,
         }
 
         model = Model.load(data)
@@ -686,7 +686,7 @@ class SpecifyingSolver:
             data = json.load(fh)
 
         data["solver"] = {
-            "solver": "glpk",
+            "name": "glpk",
         }
 
         model = Model.load(data, solver=solver)

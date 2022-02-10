@@ -317,6 +317,7 @@ class Model(object):
         if solver_args is None:
             solver_args = {}
 
+        solver_name = solver
         if solver is None:
             if 'solver' in data:
                 solver_data = data.pop('solver')
