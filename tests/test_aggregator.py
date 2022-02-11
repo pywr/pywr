@@ -19,7 +19,7 @@ npy_funcs = {
 
 
 def custom_test_func(array, axis=None):
-    return np.sum(array ** 2, axis=axis)
+    return np.sum(array**2, axis=axis)
 
 
 def percentileofscore_with_axis(values, *args, axis=0, **kwargs):
