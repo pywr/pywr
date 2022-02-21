@@ -2,6 +2,11 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.17.2
+
+### Bug Fixes
+
+- Fix a bug where the solver specified using a keyword to `Model.load` would be ignored. (#1044)
 
 ## v1.17.1
 
