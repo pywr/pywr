@@ -9,8 +9,11 @@ from pywr.model import MultiModel, Model
 
 # def load_multi_model(filename: Path):
 from pywr.nodes import Input, Link, Output
-from pywr.parameters.multi_model_parameters import OtherModelParameterValueParameter, OtherModelNodeFlowParameter, \
-    OtherModelNodeStorageParameter
+from pywr.parameters.multi_model_parameters import (
+    OtherModelParameterValueParameter,
+    OtherModelNodeFlowParameter,
+    OtherModelNodeStorageParameter,
+)
 from pywr.recorders import NumpyArrayNodeRecorder
 
 
@@ -86,7 +89,11 @@ def test_run_two_dependent_models_from_json():
 def test_run_two_dependent_models_with_flow_transfer_from_json():
     """Test two simple but dependent models."""
 
-    path = Path(os.path.dirname(__file__)) / "models" / "two-dependent-sub-models-flow-transfer"
+    path = (
+        Path(os.path.dirname(__file__))
+        / "models"
+        / "two-dependent-sub-models-flow-transfer"
+    )
     multi_model = MultiModel.load(path / "integrated-model.json")
 
     sub_model2 = multi_model.models["model2"]
@@ -110,7 +117,11 @@ def test_run_two_dependent_models_with_flow_transfer_from_json():
 def test_run_three_dependent_storage_sub_models():
     """Test three dependent models."""
 
-    path = Path(os.path.dirname(__file__)) / "models" / "three-dependent-storage-sub-models"
+    path = (
+        Path(os.path.dirname(__file__))
+        / "models"
+        / "three-dependent-storage-sub-models"
+    )
     multi_model = MultiModel.load(path / "integrated-model.json")
 
     sub_model0 = multi_model.models["model0"]
@@ -119,7 +130,9 @@ def test_run_three_dependent_storage_sub_models():
 
     multi_model.setup()
 
-    assert isinstance(sub_model0.parameters["storage1-volume"], OtherModelNodeStorageParameter)
+    assert isinstance(
+        sub_model0.parameters["storage1-volume"], OtherModelNodeStorageParameter
+    )
     assert isinstance(sub_model0.parameters["storage1-volume"]._other_model, sub_model1)
 
     # TODO complete this test

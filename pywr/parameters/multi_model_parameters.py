@@ -31,6 +31,7 @@ OtherModelParameterValueParameter.register()
 
 class OtherModelNodeFlowParameter(Parameter):
     """Parameter that obtains its value from the flow through a node in another model."""
+
     def __init__(self, model, other_model, node, **kwargs):
         super().__init__(model, **kwargs)
         self.other_model = other_model
@@ -58,6 +59,7 @@ OtherModelNodeFlowParameter.register()
 
 class OtherModelNodeStorageParameter(Parameter):
     """Parameter that obtains its value from the current storage of a node in another model."""
+
     def __init__(self, model, other_model, node, **kwargs):
         super().__init__(model, **kwargs)
         self.other_model = other_model
@@ -81,4 +83,3 @@ class OtherModelNodeStorageParameter(Parameter):
 
 
 OtherModelNodeStorageParameter.register()
-
