@@ -280,8 +280,8 @@ class Model(object):
         """
         if isinstance(data, str):
             # argument is a filename
-            logger.info('Loading model from file: "{}"'.format(path))
             path = data
+            logger.info('Loading model from file: "{}"'.format(path))
             with open(path, "r") as f:
                 data = f.read()
             return cls.loads(data, model, path, **kwargs)

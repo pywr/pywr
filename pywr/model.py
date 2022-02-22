@@ -43,8 +43,8 @@ class MultiModel:
     def load(cls, data, model=None, path=None, solver=None, **kwargs):
         if isinstance(data, (str, Path)):
             # argument is a filename
-            logger.info('Loading model from file: "{}"'.format(path))
             path = data
+            logger.info('Loading model from file: "{}"'.format(path))
             with open(path, "r") as f:
                 data = f.read()
             return cls.loads(data, model, path, solver)
@@ -68,16 +68,21 @@ class MultiModel:
 
         timestepper_data = data["timestepper"]
 
+        if path is not None:
+            if os.path.exists(path) and not os.path.isdir(path):
+                path = os.path.dirname(path)
+
         # Load the sub-models
         sub_model_paths = data["models"]
         for sub_model_definition in sub_model_paths:
             sub_model_name = sub_model_definition["name"]
-            sub_model_path = sub_model_definition["path"]
+            sub_model_filename = sub_model_definition["filename"]
+            sub_model_path = sub_model_definition.get("path", None)
             sub_model_solver = sub_model_definition.get("solver", solver)
             if path is not None:
-                sub_model_path = os.path.join(os.path.dirname(path), sub_model_path)
+                sub_model_filename = os.path.join(path, sub_model_filename)
 
-            sub_model = Model.load(sub_model_path, path=path, solver=sub_model_solver)
+            sub_model = Model.load(sub_model_filename, path=sub_model_path, solver=sub_model_solver)
             sub_model.timestepper.start = timestepper_data["start"]
             sub_model.timestepper.end = timestepper_data["end"]
             sub_model.timestepper.timestep = timestepper_data["timestep"]
