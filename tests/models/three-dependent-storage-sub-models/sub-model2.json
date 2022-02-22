@@ -19,7 +19,8 @@
             "name": "storage2",
             "type": "Storage",
             "max_volume": 1000,
-            "initial_volume": 1000
+            "initial_volume": 510,
+            "cost": -1
         },
         {
             "name": "demand2",

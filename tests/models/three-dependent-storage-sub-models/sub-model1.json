@@ -13,32 +13,39 @@
         {
             "name": "supply1",
             "type": "Input",
-            "max_flow": "timeseries1"
+            "max_flow": 0
         },
         {
             "name": "storage1",
             "type": "Storage",
             "max_volume": 1000,
-            "initial_volume": 1000
+            "initial_volume": 510,
+            "cost": -1
         },
         {
             "name": "demand1",
             "type": "Output",
             "max_flow": 10,
             "cost": -10
+        },
+        {
+            "name": "release1",
+            "type": "Output",
+            "max_flow": "release1",
+            "cost": -10
         }
+
     ],
     "edges": [
         ["supply1", "storage1"],
-        ["storage1", "demand1"]
+        ["storage1", "demand1"],
+        ["storage1", "release1"]
     ],
     "parameters": {
-        "timeseries1": {
-            "type": "dataframe",
-            "url" : "timeseries1.csv",
-            "parse_dates": true,
-            "dayfirst": true,
-            "index_col": 0
+        "release1": {
+            "type": "OtherModelParameterValueParameter",
+            "other_model": "model0",
+            "parameter": "storage1-release"
         }
     }
 }

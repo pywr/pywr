@@ -14,7 +14,11 @@ from pywr.parameters.multi_model_parameters import (
     OtherModelNodeFlowParameter,
     OtherModelNodeStorageParameter,
 )
-from pywr.recorders import NumpyArrayNodeRecorder
+from pywr.recorders import (
+    NumpyArrayNodeRecorder,
+    NumpyArrayParameterRecorder,
+    NumpyArrayStorageRecorder,
+)
 
 
 def make_simple_model(num: int) -> Model:
@@ -128,11 +132,37 @@ def test_run_three_dependent_storage_sub_models():
     sub_model1 = multi_model.models["model1"]
     sub_model2 = multi_model.models["model2"]
 
+    # Create some recorders
+    sm0_sv1 = NumpyArrayParameterRecorder(
+        sub_model0, sub_model0.parameters["storage1-volume"]
+    )
+    sm1_sv1 = NumpyArrayStorageRecorder(sub_model1, sub_model1.nodes["storage1"])
+    sm0_sr1 = NumpyArrayParameterRecorder(
+        sub_model0, sub_model0.parameters["storage1-release"]
+    )
+
     multi_model.setup()
 
     assert isinstance(
         sub_model0.parameters["storage1-volume"], OtherModelNodeStorageParameter
     )
-    assert isinstance(sub_model0.parameters["storage1-volume"]._other_model, sub_model1)
 
-    # TODO complete this test
+    multi_model.run()
+
+    # Reservoir releases on the first time-step because combined volume > 0
+    # From second time-step onwards release is turned off from model0 because combined volume < 0
+    # The storage parameter in model0 has the volume at the end of the previous day ...
+    np.testing.assert_allclose(
+        sm0_sv1.data[:, 0],
+        [
+            510.0,
+            490.0,
+            480.0,
+            470.0,
+            460.0,
+        ],
+    )
+    # The volume in storage is recorded on the node at the end of the day
+    np.testing.assert_allclose(sm1_sv1.data[:, 0], [490.0, 480.0, 470.0, 460.0, 450.0])
+    # The release is calculated using previous day's volume
+    np.testing.assert_allclose(sm0_sr1.data[:, 0], [10.0, 0.0, 0.0, 0.0, 0.0])
