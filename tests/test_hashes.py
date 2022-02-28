@@ -24,6 +24,8 @@ TEST_FOLDER = os.path.dirname(__file__)
             "1272702d60694f3417b910fb158e717de4fccdbf6aa10aa37f1c95cd78f8075e",
             False,
         ),
+        # Added a test to check the hash check is not case sensitive
+        ("timeseries2.csv", "md5", "A5C4032E2D8F5205CA99DEDCFA4CD18E", True),
     ],
 )
 def test_hash_timeseries2_(filename, algorithm, hash, correct):
