@@ -1,8 +1,4 @@
 from pathlib import Path
-import json
-import os
-import copy
-import time
 from ._model import *  # noqa
 
 import logging
@@ -82,7 +78,9 @@ class MultiModel:
             if path is not None:
                 sub_model_filename = os.path.join(path, sub_model_filename)
 
-            sub_model = Model.load(sub_model_filename, path=sub_model_path, solver=sub_model_solver)
+            sub_model = Model.load(
+                sub_model_filename, path=sub_model_path, solver=sub_model_solver
+            )
             sub_model.timestepper.start = timestepper_data["start"]
             sub_model.timestepper.end = timestepper_data["end"]
             sub_model.timestepper.timestep = timestepper_data["timestep"]
@@ -105,26 +103,15 @@ class MultiModel:
         for model in self.models.values():
             model.reset()
 
-    # def _step(self):
-    #     for model in self.models.values():
-    #         model.before()
-    #     # solve the current timestep for all models
-    #     rets = []
-    #     for model in self.models.values():
-    #         ret = model.solve()
-    #         rets.append(ret)
-    #
-    #     for model in self.models.values():
-    #         model.after()
-    #     return rets
-
     def _step(self):
         rets = []
-        for model in self.models.values():
+        for name, model in self.models.items():
+            logger.debug(f"Starting time-step of sub-model: {name}")
             model.before()
             ret = model.solve()
             rets.append(ret)
             model.after()
+            logger.debug(f"Finished time-step of sub-model: {name}")
         return rets
 
     def run(self):
