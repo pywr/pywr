@@ -24,7 +24,7 @@ def check_hash(filename, hash, algorithm="md5", **kwargs):
 
     If the hashes do not match a HashMismatchError error is raised.
 
-    This function is not case sensitive. 
+    This function is not case sensitive.
     """
 
     actual_hash = compute_hash(filename, algorithm=algorithm, **kwargs)
