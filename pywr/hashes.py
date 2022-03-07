@@ -23,11 +23,13 @@ def check_hash(filename, hash, algorithm="md5", **kwargs):
     """Check the hash for filename using the named algorithm
 
     If the hashes do not match a HashMismatchError error is raised.
+
+    This function is not case sensitive.
     """
 
     actual_hash = compute_hash(filename, algorithm=algorithm, **kwargs)
 
-    if hash != actual_hash:
+    if hash.lower() != actual_hash.lower():
         raise HashMismatchError(
             'Hash mismatch using {} on file: "{}"'.format(algorithm, filename)
         )
