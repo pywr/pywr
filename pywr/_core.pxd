@@ -154,3 +154,15 @@ cdef class RollingVirtualStorage(VirtualStorage):
     cdef double[:, :] _memory
     cdef int _memory_pointer
     cdef double _initial_utilisation
+
+cdef class ShadowStorage(AbstractStorage):
+    cdef public str other_model
+    cdef public str node
+    cdef object _other_model
+    cdef AbstractStorage _other_model_node
+
+cdef class ShadowNode(AbstractNode):
+    cdef public str other_model
+    cdef public str node
+    cdef object _other_model
+    cdef AbstractNode _other_model_node

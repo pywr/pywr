@@ -1298,4 +1298,12 @@ class LossLink(Node):
         self.commit_all(self.net.flow)
 
 
+class ShadowStorage(Loadable, Drawable, _core.ShadowStorage, metaclass=NodeMeta):
+    pass
+
+
+class ShadowNode(Loadable, Drawable, _core.ShadowNode, metaclass=NodeMeta):
+    pass
+
+
 from pywr.domains.river import *  # noqa
