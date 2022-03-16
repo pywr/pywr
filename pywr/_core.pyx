@@ -1509,8 +1509,8 @@ cdef class ShadowStorage(AbstractStorage):
     cpdef before(self, Timestep ts):
         AbstractStorage.before(self, ts)
         # Update our current storage to the value of the node we are shadowing.
-        np.copyto(self._volume, self._other_model_node._volume)
-        np.copyto(self._current_pc, self._other_model_node._current_pc)
+        self._volume[:] =  self._other_model_node._volume
+        self._current_pc[:] = self._other_model_node._current_pc
 
 
 cdef class ShadowNode(AbstractNode):
@@ -1531,5 +1531,5 @@ cdef class ShadowNode(AbstractNode):
     cpdef before(self, Timestep ts):
         AbstractNode.before(self, ts)
         # Update our current storage to the value of the node we are shadowing.
-        np.copyto(self._flow, self._other_model_node._flow)
-        np.copyto(self._prev_flow, self._other_model_node._prev_flow)
+        self._flow[:] = self._other_model_node._flow
+        self._prev_flow[:] = self._other_model_node._prev_flow
