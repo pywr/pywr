@@ -40,7 +40,9 @@
             "node": "reservoir1",
             "volumes": [0, 1000],
             "values": [0, 500],
-            "kind": "linear"
+            "interp_kwargs": {  
+                "kind": "linear"
+              }
         },
         "evaporation_mm": {
             "type": "monthlyprofile",

@@ -33,7 +33,9 @@
           "node": "outflow",
           "flows": [0,5,10],
           "values": [3,6,8],
-          "kind": "linear"
+          "interp_kwargs": {
+            "kind": "linear"
+          }
         }
     },
     "recorders": {
