@@ -222,7 +222,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         else:
             values = load_parameter_values(model, data)
             parameters = None
-        return cls(model, storage_node, control_curves, values=values, parameters=parameters)
+        return cls(model, storage_node, control_curves, values=values, parameters=parameters, **data)
 
 ControlCurveInterpolatedParameter.register()
 
@@ -490,12 +490,12 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
             values = load_parameter_values(model, data)
         elif 'parameters' in data:
             # Load parameters
-            parameters_data = data['parameters']
+            parameters_data = data.pop('parameters')
             parameters = []
             for pdata in parameters_data:
                 parameters.append(load_parameter(model, pdata))
 
-        return cls(model, storage_node, control_curves, values=values, parameters=parameters)
+        return cls(model, storage_node, control_curves, values=values, parameters=parameters, **data)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int j

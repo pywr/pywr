@@ -579,20 +579,20 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
             scenario = model.scenarios[scenario]
 
         if isinstance(data["values"], list):
-            values = np.asarray(data["values"], np.float64)
+            values = np.asarray(data.pop("values"), np.float64)
         elif isinstance(data["values"], dict):
-            values = load_parameter_values(model, data["values"])
+            values = load_parameter_values(model, data.pop("values"))
         else:
             raise TypeError("Unexpected type for \"values\" in {}".format(cls.__name__))
 
         if isinstance(data["factors"], list):
-            factors = np.asarray(data["factors"], np.float64)
+            factors = np.asarray(data.pop("factors"), np.float64)
         elif isinstance(data["factors"], dict):
-            factors = load_parameter_values(model, data["factors"])
+            factors = load_parameter_values(model, data.pop("factors"))
         else:
             raise TypeError("Unexpected type for \"factors\" in {}".format(cls.__name__))
 
-        return cls(model, scenario, values, factors)
+        return cls(model, scenario, values, factors, **data)
 
 ArrayIndexedScenarioMonthlyFactorsParameter.register()
 

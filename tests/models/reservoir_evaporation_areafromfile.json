@@ -46,7 +46,9 @@
                 "url": "reservoirarea.csv",
                 "column": "values"
               },
-            "kind": "linear"
+            "interp_kwargs": {  
+              "kind": "linear"
+            }
         },
         "evaporation_mm": {
             "type": "monthlyprofile",
