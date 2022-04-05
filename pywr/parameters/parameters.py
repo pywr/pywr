@@ -333,7 +333,7 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
             y,
             lower_parameter=lower_parameter,
             interp_kwargs=interp_kwargs,
-            **data
+            **data,
         )
 
 
