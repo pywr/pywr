@@ -764,6 +764,61 @@ class TestSeasonalVirtualStorage:
         # License is turned off so flow is not constrained
         assert_allclose(supply_df.loc["2015-03-01", :], 10)
 
+class TestMonthlyVirtualStorage:
+
+    def test_simple(self):
+        """Test MonthlyVirtualStorage with `Months` set to 3"""
+        model = load_model("virtual_storage8.json")
+        model.run()
+        df = model.recorders["supply1"].to_dataframe()
+
+        # flow on first day should be 10.0
+        assert df.loc["2015-01-01", 0].squeeze() == 10.0
+        # Licence should be exhausted after 30 days
+        assert df.loc["2015-01-31", 0].squeeze() == 0.0
+        # Licence should  still be exhausted at end of march
+        assert df.loc["2015-03-31", 0].squeeze() == 0.0
+        # Licence should be reset at start of April
+        assert df.loc["2015-04-01", 0].squeeze() == 10.0
+        # Licence should  be exhausted at end of June
+        assert df.loc["2015-06-30", 0].squeeze() == 0.0
+        # Licence should be reset at start of July
+        assert df.loc["2015-07-01", 0].squeeze() == 10.0
+
+    def test_initial_months(self):
+        """Test MonthlyVirtualStorage with `months` set to 3 and `initial_months` set to 1"""
+        model = load_model("virtual_storage8.json")
+        model.nodes["licence1"].initial_months = 1
+        model.run()
+        df = model.recorders["supply1"].to_dataframe()
+
+        # flow on first day should be 10.0
+        assert df.loc["2015-01-01", 0].squeeze() == 10.0
+        # Licence should be exhausted after 30 days
+        assert df.loc["2015-01-31", 0].squeeze() == 0.0
+        # Licence should  still be exhausted at end of feb
+        assert df.loc["2015-02-28", 0].squeeze() == 0.0
+        # Licence should be reset at start of March
+        assert df.loc["2015-03-01", 0].squeeze() == 10.0
+
+    def test_longer_licences(self):
+        """Test MonthlyVirtualStorage with `months` set to 13"""
+        model = load_model("virtual_storage8.json")
+        model.timestepper.end = "2017-03-02"
+        model.nodes["licence1"].months = 13
+        model.run()
+        df = model.recorders["supply1"].to_dataframe()
+
+        # flow on first day should be 10.0
+        assert df.loc["2015-01-01", 0].squeeze() == 10.0
+        # Once licence is exhausted it should not be reset until Feb the following year
+        assert not np.any(df.loc["2015-01-31": "2016-01-31" , 0].values)
+        assert df.loc["2016-02-01", 0].squeeze() == 10.0
+        # Once licence is exhausted it should not be reset until March the following year
+        assert not np.any(df.loc["2016-03-02": "2017-02-28" , 0].values)
+        assert df.loc["2017-03-01", 0].squeeze() == 10.0
+
+
 
 def test_storage_spill_compensation():
     """Test storage spill and compensation flows

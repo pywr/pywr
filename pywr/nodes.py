@@ -707,6 +707,31 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
                 self.active = False
 
 
+class MonthlyVirtualStorage(VirtualStorage):
+    """A virtual storage that resets after a given number of months"""
+
+    def __init__(self, *args, **kwargs):
+        self.months = kwargs.pop("months", 1)
+        self.initial_months = kwargs.pop("initial_months", 0)
+        self.reset_to_initial_volume = kwargs.pop("reset_to_initial_volume", False)
+        self._count = self.initial_months - 1
+        self._last_month = None
+        super(MonthlyVirtualStorage, self).__init__(*args, **kwargs)
+
+    def reset(self):
+        super().reset()
+        self._count = self.initial_months - 1
+        self._last_month = None
+    
+    def before(self, ts):
+        super().before(ts)
+        if ts.month != self._last_month:
+            self._last_month = ts.month
+            self._count += 1
+            if self._count == self.months:
+                self._count = 0
+                self._reset_storage_only(use_initial_volume=self.reset_to_initial_volume)
+
 class PiecewiseLink(Node):
     """An extension of Node that represents a non-linear Link with a piece wise cost function.
 
