@@ -722,7 +722,7 @@ class MonthlyVirtualStorage(VirtualStorage):
         super().reset()
         self._count = self.initial_months - 1
         self._last_month = None
-    
+
     def before(self, ts):
         super().before(ts)
         if ts.month != self._last_month:
@@ -730,7 +730,10 @@ class MonthlyVirtualStorage(VirtualStorage):
             self._count += 1
             if self._count == self.months:
                 self._count = 0
-                self._reset_storage_only(use_initial_volume=self.reset_to_initial_volume)
+                self._reset_storage_only(
+                    use_initial_volume=self.reset_to_initial_volume
+                )
+
 
 class PiecewiseLink(Node):
     """An extension of Node that represents a non-linear Link with a piece wise cost function.
