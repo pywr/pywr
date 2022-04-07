@@ -764,8 +764,8 @@ class TestSeasonalVirtualStorage:
         # License is turned off so flow is not constrained
         assert_allclose(supply_df.loc["2015-03-01", :], 10)
 
-class TestMonthlyVirtualStorage:
 
+class TestMonthlyVirtualStorage:
     def test_simple(self):
         """Test MonthlyVirtualStorage with `Months` set to 3"""
         model = load_model("virtual_storage8.json")
@@ -812,12 +812,11 @@ class TestMonthlyVirtualStorage:
         # flow on first day should be 10.0
         assert df.loc["2015-01-01", 0].squeeze() == 10.0
         # Once licence is exhausted it should not be reset until Feb the following year
-        assert not np.any(df.loc["2015-01-31": "2016-01-31" , 0].values)
+        assert not np.any(df.loc["2015-01-31":"2016-01-31", 0].values)
         assert df.loc["2016-02-01", 0].squeeze() == 10.0
         # Once licence is exhausted it should not be reset until March the following year
-        assert not np.any(df.loc["2016-03-02": "2017-02-28" , 0].values)
+        assert not np.any(df.loc["2016-03-02":"2017-02-28", 0].values)
         assert df.loc["2017-03-01", 0].squeeze() == 10.0
-
 
 
 def test_storage_spill_compensation():
