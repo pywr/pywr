@@ -708,7 +708,17 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
 
 
 class MonthlyVirtualStorage(VirtualStorage):
-    """A virtual storage that resets after a given number of months"""
+    """A virtual storage that resets after a given number of months
+
+    Parameters
+    ----------
+    months : int
+        The number of months after which the storage volume resets.
+    initial_months : int
+        The number of months into the reset period the storages is at when the model run starts.
+    reset_to_initial_volume : bool
+        Reset the volume to the initial volume instead of maximum volume each year (default is False).
+    """
 
     def __init__(self, *args, **kwargs):
         self.months = kwargs.pop("months", 1)
