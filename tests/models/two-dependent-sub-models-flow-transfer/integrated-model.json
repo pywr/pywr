@@ -2,7 +2,7 @@
   "metadata": {
     "title": "Simple 1",
     "description": "A very simple example.",
-    "minimum_version": "1.16.0"
+    "minimum_version": "1.18.0"
   },
   "timestepper": {
     "start": "2015-01-01",
