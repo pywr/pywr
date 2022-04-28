@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from ._model import *  # noqa
 
@@ -95,9 +96,35 @@ class MultiModel:
             model.dirty or model.timestepper.dirty for model in self.models.values()
         )
 
+    def _check_scenarios(self):
+        """Check that the scenario definitions across all sub-models are consistent.
+
+        This method will raise a `ValueError` if the scenarios are not consistent across all models.
+        """
+        # Extract all the scenario sizes and names
+        sizes = []
+        names = []
+        combinations = []
+        for model in self.models.values():
+            sizes.append([s.size for s in model.scenarios.scenarios])
+            names.append([s.name for s in model.scenarios.scenarios])
+            combinations.append([list(si.indices) for si in model.scenarios.get_combinations()])
+
+        for size in sizes:
+            if size != sizes[0]:
+                raise ValueError(f"Sub-models have inconsistent scenario sizes: {sizes[0]} vs {size}")
+        for name in names:
+            if name != names[0]:
+                warnings.warn(f"Sub-models have inconsistent scenario names: {names[0]} vs {name}")
+
+        for combination in combinations:
+            if combination != combinations[0]:
+                raise ValueError(f"Sub-models have inconsistent combinations defined: {combinations[0]} vs {combination}")
+
     def setup(self):
         for model in self.models.values():
             model.setup()
+        self._check_scenarios()
 
     def reset(self):
         for model in self.models.values():
