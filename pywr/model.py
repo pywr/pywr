@@ -108,18 +108,26 @@ class MultiModel:
         for model in self.models.values():
             sizes.append([s.size for s in model.scenarios.scenarios])
             names.append([s.name for s in model.scenarios.scenarios])
-            combinations.append([list(si.indices) for si in model.scenarios.get_combinations()])
+            combinations.append(
+                [list(si.indices) for si in model.scenarios.get_combinations()]
+            )
 
         for size in sizes:
             if size != sizes[0]:
-                raise ValueError(f"Sub-models have inconsistent scenario sizes: {sizes[0]} vs {size}")
+                raise ValueError(
+                    f"Sub-models have inconsistent scenario sizes: {sizes[0]} vs {size}"
+                )
         for name in names:
             if name != names[0]:
-                warnings.warn(f"Sub-models have inconsistent scenario names: {names[0]} vs {name}")
+                warnings.warn(
+                    f"Sub-models have inconsistent scenario names: {names[0]} vs {name}"
+                )
 
         for combination in combinations:
             if combination != combinations[0]:
-                raise ValueError(f"Sub-models have inconsistent combinations defined: {combinations[0]} vs {combination}")
+                raise ValueError(
+                    f"Sub-models have inconsistent combinations defined: {combinations[0]} vs {combination}"
+                )
 
     def setup(self):
         for model in self.models.values():
@@ -162,7 +170,9 @@ class MultiModel:
                 for model, timestep in zip(self.models.values(), timesteps):
                     # Check all timesteps are the same
                     if timestep.datetime != timesteps[0].datetime:
-                        raise RuntimeError("Timesteps are not synchronised across all sub-models.")
+                        raise RuntimeError(
+                            "Timesteps are not synchronised across all sub-models."
+                        )
                     model.timestep = timestep
                 # Perform the internal timestep
                 _ = self._step()

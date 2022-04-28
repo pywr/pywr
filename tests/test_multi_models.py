@@ -182,14 +182,17 @@ def test_error_with_different_timesteps():
         multi_model.run()
 
 
-@pytest.mark.parametrize('sizes1,names1,sizes2,names2', [
-    [[10], ['A'], [11], ['B']],
-    [[11], ['A'], [10], ['B']],
-    [[10, 20], ['A', 'B'], [10], ['A']],
-    [[10], ['A'], [10, 20], ['A', 'B']],
-    [[10], ['A'], [5, 2], ['A', 'B']],
-    [[1], ['A'], [10], ['A']],
-])
+@pytest.mark.parametrize(
+    "sizes1,names1,sizes2,names2",
+    [
+        [[10], ["A"], [11], ["B"]],
+        [[11], ["A"], [10], ["B"]],
+        [[10, 20], ["A", "B"], [10], ["A"]],
+        [[10], ["A"], [10, 20], ["A", "B"]],
+        [[10], ["A"], [5, 2], ["A", "B"]],
+        [[1], ["A"], [10], ["A"]],
+    ],
+)
 def test_error_with_different_scenarios(sizes1, names1, sizes2, names2):
     """Check a ValueError is raised if the models have different scenarios."""
 
@@ -212,11 +215,11 @@ def test_error_with_different_scenario_combinations():
     multi_model = MultiModel.load(path / "integrated-model.json")
 
     # Define the same scenarios in each sub-model
-    Scenario(multi_model.models["model1"], size=10, name='A')
-    Scenario(multi_model.models["model1"], size=2, name='B')
+    Scenario(multi_model.models["model1"], size=10, name="A")
+    Scenario(multi_model.models["model1"], size=2, name="B")
 
-    Scenario(multi_model.models["model2"], size=10, name='A')
-    Scenario(multi_model.models["model2"], size=2, name='B')
+    Scenario(multi_model.models["model2"], size=10, name="A")
+    Scenario(multi_model.models["model2"], size=2, name="B")
 
     # Only run the first two scenarios in model1
     multi_model.models["model1"].scenarios.user_combinations = [[0, 0], [1, 0]]
