@@ -132,12 +132,13 @@ class MultiModel:
 
             # Begin time-stepping
             for timesteps in zip(*timesteppers):
-                # TODO assert these are all the same date
-                # Check all timesteps are the same
                 for model, timestep in zip(self.models.values(), timesteps):
+                    # Check all timesteps are the same
+                    if timestep.datetime != timesteps[0].datetime:
+                        raise RuntimeError("Timesteps are not synchronised across all sub-models.")
                     model.timestep = timestep
                 # Perform the internal timestep
-                rets = self._step()
+                _ = self._step()
             t2 = time.time()
         finally:
             for model in self.models.values():

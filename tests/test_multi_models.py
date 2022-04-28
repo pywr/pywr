@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas
+import pytest
 
 from pywr.parameters import DataFrameParameter
 from pywr.model import MultiModel, Model
@@ -166,3 +167,15 @@ def test_run_three_dependent_storage_sub_models():
     np.testing.assert_allclose(sm1_sv1.data[:, 0], [490.0, 480.0, 470.0, 460.0, 450.0])
     # The release is calculated using previous day's volume
     np.testing.assert_allclose(sm0_sr1.data[:, 0], [10.0, 0.0, 0.0, 0.0, 0.0])
+
+
+def test_error_with_different_timesteps():
+    """Check a RuntimeError is raised if the models have different timesteps."""
+
+    path = Path(os.path.dirname(__file__)) / "models" / "two-independent-sub-models"
+    multi_model = MultiModel.load(path / "integrated-model.json")
+
+    multi_model.models["model1"].timestepper.start = "1900-01-01"
+
+    with pytest.raises(RuntimeError):
+        multi_model.run()
