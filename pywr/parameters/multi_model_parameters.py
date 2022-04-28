@@ -70,7 +70,7 @@ class OtherModelNodeFlowParameter(Parameter):
 
     def setup(self):
         super().setup()
-        # Find the references to the other model and one of its parameters.
+        # Find the references to the other model and one of its nodes.
         self._other_model = self.model.parent.models[self.other_model]
         self._other_model_node = self._other_model.nodes[self.node]
 
@@ -98,7 +98,7 @@ class OtherModelNodeStorageParameter(Parameter):
 
     def setup(self):
         super().setup()
-        # Find the references to the other model and one of its parameters.
+        # Find the references to the other model and one of its nodes.
         self._other_model = self.model.parent.models[self.other_model]
         self._other_model_node = self._other_model.nodes[self.node]
 
