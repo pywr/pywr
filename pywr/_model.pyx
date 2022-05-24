@@ -750,6 +750,7 @@ class Model(object):
         for component in components:
             component.before()
         for component in components:
+            logger.debug("Calculating values for component: %s", component.name)
             if isinstance(component, BaseParameter):
                 param = component
                 param.calc_values(self.timestep)

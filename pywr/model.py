@@ -16,7 +16,7 @@ class MultiModel:
     """
 
     def __init__(self):
-        self.models = {}  # TODO this does depend on ordering here
+        self.models = {}  # We rely on an ordered dict, Python 3.7+
 
     def add_model(self, name: str, model: Model):
         """Add a model."""

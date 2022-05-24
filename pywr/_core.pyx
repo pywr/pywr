@@ -1492,6 +1492,13 @@ cdef class RollingVirtualStorage(VirtualStorage):
 
 
 cdef class ShadowStorage(AbstractStorage):
+    """Storage node that shadows the volume of a node in another model.
+
+    This node will synchronise its `volume`, `current_pc`, `flow` and `prev_flow` with the respective values
+    from another storage node. This synchronisation happens in the `.before()` method. It is intended to allow a
+    storage node to "shadow" the volume of a node that has its real calculations undertaken in a separate model, but
+    is required in this model for parameter calculations.
+    """
     def __init__(self, model, other_model, node, *args, **kwargs):
         AbstractStorage.__init__(self, model, *args, **kwargs)
         self.other_model = other_model
@@ -1511,9 +1518,18 @@ cdef class ShadowStorage(AbstractStorage):
         # Update our current storage to the value of the node we are shadowing.
         self._volume[:] =  self._other_model_node._volume
         self._current_pc[:] = self._other_model_node._current_pc
+        self._flow[:] = self._other_model_node._flow
+        self._prev_flow[:] = self._other_model_node._prev_flow
 
 
 cdef class ShadowNode(AbstractNode):
+    """Node that shadows the flow of a node in another model.
+
+    This node will synchronise its `flow` and `prev_flow` with the respective values from another node. This
+    synchronisation happens in the `.before()` method. It is intended to allow a node to "shadow" the flow of a
+    node that has its real calculations undertaken in a separate model, but is required in this model for
+    parameter calculations.
+    """
     def __init__(self, model, other_model, node, *args, **kwargs):
         AbstractNode.__init__(self, model, *args, **kwargs)
         self.other_model = other_model
