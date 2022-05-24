@@ -171,7 +171,7 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
         interp_kwargs = data.pop("interp_kwargs", None)
-        return cls(model, parameter, x, y, interp_kwargs=interp_kwargs)
+        return cls(model, parameter, x, y, interp_kwargs=interp_kwargs, **data)
 
 
 InterpolatedParameter.register()
@@ -221,7 +221,7 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
         else:
             raise TypeError('Unexpected type for "values" in {}'.format(cls.__name__))
         interp_kwargs = data.pop("interp_kwargs", None)
-        return cls(model, node, volumes, values, interp_kwargs=interp_kwargs)
+        return cls(model, node, volumes, values, interp_kwargs=interp_kwargs, **data)
 
 
 InterpolatedVolumeParameter.register()
@@ -257,7 +257,7 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
         flows = np.array(data.pop("flows"))
         values = np.array(data.pop("values"))
         interp_kwargs = data.pop("interp_kwargs", None)
-        return cls(model, node, flows, values, interp_kwargs=interp_kwargs)
+        return cls(model, node, flows, values, interp_kwargs=interp_kwargs, **data)
 
 
 InterpolatedFlowParameter.register()
@@ -334,6 +334,7 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
             y,
             lower_parameter=lower_parameter,
             interp_kwargs=interp_kwargs,
+            **data,
         )
 
 
