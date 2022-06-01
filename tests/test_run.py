@@ -1127,5 +1127,5 @@ def test_setup_profiler(tmp_path):
 
     assert profile_out.exists()
     df = pandas.read_csv(profile_out)
-    assert len(df) == 3
+    assert len(df) == 6  # 3 nodes for setup & reset
 

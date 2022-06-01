@@ -66,7 +66,7 @@ def test_setup_profile_two_independent_models(tmp_path):
 
     assert profile_out.exists()
     df = pandas.read_csv(profile_out)
-    assert len(df) == 6
+    assert len(df) == 12
 
 
 def test_run_two_independent_models_from_json():

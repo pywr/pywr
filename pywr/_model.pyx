@@ -675,7 +675,7 @@ class Model(object):
             try:
                 node.setup(self)
                 if profiler is not None:
-                    profiler.checkpoint(node.__class__.__name__, node.name)
+                    profiler.checkpoint('setup', node.__class__.__name__, node.name)
 
             except Exception as err:
                 # reraise the exception after logging some info about source of error
@@ -693,7 +693,7 @@ class Model(object):
             try:
                 component.setup()
                 if profiler is not None:
-                    profiler.checkpoint(component.__class__.__name__, component.name)
+                    profiler.checkpoint('setup', component.__class__.__name__, component.name)
             except Exception as err:
                 # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred setting up component during setup %s",
@@ -701,8 +701,12 @@ class Model(object):
                 raise
 
         self.solver.setup(self)
-        self.reset()
+        reset_profiler = self.reset(profile=profile)
         self.dirty = False
+
+        # Extend the entries for this profiler with those from the reset profiler
+        if reset_profiler is not None and profiler is not None:
+            profiler.entries.extend(reset_profiler.entries)
 
         if profile_dump_filename is not None:
             profiler.to_dataframe().to_csv(profile_dump_filename)
@@ -710,10 +714,16 @@ class Model(object):
         logger.info('Setting up complete!')
         return profiler
 
-    def reset(self, start=None):
+    def reset(self, start=None, profile=False, profile_dump_filename=None):
         """Reset model to it's initial conditions"""
         logger.info('Resetting model ...')
         length_changed = self.timestepper.reset(start=start)
+
+        # Create a profiler if one is requested.
+        profiler = None
+        if profile:
+            profiler = Profiler()
+
         for node in self.nodes:
             if length_changed:
                 try:
@@ -724,12 +734,19 @@ class Model(object):
                     raise
             try:
                 node.reset()
+                if profiler is not None:
+                    profiler.checkpoint('reset', node.__class__.__name__, node.name)
             except Exception as err:
                 # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred calling reset on node %s", node.name)
                 raise
 
         components = self.flatten_component_tree(rebuild=False)
+
+        # Reset the resource counters in the profiler after the component tree is re-computed.
+        if profiler is not None:
+            profiler.reset()
+
         for component in components:
             if length_changed:
                 try:
@@ -742,6 +759,8 @@ class Model(object):
 
             try:
                 component.reset()
+                if profiler is not None:
+                    profiler.checkpoint('reset', component.__class__.__name__, component.name)
             except Exception as err:
                 # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred calling reset on component %s",
@@ -749,10 +768,16 @@ class Model(object):
                 raise
 
         self.solver.reset()
+
+        if profile_dump_filename is not None:
+            profiler.to_dataframe().to_csv(profile_dump_filename)
+
         # reset the timers
         self._time_before = 0.0
         self._time_after = 0.0
+
         logger.info('Reset complete!')
+        return profiler
 
     def before(self):
         """ Perform initialisation work before solve on each timestep.

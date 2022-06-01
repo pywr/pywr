@@ -15,6 +15,7 @@ def memory_usage() -> float:
 
 @dataclass
 class ProfilerEntry:
+    phase: str
     class_name: str
     name: str
     perf_counter: float
@@ -34,13 +35,14 @@ class Profiler:
         self._last_perf_counter = time.perf_counter()
         self._last_max_rss = memory_usage()
 
-    def checkpoint(self, class_name: str, name: str):
+    def checkpoint(self, phase: str, class_name: str, name: str):
 
         max_rss = memory_usage()
         perf_counter = time.perf_counter()
 
         self.entries.append(
             ProfilerEntry(
+                phase=phase,
                 class_name=class_name,
                 name=name,
                 perf_counter=perf_counter-self._last_perf_counter,
@@ -51,7 +53,7 @@ class Profiler:
         self.reset()
 
     def to_dataframe(self):
-        return pandas.DataFrame([asdict(e) for e in self.entries]).set_index(['class_name', 'name'])
+        return pandas.DataFrame([asdict(e) for e in self.entries]).set_index(['phase', 'class_name', 'name'])
 
 
 

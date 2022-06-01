@@ -138,7 +138,7 @@ class MultiModel:
                 profilers[name] = profiler
 
         if len(profilers) > 0 and profile_dump_filename is not None:
-            df = pandas.concat({n: p.to_dataframe() for n, p in profilers.items()}, names=['model', 'class_name', 'name'])
+            df = pandas.concat({n: p.to_dataframe() for n, p in profilers.items()}, names=['model', 'phase', 'class_name', 'name'])
             df.to_csv(profile_dump_filename)
 
         self._check_scenarios()
