@@ -660,3 +660,19 @@ class TablesRecorder(Recorder):
 
 
 TablesRecorder.register()
+
+
+class H5PyRecorder(Recorder):
+    """"""
+
+    def __init__(
+        self,
+        model,
+        h5file,
+        nodes=None,
+        parameters=None,
+        time="/time",
+        scenarios="/scenarios",
+        **kwargs,
+    ):
+        super().__init__(model, **kwargs)

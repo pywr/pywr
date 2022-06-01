@@ -9,6 +9,9 @@ import inspect
 import time
 from functools import wraps
 import logging
+
+from .profiler import Profiler
+
 logger = logging.getLogger(__name__)
 
 
@@ -655,16 +658,25 @@ class Model(object):
         logger.info('Model run complete!')
         return result
 
-    def setup(self, ):
+    def setup(self, profile=False, profile_dump_filename=None):
         """Setup the model for the first time or if it has changed since
         last run."""
         logger.info('Setting up model ...')
         self.timestepper.setup()
         self.scenarios.setup()
         length_changed = self.timestepper.reset()
+
+        # Create a profiler if one is requested.
+        profiler = None
+        if profile:
+            profiler = Profiler()
+
         for node in self.graph.nodes():
             try:
                 node.setup(self)
+                if profiler is not None:
+                    profiler.checkpoint(node.__class__.__name__, node.name)
+
             except Exception as err:
                 # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred setting up node during setup %s",
@@ -672,9 +684,16 @@ class Model(object):
                 raise
 
         components = self.flatten_component_tree(rebuild=True)
+
+        # Reset the resource counters in the profiler after the component tree is re-computed.
+        if profiler is not None:
+            profiler.reset()
+
         for component in components:
             try:
                 component.setup()
+                if profiler is not None:
+                    profiler.checkpoint(component.__class__.__name__, component.name)
             except Exception as err:
                 # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred setting up component during setup %s",
@@ -684,6 +703,10 @@ class Model(object):
         self.solver.setup(self)
         self.reset()
         self.dirty = False
+
+        if profile_dump_filename is not None:
+            profiler.to_dataframe().to_csv(profile_dump_filename)
+
         logger.info('Setting up complete!')
 
     def reset(self, start=None):

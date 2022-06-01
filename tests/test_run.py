@@ -1116,3 +1116,16 @@ class TestGlpkErrorHandling:
 
         with pytest.raises(pywr.solvers.GLPKError):
             model.run()
+
+
+def test_setup_profiler(tmp_path):
+    """Test the setup resource profiler."""
+    model = load_model("simple1.json")
+
+    profile_out = tmp_path / 'stats.csv'
+    model.setup(profile=True, profile_dump_filename=profile_out)
+
+    assert profile_out.exists()
+    df = pandas.read_csv(profile_out)
+    assert len(df) == 3
+
