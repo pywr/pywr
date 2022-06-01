@@ -129,9 +129,18 @@ class MultiModel:
                     f"Sub-models have inconsistent combinations defined: {combinations[0]} vs {combination}"
                 )
 
-    def setup(self):
-        for model in self.models.values():
-            model.setup()
+    def setup(self, profile=False, profile_dump_filename=None):
+        profilers = {}
+
+        for name, model in self.models.items():
+            profiler = model.setup(profile=profile)
+            if profiler is not None:
+                profilers[name] = profiler
+
+        if len(profilers) > 0 and profile_dump_filename is not None:
+            df = pandas.concat({n: p.to_dataframe() for n, p in profilers.items()}, names=['model', 'class_name', 'name'])
+            df.to_csv(profile_dump_filename)
+
         self._check_scenarios()
 
     def reset(self):

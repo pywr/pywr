@@ -708,6 +708,7 @@ class Model(object):
             profiler.to_dataframe().to_csv(profile_dump_filename)
 
         logger.info('Setting up complete!')
+        return profiler
 
     def reset(self, start=None):
         """Reset model to it's initial conditions"""

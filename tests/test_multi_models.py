@@ -53,6 +53,22 @@ def test_run_two_independent_models():
     )
 
 
+def test_setup_profile_two_independent_models(tmp_path):
+
+    multi_model = MultiModel()
+
+    for i in range(2):
+        m = make_simple_model(i)
+        multi_model.add_model(f"model-{i}", m)
+
+    profile_out = tmp_path / 'stats.csv'
+    multi_model.setup(profile=True, profile_dump_filename=profile_out)
+
+    assert profile_out.exists()
+    df = pandas.read_csv(profile_out)
+    assert len(df) == 6
+
+
 def test_run_two_independent_models_from_json():
     """Test two independent models running together"""
     path = Path(os.path.dirname(__file__)) / "models" / "two-independent-sub-models"
