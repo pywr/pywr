@@ -6,8 +6,8 @@ import pandas
 
 
 def memory_usage() -> float:
-    rusage_denom = 1024.
-    if sys.platform == 'darwin':
+    rusage_denom = 1024.0
+    if sys.platform == "darwin":
         # ... it seems that in OSX the output is different units ...
         rusage_denom = rusage_denom * rusage_denom
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
@@ -24,6 +24,7 @@ class ProfilerEntry:
 
 class Profiler:
     """A basic memory consumption profiler"""
+
     def __init__(self):
         self.entries = []
 
@@ -45,18 +46,14 @@ class Profiler:
                 phase=phase,
                 class_name=class_name,
                 name=name,
-                perf_counter=perf_counter-self._last_perf_counter,
-                memory_usage=max_rss-self._last_max_rss
+                perf_counter=perf_counter - self._last_perf_counter,
+                memory_usage=max_rss - self._last_max_rss,
             )
         )
 
         self.reset()
 
     def to_dataframe(self):
-        return pandas.DataFrame([asdict(e) for e in self.entries]).set_index(['phase', 'class_name', 'name'])
-
-
-
-
-
-
+        return pandas.DataFrame([asdict(e) for e in self.entries]).set_index(
+            ["phase", "class_name", "name"]
+        )

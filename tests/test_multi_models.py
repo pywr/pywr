@@ -61,7 +61,7 @@ def test_setup_profile_two_independent_models(tmp_path):
         m = make_simple_model(i)
         multi_model.add_model(f"model-{i}", m)
 
-    profile_out = tmp_path / 'stats.csv'
+    profile_out = tmp_path / "stats.csv"
     multi_model.setup(profile=True, profile_dump_filename=profile_out)
 
     assert profile_out.exists()
