@@ -1952,6 +1952,41 @@ cdef class FlowParameter(Parameter):
 FlowParameter.register()
 
 
+cdef class StorageParameter(Parameter):
+    """Parameter that provides the current volume from a storage node.
+
+    Parameters
+    ----------
+    model : pywr.model.Model
+    storage_node : AbstractStorage
+      The node that will have its volume tracked
+    use_proportional_volume : bool
+        An optional boolean only to switch between returning absolute or proportional volume.
+
+    Notes
+    -----
+    This parameter returns the current volume of the given storage node. These
+    values can be used in calculations for the current timestep as though this was any
+    other parameter.
+    """
+    def __init__(self, model, storage_node, *args, use_proportional_volume=False, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        self.storage_node = storage_node
+        self.use_proportional_volume = use_proportional_volume
+
+    cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        if self.use_proportional_volume:
+            return self.storage_node._current_pc[scenario_index.global_id]
+        else:
+            return self.storage_node._volume[scenario_index.global_id]
+
+    @classmethod
+    def load(cls, model, data):
+        storage_node = model.nodes[data.pop("storage_node")]
+        return cls(model, storage_node=storage_node, **data)
+StorageParameter.register()
+
+
 cdef class PiecewiseIntegralParameter(Parameter):
     """Parameter that integrates a piecewise function.
 

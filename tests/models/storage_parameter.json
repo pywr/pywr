@@ -1,0 +1,63 @@
+{
+    "metadata": {
+        "title": "StorageParameter test",
+        "description": "A model that demonstrates StorageParameter by making demand 10% of current volume.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-01-06",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Storage",
+            "max_volume": 35,
+            "initial_volume": 35,
+            "outputs": 0
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": "demand",
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "demand": {
+            "type": "aggregated",
+            "agg_func": "product",
+            "parameters": [
+                "storage",
+                "demand_factor"
+            ]
+        },
+        "storage": {
+            "type": "storage",
+            "storage_node": "supply1"
+        },
+        "demand_factor": {
+            "type": "constant",
+            "value": 0.1
+        }
+    },
+    "recorders": {
+        "flow_recorder": {
+            "type": "numpyarraynoderecorder",
+            "node": "demand1"
+        },
+        "storage_recorder": {
+            "type": "numpyarraystoragerecorder",
+            "node": "supply1"
+        }
+    }
+}

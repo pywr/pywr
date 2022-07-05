@@ -161,6 +161,7 @@ Other parameters
    PiecewiseIntegralParameter
    FlowParameter
    FlowDelayParameter
+   StorageParameter
    DiscountFactorParameter
 
 

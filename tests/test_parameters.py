@@ -1945,6 +1945,21 @@ def test_flow_parameter():
     assert_allclose(expected_yesterday, actual_yesterday[:, 0])
 
 
+def test_storage_parameter():
+    """test StorageParameter"""
+    model = load_model("storage_parameter.json")
+
+    model.run()
+
+    expected_volume = np.array([31.5, 28.35, 25.515, 22.9635, 20.66715, 18.600435])
+    expected_demand = np.array([3.5, 3.15, 2.835, 2.5515, 2.29635, 2.066715])
+
+    actual_demand = model.recorders["flow_recorder"].data
+    actual_volume = model.recorders["storage_recorder"].data
+    assert_allclose(expected_demand, actual_demand[:, 0])
+    assert_allclose(expected_volume, actual_volume[:, 0])
+
+
 class TestHydroPowerTargets:
     def test_target_json(self):
         """Test loading a HydropowerTargetParameter from JSON."""

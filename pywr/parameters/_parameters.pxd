@@ -1,6 +1,6 @@
 from pywr.recorders._recorders cimport Recorder
 from pywr._component cimport Component
-from pywr._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node
+from pywr._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node, AbstractStorage
 
 cdef class Parameter(Component):
     cdef public int double_size
@@ -204,6 +204,10 @@ cdef class FlowParameter(Parameter):
     cdef public Node node
     cdef double[:] __next_values
     cdef public double initial_value
+
+cdef class StorageParameter(Parameter):
+    cdef public AbstractStorage storage_node
+    cdef public bint use_proportional_volume
 
 cdef class PiecewiseIntegralParameter(Parameter):
     cdef public double[:] x
