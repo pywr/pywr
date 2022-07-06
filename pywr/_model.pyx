@@ -659,8 +659,16 @@ class Model(object):
         return result
 
     def setup(self, profile=False, profile_dump_filename=None):
-        """Setup the model for the first time or if it has changed since
-        last run."""
+        """Setup the model for the first time or if it has changed since last run.
+
+        Parameters
+        ==========
+        profile : bool (default=False)
+            If true create and return a Profile object that tracks the setup of each node and
+            component in the model.
+        profile_dump_filename : str, Path
+            A CSV filename to write a dataframe of profile checkpoints. Has no effect if profile is not True.
+        """
         logger.info('Setting up model ...')
         self.timestepper.setup()
         self.scenarios.setup()
@@ -708,14 +716,26 @@ class Model(object):
         if reset_profiler is not None and profiler is not None:
             profiler.entries.extend(reset_profiler.entries)
 
-        if profile_dump_filename is not None:
+        if profiler is not None and profile_dump_filename is not None:
             profiler.to_dataframe().to_csv(profile_dump_filename)
 
         logger.info('Setting up complete!')
         return profiler
 
     def reset(self, start=None, profile=False, profile_dump_filename=None):
-        """Reset model to it's initial conditions"""
+        """Reset model to it's initial conditions.
+
+        Parameters
+        ==========
+        start : None, pandas.Timestamp
+            The start timestamp to reset the model to. By default this will reset the model to the timestepper's
+            start date.
+        profile : bool (default=False)
+            If true create and return a Profile object that tracks the setup of each node and
+            component in the model.
+        profile_dump_filename : str, Path
+            A CSV filename to write a dataframe of profile checkpoints. Has no effect if profile is not True.
+        """
         logger.info('Resetting model ...')
         length_changed = self.timestepper.reset(start=start)
 
@@ -769,7 +789,7 @@ class Model(object):
 
         self.solver.reset()
 
-        if profile_dump_filename is not None:
+        if profiler is not None and profile_dump_filename is not None:
             profiler.to_dataframe().to_csv(profile_dump_filename)
 
         # reset the timers
