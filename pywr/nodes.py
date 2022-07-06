@@ -712,9 +712,9 @@ class MonthlyVirtualStorage(VirtualStorage):
 
     Parameters
     ----------
-    months : int
+    months : int, default 1
         The number of months after which the storage volume resets.
-    initial_months : int
+    initial_months : int, default 0
         The number of months into the reset period the storages is at when the model run starts.
     reset_to_initial_volume : bool
         Reset the volume to the initial volume instead of maximum volume each year (default is False).
