@@ -1945,6 +1945,33 @@ def test_flow_parameter():
     assert_allclose(expected_yesterday, actual_yesterday[:, 0])
 
 
+@pytest.mark.parametrize("use_proportional_volume", [None, True, False])
+def test_storage_parameter(use_proportional_volume: bool):
+    """test StorageParameter"""
+    model = load_model("storage_parameter.json")
+
+    if use_proportional_volume is not None:
+        model.parameters["storage"].use_proportional_volume = use_proportional_volume
+
+    model.run()
+
+    if model.parameters["storage"].use_proportional_volume:
+        expected_volume = np.array(
+            [34.900000, 34.800286, 34.700856, 34.601711, 34.502849, 34.404269]
+        )
+        expected_demand = np.array(
+            [0.100000, 0.099714, 0.099429, 0.099145, 0.098862, 0.098580]
+        )
+    else:
+        expected_volume = np.array([31.5, 28.35, 25.515, 22.9635, 20.66715, 18.600435])
+        expected_demand = np.array([3.5, 3.15, 2.835, 2.5515, 2.29635, 2.066715])
+
+    actual_demand = model.recorders["flow_recorder"].data
+    actual_volume = model.recorders["storage_recorder"].data
+    assert_allclose(expected_demand, actual_demand[:, 0], rtol=1e-4)
+    assert_allclose(expected_volume, actual_volume[:, 0], rtol=1e-4)
+
+
 class TestHydroPowerTargets:
     def test_target_json(self):
         """Test loading a HydropowerTargetParameter from JSON."""

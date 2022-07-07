@@ -37,6 +37,7 @@ from ._parameters import (
     DivisionParameter,
     FlowParameter,
     FlowDelayParameter,
+    StorageParameter,
     OffsetParameter,
     RbfProfileParameter,
     UniformDrawdownProfileParameter,
