@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parameters &mdash; Pywr 1.17.3.dev3+g66988838 documentation</title>
+  <title>Parameters &mdash; Pywr 1.17.3.dev4+ge106c8d3 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
@@ -32,7 +32,7 @@
             <a href="../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.17.3.dev3+g66988838
+                1.17.3.dev4+ge106c8d3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -148,6 +148,7 @@
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.PiecewiseIntegralParameter.html">pywr.parameters.PiecewiseIntegralParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.FlowParameter.html">pywr.parameters.FlowParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.FlowDelayParameter.html">pywr.parameters.FlowDelayParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.StorageParameter.html">pywr.parameters.StorageParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.DiscountFactorParameter.html">pywr.parameters.DiscountFactorParameter</a></li>
 </ul>
 </li>
@@ -498,7 +499,10 @@
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.FlowDelayParameter.html#pywr.parameters.FlowDelayParameter" title="pywr.parameters.FlowDelayParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlowDelayParameter</span></code></a>(model, node, *args, **kwargs)</p></td>
 <td><p>Parameter that returns the delayed flow for a node after a given number of timesteps or days</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.DiscountFactorParameter.html#pywr.parameters.DiscountFactorParameter" title="pywr.parameters.DiscountFactorParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DiscountFactorParameter</span></code></a>(model, rate, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.StorageParameter.html#pywr.parameters.StorageParameter" title="pywr.parameters.StorageParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StorageParameter</span></code></a>(model, storage_node[, ...])</p></td>
+<td><p>Parameter that provides the current volume from a storage node.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.DiscountFactorParameter.html#pywr.parameters.DiscountFactorParameter" title="pywr.parameters.DiscountFactorParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DiscountFactorParameter</span></code></a>(model, rate, ...)</p></td>
 <td><p>Parameter that returns the current discount factor based on discount rate and a base year.</p></td>
 </tr>
 </tbody>

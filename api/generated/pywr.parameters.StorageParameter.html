@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.parameters.FlowDelayParameter &mdash; Pywr 1.17.3.dev4+ge106c8d3 documentation</title>
+  <title>pywr.parameters.StorageParameter &mdash; Pywr 1.17.3.dev4+ge106c8d3 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
@@ -20,8 +20,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pywr.parameters.StorageParameter" href="pywr.parameters.StorageParameter.html" />
-    <link rel="prev" title="pywr.parameters.FlowParameter" href="pywr.parameters.FlowParameter.html" /> 
+    <link rel="next" title="pywr.parameters.DiscountFactorParameter" href="pywr.parameters.DiscountFactorParameter.html" />
+    <link rel="prev" title="pywr.parameters.FlowDelayParameter" href="pywr.parameters.FlowDelayParameter.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -73,8 +73,8 @@
 <li class="toctree-l4"><a class="reference internal" href="pywr.parameters.ScenarioWrapperParameter.html">pywr.parameters.ScenarioWrapperParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.parameters.PiecewiseIntegralParameter.html">pywr.parameters.PiecewiseIntegralParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.parameters.FlowParameter.html">pywr.parameters.FlowParameter</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">pywr.parameters.FlowDelayParameter</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.StorageParameter.html">pywr.parameters.StorageParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.FlowDelayParameter.html">pywr.parameters.FlowDelayParameter</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pywr.parameters.StorageParameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pywr.parameters.DiscountFactorParameter.html">pywr.parameters.DiscountFactorParameter</a></li>
 </ul>
 </li>
@@ -105,9 +105,9 @@
       <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../pywr.html">Pywr reference documentation.</a> &raquo;</li>
           <li><a href="../pywr.parameters.html">Parameters</a> &raquo;</li>
-      <li>pywr.parameters.FlowDelayParameter</li>
+      <li>pywr.parameters.StorageParameter</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/api/generated/pywr.parameters.FlowDelayParameter.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/api/generated/pywr.parameters.StorageParameter.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -115,32 +115,30 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pywr-parameters-flowdelayparameter">
-<h1>pywr.parameters.FlowDelayParameter<a class="headerlink" href="#pywr-parameters-flowdelayparameter" title="Permalink to this heading"></a></h1>
+  <section id="pywr-parameters-storageparameter">
+<h1>pywr.parameters.StorageParameter<a class="headerlink" href="#pywr-parameters-storageparameter" title="Permalink to this heading"></a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="pywr.parameters.FlowDelayParameter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">FlowDelayParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.FlowDelayParameter" title="Permalink to this definition"></a></dt>
-<dd><p>Parameter that returns the delayed flow for a node after a given number of timesteps or days</p>
-<dl class="field-list">
+<dt class="sig sig-object py" id="pywr.parameters.StorageParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">StorageParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_proportional_volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.StorageParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Parameter that provides the current volume from a storage node.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl>
-<dt><strong>model</strong><span class="classifier"><cite>pywr.model.Model</cite></span></dt><dd></dd>
-<dt><strong>node: Node</strong></dt><dd><p>The node to delay for.</p>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">pywr.model.Model</span></dt><dd></dd>
+<dt><strong>storage_node</strong><span class="classifier">AbstractStorage</span></dt><dd><p>The node that will have its volume tracked</p>
 </dd>
-<dt><strong>timesteps: int</strong></dt><dd><p>Number of timesteps to delay the flow.</p>
-</dd>
-<dt><strong>days: int</strong></dt><dd><p>Number of days to delay the flow. Specifying a number of days (instead of a number
-of timesteps) is only valid if the number of days is exactly divisible by the model timestep length.</p>
-</dd>
-<dt><strong>initial_flow: float</strong></dt><dd><p>Flow value to return for initial model timesteps prior to any delayed flow being available. This
-value is constant across all delayed timesteps and any model scenarios. Default is 0.0.</p>
+<dt><strong>use_proportional_volume</strong><span class="classifier">bool</span></dt><dd><p>An optional boolean only to switch between returning absolute or proportional volume.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>This parameter returns the current volume of the given storage node. These
+values can be used in calculations for the current timestep as though this was any
+other parameter.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="pywr.parameters.FlowDelayParameter.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.FlowDelayParameter.__init__" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywr.parameters.StorageParameter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.StorageParameter.__init__" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <p class="rubric">Methods</p>
@@ -150,7 +148,7 @@ value is constant across all delayed timesteps and any model scenarios. Default 
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#pywr.parameters.FlowDelayParameter.__init__" title="pywr.parameters.FlowDelayParameter.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pywr.parameters.StorageParameter.__init__" title="pywr.parameters.StorageParameter.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">after</span></code>(self)</p></td>
@@ -210,7 +208,7 @@ value is constant across all delayed timesteps and any model scenarios. Default 
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">unregister</span></code>(type cls)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">value</span></code>(self, Timestep ts, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">value</span></code>(self, Timestep timestep, ...)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -228,14 +226,8 @@ value is constant across all delayed timesteps and any model scenarios. Default 
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">comment</span></code></p></td>
 <td><p>comment: unicode</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">days</span></code></p></td>
-<td><p>days: 'int'</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">double_size</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">double_size</span></code></p></td>
 <td><p>double_size: 'int'</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initial_flow</span></code></p></td>
-<td><p>initial_flow: 'double'</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">integer_size</span></code></p></td>
 <td><p>integer_size: 'int'</p></td>
@@ -252,20 +244,20 @@ value is constant across all delayed timesteps and any model scenarios. Default 
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node</span></code></p></td>
-<td><p>node: pywr._core.AbstractNode</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parents</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parents</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">storage_node</span></code></p></td>
+<td><p>storage_node: pywr._core.AbstractStorage</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tags</span></code></p></td>
 <td><p>tags: dict</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">timesteps</span></code></p></td>
-<td><p>timesteps: 'int'</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">use_proportional_volume</span></code></p></td>
+<td><p>use_proportional_volume: 'bool'</p></td>
 </tr>
 </tbody>
 </table>
@@ -277,8 +269,8 @@ value is constant across all delayed timesteps and any model scenarios. Default 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pywr.parameters.FlowParameter.html" class="btn btn-neutral float-left" title="pywr.parameters.FlowParameter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pywr.parameters.StorageParameter.html" class="btn btn-neutral float-right" title="pywr.parameters.StorageParameter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pywr.parameters.FlowDelayParameter.html" class="btn btn-neutral float-left" title="pywr.parameters.FlowDelayParameter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pywr.parameters.DiscountFactorParameter.html" class="btn btn-neutral float-right" title="pywr.parameters.DiscountFactorParameter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

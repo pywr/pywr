@@ -1,0 +1,60 @@
+﻿pywr.parameters.StorageParameter
+================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: StorageParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~StorageParameter.__init__
+      ~StorageParameter.after
+      ~StorageParameter.before
+      ~StorageParameter.finish
+      ~StorageParameter.get_all_values
+      ~StorageParameter.get_constant_value
+      ~StorageParameter.get_double_lower_bounds
+      ~StorageParameter.get_double_upper_bounds
+      ~StorageParameter.get_double_variables
+      ~StorageParameter.get_integer_lower_bounds
+      ~StorageParameter.get_integer_upper_bounds
+      ~StorageParameter.get_integer_variables
+      ~StorageParameter.get_value
+      ~StorageParameter.load
+      ~StorageParameter.register
+      ~StorageParameter.reset
+      ~StorageParameter.set_double_variables
+      ~StorageParameter.set_integer_variables
+      ~StorageParameter.setup
+      ~StorageParameter.unregister
+      ~StorageParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~StorageParameter.children
+      ~StorageParameter.comment
+      ~StorageParameter.double_size
+      ~StorageParameter.integer_size
+      ~StorageParameter.is_constant
+      ~StorageParameter.is_variable
+      ~StorageParameter.model
+      ~StorageParameter.name
+      ~StorageParameter.parents
+      ~StorageParameter.size
+      ~StorageParameter.storage_node
+      ~StorageParameter.tags
+      ~StorageParameter.use_proportional_volume
+   
+   
