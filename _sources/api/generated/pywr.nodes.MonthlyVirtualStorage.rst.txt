@@ -1,0 +1,74 @@
+﻿pywr.nodes.MonthlyVirtualStorage
+================================
+
+.. currentmodule:: pywr.nodes
+
+.. autoclass:: MonthlyVirtualStorage
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MonthlyVirtualStorage.__init__
+      ~MonthlyVirtualStorage.after
+      ~MonthlyVirtualStorage.before
+      ~MonthlyVirtualStorage.check
+      ~MonthlyVirtualStorage.commit
+      ~MonthlyVirtualStorage.commit_all
+      ~MonthlyVirtualStorage.finalise_load
+      ~MonthlyVirtualStorage.finish
+      ~MonthlyVirtualStorage.get_all_cost
+      ~MonthlyVirtualStorage.get_all_max_volume
+      ~MonthlyVirtualStorage.get_all_min_volume
+      ~MonthlyVirtualStorage.get_area
+      ~MonthlyVirtualStorage.get_cost
+      ~MonthlyVirtualStorage.get_current_pc
+      ~MonthlyVirtualStorage.get_initial_pc
+      ~MonthlyVirtualStorage.get_initial_volume
+      ~MonthlyVirtualStorage.get_level
+      ~MonthlyVirtualStorage.get_max_volume
+      ~MonthlyVirtualStorage.get_min_volume
+      ~MonthlyVirtualStorage.pre_load
+      ~MonthlyVirtualStorage.reset
+      ~MonthlyVirtualStorage.setup
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MonthlyVirtualStorage.active
+      ~MonthlyVirtualStorage.allow_isolated
+      ~MonthlyVirtualStorage.area
+      ~MonthlyVirtualStorage.comment
+      ~MonthlyVirtualStorage.component_attrs
+      ~MonthlyVirtualStorage.components
+      ~MonthlyVirtualStorage.cost
+      ~MonthlyVirtualStorage.current_pc
+      ~MonthlyVirtualStorage.domain
+      ~MonthlyVirtualStorage.factors
+      ~MonthlyVirtualStorage.flow
+      ~MonthlyVirtualStorage.fully_qualified_name
+      ~MonthlyVirtualStorage.has_fixed_cost
+      ~MonthlyVirtualStorage.initial_volume
+      ~MonthlyVirtualStorage.initial_volume_pc
+      ~MonthlyVirtualStorage.level
+      ~MonthlyVirtualStorage.max_volume
+      ~MonthlyVirtualStorage.min_volume
+      ~MonthlyVirtualStorage.model
+      ~MonthlyVirtualStorage.name
+      ~MonthlyVirtualStorage.nodes
+      ~MonthlyVirtualStorage.parent
+      ~MonthlyVirtualStorage.prev_flow
+      ~MonthlyVirtualStorage.recorders
+      ~MonthlyVirtualStorage.virtual
+      ~MonthlyVirtualStorage.volume
+   
+   

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Using external data &mdash; Pywr 1.17.3.dev2+gc19070a7 documentation</title>
+  <title>Using external data &mdash; Pywr 1.17.3.dev3+g66988838 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
@@ -15,6 +15,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -31,7 +32,7 @@
             <a href="../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.17.3.dev2+gc19070a7
+                1.17.3.dev3+g66988838
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -100,11 +101,11 @@
            <div itemprop="articleBody">
              
   <section id="using-external-data">
-<h1>Using external data<a class="headerlink" href="#using-external-data" title="Permalink to this headline"></a></h1>
+<h1>Using external data<a class="headerlink" href="#using-external-data" title="Permalink to this heading"></a></h1>
 <p>It’s not always practical or desirable to store all the data required by a model in the JSON document. This is particularly true when working with large amounts of timeseries data, but is also applicable to data better stored in a tabular format.</p>
 <p>Many parameter types support loading data from an external file using the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword. The data is loaded during the setup/reset process, before the model is run.</p>
 <section id="supported-formats">
-<h2>Supported formats<a class="headerlink" href="#supported-formats" title="Permalink to this headline"></a></h2>
+<h2>Supported formats<a class="headerlink" href="#supported-formats" title="Permalink to this heading"></a></h2>
 <p>Support for the following data formats is available via the <a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/io.html">Pandas</a> module.</p>
 <blockquote>
 <div><ul class="simple">
@@ -117,7 +118,7 @@
 <p>When working with large amounts of timeseries data the <a class="reference external" href="https://www.hdfgroup.org/why-hdf/">HDF5 format</a> is recommended as it has superior read speeds. Data in an HDF5 file should be in the “fixed” format; this is achieved by passing the <code class="docutils literal notranslate"><span class="pre">format=&quot;fixed&quot;</span></code> argument to <code class="docutils literal notranslate"><span class="pre">DataFrame.to_hdf</span></code>. Where data access speed is critical, users are advised to look at the <code class="docutils literal notranslate"><span class="pre">TablesArrayParameter</span></code> parameter instead which supports very fast access via <cite>pytables</cite> directly (rather than indirectly via <cite>pandas</cite>).</p>
 <p>External data is read using the appropriate <code class="docutils literal notranslate"><span class="pre">pandas.read_xxx</span></code> function determined by the file extension (e.g. <code class="docutils literal notranslate"><span class="pre">pandas.read_excel</span></code> for xls/xlsx). Keywords that are not recognised by Pywr are passed on to these functions. For example, when reading timeseries data from a CSV you can parse the date strings into pandas timestamps by passing <code class="docutils literal notranslate"><span class="pre">parse_dates=True</span></code> (see example below).</p>
 <section id="checksums">
-<h3>Checksums<a class="headerlink" href="#checksums" title="Permalink to this headline"></a></h3>
+<h3>Checksums<a class="headerlink" href="#checksums" title="Permalink to this heading"></a></h3>
 <p>Often external boundary condition data is very large in comparison to the model definition (JSON) itself. Model definitions
 might be stored in a version control system (e.g. Git) but this may not be suitable for large amounts of binary data.
 Users of a model therefore might need to obtain the external data via another means. Tracking revisions of this external
@@ -127,14 +128,14 @@ the external data. The example below shows how to define a checksum in the JSON 
 If the local file does not match the checksum in the JSON definition a <cite>HashMismatchError</cite> is raised. Pywr uses
 <a class="reference external" href="https://docs.python.org/3/library/hashlib.html">hashlib</a> and supports all of its algorithms.</p>
 <p><strong>Note:</strong> The example shows checksums for two different algorithms, but usually one is sufficient.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;url&quot;</span> <span class="o">:</span> <span class="s2">&quot;timeseries2.csv&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;checksum&quot;</span><span class="o">:</span> <span class="p">{</span>
-        <span class="s2">&quot;md5&quot;</span><span class="o">:</span> <span class="s2">&quot;a5c4032e2d8f5205ca99dedcfa4cd18e&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sha256&quot;</span><span class="o">:</span> <span class="s2">&quot;0f75b3cee325d37112687d3d10596f44e0add374f4e40a1b6687912c05e65366&quot;</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;url&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;timeseries2.csv&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;checksum&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;md5&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a5c4032e2d8f5205ca99dedcfa4cd18e&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;sha256&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0f75b3cee325d37112687d3d10596f44e0add374f4e40a1b6687912c05e65366&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The author of the external data will need to produce a file checksum to add the JSON definition. The following script
@@ -150,9 +151,9 @@ shows how Python can be used to calculate the checksum of a file.</p>
 </section>
 </section>
 <section id="examples">
-<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline"></a></h2>
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading"></a></h2>
 <section id="timeseries">
-<h3>Timeseries<a class="headerlink" href="#timeseries" title="Permalink to this headline"></a></h3>
+<h3>Timeseries<a class="headerlink" href="#timeseries" title="Permalink to this heading"></a></h3>
 <p>The most common kind of data to store in an external file is timeseries data. For example, the flow used by a <code class="docutils literal notranslate"><span class="pre">Catchment</span></code> node.</p>
 <p>An example dataset is given below with three columns: a timestamp (used as the index), rainfall and flow.</p>
 <table class="colwidths-given docutils align-default" id="id1">
@@ -184,19 +185,19 @@ shows how Python can be used to calculate the checksum of a file.</p>
 </tbody>
 </table>
 <p>The parameter below references the <cite>timeseries1.csv</cite> file in its <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code>. The index column is defined by <code class="docutils literal notranslate"><span class="pre">&quot;index_col&quot;</span></code> and the data column is defined by the <code class="docutils literal notranslate"><span class="pre">&quot;column&quot;</span></code> keyword (in this case, <code class="docutils literal notranslate"><span class="pre">&quot;Flow&quot;</span></code>). The <code class="docutils literal notranslate"><span class="pre">&quot;parse_dates&quot;</span></code> keyword is required in order to parse the dates from strings in the CSV file into pandas date objects.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;flow&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;timeseries1.csv&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="s2">&quot;Timestamp&quot;</span>
-    <span class="s2">&quot;parse_dates&quot;</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
-    <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;Flow&quot;</span>
-<span class="p">}</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;timeseries1.csv&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Timestamp&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;parse_dates&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Flow&quot;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>If the index column of the dataframe is a timestamp the parameter will support automatic resampling, if required. For example, if the external data is on a daily timestep the model can still be run on a weekly timestep. In this case the data mean flow for the week is used. Only subsampling is currently supported (e.g. you can go from daily to monthly, but not monthly to daily).</p>
 </section>
 <section id="constants">
-<h3>Constants<a class="headerlink" href="#constants" title="Permalink to this headline"></a></h3>
+<h3>Constants<a class="headerlink" href="#constants" title="Permalink to this heading"></a></h3>
 <p>Constant parameters can also load their data from an external source. This is useful when data with a common theme is stored in a table. For example, the demand for different nodes in the model.</p>
 <p>An example is given below with the population and demand for three different cities (not real data!).</p>
 <table class="colwidths-given docutils align-default" id="id2">
@@ -228,18 +229,18 @@ shows how Python can be used to calculate the checksum of a file.</p>
 </tbody>
 </table>
 <p>As in the previous example, the filename is passed to the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword. The <code class="docutils literal notranslate"><span class="pre">&quot;index_col&quot;</span></code> keyword defines which column should be used for the lookups, with the <code class="docutils literal notranslate"><span class="pre">&quot;index&quot;</span></code> keyword specifying the lookup key.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow_oxford&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;demands.csv&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="s2">&quot;City&quot;</span>
-    <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="s2">&quot;Oxford&quot;</span>
-    <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;Demand&quot;</span>
-<span class="p">}</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow_oxford&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;demands.csv&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;City&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Oxford&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Demand&quot;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </section>
 <section id="monthly-profiles">
-<h3>Monthly profiles<a class="headerlink" href="#monthly-profiles" title="Permalink to this headline"></a></h3>
+<h3>Monthly profiles<a class="headerlink" href="#monthly-profiles" title="Permalink to this heading"></a></h3>
 <p>Monthly profiles can also be loaded from an external data source. Instead of passing a <code class="docutils literal notranslate"><span class="pre">&quot;column&quot;</span></code> keyword, the parameter expects the data source to have 12 columns (plus 1 for the index). The names of the columns are not important.</p>
 <table class="colwidths-given docutils align-default" id="id3">
 <caption><span class="caption-text">demands_monthly.csv</span><a class="headerlink" href="#id3" title="Permalink to this table"></a></caption>
@@ -277,17 +278,17 @@ shows how Python can be used to calculate the checksum of a file.</p>
 </tr>
 </tbody>
 </table>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;monthlyprofile&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;demands_monthly.csv&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="s2">&quot;City&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="s2">&quot;Oxford&quot;</span>
-<span class="p">}</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;monthlyprofile&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;demands_monthly.csv&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;City&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Oxford&quot;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </section>
 <section id="multi-index">
-<h3>Multi-index<a class="headerlink" href="#multi-index" title="Permalink to this headline"></a></h3>
+<h3>Multi-index<a class="headerlink" href="#multi-index" title="Permalink to this heading"></a></h3>
 <p>Multi-indexing of dataframes is supported by passing a list to the <code class="docutils literal notranslate"><span class="pre">&quot;index_col&quot;</span></code> keyword. Both numeric and string indexes are valid.</p>
 <table class="colwidths-given docutils align-default" id="id4">
 <caption><span class="caption-text">multiindex_data.csv</span><a class="headerlink" href="#id4" title="Permalink to this table"></a></caption>
@@ -327,53 +328,53 @@ shows how Python can be used to calculate the checksum of a file.</p>
 </tr>
 </tbody>
 </table>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;DC1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;output&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;max_flow&quot;</span><span class="o">:</span> <span class="p">{</span>
-        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;multiindex_data.csv&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;max_flow&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="p">[</span><span class="mf">0</span><span class="p">,</span> <span class="s2">&quot;demand1&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="p">[</span><span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="s2">&quot;node&quot;</span><span class="p">]</span>
-    <span class="p">},</span>
-    <span class="s2">&quot;cost&quot;</span><span class="o">:</span> <span class="p">{</span>
-        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;multiindex_data.csv&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;cost&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="p">[</span><span class="mf">1</span><span class="p">,</span> <span class="s2">&quot;demand1&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="p">[</span><span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="s2">&quot;node&quot;</span><span class="p">]</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;name&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DC1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;output&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;multiindex_data.csv&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;max_flow&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;demand1&quot;</span><span class="p">],</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;level&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;node&quot;</span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;cost&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;multiindex_data.csv&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;cost&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;demand1&quot;</span><span class="p">],</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;level&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;node&quot;</span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>In the example above, <em>max_flow</em> evaluates to 10 and <em>cost</em> evaluates to -100.</p>
 </section>
 </section>
 <section id="tables">
-<h2>Tables<a class="headerlink" href="#tables" title="Permalink to this headline"></a></h2>
+<h2>Tables<a class="headerlink" href="#tables" title="Permalink to this heading"></a></h2>
 <p>Each time an external data source is referenced using the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword the data is reloaded from disk. If a dataset is going to be used multiple times in a model it can be defined in the <code class="docutils literal notranslate"><span class="pre">&quot;tables&quot;</span></code> section of the JSON document. In this way the data will only be loaded once. Parameters can then reference the data using the <code class="docutils literal notranslate"><span class="pre">&quot;table&quot;</span></code> keyword instead of the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword. Although the index column applied to the data must be defined in the <code class="docutils literal notranslate"><span class="pre">&quot;tables&quot;</span></code> section, the index used for each lookup can be different.</p>
 <p>An example is given below using the <cite>demands.csv</cite> dataset shown previously. Two constant parameters are defined referencing data in the table.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;oxford_demand&quot;</span><span class="o">:</span> <span class="p">{</span>
-        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;table&quot;</span><span class="o">:</span> <span class="s2">&quot;simple_data&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;Demand&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="s2">&quot;Oxford&quot;</span>
-    <span class="p">},</span>
-    <span class="s2">&quot;cambridge_demand&quot;</span><span class="o">:</span> <span class="p">{</span>
-        <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;table&quot;</span><span class="o">:</span> <span class="s2">&quot;simple_data&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;column&quot;</span><span class="o">:</span> <span class="s2">&quot;Demand&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;index&quot;</span><span class="o">:</span> <span class="s2">&quot;Cambridge&quot;</span>
-    <span class="p">}</span>
-<span class="p">},</span>
-<span class="s2">&quot;tables&quot;</span><span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;simple_data&quot;</span><span class="o">:</span> <span class="p">{</span>
-        <span class="s2">&quot;url&quot;</span><span class="o">:</span> <span class="s2">&quot;demands.csv&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;index_col&quot;</span><span class="o">:</span> <span class="s2">&quot;City&quot;</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;oxford_demand&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;table&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;simple_data&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Demand&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Oxford&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;cambridge_demand&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;table&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;simple_data&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Demand&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Cambridge&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">},</span><span class="w"></span>
+<span class="s2">&quot;tables&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="s2">&quot;simple_data&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;demands.csv&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;City&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </section>

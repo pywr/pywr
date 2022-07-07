@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.17.3.dev2+gc19070a7 documentation</title>
+  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.17.3.dev3+g66988838 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
@@ -15,6 +15,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -31,7 +32,7 @@
             <a href="../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.17.3.dev2+gc19070a7
+                1.17.3.dev3+g66988838
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -91,7 +92,7 @@
            <div itemprop="articleBody">
              
   <section id="extending-pywr-with-custom-parameters">
-<span id="extending-pywr-parameters"></span><h1>Extending Pywr with custom Parameters<a class="headerlink" href="#extending-pywr-with-custom-parameters" title="Permalink to this headline"></a></h1>
+<span id="extending-pywr-parameters"></span><h1>Extending Pywr with custom Parameters<a class="headerlink" href="#extending-pywr-with-custom-parameters" title="Permalink to this heading"></a></h1>
 <p>Pywr provides many existing Parameters that can be used to model complex behaviours. This includes parameters that
 read data in different formats (e.g. the dataframe parameter), parameters that solve specific problems (e.g. reservoir
 control curves) and general purpose parameters (e.g. the <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code>).</p>
@@ -100,7 +101,7 @@ write a custom parameter you must (as a minimim) inherit from the base <code cla
 the <code class="docutils literal notranslate"><span class="pre">Parameter.value</span></code> method. The arguments to this method represent the current timestep and scenario allowing the
 value of the parameter to be dynamic.</p>
 <section id="a-simple-parameter">
-<h2>A simple parameter<a class="headerlink" href="#a-simple-parameter" title="Permalink to this headline"></a></h2>
+<h2>A simple parameter<a class="headerlink" href="#a-simple-parameter" title="Permalink to this heading"></a></h2>
 <p>The example below shows a minimal parameter which returns the same value every timestep. The parameter is initialised
 with the value to return, which it stores in the <code class="docutils literal notranslate"><span class="pre">_value</span></code> attribute on the instance <a class="footnote-reference brackets" href="#id2" id="id1">*</a>. This value is returned
 whenever the <code class="docutils literal notranslate"><span class="pre">value</span></code> method is queries. The <code class="docutils literal notranslate"><span class="pre">load</span></code> class method is used to create an instance of the parameter
@@ -142,7 +143,7 @@ of <code class="docutils literal notranslate"><span class="pre">ConstantParamete
 </div>
 </section>
 <section id="timesteps-and-scenarios">
-<h2>Timesteps and scenarios<a class="headerlink" href="#timesteps-and-scenarios" title="Permalink to this headline"></a></h2>
+<h2>Timesteps and scenarios<a class="headerlink" href="#timesteps-and-scenarios" title="Permalink to this heading"></a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">Parameter.value</span></code> method is called once per timestep for each scenario. The value it returns can be varied using
 the <code class="docutils literal notranslate"><span class="pre">timestep</span></code> and <code class="docutils literal notranslate"><span class="pre">scenario_index</span></code> arguments. For example, a simple version of a <code class="docutils literal notranslate"><span class="pre">MonthlyProfileParameter</span></code> could be
 created using the following:</p>
@@ -163,7 +164,7 @@ created using the following:</p>
 </div>
 </section>
 <section id="tracking-state-with-setup-reset-before-and-after">
-<h2>Tracking state with setup, reset, before and after<a class="headerlink" href="#tracking-state-with-setup-reset-before-and-after" title="Permalink to this headline"></a></h2>
+<h2>Tracking state with setup, reset, before and after<a class="headerlink" href="#tracking-state-with-setup-reset-before-and-after" title="Permalink to this heading"></a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">Parameter.setup</span></code> and <code class="docutils literal notranslate"><span class="pre">Parameter.reset</span></code> methods are called once at the start of a model run before the first
 timestep. The <code class="docutils literal notranslate"><span class="pre">reset</span></code> method is called for every run, while the <cite>setup</cite> method is only called if the structure of
 the model has changed <a class="footnote-reference brackets" href="#id4" id="id3">†</a>.</p>
@@ -215,7 +216,7 @@ reallocate memory, instead of just resetting values.</p>
 </dl>
 </section>
 <section id="dependency-on-other-parameters">
-<h2>Dependency on other parameters<a class="headerlink" href="#dependency-on-other-parameters" title="Permalink to this headline"></a></h2>
+<h2>Dependency on other parameters<a class="headerlink" href="#dependency-on-other-parameters" title="Permalink to this heading"></a></h2>
 <p>The value of each parameter is calculated at the start of every timestep. A dependency tree is used to ensure that
 parameters are evaluated in the correct order and that there are no circular dependencies <a class="footnote-reference brackets" href="#id6" id="id5">‡</a>. For example, the
 <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code> returns the aggregated value of a set of parameters using a user-defined function. In the
@@ -255,7 +256,7 @@ order in which to calculate these parameters and will raise an error at runtime.
 </dl>
 </section>
 <section id="improving-performance-with-cython">
-<h2>Improving performance with Cython<a class="headerlink" href="#improving-performance-with-cython" title="Permalink to this headline"></a></h2>
+<h2>Improving performance with Cython<a class="headerlink" href="#improving-performance-with-cython" title="Permalink to this heading"></a></h2>
 <p>Parameters are evaluated many times and can be a significant part of the model run time. Many of the parameters in the
 core library have been written in Cython to improve performance. Custom parameters can be written in Cython too. Cython
 can also be used to link to external C/C++ libraries.</p>

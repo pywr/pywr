@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JSON model format &mdash; Pywr 1.17.3.dev2+gc19070a7 documentation</title>
+  <title>JSON model format &mdash; Pywr 1.17.3.dev3+g66988838 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -31,7 +32,7 @@
             <a href="index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.17.3.dev2+gc19070a7
+                1.17.3.dev3+g66988838
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -94,9 +95,9 @@
            <div itemprop="articleBody">
              
   <section id="json-model-format">
-<span id="id1"></span><h1>JSON model format<a class="headerlink" href="#json-model-format" title="Permalink to this headline"></a></h1>
+<span id="id1"></span><h1>JSON model format<a class="headerlink" href="#json-model-format" title="Permalink to this heading"></a></h1>
 <section id="overview-of-document-structure">
-<h2>Overview of document structure<a class="headerlink" href="#overview-of-document-structure" title="Permalink to this headline"></a></h2>
+<h2>Overview of document structure<a class="headerlink" href="#overview-of-document-structure" title="Permalink to this heading"></a></h2>
 <p>In addition to creating models programmatically using the Python API, models can be described in a JSON (JavaScript Object Notation) document <a class="footnote-reference brackets" href="#id3" id="id2">1</a>.</p>
 <p>The overall structure of the model is given below. A description of the contents of each of the first level items is given in this document. The most important are the <a class="reference internal" href="#nodes">nodes</a> and <a class="reference internal" href="#edges">edges</a> sections.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
@@ -112,7 +113,7 @@
 <p>Some examples of JSON models can be found in the <a class="reference external" href="https://github.com/pywr/pywr/tree/master/tests/models">tests/models</a> folder.</p>
 </section>
 <section id="metadata">
-<h2>Metadata<a class="headerlink" href="#metadata" title="Permalink to this headline"></a></h2>
+<h2>Metadata<a class="headerlink" href="#metadata" title="Permalink to this heading"></a></h2>
 <p>The metadata section includes information about the model as key-value pairs. It is expected as a minimum to include a <code class="docutils literal notranslate"><span class="pre">&quot;title&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;description&quot;</span></code> and may additionally include keys such as <code class="docutils literal notranslate"><span class="pre">&quot;author&quot;</span></code>.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Example&quot;</span><span class="p">,</span><span class="w"></span>
@@ -123,7 +124,7 @@
 </div>
 </section>
 <section id="timestepper">
-<h2>Timestepper<a class="headerlink" href="#timestepper" title="Permalink to this headline"></a></h2>
+<h2>Timestepper<a class="headerlink" href="#timestepper" title="Permalink to this heading"></a></h2>
 <p>The timestepper defines the period a model is run for and the timestep used. It corresponds directly to the <code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.core.Timestepper</span></code> instance on the model. It has three properties: the start date, end date and timestep.</p>
 <p>The example below describes a model that will run from 1st January 2016 to 31st December 2016 using a 7 day timestep.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;timestepper&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -135,7 +136,7 @@
 </div>
 </section>
 <section id="solver">
-<h2>Solver<a class="headerlink" href="#solver" title="Permalink to this headline"></a></h2>
+<h2>Solver<a class="headerlink" href="#solver" title="Permalink to this heading"></a></h2>
 <p>The solver section contains items to be passed to the solver. The only required item is the name of the solver to use. Other items will be specific to the solver.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;solver&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;glpk&quot;</span><span class="w"></span>
@@ -144,11 +145,11 @@
 </div>
 </section>
 <section id="nodes">
-<h2>Nodes<a class="headerlink" href="#nodes" title="Permalink to this headline"></a></h2>
+<h2>Nodes<a class="headerlink" href="#nodes" title="Permalink to this heading"></a></h2>
 <p>The nodes section describes the nodes in the model. As a minimum a node must have a <code class="docutils literal notranslate"><span class="pre">name</span></code> and a <code class="docutils literal notranslate"><span class="pre">type</span></code>. There are two fundamental types of node in Pywr (<code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.core.Node</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.core.Storage</span></code>) which have different properties.</p>
 <p>Where a parameter can be described as a simple scalar value it is sufficient to pass the value directly (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;cost&quot;:</span> <span class="pre">10.0</span></code>). See also the <a class="reference internal" href="#parameters">parameters</a> section for details on defining non-scalar parameters.</p>
 <section id="non-storage-nodes">
-<h3>Non-storage nodes<a class="headerlink" href="#non-storage-nodes" title="Permalink to this headline"></a></h3>
+<h3>Non-storage nodes<a class="headerlink" href="#non-storage-nodes" title="Permalink to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">Node</span></code> type and it’s subtypes have a <code class="docutils literal notranslate"><span class="pre">max_flow</span></code> and <code class="docutils literal notranslate"><span class="pre">cost</span></code> property, both of which have default values.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
 <span class="w">    </span><span class="p">{</span><span class="w"></span>
@@ -174,7 +175,7 @@
 </div>
 </section>
 <section id="storage-nodes">
-<h3>Storage nodes<a class="headerlink" href="#storage-nodes" title="Permalink to this headline"></a></h3>
+<h3>Storage nodes<a class="headerlink" href="#storage-nodes" title="Permalink to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">Storage</span></code> type and it’s subtypes have a <code class="docutils literal notranslate"><span class="pre">max_volume</span></code>, <code class="docutils literal notranslate"><span class="pre">min_volume</span></code> and <code class="docutils literal notranslate"><span class="pre">initial_volume</span></code>, as well as <code class="docutils literal notranslate"><span class="pre">num_inputs</span></code> and <code class="docutils literal notranslate"><span class="pre">num_outputs</span></code>. The maximum and initial volumes must be specified, whereas the others have default values.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
 <span class="w">    </span><span class="p">{</span><span class="w"></span>
@@ -194,7 +195,7 @@
 </section>
 </section>
 <section id="edges">
-<h2>Edges<a class="headerlink" href="#edges" title="Permalink to this headline"></a></h2>
+<h2>Edges<a class="headerlink" href="#edges" title="Permalink to this heading"></a></h2>
 <p>The edges section describes the connections between nodes. As a minimum an edge is defined as a two-item list containing the names of the nodes to connect (given in the order corresponding to the direction of flow), e.g.:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
 <span class="w">    </span><span class="p">[</span><span class="s2">&quot;supply&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;intermediate&quot;</span><span class="p">],</span><span class="w"></span>
@@ -210,7 +211,7 @@
 </div>
 </section>
 <section id="parameters">
-<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline"></a></h2>
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h2>
 <p>Sometimes it is convenient to define a <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> used in the model in the <code class="docutils literal notranslate"><span class="pre">&quot;parameters&quot;</span></code> section instead of inside a node, for instance if the parameter is needed by more than one node.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
@@ -255,7 +256,7 @@
 </div>
 </section>
 <section id="loading-a-json-document">
-<h2>Loading a JSON document<a class="headerlink" href="#loading-a-json-document" title="Permalink to this headline"></a></h2>
+<h2>Loading a JSON document<a class="headerlink" href="#loading-a-json-document" title="Permalink to this heading"></a></h2>
 <p>A Pywr JSON document can be loaded into a <cite>Model</cite> instance by using the <cite>Model.load</cite> class-method:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.model</span> <span class="kn">import</span> <span class="n">Model</span>
 <span class="n">my_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;/path/to/my_model.json&#39;</span><span class="p">)</span>
@@ -286,7 +287,7 @@
 </div>
 </section>
 <section id="debugging-and-syntax-errors">
-<h2>Debugging and syntax errors<a class="headerlink" href="#debugging-and-syntax-errors" title="Permalink to this headline"></a></h2>
+<h2>Debugging and syntax errors<a class="headerlink" href="#debugging-and-syntax-errors" title="Permalink to this heading"></a></h2>
 <p>The JSON format is not sensitive to white space but is otherwise quite strict. When the <cite>json</cite> module fails to parse a document an exception will be raised. The exception includes a (somewhat cryptic) description of the problem and usefully includes a line number (see example below).</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
@@ -311,7 +312,7 @@
 </div></blockquote>
 </section>
 <section id="footnotes">
-<h2>Footnotes<a class="headerlink" href="#footnotes" title="Permalink to this headline"></a></h2>
+<h2>Footnotes<a class="headerlink" href="#footnotes" title="Permalink to this heading"></a></h2>
 <dl class="footnote brackets">
 <dt class="label" id="id3"><span class="brackets"><a class="fn-backref" href="#id2">1</a></span></dt>
 <dd><p>In fact the model can be represented as a hierarchy of basic Python types, which can be conveniently parsed from a JSON document. Alternative formats are possible; for example, a YAML (Yet Another Markup Language) document as it can be translated to/from JSON losslessly.</p>

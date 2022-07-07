@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dynamic behaviour and control curves &mdash; Pywr 1.17.3.dev2+gc19070a7 documentation</title>
+  <title>Dynamic behaviour and control curves &mdash; Pywr 1.17.3.dev3+g66988838 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
@@ -15,6 +15,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -31,7 +32,7 @@
             <a href="../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.17.3.dev2+gc19070a7
+                1.17.3.dev3+g66988838
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -92,13 +93,13 @@
            <div itemprop="articleBody">
              
   <section id="dynamic-behaviour-and-control-curves">
-<h1>Dynamic behaviour and control curves<a class="headerlink" href="#dynamic-behaviour-and-control-curves" title="Permalink to this headline"></a></h1>
+<h1>Dynamic behaviour and control curves<a class="headerlink" href="#dynamic-behaviour-and-control-curves" title="Permalink to this heading"></a></h1>
 <p>Control curves are an important concept of many Pywr models. They are the most common way in which complex dynamic
 behaviour is created. The typical application uses control curves to parameterise state dependent rules. For example,
 a reservoir release that is dependent on the current volume. In this section of the documentation we discuss
 different strategies for implementing dynamic behaviour and control curves in Pywr models.</p>
 <section id="basic-concept">
-<h2>Basic concept<a class="headerlink" href="#basic-concept" title="Permalink to this headline"></a></h2>
+<h2>Basic concept<a class="headerlink" href="#basic-concept" title="Permalink to this heading"></a></h2>
 <p>It is very common for resource allocation models to include rules and behaviours that are dependent on the
 current state of the model. The most common example of state in Pywr models is the current volume in <code class="docutils literal notranslate"><span class="pre">Storage</span></code>
 node(s). During a simulation this state will be updated each timestep. Resource allocation rules and constraints
@@ -110,7 +111,7 @@ parameterised independently of the model’s boundary conditions. Such rules sho
 to different boundary conditions (e.g. changes in demand, future flow scenarios, etc.).</p>
 </section>
 <section id="storage-dependent-control-curves">
-<h2>Storage dependent control curves<a class="headerlink" href="#storage-dependent-control-curves" title="Permalink to this headline"></a></h2>
+<h2>Storage dependent control curves<a class="headerlink" href="#storage-dependent-control-curves" title="Permalink to this heading"></a></h2>
 <p>Pywr provides a few different ways to implement dynamic state dependent behaviour. The most common approach compares
 current volume in a <code class="docutils literal notranslate"><span class="pre">Storage</span></code> node against one or more curves. These are typically referred to as a <em>curves</em>
 because they are often defined as a profile which varies through the year. More complex systems will often contain
@@ -118,11 +119,11 @@ multiple ordered control curves that define progressively changing behaviour.</p
 <p>TBC</p>
 </section>
 <section id="other-control-curves">
-<h2>Other control curves<a class="headerlink" href="#other-control-curves" title="Permalink to this headline"></a></h2>
+<h2>Other control curves<a class="headerlink" href="#other-control-curves" title="Permalink to this heading"></a></h2>
 <p>TBC</p>
 </section>
 <section id="custom-control-curves">
-<h2>Custom control curves<a class="headerlink" href="#custom-control-curves" title="Permalink to this headline"></a></h2>
+<h2>Custom control curves<a class="headerlink" href="#custom-control-curves" title="Permalink to this heading"></a></h2>
 <p>TBC</p>
 <p>See also <a class="reference internal" href="../extending_pywr/extending_pywr_parameters.html#extending-pywr-parameters"><span class="std std-ref">Extending Pywr with custom Parameters</span></a>.</p>
 </section>
