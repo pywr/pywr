@@ -2,6 +2,23 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.18.0
+
+### New Features
+
+- Hash checking is now *not* case-sensitive. (#1046)
+- Add `MonthlyVirtualStorage` node that resets after a given number of months.
+- Add `StorageParameter` that provides the current volume from a storage node.
+- Add support for running multiple Pywr models in an interleaved fashion using a new `MultiModel` class
+ and associated parameters. 
+
+### Bug Fixes
+
+- Update load method of several parameters (`ControlCurveInterpolatedParameter`, `ControlCurveParameter`,
+ `ArrayIndexedScenarioMonthlyFactorsParameter`, several interpolated parameters) to ensure all data 
+ is loaded. (#1048)
+
+
 ## v1.17.2
 
 ### Bug Fixes
