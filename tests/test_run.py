@@ -1170,3 +1170,30 @@ class TestGlpkErrorHandling:
 
         with pytest.raises(pywr.solvers.GLPKError):
             model.run()
+
+
+def test_setup_profiler(tmp_path):
+    """Test the setup resource profiler."""
+    model = load_model("demand_saving2.json")
+
+    profile_out = tmp_path / "stats.csv"
+    model.setup(profile=True, profile_dump_filename=profile_out)
+
+    assert profile_out.exists()
+    df = pandas.read_csv(profile_out)
+    # 4 nodes & 10 parameters for setup & reset
+    # Plus reservoir has 2 internal nodes that are setup
+    assert len(df) == 14 * 2 + 2
+
+
+def test_reset_profiler(tmp_path):
+    """Test the reset resource profiler."""
+    model = load_model("demand_saving2.json")
+
+    profile_out = tmp_path / "stats.csv"
+    model.setup()
+    model.reset(profile=True, profile_dump_filename=profile_out)
+
+    assert profile_out.exists()
+    df = pandas.read_csv(profile_out)
+    assert len(df) == 14  # 4 nodes & 10 parameters for reset

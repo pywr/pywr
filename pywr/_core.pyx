@@ -1459,7 +1459,7 @@ cdef class RollingVirtualStorage(VirtualStorage):
             raise ValueError('The number of time-steps for a RollingVirtualStorage node must be greater than one.')
         cdef double initial_vol = self.get_initial_volume()
         cdef double initial_pc = self.get_initial_pc()
-        
+
         if initial_pc == 0.0:
             if isinstance(self.max_volume, Parameter):
                 raise ValueError("`max_volume` cannot be a parameter if `initial_volume` or `initial_volume_pc` is 0.0")
@@ -1489,3 +1489,63 @@ cdef class RollingVirtualStorage(VirtualStorage):
             # returning to the store later
             self._memory[self._memory_pointer, i] = -self._flow[i] * ts.days
         self._memory_pointer = (self._memory_pointer + 1) % (self.timesteps - 1)
+
+
+cdef class ShadowStorage(AbstractStorage):
+    """Storage node that shadows the volume of a node in another model.
+
+    This node will synchronise its `volume`, `current_pc`, `flow` and `prev_flow` with the respective values
+    from another storage node. This synchronisation happens in the `.before()` method. It is intended to allow a
+    storage node to "shadow" the volume of a node that has its real calculations undertaken in a separate model, but
+    is required in this model for parameter calculations.
+    """
+    def __init__(self, model, other_model, node, *args, **kwargs):
+        AbstractStorage.__init__(self, model, *args, **kwargs)
+        self.other_model = other_model
+        self.node = node
+
+        self._other_model = None
+        self._other_model_node = None
+
+    cpdef setup(self, model):
+        AbstractStorage.setup(self, model)
+        # Find the references to the other model and one of its parameters.
+        self._other_model = model.parent.models[self.other_model]
+        self._other_model_node = self._other_model.nodes[self.node]
+
+    cpdef before(self, Timestep ts):
+        AbstractStorage.before(self, ts)
+        # Update our current storage to the value of the node we are shadowing.
+        self._volume[:] =  self._other_model_node._volume
+        self._current_pc[:] = self._other_model_node._current_pc
+        self._flow[:] = self._other_model_node._flow
+        self._prev_flow[:] = self._other_model_node._prev_flow
+
+
+cdef class ShadowNode(AbstractNode):
+    """Node that shadows the flow of a node in another model.
+
+    This node will synchronise its `flow` and `prev_flow` with the respective values from another node. This
+    synchronisation happens in the `.before()` method. It is intended to allow a node to "shadow" the flow of a
+    node that has its real calculations undertaken in a separate model, but is required in this model for
+    parameter calculations.
+    """
+    def __init__(self, model, other_model, node, *args, **kwargs):
+        AbstractNode.__init__(self, model, *args, **kwargs)
+        self.other_model = other_model
+        self.node = node
+
+        self._other_model = None
+        self._other_model_node = None
+
+    cpdef setup(self, model):
+        AbstractNode.setup(self, model)
+        # Find the references to the other model and one of its parameters.
+        self._other_model = model.parent.models[self.other_model]
+        self._other_model_node = self._other_model.nodes[self.node]
+
+    cpdef before(self, Timestep ts):
+        AbstractNode.before(self, ts)
+        # Update our current storage to the value of the node we are shadowing.
+        self._flow[:] = self._other_model_node._flow
+        self._prev_flow[:] = self._other_model_node._prev_flow

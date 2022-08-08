@@ -65,6 +65,7 @@ from ._activation_functions import (
     RectifierParameter,
     LogisticParameter,
 )  # noqa
+from . import multi_model_parameters
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
