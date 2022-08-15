@@ -10,7 +10,8 @@ Aggregated nodes allows a constraint to be added that ensures the flow via two o
 
 In the example below the aggregated node "D" constrains the flow in nodes "A" and "B" to be equal (0.5 + 0.5 == 1). Due to the constraint the solution is flow from A = 40, B = 40, despite C demanding 100. There is no requirement that the factors sum to 1.0 this example would work with factors of 50 and 50 (or any two equal numbers) instead.
 
-Note that the aggregated node "D" is not connected to any nodes via an edge. The constraint is applied regardless. The factors must also remain a constant throughout a simulation (i.e. they can not be `Parameter` definitions references). This limitation could be resolved in a future version of Pywr.
+Note that the aggregated node "D" is not connected to any nodes via an edge. The constraint is applied regardless.
+Time-varying factors can used by referencing other parameters instead of using literal numbers as in the example.
 
 .. code-block:: javascript
 
