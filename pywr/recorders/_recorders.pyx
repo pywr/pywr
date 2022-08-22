@@ -1994,7 +1994,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
             include_to = 366
         else:
             include_to = pd.Timestamp(self._current_year, self.include_to_month, self.include_to_day).dayofyear
-        if include_from <= ts.dayofyear <= include_to:
+        if not (include_from <= ts.dayofyear <= include_to):
             return
 
         for scenario_index in self.model.scenarios.combinations:

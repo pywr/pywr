@@ -1831,17 +1831,17 @@ def test_annual_count_index_threshold_recorder(
 
     # We expect no failures in the first ensemble, the reservoir starts failing halfway through
     # the 3rd year
-    if exclude_months is None and include_range is None:
+    if exclude_months is None and None in include_range:
         expected_data = [[0, 0], [0, 0], [0, 183], [0, 365], [0, 365]]
-    elif isinstance(include_range, list):
+    elif None not in include_range:
         # Ignore counts between the 1st April and 15th Aug inclusive
         assert include_range == [4, 1, 8, 15]
         expected_data = [
             [0, 0],
             [0, 0],
-            [0, 183 + 31 + 15],
-            [0, 365 - 31 - 30 - 31 - 30 - 16],
-            [0, 365 - 31 - 30 - 31 - 30 - 16],
+            [0, 30 + 15],
+            [0, 30 + 31 + 30 + 31 + 15],
+            [0, 30 + 31 + 30 + 31 + 15],
         ]
     else:
         # Ignore counts for Jan, Feb and Dec
@@ -1857,7 +1857,6 @@ def test_annual_count_index_threshold_recorder(
             [0, 365 - 31 - 28 - 31],
             [0, 365 - 31 - 28 - 31],
         ]
-
     assert_allclose(expected_data, rec.data, atol=1e-7)
     df = rec.to_dataframe()
     assert_allclose(expected_data, df.values, atol=1e-7)
