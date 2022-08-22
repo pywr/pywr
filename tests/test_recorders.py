@@ -717,7 +717,10 @@ def test_numpy_parameter_recorder(simple_linear_model):
     model.timestepper.end = pandas.to_datetime("2016-12-31")
     otpt = model.nodes["Output"]
 
-    p = DailyProfileParameter(model, np.arange(366, dtype=np.float64),)
+    p = DailyProfileParameter(
+        model,
+        np.arange(366, dtype=np.float64),
+    )
     p.name = "daily profile"
     model.nodes["Input"].max_flow = p
     otpt.cost = -2.0
@@ -748,7 +751,10 @@ def test_numpy_daily_profile_parameter_recorder(simple_linear_model):
     model.timestepper.end = pandas.to_datetime("2017-12-31")
     otpt = model.nodes["Output"]
 
-    p = DailyProfileParameter(model, np.arange(366, dtype=np.float64),)
+    p = DailyProfileParameter(
+        model,
+        np.arange(366, dtype=np.float64),
+    )
     p.name = "daily profile"
     model.nodes["Input"].max_flow = p
     otpt.cost = -2.0
@@ -1299,7 +1305,15 @@ class TestTablesRecorder:
         with tables.open_file(str(h5file), "w") as h5f:
             nodes = ["Output", "Input", "Sum"]
             where = "/agroup"
-            rec = TablesRecorder(model, h5f, nodes=nodes, parameters=[p,], where=where,)
+            rec = TablesRecorder(
+                model,
+                h5f,
+                nodes=nodes,
+                parameters=[
+                    p,
+                ],
+                where=where,
+            )
 
             model.run()
 
@@ -1904,7 +1918,11 @@ class TestAnnualTotalFlowRecorder:
         assert_allclose([[3650.0 * 3]], df.values)
 
     @pytest.mark.parametrize(
-        "end_date, expected", [("2013-01-04", [30.0, 40.0]), ("2012-12-31", [30.0]),],
+        "end_date, expected",
+        [
+            ("2013-01-04", [30.0, 40.0]),
+            ("2012-12-31", [30.0]),
+        ],
     )
     def test_annual_total_flow_recorder_year_end(
         self, simple_linear_model, end_date, expected
@@ -1971,7 +1989,7 @@ def test_mean_flow_node_recorder(simple_linear_model):
 
 
 def custom_test_func(array, axis=None):
-    return np.sum(array ** 2, axis=axis)
+    return np.sum(array**2, axis=axis)
 
 
 class TestAggregatedRecorder:
@@ -2437,7 +2455,10 @@ class TestEventRecorder:
         elif minimum_length < 4:
             assert len(evt_rec.events) == 1
             assert_equal(
-                [3,], [e.duration for e in evt_rec.events],
+                [
+                    3,
+                ],
+                [e.duration for e in evt_rec.events],
             )
         else:
             assert len(evt_rec.events) == 0
@@ -2588,7 +2609,9 @@ class TestHydroPowerRecorder:
         np.testing.assert_allclose(rec.data[1, 0], 1000 * 9.81 * 8 * 0 * 1e-6)
         np.testing.assert_allclose(rec_total.values()[0], 1000 * 9.81 * 8 * 20 * 1e-6)
 
-    def test_load_from_json(self,):
+    def test_load_from_json(
+        self,
+    ):
         """Test example hydropower model loads and runs."""
         model = load_model("hydropower_example.json")
 
