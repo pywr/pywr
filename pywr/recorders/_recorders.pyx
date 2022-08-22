@@ -1921,13 +1921,25 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
     threshold : int
         Threshold to compare parameters against
     exclude_months : list or None
-        Optional list of month numbers to exclude from the count.
+        Optional list of month numbers to include from the count.
+    include_from_month : int or None
+        Optional start month to specify a range of dates to include from the count.
+    include_from_day : int or None
+        Optional start day to specify a range of dates to include from the count.
+    include_to_month : int or None
+        Optional end month to specify a range of dates to include from the count.
+    include_to_day : int or None
+        Optional end to specify a range of dates to include from the count.
     """
     def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
         self.exclude_months = kwargs.pop('exclude_months', None)
+        self.include_from_month = kwargs.pop('include_from_month', None)
+        self.include_from_day = kwargs.pop('include_from_day', None)
+        self.include_to_month = kwargs.pop('include_to_month', None)
+        self.include_to_day = kwargs.pop('include_to_day', None)
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
-        super().__init__(model, name=name, *args, **kwargs)
+        super(AnnualCountIndexThresholdRecorder, self).__init__(model, name=name, *args, **kwargs)
         self.parameters = parameters
         self.threshold = threshold
         for parameter in self.parameters:
@@ -1971,6 +1983,18 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
             self._current_year = ts.year
 
         if self.exclude_months is not None and ts.month in self.exclude_months:
+            return
+        
+        # include a range of dates within a year
+        if self.include_from_month is None or self.include_from_day is None:
+            include_from = 1
+        else:
+            include_from = pd.Timestamp(self._current_year, self.include_from_month, self.include_from_day).dayofyear
+        if self.include_to_month is None or self.include_to_day is None:
+            include_to = 366
+        else:
+            include_to = pd.Timestamp(self._current_year, self.include_to_month, self.include_to_day).dayofyear
+        if include_from <= ts.dayofyear <= include_to:
             return
 
         for scenario_index in self.model.scenarios.combinations:
