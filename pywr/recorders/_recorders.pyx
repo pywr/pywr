@@ -1907,7 +1907,11 @@ TimestepCountIndexParameterRecorder.register()
 cdef class AnnualCountIndexThresholdRecorder(Recorder):
     """
     For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
-    If multiple parameters exceed in one timestep then it is only counted once.
+    If multiple parameters exceed in one timestep then it is only counted once. The recorder also allows
+    for exclusion of months and for the inclusion of a range of dates within a calendar year to which
+    the parameter exceedence is counted. Both the exclusion of months and the inclusion of dates can
+    simultaneously be provided, where the intersection of excluded months with a range of dates will result
+    in the day not counting any exceedences.
 
     Output from data property has shape: (years, scenario combinations)
 
@@ -1921,15 +1925,15 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
     threshold : int
         Threshold to compare parameters against
     exclude_months : list or None
-        Optional list of month numbers to include from the count.
-    include_from_month : int or None
-        Optional start month to specify a range of dates to include from the count.
-    include_from_day : int or None
-        Optional start day to specify a range of dates to include from the count.
-    include_to_month : int or None
-        Optional end month to specify a range of dates to include from the count.
-    include_to_day : int or None
-        Optional end to specify a range of dates to include from the count.
+        Optional list of month numbers to exclude from the count.
+    include_from_month, include_from_day : int or None
+        Optional start date to specify a range of dates to include in the count. If intended to be used,
+        both arguments must be supplied, otherwise the recorder will assume that this is not used and default
+        to the 1st Jan. Period to count is inclusive of the start date.
+    include_to_month, include_to_day : int or None
+        Optional end date to specify a range of dates to include in the count. If intended to be used,
+        both arguments must be supplied, otherwise the recorder will assume that this is not used and default
+        to the 31st Dec. Period to count is inclusive of the end date.
     """
     def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
         self.exclude_months = kwargs.pop('exclude_months', None)
@@ -1966,6 +1970,8 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = self._current_year - self._start_year
         cdef int p
+        cdef int include_from
+        cdef int include_to
         cdef Py_ssize_t i
         cdef int value
         cdef ScenarioIndex scenario_index
@@ -1984,7 +1990,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
 
         if self.exclude_months is not None and ts.month in self.exclude_months:
             return
-        
+
         # include a range of dates within a year
         if self.include_from_month is None or self.include_from_day is None:
             include_from = 1
