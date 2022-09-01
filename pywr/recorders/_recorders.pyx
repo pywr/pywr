@@ -1905,8 +1905,8 @@ TimestepCountIndexParameterRecorder.register()
 
 
 cdef class AnnualCountIndexThresholdRecorder(Recorder):
-    """
-    For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
+    """For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
+
     If multiple parameters exceed in one timestep then it is only counted once. The recorder also allows
     for exclusion of months and for the inclusion of a range of dates within a calendar year to which
     the parameter exceedence is counted. Both the exclusion of months and the inclusion of dates can
