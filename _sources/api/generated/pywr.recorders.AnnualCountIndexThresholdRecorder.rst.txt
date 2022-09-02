@@ -44,6 +44,10 @@
       ~AnnualCountIndexThresholdRecorder.epsilon
       ~AnnualCountIndexThresholdRecorder.exclude_months
       ~AnnualCountIndexThresholdRecorder.ignore_nan
+      ~AnnualCountIndexThresholdRecorder.include_from_day
+      ~AnnualCountIndexThresholdRecorder.include_from_month
+      ~AnnualCountIndexThresholdRecorder.include_to_day
+      ~AnnualCountIndexThresholdRecorder.include_to_month
       ~AnnualCountIndexThresholdRecorder.is_constraint
       ~AnnualCountIndexThresholdRecorder.is_double_bounded_constraint
       ~AnnualCountIndexThresholdRecorder.is_equality_constraint
