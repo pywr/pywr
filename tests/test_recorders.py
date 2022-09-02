@@ -1783,15 +1783,16 @@ def test_timestep_count_index_parameter_recorder(simple_storage_model):
 
 
 @pytest.mark.parametrize(
-    ("params", "exclude_months"),
+    ("params", "exclude_months", "include_range"),
     [
-        [1, None],
-        [2, None],
-        [1, [1, 2, 12]],
+        [1, None, [None, None, None, None]],
+        [2, None, [None, None, None, None]],
+        [1, [1, 2, 12], [None, None, None, None]],
+        [1, None, [4, 1, 8, 15]],
     ],
 )
 def test_annual_count_index_threshold_recorder(
-    simple_storage_model, params, exclude_months
+    simple_storage_model, params, exclude_months, include_range
 ):
     """
     The test sets uses a simple reservoir model with different inputs that
@@ -1819,18 +1820,43 @@ def test_annual_count_index_threshold_recorder(
         model, scenario, [demand, 0]
     )
     model.nodes["Output"].max_flow = demand
+    (
+        include_from_month,
+        include_from_day,
+        include_to_month,
+        include_to_day,
+    ) = include_range
 
+    # import pdb; pdb.set_trace()
     # Create the recorder with a threshold of 1
     rec = AnnualCountIndexThresholdRecorder(
-        model, [param] * params, "TestRec", 1, exclude_months=exclude_months
+        model,
+        [param] * params,
+        "TestRec",
+        1,
+        exclude_months=exclude_months,
+        include_from_month=include_from_month,
+        include_from_day=include_from_day,
+        include_to_day=include_to_day,
+        include_to_month=include_to_month,
     )
 
     model.run()
 
     # We expect no failures in the first ensemble, the reservoir starts failing halfway through
     # the 3rd year
-    if exclude_months is None:
+    if exclude_months is None and None in include_range:
         expected_data = [[0, 0], [0, 0], [0, 183], [0, 365], [0, 365]]
+    elif None not in include_range:
+        # Ignore counts between the 1st April and 15th Aug inclusive
+        assert include_range == [4, 1, 8, 15]
+        expected_data = [
+            [0, 0],
+            [0, 0],
+            [0, 30 + 15],
+            [0, 30 + 31 + 30 + 31 + 15],
+            [0, 30 + 31 + 30 + 31 + 15],
+        ]
     else:
         # Ignore counts for Jan, Feb and Dec
         assert exclude_months == [
@@ -1845,7 +1871,6 @@ def test_annual_count_index_threshold_recorder(
             [0, 365 - 31 - 28 - 31],
             [0, 365 - 31 - 28 - 31],
         ]
-
     assert_allclose(expected_data, rec.data, atol=1e-7)
     df = rec.to_dataframe()
     assert_allclose(expected_data, df.values, atol=1e-7)
