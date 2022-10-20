@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Solvers &mdash; Pywr 1.18.1.dev2+g7f815b33 documentation</title>
+  <title>Solvers &mdash; Pywr 1.18.1.dev3+gda3ba3f4 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
@@ -17,6 +17,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -32,7 +33,7 @@
             <a href="../index.html" class="icon icon-home"> Pywr
           </a>
               <div class="version">
-                1.18.1.dev2+g7f815b33
+                1.18.1.dev3+gda3ba3f4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -58,9 +59,25 @@
 <li class="toctree-l2"><a class="reference internal" href="pywr.recorders.html">Recorders</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Solvers</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-pywr.solvers.cython_glpk">pywr.solvers.cython_glpk module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pywr.solvers.cython_glpk">pywr.solvers.cython_glpk module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.cython_glpk.AbstractNodeData"><code class="docutils literal notranslate"><span class="pre">AbstractNodeData</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.cython_glpk.AggNodeFactorData"><code class="docutils literal notranslate"><span class="pre">AggNodeFactorData</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.cython_glpk.BasisManager"><code class="docutils literal notranslate"><span class="pre">BasisManager</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.cython_glpk.CythonGLPKEdgeSolver"><code class="docutils literal notranslate"><span class="pre">CythonGLPKEdgeSolver</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.cython_glpk.CythonGLPKSolver"><code class="docutils literal notranslate"><span class="pre">CythonGLPKSolver</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.cython_glpk.GLPKError"><code class="docutils literal notranslate"><span class="pre">GLPKError</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.cython_glpk.GLPKInternalError"><code class="docutils literal notranslate"><span class="pre">GLPKInternalError</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.cython_glpk.GLPKSolver"><code class="docutils literal notranslate"><span class="pre">GLPKSolver</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#pywr-solvers-cython-lpsolve-module">pywr.solvers.cython_lpsolve module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-pywr.solvers">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pywr.solvers">Module contents</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.CythonGLPKEdgeSolver"><code class="docutils literal notranslate"><span class="pre">CythonGLPKEdgeSolver</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.CythonGLPKSolver"><code class="docutils literal notranslate"><span class="pre">CythonGLPKSolver</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.NullSolver"><code class="docutils literal notranslate"><span class="pre">NullSolver</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywr.solvers.Solver"><code class="docutils literal notranslate"><span class="pre">Solver</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="pywr.notebook.html">Notebook Utilities</a></li>
