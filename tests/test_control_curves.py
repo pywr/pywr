@@ -1,5 +1,10 @@
 from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep, Output
-from pywr.parameters import ConstantParameter, DailyProfileParameter, MonthlyProfileParameter, load_parameter
+from pywr.parameters import (
+    ConstantParameter,
+    DailyProfileParameter,
+    MonthlyProfileParameter,
+    load_parameter,
+)
 from pywr.parameters.control_curves import (
     ControlCurveParameter,
     ControlCurveInterpolatedParameter,
@@ -527,15 +532,9 @@ class TestWeightedAverageControlCurve:
         curve0 = ConstantParameter(three_storage_model, 0.25)
         curve1 = ConstantParameter(three_storage_model, 0.7)
 
-        storages = [
-            m.nodes["Storage 0"],
-            m.nodes["Storage 1"]
-        ]
+        storages = [m.nodes["Storage 0"], m.nodes["Storage 1"]]
 
-        profiles = [
-            curve0,
-            curve1
-        ]
+        profiles = [curve0, curve1]
 
         agg_curves = WeightedAverageProfileParameter(m, storages, profiles)
 
@@ -564,15 +563,9 @@ class TestWeightedAverageControlCurve:
         curve0 = MonthlyProfileParameter(three_storage_model, profile_vals)
         curve1 = ConstantParameter(three_storage_model, 0.7)
 
-        storages = [
-            m.nodes["Storage 0"],
-            m.nodes["Storage 1"]
-        ]
+        storages = [m.nodes["Storage 0"], m.nodes["Storage 1"]]
 
-        profiles = [
-            curve0,
-            curve1
-        ]
+        profiles = [curve0, curve1]
 
         agg_curves = WeightedAverageProfileParameter(m, storages, profiles)
 
@@ -601,15 +594,9 @@ class TestWeightedAverageControlCurve:
         curve0 = MonthlyProfileParameter(three_storage_model, profile_vals)
         curve1 = DailyProfileParameter(three_storage_model, np.full(366, 0.7))
 
-        storages = [
-            m.nodes["Storage 0"],
-            m.nodes["Storage 1"]
-        ]
+        storages = [m.nodes["Storage 0"], m.nodes["Storage 1"]]
 
-        profiles = [
-            curve0,
-            curve1
-        ]
+        profiles = [curve0, curve1]
 
         agg_curves = WeightedAverageProfileParameter(m, storages, profiles)
 
@@ -638,15 +625,9 @@ class TestWeightedAverageControlCurve:
         curve0 = MonthlyProfileParameter(three_storage_model, profile_vals)
         curve1 = ConstantParameter(three_storage_model, 0.7)
 
-        storages = [
-            m.nodes["Storage 0"],
-            m.nodes["Storage 1"]
-        ]
+        storages = [m.nodes["Storage 0"], m.nodes["Storage 1"]]
 
-        profiles = [
-            curve0,
-            curve1
-        ]
+        profiles = [curve0, curve1]
 
         agg_curves = WeightedAverageProfileParameter(m, storages, profiles)
 

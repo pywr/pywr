@@ -7,5 +7,5 @@ from ._control_curves import (
     ControlCurveInterpolatedParameter,
     ControlCurveIndexParameter,
     ControlCurvePiecewiseInterpolatedParameter,
-    WeightedAverageProfileParameter
+    WeightedAverageProfileParameter,
 )
