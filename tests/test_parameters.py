@@ -48,7 +48,6 @@ from pywr.model import OrphanedParameterWarning
 from pywr.dataframe_tools import ResamplingError
 from pywr.recorders import Recorder
 from fixtures import simple_linear_model, simple_storage_model
-from fixtures import three_storage_model
 from helpers import load_model
 import json
 import os

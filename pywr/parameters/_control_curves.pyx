@@ -552,7 +552,7 @@ ControlCurveParameter.register()
 
 
 cdef class WeightedAverageProfileParameter(Parameter):
-    """Generates a weighted average daily profile from a list of stroge nodes and
+    """Generates a weighted average daily profile from pairs of storage nodes and
     profile parameters.
 
     The contribution on each profile is weighted using the volume of the paired
@@ -561,8 +561,8 @@ cdef class WeightedAverageProfileParameter(Parameter):
     Parameters
     ----------
     storages: iterable of storage nodes.
-    profiles: iterable of profile parameters. These can be either a ConstantParameter, DailyProfileParameter,
-            or MonthlyProfileParameter.
+    profiles: iterable of profile parameters. These can be either a
+        ConstantParameter, DailyProfileParameter, or MonthlyProfileParameter.
     """
 
     def __init__(self, model, storages, profiles, **kwargs):
@@ -573,7 +573,7 @@ cdef class WeightedAverageProfileParameter(Parameter):
             profile.parents.add(self)
 
     cpdef reset(self):
-    super(UniformDrawdownProfileParameter, self).reset()
+        super(WeightedAverageProfileParameter, self).reset()
         cdef double total_volume
         cdef int mnth, i
         cdef Storage storage
@@ -584,8 +584,10 @@ cdef class WeightedAverageProfileParameter(Parameter):
         for (storage, profile) in zip(self.storages, self.profiles):
             max_volume = storage.max_volume
             if isinstance(max_volume, Parameter):
-                # TODO raise a error here if max_volume parameter is not a constant?
-                max_volume = max_volume.get_constant_value()
+                if max_volume.is_constant():
+                    max_volume = max_volume.get_constant_value()
+                else:
+                    raise ValueError("Storages with max_volume set to non-constant parameters cannot be used in WeightedAverageProfileParameter")
             total_volume += max_volume
             print(profile.name)
             if isinstance(profile, ConstantParameter):
