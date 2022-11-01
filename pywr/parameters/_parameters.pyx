@@ -620,6 +620,9 @@ cdef class DailyProfileParameter(Parameter):
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self._values[ts.dayofyear_index]
+
+    cpdef double[:] get_double_variables(self):
+        return np.array(self._values).copy()
 DailyProfileParameter.register()
 
 cdef class WeeklyProfileParameter(Parameter):
@@ -754,6 +757,9 @@ cdef class MonthlyProfileParameter(Parameter):
 
     cpdef set_double_variables(self, double[:] values):
         self._values[...] = values
+
+    cpdef double[:] get_interp_values(self):
+        return np.array(self._interp_values).copy()
 
     cpdef double[:] get_double_variables(self):
         # Make sure we return a copy of the data instead of a view.

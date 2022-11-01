@@ -1,19 +1,20 @@
 from pywr.core import Model, Storage, Link, ScenarioIndex, Timestep, Output
-from pywr.parameters import ConstantParameter, DailyProfileParameter, load_parameter
+from pywr.parameters import ConstantParameter, DailyProfileParameter, MonthlyProfileParameter, load_parameter
 from pywr.parameters.control_curves import (
     ControlCurveParameter,
     ControlCurveInterpolatedParameter,
     ControlCurvePiecewiseInterpolatedParameter,
+    WeightedAverageProfileParameter,
 )
 from pywr.parameters._control_curves import _interpolate
 from pywr.recorders import NumpyArrayNodeRecorder, NumpyArrayStorageRecorder, assert_rec
 import numpy as np
 import pandas as pd
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_almost_equal
 import pytest
 import datetime
 import os
-from fixtures import simple_linear_model, simple_storage_model
+from fixtures import simple_linear_model, simple_storage_model, three_storage_model
 from helpers import load_model
 
 
@@ -516,3 +517,141 @@ class TestControlCurvePiecewiseInterpolatedParameter:
         np.testing.assert_allclose(parameter.values, [[200, 100], [10, 5], [0, -10]])
         assert parameter.control_curves == [control_curve1, control_curve2]
         assert parameter.storage_node is model.nodes["Storage"]
+
+
+class TestWeightedAverageControlCurve:
+    def test_constant(self, three_storage_model):
+        m = three_storage_model
+
+        m.nodes["Storage 0"].max_volume = 16.0
+        curve0 = ConstantParameter(three_storage_model, 0.25)
+        curve1 = ConstantParameter(three_storage_model, 0.7)
+
+        storages = [
+            m.nodes["Storage 0"],
+            m.nodes["Storage 1"]
+        ]
+
+        profiles = [
+            curve0,
+            curve1
+        ]
+
+        agg_curves = WeightedAverageProfileParameter(m, storages, profiles)
+
+        m.setup()
+
+        assert_array_almost_equal(agg_curves.get_daily_values(), np.full(366, 0.5))
+
+    def test_monthly_and_constant(self, three_storage_model):
+        m = three_storage_model
+
+        m.nodes["Storage 0"].max_volume = 16.0
+        profile_vals = [
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+        ]
+        curve0 = MonthlyProfileParameter(three_storage_model, profile_vals)
+        curve1 = ConstantParameter(three_storage_model, 0.7)
+
+        storages = [
+            m.nodes["Storage 0"],
+            m.nodes["Storage 1"]
+        ]
+
+        profiles = [
+            curve0,
+            curve1
+        ]
+
+        agg_curves = WeightedAverageProfileParameter(m, storages, profiles)
+
+        m.setup()
+
+        assert_array_almost_equal(agg_curves.get_daily_values(), np.full(366, 0.5))
+
+    def test_monthly_and_daily(self, three_storage_model):
+        m = three_storage_model
+
+        m.nodes["Storage 0"].max_volume = 16.0
+        profile_vals = [
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+        ]
+        curve0 = MonthlyProfileParameter(three_storage_model, profile_vals)
+        curve1 = DailyProfileParameter(three_storage_model, np.full(366, 0.7))
+
+        storages = [
+            m.nodes["Storage 0"],
+            m.nodes["Storage 1"]
+        ]
+
+        profiles = [
+            curve0,
+            curve1
+        ]
+
+        agg_curves = WeightedAverageProfileParameter(m, storages, profiles)
+
+        m.setup()
+
+        assert_array_almost_equal(agg_curves.get_daily_values(), np.full(366, 0.5))
+
+    def test_varying_curve(self, three_storage_model):
+        m = three_storage_model
+
+        m.nodes["Storage 0"].max_volume = 16.0
+        profile_vals = [
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.8125,
+            0.8125,
+            0.8125,
+            0.8125,
+            0.8125,
+            0.8125,
+        ]
+        curve0 = MonthlyProfileParameter(three_storage_model, profile_vals)
+        curve1 = ConstantParameter(three_storage_model, 0.7)
+
+        storages = [
+            m.nodes["Storage 0"],
+            m.nodes["Storage 1"]
+        ]
+
+        profiles = [
+            curve0,
+            curve1
+        ]
+
+        agg_curves = WeightedAverageProfileParameter(m, storages, profiles)
+
+        m.setup()
+
+        expected = np.append(np.full(182, 0.5), np.full(184, 0.75))
+
+        assert_array_almost_equal(agg_curves.get_daily_values(), expected)

@@ -30,3 +30,10 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
     cdef int[:] _variable_indices
     cdef double[:] _upper_bounds
     cdef double[:] _lower_bounds
+
+
+cdef class WeightedAverageProfileParameter(Parameter):
+    cdef list storages
+    cdef list profiles
+    cdef double[:] daily_values
+    cpdef double[:] get_daily_values(self)
