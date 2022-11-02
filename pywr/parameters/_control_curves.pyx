@@ -589,7 +589,7 @@ cdef class WeightedAverageProfileParameter(Parameter):
                 else:
                     raise ValueError("Storages with max_volume set to non-constant parameters cannot be used in WeightedAverageProfileParameter")
             total_volume += max_volume
-            print(profile.name)
+
             if isinstance(profile, ConstantParameter):
                 total_absolute_profile += (np.full(366, profile.get_constant_value()) * max_volume)
             elif isinstance(profile, DailyProfileParameter):
