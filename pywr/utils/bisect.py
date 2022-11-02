@@ -37,7 +37,7 @@ class BisectionSearchModel(Model):
     @classmethod
     def _load_from_dict(cls, data, model=None, path=None, solver=None, **kwargs):
         model = super()._load_from_dict(
-            data, model=None, path=None, solver=None, **kwargs
+            data, model=model, path=path, solver=solver, **kwargs
         )
 
         try:
