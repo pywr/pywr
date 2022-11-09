@@ -636,3 +636,39 @@ class TestWeightedAverageControlCurve:
         expected = np.append(np.full(182, 0.5), np.full(184, 0.75))
 
         assert_array_almost_equal(agg_curves.get_daily_values(), expected)
+
+    def test_interpolated_curve(self, three_storage_model):
+        m = three_storage_model
+
+        m.nodes["Storage 0"].max_volume = 16.0
+        profile_vals = [
+            0.25,
+            0.25,
+            0.25,
+            0.5,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+        ]
+        curve0 = MonthlyProfileParameter(three_storage_model, profile_vals, interp_day="first")
+        curve1 = ConstantParameter(three_storage_model, 0.7)
+
+        storages = [m.nodes["Storage 0"], m.nodes["Storage 1"]]
+
+        profiles = [curve0, curve1]
+
+        agg_curves = WeightedAverageProfileParameter(m, storages, profiles)
+
+        m.setup()
+
+        interp_vals = np.interp(np.arange(62), [0, 31, 62], [0.25, 0.5, 0.25])
+        interp_curve = ((interp_vals * 16.0) + (np.full(62, 0.7) * 20.0)) / 36
+
+        expected = np.append(np.append(np.full(60, 0.5), interp_curve), np.full(302, 0.5))
+
+        assert_array_almost_equal(agg_curves.get_daily_values()[58:62], expected[58:62])

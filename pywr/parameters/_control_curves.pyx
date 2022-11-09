@@ -556,13 +556,17 @@ cdef class WeightedAverageProfileParameter(Parameter):
     profile parameters.
 
     The contribution on each profile is weighted using the volume of the paired
-    storage node.
+    storage node. For efficiency, the profile values are calculated in the reset
+    method, though this limits the type of parameters that can be given as input
+    profiles.
 
     Parameters
     ----------
-    storages: iterable of storage nodes.
+    storages: iterable of storage nodes. Length should equal to the length of
+        profiles parameter.
     profiles: iterable of profile parameters. These can be either a
         ConstantParameter, DailyProfileParameter, or MonthlyProfileParameter.
+        Length should equal to the length of storages parameter.
     """
 
     def __init__(self, model, storages, profiles, **kwargs):
@@ -590,22 +594,14 @@ cdef class WeightedAverageProfileParameter(Parameter):
                     raise ValueError("Storages with max_volume set to non-constant parameters cannot be used in WeightedAverageProfileParameter")
             total_volume += max_volume
 
-            if isinstance(profile, ConstantParameter):
-                total_absolute_profile += (np.full(366, profile.get_constant_value()) * max_volume)
+            if profile.is_constant:
+                total_absolute_profile += np.full(366, profile.get_constant_value()) * max_volume
             elif isinstance(profile, DailyProfileParameter):
                 vals = np.asarray(profile.get_double_variables())
                 total_absolute_profile += (vals * max_volume)
             elif isinstance(profile, MonthlyProfileParameter):
-                if profile.interp_day is not None:
-                    vals = np.asarray(profile.get_interp_values())
-                    total_absolute_profile += (vals * max_volume)
-                else:
-                    values = profile.get_double_variables()
-                    daily_values = []
-                    for mth in range(0, 12):
-                        for i in range(0, calendar.monthrange(2016, mth+1)[1]):
-                            daily_values.append(values[mth] * max_volume)
-                    total_absolute_profile += np.array(daily_values)
+                vals = np.asarray(profile.get_daily_values())
+                total_absolute_profile += (vals * max_volume)
             else:
                 raise ValueError("Control curve should be a ContantParameter, MonthlyProfileParameter, \
                                   or DailyProfileParameter")
