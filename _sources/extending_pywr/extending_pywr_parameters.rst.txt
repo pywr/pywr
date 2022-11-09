@@ -94,13 +94,17 @@ parameter which has a finite volume.
 
 .. code-block:: python
 
+    from pywr.parameters import Parameter
+
     class LicenceParameter(Parameter):
-        def __init__(self, model, total_volume, **kwargs):
-            super().__init__(self, model, **kwargs)
+        def __init__(self, model, total_volume, node, **kwargs):
+            super().__init__(model, **kwargs)
             self.total_volume = total_volume
+            self.node = node
 
         def setup(self):
             # allocate an array to hold the parameter state
+            super().setup()
             num_scenarios = len(self.model.scenarios.combinations)
             self._volume_remaining = np.empty([num_scenarios], np.float64)
 
@@ -115,13 +119,17 @@ parameter which has a finite volume.
         def after(self):
             # update the state
             timestep = self.model.timestepper.current  # get current timestep
-            flow_during_timestep = self._node.flow * timestep.days  # see explanation below
-            self._remaining -= flow_during_timestep
-            self._remaining[self._remaining < 0] = 0  # volume remaining cannot be less than zero
+            flow_during_timestep = self.node.flow * timestep.days  # see explanation below
+            self._volume_remaining -= flow_during_timestep
+            self._volume_remaining[self._volume_remaining < 0] = 0  # volume remaining cannot be less than zero
 
-        def load(self, model, data):
+        @classmethod
+        def load(cls, model, data):
             total_volume = data.pop("total_volume")
-            return cls(model, total_volume, **data)
+            node = model.nodes[data.pop("node")]
+            return cls(model, total_volume, node, **data)
+
+    LicenceParameter.register()  # register the name so it can be loaded from JSON
 
 The example above uses the `_node` attribute of the parameter, which is automatically set when the parameter is attached
 to a node. The `flow` attribute of the node represents the flow (per day) via that node. To get the total flow for the
