@@ -655,7 +655,9 @@ class TestWeightedAverageControlCurve:
             0.25,
             0.25,
         ]
-        curve0 = MonthlyProfileParameter(three_storage_model, profile_vals, interp_day="first")
+        curve0 = MonthlyProfileParameter(
+            three_storage_model, profile_vals, interp_day="first"
+        )
         curve1 = ConstantParameter(three_storage_model, 0.7)
 
         storages = [m.nodes["Storage 0"], m.nodes["Storage 1"]]
@@ -669,6 +671,8 @@ class TestWeightedAverageControlCurve:
         interp_vals = np.interp(np.arange(62), [0, 31, 62], [0.25, 0.5, 0.25])
         interp_curve = ((interp_vals * 16.0) + (np.full(62, 0.7) * 20.0)) / 36
 
-        expected = np.append(np.append(np.full(60, 0.5), interp_curve), np.full(302, 0.5))
+        expected = np.append(
+            np.append(np.full(60, 0.5), interp_curve), np.full(302, 0.5)
+        )
 
         assert_array_almost_equal(agg_curves.get_daily_values()[58:62], expected[58:62])
