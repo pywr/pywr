@@ -1,8 +1,9 @@
 import cython
+import calendar
 import numpy as np
 cimport numpy as np
 from .parameters import parameter_registry, ConstantParameter, parameter_property
-from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter
+from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter, ConstantParameter, DailyProfileParameter, MonthlyProfileParameter
 import warnings
 
 
@@ -548,3 +549,74 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
         return self._upper_bounds
 
 ControlCurveParameter.register()
+
+
+cdef class WeightedAverageProfileParameter(Parameter):
+    """Generates a weighted average daily profile from pairs of storage nodes and
+    profile parameters.
+
+    The contribution on each profile is weighted using the volume of the paired
+    storage node. For efficiency, the profile values are calculated in the reset
+    method, though this limits the type of parameters that can be given as input
+    profiles.
+
+    Parameters
+    ----------
+    storages: iterable of storage nodes. Length should equal to the length of
+        profiles parameter.
+    profiles: iterable of profile parameters. These can be either a
+        ConstantParameter, DailyProfileParameter, or MonthlyProfileParameter.
+        Length should equal to the length of storages parameter.
+    """
+
+    def __init__(self, model, storages, profiles, **kwargs):
+        super(WeightedAverageProfileParameter, self).__init__(model, **kwargs)
+        self.storages = storages
+        self.profiles = profiles
+        for profile in profiles:
+            profile.parents.add(self)
+
+    cpdef reset(self):
+        super(WeightedAverageProfileParameter, self).reset()
+        cdef double total_volume
+        cdef int mnth, i
+        cdef Storage storage
+        cdef Parameter profile
+
+        total_volume = 0
+        total_absolute_profile = np.zeros(366)
+        for (storage, profile) in zip(self.storages, self.profiles):
+            max_volume = storage.max_volume
+            if isinstance(max_volume, Parameter):
+                if max_volume.is_constant():
+                    max_volume = max_volume.get_constant_value()
+                else:
+                    raise ValueError("Storages with max_volume set to non-constant parameters cannot be used in WeightedAverageProfileParameter")
+            total_volume += max_volume
+
+            if profile.is_constant:
+                total_absolute_profile += np.full(366, profile.get_constant_value()) * max_volume
+            elif isinstance(profile, DailyProfileParameter):
+                vals = np.asarray(profile.get_double_variables())
+                total_absolute_profile += (vals * max_volume)
+            elif isinstance(profile, MonthlyProfileParameter):
+                vals = np.asarray(profile.get_daily_values())
+                total_absolute_profile += (vals * max_volume)
+            else:
+                raise ValueError("Control curve should be a ContantParameter, MonthlyProfileParameter, \
+                                  or DailyProfileParameter")
+        self.daily_values = total_absolute_profile / total_volume
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self.daily_values[ts.dayofyear_index]
+
+    cpdef double[:] get_daily_values(self):
+        return np.asarray(self.daily_values).copy()
+
+    @classmethod
+    def load(cls, model, data):
+        storages = [model.nodes[n] for n in data.pop("storages")]
+        profiles = [load_parameter(model, p) for p in data.pop("profiles")]
+        return cls(model, storages, profiles, **data)
+
+WeightedAverageProfileParameter.register()
