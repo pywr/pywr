@@ -19,6 +19,7 @@
       ~MonthlyProfileParameter.finish
       ~MonthlyProfileParameter.get_all_values
       ~MonthlyProfileParameter.get_constant_value
+      ~MonthlyProfileParameter.get_daily_values
       ~MonthlyProfileParameter.get_double_lower_bounds
       ~MonthlyProfileParameter.get_double_upper_bounds
       ~MonthlyProfileParameter.get_double_variables
