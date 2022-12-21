@@ -422,7 +422,7 @@ def test_storage_max_volume_param():
     # The initial storage is defined in both absolute and relative terms
     # but these are now not consistent with one another and the updated max_volume
 
-    np.testing.assert_allclose(storage.volume, 10.0)
+    np.testing.assert_allclose(storage.volume, 20.0)
     np.testing.assert_allclose(storage.current_pc, 0.5)
 
 
