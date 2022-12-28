@@ -2,6 +2,23 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.19.0
+
+### New Features
+
+- Add `WeightedAverageProfileParameter`. (#1066) 
+- Update to `AnnualCountIndexThresholdRecorder` to include a range of days to record. (#1061)
+
+### Bug Fixes
+
+- Fix `__init__` argument handling in `BisectionSearchModel`. (#1067)
+
+### Miscellaneous
+
+- Remove matplotlib, jinja2 and ipython from core dependencies. (#1040)
+- Fix `LicenceParameter` example in documentation. (#1068) 
+- Remove outdated documentation on constant factors in AggregatedNode. (#1060) 
+
 ## v1.18.0
 
 ### New Features

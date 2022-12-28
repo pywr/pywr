@@ -35,10 +35,11 @@ def setup_package():
             super().finalize_options()
 
     # Extra optional dependencies
-    docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc"]
-    test_extras = ["pytest"]
-    dev_extras = docs_extras + test_extras
+    docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc", "matplotlib"]
+    notebook_extras = ["ipython", "jinja2", "matplotlib"]
     opt_extras = ["platypus-opt", "pygmo"]
+    test_extras = ["pytest"] + notebook_extras + opt_extras
+    dev_extras = docs_extras + test_extras
 
     metadata = dict(
         name="pywr",
@@ -56,15 +57,13 @@ def setup_package():
             "tables",
             "openpyxl",
             "packaging",
-            "matplotlib",
-            "jinja2",
-            "ipython",
         ],
         extras_require={
             "docs": docs_extras,
             "test": test_extras,
             "dev": dev_extras,
             "optimisation": opt_extras,
+            "notebook": notebook_extras,
         },
         cmdclass={"build_ext": new_build_ext},
         packages=[

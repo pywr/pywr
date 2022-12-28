@@ -3,7 +3,7 @@ name: Build
 on: [push, pull_request]
 
 env:
-  CIBW_TEST_REQUIRES: pytest platypus-opt
+  CIBW_TEST_REQUIRES: pytest platypus-opt ipython jinja2 matplotlib
   CIBW_BEFORE_TEST_LINUX: "chmod +x {project}/.github/workflows/run-tests.sh"
   CIBW_TEST_COMMAND_LINUX: "{project}/.github/workflows/run-tests.sh {project}"
   CIBW_TEST_COMMAND_WINDOWS: "{project}\\.github\\workflows\\run-tests-windows.bat {project}"
@@ -114,7 +114,7 @@ jobs:
         # This doesn't really matter for the documentation builds.
         run: |
           sudo apt-get install libglpk-dev
-          pip install sphinx sphinx_rtd_theme numpydoc
+          pip install sphinx sphinx_rtd_theme numpydoc matplotlib
           python setup.py install --without-lpsolve
           cd docs
           make html
