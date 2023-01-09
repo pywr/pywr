@@ -18,6 +18,7 @@ from pywr.parameters import (
     ConstantParameter,
     DataFrameParameter,
     AggregatedParameter,
+    ArrayIndexedParameter
 )
 from pywr.recorders import assert_rec, AssertionRecorder
 
@@ -398,7 +399,7 @@ def test_storage_max_volume_param():
     otpt = Output(model, "output", max_flow=99999, cost=-99999)
     storage.connect(otpt)
 
-    p = ConstantParameter(model, 20.0)
+    p = ArrayIndexedParameter(model, [20.0])
     storage.max_volume = p
     storage.initial_volume = 10.0
     storage.initial_volume_pc = 0.5
@@ -408,21 +409,17 @@ def test_storage_max_volume_param():
 
     model.run()
 
-    p.set_double_variables(
-        np.asarray(
-            [
-                40.0,
-            ]
-        )
-    )
+    p1 = ArrayIndexedParameter(model, [10.0])
+    storage.max_volume = p1
     model.reset()
 
     # This is a demonstration of the issue describe in #470
     #   https://github.com/pywr/pywr/issues/470
     # The initial storage is defined in both absolute and relative terms
     # but these are now not consistent with one another and the updated max_volume
+    # The issue has been fixed when max_volume is set to a constant parameter.
 
-    np.testing.assert_allclose(storage.volume, 20.0)
+    np.testing.assert_allclose(storage.volume, 10.0)
     np.testing.assert_allclose(storage.current_pc, 0.5)
 
 
@@ -434,6 +431,31 @@ def test_storage_initial_volume_pc():
 
     storage = Storage(
         model, "storage", inputs=1, outputs=0, initial_volume_pc=0.5, max_volume=20.0
+    )
+    otpt = Output(model, "output", max_flow=99999, cost=-99999)
+    storage.connect(otpt)
+
+    model.setup()
+    np.testing.assert_allclose(storage.current_pc, 0.5)
+    np.testing.assert_allclose(storage.volume, 10.0)
+
+    model.run()
+
+    storage.max_volume = 40.0
+    model.reset()
+    np.testing.assert_allclose(storage.current_pc, 0.5)
+    np.testing.assert_allclose(storage.volume, 20.0)
+
+
+def test_storage_initial_volume_pc_constant_mx_vol_param():
+    """Test that setting initial volume as a percentage works as expected."""
+    model = Model(
+        start=pandas.to_datetime("2016-01-01"), end=pandas.to_datetime("2016-01-01")
+    )
+
+    mx_vol = ConstantParameter(model, 20.0)
+    storage = Storage(
+        model, "storage", inputs=1, outputs=0, initial_volume_pc=0.5, max_volume=mx_vol
     )
     otpt = Output(model, "output", max_flow=99999, cost=-99999)
     storage.connect(otpt)
