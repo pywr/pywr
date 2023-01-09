@@ -18,7 +18,7 @@ from pywr.parameters import (
     ConstantParameter,
     DataFrameParameter,
     AggregatedParameter,
-    ArrayIndexedParameter
+    ArrayIndexedParameter,
 )
 from pywr.recorders import assert_rec, AssertionRecorder
 
