@@ -473,6 +473,30 @@ class TablesRecorder(Recorder):
                         entry[s.name] = i
                     entry.append()
                 tbl.flush()
+            elif any([s.slice for s in self.model.scenarios.scenarios]):
+                # Slices are only applied in a model run if there are no user combinations
+                description = {
+                    "name": tables.StringCol(1024),
+                    "slice_start": tables.Int64Col(),
+                    "slice_stop": tables.Int64Col(),
+                    "slice_step": tables.Int64Col(),
+                }
+                tbl = self.h5store.file.create_table(
+                    group_name, "scenario_slices", description=description, createparents=True
+                )
+
+                entry = tbl.row
+                for scenario in self.model.scenarios.scenarios:
+                    if scenario.slice is not None:
+                        entry["name"] = scenario.name.encode("utf-8")
+                        entry["slice_start"] = scenario.slice.start
+                        entry["slice_stop"] = scenario.slice.stop
+                        if scenario.slice.step:
+                            entry["slice_step"] = scenario.slice.step
+                        else:
+                            entry["slice_step"] = 1
+                        entry.append()
+                tbl.flush()
 
         self.h5store = None
 

@@ -1232,6 +1232,43 @@ class TestTablesRecorder:
                 assert row["A"] == comb[0]
                 assert row["B"] == comb[1]
 
+    def test_scenario_slices(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder with user defined scenario subset
+
+        """
+        from pywr.parameters import ConstantScenarioParameter
+
+        model = simple_linear_model
+        scA = Scenario(model, name="A", size=4, slice=slice(1, 4))
+        scB = Scenario(model, name="B", size=2)
+
+        otpt = model.nodes["Output"]
+        inpt = model.nodes["Input"]
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join("output.h5")
+        import tables
+
+        with tables.open_file(str(h5file), "w") as h5f:
+            rec = TablesRecorder(model, h5f)
+
+            model.run()
+
+            for node_name in model.nodes.keys():
+                ca = h5f.get_node("/", node_name)
+                assert ca.shape == (365, 3, 2)
+
+            # check slices table exists
+            slices = h5f.get_node("/scenario_slices")
+            for s in slices.iterrows():
+                print(s)
+            print(slices.colnames)
+            print(slices.read())
+
     def test_parameters(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder
