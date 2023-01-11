@@ -482,7 +482,10 @@ class TablesRecorder(Recorder):
                     "slice_step": tables.Int64Col(),
                 }
                 tbl = self.h5store.file.create_table(
-                    group_name, "scenario_slices", description=description, createparents=True
+                    group_name,
+                    "scenario_slices",
+                    description=description,
+                    createparents=True,
                 )
 
                 entry = tbl.row
