@@ -465,7 +465,10 @@ class TablesRecorder(Recorder):
                     s.name: tables.Int64Col() for s in self.model.scenarios.scenarios
                 }
                 tbl = self.h5store.file.create_table(
-                    group_name, "scenario_combinations", description=description
+                    group_name,
+                    "scenario_combinations",
+                    description=description,
+                    createparents=True,
                 )
                 entry = tbl.row
                 for comb in self.model.scenarios.user_combinations:
@@ -477,9 +480,9 @@ class TablesRecorder(Recorder):
                 # Slices are only applied in a model run if there are no user combinations
                 description = {
                     "name": tables.StringCol(1024),
-                    "slice_start": tables.Int64Col(),
-                    "slice_stop": tables.Int64Col(),
-                    "slice_step": tables.Int64Col(),
+                    "start": tables.Int64Col(),
+                    "stop": tables.Int64Col(),
+                    "step": tables.Int64Col(),
                 }
                 tbl = self.h5store.file.create_table(
                     group_name,
@@ -492,12 +495,12 @@ class TablesRecorder(Recorder):
                 for scenario in self.model.scenarios.scenarios:
                     if scenario.slice is not None:
                         entry["name"] = scenario.name.encode("utf-8")
-                        entry["slice_start"] = scenario.slice.start
-                        entry["slice_stop"] = scenario.slice.stop
+                        entry["start"] = scenario.slice.start
+                        entry["stop"] = scenario.slice.stop
                         if scenario.slice.step:
-                            entry["slice_step"] = scenario.slice.step
+                            entry["step"] = scenario.slice.step
                         else:
-                            entry["slice_step"] = 1
+                            entry["step"] = 1
                         entry.append()
                 tbl.flush()
 

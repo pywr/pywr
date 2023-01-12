@@ -1265,9 +1265,9 @@ class TestTablesRecorder:
             # check slices table exists
             slices = h5f.get_node("/scenario_slices")
             assert slices[0]["name"] == b"A"
-            assert slices[0]["slice_start"] == 1
-            assert slices[0]["slice_stop"] == 4
-            assert slices[0]["slice_step"] == 1
+            assert slices[0]["start"] == 1
+            assert slices[0]["stop"] == 4
+            assert slices[0]["step"] == 1
 
     def test_parameters(self, simple_linear_model, tmpdir):
         """
