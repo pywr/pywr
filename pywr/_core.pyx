@@ -1128,9 +1128,9 @@ cdef class Storage(AbstractStorage):
 
     cpdef double get_initial_volume(self) except? -1:
         """Returns the absolute initial volume. """
-        cdef double mxv = self._max_volume
+        cdef double mxv
 
-        if self._max_volume_param is not None:
+        if self._max_volume_param is not None and not self._max_volume_param.is_constant:
             # Max volume is a parameter; require both initial_volume and initial_volume_pc be given.
             # The parameter will not be evaluated at the beginning of the model run.
             if not np.isfinite(self._initial_volume_pc) or not np.isfinite(self._initial_volume):
@@ -1141,6 +1141,10 @@ cdef class Storage(AbstractStorage):
         else:
             # User only has to supply absolute or relative initial volume
             if np.isfinite(self._initial_volume_pc):
+                if self._max_volume_param is not None:
+                    mxv = self._max_volume_param.get_constant_value()
+                else:
+                    mxv = self._max_volume
                 initial_volume = self._initial_volume_pc * mxv
             elif np.isfinite(self._initial_volume):
                 initial_volume = self._initial_volume
@@ -1150,9 +1154,9 @@ cdef class Storage(AbstractStorage):
 
     cpdef double get_initial_pc(self) except? -1:
         """Returns the initial volume as a proportion. """
-        cdef double mxv = self._max_volume
+        cdef double mxv
 
-        if self._max_volume_param is not None:
+        if self._max_volume_param is not None and not self._max_volume_param.is_constant:
             # Max volume is a parameter; require both initial_volume and initial_volume_pc be given.
             # The parameter will not be evaluated at the beginning of the model run.
             if not np.isfinite(self._initial_volume_pc) or not np.isfinite(self._initial_volume):
@@ -1164,6 +1168,10 @@ cdef class Storage(AbstractStorage):
             if np.isfinite(self._initial_volume_pc):
                 initial_pc = self._initial_volume_pc
             elif np.isfinite(self._initial_volume):
+                if self._max_volume_param is not None:
+                    mxv = self._max_volume_param.get_constant_value()
+                else:
+                    mxv = self._max_volume
                 try:
                     initial_pc = self._initial_volume / mxv
                 except ZeroDivisionError:
