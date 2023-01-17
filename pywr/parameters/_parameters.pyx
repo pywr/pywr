@@ -201,6 +201,8 @@ cdef class DataFrameParameter(Parameter):
     timestep_offset : int (default=0)
         Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
         backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
+        If the offset takes the indexing out of the data bounds then the parameter will return the first or last
+        value available.
     """
     def __init__(self, model, dataframe, scenario=None, timestep_offset=0, **kwargs):
         super(DataFrameParameter, self).__init__(model, *kwargs)
@@ -357,6 +359,8 @@ cdef class TablesArrayParameter(IndexParameter):
         timestep_offset : int
             Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
             backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
+            If the offset takes the indexing out of the data bounds then the parameter will return the first or last
+            value available.
         """
         super(TablesArrayParameter, self).__init__(model, **kwargs)
 
