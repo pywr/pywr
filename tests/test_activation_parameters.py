@@ -70,7 +70,6 @@ class TestBinaryStepParameter:
         ],
     )
     def test_bounds(self, simple_linear_model, lb, ub):
-
         m = simple_linear_model
 
         data = {
@@ -151,7 +150,6 @@ class TestRectifierParameter:
         ],
     )
     def test_bounds(self, simple_linear_model, lb, ub):
-
         m = simple_linear_model
 
         data = {
@@ -225,7 +223,6 @@ class TestLogisticParameter:
         ],
     )
     def test_bounds(self, simple_linear_model, lb, ub):
-
         m = simple_linear_model
 
         data = {

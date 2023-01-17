@@ -198,11 +198,17 @@ cdef class DataFrameParameter(Parameter):
     model : pywr.model.Model
     dataframe : pandas.DataFrame or pandas.Series
     scenario: pywr._core.Scenario (optional)
+    timestep_offset : int (default=0)
+        Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
+        backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
+        If the offset takes the indexing out of the data bounds then the parameter will return the first or last
+        value available.
     """
-    def __init__(self, model, dataframe, scenario=None, **kwargs):
+    def __init__(self, model, dataframe, scenario=None, timestep_offset=0, **kwargs):
         super(DataFrameParameter, self).__init__(model, *kwargs)
         self.dataframe = dataframe
         self.scenario = scenario
+        self.timestep_offset = timestep_offset
 
     cpdef setup(self):
         cdef Py_ssize_t i
@@ -252,7 +258,7 @@ cdef class DataFrameParameter(Parameter):
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef double value
-        cdef Py_ssize_t i = timestep.index
+        cdef Py_ssize_t i = min(max(timestep.index + self.timestep_offset, 0), self._values.shape[0] - 1)
         cdef Py_ssize_t j
 
         if self.scenario is not None:
@@ -331,7 +337,7 @@ ArrayIndexedScenarioParameter.register()
 
 
 cdef class TablesArrayParameter(IndexParameter):
-    def __init__(self, model, h5file, node, where='/', scenario=None, **kwargs):
+    def __init__(self, model, h5file, node, where='/', scenario=None, timestep_offset=0, **kwargs):
         """
         This Parameter reads array data from a PyTables HDF database.
 
@@ -350,6 +356,11 @@ cdef class TablesArrayParameter(IndexParameter):
             Path to read the node from.
         scenario : Scenario
             Scenario to use as the second index in the array.
+        timestep_offset : int
+            Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
+            backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
+            If the offset takes the indexing out of the data bounds then the parameter will return the first or last
+            value available.
         """
         super(TablesArrayParameter, self).__init__(model, **kwargs)
 
@@ -358,6 +369,7 @@ cdef class TablesArrayParameter(IndexParameter):
         self.node = node
         self.where = where
         self.scenario = scenario
+        self.timestep_offset = timestep_offset
 
         # Private attributes, initialised during setup()
         self._values_dbl = None  # Stores the loaded data if float
@@ -446,10 +458,12 @@ cdef class TablesArrayParameter(IndexParameter):
                 self._values_int = node.read().astype(np.int32)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef Py_ssize_t i = ts.index
+        cdef Py_ssize_t i
         cdef Py_ssize_t j
         if self._values_dbl is None:
             return float(self.index(ts, scenario_index))
+
+        i = min(max(ts.index + self.timestep_offset, 0), self._values_dbl.shape[0] - 1)
         # Support 1D and 2D indexing when scenario is or is not given.
         if self._scenario_index == -1:
             return self._values_dbl[i, 0]
@@ -460,10 +474,12 @@ cdef class TablesArrayParameter(IndexParameter):
             return self._values_dbl[i, j]
 
     cpdef int index(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef Py_ssize_t i = ts.index
+        cdef Py_ssize_t i
         cdef Py_ssize_t j
         if self._values_int is None:
             return int(self.value(ts, scenario_index))
+
+        i = min(max(ts.index + self.timestep_offset, 0), self._values_int.shape[0] - 1)
         # Support 1D and 2D indexing when scenario is or is not given.
         if self._scenario_index == -1:
             return self._values_int[i, 0]

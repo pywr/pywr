@@ -334,7 +334,6 @@ def test_multipiecewise_constraint(model, flow):
                                                                               been implemented for glpk solvers",
 )
 def test_dynamic_factors(model):
-
     model.timestepper.end = Timestamp("2016-01-03")
 
     A = Input(model, "A", max_flow=10.0)
@@ -379,7 +378,6 @@ def test_dynamic_factors(model):
                                                                               been implemented for glpk solvers",
 )
 def test_dynamic_factors_load(model):
-
     model.timestepper.end = Timestamp("2016-01-03")
 
     A = Input(model, "A", max_flow=10.0)

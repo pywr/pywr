@@ -407,7 +407,6 @@ class TablesRecorder(Recorder):
         else:
             nodes = []
             for n in self.nodes:
-
                 try:
                     where, node = n
                 except (TypeError, ValueError):

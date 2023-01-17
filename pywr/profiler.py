@@ -50,7 +50,6 @@ class Profiler:
         self._last_max_rss = memory_usage()
 
     def checkpoint(self, phase: str, class_name: str, name: str):
-
         max_rss = memory_usage()
         perf_counter = time.perf_counter()
 

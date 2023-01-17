@@ -24,7 +24,6 @@ def routes_to_sankey_links(
     sources = defaultdict(lambda: defaultdict(lambda: 0.0))
 
     with tables.open_file(filename, mode="r") as h5:
-
         flows = h5.get_node(where, node_name)
 
         # Apply time slice and aggregation

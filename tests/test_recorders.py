@@ -685,7 +685,6 @@ def test_numpy_array_level_recorder(simple_storage_model):
 
 
 def test_numpy_array_area_recorder(simple_storage_model):
-
     model = simple_storage_model
 
     storage = model.nodes["Storage"]
@@ -903,7 +902,6 @@ class TestTotalParameterRecorder:
 
     @pytest.mark.parametrize("integrate", [None, True, False])
     def test_from_json(self, daily_profile_model, integrate):
-
         model = daily_profile_model
 
         data = {
@@ -938,7 +936,6 @@ class TestMeanParameterRecorder:
         assert_allclose(rec.values(), expected)
 
     def test_from_json(self, daily_profile_model):
-
         model = daily_profile_model
 
         data = {
@@ -1337,7 +1334,6 @@ class TestTablesRecorder:
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
-
             nodes = [
                 ("/outputs/demand", "Demand"),
                 ("/storage/reservoir", "Reservoir"),

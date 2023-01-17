@@ -132,7 +132,6 @@ class RiverSplit(MultiSplitLink):
     """
 
     def __init__(self, model, *args, nsteps=1, **kwargs):
-
         factors = kwargs.pop("factors")
         extra_slots = len(factors) - 1
 
