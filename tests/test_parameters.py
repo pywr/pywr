@@ -42,7 +42,7 @@ from pywr.parameters import (
     load_parameter,
     InterpolatedFlowParameter,
     ScenarioDailyProfileParameter,
-    RollingMeanFlowNodeParameter
+    RollingMeanFlowNodeParameter,
 )
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
@@ -2263,10 +2263,10 @@ class TestDiscountFactorParameter:
 
 class TestRollingMeanFlowNodeParameter:
     @pytest.mark.parametrize(
-        "initial_flow", [0.0, 2.0],
+        "initial_flow",
+        [0.0, 2.0],
     )
     def test_mean_flow_recorder(self, model, initial_flow):
-
         model.timestepper.start = pd.to_datetime("2016-01-01")
         model.timestepper.end = pd.to_datetime("2016-01-04")
 
@@ -2274,7 +2274,9 @@ class TestRollingMeanFlowNodeParameter:
         otpt = Output(model, "output")
         inpt.connect(otpt)
 
-        p_mean = RollingMeanFlowNodeParameter(model, node=inpt, timesteps=3, initial_flow=initial_flow)
+        p_mean = RollingMeanFlowNodeParameter(
+            model, node=inpt, timesteps=3, initial_flow=initial_flow
+        )
 
         _scenario = Scenario(model, "dummy", size=2)
 
@@ -2289,6 +2291,7 @@ class TestRollingMeanFlowNodeParameter:
             (2.0 + 3.0 + 4.0) / 3,
             (3.0 + 4.0 + 5.0) / 3,  # zeroth day forgotten
         ]
+
         @assert_rec(model, p_mean)
         def expected_func(timestep, scenario_index):
             return expected[timestep.index]
