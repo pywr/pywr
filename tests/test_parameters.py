@@ -468,7 +468,6 @@ def test_daily_profile_leap_day(model):
 
 class TestScenarioDailyProfileParameter:
     def test_scenario_daily_profile(self, simple_linear_model):
-
         model = simple_linear_model
         scenario = Scenario(model, "A", 2)
         values = np.array(
@@ -509,7 +508,6 @@ class TestScenarioDailyProfileParameter:
 
 
 def test_scenario_weekly_profile(simple_linear_model):
-
     model = simple_linear_model
     scenario = Scenario(model, "A", 2)
 
@@ -557,7 +555,6 @@ class TestAnnualHarmonicSeriesParameter:
     """Tests for `AnnualHarmonicSeriesParameter`"""
 
     def test_single_harmonic(self, model):
-
         p1 = AnnualHarmonicSeriesParameter(model, 0.5, [0.25], [np.pi / 4])
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
@@ -583,7 +580,6 @@ class TestAnnualHarmonicSeriesParameter:
             np.testing.assert_allclose(p1.value(ts, si), expected)
 
     def test_load(self, model):
-
         data = {
             "type": "annualharmonicseries",
             "mean": 0.5,
@@ -787,7 +783,6 @@ class TestAggregatedIndexParameter:
 
 
 def test_parameter_child_variables(model):
-
     p1 = Parameter(model)
     # Default parameter
     assert len(p1.parents) == 0
@@ -953,7 +948,6 @@ def test_parameter_df_subsample():
 
 
 def test_parameter_df_json_load(model, tmpdir):
-
     # Daily time-step
     index = pd.date_range("2015-01-01", periods=365, freq="D", name="date")
     df = pd.DataFrame(np.random.rand(365), index=index, columns=["data"])
@@ -972,7 +966,6 @@ def test_parameter_df_json_load(model, tmpdir):
 
 
 def test_parameter_df_embed_load(model):
-
     # Daily time-step
     index = pd.date_range("2015-01-01", periods=365, freq="D", name="date")
     df = pd.DataFrame(np.random.rand(365), index=index, columns=["data"])
@@ -991,6 +984,32 @@ def test_parameter_df_embed_load(model):
 
     p = load_parameter(model, data)
     p.setup()
+
+
+@pytest.mark.parametrize("timestep_offset", [0, 1, -1, 2])
+def test_df_timestep_offset(timestep_offset):
+    """Check `timestep_offset` works as expected for `DataFrameParameter`"""
+    model = load_model("timeseries1.json")
+
+    # check first day initalised
+    assert model.timestepper.start == datetime.datetime(2015, 1, 1)
+
+    # check results
+    demand1 = model.nodes["demand1"]
+    catchment1 = model.nodes["catchment1"]
+    # Modify the timestep offset
+    catchment1.max_flow.timestep_offset = timestep_offset
+
+    expected_array = [23.92, 22.14, 22.57, 24.97, 27.59]
+    if timestep_offset > 0:
+        expected_array = expected_array[timestep_offset:]
+    elif timestep_offset < 0:
+        expected_array = [23.92] * abs(timestep_offset) + expected_array
+
+    for expected in expected_array:
+        result = model.step()
+        assert_allclose(catchment1.flow, expected, atol=1e-7)
+        assert_allclose(demand1.flow, min(expected, 23.0), atol=1e-7)
 
 
 def test_simple_json_parameter_reference():
@@ -1217,7 +1236,6 @@ class Test1DPolynomialParameter:
         # Test with proportional storage
         @assert_rec(model, p2, name="proportionalassertion")
         def expected_func(timestep, scenario_index):
-
             return 0.5 + np.pi * x / stg.max_volume
 
         model.setup()
@@ -1716,7 +1734,6 @@ class TestThresholdParameters:
         model.run()
 
     def test_multiple_threshold_index_parameter(self, simple_linear_model):
-
         model = simple_linear_model
         model.nodes["Input"].max_flow = ArrayIndexedParameter(model, np.arange(0, 20))
         model.nodes["Output"].cost = -10.0
@@ -1746,7 +1763,6 @@ class TestThresholdParameters:
         model.run()
 
     def test_multiple_threshold_parameter_index_parameter(self, simple_linear_model):
-
         model = simple_linear_model
         model.nodes["Input"].max_flow = ArrayIndexedParameter(
             model, np.arange(0, 20), name="max_flow"

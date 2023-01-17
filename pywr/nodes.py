@@ -348,7 +348,6 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
     __parameter_value_attributes__ = ("initial_volume",)
 
     def __init__(self, model, name, outputs=1, inputs=1, *args, **kwargs):
-
         min_volume = pop_kwarg_parameter(kwargs, "min_volume", 0.0)
         if min_volume is None:
             min_volume = 0.0

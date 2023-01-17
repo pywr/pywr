@@ -104,7 +104,6 @@ def test_run_reservoir2():
 
 
 def test_empty_storage_min_flow():
-
     model = Model()
     storage = Storage(
         model, "storage", initial_volume=100, max_volume=100, inputs=1, outputs=0
@@ -678,7 +677,6 @@ def test_annual_virtual_storage_with_aggregated_node():
 
 class TestSeasonalVirtualStorage:
     def test_run(self):
-
         model = load_model("seasonal_virtual_storage.json")
         model.run()
         supply_df = model.recorders["supply1"].to_dataframe()

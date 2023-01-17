@@ -245,7 +245,6 @@ def get_node_attr(node):
     attrs = inspect.getmembers(node, lambda a: not (inspect.isroutine(a)))
     attribute_data = []
     for att in attrs:
-
         attr_name, attr_val = att
         if attr_name.startswith("_"):
             continue
@@ -309,7 +308,6 @@ def pywr_json_to_d3_json(model, attributes=False):
     nodes = []
     node_classes = create_node_class_trees()
     for node in model["nodes"]:
-
         if node["type"].lower() in [
             "annualvirtualstorage",
             "virtualstorage",
@@ -329,7 +327,6 @@ def pywr_json_to_d3_json(model, attributes=False):
         if attributes:
             json_node["attributes"] = []
             for name, val in node.items():
-
                 if name == "type":
                     continue
 

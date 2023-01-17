@@ -40,6 +40,7 @@ cdef class DataFrameParameter(Parameter):
     cdef int _scenario_index
     cdef int[:] _scenario_ids
     cdef public object dataframe
+    cdef public int timestep_offset
 
 cdef class ArrayIndexedParameter(Parameter):
     cdef double[:] values
@@ -132,7 +133,7 @@ cdef class TablesArrayParameter(IndexParameter):
     cdef public object h5store
     cdef public object node
     cdef public object where
-
+    cdef public int timestep_offset
     cdef int _scenario_index
     cdef int[:] _scenario_ids
 

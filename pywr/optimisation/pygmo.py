@@ -57,7 +57,6 @@ class PygmoWrapper(BaseOptimisationWrapper):
         lower = []
         upper = []
         for var in self.model_variables:
-
             if var.double_size > 0:
                 lower.append(var.get_double_lower_bounds())
                 upper.append(var.get_double_upper_bounds())

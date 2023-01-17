@@ -24,7 +24,6 @@ from pywr.recorders import (
 
 
 def make_simple_model(num: int) -> Model:
-
     m = Model()
     inpt = Input(m, name=f"input-{num}", max_flow=5 + num)
     lnk = Link(m, name=f"link-{num}")
@@ -36,7 +35,6 @@ def make_simple_model(num: int) -> Model:
 
 
 def test_run_two_independent_models():
-
     multi_model = MultiModel()
 
     for i in range(2):
@@ -54,7 +52,6 @@ def test_run_two_independent_models():
 
 
 def test_setup_profile_two_independent_models(tmp_path):
-
     multi_model = MultiModel()
 
     for i in range(2):

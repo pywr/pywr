@@ -200,7 +200,6 @@ class TestUpSampling:
         pd.testing.assert_frame_equal(input_resampled, expected_df)
 
     def test_annual_to_daily(self):
-
         input_df = make_df("A", "2010-01-01", "2020-01-01")
         model_index = make_model_index("D", "2010-01-01", "2020-01-01")
 
@@ -213,7 +212,6 @@ class TestUpSampling:
         pd.testing.assert_frame_equal(input_resampled, expected_df)
 
     def test_annual_to_monthly(self):
-
         input_df = make_df("A", "2010-01-01", "2020-01-01")
         model_index = make_model_index("M", "2010-01-01", "2020-01-01")
 

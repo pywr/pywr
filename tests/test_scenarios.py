@@ -211,7 +211,6 @@ def test_scenarios_from_json(json_file):
 
 
 def test_timeseries_with_scenarios():
-
     model = load_model("timeseries2.json")
 
     model.setup()
