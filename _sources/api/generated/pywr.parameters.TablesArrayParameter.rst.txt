@@ -61,6 +61,7 @@
       ~TablesArrayParameter.scenario
       ~TablesArrayParameter.size
       ~TablesArrayParameter.tags
+      ~TablesArrayParameter.timestep_offset
       ~TablesArrayParameter.where
    
    

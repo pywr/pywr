@@ -56,5 +56,6 @@
       ~DataFrameParameter.scenario
       ~DataFrameParameter.size
       ~DataFrameParameter.tags
+      ~DataFrameParameter.timestep_offset
    
    

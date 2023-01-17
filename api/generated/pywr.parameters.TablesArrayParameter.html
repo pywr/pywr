@@ -8,7 +8,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>pywr.parameters.TablesArrayParameter &mdash; Pywr 1.19.1.dev2+gececdcd6 documentation</title>
+  <title>pywr.parameters.TablesArrayParameter &mdash; Pywr 1.19.1.dev3+g01078daf documentation</title>
   
 
   
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                1.19.1.dev2+gececdcd6
+                1.19.1.dev3+g01078daf
               </div>
             
           
@@ -205,7 +205,7 @@
 <h1>pywr.parameters.TablesArrayParameter<a class="headerlink" href="#pywr-parameters-tablesarrayparameter" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.parameters.TablesArrayParameter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">TablesArrayParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h5file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">where</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.TablesArrayParameter" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">TablesArrayParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h5file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">where</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestep_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.TablesArrayParameter" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="pywr.parameters.TablesArrayParameter.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.TablesArrayParameter.__init__" title="Permalink to this definition">¶</a></dt>
@@ -224,6 +224,11 @@ filename is given the object will open and close the file handles.</p>
 <dt><strong>where</strong><span class="classifier">string</span></dt><dd><p>Path to read the node from.</p>
 </dd>
 <dt><strong>scenario</strong><span class="classifier">Scenario</span></dt><dd><p>Scenario to use as the second index in the array.</p>
+</dd>
+<dt><strong>timestep_offset</strong><span class="classifier">int</span></dt><dd><p>Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
+backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
+If the offset takes the indexing out of the data bounds then the parameter will return the first or last
+value available.</p>
 </dd>
 </dl>
 </dd>
@@ -355,7 +360,10 @@ filename is given the object will open and close the file handles.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tags</span></code></p></td>
 <td><p>tags: dict</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">where</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">timestep_offset</span></code></p></td>
+<td><p>timestep_offset: 'int'</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">where</span></code></p></td>
 <td><p>where: object</p></td>
 </tr>
 </tbody>
