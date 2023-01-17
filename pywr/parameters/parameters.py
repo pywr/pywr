@@ -41,6 +41,7 @@ from ._parameters import (
     OffsetParameter,
     RbfProfileParameter,
     UniformDrawdownProfileParameter,
+    RollingMeanFlowNodeParameter,
     load_parameter,
     load_parameter_values,
     load_dataframe,

@@ -1,0 +1,73 @@
+{
+    "metadata": {
+        "title": "Mean flow parameter",
+        "description": "A test of the mean flow parameter",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-01-04",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 15,
+            "cost": 1
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        },
+        {
+          "name": "supply2",
+          "type": "Input",
+          "max_flow": 100,
+          "cost": 0
+        },
+        {
+            "name": "demand_with_threshold",
+            "type": "Output",
+            "max_flow": {
+                "type": "parameterthreshold",
+                "parameter": "mean-flow",
+                "threshold": 2.5,
+                "values": [60.0, 50.0],
+                "predicate": "LT"
+            },
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "demand1"],
+        ["supply2", "demand_with_threshold"]
+    ],
+    "parameters": {
+        "mean-flow": {
+            "comment": "Mean flow (last 3 days) from supply1",
+            "type": "rollingMeanFlownode",
+            "node": "supply1",
+            "timesteps": 3
+        }
+
+    },
+    "recorders": {
+        "Supply": {
+            "comment": "Actual flow from supply1",
+            "type": "NumpyArrayNode",
+            "node": "supply1"
+        },
+        "Mean Flow": {
+            "comment": "Mean flow (last 3 days) from supply1",
+            "type": "NumpyArrayParameter",
+            "parameter": "mean-flow"
+        },
+        "Supply 2": {
+            "type": "NumpyArrayNode",
+            "node": "supply2"
+        }
+    }
+}

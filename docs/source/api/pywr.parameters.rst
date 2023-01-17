@@ -164,5 +164,4 @@ Other parameters
    FlowDelayParameter
    StorageParameter
    DiscountFactorParameter
-
-
+   RollingMeanFlowNodeParameter

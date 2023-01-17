@@ -1635,8 +1635,15 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
     name : str (optional)
         The name of the recorder
 
+    See also
+    --------
+    RollingMeanFlowNodeParameter
     """
     def __init__(self, model, node, timesteps=None, days=None, name=None, **kwargs):
+        warnings.warn("`RollingMeanFlowNodeRecorder` has been deprecated in favour of `RollingMeanFlowNodeParameter`."
+                      " If you need to record the value use a recorder capable of recording an arbitrary parameter"
+                      " (e.g. `NumpyArrayParameterRecorder`)", DeprecationWarning, stacklevel=2)
+
         super(RollingMeanFlowNodeRecorder, self).__init__(model, node, name=name, **kwargs)
         self.model = model
         if not timesteps and not days:
@@ -1650,6 +1657,7 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
         else:
             self.days = 0
         self._data = None
+        self._memory = None
         self.position = 0
 
     cpdef setup(self):
