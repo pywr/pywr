@@ -1,0 +1,62 @@
+﻿pywr.parameters.RollingMeanFlowNodeParameter
+============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: RollingMeanFlowNodeParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RollingMeanFlowNodeParameter.__init__
+      ~RollingMeanFlowNodeParameter.after
+      ~RollingMeanFlowNodeParameter.before
+      ~RollingMeanFlowNodeParameter.finish
+      ~RollingMeanFlowNodeParameter.get_all_values
+      ~RollingMeanFlowNodeParameter.get_constant_value
+      ~RollingMeanFlowNodeParameter.get_double_lower_bounds
+      ~RollingMeanFlowNodeParameter.get_double_upper_bounds
+      ~RollingMeanFlowNodeParameter.get_double_variables
+      ~RollingMeanFlowNodeParameter.get_integer_lower_bounds
+      ~RollingMeanFlowNodeParameter.get_integer_upper_bounds
+      ~RollingMeanFlowNodeParameter.get_integer_variables
+      ~RollingMeanFlowNodeParameter.get_value
+      ~RollingMeanFlowNodeParameter.load
+      ~RollingMeanFlowNodeParameter.register
+      ~RollingMeanFlowNodeParameter.reset
+      ~RollingMeanFlowNodeParameter.set_double_variables
+      ~RollingMeanFlowNodeParameter.set_integer_variables
+      ~RollingMeanFlowNodeParameter.setup
+      ~RollingMeanFlowNodeParameter.unregister
+      ~RollingMeanFlowNodeParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RollingMeanFlowNodeParameter.children
+      ~RollingMeanFlowNodeParameter.comment
+      ~RollingMeanFlowNodeParameter.days
+      ~RollingMeanFlowNodeParameter.double_size
+      ~RollingMeanFlowNodeParameter.initial_flow
+      ~RollingMeanFlowNodeParameter.integer_size
+      ~RollingMeanFlowNodeParameter.is_constant
+      ~RollingMeanFlowNodeParameter.is_variable
+      ~RollingMeanFlowNodeParameter.model
+      ~RollingMeanFlowNodeParameter.name
+      ~RollingMeanFlowNodeParameter.node
+      ~RollingMeanFlowNodeParameter.parents
+      ~RollingMeanFlowNodeParameter.size
+      ~RollingMeanFlowNodeParameter.tags
+      ~RollingMeanFlowNodeParameter.timesteps
+   
+   
