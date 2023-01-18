@@ -227,3 +227,12 @@ cdef class FlowDelayParameter(Parameter):
 cdef class DiscountFactorParameter(Parameter):
     cdef public double rate
     cdef public int base_year
+
+
+cdef class RollingMeanFlowNodeParameter(Parameter):
+    cdef int position
+    cdef public int timesteps
+    cdef public int days
+    cdef public double initial_flow
+    cdef public AbstractNode node
+    cdef double[:, :] _memory

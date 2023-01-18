@@ -42,6 +42,7 @@ from pywr.parameters import (
     load_parameter,
     InterpolatedFlowParameter,
     ScenarioDailyProfileParameter,
+    RollingMeanFlowNodeParameter,
 )
 from pywr.recorders import AssertionRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
@@ -2258,3 +2259,73 @@ class TestDiscountFactorParameter:
             return 1 / pow(1.035, year - 2015)
 
         model.run()
+
+
+class TestRollingMeanFlowNodeParameter:
+    @pytest.mark.parametrize(
+        "initial_flow",
+        [0.0, 2.0],
+    )
+    def test_mean_flow_recorder(self, model, initial_flow):
+        model.timestepper.start = pd.to_datetime("2016-01-01")
+        model.timestepper.end = pd.to_datetime("2016-01-04")
+
+        inpt = Input(model, "input")
+        otpt = Output(model, "output")
+        inpt.connect(otpt)
+
+        p_mean = RollingMeanFlowNodeParameter(
+            model, node=inpt, timesteps=3, initial_flow=initial_flow
+        )
+
+        _scenario = Scenario(model, "dummy", size=2)
+
+        inpt.max_flow = inpt.min_flow = FunctionParameter(
+            model, inpt, lambda model, t, si: 2 + t.index
+        )
+
+        expected = [
+            initial_flow,
+            2.0,
+            (2.0 + 3.0) / 2,
+            (2.0 + 3.0 + 4.0) / 3,
+            (3.0 + 4.0 + 5.0) / 3,  # zeroth day forgotten
+        ]
+
+        @assert_rec(model, p_mean)
+        def expected_func(timestep, scenario_index):
+            return expected[timestep.index]
+
+        model.run()
+
+    def test_mean_flow_recorder_days(self, model):
+        model.timestepper.delta = 7
+
+        inpt = Input(model, "input")
+        otpt = Output(model, "output")
+        inpt.connect(otpt)
+
+        p_mean = RollingMeanFlowNodeParameter(model, node=inpt, days=31)
+
+        model.run()
+        assert p_mean.timesteps == 4
+
+    def test_mean_flow_recorder_json(self, model):
+        model = load_model("mean_flow_parameter.json")
+
+        supply1 = model.nodes["supply1"]
+        supply1.max_flow = supply1.min_flow = FunctionParameter(
+            model, supply1, lambda model, t, si: 2 + t.index
+        )
+
+        assert len(model.recorders) == 3
+
+        rec_flow = model.recorders["Supply"]
+        rec_mean = model.recorders["Mean Flow"]
+        rec_check = model.recorders["Supply 2"]
+
+        model.run()
+
+        assert_allclose(rec_flow.data[:, 0], [2.0, 3.0, 4.0, 5.0])
+        assert_allclose(rec_mean.data[:, 0], [0.0, 2.0, 2.5, 3.0])
+        assert_allclose(rec_check.data[:, 0], [50.0, 50.0, 60.0, 60.0])

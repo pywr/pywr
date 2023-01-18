@@ -2162,6 +2162,91 @@ cdef class DiscountFactorParameter(Parameter):
 DiscountFactorParameter.register()
 
 
+cdef class RollingMeanFlowNodeParameter(Parameter):
+    """Returns the mean flow of a Node for the previous N timesteps or days.
+
+    Parameters
+    ----------
+    model : `pywr.core.Model`
+    node : `pywr.core.Node`
+        The node to record
+    timesteps : int (optional)
+        The number of timesteps to calculate the mean flow for. If `days` is provided then timesteps is ignored.
+    days : int (optional)
+        The number of days to calculate the mean flow for. This is converted into a number of timesteps
+        internally provided the timestep is a number of days.
+    name : str (optional)
+        The name of the parameter
+    initial_flow : float
+        The initial value to use in the first timestep before any flows have been recorded.
+    """
+    def __init__(self, model, node, timesteps=None, days=None, initial_flow=0.0, **kwargs):
+        super(RollingMeanFlowNodeParameter, self).__init__(model, **kwargs)
+        self.node = node
+        self.initial_flow = initial_flow
+
+        if not timesteps and not days:
+            raise ValueError("Either `timesteps` or `days` must be specified.")
+        if timesteps:
+            self.timesteps = int(timesteps)
+        else:
+            self.timesteps = 0
+        if days:
+            self.days = int(days)
+        else:
+            self.days = 0
+        self._memory = None
+        self.position = 0
+
+    cpdef setup(self):
+        super(RollingMeanFlowNodeParameter, self).setup()
+        if self.days > 0:
+            try:
+                self.timesteps = self.days // self.model.timestepper.delta
+            except TypeError:
+                raise TypeError('A rolling window defined as a number of days is only valid with daily time-steps.')
+        if self.timesteps == 0:
+            raise ValueError("Timesteps is less than 1.")
+        self._memory = np.zeros([len(self.model.scenarios.combinations), self.timesteps])
+
+    cpdef reset(self):
+        super(RollingMeanFlowNodeParameter, self).reset()
+        self.position = 0
+        self._memory[:] = 0.0
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+
+        cdef int n
+        # No data in memory yet
+        if ts.index == 0:
+            return self.initial_flow
+
+        # Calculate the mean flow from the memory
+        if ts.index <= self.timesteps:
+            n = ts.index
+        else:
+            n = self.timesteps
+        return np.mean(self._memory[scenario_index.global_id, :n])
+
+    cpdef after(self):
+        cdef int i
+        # save today's flow (NB - this won't change the parameter until tomorrow)
+        for i in range(0, self._memory.shape[0]):
+            self._memory[i, self.position] = self.node._flow[i]
+
+        # prepare for the next timestep
+        self.position += 1
+        if self.position >= self.timesteps:
+            self.position = 0
+
+    @classmethod
+    def load(cls, model, data):
+        node = model.nodes[data.pop("node")]
+        return cls(model, node, **data)
+
+RollingMeanFlowNodeParameter.register()
+
+
 def get_parameter_from_registry(parameter_type):
     key = parameter_type.lower()
     try:

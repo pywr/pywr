@@ -89,6 +89,7 @@ class AssertionRecorder(Recorder):
                 value = self._parameter.get_index(scenario_index)
             else:
                 value = self._parameter.get_value(scenario_index)
+
             try:
                 np.testing.assert_allclose(value, expected_value)
             except AssertionError:
