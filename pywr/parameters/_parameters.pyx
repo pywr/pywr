@@ -775,6 +775,7 @@ cdef class MonthlyProfileParameter(Parameter):
         self._values[...] = values
 
     cpdef double[:] get_daily_values(self):
+        cdef int i, mth        
         if self.interp_day is not None:
             return np.array(self._interp_values).copy()
         else:
