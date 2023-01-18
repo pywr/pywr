@@ -232,11 +232,21 @@ CSVRecorder.register()
 
 class TablesRecorder(Recorder):
     """
-    A recorder that saves to PyTables CArray
+    A recorder that saves model outputs to an HDF file.
 
-    This Recorder creates a CArray for every node passed to the constructor.
-    Each CArray stores the data for all scenarios on the specific node. This
-    is useful for analysis of Node statistics across multiple scenarios.
+    This Recorder creates a CArray in the HDF file for every node passed to the
+    constructor. Each CArray stores the data for all scenarios on the specific node.
+    This is useful for analysis of Node statistics across multiple scenarios.
+    Parameter values can also be optionally stored in CArrays within the file.
+
+    By default, the recorder also stores time and scenario metadata tables. The
+    time table stores a row containing index, year, month and day values for every
+    timestep. A scenario table is created containing the name and size of each
+    scenario defined for the Model. If scenario combinations are defined for the
+    model then a separate table is created that saves the scenario indices of each
+    combination. If there are no combinations but some of the scenarios have slices
+    defined then scenario slice information, including the slice start, end, and
+    step, is stored in a table.
     """
 
     def __init__(
@@ -464,13 +474,43 @@ class TablesRecorder(Recorder):
                     s.name: tables.Int64Col() for s in self.model.scenarios.scenarios
                 }
                 tbl = self.h5store.file.create_table(
-                    group_name, "scenario_combinations", description=description
+                    group_name,
+                    "scenario_combinations",
+                    description=description,
+                    createparents=True,
                 )
                 entry = tbl.row
                 for comb in self.model.scenarios.user_combinations:
                     for s, i in zip(self.model.scenarios.scenarios, comb):
                         entry[s.name] = i
                     entry.append()
+                tbl.flush()
+            elif any([s.slice for s in self.model.scenarios.scenarios]):
+                # Slices are only applied in a model run if there are no user combinations
+                description = {
+                    "name": tables.StringCol(1024),
+                    "start": tables.Int64Col(),
+                    "stop": tables.Int64Col(),
+                    "step": tables.Int64Col(),
+                }
+                tbl = self.h5store.file.create_table(
+                    group_name,
+                    "scenario_slices",
+                    description=description,
+                    createparents=True,
+                )
+
+                entry = tbl.row
+                for scenario in self.model.scenarios.scenarios:
+                    if scenario.slice is not None:
+                        entry["name"] = scenario.name.encode("utf-8")
+                        entry["start"] = scenario.slice.start
+                        entry["stop"] = scenario.slice.stop
+                        if scenario.slice.step:
+                            entry["step"] = scenario.slice.step
+                        else:
+                            entry["step"] = 1
+                        entry.append()
                 tbl.flush()
 
         self.h5store = None
