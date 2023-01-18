@@ -2162,17 +2162,20 @@ DiscountFactorParameter.register()
 
 
 cdef class RollingMeanFlowNodeParameter(Parameter):
-    """Returns the mean flow of a Node for the previous N timesteps.
+    """Returns the mean flow of a Node for the previous N timesteps or days.
 
     Parameters
     ----------
     model : `pywr.core.Model`
     node : `pywr.core.Node`
         The node to record
-    timesteps : int
-        The number of timesteps to calculate the mean flow for
+    timesteps : int (optional)
+        The number of timesteps to calculate the mean flow for. If `days` is provided then timesteps is ignored.
+    days : int (optional)
+        The number of days to calculate the mean flow for. This is converted into a number of timesteps
+        internally provided the timestep is a number of days.
     name : str (optional)
-        The name of the recorder
+        The name of the parameter
     initial_flow : float
         The initial value to use in the first timestep before any flows have been recorded.
     """
@@ -2202,7 +2205,7 @@ cdef class RollingMeanFlowNodeParameter(Parameter):
             except TypeError:
                 raise TypeError('A rolling window defined as a number of days is only valid with daily time-steps.')
         if self.timesteps == 0:
-            raise ValueError("Timesteps property of MeanFlowRecorder is less than 1.")
+            raise ValueError("Timesteps is less than 1.")
         self._memory = np.zeros([len(self.model.scenarios.combinations), self.timesteps])
 
     cpdef reset(self):
