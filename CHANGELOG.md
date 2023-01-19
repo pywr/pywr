@@ -2,6 +2,23 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.20.0
+
+### New Features
+
+- Allow storage max volume to be set as a constant parameter without specifying both initial volume and initial volume pc. (#1071)
+- Add timestep offset to `DataFrameParameter` and `TablesArrayParameter`. (#1073)
+- Update `TablesRecorder` to save scenario slice data. (#1072)
+- Add `RollingMeanFlowNodeParameter` and deprecate `RollingMeanFlowNodeRecorder`. (#1074) 
+
+### Bug Fixes
+
+- Fix Cython typing warning in `MonthlyProfile`. (#1075)
+
+### Miscellaneous
+
+- Release wheels for Python 3.11.
+
 ## v1.19.0
 
 ### New Features
