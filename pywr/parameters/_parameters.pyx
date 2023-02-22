@@ -275,8 +275,10 @@ cdef class DataFrameParameter(Parameter):
         scenario = data.pop('scenario', None)
         if scenario is not None:
             scenario = model.scenarios[scenario]
+        timestep_offset = data.pop('timestep_offset', 0)
+        # This will consume all keyword arguments silently in pandas. I.e. don't rely on **data passing keywords
         df = load_dataframe(model, data)
-        return cls(model, df, scenario=scenario, **data)
+        return cls(model, df, scenario=scenario, timestep_offset=timestep_offset, **data)
 
 DataFrameParameter.register()
 
@@ -775,7 +777,7 @@ cdef class MonthlyProfileParameter(Parameter):
         self._values[...] = values
 
     cpdef double[:] get_daily_values(self):
-        cdef int i, mth        
+        cdef int i, mth
         if self.interp_day is not None:
             return np.array(self._interp_values).copy()
         else:

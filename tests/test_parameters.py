@@ -948,7 +948,8 @@ def test_parameter_df_subsample():
     model.run()
 
 
-def test_parameter_df_json_load(model, tmpdir):
+@pytest.mark.parametrize("timestep_offset", [0, 1, -1, 2])
+def test_parameter_df_json_load(model, tmpdir, timestep_offset):
     # Daily time-step
     index = pd.date_range("2015-01-01", periods=365, freq="D", name="date")
     df = pd.DataFrame(np.random.rand(365), index=index, columns=["data"])
@@ -960,9 +961,11 @@ def test_parameter_df_json_load(model, tmpdir):
         "url": str(df_path),
         "index_col": "date",
         "parse_dates": True,
+        "timestep_offset": timestep_offset,
     }
 
     p = load_parameter(model, data)
+    assert p.timestep_offset == timestep_offset
     p.setup()
 
 
