@@ -6,7 +6,6 @@ import numpy as np
 
 
 if __name__ == "__main__":
-
     m = Model.load("hydropower_example.json")
     stats = m.run()
     print(stats)
