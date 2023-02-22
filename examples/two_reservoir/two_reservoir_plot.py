@@ -7,7 +7,6 @@ import seaborn as sns
 
 
 if __name__ == "__main__":
-
     store = pd.HDFStore("two_reservoir_moea.h5")
 
     fig, ax = plt.subplots(figsize=(6, 6))

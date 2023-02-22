@@ -22,7 +22,6 @@ def cli():
 
 @cli.command()
 def run():
-
     # Run the model
     model = Model.load(MODEL_FILENAME)
 
@@ -72,7 +71,6 @@ def run():
             labels.append("Solver - {}".format(label))
             solver_sub_total += v
         else:
-
             labels.append(label)
 
     values.append(stats_df.loc["solver_stats.total"][0] - solver_sub_total)
@@ -117,7 +115,6 @@ def run():
 @click.option("--ext", default="png")
 @click.option("--show/--no-show", default=False)
 def figures(ext, show):
-
     for name, df in TablesRecorder.generate_dataframes("thames_output.h5"):
         df.columns = ["Very low", "Low", "Central", "High", "Very high"]
 
@@ -148,7 +145,6 @@ def figures(ext, show):
 @click.option("--ext", default="png")
 @click.option("--show/--no-show", default=False)
 def plot_res(ext, show):
-
     end_year = "2105"
 
     data = {}
@@ -187,7 +183,6 @@ def plot_res(ext, show):
 @click.option("--ext", default="png")
 @click.option("--show/--no-show", default=False)
 def plot_res2(ext, show):
-
     end_year = "2105"
 
     data = {}
@@ -231,7 +226,6 @@ def plot_res2(ext, show):
 @click.option("--ext", default="png")
 @click.option("--show/--no-show", default=False)
 def plot_control_curves(ext, show):
-
     with open(MODEL_FILENAME) as fh:
         data = json.load(fh)
 
@@ -272,7 +266,6 @@ def plot_control_curves(ext, show):
 @click.option("--ext", default="png")
 @click.option("--show/--no-show", default=False)
 def plot_demand_saving_factor(ext, show):
-
     with open(MODEL_FILENAME) as fh:
         data = json.load(fh)
 

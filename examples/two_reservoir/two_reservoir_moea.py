@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 
 
 def get_model_data(harmonic=True):
-
     with open("two_reservoir.json") as fh:
         data = json.load(fh)
 
