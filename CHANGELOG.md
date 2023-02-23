@@ -2,6 +2,12 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.20.1
+
+### Bug Fixes
+
+- Fix bug loading `timestep_offset` in `DataFrameParameter` from JSON. (#1078)
+
 ## v1.20.0
 
 ### New Features
