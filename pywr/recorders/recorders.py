@@ -385,6 +385,24 @@ class TablesRecorder(Recorder):
             url = os.path.join(model.path, url)
         return cls(model, url, **data)
 
+    @staticmethod
+    def _node_attribute(node) -> str:
+        """Return the type of attribute recorded from a particular "node" type."""
+        from pywr.parameters import Parameter, IndexParameter
+
+        if isinstance(node, AbstractStorage):
+            return "volume"
+        elif isinstance(node, AbstractNode):
+            return "flow"
+        elif isinstance(node, IndexParameter):
+            return "parameter-index"
+        elif isinstance(node, Parameter):
+            return "parameter"
+        else:
+            raise ValueError(
+                "Unrecognised Node type '{}' for TablesRecorder".format(type(node))
+            )
+
     def setup(self):
         """
         Setup the tables
@@ -445,9 +463,12 @@ class TablesRecorder(Recorder):
             group_name, node_name = where.rsplit("/", 1)
             if group_name == "":
                 group_name = "/"
-            self.h5store.file.create_carray(
+            carray = self.h5store.file.create_carray(
                 group_name, node_name, atom, shape, createparents=True
             )
+            # Save some metadata about the type of data this is
+            carray._v_attrs["pywr-attribute"] = self._node_attribute(node)
+            carray._v_attrs["pywr-type"] = node.__class__.__name__
 
         # Create scenario tables
         if self.scenarios is not None:
