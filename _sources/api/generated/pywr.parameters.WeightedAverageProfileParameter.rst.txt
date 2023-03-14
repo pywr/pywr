@@ -1,0 +1,59 @@
+﻿pywr.parameters.WeightedAverageProfileParameter
+===============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: WeightedAverageProfileParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~WeightedAverageProfileParameter.__init__
+      ~WeightedAverageProfileParameter.after
+      ~WeightedAverageProfileParameter.before
+      ~WeightedAverageProfileParameter.finish
+      ~WeightedAverageProfileParameter.get_all_values
+      ~WeightedAverageProfileParameter.get_constant_value
+      ~WeightedAverageProfileParameter.get_daily_values
+      ~WeightedAverageProfileParameter.get_double_lower_bounds
+      ~WeightedAverageProfileParameter.get_double_upper_bounds
+      ~WeightedAverageProfileParameter.get_double_variables
+      ~WeightedAverageProfileParameter.get_integer_lower_bounds
+      ~WeightedAverageProfileParameter.get_integer_upper_bounds
+      ~WeightedAverageProfileParameter.get_integer_variables
+      ~WeightedAverageProfileParameter.get_value
+      ~WeightedAverageProfileParameter.load
+      ~WeightedAverageProfileParameter.register
+      ~WeightedAverageProfileParameter.reset
+      ~WeightedAverageProfileParameter.set_double_variables
+      ~WeightedAverageProfileParameter.set_integer_variables
+      ~WeightedAverageProfileParameter.setup
+      ~WeightedAverageProfileParameter.unregister
+      ~WeightedAverageProfileParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~WeightedAverageProfileParameter.children
+      ~WeightedAverageProfileParameter.comment
+      ~WeightedAverageProfileParameter.double_size
+      ~WeightedAverageProfileParameter.integer_size
+      ~WeightedAverageProfileParameter.is_constant
+      ~WeightedAverageProfileParameter.is_variable
+      ~WeightedAverageProfileParameter.model
+      ~WeightedAverageProfileParameter.name
+      ~WeightedAverageProfileParameter.parents
+      ~WeightedAverageProfileParameter.size
+      ~WeightedAverageProfileParameter.tags
+   
+   

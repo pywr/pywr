@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.parameters.InterpolatedQuadratureParameter &mdash; Pywr 1.20.2.dev1+g94bcdad3 documentation</title>
+  <title>pywr.parameters.WeightedAverageProfileParameter &mdash; Pywr 1.20.2.dev1+g94bcdad3 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
@@ -19,8 +19,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pywr.parameters.InterpolatedFlowParameter" href="pywr.parameters.InterpolatedFlowParameter.html" />
-    <link rel="prev" title="pywr.parameters.InterpolatedVolumeParameter" href="pywr.parameters.InterpolatedVolumeParameter.html" /> 
+    <link rel="next" title="pywr.parameters.DataFrameParameter" href="pywr.parameters.DataFrameParameter.html" />
+    <link rel="prev" title="pywr.parameters.RbfProfileParameter" href="pywr.parameters.RbfProfileParameter.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -61,19 +61,25 @@
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#base-parameter-class">Base Parameter class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#simple-parameters">Simple parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#combining-multiple-parameters">Combining multiple parameters</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#annual-profile-parameters">Annual profile parameters</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../pywr.parameters.html#annual-profile-parameters">Annual profile parameters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.DailyProfileParameter.html">pywr.parameters.DailyProfileParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.WeeklyProfileParameter.html">pywr.parameters.WeeklyProfileParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.MonthlyProfileParameter.html">pywr.parameters.MonthlyProfileParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.UniformDrawdownProfileParameter.html">pywr.parameters.UniformDrawdownProfileParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.ScenarioDailyProfileParameter.html">pywr.parameters.ScenarioDailyProfileParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.ScenarioWeeklyProfileParameter.html">pywr.parameters.ScenarioWeeklyProfileParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.ScenarioMonthlyProfileParameter.html">pywr.parameters.ScenarioMonthlyProfileParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.ArrayIndexedScenarioMonthlyFactorsParameter.html">pywr.parameters.ArrayIndexedScenarioMonthlyFactorsParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.RbfProfileParameter.html">pywr.parameters.RbfProfileParameter</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pywr.parameters.WeightedAverageProfileParameter</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#dataframe-parameter">Dataframe parameter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#hdf5-parameter">HDF5 Parameter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#array-based-parameters">Array based parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#threshold-parameters">Threshold parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#activation-function-parameters">Activation function parameters</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="../pywr.parameters.html#interpolation-parameters">Interpolation parameters</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.InterpolatedParameter.html">pywr.parameters.InterpolatedParameter</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.InterpolatedVolumeParameter.html">pywr.parameters.InterpolatedVolumeParameter</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">pywr.parameters.InterpolatedQuadratureParameter</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pywr.parameters.InterpolatedFlowParameter.html">pywr.parameters.InterpolatedFlowParameter</a></li>
-</ul>
-</li>
+<li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#interpolation-parameters">Interpolation parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#control-curve-parameters">Control curve parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#hydropower-parameters">Hydropower parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../pywr.parameters.html#other-parameters">Other parameters</a></li>
@@ -104,9 +110,9 @@
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../pywr.html">Pywr reference documentation.</a></li>
           <li class="breadcrumb-item"><a href="../pywr.parameters.html">Parameters</a></li>
-      <li class="breadcrumb-item active">pywr.parameters.InterpolatedQuadratureParameter</li>
+      <li class="breadcrumb-item active">pywr.parameters.WeightedAverageProfileParameter</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/api/generated/pywr.parameters.InterpolatedQuadratureParameter.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/api/generated/pywr.parameters.WeightedAverageProfileParameter.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -114,39 +120,37 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pywr-parameters-interpolatedquadratureparameter">
-<h1>pywr.parameters.InterpolatedQuadratureParameter<a class="headerlink" href="#pywr-parameters-interpolatedquadratureparameter" title="Permalink to this heading"></a></h1>
+  <section id="pywr-parameters-weightedaverageprofileparameter">
+<h1>pywr.parameters.WeightedAverageProfileParameter<a class="headerlink" href="#pywr-parameters-weightedaverageprofileparameter" title="Permalink to this heading"></a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="pywr.parameters.InterpolatedQuadratureParameter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">InterpolatedQuadratureParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_parameter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_parameter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interp_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.InterpolatedQuadratureParameter" title="Permalink to this definition"></a></dt>
-<dd><p>Parameter value is equal to the quadrature of the interpolation of another parameter</p>
+<dt class="sig sig-object py" id="pywr.parameters.WeightedAverageProfileParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">WeightedAverageProfileParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storages</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiles</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.WeightedAverageProfileParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a weighted average daily profile from pairs of storage nodes and
+profile parameters.</p>
+<p>The contribution on each profile is weighted using the volume of the paired
+storage node. For efficiency, the profile values are calculated in the reset
+method, though this limits the type of parameters that can be given as input
+profiles.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>upper_parameter</strong><span class="classifier">Parameter</span></dt><dd><p>Upper value of the interpolated interval to integrate over.</p>
+<dt><strong>storages: iterable of storage nodes. Length should equal to the length of</strong></dt><dd><p>profiles parameter.</p>
 </dd>
-<dt><strong>x</strong><span class="classifier">array_like</span></dt><dd><p>x coordinates of the data points for interpolation.</p>
-</dd>
-<dt><strong>y</strong><span class="classifier">array_like</span></dt><dd><p>y coordinates of the data points for interpolation.</p>
-</dd>
-<dt><strong>lower_parameter</strong><span class="classifier">Parameter or None</span></dt><dd><p>Lower value of the interpolated interval to integrate over. Can be <cite>None</cite> in which
-case the lower value of interval is zero.</p>
-</dd>
-<dt><strong>interp_kwargs</strong><span class="classifier">dict</span></dt><dd><p>Dictionary of keyword arguments to pass to <cite>scipy.interpolate.interp1d</cite> class and used
-for interpolation.</p>
+<dt><strong>profiles: iterable of profile parameters. These can be either a</strong></dt><dd><p>ConstantParameter, DailyProfileParameter, or MonthlyProfileParameter.
+Length should equal to the length of storages parameter.</p>
 </dd>
 </dl>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="pywr.parameters.InterpolatedQuadratureParameter.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_parameter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_parameter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interp_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.InterpolatedQuadratureParameter.__init__" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywr.parameters.WeightedAverageProfileParameter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.WeightedAverageProfileParameter.__init__" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#pywr.parameters.InterpolatedQuadratureParameter.__init__" title="pywr.parameters.InterpolatedQuadratureParameter.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(model, upper_parameter, x, y[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pywr.parameters.WeightedAverageProfileParameter.__init__" title="pywr.parameters.WeightedAverageProfileParameter.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">after</span></code>(self)</p></td>
@@ -164,49 +168,52 @@ for interpolation.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_constant_value</span></code>(self)</p></td>
 <td><p>Return a constant value.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_double_lower_bounds</span></code>(self)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_daily_values</span></code>(self)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_double_upper_bounds</span></code>(self)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_double_lower_bounds</span></code>(self)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_double_variables</span></code>(self)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_double_upper_bounds</span></code>(self)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_integer_lower_bounds</span></code>(self)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_double_variables</span></code>(self)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_integer_upper_bounds</span></code>(self)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_integer_lower_bounds</span></code>(self)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_integer_variables</span></code>(self)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_integer_upper_bounds</span></code>(self)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_value</span></code>(self, ScenarioIndex scenario_index)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_integer_variables</span></code>(self)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code>(type cls, model, data)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_value</span></code>(self, ScenarioIndex scenario_index)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register</span></code>(type cls)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code>(type cls, model, data)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>(self)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register</span></code>(type cls)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_double_variables</span></code>(self, double[)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>(self)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_integer_variables</span></code>(self, int[)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_double_variables</span></code>(self, double[)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code>(self)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_integer_variables</span></code>(self, int[)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">unregister</span></code>(type cls)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code>(self)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">value</span></code>(self, Timestep ts, ...)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">unregister</span></code>(type cls)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">value</span></code>(self, Timestep ts, ...)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -226,17 +233,11 @@ for interpolation.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">integer_size</span></code></p></td>
 <td><p>integer_size: 'int'</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_kwargs</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_constant</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_constant</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_variable</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_variable</span></code></p></td>
 <td><p>is_variable: 'bool'</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">lower_parameter</span></code></p></td>
-<td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
 <td><p></p></td>
@@ -253,9 +254,6 @@ for interpolation.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tags</span></code></p></td>
 <td><p>tags: dict</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">upper_parameter</span></code></p></td>
-<td><p></p></td>
-</tr>
 </tbody>
 </table>
 </dd></dl>
@@ -266,8 +264,8 @@ for interpolation.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pywr.parameters.InterpolatedVolumeParameter.html" class="btn btn-neutral float-left" title="pywr.parameters.InterpolatedVolumeParameter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pywr.parameters.InterpolatedFlowParameter.html" class="btn btn-neutral float-right" title="pywr.parameters.InterpolatedFlowParameter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pywr.parameters.RbfProfileParameter.html" class="btn btn-neutral float-left" title="pywr.parameters.RbfProfileParameter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pywr.parameters.DataFrameParameter.html" class="btn btn-neutral float-right" title="pywr.parameters.DataFrameParameter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
