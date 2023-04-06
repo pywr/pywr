@@ -1113,13 +1113,15 @@ class TestTablesRecorder:
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
-            rec = TablesRecorder(model, h5f)
+            _rec = TablesRecorder(model, h5f)
 
             model.run()
 
             for node_name in model.nodes.keys():
                 ca = h5f.get_node("/", node_name)
                 assert ca.shape == (365, 1)
+                assert ca._v_attrs['pywr-attribute'] == 'flow'
+                assert 'pywr-type' in ca._v_attrs
                 if node_name == "Sum":
                     np.testing.assert_allclose(ca, 20.0)
                 else:
