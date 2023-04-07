@@ -862,7 +862,7 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
         as the first level and scenario combination names as the second level. This
         allows for easy combination with multiple recorder's DataFrames
         """
-        index = self._percentiles
+        index = np.array(self._percentiles)
         sc_index = self.model.scenarios.multiindex
 
         return pd.DataFrame(data=np.array(self.fdc), index=index, columns=sc_index)
@@ -1070,7 +1070,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             If true returns a tuple of two dataframes. The first is the deviations, the second
             is the actual FDC.
         """
-        index = self._percentiles
+        index = np.array(self._percentiles)
         sc_index = self.model.scenarios.multiindex
 
         df = pd.DataFrame(data=np.array(self._fdc_deviations), index=index, columns=sc_index)
@@ -1293,7 +1293,7 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
         as the first level and scenario combination names as the second level. This
         allows for easy combination with multiple recorder's DataFrames
         """
-        index = self._percentiles
+        index = np.array(self._percentiles)
         sc_index = self.model.scenarios.multiindex
 
         return pd.DataFrame(data=self.sdc, index=index, columns=sc_index)

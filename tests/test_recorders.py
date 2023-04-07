@@ -2202,7 +2202,6 @@ def timeseries2_observed():
     df = pandas.read_csv(
         os.path.join(path, "timeseries2.csv"),
         parse_dates=True,
-        dayfirst=True,
         index_col=0,
     )
     df = df.asfreq(pandas.infer_freq(df.index))

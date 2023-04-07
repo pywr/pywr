@@ -28,7 +28,6 @@
                 },
                 "scenario": "scenario A",
                 "parse_dates": true,
-                "dayfirst": true,
                 "index_col": 0
             }
         },
@@ -65,7 +64,7 @@
             "node": "term1",
             "percentiles": [20, 40, 60, 80, 100],
             "lower_target_fdc": {
-                "url": "fdc_targets.csv", 
+                "url": "fdc_targets.csv",
                 "index_col": 0
             },
             "upper_target_fdc": [
