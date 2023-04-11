@@ -12,6 +12,7 @@ import tables
 import json
 from numpy.testing import assert_allclose, assert_equal
 from fixtures import simple_linear_model, simple_storage_model
+from pywr.nodes import PiecewiseLink
 from pywr.recorders import (
     Recorder,
     NumpyArrayNodeRecorder,
@@ -1715,6 +1716,28 @@ class TestDeficitRecorders:
         df = rec.to_dataframe()
         assert df.shape == (365, 1)
         np.testing.assert_allclose(expected_deficit[:, np.newaxis], df.values)
+
+    def test_array_deficit_recorder_with_piecewise_link(
+        self,
+    ):
+        """Test `NumpyArrayNodeDeficitRecorder` with a piecewise link."""
+        model = Model()
+        inpt = Input(model, name="Input")
+        lnk = PiecewiseLink(
+            model, name="Link", costs=[0.0, 1.0], max_flows=[2, 8], nsteps=2
+        )
+        inpt.connect(lnk)
+        otpt = Output(model, name="Output", cost=-10.0, max_flow=10)
+        lnk.connect(otpt)
+
+        rec_lnk = NumpyArrayNodeDeficitRecorder(model, lnk)
+        rec_otpt = NumpyArrayNodeDeficitRecorder(model, otpt)
+
+        model.run()
+
+        expected = np.zeros(365)
+        np.testing.assert_allclose(expected[:, np.newaxis], rec_otpt.data)
+        np.testing.assert_allclose(rec_lnk.data, rec_otpt.data)
 
     @pytest.mark.parametrize("demand_factor", [30.0, 0.0])
     def test_array_supplied_ratio_recoder(self, simple_linear_model, demand_factor):

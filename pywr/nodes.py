@@ -818,6 +818,12 @@ class PiecewiseLink(Node):
         if max_flows is not None:
             self.max_flows = max_flows
 
+    def get_min_flow(self, si):
+        return sum([sl.get_min_flow(si) for sl in self.sublinks])
+
+    def get_max_flow(self, si):
+        return sum([sl.get_max_flow(si) for sl in self.sublinks])
+
     def costs():
         def fget(self):
             return [sl.cost for sl in self.sublinks]
