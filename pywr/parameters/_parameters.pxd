@@ -1,6 +1,6 @@
 from pywr.recorders._recorders cimport Recorder
 from pywr._component cimport Component
-from pywr._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node
+from pywr._core cimport Timestep, Scenario, ScenarioIndex, ScenarioCollection, AbstractNode, Node, AbstractStorage
 
 cdef class Parameter(Component):
     cdef public int double_size
@@ -40,6 +40,7 @@ cdef class DataFrameParameter(Parameter):
     cdef int _scenario_index
     cdef int[:] _scenario_ids
     cdef public object dataframe
+    cdef public int timestep_offset
 
 cdef class ArrayIndexedParameter(Parameter):
     cdef double[:] values
@@ -75,6 +76,7 @@ cdef class MonthlyProfileParameter(Parameter):
     cdef double[:] _upper_bounds
     cdef public object interp_day
     cpdef _interpolate(self)
+    cpdef double[:] get_daily_values(self)
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
     cdef double[:, :] _values
@@ -94,6 +96,7 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
 cdef class UniformDrawdownProfileParameter(Parameter):
     cdef public int reset_day
     cdef public int reset_month
+    cdef public int residual_days
     cdef int _reset_idoy
 
 cdef class RbfProfileParameter(Parameter):
@@ -130,7 +133,7 @@ cdef class TablesArrayParameter(IndexParameter):
     cdef public object h5store
     cdef public object node
     cdef public object where
-
+    cdef public int timestep_offset
     cdef int _scenario_index
     cdef int[:] _scenario_ids
 
@@ -204,6 +207,10 @@ cdef class FlowParameter(Parameter):
     cdef double[:] __next_values
     cdef public double initial_value
 
+cdef class StorageParameter(Parameter):
+    cdef public AbstractStorage storage_node
+    cdef public bint use_proportional_volume
+
 cdef class PiecewiseIntegralParameter(Parameter):
     cdef public double[:] x
     cdef public double[:] y
@@ -220,3 +227,12 @@ cdef class FlowDelayParameter(Parameter):
 cdef class DiscountFactorParameter(Parameter):
     cdef public double rate
     cdef public int base_year
+
+
+cdef class RollingMeanFlowNodeParameter(Parameter):
+    cdef int position
+    cdef public int timesteps
+    cdef public int days
+    cdef public double initial_flow
+    cdef public AbstractNode node
+    cdef double[:, :] _memory

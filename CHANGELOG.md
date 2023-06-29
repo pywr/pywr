@@ -2,6 +2,137 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## v1.20.1
+
+### Bug Fixes
+
+- Fix bug loading `timestep_offset` in `DataFrameParameter` from JSON. (#1078)
+
+## v1.20.0
+
+### New Features
+
+- Allow storage max volume to be set as a constant parameter without specifying both initial volume and initial volume pc. (#1071)
+- Add timestep offset to `DataFrameParameter` and `TablesArrayParameter`. (#1073)
+- Update `TablesRecorder` to save scenario slice data. (#1072)
+- Add `RollingMeanFlowNodeParameter` and deprecate `RollingMeanFlowNodeRecorder`. (#1074) 
+
+### Bug Fixes
+
+- Fix Cython typing warning in `MonthlyProfile`. (#1075)
+
+### Miscellaneous
+
+- Release wheels for Python 3.11.
+
+## v1.19.0
+
+### New Features
+
+- Add `WeightedAverageProfileParameter`. (#1066) 
+- Update to `AnnualCountIndexThresholdRecorder` to include a range of days to record. (#1061)
+
+### Bug Fixes
+
+- Fix `__init__` argument handling in `BisectionSearchModel`. (#1067)
+
+### Miscellaneous
+
+- Remove matplotlib, jinja2 and ipython from core dependencies. (#1040)
+- Fix `LicenceParameter` example in documentation. (#1068) 
+- Remove outdated documentation on constant factors in AggregatedNode. (#1060) 
+
+## v1.18.0
+
+### New Features
+
+- Hash checking is now *not* case-sensitive. (#1046)
+- Add `MonthlyVirtualStorage` node that resets after a given number of months.
+- Add `StorageParameter` that provides the current volume from a storage node.
+- Add support for running multiple Pywr models in an interleaved fashion using a new `MultiModel` class
+ and associated parameters. 
+
+### Bug Fixes
+
+- Update load method of several parameters (`ControlCurveInterpolatedParameter`, `ControlCurveParameter`,
+ `ArrayIndexedScenarioMonthlyFactorsParameter`, several interpolated parameters) to ensure all data 
+ is loaded. (#1048)
+
+
+## v1.17.2
+
+### Bug Fixes
+
+- Fix a bug where the solver specified using a keyword to `Model.load` would be ignored. (#1044)
+
+## v1.17.1
+
+### Miscellaneous
+
+- Release wheels for Python 3.9 (Windows) and Python 3.10 (Linux and Windows).
+
+## v1.17.0
+
+### New Features
+
+- Networks with missing connections will now more reliably raise `ModelStructureError`. (#1025)
+- Improve GLPK API (#1021): 
+  - GLPK errors are now handled by default by raising `GLPKInternalError`.
+  - NaN checks are performed by default.
+  - Added runtime option to use "unsafe" API with no error or NaN handling (see new documentation).
+  - Added documentation describing error handling changes.
+- Improve handling of NaN values in `Storage.current_pc` (i.e. when `max_volume` is zero). 
+  - Added a new method `Storage.get_current_pc` to guarantee a finite value. 
+- Added `min_output` to `RectifierParameter`
+
+### Miscellaneous
+
+- Documentation improvements:
+  - `RiverSplitWithGauge` docstring. (#1030)
+  - Added section describing how to use Dataframe checksums. (#1028)
+  - Added `ControlCurveParameter` to API docs. (#1027)
+
+
+## v1.16.1
+
+### Bug Fixes
+
+- Fix internal node names for `PiecewiseLink`. (#1024) 
+
+## v1.16.0
+
+### New Features
+
+- Supply `initial_volume_pc` in `VirtualStorage` and its subclasses. (#1015)
+- Add `residual_days` option to `UniformDrawdownProfileParameter`. (#1013)
+
+### Bug Fixes
+
+- Fix a JSON formatting error in the documentation. (#1009)
+- Removed a circular import in `pywr.recorders.calibration`. (#1012)
+
+### Miscellaneous
+
+- Removed some older folders related to Travis. (#1016)
+- Re-formatted the Python code using the Black formatter and enforced this for future modifications. (#1010)
+
+
+## v1.15.3
+
+### Bug Fixes
+
+- Fix bug where constraints are not applied between `VirtualStorage` and some complex node types (e.g
+`PiecewiseLink` and `AggregatedNode`). Previously models would run and silently ignore constraints
+that users might reasonably expect to be applied. Now these models will error until a proper fix
+is implemented. See issue #1001 to see details and track progress. (#1002)
+
+## v1.15.2
+
+### Bug Fixes
+
+- Fix bug with `AggregatedParameter.remove()` and `AggregatedIndexParameter.remove()` methods using the
+wrong method internally. (#997)
+
 ## v1.15.1
 
 ### Bug Fixes

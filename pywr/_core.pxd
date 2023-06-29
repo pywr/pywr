@@ -116,6 +116,7 @@ cdef class BaseInput(Node):
 cdef class AbstractStorage(AbstractNode):
     cdef public double[:] _volume
     cdef public double[:] _current_pc
+    cpdef double get_current_pc(self, ScenarioIndex scenario_index)
 
 cdef class Storage(AbstractStorage):
     cdef double _cost
@@ -152,3 +153,16 @@ cdef class RollingVirtualStorage(VirtualStorage):
     cdef public int timesteps
     cdef double[:, :] _memory
     cdef int _memory_pointer
+    cdef double _initial_utilisation
+
+cdef class ShadowStorage(AbstractStorage):
+    cdef public str other_model
+    cdef public str node
+    cdef object _other_model
+    cdef AbstractStorage _other_model_node
+
+cdef class ShadowNode(AbstractNode):
+    cdef public str other_model
+    cdef public str node
+    cdef object _other_model
+    cdef AbstractNode _other_model_node

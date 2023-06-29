@@ -862,7 +862,7 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
         as the first level and scenario combination names as the second level. This
         allows for easy combination with multiple recorder's DataFrames
         """
-        index = self._percentiles
+        index = np.array(self._percentiles)
         sc_index = self.model.scenarios.multiindex
 
         return pd.DataFrame(data=np.array(self.fdc), index=index, columns=sc_index)
@@ -1070,7 +1070,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             If true returns a tuple of two dataframes. The first is the deviations, the second
             is the actual FDC.
         """
-        index = self._percentiles
+        index = np.array(self._percentiles)
         sc_index = self.model.scenarios.multiindex
 
         df = pd.DataFrame(data=np.array(self._fdc_deviations), index=index, columns=sc_index)
@@ -1293,7 +1293,7 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
         as the first level and scenario combination names as the second level. This
         allows for easy combination with multiple recorder's DataFrames
         """
-        index = self._percentiles
+        index = np.array(self._percentiles)
         sc_index = self.model.scenarios.multiindex
 
         return pd.DataFrame(data=self.sdc, index=index, columns=sc_index)
@@ -1635,8 +1635,15 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
     name : str (optional)
         The name of the recorder
 
+    See also
+    --------
+    RollingMeanFlowNodeParameter
     """
     def __init__(self, model, node, timesteps=None, days=None, name=None, **kwargs):
+        warnings.warn("`RollingMeanFlowNodeRecorder` has been deprecated in favour of `RollingMeanFlowNodeParameter`."
+                      " If you need to record the value use a recorder capable of recording an arbitrary parameter"
+                      " (e.g. `NumpyArrayParameterRecorder`)", DeprecationWarning, stacklevel=2)
+
         super(RollingMeanFlowNodeRecorder, self).__init__(model, node, name=name, **kwargs)
         self.model = model
         if not timesteps and not days:
@@ -1650,6 +1657,7 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
         else:
             self.days = 0
         self._data = None
+        self._memory = None
         self.position = 0
 
     cpdef setup(self):
@@ -1905,9 +1913,13 @@ TimestepCountIndexParameterRecorder.register()
 
 
 cdef class AnnualCountIndexThresholdRecorder(Recorder):
-    """
-    For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
-    If multiple parameters exceed in one timestep then it is only counted once.
+    """For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
+
+    If multiple parameters exceed in one timestep then it is only counted once. The recorder also allows
+    for exclusion of months and for the inclusion of a range of dates within a calendar year to which
+    the parameter exceedence is counted. Both the exclusion of months and the inclusion of dates can
+    simultaneously be provided, where the intersection of excluded months with a range of dates will result
+    in the day not counting any exceedences.
 
     Output from data property has shape: (years, scenario combinations)
 
@@ -1922,12 +1934,24 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         Threshold to compare parameters against
     exclude_months : list or None
         Optional list of month numbers to exclude from the count.
+    include_from_month, include_from_day : int or None
+        Optional start date to specify a range of dates to include in the count. If intended to be used,
+        both arguments must be supplied, otherwise the recorder will assume that this is not used and default
+        to the 1st Jan. Period to count is inclusive of the start date.
+    include_to_month, include_to_day : int or None
+        Optional end date to specify a range of dates to include in the count. If intended to be used,
+        both arguments must be supplied, otherwise the recorder will assume that this is not used and default
+        to the 31st Dec. Period to count is inclusive of the end date.
     """
     def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
         self.exclude_months = kwargs.pop('exclude_months', None)
+        self.include_from_month = kwargs.pop('include_from_month', None)
+        self.include_from_day = kwargs.pop('include_from_day', None)
+        self.include_to_month = kwargs.pop('include_to_month', None)
+        self.include_to_day = kwargs.pop('include_to_day', None)
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
-        super().__init__(model, name=name, *args, **kwargs)
+        super(AnnualCountIndexThresholdRecorder, self).__init__(model, name=name, *args, **kwargs)
         self.parameters = parameters
         self.threshold = threshold
         for parameter in self.parameters:
@@ -1954,6 +1978,8 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = self._current_year - self._start_year
         cdef int p
+        cdef int include_from
+        cdef int include_to
         cdef Py_ssize_t i
         cdef int value
         cdef ScenarioIndex scenario_index
@@ -1971,6 +1997,18 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
             self._current_year = ts.year
 
         if self.exclude_months is not None and ts.month in self.exclude_months:
+            return
+
+        # include a range of dates within a year
+        if self.include_from_month is None or self.include_from_day is None:
+            include_from = 1
+        else:
+            include_from = pd.Timestamp(self._current_year, self.include_from_month, self.include_from_day).dayofyear
+        if self.include_to_month is None or self.include_to_day is None:
+            include_to = 366
+        else:
+            include_to = pd.Timestamp(self._current_year, self.include_to_month, self.include_to_day).dayofyear
+        if not (include_from <= ts.dayofyear <= include_to):
             return
 
         for scenario_index in self.model.scenarios.combinations:

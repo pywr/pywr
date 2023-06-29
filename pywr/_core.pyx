@@ -1,12 +1,14 @@
 from pywr._core cimport *
 from pywr._component cimport Component
 import itertools
+from libc.math cimport isnan
 import numpy as np
 cimport numpy as np
 import pandas as pd
 import warnings
 
 cdef double inf = float('inf')
+
 
 cdef class Scenario:
     """Represents a scenario in the model.
@@ -746,7 +748,7 @@ cdef class AggregatedNode(AbstractNode):
         self._min_flow_param = None
         self._max_flow_param = None
 
-    component_attrs = ["min_flow", "max_flow"]
+    component_attrs = ["min_flow", "max_flow", "factors"]
 
     property nodes:
         def __get__(self):
@@ -1013,9 +1015,27 @@ cdef class AbstractStorage(AbstractNode):
             return np.asarray(self._volume)
 
     property current_pc:
-        """ Current percentage full """
+        """ Current proportion full.
+         
+        Note that this property is the raw internal value of the current_pc and may contain `NaN` values. Prefer
+        use of the `get_current_pc` method to return a guaranteed finite value between 0.0 and 1.0.
+        """
         def __get__(self, ):
             return np.asarray(self._current_pc)
+
+    cpdef double get_current_pc(self, ScenarioIndex scenario_index):
+        """Return the current proportion of full of the storage node.
+        
+        This method will always return a finite value between 0.0 and 1.0. If the current proportion is `NaN` 
+        (usually because max_volume is zero) it is assumed full (i.e. returns 1.0). It is preferable to use
+        this method in Parameter calculations to avoid dealing with NaN or out of range values.
+        """
+        cdef double current_pc = self._current_pc[scenario_index.global_id]
+        if current_pc > 1.0 or isnan(current_pc):
+            current_pc = 1.0
+        elif current_pc < 0.0:
+            current_pc = 0.0
+        return current_pc
 
     cpdef setup(self, model):
         """ Called before the first run of the model"""
@@ -1108,9 +1128,9 @@ cdef class Storage(AbstractStorage):
 
     cpdef double get_initial_volume(self) except? -1:
         """Returns the absolute initial volume. """
-        cdef double mxv = self._max_volume
+        cdef double mxv
 
-        if self._max_volume_param is not None:
+        if self._max_volume_param is not None and not self._max_volume_param.is_constant:
             # Max volume is a parameter; require both initial_volume and initial_volume_pc be given.
             # The parameter will not be evaluated at the beginning of the model run.
             if not np.isfinite(self._initial_volume_pc) or not np.isfinite(self._initial_volume):
@@ -1121,6 +1141,10 @@ cdef class Storage(AbstractStorage):
         else:
             # User only has to supply absolute or relative initial volume
             if np.isfinite(self._initial_volume_pc):
+                if self._max_volume_param is not None:
+                    mxv = self._max_volume_param.get_constant_value()
+                else:
+                    mxv = self._max_volume
                 initial_volume = self._initial_volume_pc * mxv
             elif np.isfinite(self._initial_volume):
                 initial_volume = self._initial_volume
@@ -1130,9 +1154,9 @@ cdef class Storage(AbstractStorage):
 
     cpdef double get_initial_pc(self) except? -1:
         """Returns the initial volume as a proportion. """
-        cdef double mxv = self._max_volume
+        cdef double mxv
 
-        if self._max_volume_param is not None:
+        if self._max_volume_param is not None and not self._max_volume_param.is_constant:
             # Max volume is a parameter; require both initial_volume and initial_volume_pc be given.
             # The parameter will not be evaluated at the beginning of the model run.
             if not np.isfinite(self._initial_volume_pc) or not np.isfinite(self._initial_volume):
@@ -1144,6 +1168,10 @@ cdef class Storage(AbstractStorage):
             if np.isfinite(self._initial_volume_pc):
                 initial_pc = self._initial_volume_pc
             elif np.isfinite(self._initial_volume):
+                if self._max_volume_param is not None:
+                    mxv = self._max_volume_param.get_constant_value()
+                else:
+                    mxv = self._max_volume
                 try:
                     initial_pc = self._initial_volume / mxv
                 except ZeroDivisionError:
@@ -1437,12 +1465,21 @@ cdef class RollingVirtualStorage(VirtualStorage):
         cdef int ncomb = len(model.scenarios.combinations)
         if self.timesteps < 2:
             raise ValueError('The number of time-steps for a RollingVirtualStorage node must be greater than one.')
-        self._memory = np.zeros((self.timesteps-1, ncomb), dtype=np.float64)
+        cdef double initial_vol = self.get_initial_volume()
+        cdef double initial_pc = self.get_initial_pc()
+
+        if initial_pc == 0.0:
+            if isinstance(self.max_volume, Parameter):
+                raise ValueError("`max_volume` cannot be a parameter if `initial_volume` or `initial_volume_pc` is 0.0")
+            self._initial_utilisation = self._max_volume / (self.timesteps - 1)
+        else:
+            self._initial_utilisation = ((initial_vol / initial_pc) - initial_vol) / (self.timesteps - 1)
+        self._memory = np.full((self.timesteps-1, ncomb), self._initial_utilisation, dtype=np.float64)
         self._memory_pointer = 0
 
     cpdef reset(self):
         VirtualStorage.reset(self)
-        self._memory[:] = 0.0
+        self._memory[:] = self._initial_utilisation
         self._memory_pointer = 0
 
     cpdef after(self, Timestep ts, double[:] adjustment=None):
@@ -1460,3 +1497,63 @@ cdef class RollingVirtualStorage(VirtualStorage):
             # returning to the store later
             self._memory[self._memory_pointer, i] = -self._flow[i] * ts.days
         self._memory_pointer = (self._memory_pointer + 1) % (self.timesteps - 1)
+
+
+cdef class ShadowStorage(AbstractStorage):
+    """Storage node that shadows the volume of a node in another model.
+
+    This node will synchronise its `volume`, `current_pc`, `flow` and `prev_flow` with the respective values
+    from another storage node. This synchronisation happens in the `.before()` method. It is intended to allow a
+    storage node to "shadow" the volume of a node that has its real calculations undertaken in a separate model, but
+    is required in this model for parameter calculations.
+    """
+    def __init__(self, model, other_model, node, *args, **kwargs):
+        AbstractStorage.__init__(self, model, *args, **kwargs)
+        self.other_model = other_model
+        self.node = node
+
+        self._other_model = None
+        self._other_model_node = None
+
+    cpdef setup(self, model):
+        AbstractStorage.setup(self, model)
+        # Find the references to the other model and one of its parameters.
+        self._other_model = model.parent.models[self.other_model]
+        self._other_model_node = self._other_model.nodes[self.node]
+
+    cpdef before(self, Timestep ts):
+        AbstractStorage.before(self, ts)
+        # Update our current storage to the value of the node we are shadowing.
+        self._volume[:] =  self._other_model_node._volume
+        self._current_pc[:] = self._other_model_node._current_pc
+        self._flow[:] = self._other_model_node._flow
+        self._prev_flow[:] = self._other_model_node._prev_flow
+
+
+cdef class ShadowNode(AbstractNode):
+    """Node that shadows the flow of a node in another model.
+
+    This node will synchronise its `flow` and `prev_flow` with the respective values from another node. This
+    synchronisation happens in the `.before()` method. It is intended to allow a node to "shadow" the flow of a
+    node that has its real calculations undertaken in a separate model, but is required in this model for
+    parameter calculations.
+    """
+    def __init__(self, model, other_model, node, *args, **kwargs):
+        AbstractNode.__init__(self, model, *args, **kwargs)
+        self.other_model = other_model
+        self.node = node
+
+        self._other_model = None
+        self._other_model_node = None
+
+    cpdef setup(self, model):
+        AbstractNode.setup(self, model)
+        # Find the references to the other model and one of its parameters.
+        self._other_model = model.parent.models[self.other_model]
+        self._other_model_node = self._other_model.nodes[self.node]
+
+    cpdef before(self, Timestep ts):
+        AbstractNode.before(self, ts)
+        # Update our current storage to the value of the node we are shadowing.
+        self._flow[:] = self._other_model_node._flow
+        self._prev_flow[:] = self._other_model_node._prev_flow

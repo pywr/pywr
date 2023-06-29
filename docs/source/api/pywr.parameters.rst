@@ -58,6 +58,7 @@ Annual profile parameters
    ScenarioMonthlyProfileParameter
    ArrayIndexedScenarioMonthlyFactorsParameter
    RbfProfileParameter
+   WeightedAverageProfileParameter
 
 Dataframe parameter
 -------------------
@@ -134,6 +135,7 @@ Control curve parameters
     :toctree: generated/
 
     control_curves.BaseControlCurveParameter
+    control_curves.ControlCurveParameter
     control_curves.ControlCurveInterpolatedParameter
     control_curves.ControlCurveIndexParameter
     control_curves.ControlCurvePiecewiseInterpolatedParameter
@@ -160,6 +162,6 @@ Other parameters
    PiecewiseIntegralParameter
    FlowParameter
    FlowDelayParameter
+   StorageParameter
    DiscountFactorParameter
-
-
+   RollingMeanFlowNodeParameter

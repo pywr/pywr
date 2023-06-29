@@ -1,7 +1,8 @@
 from cpython cimport array
 import array
 from libc.stdlib cimport malloc, free
-from libc.math cimport abs
+from libc.math cimport abs, isnan
+from libc.setjmp cimport setjmp, longjmp, jmp_buf
 from libc.float cimport DBL_MAX
 from cython.view cimport array as cvarray
 import numpy as np
@@ -14,6 +15,8 @@ from pywr.core import ModelStructureError
 import time
 
 from .libglpk cimport *
+import logging
+logger = logging.getLogger(__name__)
 
 # Constants and message strings
 # =============================
@@ -91,6 +94,25 @@ cdef inline double inf_to_dbl_max(double a):
         return -DBL_MAX
     return a
 
+# Error handling
+# ==============
+class GLPKError(Exception):
+    pass
+class GLPKInternalError(Exception):
+    pass
+
+
+cdef jmp_buf error_ctx
+cdef bint has_glpk_errored = 0
+
+cdef void error_hook(void *info):
+    # Free GLPK memory; this will destroy the entire GLPK environment for this process
+    # Potentially invalidating other models.
+    global has_glpk_errored
+    has_glpk_errored = True;
+    glp_free_env();
+    longjmp((<jmp_buf*>info)[0], <int>1)
+
 
 cdef class AbstractNodeData:
     """Helper class for caching node data for the solver."""
@@ -115,6 +137,7 @@ cdef class GLPKSolver:
 
     cdef public bint use_presolve
     cdef bint has_presolved
+    cdef public bint use_unsafe_api
     cdef public bint set_fixed_flows_once
     cdef public bint set_fixed_costs_once
     cdef public bint set_fixed_factors_once
@@ -123,17 +146,22 @@ cdef class GLPKSolver:
         self.prob = glp_create_prob()
 
     def __dealloc__(self):
-        glp_delete_prob(self.prob)
+        # If there's been an error the GLPK environment is destroyed and the pointer is invalid.
+        if not has_glpk_errored:
+            glp_delete_prob(self.prob)
 
     def __init__(self, use_presolve=False, time_limit=None, iteration_limit=None, message_level="error",
-                 set_fixed_flows_once=False, set_fixed_costs_once=False, set_fixed_factors_once=False):
+                 set_fixed_flows_once=False, set_fixed_costs_once=False, set_fixed_factors_once=False, use_unsafe_api=False):
         self.use_presolve = use_presolve
+        self.use_unsafe_api = use_unsafe_api
         self.set_solver_options(time_limit, iteration_limit, message_level)
         glp_term_hook(term_hook, NULL)
         self.has_presolved = False
         self.set_fixed_flows_once = set_fixed_flows_once
         self.set_fixed_costs_once = set_fixed_costs_once
         self.set_fixed_factors_once = set_fixed_factors_once
+        # Register the error hook
+        glp_error_hook(error_hook, &error_ctx)
 
     def set_solver_options(self, time_limit, iteration_limit, message_level):
         glp_init_smcp(&self.smcp)
@@ -217,52 +245,94 @@ cdef int term_hook(void *info, const char *s):
     return 1
 
 
-cdef int simplex(glp_prob *P, glp_smcp parm):
+
+# Unsafe interface to GLPK
+# This interface performs no checks or error handling
+cdef int simplex_unsafe(glp_prob *P, glp_smcp parm):
+    """Unsafe wrapped call to `glp_simplex`"""
     return glp_simplex(P, &parm)
 
-
-cdef set_obj_coef(glp_prob *P, int j, double coef):
-    IF SOLVER_DEBUG:
-        assert np.isfinite(coef)
-        if abs(coef) < 1e-9:
-            if abs(coef) != 0.0:
-                print(j, coef)
-                assert False
+cdef set_obj_coef_unsafe(glp_prob *P, int j, double coef):
+    """Unsafe wrapped call to `glp_set_obj_coef`"""
     glp_set_obj_coef(P, j, coef)
 
-
-cdef set_row_bnds(glp_prob *P, int i, int type, double lb, double ub):
-    IF SOLVER_DEBUG:
-        assert np.isfinite(lb)
-        assert np.isfinite(ub)
-        assert lb <= ub
-        if abs(lb) < 1e-9:
-            if abs(lb) != 0.0:
-                print(i, type, lb, ub)
-                assert False
-        if abs(ub) < 1e-9:
-            if abs(ub) != 0.0:
-                print(i, type, lb, ub)
-                assert False
+cdef set_row_bnds_unsafe(glp_prob *P, int i, int type, double lb, double ub):
+    """Wrapped call to `glp_set_row_bnds`"""
     glp_set_row_bnds(P, i, type, lb, ub)
 
-
-cdef set_col_bnds(glp_prob *P, int i, int type, double lb, double ub):
-    IF SOLVER_DEBUG:
-        assert np.isfinite(lb)
-        assert np.isfinite(ub)
-        assert lb <= ub
+cdef set_col_bnds_unsafe(glp_prob *P, int i, int type, double lb, double ub):
+    """Wrapped call to `glp_set_col_bnds`"""
     glp_set_col_bnds(P, i, type, lb, ub)
 
-
-cdef set_mat_row(glp_prob *P, int i, int len, int* ind, double* val):
-    IF SOLVER_DEBUG:
-        cdef int j
-        for j in range(len):
-            assert np.isfinite(val[j+1])
-            assert abs(val[j+1]) > 1e-6
-            assert ind[j+1] > 0
+cdef set_mat_row_unsafe(glp_prob *P, int i, int len, int * ind, double * val):
+    """Wrapped call to `glp_set_mat_row`"""
     glp_set_mat_row(P, i, len, ind, val)
+
+# Safe interface to GLPK
+# This interface checks for NaNs and uses setjmp to catch GLPK errors
+
+glpk_error_msg = "This is an internal GLPK error and will have invalidated the entire GLPK environment. " \
+                 "All models will need to be recreated to continue. " \
+                 "This error should be resolved and the model re-run."
+
+cdef int simplex_safe(glp_prob *P, glp_smcp parm) except? -1:
+    """Wrapped call to `glp_simplex`"""
+    if not setjmp(error_ctx):
+        return glp_simplex(P, &parm)
+    else:
+        raise GLPKInternalError("An error occurred in `glp_simplex`." + glpk_error_msg)
+
+
+cdef int set_obj_coef_safe(glp_prob *P, int j, double coef) except -1:
+    """Wrapped call to `glp_set_obj_coef`"""
+    if isnan(coef):
+        raise GLPKError(f"NaN detected in objective coefficient of column {j}")
+
+    if not setjmp(error_ctx):
+        glp_set_obj_coef(P, j, coef)
+    else:
+        raise GLPKInternalError("An error occurred in `glp_set_obj_coef`." + glpk_error_msg)
+
+
+cdef int set_row_bnds_safe(glp_prob *P, int i, int type, double lb, double ub) except -1:
+    """Wrapped call to `glp_set_row_bnds`"""
+    if isnan(lb):
+        raise GLPKError(f"NaN detected in lower bounds of row {i}")
+    if isnan(ub):
+        raise GLPKError(f"NaN detected in upper bounds of row {i}")
+    if not setjmp(error_ctx):
+        glp_set_row_bnds(P, i, type, lb, ub)
+    else:
+        raise GLPKInternalError("An error occurred in `glp_set_row_bnds`." + glpk_error_msg)
+
+
+cdef int set_col_bnds_safe(glp_prob *P, int i, int type, double lb, double ub) except -1:
+    """Wrapped call to `glp_set_col_bnds`"""
+    if isnan(lb):
+        raise GLPKError(f"NaN detected in lower bounds of column {i}")
+    if isnan(ub):
+        raise GLPKError(f"NaN detected in upper bounds of column {i}")
+    if not setjmp(error_ctx):
+        glp_set_col_bnds(P, i, type, lb, ub)
+    else:
+        raise GLPKInternalError("An error occurred in `glp_set_col_bnds`." + glpk_error_msg)
+
+
+cdef int set_mat_row_safe(glp_prob *P, int i, int len, int* ind, double* val) except -1:
+    """Wrapped call to `glp_set_mat_row`"""
+    if len == 0:
+        raise GLPKError("Attempting to set a constraint row with zero entries. This should not happen. It is likely caused "
+                        "by invalid or unsupported network configuration, but should generally be caught earlier by Pywr. "
+                        "If you experience this error please report it to the Pywr developers.")
+
+    for j in range(len):
+        if isnan(val[j+1]):
+            raise GLPKError(f"NaN detected in matrix coefficient of row {i} and column {ind[j+1]}")
+
+    if not setjmp(error_ctx):
+        glp_set_mat_row(P, i, len, ind, val)
+    else:
+        raise GLPKInternalError(f"An error occurred in `glp_set_mat_row` for row {i}." + glpk_error_msg)
 
 
 cdef class CythonGLPKSolver(GLPKSolver):
@@ -418,7 +488,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
         # explicitly set bounds on route and demand columns
         for col, route in enumerate(routes):
-            set_col_bnds(self.prob, self.idx_col_routes+col, GLP_LO, 0.0, DBL_MAX)
+            set_col_bnds_safe(self.prob, self.idx_col_routes+col, GLP_LO, 0.0, DBL_MAX)
 
         # constrain supply minimum and maximum flow
         self.idx_row_non_storages = glp_add_rows(self.prob, len(non_storages))
@@ -454,17 +524,25 @@ cdef class CythonGLPKSolver(GLPKSolver):
             else:
                 # Other nodes apply their flow constraints to all routes passing through them
                 cols = [n for n, route in enumerate(routes) if node in route]
+
+            if len(cols) == 0:
+                raise ModelStructureError(f'{node.__class__.__name__} node "{node.name}" is not part of any routes.')
+
             ind = <int*>malloc((1+len(cols)) * sizeof(int))
             val = <double*>malloc((1+len(cols)) * sizeof(double))
             for n, c in enumerate(cols):
                 ind[1+n] = 1+c
                 val[1+n] = 1
-            set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
-            set_row_bnds(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
-
-            free(ind)
-            free(val)
-
+            try:
+                # Always use the safe API in setup
+                set_mat_row_safe(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
+                set_row_bnds_safe(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of flow constraints for node: {node}")
+                raise
+            finally:
+                free(ind)
+                free(val)
             # Now test whether this node has fixed flow constraints
             if self.set_fixed_flows_once and node.has_constant_flows:
                 non_storages_with_constant_bounds.append(node)
@@ -483,12 +561,17 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 for n, (c, v) in enumerate(col_vals):
                     ind[1+n+len(cols)] = 1+c
                     val[1+n+len(cols)] = 1./v
-                set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
-                set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
-                # glp_set_row_name(self.prob, self.idx_row_cross_domain+cross_domain_row,
-                #                  b'cd.'+some_node.fully_qualified_name.encode('utf-8'))
-                free(ind)
-                free(val)
+
+                try:
+                    # Always use the safe API in setup
+                    set_mat_row_safe(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
+                    set_row_bnds_safe(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
+                except GLPKError, GLPKInternalError:
+                    logger.error(f"A GLPK error occurred during creation of cross-domain constraints for node: {node}")
+                    raise
+                finally:
+                    free(ind)
+                    free(val)
                 cross_domain_row += 1
 
         # storage
@@ -507,11 +590,15 @@ cdef class CythonGLPKSolver(GLPKSolver):
             for n, c in enumerate(cols_input):
                 ind[1+len(cols_output)+n] = self.idx_col_routes+c
                 val[1+len(cols_output)+n] = -1
-            set_mat_row(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_storages+row,
-            #                  b's.'+storage.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                # Always use the safe API in setup
+                set_mat_row_safe(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of storage constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # virtual storage
         if len(virtual_storages):
@@ -537,11 +624,15 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 ind[1+n] = self.idx_col_routes+c
                 val[1+n] = -f
 
-            set_mat_row(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_virtual_storages+row,
-            #                  b'vs.'+storage.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                # Always use the safe API in setup
+                set_mat_row_safe(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of virtual storage constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # Add constraint rows for aggregated nodes with dynamics factors and
         # cache data so row values can be updated in solve
@@ -572,7 +663,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 agg_node.__agg_factor_data.vals[i] = 1.0
 
             for n in range(len(nodes)-1):
-                set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
+                # Always use the safe API in setup
+                set_row_bnds_safe(self.prob, row+n, GLP_FX, 0.0, 0.0)
 
             # Determine whether the factors should be updated in reset or at each time-step
             if self.set_fixed_factors_once and agg_node.has_constant_factors:
@@ -602,11 +694,16 @@ cdef class CythonGLPKSolver(GLPKSolver):
             for i, col in enumerate(sorted(matrix)):
                 ind[1+i] = 1+col
                 val[1+i] = matrix[col]
-            set_mat_row(self.prob, row, length, ind, val)
-            set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
-            # glp_set_row_name(self.prob, row, b'ag.'+agg_node.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                # Always use the safe API in setup
+                set_mat_row_safe(self.prob, row, length, ind, val)
+                set_row_bnds_safe(self.prob, row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of aggregated node constraints for node: {agg_node}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # update route properties
         routes_cost = []
@@ -663,7 +760,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         self._update_nonstorage_constant_bounds()
         self._update_constant_agg_factors()
 
-    cdef _update_nonstorage_constant_bounds(self):
+    cdef int _update_nonstorage_constant_bounds(self) except -1:
         """Update the bounds of non-storage where they are constants.
 
         These bounds do not need updating every time-step.
@@ -673,7 +770,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         cdef double max_flow
         cdef int row
         if self.non_storages_with_constant_bounds is None:
-            return
+            return 0
         # update non-storage constraints with constant bounds
         for node in self.non_storages_with_constant_bounds:
             row = node.__data.row
@@ -683,11 +780,11 @@ cdef class CythonGLPKSolver(GLPKSolver):
             max_flow = inf_to_dbl_max(node.get_constant_max_flow())
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
-
-            set_row_bnds(self.prob, self.idx_row_non_storages + row, constraint_type(min_flow, max_flow),
+            # Always use the safe API in reset
+            set_row_bnds_safe(self.prob, self.idx_row_non_storages + row, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
 
-    cdef _update_constant_agg_factors(self):
+    cdef int _update_constant_agg_factors(self) except -1:
         cdef AggregatedNode agg_node
         cdef AggNodeFactorData agg_data
         cdef int n, i, ptr
@@ -696,7 +793,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
         cdef double[::1] vals
         cdef int[:] indptr_array
         if self.aggregated_with_constant_factors is None:
-            return
+            return 0
 
         # Update constraint matrix values for aggregated nodes that have factors defined as parameters
         for agg_node in self.aggregated_with_constant_factors:
@@ -718,8 +815,8 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
                 # 'length - 1' is used here because the ind and val slices start with a padded zero value.
                 # This is required by 'set_mat_row'.
-                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
-
+                # Always use the safe API in reset
+                set_mat_row_safe(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
     cpdef object solve(self, model):
         GLPKSolver.solve(self, model)
@@ -794,7 +891,10 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
             if abs(cost) < 1e-8:
                 cost = 0.0
-            set_obj_coef(self.prob, self.idx_col_routes+col, cost)
+            if self.use_unsafe_api:
+                set_obj_coef_unsafe(self.prob, self.idx_col_routes+col, cost)
+            else:
+                set_obj_coef_safe(self.prob, self.idx_col_routes+col, cost)
 
         self.stats['objective_update'] += time.perf_counter() - t0
         t0 = time.perf_counter()
@@ -820,7 +920,10 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
                 # 'length - 1' is used here because the ind and val slices start with a padded zero value.
                 # This is required by 'set_mat_row'.
-                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
+                if self.use_unsafe_api:
+                    set_mat_row_unsafe(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
+                else:
+                    set_mat_row_safe(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
         self.stats['constraint_update_factors'] += time.perf_counter() - t0
         t0 = time.perf_counter()
@@ -834,8 +937,12 @@ cdef class CythonGLPKSolver(GLPKSolver):
             max_flow = inf_to_dbl_max(node.get_max_flow(scenario_index))
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
-            set_row_bnds(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
-                         min_flow, max_flow)
+            if self.use_unsafe_api:
+                set_row_bnds_unsafe(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
+                                    min_flow, max_flow)
+            else:
+                set_row_bnds_safe(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
+                                  min_flow, max_flow)
 
         for row, agg_node in enumerate(aggregated):
             min_flow = inf_to_dbl_max(agg_node.get_min_flow(scenario_index))
@@ -844,8 +951,12 @@ cdef class CythonGLPKSolver(GLPKSolver):
             max_flow = inf_to_dbl_max(agg_node.get_max_flow(scenario_index))
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
-            set_row_bnds(self.prob, self.idx_row_aggregated_min_max + row, constraint_type(min_flow, max_flow),
-                         min_flow, max_flow)
+            if self.use_unsafe_api:
+                set_row_bnds_unsafe(self.prob, self.idx_row_aggregated_min_max + row, constraint_type(min_flow, max_flow),
+                                    min_flow, max_flow)
+            else:
+                set_row_bnds_safe(self.prob, self.idx_row_aggregated_min_max + row, constraint_type(min_flow, max_flow),
+                                  min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.perf_counter() - t0
         t0 = time.perf_counter()
@@ -856,7 +967,10 @@ cdef class CythonGLPKSolver(GLPKSolver):
             min_volume = storage.get_min_volume(scenario_index)
 
             if max_volume == min_volume:
-                set_row_bnds(self.prob, self.idx_row_storages+row, GLP_FX, 0.0, 0.0)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_storages+row, GLP_FX, 0.0, 0.0)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_storages + row, GLP_FX, 0.0, 0.0)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
@@ -868,7 +982,10 @@ cdef class CythonGLPKSolver(GLPKSolver):
                     lb = 0.0
                 if abs(ub) < 1e-8:
                     ub = 0.0
-                set_row_bnds(self.prob, self.idx_row_storages+row, constraint_type(lb, ub), lb, ub)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_storages+row, constraint_type(lb, ub), lb, ub)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_storages + row, constraint_type(lb, ub), lb, ub)
 
         # update virtual storage node constraint
         for row, storage in enumerate(virtual_storages):
@@ -876,9 +993,15 @@ cdef class CythonGLPKSolver(GLPKSolver):
             min_volume = storage.get_min_volume(scenario_index)
 
             if max_volume == min_volume:
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
             elif not storage.active:
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
@@ -890,7 +1013,10 @@ cdef class CythonGLPKSolver(GLPKSolver):
                     lb = 0.0
                 if abs(ub) < 1e-8:
                     ub = 0.0
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, constraint_type(lb, ub), lb, ub)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_virtual_storages+row, constraint_type(lb, ub), lb, ub)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_virtual_storages+row, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update_storage'] += time.perf_counter() - t0
 
@@ -899,13 +1025,20 @@ cdef class CythonGLPKSolver(GLPKSolver):
         # Set the basis for this scenario
         self.basis_manager.set_basis(self.prob, self.is_first_solve, scenario_index.global_id)
         # attempt to solve the linear programme
-        simplex_ret = simplex(self.prob, self.smcp)
+        if self.use_unsafe_api:
+            simplex_ret = simplex_unsafe(self.prob, self.smcp)
+        else:
+            simplex_ret = simplex_safe(self.prob, self.smcp)
+
         status = glp_get_status(self.prob)
         if (status != GLP_OPT or simplex_ret != 0) and self.retry_solve:
             # try creating a new basis and resolving
             print('Retrying solve with new basis.')
             glp_std_basis(self.prob)
-            simplex_ret = simplex(self.prob, self.smcp)
+            if self.use_unsafe_api:
+                simplex_ret = simplex_unsafe(self.prob, self.smcp)
+            else:
+                simplex_ret = simplex_safe(self.prob, self.smcp)
             status = glp_get_status(self.prob)
 
         if status != GLP_OPT or simplex_ret != 0:
@@ -919,7 +1052,10 @@ cdef class CythonGLPKSolver(GLPKSolver):
 
             self.smcp.msg_lev = GLP_MSG_DBG
             # Retry solve with debug messages
-            simplex_ret = simplex(self.prob, self.smcp)
+            if self.use_unsafe_api:
+                simplex_ret = simplex_unsafe(self.prob, self.smcp)
+            else:
+                simplex_ret = simplex_safe(self.prob, self.smcp)
             status = glp_get_status(self.prob)
             raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(
                 simplex_status_string[simplex_ret], status_string[status]))
@@ -1119,7 +1255,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
         # explicitly set bounds on route and demand columns
         for row, edge in enumerate(edges):
-            set_col_bnds(self.prob, self.idx_col_edges+row, GLP_LO, 0.0, DBL_MAX)
+            # Always use safe API in setup
+            set_col_bnds_safe(self.prob, self.idx_col_edges+row, GLP_LO, 0.0, DBL_MAX)
 
         # Apply nodal flow constraints
         self.idx_row_non_storages = glp_add_rows(self.prob, len(non_storages))
@@ -1174,15 +1311,24 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 # Other nodes apply their flow constraints to all routes passing through them
                 cols = node.__data.out_edges
 
+            if len(cols) == 0:
+                raise ModelStructureError(f'{node.__class__.__name__} node "{node.name}" does not have any valid connections.')
+
             ind = <int*>malloc((1+len(cols)) * sizeof(int))
             val = <double*>malloc((1+len(cols)) * sizeof(double))
             for n, c in enumerate(cols):
                 ind[1+n] = 1+c
                 val[1+n] = 1
-            set_mat_row(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
-            set_row_bnds(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
-            free(ind)
-            free(val)
+            try:
+                # Always use safe API in setup
+                set_mat_row_safe(self.prob, self.idx_row_non_storages+row, len(cols), ind, val)
+                set_row_bnds_safe(self.prob, self.idx_row_non_storages + row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of flow constraints for node: {node}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
             # Now test whether this node has constant flow constraints
             if self.set_fixed_flows_once and node.has_constant_flows:
@@ -1202,12 +1348,16 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 for n, (c, v) in enumerate(col_vals):
                     ind[1+n+len(cols)] = 1+c
                     val[1+n+len(cols)] = 1./v
-                set_mat_row(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
-                set_row_bnds(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
-                # glp_set_row_name(self.prob, self.idx_row_cross_domain+cross_domain_row,
-                #                  b'cd.'+some_node.fully_qualified_name.encode('utf-8'))
-                free(ind)
-                free(val)
+                try:
+                    # Always use safe API in setup
+                    set_mat_row_safe(self.prob, self.idx_row_cross_domain+cross_domain_row, len(col_vals)+len(cols), ind, val)
+                    set_row_bnds_safe(self.prob, self.idx_row_cross_domain+cross_domain_row, GLP_FX, 0.0, 0.0)
+                except GLPKError, GLPKInternalError:
+                    logger.error(f"A GLPK error occurred during creation of cross-domain constraints for node: {node}")
+                    raise
+                finally:
+                    free(ind)
+                    free(val)
                 cross_domain_row += 1
 
         # Add mass balance constraints
@@ -1225,11 +1375,17 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             for n, c in enumerate(out_cols):
                 ind[1+len(in_cols)+n] = 1+c
                 val[1+len(in_cols)+n] = -1
-            set_mat_row(self.prob, self.idx_row_link_mass_bal+row, len(in_cols)+len(out_cols), ind, val)
-            set_row_bnds(self.prob, self.idx_row_link_mass_bal+row, GLP_FX, 0.0, 0.0)
 
-            free(ind)
-            free(val)
+            try:
+                # Always use safe API in setup
+                set_mat_row_safe(self.prob, self.idx_row_link_mass_bal+row, len(in_cols)+len(out_cols), ind, val)
+                set_row_bnds_safe(self.prob, self.idx_row_link_mass_bal+row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of mass-balance constraints for node: {some_node}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # storage
         if len(storages):
@@ -1252,11 +1408,15 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 ind[1+len(cols_output)+n] = self.idx_col_edges+c
                 val[1+len(cols_output)+n] = -1
 
-            set_mat_row(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_storages+row,
-            #                  b's.'+storage.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                # Always use safe API in setup
+                set_mat_row_safe(self.prob, self.idx_row_storages+row, len(cols_output)+len(cols_input), ind, val)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of storage constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # virtual storage
         if len(virtual_storages):
@@ -1283,11 +1443,15 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 ind[1+n] = self.idx_col_edges+c
                 val[1+n] = -f
 
-            set_mat_row(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
-            # glp_set_row_name(self.prob, self.idx_row_virtual_storages+row,
-            #                  b'vs.'+storage.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                # Always use safe API in setup
+                set_mat_row_safe(self.prob, self.idx_row_virtual_storages+row, len(cols), ind, val)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of virtual-storage constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         # Add constraint rows for aggregated nodes with dynamics factors and
         # cache data so row values can be updated in solve
@@ -1325,7 +1489,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 agg_node.__agg_factor_data.vals[i] = 1.0
 
             for n in range(len(nodes)-1):
-                set_row_bnds(self.prob, row+n, GLP_FX, 0.0, 0.0)
+                # Always use safe API in setup
+                set_row_bnds_safe(self.prob, row+n, GLP_FX, 0.0, 0.0)
 
             # Determine whether the factors should be updated in reset or at each time-step
             if self.set_fixed_factors_once and agg_node.has_constant_factors:
@@ -1360,11 +1525,16 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             for i, col in enumerate(sorted(matrix)):
                 ind[1+i] = 1+col
                 val[1+i] = matrix[col]
-            set_mat_row(self.prob, row, length, ind, val)
-            set_row_bnds(self.prob, row, GLP_FX, 0.0, 0.0)
-            # glp_set_row_name(self.prob, row, b'ag.'+agg_node.fully_qualified_name.encode('utf-8'))
-            free(ind)
-            free(val)
+            try:
+                # Always use safe API in setup
+                set_mat_row_safe(self.prob, row, length, ind, val)
+                set_row_bnds_safe(self.prob, row, GLP_FX, 0.0, 0.0)
+            except GLPKError, GLPKInternalError:
+                logger.error(f"A GLPK error occurred during creation of aggregated node constraints for node: {storage}")
+                raise
+            finally:
+                free(ind)
+                free(val)
 
         self.non_storages = non_storages
         self.non_storages_with_dynamic_bounds = non_storages_with_dynamic_bounds
@@ -1402,7 +1572,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         self._update_nonstorage_constant_bounds()
         self._update_constant_agg_factors()
 
-    cdef _update_nonstorage_constant_bounds(self):
+    cdef int _update_nonstorage_constant_bounds(self) except -1:
         """Update the bounds of non-storage where they are constants.
         
         These bounds do not need updating every time-step.
@@ -1412,7 +1582,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         cdef double max_flow
         cdef int row
         if self.non_storages_with_constant_bounds is None:
-            return
+            return 0
         # update non-storage constraints with constant bounds
         for node in self.non_storages_with_constant_bounds:
             row = node.__data.row
@@ -1423,10 +1593,11 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
 
-            set_row_bnds(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
+            # Always use safe API in setup
+            set_row_bnds_safe(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
 
-    cdef _update_constant_agg_factors(self):
+    cdef int _update_constant_agg_factors(self) except -1:
         cdef AggregatedNode agg_node
         cdef AggNodeFactorData agg_data
         cdef int n, i, ptr
@@ -1435,7 +1606,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         cdef double[::1] vals
         cdef int[:] indptr_array
         if self.aggregated_with_constant_factors is None:
-            return
+            return 0
 
         # Update constraint matrix values for aggregated nodes that have factors defined as parameters
         for agg_node in self.aggregated_with_constant_factors:
@@ -1457,7 +1628,8 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
                 # 'length - 1' is used here because the ind and val slices start with a padded zero value.
                 # This is required by 'set_mat_row'.
-                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
+                # Always use safe API in setup
+                set_mat_row_safe(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
     cpdef object solve(self, model):
         GLPKSolver.solve(self, model)
@@ -1543,7 +1715,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
         # calculate the total cost of each route
         for col in range(nedges):
-            set_obj_coef(self.prob, self.idx_col_edges+col, edge_costs[col])
+            if self.use_unsafe_api:
+                set_obj_coef_unsafe(self.prob, self.idx_col_edges+col, edge_costs[col])
+            else:
+                set_obj_coef_safe(self.prob, self.idx_col_edges+col, edge_costs[col])
 
         self.stats['objective_update'] += time.perf_counter() - t0
         t0 = time.perf_counter()
@@ -1569,7 +1744,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
                 # 'length - 1' is used here because the ind and val slices start with a padded zero value.
                 # This is required by 'set_mat_row'.
-                set_mat_row(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
+                if self.use_unsafe_api:
+                    set_mat_row_unsafe(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
+                else:
+                    set_mat_row_safe(self.prob, agg_data.row+n, length-1, &inds[ptr], &vals[ptr])
 
         self.stats['constraint_update_factors'] += time.perf_counter() - t0
         t0 = time.perf_counter()
@@ -1583,8 +1761,11 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             max_flow = inf_to_dbl_max(node.get_max_flow(scenario_index))
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
-
-            set_row_bnds(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
+            if self.use_unsafe_api:
+                set_row_bnds_unsafe(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
+                         min_flow, max_flow)
+            else:
+                set_row_bnds_safe(self.prob, self.idx_row_non_storages+row, constraint_type(min_flow, max_flow),
                          min_flow, max_flow)
 
         for row, agg_node in enumerate(aggregated):
@@ -1594,8 +1775,12 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             max_flow = inf_to_dbl_max(agg_node.get_max_flow(scenario_index))
             if abs(max_flow) < 1e-8:
                 max_flow = 0.0
-            set_row_bnds(self.prob, self.idx_row_aggregated_min_max + row, constraint_type(min_flow, max_flow),
-                         min_flow, max_flow)
+            if self.use_unsafe_api:
+                set_row_bnds_unsafe(self.prob, self.idx_row_aggregated_min_max + row, constraint_type(min_flow, max_flow),
+                             min_flow, max_flow)
+            else:
+                set_row_bnds_safe(self.prob, self.idx_row_aggregated_min_max + row, constraint_type(min_flow, max_flow),
+                             min_flow, max_flow)
 
         self.stats['bounds_update_nonstorage'] += time.perf_counter() - t0
         t0 = time.perf_counter()
@@ -1606,7 +1791,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             min_volume = storage.get_min_volume(scenario_index)
 
             if max_volume == min_volume:
-                set_row_bnds(self.prob, self.idx_row_storages+row, GLP_FX, 0.0, 0.0)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_storages+row, GLP_FX, 0.0, 0.0)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_storages+row, GLP_FX, 0.0, 0.0)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
@@ -1618,7 +1806,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                     lb = 0.0
                 if abs(ub) < 1e-8:
                     ub = 0.0
-                set_row_bnds(self.prob, self.idx_row_storages+row, constraint_type(lb, ub), lb, ub)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_storages+row, constraint_type(lb, ub), lb, ub)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_storages+row, constraint_type(lb, ub), lb, ub)
 
         # update virtual storage node constraint
         for row, storage in enumerate(virtual_storages):
@@ -1626,9 +1817,15 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
             min_volume = storage.get_min_volume(scenario_index)
 
             if max_volume == min_volume:
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_virtual_storages+row, GLP_FX, 0.0, 0.0)
             elif not storage.active:
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_virtual_storages+row, GLP_FR, -DBL_MAX, DBL_MAX)
             else:
                 avail_volume = max(storage._volume[scenario_index.global_id] - min_volume, 0.0)
                 # change in storage cannot be more than the current volume or
@@ -1640,7 +1837,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                     lb = 0.0
                 if abs(ub) < 1e-8:
                     ub = 0.0
-                set_row_bnds(self.prob, self.idx_row_virtual_storages+row, constraint_type(lb, ub), lb, ub)
+                if self.use_unsafe_api:
+                    set_row_bnds_unsafe(self.prob, self.idx_row_virtual_storages+row, constraint_type(lb, ub), lb, ub)
+                else:
+                    set_row_bnds_safe(self.prob, self.idx_row_virtual_storages+row, constraint_type(lb, ub), lb, ub)
 
         self.stats['bounds_update_storage'] += time.perf_counter() - t0
 
@@ -1649,13 +1849,19 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
         # Set the basis for this scenario
         self.basis_manager.set_basis(self.prob, self.is_first_solve, scenario_index.global_id)
         # attempt to solve the linear programme
-        simplex_ret = simplex(self.prob, self.smcp)
+        if self.use_unsafe_api:
+            simplex_ret = simplex_unsafe(self.prob, self.smcp)
+        else:
+            simplex_ret = simplex_safe(self.prob, self.smcp)
         status = glp_get_status(self.prob)
         if (status != GLP_OPT or simplex_ret != 0) and self.retry_solve:
             # try creating a new basis and resolving
             print('Retrying solve with new basis.')
             glp_std_basis(self.prob)
-            simplex_ret = simplex(self.prob, self.smcp)
+            if self.use_unsafe_api:
+                simplex_ret = simplex_unsafe(self.prob, self.smcp)
+            else:
+                simplex_ret = simplex_safe(self.prob, self.smcp)
             status = glp_get_status(self.prob)
 
         if status != GLP_OPT or simplex_ret != 0:
@@ -1669,7 +1875,10 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
 
             self.smcp.msg_lev = GLP_MSG_DBG
             # Retry solve with debug messages
-            simplex_ret = simplex(self.prob, self.smcp)
+            if self.use_unsafe_api:
+                simplex_ret = simplex_unsafe(self.prob, self.smcp)
+            else:
+                simplex_ret = simplex_safe(self.prob, self.smcp)
             status = glp_get_status(self.prob)
             raise RuntimeError('Simplex solver failed with message: "{}", status: "{}".'.format(
                 simplex_status_string[simplex_ret], status_string[status]))

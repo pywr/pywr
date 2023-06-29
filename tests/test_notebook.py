@@ -21,13 +21,17 @@ def get_node_attribute(node, attr_name):
 
 class TestPywrSchematic:
     def test_from_json(self):
-        json_path = os.path.join(os.path.dirname(__file__), "models", "demand_saving2_with_variables.json")
+        json_path = os.path.join(
+            os.path.dirname(__file__), "models", "demand_saving2_with_variables.json"
+        )
         schematic = PywrSchematic(json_path)
         assert "nodes" in schematic.graph.keys()
         assert "links" in schematic.graph.keys()
 
     def test_from_dict(self):
-        json_path = os.path.join(os.path.dirname(__file__), "models", "demand_saving2_with_variables.json")
+        json_path = os.path.join(
+            os.path.dirname(__file__), "models", "demand_saving2_with_variables.json"
+        )
         with open(json_path) as fh:
             json_data = json.load(fh)
         schematic = PywrSchematic(json_data)
@@ -43,7 +47,9 @@ class TestPywrSchematic:
 
 @pytest.mark.parametrize("from_json", [True, False])
 def test_from_json(from_json):
-    json_path = os.path.join(os.path.dirname(__file__), "models", "demand_saving2_with_variables.json")
+    json_path = os.path.join(
+        os.path.dirname(__file__), "models", "demand_saving2_with_variables.json"
+    )
 
     if from_json:
         json_dict = pywr_json_to_d3_json(json_path, attributes=True)
@@ -73,7 +79,9 @@ def test_d3_data():
     These return graph data from a JSON file and Model instance respectively. Here we test that each returns the
     same node names and number on links. The data won't match exactly due to differences in node ordering.
     """
-    json_path = os.path.join(os.path.dirname(__file__), "models", "demand_saving2_with_variables.json")
+    json_path = os.path.join(
+        os.path.dirname(__file__), "models", "demand_saving2_with_variables.json"
+    )
     model = load_model("demand_saving2_with_variables.json")
 
     d3_data_from_json = pywr_json_to_d3_json(json_path)

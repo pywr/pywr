@@ -1,0 +1,61 @@
+{
+    "metadata": {
+        "title": "Annual virtual storage",
+        "description": "Annual abstraction licence implemented as an annual virtual storage",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2016-01-02",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 100,
+            "cost": 0
+        },
+        {
+            "name": "link1",
+            "type": "Link"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 10,
+            "cost": -10
+        },
+        {
+            "name": "licence1",
+            "type": "AnnualVirtualStorage",
+            "max_volume": "licence_volume",
+            "initial_volume": 205,
+            "initial_volume_pc": 1.0,
+            "nodes": [
+                "supply1"
+            ],
+            "factors": [
+                1.0
+            ],
+            "reset_day": 1,
+            "reset_month": 1
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "licence_volume": {
+            "type": "constant",
+            "value": 205
+        }
+    },
+    "recorders": {
+        "supply1": {
+            "type": "numpyarraynoderecorder",
+            "node": "supply1"
+        }
+    }
+}

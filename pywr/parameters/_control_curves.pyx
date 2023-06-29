@@ -1,13 +1,10 @@
 import cython
+import calendar
 import numpy as np
 cimport numpy as np
 from .parameters import parameter_registry, ConstantParameter, parameter_property
-from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter
+from ._parameters import load_parameter, load_parameter_values, Parameter, IndexParameter, ConstantParameter, DailyProfileParameter, MonthlyProfileParameter
 import warnings
-
-# http://stackoverflow.com/a/20031818/1300519
-cdef extern from "numpy/npy_math.h":
-    bint npy_isnan(double x)
 
 
 @cython.cdivision(True)
@@ -176,7 +173,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         cdef Parameter cc_param, value_param
         cdef double cc, cc_prev
         # return the interpolated value for the current level.
-        cdef double current_pc = self._storage_node._current_pc[scenario_index.global_id]
+        cdef double current_pc = self._storage_node.get_current_pc(scenario_index)
         cdef double weight
         cdef double[:] values  # y values to interpolate between in this time-step
 
@@ -189,14 +186,6 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             # Otherwise use the given array of floats.
             # This makes a reference rather than a copy.
             values = self._values
-
-        # Bounds check the current pc storage.
-        # Always return the first value if storage above 100% or NaN
-        if current_pc > 1.0 or npy_isnan(current_pc):
-            return values[0]
-        # Always return last value is storage less than 0%
-        if current_pc < 0.0:
-            return values[-1]
 
         # Assumes control_curves is sorted highest to lowest
         # First level 100%
@@ -234,7 +223,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         else:
             values = load_parameter_values(model, data)
             parameters = None
-        return cls(model, storage_node, control_curves, values=values, parameters=parameters)
+        return cls(model, storage_node, control_curves, values=values, parameters=parameters, **data)
 
 ControlCurveInterpolatedParameter.register()
 
@@ -289,7 +278,7 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
         cdef Parameter cc_param
         cdef double cc, cc_prev, val
         # return the interpolated value for the current level.
-        cdef double current_pc = self._storage_node._current_pc[scenario_index.global_id]
+        cdef double current_pc = self._storage_node.get_current_pc(scenario_index)
 
         cc_prev = self.maximum
         for j, cc_param in enumerate(self._control_curves):
@@ -365,7 +354,7 @@ cdef class ControlCurveIndexParameter(IndexParameter):
         cdef double target_percentage
         cdef int index, j
         cdef Parameter control_curve
-        current_percentage = self.storage_node._current_pc[scenario_index.global_id]
+        current_percentage = self.storage_node.get_current_pc(scenario_index)
         index = len(self.control_curves)
         for j, control_curve in enumerate(self.control_curves):
             target_percentage = control_curve.get_value(scenario_index)
@@ -425,8 +414,7 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
 
     See also
     --------
-    `BaseControlCurveParameter`
-
+    BaseControlCurveParameter
     """
     def __init__(self, model, storage_node, control_curves, values=None, parameters=None,
                  variable_indices=None, upper_bounds=None, lower_bounds=None, **kwargs):
@@ -503,26 +491,26 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
             values = load_parameter_values(model, data)
         elif 'parameters' in data:
             # Load parameters
-            parameters_data = data['parameters']
+            parameters_data = data.pop('parameters')
             parameters = []
             for pdata in parameters_data:
                 parameters.append(load_parameter(model, pdata))
 
-        return cls(model, storage_node, control_curves, values=values, parameters=parameters)
+        return cls(model, storage_node, control_curves, values=values, parameters=parameters, **data)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        cdef int i = scenario_index.global_id
         cdef int j
         cdef AbstractStorage node
         cdef double cc
         cdef Parameter param, cc_param
         node = self.node if self.storage_node is None else self.storage_node
+        cdef double current_pc = node.get_current_pc(scenario_index)
 
         # Assumes control_curves is sorted highest to lowest
         for j, cc_param in enumerate(self.control_curves):
             cc = cc_param.get_value(scenario_index)
             # If level above control curve then return this level's value
-            if node._current_pc[i] >= cc:
+            if current_pc >= cc:
                 if self.parameters is not None:
                     param = self.parameters[j]
                     return param.get_value(scenario_index)
@@ -561,3 +549,74 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
         return self._upper_bounds
 
 ControlCurveParameter.register()
+
+
+cdef class WeightedAverageProfileParameter(Parameter):
+    """Generates a weighted average daily profile from pairs of storage nodes and
+    profile parameters.
+
+    The contribution on each profile is weighted using the volume of the paired
+    storage node. For efficiency, the profile values are calculated in the reset
+    method, though this limits the type of parameters that can be given as input
+    profiles.
+
+    Parameters
+    ----------
+    storages: iterable of storage nodes. Length should equal to the length of
+        profiles parameter.
+    profiles: iterable of profile parameters. These can be either a
+        ConstantParameter, DailyProfileParameter, or MonthlyProfileParameter.
+        Length should equal to the length of storages parameter.
+    """
+
+    def __init__(self, model, storages, profiles, **kwargs):
+        super(WeightedAverageProfileParameter, self).__init__(model, **kwargs)
+        self.storages = storages
+        self.profiles = profiles
+        for profile in profiles:
+            profile.parents.add(self)
+
+    cpdef reset(self):
+        super(WeightedAverageProfileParameter, self).reset()
+        cdef double total_volume
+        cdef int mnth, i
+        cdef Storage storage
+        cdef Parameter profile
+
+        total_volume = 0
+        total_absolute_profile = np.zeros(366)
+        for (storage, profile) in zip(self.storages, self.profiles):
+            max_volume = storage.max_volume
+            if isinstance(max_volume, Parameter):
+                if max_volume.is_constant():
+                    max_volume = max_volume.get_constant_value()
+                else:
+                    raise ValueError("Storages with max_volume set to non-constant parameters cannot be used in WeightedAverageProfileParameter")
+            total_volume += max_volume
+
+            if profile.is_constant:
+                total_absolute_profile += np.full(366, profile.get_constant_value()) * max_volume
+            elif isinstance(profile, DailyProfileParameter):
+                vals = np.asarray(profile.get_double_variables())
+                total_absolute_profile += (vals * max_volume)
+            elif isinstance(profile, MonthlyProfileParameter):
+                vals = np.asarray(profile.get_daily_values())
+                total_absolute_profile += (vals * max_volume)
+            else:
+                raise ValueError("Control curve should be a ContantParameter, MonthlyProfileParameter, \
+                                  or DailyProfileParameter")
+        self.daily_values = total_absolute_profile / total_volume
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self.daily_values[ts.dayofyear_index]
+
+    cpdef double[:] get_daily_values(self):
+        return np.asarray(self.daily_values).copy()
+
+    @classmethod
+    def load(cls, model, data):
+        storages = [model.nodes[n] for n in data.pop("storages")]
+        profiles = [load_parameter(model, p) for p in data.pop("profiles")]
+        return cls(model, storages, profiles, **data)
+
+WeightedAverageProfileParameter.register()

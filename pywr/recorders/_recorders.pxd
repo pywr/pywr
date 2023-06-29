@@ -144,6 +144,10 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
     cdef public list parameters
     cdef public int threshold
     cdef public list exclude_months
+    cdef public object include_from_day
+    cdef public object include_from_month
+    cdef public object include_to_day
+    cdef public object include_to_month
     cdef int _num_years
     cdef int _ncomb
     cdef double[:, :] _data

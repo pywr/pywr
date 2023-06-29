@@ -2,27 +2,79 @@ import os
 import datetime
 from ..parameter_property import parameter_property
 from ._parameters import (
-    Parameter, parameter_registry, UnutilisedDataWarning, ConstantParameter,
-    ConstantScenarioParameter, ConstantScenarioIndexParameter, AnnualHarmonicSeriesParameter,
-    ArrayIndexedParameter, ConstantScenarioParameter, IndexedArrayParameter,
-    ArrayIndexedScenarioMonthlyFactorsParameter, TablesArrayParameter,
-    DailyProfileParameter, MonthlyProfileParameter, WeeklyProfileParameter,
-    ArrayIndexedScenarioParameter, ScenarioMonthlyProfileParameter, ScenarioDailyProfileParameter,
-    ScenarioWeeklyProfileParameter, align_and_resample_dataframe, DataFrameParameter,
-    IndexParameter, AggregatedParameter, AggregatedIndexParameter, PiecewiseIntegralParameter,
-    DiscountFactorParameter, NegativeParameter, MaxParameter, NegativeMaxParameter, MinParameter,
-    NegativeMinParameter, DeficitParameter, DivisionParameter, FlowParameter, FlowDelayParameter, OffsetParameter,
-    RbfProfileParameter, UniformDrawdownProfileParameter, load_parameter, load_parameter_values, load_dataframe)
+    Parameter,
+    parameter_registry,
+    UnutilisedDataWarning,
+    ConstantParameter,
+    ConstantScenarioParameter,
+    ConstantScenarioIndexParameter,
+    AnnualHarmonicSeriesParameter,
+    ArrayIndexedParameter,
+    ConstantScenarioParameter,
+    IndexedArrayParameter,
+    ArrayIndexedScenarioMonthlyFactorsParameter,
+    TablesArrayParameter,
+    DailyProfileParameter,
+    MonthlyProfileParameter,
+    WeeklyProfileParameter,
+    ArrayIndexedScenarioParameter,
+    ScenarioMonthlyProfileParameter,
+    ScenarioDailyProfileParameter,
+    ScenarioWeeklyProfileParameter,
+    align_and_resample_dataframe,
+    DataFrameParameter,
+    IndexParameter,
+    AggregatedParameter,
+    AggregatedIndexParameter,
+    PiecewiseIntegralParameter,
+    DiscountFactorParameter,
+    NegativeParameter,
+    MaxParameter,
+    NegativeMaxParameter,
+    MinParameter,
+    NegativeMinParameter,
+    DeficitParameter,
+    DivisionParameter,
+    FlowParameter,
+    FlowDelayParameter,
+    StorageParameter,
+    OffsetParameter,
+    RbfProfileParameter,
+    UniformDrawdownProfileParameter,
+    RollingMeanFlowNodeParameter,
+    load_parameter,
+    load_parameter_values,
+    load_dataframe,
+)
 
 from . import licenses
 from ._polynomial import Polynomial1DParameter, Polynomial2DStorageParameter
 from ._thresholds import (
-    AbstractThresholdParameter, StorageThresholdParameter, NodeThresholdParameter, ParameterThresholdParameter,
-    RecorderThresholdParameter, CurrentYearThresholdParameter, CurrentOrdinalDayThresholdParameter,
-    MultipleThresholdIndexParameter, MultipleThresholdParameterIndexParameter
+    AbstractThresholdParameter,
+    StorageThresholdParameter,
+    NodeThresholdParameter,
+    ParameterThresholdParameter,
+    RecorderThresholdParameter,
+    CurrentYearThresholdParameter,
+    CurrentOrdinalDayThresholdParameter,
+    MultipleThresholdIndexParameter,
+    MultipleThresholdParameterIndexParameter,
 )
 from ._hydropower import HydropowerTargetParameter
-from ._activation_functions import BinaryStepParameter, RectifierParameter, LogisticParameter  # noqa
+from ._activation_functions import (
+    BinaryStepParameter,
+    RectifierParameter,
+    LogisticParameter,
+)  # noqa
+from .control_curves import (
+    ControlCurveParameter,
+    BaseControlCurveParameter,
+    ControlCurveInterpolatedParameter,
+    ControlCurveIndexParameter,
+    ControlCurvePiecewiseInterpolatedParameter,
+    WeightedAverageProfileParameter,
+)
+from . import multi_model_parameters
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
@@ -37,6 +89,8 @@ class FunctionParameter(Parameter):
 
     def value(self, ts, scenario_index):
         return self._func(self._parent, ts, scenario_index)
+
+
 FunctionParameter.register()
 
 
@@ -57,6 +111,8 @@ class ScaledProfileParameter(Parameter):
     def value(self, ts, si):
         p = self.profile.get_value(si)
         return self.scale * p
+
+
 ScaledProfileParameter.register()
 
 
@@ -66,7 +122,7 @@ class AbstractInterpolatedParameter(Parameter):
         self.x = x
         self.y = y
         self.interp = None
-        default_interp_kwargs = dict(kind='linear', bounds_error=True)
+        default_interp_kwargs = dict(kind="linear", bounds_error=True)
         if interp_kwargs is not None:
             # Overwrite or add to defaults with given values
             default_interp_kwargs.update(interp_kwargs)
@@ -106,8 +162,11 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
     >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
     >>> p2 = InterpolatedParameter(model, p1, x, y, interp_kwargs={"kind": "linear"})
     """
+
     def __init__(self, model, parameter, x, y, interp_kwargs=None, **kwargs):
-        super(InterpolatedParameter, self).__init__(model, x, y, interp_kwargs, **kwargs)
+        super(InterpolatedParameter, self).__init__(
+            model, x, y, interp_kwargs, **kwargs
+        )
         self._parameter = None
         self.parameter = parameter
 
@@ -122,7 +181,7 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
         interp_kwargs = data.pop("interp_kwargs", None)
-        return cls(model, parameter, x, y, interp_kwargs=interp_kwargs)
+        return cls(model, parameter, x, y, interp_kwargs=interp_kwargs, **data)
 
 
 InterpolatedParameter.register()
@@ -144,8 +203,11 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
         Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
         for interpolation.
     """
+
     def __init__(self, model, node, volumes, values, interp_kwargs=None, **kwargs):
-        super(InterpolatedVolumeParameter, self).__init__(model, volumes, values, interp_kwargs, **kwargs)
+        super(InterpolatedVolumeParameter, self).__init__(
+            model, volumes, values, interp_kwargs, **kwargs
+        )
         self._node = node
 
     def _value_to_interpolate(self, ts, scenario_index):
@@ -160,16 +222,16 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
         elif isinstance(volumes, dict):
             volumes = load_parameter_values(model, volumes)
         else:
-            raise TypeError("Unexpected type for \"volumes\" in {}".format(cls.__name__))
+            raise TypeError('Unexpected type for "volumes" in {}'.format(cls.__name__))
         values = data.pop("values")
         if isinstance(values, list):
             values = np.asarray(values, np.float64)
         elif isinstance(values, dict):
             values = load_parameter_values(model, values)
         else:
-            raise TypeError("Unexpected type for \"values\" in {}".format(cls.__name__))
+            raise TypeError('Unexpected type for "values" in {}'.format(cls.__name__))
         interp_kwargs = data.pop("interp_kwargs", None)
-        return cls(model, node, volumes, values, interp_kwargs=interp_kwargs)
+        return cls(model, node, volumes, values, interp_kwargs=interp_kwargs, **data)
 
 
 InterpolatedVolumeParameter.register()
@@ -191,6 +253,7 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
         Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
         for interpolation.
     """
+
     def __init__(self, model, node, flows, values, interp_kwargs=None, **kwargs):
         super().__init__(model, flows, values, interp_kwargs, **kwargs)
         self._node = node
@@ -204,7 +267,7 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
         flows = np.array(data.pop("flows"))
         values = np.array(data.pop("values"))
         interp_kwargs = data.pop("interp_kwargs", None)
-        return cls(model, node, flows, values, interp_kwargs=interp_kwargs)
+        return cls(model, node, flows, values, interp_kwargs=interp_kwargs, **data)
 
 
 InterpolatedFlowParameter.register()
@@ -235,7 +298,17 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
     >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
     >>> p2 = InterpolatedQuadratureParameter(model, p1, x, y, interp_kwargs={"kind": "linear"})
     """
-    def __init__(self, model, upper_parameter, x, y, lower_parameter=None, interp_kwargs=None, **kwargs):
+
+    def __init__(
+        self,
+        model,
+        upper_parameter,
+        x,
+        y,
+        lower_parameter=None,
+        interp_kwargs=None,
+        **kwargs,
+    ):
         super().__init__(model, x, y, interp_kwargs, **kwargs)
         self._upper_parameter = None
         self.upper_parameter = upper_parameter
@@ -264,8 +337,15 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
         interp_kwargs = data.pop("interp_kwargs", None)
-        return cls(model, upper_parameter, x, y, lower_parameter=lower_parameter,
-                   interp_kwargs=interp_kwargs)
+        return cls(
+            model,
+            upper_parameter,
+            x,
+            y,
+            lower_parameter=lower_parameter,
+            interp_kwargs=interp_kwargs,
+            **data,
+        )
 
 
 InterpolatedQuadratureParameter.register()
@@ -289,10 +369,13 @@ class ScenarioWrapperParameter(Parameter):
         of parameters must equal the size of the given scenario.
 
     """
+
     def __init__(self, model, scenario, parameters, **kwargs):
         super().__init__(model, **kwargs)
         if scenario.size != len(parameters):
-            raise ValueError("The number of parameters must equal the size of the scenario.")
+            raise ValueError(
+                "The number of parameters must equal the size of the scenario."
+            )
         self.scenario = scenario
         self.parameters = []
         for p in parameters:
@@ -318,10 +401,12 @@ class ScenarioWrapperParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
-        scenario = model.scenarios[data.pop('scenario')]
+        scenario = model.scenarios[data.pop("scenario")]
 
-        parameters = [load_parameter(model, p) for p in data.pop('parameters')]
+        parameters = [load_parameter(model, p) for p in data.pop("parameters")]
         return cls(model, scenario, parameters, **data)
+
+
 ScenarioWrapperParameter.register()
 
 

@@ -5,9 +5,8 @@ import pandas
 import numpy as np
 
 
-if __name__ == '__main__':
-
-    m = Model.load('hydropower_example.json')
+if __name__ == "__main__":
+    m = Model.load("hydropower_example.json")
     stats = m.run()
     print(stats)
 
@@ -17,5 +16,6 @@ if __name__ == '__main__':
     print(df.head())
 
     from matplotlib import pyplot as plt
+
     df.plot(subplots=True)
     plt.show()

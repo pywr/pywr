@@ -63,7 +63,9 @@
           "node": "reservoir1",
           "volumes": [0, 25000, 50000, 75000, 100000, 150000, 200000],
           "values": [0, 29.2, 36.8, 42.2, 46.4, 53.1, 58.5],
-          "kind": "cubic"
+          "interp_kwargs": {
+            "kind": "cubic"
+          }
         },
         "turbine1_discharge": {
             "type": "indexedarray",
