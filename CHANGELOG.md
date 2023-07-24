@@ -2,6 +2,25 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## [v1.21.0](https://github.com/pywr/pywr/compare/v1.20.1...v1.21.0) (2023-06-30)
+
+### Features
+
+* Pass kwargs to model load via optimisation wrappers (#1096) ([3557e4b](https://github.com/pywr/pywr/commit/3557e4be876300189f7762ede8e9a59e8fe0a29e))
+* Add metadata to TablesRecorder arrays. (#1083) ([4dac394](https://github.com/pywr/pywr/commit/4dac394dc6a9a1a22dab3e8ebc0a505e6fda644d))
+
+### Fixes
+
+* Overload get_xxx_flow for PiecewiseLink. (#1088) ([51dcd57](https://github.com/pywr/pywr/commit/51dcd57650537fbfc27e08bba20dec3cee9ab41e)),
+closes [#1087](https://github.com/pywr/pywr/issues/1087)
+* Add pywr.parameter imports from control_curves module. (#1084) ([94bcdad](https://github.com/pywr/pywr/commit/94bcdad3fe3325f1d3d43a6e1ee97734040590f2))
+
+### Other
+
+* Support pandas v2.x (#1089) ([68ee7cc](https://github.com/pywr/pywr/commit/68ee7cc93fa803fc07082e95c4cfbd88ff4e39a7))
+* Use ubuntu-latest image for building wheels. (#1090) ([cce65e3](https://github.com/pywr/pywr/commit/cce65e3df357dd2ee54109124c598e9c9b9dd8db))
+
+
 ## v1.20.1
 
 ### Bug Fixes
