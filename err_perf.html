@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GLPK error handling and performance &mdash; Pywr 1.20.2.dev8+gb6cd142d documentation</title>
+  <title>GLPK error handling and performance &mdash; Pywr 1.21.1.dev1+g651e9498 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
@@ -12,11 +12,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=a43322b2"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -36,7 +36,7 @@
             Pywr
           </a>
               <div class="version">
-                1.20.2.dev8+gb6cd142d
+                1.21.1.dev1+g651e9498
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -87,12 +87,12 @@
            <div itemprop="articleBody">
              
   <section id="glpk-error-handling-and-performance">
-<h1>GLPK error handling and performance<a class="headerlink" href="#glpk-error-handling-and-performance" title="Permalink to this heading"></a></h1>
+<h1>GLPK error handling and performance<a class="headerlink" href="#glpk-error-handling-and-performance" title="Link to this heading"></a></h1>
 <p>In complex models it may be possible to create combinations of nodes, custom parameter outputs and other data that
 does not translate in to a sensible linear programme. GLPK’s C interface by default performs little check of input values
 (e.g. NaNs are unchecked). Since v1.17 Pywr has enabled additional data checking and error handling by default.</p>
 <section id="version-1-17-and-above">
-<h2>Version 1.17 and above<a class="headerlink" href="#version-1-17-and-above" title="Permalink to this heading"></a></h2>
+<h2>Version 1.17 and above<a class="headerlink" href="#version-1-17-and-above" title="Link to this heading"></a></h2>
 <p>Since version v1.17 Pywr has included additional value checking and error handling by default. These checks will
 ensure that NaN values are caught before they reach GLPK. The error handling ensures that any internal errors within
 GLPK are caught gracefully and translated to Python exceptions. Two exceptions <cite>GLPKError</cite> and <cite>GLPKInternalError</cite>
@@ -109,7 +109,7 @@ can be enabled with the <cite>use_unsafe_api=True</cite> keyword argument to a G
 <cite>PYWR_SOLVER_GLPK_UNSAFE_API</cite></p>
 </section>
 <section id="older-versions">
-<h2>Older versions<a class="headerlink" href="#older-versions" title="Permalink to this heading"></a></h2>
+<h2>Older versions<a class="headerlink" href="#older-versions" title="Link to this heading"></a></h2>
 <p>Prior to version v1.17 checks of NaN values could be enabled using the <cite>–enabled-debug</cite> option at build time. Any
 errors would result in an <cite>AssertionError</cite> from the GLPK solver interface. Internal GLPK errors are not handled in
 earlier versions of Pywr. If an error occurs within GLPK it is very likely that this will result in a segmentation

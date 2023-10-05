@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.domains.river.Reservoir &mdash; Pywr 1.20.2.dev8+gb6cd142d documentation</title>
+  <title>pywr.domains.river.Reservoir &mdash; Pywr 1.21.1.dev1+g651e9498 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
@@ -12,11 +12,11 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=a43322b2"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -36,7 +36,7 @@
             Pywr
           </a>
               <div class="version">
-                1.20.2.dev8+gb6cd142d
+                1.21.1.dev1+g651e9498
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -123,10 +123,10 @@
            <div itemprop="articleBody">
              
   <section id="pywr-domains-river-reservoir">
-<h1>pywr.domains.river.Reservoir<a class="headerlink" href="#pywr-domains-river-reservoir" title="Permalink to this heading"></a></h1>
+<h1>pywr.domains.river.Reservoir<a class="headerlink" href="#pywr-domains-river-reservoir" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.domains.river.Reservoir">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.domains.river.</span></span><span class="sig-name descname"><span class="pre">Reservoir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.domains.river.Reservoir" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.domains.river.</span></span><span class="sig-name descname"><span class="pre">Reservoir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.domains.river.Reservoir" title="Link to this definition"></a></dt>
 <dd><p>A reservoir node with control curve.</p>
 <p>The Reservoir is a subclass of Storage with additional functionality to provide a
 simple control curve. The Reservoir has above_curve_cost when it is above its curve
@@ -134,7 +134,7 @@ and the user defined cost when it is below. Typically the costs are negative
 to represent a benefit of filling the reservoir when it is below its curve.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.domains.river.Reservoir.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.domains.river.Reservoir.__init__" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.domains.river.Reservoir.__init__" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Keywords:</dt><dd><dl class="simple">
 <dt>control_curve - A Parameter object that can return the control curve position,</dt><dd><p>as a percentage of fill, for the given timestep.</p>
@@ -276,7 +276,7 @@ to represent a benefit of filling the reservoir when it is below its curve.</p>
 <td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
-<td><p>The recorder for the node, e.g.</p></td>
+<td><p>The recorder for the node, e.g. a NumpyArrayRecorder.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
 <td><p>Name of the node.</p></td>
