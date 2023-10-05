@@ -7,8 +7,9 @@ Pywr is a generalised network resource allocation model written in Python. It ai
 .. image:: https://github.com/pywr/pywr/workflows/Build/badge.svg?branch=master
    :target: https://github.com/pywr/pywr/actions?query=workflow%3ABuild
 
-.. image:: https://img.shields.io/badge/chat-on%20gitter-blue.svg
-   :target: https://gitter.im/pywr/pywr
+.. image:: https://img.shields.io/badge/chat-on?logo=zulip&color=blue
+   :alt: Static Badge
+   :target: https://pywr.zulipchat.com
 
 .. image:: https://codecov.io/gh/pywr/pywr/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/pywr/pywr
