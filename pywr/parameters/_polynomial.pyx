@@ -64,7 +64,7 @@ cdef class Polynomial1DParameter(Parameter):
 
         # Get the 'x' value to put in the polynomial
         if self._parameter is not None:
-            x = self._parameter.__values[scenario_index.global_id]
+            x = self._parameter._Parameter__values[scenario_index.global_id]
         elif self._storage_node is not None:
             if self.use_proportional_volume:
                 x = self._storage_node.get_current_pc(scenario_index)
@@ -155,7 +155,7 @@ cdef class Polynomial2DStorageParameter(Parameter):
         else:
             x = self._storage_node._volume[scenario_index.global_id]
         # Parameter value is 2nd dimension
-        y = self._parameter.__values[scenario_index.global_id]
+        y = self._parameter._Parameter__values[scenario_index.global_id]
 
         # Apply scaling and offset
         x = self.storage_scale*x + self.storage_offset
