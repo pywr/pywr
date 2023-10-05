@@ -52,7 +52,7 @@ def setup_package():
         setup_requires=[
             "setuptools>=62",
             "setuptools_scm[toml]>=8.0",
-            "cython<3",
+            "cython>=3",
             "numpy",
         ],
         install_requires=[
