@@ -2,6 +2,15 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## [v1.22.0](https://github.com/pywr/pywr/compare/v1.21.0...v1.22.0) (2023-10-06)
+
+### Other
+
+* Updates for Python 3.12 in CI (#1107) ([a0924ea](https://github.com/pywr/pywr/commit/a0924ea2aeffaf1cf99c66da9223c0b37c157829)), closes [#1107](https://github.com/pywr/pywr/issues/1107)
+* Support Cython 3.x (#1104) ([1981de1](https://github.com/pywr/pywr/commit/1981de10ffbbc4cbe74cf2abeda827dbdacf489c)), closes [#1104](https://github.com/pywr/pywr/issues/1104)
+* Add Zulip link to README. (#1108) ([651e949](https://github.com/pywr/pywr/commit/651e9498299670c8c8ac5bf91a3eb9cdf21a7106)), closes [#1108](https://github.com/pywr/pywr/issues/1108)
+
+
 ## [v1.21.0](https://github.com/pywr/pywr/compare/v1.20.1...v1.21.0) (2023-06-30)
 
 ### Features
