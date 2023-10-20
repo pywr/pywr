@@ -2,6 +2,13 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## [v1.22.1](https://github.com/pywr/pywr/compare/v1.22.0...v1.22.1) (2023-10-20)
+
+### Fixes
+
+* Fix issue with dataframe scenario indexing (#1111) ([e6818a8](https://github.com/pywr/pywr/commit/e6818a8f0b44ed1db081de911688d519098c94cc)), closes [#1111](https://github.com/pywr/pywr/issues/1111) [#1110](https://github.com/pywr/pywr/issues/1110)
+
+
 ## [v1.22.0](https://github.com/pywr/pywr/compare/v1.21.0...v1.22.0) (2023-10-06)
 
 ### Other
