@@ -228,7 +228,8 @@ cdef class DataFrameParameter(Parameter):
                 raise ValueError("Scenario size ({}) is different to the number of columns ({}) "
                                  "in the DataFrame input.".format(self.scenario.size, dataframe_resampled.shape[1]))
 
-        if self.scenario:
+        if self.scenario is not None:
+            self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
             # if possible, only load the data required
             scenario_indices = None
             # Default to index that is just out of bounds to cause IndexError if something goes wrong
@@ -245,7 +246,6 @@ cdef class DataFrameParameter(Parameter):
             else:
                 # scenario is defined, but all data required
                 self._scenario_ids = None
-
             if scenario_indices is not None:
                 # Now load only the required data
                 for n, i in enumerate(scenario_indices):
@@ -253,8 +253,6 @@ cdef class DataFrameParameter(Parameter):
                 dataframe_resampled = dataframe_resampled.iloc[:, scenario_indices]
 
         self._values = dataframe_resampled.values.astype(np.float64)
-        if self.scenario is not None:
-            self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef double value

@@ -1195,3 +1195,9 @@ def test_reset_profiler(tmp_path):
     assert profile_out.exists()
     df = pandas.read_csv(profile_out)
     assert len(df) == 14  # 4 nodes & 10 parameters for reset
+
+
+def test_issue1110():
+    """Test for running the model in issue #1110"""
+    model = load_model("issue1110-df-scenario-combinations.json")
+    model.run()
