@@ -992,6 +992,30 @@ def test_loss_link_node(loss_factor):
     assert_allclose(demand1.flow, expected_demand)
 
 
+def test_loss_link_node_loss_factor_parameter():
+    """Test LossLink node with a parameter for `loss_factor`."""
+    model = load_model("loss_link_parameter.json")
+
+    model.check()
+    model.run()
+
+    df_supply1 = model.recorders["supply1"].to_dataframe()
+    df_link1 = model.recorders["link1"].to_dataframe()
+    df_demand1 = model.recorders["demand1"].to_dataframe()
+
+    expected_supply = pandas.DataFrame(
+        df_supply1.index.map(lambda x: 10.0 * (1.0 + x.month / 100.0)),
+        index=df_supply1.index,
+    )
+    expected_demand = 10
+
+    # Supply must provide 20% more flow because of the loss in link1
+    assert_allclose(df_supply1, expected_supply)
+    # link1 records the net flow after losses
+    assert_allclose(df_link1, expected_demand)
+    assert_allclose(df_demand1, expected_demand)
+
+
 def test_reservoir_surface_area():
     from pywr.parameters import InterpolatedVolumeParameter
 

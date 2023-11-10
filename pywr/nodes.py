@@ -1243,7 +1243,7 @@ class LossLink(Node):
         then no-losses are calculated. The percentage is calculated as a percentage of gross flow.
     """
 
-    __parameter_value_attributes__ = ("loss_factor",)
+    __parameter_attributes__ = ("loss_factor",)
 
     def __init__(self, model, name, **kwargs):
         self.allow_isolated = True
@@ -1290,7 +1290,7 @@ class LossLink(Node):
                 self.net.max_flow = 0.0
             else:
                 self.output.max_flow = float("inf")
-                self.agg.factors = [1.0, float(value)]
+                self.agg.factors = [1.0, value]
 
         return locals()
 

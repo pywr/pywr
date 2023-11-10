@@ -1,0 +1,56 @@
+{
+    "metadata": {
+        "title": "Simple 1",
+        "description": "A very simple example with a loss link which has a parameter for its loss_factor.",
+        "minimum_version": "1.11.0"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 100,
+            "cost": 0.1
+        },
+        {
+            "name": "link1",
+            "type": "LossLink",
+            "max_flow": 10,
+            "loss_factor": "loss_factor"
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 20,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "parameters": {
+        "loss_factor": {
+            "type": "MonthlyProfile",
+            "values": [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12]
+        }
+    },
+    "recorders": {
+        "supply1": {
+            "type": "numpyarraynoderecorder",
+            "node": "supply1"
+        },
+        "link1": {
+            "type": "numpyarraynoderecorder",
+            "node": "link1"
+        },
+        "demand1": {
+            "type": "numpyarraynoderecorder",
+            "node": "demand1"
+        }
+    }
+}
