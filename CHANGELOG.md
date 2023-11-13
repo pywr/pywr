@@ -2,6 +2,12 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## [v1.23.0](https://github.com/pywr/pywr/compare/v1.22.1...v1.23.0) (2023-11-13)
+
+### Features
+
+* Support parameter loss_factor in LossLink. (#1113) ([cb583aa](https://github.com/pywr/pywr/commit/cb583aaa402843098a7de7840acacf0d770ca25b)), closes [#1113](https://github.com/pywr/pywr/issues/1113) [#1091](https://github.com/pywr/pywr/issues/1091)
+
 ## [v1.22.1](https://github.com/pywr/pywr/compare/v1.22.0...v1.22.1) (2023-10-20)
 
 ### Fixes
