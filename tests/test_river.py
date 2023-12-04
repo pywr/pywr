@@ -139,6 +139,57 @@ def test_river_split_gauge_json():
     assert_allclose(catchment_node.flow, catchment_flow)
     assert_allclose(demand_node.flow, expected_demand_flow)
 
+def test_reservoir_weather():
+    """
+        Use a simple model of a Reservoir to test that the bathymetry, weather,
+        volume, area, evaporation, rainfall behave as expected
+
+        (flow = 8.0)          (max_flow = 10.0)
+        Catchment -> River -> DemandCentre
+                         |        ^
+        (max_flow = 2.0) v        | (max_flow = 2.0)
+                        Reservoir
+
+
+    """
+    in_flow = 8
+
+    model = pywr.core.Model()
+    catchment = river.Catchment(model, name="Catchment", flow=in_flow)
+    lnk = river.River(model, name="River")
+    catchment.connect(lnk)
+    demand = pywr.core.Output(model, name="Demand", cost=-10.0, max_flow=10)
+    lnk.connect(demand)
+    from pywr.parameters import ConstantParameter
+
+    control_curve = ConstantParameter(model, 0.8)
+    reservoir = river.Reservoir(
+        model,
+        name="Reservoir",
+        max_volume=10,
+        cost=-20,
+        initial_volume=10,
+        bathymetry = 10, #TODO
+        area = 100, #TODO: what should this be?
+        volume = 100, #TODO:
+        level = 100, #TODO
+        weather_cost = -999, #TODO
+        evaporation_cost = -999, #TODO
+        rainfall_cost = -999, #TODO
+    )
+    reservoir.inputs[0].max_flow = 2.0
+    reservoir.outputs[0].max_flow = 2.0
+    lnk.connect(reservoir)
+    reservoir.connect(demand)
+
+    model.setup()
+
+    model.step()
+    #TODO assert that something has changed and explain why
+    model.step()
+    #TODO assert that something has changedd and explain why
+    model.step()
+    #TODO assert that something has changedd and explain why
 
 def test_control_curve():
     """
@@ -227,3 +278,33 @@ def test_catchment_many_successors():
     assert_allclose(out1.flow, 10)
     assert_allclose(out2.flow, 15)
     assert_allclose(out3.flow, 75)
+
+def test_monthly_output():
+    """
+        TODO: Esplain what this is testing
+    """
+    model = Model()
+    #TODO: Add the correct nodes here
+    model.check()
+    model.run()
+    #TODO: Check that the model has worked properly
+
+def test_linear_storage_release_control():
+    """
+        TODO: Explain what this is testing
+    """
+    model = Model()
+    #TODO: Add the correct nodes here
+    model.check()
+    model.run()
+    #TODO: Check that the model has worked properly
+
+def test_proportional_input():
+    """
+    TODO: explain what this is testing
+    """
+    model = Model()
+    #TODO: Add the correct nodes here
+    model.check()
+    model.run()
+    #TODO: Check that the model has worked properly
