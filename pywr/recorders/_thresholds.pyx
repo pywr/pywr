@@ -66,7 +66,7 @@ cdef class StorageThresholdRecorder(StorageRecorder):
         self._state[...] = 0
 
     cpdef double[:] values(self) except *:
-        return np.array(self._state, dtype=np.float)
+        return np.array(self._state, dtype=np.float64)
 
     cpdef after(self):
         cdef double volume
@@ -111,7 +111,7 @@ cdef class NodeThresholdRecorder(NodeRecorder):
         self._state[...] = 0
 
     cpdef double[:] values(self) except *:
-        return np.array(self._state, dtype=np.float)
+        return np.array(self._state, dtype=np.float64)
 
     cpdef after(self):
         cdef double flow

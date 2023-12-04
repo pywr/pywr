@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import os
 import sys
-from pkg_resources import get_distribution, DistributionNotFound
+
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    # package is not installed
-    pass
+    from ._version import version as __version__
+    from ._version import version_tuple
+except ImportError:
+    __version__ = "unknown version"
+    version_tuple = (0, 0, "unknown version")
 
 if sys.platform == "win32":
     dll_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), ".libs"))

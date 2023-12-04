@@ -2,8 +2,14 @@
 
 import pytest
 from datetime import datetime
-from pywr.core import Timestep, ScenarioIndex
-from pywr.parameters.licenses import License, TimestepLicense, AnnualLicense, AnnualExponentialLicense, AnnualHyperbolaLicense
+from pywr.core import Timestep, ScenarioIndex, Model
+from pywr.parameters.licenses import (
+    License,
+    TimestepLicense,
+    AnnualLicense,
+    AnnualExponentialLicense,
+    AnnualHyperbolaLicense,
+)
 from pywr.recorders import NumpyArrayNodeRecorder
 from fixtures import simple_linear_model
 from helpers import load_model
@@ -11,23 +17,28 @@ from numpy.testing import assert_allclose
 import numpy as np
 import pandas
 
+
 def test_base_license():
     with pytest.raises(TypeError):
         lic = License()
 
 
 def test_daily_license(simple_linear_model):
-    '''Test daily licence'''
+    """Test daily licence"""
     m = simple_linear_model
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
     lic = TimestepLicense(m, None, 42.0)
-    assert(isinstance(lic, License))
-    assert(lic.value(Timestep(pandas.Period('2015-1-1'), 0, 1), si) == 42.0)
+    assert isinstance(lic, License)
+    assert lic.value(Timestep(pandas.Period("2015-1-1"), 0, 1), si) == 42.0
 
     # daily licences don't have resource state
-    assert(lic.resource_state(Timestep(pandas.Period('2015-1-1'), 0, 1)) is None)
+    assert lic.resource_state(Timestep(pandas.Period("2015-1-1"), 0, 1)) is None
 
 
+@pytest.mark.skipif(
+    Model().solver.name.startswith("glpk") and Model().solver.set_fixed_flows_once,
+    reason="This test changes constant constraints between steps.",
+)
 def test_simple_model_with_annual_licence(simple_linear_model):
     m = simple_linear_model
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
@@ -55,7 +66,7 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     assert_allclose(m.nodes["Output"].flow, 0.5)
     # Check the constraint for the next timestep. The available amount should now be larger
     # due to the reduced use
-    remaining = (annual_total-1.5)
+    remaining = annual_total - 1.5
     assert_allclose(lic.value(m.timestepper._next, si), remaining / (365 - 2))
 
     # Unconstrain the demand
@@ -65,6 +76,7 @@ def test_simple_model_with_annual_licence(simple_linear_model):
     # Licence should now be on track for an expected value of 1.0
     remaining -= remaining / (365 - 2)
     assert_allclose(lic.value(m.timestepper._next, si), remaining / (365 - 3))
+
 
 def test_annual_license_json():
     """
@@ -96,20 +108,20 @@ def test_annual_license_json():
     assert_allclose(rec.data[2], 0.0)
     # fourth day more can be supplied as we've built up a surplus
     remaining_days = 365 - 5 * 3
-    fourth_day = (initial_amount - (first_day+second_day)*5) / remaining_days
+    fourth_day = (initial_amount - (first_day + second_day) * 5) / remaining_days
     assert_allclose(rec.data[3], fourth_day)
     assert fourth_day > first_day
 
 
 def test_simple_model_with_annual_licence_multi_year(simple_linear_model):
-    """ Test the AnnualLicense over multiple years
-    """
+    """Test the AnnualLicense over multiple years"""
     import pandas as pd
     import datetime, calendar
+
     m = simple_linear_model
     # Modify model to run for 3 years of non-leap years at 30 day time-step.
-    m.timestepper.start = pd.to_datetime('2017-1-1')
-    m.timestepper.end = pd.to_datetime('2020-1-1')
+    m.timestepper.start = pd.to_datetime("2017-1-1")
+    m.timestepper.end = pd.to_datetime("2020-1-1")
     m.timestepper.delta = datetime.timedelta(30)
 
     annual_total = 365.0
@@ -123,9 +135,13 @@ def test_simple_model_with_annual_licence_multi_year(simple_linear_model):
     for i in range(len(m.timestepper)):
         m.step()
         days_in_year = 365 + int(calendar.isleap(m.timestepper.current.datetime.year))
-        assert_allclose(m.nodes["Output"].flow, annual_total/days_in_year)
+        assert_allclose(m.nodes["Output"].flow, annual_total / days_in_year)
 
 
+@pytest.mark.skipif(
+    Model().solver.name.startswith("glpk") and Model().solver.set_fixed_flows_once,
+    reason="This test changes constant constraints between steps.",
+)
 def test_simple_model_with_exponential_license(simple_linear_model):
     m = simple_linear_model
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
@@ -154,8 +170,10 @@ def test_simple_model_with_exponential_license(simple_linear_model):
     assert_allclose(m.nodes["Output"].flow, 0.5)
     # Check the constraint for the next timestep. The available amount should now be larger
     # due to the reduced use
-    remaining = (annual_total-1.5)
-    assert_allclose(lic.value(m.timestepper._next, si), np.exp(-remaining / (365 - 2) + 1))
+    remaining = annual_total - 1.5
+    assert_allclose(
+        lic.value(m.timestepper._next, si), np.exp(-remaining / (365 - 2) + 1)
+    )
 
     # Unconstrain the demand
     m.nodes["Output"].max_flow = 10.0
@@ -163,9 +181,15 @@ def test_simple_model_with_exponential_license(simple_linear_model):
     assert_allclose(m.nodes["Output"].flow, np.exp(-remaining / (365 - 2) + 1))
     # Licence should now be on track for an expected value of 1.0
     remaining -= np.exp(-remaining / (365 - 2) + 1)
-    assert_allclose(lic.value(m.timestepper._next, si), np.exp(-remaining / (365 - 3) + 1))
+    assert_allclose(
+        lic.value(m.timestepper._next, si), np.exp(-remaining / (365 - 3) + 1)
+    )
 
 
+@pytest.mark.skipif(
+    Model().solver.name.startswith("glpk") and Model().solver.set_fixed_flows_once,
+    reason="This test changes constant constraints between steps.",
+)
 def test_simple_model_with_hyperbola_license(simple_linear_model):
     m = simple_linear_model
     si = ScenarioIndex(0, np.array([0], dtype=np.int32))
@@ -194,7 +218,7 @@ def test_simple_model_with_hyperbola_license(simple_linear_model):
     assert_allclose(m.nodes["Output"].flow, 0.5)
     # Check the constraint for the next timestep. The available amount should now be larger
     # due to the reduced use
-    remaining = (annual_total-1.5)
+    remaining = annual_total - 1.5
     assert_allclose(lic.value(m.timestepper._next, si), (365 - 2) / remaining)
 
     # Unconstrain the demand

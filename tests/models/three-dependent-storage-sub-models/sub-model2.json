@@ -1,0 +1,36 @@
+{
+    "metadata": {
+        "title": "Simple 1",
+        "description": "A very simple example.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-01-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply2",
+            "type": "Input",
+            "max_flow": 15
+        },
+        {
+            "name": "storage2",
+            "type": "Storage",
+            "max_volume": 1000,
+            "initial_volume": 510,
+            "cost": -1
+        },
+        {
+            "name": "demand2",
+            "type": "Output",
+            "max_flow": 50,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply2", "storage2"],
+        ["storage2", "demand2"]
+    ]
+}

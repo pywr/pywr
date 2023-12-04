@@ -4,7 +4,8 @@ import pandas
 
 
 class Event(object):
-    """ Container for event information """
+    """Container for event information"""
+
     def __init__(self, start, scenario_index):
         self.start = start
         self.scenario_index = scenario_index
@@ -52,9 +53,12 @@ class EventRecorder(Recorder):
      `pywr.parameters._thresholds`
 
 
-     """
-    def __init__(self, model, threshold, minimum_event_length=1, tracked_parameter=None, **kwargs):
-        self.event_agg_func = kwargs.pop('event_agg_func', kwargs.get('agg_func'))
+    """
+
+    def __init__(
+        self, model, threshold, minimum_event_length=1, tracked_parameter=None, **kwargs
+    ):
+        self.event_agg_func = kwargs.pop("event_agg_func", kwargs.get("agg_func"))
         super(EventRecorder, self).__init__(model, **kwargs)
         self.threshold = threshold
         self.threshold.parents.add(self)
@@ -83,13 +87,15 @@ class EventRecorder(Recorder):
         from pywr.parameters import Parameter, IndexParameter
 
         if isinstance(self.threshold, Recorder):
-            all_triggered = np.array(self.threshold.values(), dtype=np.int)
+            all_triggered = np.array(self.threshold.values(), dtype=int)
         elif isinstance(self.threshold, IndexParameter):
             all_triggered = self.threshold.get_all_indices()
         elif isinstance(self.threshold, Parameter):
-            all_triggered = np.array(self.threshold.get_all_values(), dtype=np.int)
+            all_triggered = np.array(self.threshold.get_all_values(), dtype=int)
         else:
-            raise TypeError("Threshold must be either a Recorder or Parameter instance.")
+            raise TypeError(
+                "Threshold must be either a Recorder or Parameter instance."
+            )
 
         for si in self.model.scenarios.combinations:
             # Determine if an event is active this time-step/scenario combination
@@ -108,7 +114,9 @@ class EventRecorder(Recorder):
                 else:
                     # Update the end of the current event.
                     current_event.end = ts
-                    current_event.values = np.array(current_event.values)  # Convert list to nparray
+                    current_event.values = np.array(
+                        current_event.values
+                    )  # Convert list to nparray
                     current_length = ts.index - current_event.start.index
 
                     if current_length >= self.minimum_event_length:
@@ -127,7 +135,9 @@ class EventRecorder(Recorder):
                     # Start the timeseries of event data
                     if self.tracked_parameter is not None:
                         value = self.tracked_parameter.get_value(si)
-                        current_event.values = [value, ]
+                        current_event.values = [
+                            value,
+                        ]
                 else:
                     # No event active and one hasn't started
                     # Therefore do nothing.
@@ -149,7 +159,7 @@ class EventRecorder(Recorder):
                 self._current_events[si.global_id] = None
 
     def to_dataframe(self):
-        """ Returns a `pandas.DataFrame` containing all of the events.
+        """Returns a `pandas.DataFrame` containing all of the events.
 
         If `event_agg_func` is a valid aggregation function and `tracked_parameter`
          is given then a "value" column is added to the dataframe containing the
@@ -158,9 +168,9 @@ class EventRecorder(Recorder):
         """
         # Return empty dataframe if no events are found.
         if len(self.events) == 0:
-            return pandas.DataFrame(columns=['scenario_id', 'start', 'end'])
+            return pandas.DataFrame(columns=["scenario_id", "start", "end"])
 
-        scen_id = np.empty(len(self.events), dtype=np.int)
+        scen_id = np.empty(len(self.events), dtype=int)
         start = np.empty_like(scen_id, dtype=object)
         end = np.empty_like(scen_id, dtype=object)
         values = np.empty_like(scen_id, dtype=float)
@@ -172,7 +182,7 @@ class EventRecorder(Recorder):
             if self.tracked_parameter is not None and self.event_agg_func is not None:
                 values[i] = pandas.Series(evt.values).aggregate(self.event_agg_func)
 
-        df_dict = {'scenario_id': scen_id, 'start': start, 'end': end}
+        df_dict = {"scenario_id": scen_id, "start": start, "end": end}
         if self.tracked_parameter is not None and self.event_agg_func is not None:
             df_dict["value"] = values
 
@@ -181,6 +191,7 @@ class EventRecorder(Recorder):
     @classmethod
     def load(cls, model, data):
         from pywr.parameters import load_parameter
+
         threshold = data.pop("threshold")
         try:
             threshold = load_parameter(model, threshold)
@@ -196,7 +207,7 @@ EventRecorder.register()
 
 
 class EventDurationRecorder(Recorder):
-    """ Recorder for the duration of events found by an EventRecorder
+    """Recorder for the duration of events found by an EventRecorder
 
     This Recorder uses the results of an EventRecorder to calculate the duration
     of those events in each scenario. Aggregation by scenario is done via
@@ -216,9 +227,10 @@ class EventDurationRecorder(Recorder):
         must be supported by the `DataFrame.group_by` method.  If no value is provided
         then the value of 'agg_func' is used.
     """
+
     def __init__(self, model, event_recorder, **kwargs):
         # Optional different method for aggregating across self.recorders scenarios
-        agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func', 'mean'))
+        agg_func = kwargs.pop("recorder_agg_func", kwargs.get("agg_func", "mean"))
         self.recorder_agg_func = agg_func
 
         super(EventDurationRecorder, self).__init__(model, **kwargs)
@@ -243,17 +255,17 @@ class EventDurationRecorder(Recorder):
             return
 
         # Calculate duration
-        df['duration'] = df['end'] - df['start']
+        df["duration"] = df["end"] - df["start"]
         # Convert to int of days
-        df['duration'] = df['duration'].dt.days
+        df["duration"] = df["duration"].dt.days
         # Drop other columns
-        df = df[['scenario_id', 'duration']]
+        df = df[["scenario_id", "duration"]]
 
         # Group by scenario ...
-        grouped = df.groupby('scenario_id').agg(self.recorder_agg_func)
+        grouped = df.groupby("scenario_id").agg(self.recorder_agg_func)
         # ... and update the internal values
         for index, row in grouped.iterrows():
-            self._values[index] = row['duration']
+            self._values[index] = row["duration"]
 
     @classmethod
     def load(cls, model, data):
@@ -265,7 +277,7 @@ EventDurationRecorder.register()
 
 
 class EventStatisticRecorder(Recorder):
-    """ Recorder for the duration of events found by an EventRecorder
+    """Recorder for the duration of events found by an EventRecorder
 
     This Recorder uses the results of an EventRecorder to calculate aggregated statistics
     of those events in each scenario. This requires the EventRecorder to be given a `tracked_parameter`
@@ -292,11 +304,12 @@ class EventStatisticRecorder(Recorder):
         If given this aggregation will be added as a `value` column in the `to_dataframe` method.
         If no value is provided then the value of 'agg_func' is used.
     """
+
     def __init__(self, model, event_recorder, **kwargs):
         # Optional different method for aggregating across self.recorders scenarios
-        agg_func = kwargs.pop('event_agg_func', kwargs.get('agg_func', "mean"))
+        agg_func = kwargs.pop("event_agg_func", kwargs.get("agg_func", "mean"))
         self.event_agg_func = agg_func
-        agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func', "mean"))
+        agg_func = kwargs.pop("recorder_agg_func", kwargs.get("agg_func", "mean"))
         self.recorder_agg_func = agg_func
 
         super(EventStatisticRecorder, self).__init__(model, **kwargs)
@@ -307,7 +320,9 @@ class EventStatisticRecorder(Recorder):
         self._values = np.empty(len(self.model.scenarios.combinations))
 
         if self.event_recorder.tracked_parameter is None:
-            raise ValueError('To calculate event statistics requires the parent `EventRecorder` to have a `tracked_parameter`.')
+            raise ValueError(
+                "To calculate event statistics requires the parent `EventRecorder` to have a `tracked_parameter`."
+            )
 
     def reset(self):
         self._values[...] = np.nan
@@ -316,26 +331,26 @@ class EventStatisticRecorder(Recorder):
         return self._values
 
     def finish(self):
-        """ Compute the aggregated value in each scenario based on the parent `EventRecorder` events """
+        """Compute the aggregated value in each scenario based on the parent `EventRecorder` events"""
         events = self.event_recorder.events
         # Return NaN if no events found
         if len(events) == 0:
             return
 
-        scen_id = np.empty(len(events), dtype=np.int)
+        scen_id = np.empty(len(events), dtype=int)
         values = np.empty_like(scen_id, dtype=np.float64)
 
         for i, evt in enumerate(events):
             scen_id[i] = evt.scenario_index.global_id
             values[i] = pandas.Series(evt.values).aggregate(self.event_agg_func)
 
-        df = pandas.DataFrame({'scenario_id': scen_id, 'value': values})
+        df = pandas.DataFrame({"scenario_id": scen_id, "value": values})
 
         # Group by scenario ...
-        grouped = df.groupby('scenario_id').agg(self.recorder_agg_func)
+        grouped = df.groupby("scenario_id").agg(self.recorder_agg_func)
         # ... and update the internal values
         for index, row in grouped.iterrows():
-            self._values[index] = row['value']
+            self._values[index] = row["value"]
 
     @classmethod
     def load(cls, model, data):

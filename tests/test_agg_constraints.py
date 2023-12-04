@@ -1,4 +1,14 @@
-from pywr.core import Model, Input, Output, Link, Storage, AggregatedNode, PiecewiseLink, MultiSplitLink
+import pywr.solvers
+from pywr.core import (
+    Model,
+    Input,
+    Output,
+    Link,
+    Storage,
+    AggregatedNode,
+    PiecewiseLink,
+    MultiSplitLink,
+)
 from pywr.parameters import ConstantParameter, DailyProfileParameter
 
 import pytest
@@ -9,12 +19,14 @@ from pandas import Timestamp
 
 from helpers import load_model
 
+
 @pytest.fixture
 def model():
     model = Model()
     model.timestepper.start = Timestamp("2016-01-01")
     model.timestepper.end = Timestamp("2016-01-02")
     return model
+
 
 def test_aggregated_node_two_factors(model):
     """Nodes constrained by a fixed ratio between flows (2 nodes)"""
@@ -36,6 +48,7 @@ def test_aggregated_node_two_factors(model):
     assert_allclose(agg.flow, 80.0)
     assert_allclose(A.flow, 40.0)
     assert_allclose(B.flow, 40.0)
+
 
 def test_aggregated_node_three_factors(model):
     """Nodes constrained by a fixed ratio between flows (3 nodes)"""
@@ -82,12 +95,16 @@ def test_aggregated_node_max_flow(model):
     assert_allclose(B.flow, 10.0)
 
 
-@pytest.mark.parametrize("flow_weights,expected_agg_flow,expected_A_flow,expected_B_flow",
-                         [
-                             ([2.0, 1.0], 30.0, 15.0, 0.0),
-                             ([0.5, 2.0], 30.0, 20.0, 10.0),
-                         ])
-def test_aggregated_node_max_flow_with_weights(model, flow_weights, expected_agg_flow, expected_A_flow, expected_B_flow):
+@pytest.mark.parametrize(
+    "flow_weights,expected_agg_flow,expected_A_flow,expected_B_flow",
+    [
+        ([2.0, 1.0], 30.0, 15.0, 0.0),
+        ([0.5, 2.0], 30.0, 20.0, 10.0),
+    ],
+)
+def test_aggregated_node_max_flow_with_weights(
+    model, flow_weights, expected_agg_flow, expected_A_flow, expected_B_flow
+):
     """Nodes constrained by the weighted max_flow of their AggregatedNode"""
     A = Input(model, "A", max_flow=20.0, cost=1)
     B = Input(model, "B", max_flow=20.0, cost=8)
@@ -107,9 +124,11 @@ def test_aggregated_node_max_flow_with_weights(model, flow_weights, expected_agg
     assert_allclose(B.flow, expected_B_flow)
 
 
-@pytest.mark.skipif(Model().solver.name == "lpsolve", reason="Not supported in lpsolve.")
+@pytest.mark.skipif(
+    Model().solver.name == "lpsolve", reason="Not supported in lpsolve."
+)
 def test_aggregated_node_max_flow_parameter(model):
-    """Nodes constrained by the max_flow of their AggregatedNode using a Parameter """
+    """Nodes constrained by the max_flow of their AggregatedNode using a Parameter"""
     A = Input(model, "A", max_flow=20.0, cost=1)
     B = Input(model, "B", max_flow=20.0, cost=2)
     Z = Output(model, "Z", max_flow=100, cost=-10)
@@ -146,7 +165,9 @@ def test_aggregated_node_min_flow(model):
     assert_allclose(B.flow, 0.0)
 
 
-@pytest.mark.skipif(Model().solver.name == "lpsolve", reason="Not supported in lpsolve.")
+@pytest.mark.skipif(
+    Model().solver.name == "lpsolve", reason="Not supported in lpsolve."
+)
 def test_aggregated_node_min_flow_parameter(model):
     """Nodes constrained by the min_flow of their AggregatedNode"""
     A = Input(model, "A", max_flow=20.0, cost=1)
@@ -165,7 +186,10 @@ def test_aggregated_node_min_flow_parameter(model):
     assert_allclose(A.flow, 15.0)
     assert_allclose(B.flow, 0.0)
 
-@pytest.mark.skipif(Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver.")
+
+@pytest.mark.skipif(
+    Model().solver.name == "glpk-edge", reason="Not valid for GLPK Edge based solver."
+)
 def test_aggregated_node_max_flow_same_route(model):
     """Unusual case where the aggregated nodes are in the same route"""
     A = Input(model, "A", max_flow=20.0, cost=1)
@@ -185,11 +209,12 @@ def test_aggregated_node_max_flow_same_route(model):
     assert_allclose(agg.flow, 30.0)
     assert_allclose(A.flow + B.flow, 30.0)
 
+
 def test_aggregated_constraint_json():
     model = load_model("aggregated1.json")
 
     agg = model.nodes["agg"]
-    assert(agg.nodes == [model.nodes["A"], model.nodes["B"]])
+    assert agg.nodes == [model.nodes["A"], model.nodes["B"]]
 
     for f, v in zip(agg.factors, [2.0, 4.0]):
         assert isinstance(f, ConstantParameter)
@@ -198,7 +223,40 @@ def test_aggregated_constraint_json():
     assert_allclose(agg.max_flow, 30.0)
     assert_allclose(agg.min_flow, 5.0)
 
-@pytest.mark.parametrize('flow', (100.0, 200.0, 300.0))
+    model.run()
+
+
+@pytest.mark.skipif(
+    Model().solver.name != "glpk" or Model().solver.use_unsafe_api,
+    reason="Only valid for GLPK route based solver using safe API.",
+)
+def test_aggregated_constraint_with_two_nodes_in_same_route_json():
+    """Test the case where an aggregated node contains two nodes in the same route.
+
+    In the route based solver this is not currently possible.
+    """
+    model = load_model("aggregated_with_two_nodes_same_route.json")
+
+    agg = model.nodes["agg"]
+    assert agg.nodes == [
+        model.nodes["A"],
+        model.nodes["B"],
+        model.nodes["C"],
+        model.nodes["X"],
+    ]
+
+    for f, v in zip(agg.factors, [1.0, 1.0, 1.0, 1.0]):
+        assert isinstance(f, ConstantParameter)
+        assert_allclose(f.get_double_variables(), v)
+
+    assert_allclose(agg.max_flow, 30.0)
+    assert_allclose(agg.min_flow, 5.0)
+
+    with pytest.raises(pywr.solvers.GLPKInternalError):
+        model.run()
+
+
+@pytest.mark.parametrize("flow", (100.0, 200.0, 300.0))
 def test_piecewise_constraint(model, flow):
     """Test using an aggregated node constraint in combination with a
     piecewise link in order to create a minimum flow constraint of the form
@@ -217,7 +275,9 @@ def test_piecewise_constraint(model, flow):
                          Bo -->-- Bi --> D
     """
     A = Input(model, "A", min_flow=flow, max_flow=flow)
-    X = PiecewiseLink(model, name="X", nsteps=3, costs=[-500.0, 0, 0], max_flows=[40.0, None, None])
+    X = PiecewiseLink(
+        model, name="X", nsteps=3, costs=[-500.0, 0, 0], max_flows=[40.0, None, None]
+    )
     C = Output(model, "C")
 
     A.connect(X)
@@ -239,30 +299,41 @@ def test_piecewise_constraint(model, flow):
     assert_allclose(D.flow, min((flow - 40) * 0.25, 50.0))
 
 
-@pytest.mark.parametrize('flow', (100.0, 200.0, 300.0))
+@pytest.mark.parametrize("flow", (100.0, 200.0, 300.0))
 def test_multipiecewise_constraint(model, flow):
-    """ Test using an aggregated node in combination with a MultiSplitLink.
+    """Test using an aggregated node in combination with a MultiSplitLink.
 
     This test is the same as the `test_piecewise_constraint` but using the MultiSplitLink API
      for brevity.
     """
     A = Input(model, "A", min_flow=flow, max_flow=flow)
-    X = MultiSplitLink(model, name="X", nsteps=2, costs=[-500.0, 0], max_flows=[40.0, None],
-                       factors=[3, 1], extra_slots=1, slot_names=['river', 'abstraction'])
+    X = MultiSplitLink(
+        model,
+        name="X",
+        nsteps=2,
+        costs=[-500.0, 0],
+        max_flows=[40.0, None],
+        factors=[3, 1],
+        extra_slots=1,
+        slot_names=["river", "abstraction"],
+    )
     C = Output(model, "C")
     D = Output(model, "D", max_flow=50, cost=-100)
 
     A.connect(X)
-    X.connect(C, from_slot='river')
-    X.connect(D, from_slot='abstraction')
+    X.connect(C, from_slot="river")
+    X.connect(D, from_slot="abstraction")
 
     model.step()
     assert_allclose(D.flow, min((flow - 40) * 0.25, 50.0))
 
-@pytest.mark.skipif(Model().solver.name not in ["glpk", "glpk-edge"], reason="Dynamic factors for agg nodes have only \
-                                                                              been implemented for glpk solvers")
-def test_dynamic_factors(model):
 
+@pytest.mark.skipif(
+    Model().solver.name not in ["glpk", "glpk-edge"],
+    reason="Dynamic factors for agg nodes have only \
+                                                                              been implemented for glpk solvers",
+)
+def test_dynamic_factors(model):
     model.timestepper.end = Timestamp("2016-01-03")
 
     A = Input(model, "A", max_flow=10.0)
@@ -272,9 +343,15 @@ def test_dynamic_factors(model):
 
     agg = AggregatedNode(model, "agg", [A, B, C])
     agg.max_flow = 10.0
-    factor1 = DailyProfileParameter(model, np.append(np.array([0.8, 0.3]), np.ones(364)))
-    factor2 = DailyProfileParameter(model, np.append(np.array([0.1, 0.3]), np.ones(364)))
-    factor3 = DailyProfileParameter(model, np.append(np.array([0.1, 0.4]), np.ones(364)))
+    factor1 = DailyProfileParameter(
+        model, np.append(np.array([0.8, 0.3]), np.ones(364))
+    )
+    factor2 = DailyProfileParameter(
+        model, np.append(np.array([0.1, 0.3]), np.ones(364))
+    )
+    factor3 = DailyProfileParameter(
+        model, np.append(np.array([0.1, 0.4]), np.ones(364))
+    )
 
     agg.factors = [factor1, factor2, factor3]
 
@@ -294,10 +371,13 @@ def test_dynamic_factors(model):
     assert_allclose(B.flow, 3)
     assert_allclose(C.flow, 4)
 
-@pytest.mark.skipif(Model().solver.name not in ["glpk", "glpk-edge"], reason="Dynamic factors for agg nodes have only \
-                                                                              been implemented for glpk solvers")
-def test_dynamic_factors_load(model):
 
+@pytest.mark.skipif(
+    Model().solver.name not in ["glpk", "glpk-edge"],
+    reason="Dynamic factors for agg nodes have only \
+                                                                              been implemented for glpk solvers",
+)
+def test_dynamic_factors_load(model):
     model.timestepper.end = Timestamp("2016-01-03")
 
     A = Input(model, "A", max_flow=10.0)
@@ -307,13 +387,11 @@ def test_dynamic_factors_load(model):
     A.connect(Z)
     B.connect(Z)
 
-    DailyProfileParameter(model, np.append(np.array([3, 4]), np.ones(364)), name="factor1")
+    DailyProfileParameter(
+        model, np.append(np.array([3, 4]), np.ones(364)), name="factor1"
+    )
 
-    data = {
-        "name": "agg",
-        "factors": [1, "factor1"],
-        "nodes": ["A", "B"]
-    }
+    data = {"name": "agg", "factors": [1, "factor1"], "nodes": ["A", "B"]}
 
     node = AggregatedNode.pre_load(model, data)
     node.finalise_load()

@@ -1,17 +1,22 @@
 from ..core import Model
 import uuid
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 def cache_variable_parameters(model):
     variables = []
-    variable_map = [0, ]
+    variable_map = [
+        0,
+    ]
     for var in model.variables:
         size = var.double_size + var.integer_size
 
         if size <= 0:
-            raise ValueError('Variable parameter "{}" does not have a size > 0.'.format(var.name))
+            raise ValueError(
+                'Variable parameter "{}" does not have a size > 0.'.format(var.name)
+            )
 
         variable_map.append(variable_map[-1] + size)
         variables.append(var)
@@ -44,15 +49,18 @@ class ModelCache:
         self.variable_map = None
         self.objectives = None
         self.constraints = None
+
+
 MODEL_CACHE = {}
 
 
 class BaseOptimisationWrapper(object):
-    """ A helper class for running pywr optimisations with platypus.
-    """
+    """A helper class for running pywr optimisations with platypus."""
+
     def __init__(self, pywr_model_json, *args, **kwargs):
-        uid = kwargs.pop('uid', None)
+        uid = kwargs.pop("uid", None)
         self.pywr_model_klass = kwargs.pop("model_klass", Model)
+        self.pywr_model_kwargs = kwargs.pop("model_kwargs", {})
         super(BaseOptimisationWrapper, self).__init__(*args, **kwargs)
         self.pywr_model_json = pywr_model_json
 
@@ -100,7 +108,7 @@ class BaseOptimisationWrapper(object):
         return self._cached.constraints
 
     def make_model(self):
-        m = self.pywr_model_klass.load(self.pywr_model_json)
+        m = self.pywr_model_klass.load(self.pywr_model_json, **self.pywr_model_kwargs)
         # Apply any user defined changes to the model
         self.customise_model(m)
         return m
@@ -110,6 +118,6 @@ class BaseOptimisationWrapper(object):
 
 
 def clear_global_model_cache():
-    """ Clear the module level model cache. """
+    """Clear the module level model cache."""
     global MODEL_CACHE
     MODEL_CACHE = {}

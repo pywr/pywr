@@ -36,6 +36,9 @@ cdef class Timestep:
     cdef readonly int day
     cdef readonly int month
     cdef readonly int year
+    cdef readonly int end_year
+    cpdef public double days_in_current_year(self)
+    cpdef public double days_in_next_year(self)
 
 cdef class Domain:
     cdef object name
@@ -75,8 +78,14 @@ cdef class Node(AbstractNode):
     cdef Parameter _max_flow_param
 
     cdef Parameter _conversion_factor_param
+
+    cpdef double get_fixed_min_flow(self)
+    cpdef double get_constant_min_flow(self)
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1
     cpdef double[:] get_all_min_flow(self, double[:] out=*)
+
+    cpdef double get_fixed_max_flow(self)
+    cpdef double get_constant_max_flow(self)
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1
     cpdef double[:] get_all_max_flow(self, double[:] out=*)
 
@@ -98,6 +107,7 @@ cdef class AggregatedNode(AbstractNode):
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1
     cpdef double[:] get_all_max_flow(self, double[:] out=*)
     cpdef double[:] get_factors(self, ScenarioIndex scenario_index)
+    cpdef double[:] get_constant_factors(self)
     cpdef double[:] get_factors_norm(self, ScenarioIndex scenario_index)
 
 cdef class BaseInput(Node):
@@ -106,6 +116,7 @@ cdef class BaseInput(Node):
 cdef class AbstractStorage(AbstractNode):
     cdef public double[:] _volume
     cdef public double[:] _current_pc
+    cpdef double get_current_pc(self, ScenarioIndex scenario_index)
 
 cdef class Storage(AbstractStorage):
     cdef double _cost
@@ -142,3 +153,16 @@ cdef class RollingVirtualStorage(VirtualStorage):
     cdef public int timesteps
     cdef double[:, :] _memory
     cdef int _memory_pointer
+    cdef double _initial_utilisation
+
+cdef class ShadowStorage(AbstractStorage):
+    cdef public str other_model
+    cdef public str node
+    cdef object _other_model
+    cdef AbstractStorage _other_model_node
+
+cdef class ShadowNode(AbstractNode):
+    cdef public str other_model
+    cdef public str node
+    cdef object _other_model
+    cdef AbstractNode _other_model_node

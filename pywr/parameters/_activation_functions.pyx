@@ -24,12 +24,17 @@ cdef class BinaryStepParameter(Parameter):
         self.integer_size = 0
         self._lower_bounds = lower_bounds
         self._upper_bounds = upper_bounds
+        self.is_constant = True
 
-    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_constant_value(self):
         if self._value <= 0.0:
             return 0.0
         else:
             return self.output
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        # This is fine because value doesn't depend on timestep or scenario
+        return self.get_constant_value()
 
     cpdef set_double_variables(self, double[:] values):
         self._value = values[0]
@@ -60,21 +65,29 @@ cdef class RectifierParameter(Parameter):
         The valid ranges of the internal variable for optimisation (default = [-1.0, 1.0]).
     max_output : float
         The maximum value to return when the internal variable is at its upper bounds (default = 1.0).
+    min_output : float
+        The value to return when the internal variable is at 0.0.
     """
-    def __init__(self, model, value=0.0, lower_bounds=-1.0, upper_bounds=1.0, max_output=1.0, **kwargs):
+    def __init__(self, model, value=0.0, lower_bounds=-1.0, upper_bounds=1.0, min_output=0.0, max_output=1.0, **kwargs):
         super(RectifierParameter, self).__init__(model, **kwargs)
         self._value = value
+        self.min_output = min_output
         self.max_output = max_output
         self.double_size = 1
         self.integer_size = 0
         self._lower_bounds = lower_bounds
         self._upper_bounds = upper_bounds
+        self.is_constant = True
 
-    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+    cpdef double get_constant_value(self):
         if self._value <= 0.0:
             return 0.0
         else:
-            return self.max_output * self._value / self._upper_bounds
+            return self.min_output + (self.max_output - self.min_output) * self._value / self._upper_bounds
+
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        # This is fine because value doesn't depend on timestep or scenario
+        return self.get_constant_value()
 
     cpdef set_double_variables(self, double[:] values):
         self._value = values[0]
@@ -117,9 +130,14 @@ cdef class LogisticParameter(Parameter):
         self.integer_size = 0
         self._lower_bounds = lower_bounds
         self._upper_bounds = upper_bounds
+        self.is_constant = True
+
+    cpdef double get_constant_value(self):
+        return self.max_output / (1 + np.exp(-self.growth_rate*self._value))
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        return self.max_output / (1 + np.exp(-self.growth_rate*self._value))
+        # This is fine because value doesn't depend on timestep or scenario
+        return self.get_constant_value()
 
     cpdef set_double_variables(self, double[:] values):
         self._value = values[0]

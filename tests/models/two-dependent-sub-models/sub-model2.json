@@ -1,0 +1,40 @@
+{
+    "metadata": {
+        "title": "Simple 1",
+        "description": "A very simple example.",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-01-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply2",
+            "type": "Input",
+            "max_flow": "timeseries2"
+        },
+        {
+            "name": "link2",
+            "type": "Link"
+        },
+        {
+            "name": "demand2",
+            "type": "Output",
+            "max_flow": 50,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply2", "link2"],
+        ["link2", "demand2"]
+    ],
+    "parameters": {
+        "timeseries2": {
+            "type": "OtherModelParameterValue",
+            "other_model": "model1",
+            "parameter": "timeseries1"
+        }
+    }
+}

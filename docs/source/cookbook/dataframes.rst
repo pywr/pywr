@@ -20,6 +20,46 @@ When working with large amounts of timeseries data the `HDF5 format <https://www
 
 External data is read using the appropriate ``pandas.read_xxx`` function determined by the file extension (e.g. ``pandas.read_excel`` for xls/xlsx). Keywords that are not recognised by Pywr are passed on to these functions. For example, when reading timeseries data from a CSV you can parse the date strings into pandas timestamps by passing ``parse_dates=True`` (see example below).
 
+Checksums
+~~~~~~~~~
+
+Often external boundary condition data is very large in comparison to the model definition (JSON) itself. Model definitions
+might be stored in a version control system (e.g. Git) but this may not be suitable for large amounts of binary data.
+Users of a model therefore might need to obtain the external data via another means. Tracking revisions of this external
+data can become problematic.
+
+To address this `DataFrameParameter` and `TablesArrayParameter` support validating external file checksums before reading
+the external data. The example below shows how to define a checksum in the JSON definition of a `DataFrameParameter`.
+If the local file does not match the checksum in the JSON definition a `HashMismatchError` is raised. Pywr uses
+`hashlib <https://docs.python.org/3/library/hashlib.html>`_ and supports all of its algorithms.
+
+**Note:** The example shows checksums for two different algorithms, but usually one is sufficient.
+
+.. code-block:: javascript
+
+    "max_flow": {
+        "type": "dataframe",
+        "url" : "timeseries2.csv",
+        "checksum": {
+            "md5": "a5c4032e2d8f5205ca99dedcfa4cd18e",
+            "sha256": "0f75b3cee325d37112687d3d10596f44e0add374f4e40a1b6687912c05e65366"
+        }
+    }
+
+The author of the external data will need to produce a file checksum to add the JSON definition. The following script
+shows how Python can be used to calculate the checksum of a file.
+
+.. code-block:: python
+
+    import hashlib
+    md5 = hashlib.md5()
+    with open("data.h5", "rb") as f:
+        for block in iter(lambda: f.read(8192), ""):
+           md5.update(block)
+    print(md5.hexdigest())
+
+
+
 Examples
 ========
 

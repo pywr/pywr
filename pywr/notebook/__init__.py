@@ -25,8 +25,9 @@ with open(os.path.join(folder, "template.html"), "r") as f:
 
 
 class PywrSchematic:
-
-    def __init__(self, model, width=500, height=400, labels=False, attributes=False, css=None):
+    def __init__(
+        self, model, width=500, height=400, labels=False, attributes=False, css=None
+    ):
         """This object contains methods that allow the graph of a pywr model network to be displayed in a jupyter
         notebook or saved to an html file.
 
@@ -80,7 +81,7 @@ class PywrSchematic:
             element="element",
             labels=self.labels,
             attributes=self.attributes,
-            css=self.css.replace("\n", "")
+            css=self.css.replace("\n", ""),
         )
         display(Javascript(data=js))
 
@@ -102,21 +103,30 @@ class PywrSchematic:
         """
 
         if filetype not in ["json", "csv"]:
-            warnings.warn(f"Output filetype '{filetype}' not recognised. Please use either 'json' or 'csv'</p>",
-                          stacklevel=2)
+            warnings.warn(
+                f"Output filetype '{filetype}' not recognised. Please use either 'json' or 'csv'</p>",
+                stacklevel=2,
+            )
 
         if self.json is None and filetype == "json":
-            warnings.warn("Node positions cannot be saved to JSON if PywrSchematic object has been instantiated using "
-                          "a pywr model object. Please use a JSON file path or model dict instead.", stacklevel=2)
+            warnings.warn(
+                "Node positions cannot be saved to JSON if PywrSchematic object has been instantiated using "
+                "a pywr model object. Please use a JSON file path or model dict instead.",
+                stacklevel=2,
+            )
         else:
-            display(Javascript(save_graph_template.render(
-                model_data=json.dumps(self.json),
-                height=self.height,
-                width=self.width,
-                save_unfixed=json.dumps(save_unfixed),
-                filename=json.dumps(filename),
-                filetype=json.dumps(filetype)
-            )))
+            display(
+                Javascript(
+                    save_graph_template.render(
+                        model_data=json.dumps(self.json),
+                        height=self.height,
+                        width=self.width,
+                        save_unfixed=json.dumps(save_unfixed),
+                        filename=json.dumps(filename),
+                        filetype=json.dumps(filetype),
+                    )
+                )
+            )
 
     def to_html(self, filename="model.html", title="Model Schematic"):
         """Save an HTML file of schematic
@@ -138,14 +148,10 @@ class PywrSchematic:
             element=json.dumps(".schematic"),
             labels=self.labels,
             attributes=self.attributes,
-            css=""
+            css="",
         )
 
-        html = html_template.render(
-            title=title,
-            css=self.css,
-            d3_script=js
-        )
+        html = html_template.render(title=title, css=self.css, d3_script=js)
 
         with open(filename, "w") as f:
             f.write(html)
@@ -156,7 +162,9 @@ def draw_graph(model, width=500, height=400, labels=False, attributes=False, css
 
     Functionality for creating the d3 graph is now in the PywrSchematic object
     """
-    schematic = PywrSchematic(model, width=width, height=height, labels=labels, attributes=attributes, css=css)
+    schematic = PywrSchematic(
+        model, width=width, height=height, labels=labels, attributes=attributes, css=css
+    )
     schematic.draw_graph()
 
 
@@ -193,7 +201,7 @@ def pywr_model_to_d3_json(model, attributes=False):
 
         index_source = node_names.index(node_source.name)
         index_target = node_names.index(node_target.name)
-        edges.append({'source': index_source, 'target': index_target})
+        edges.append({"source": index_source, "target": index_target})
 
     json_nodes = []
     for n, node in enumerate(nodes):
@@ -221,9 +229,7 @@ def pywr_model_to_d3_json(model, attributes=False):
 
         json_nodes.append(node_dict)
 
-    graph = {
-        "nodes": json_nodes,
-        "links": edges}
+    graph = {"nodes": json_nodes, "links": edges}
 
     return graph
 
@@ -236,18 +242,30 @@ def get_node_attr(node):
     ----------
     node : a pywr node object
     """
-    attrs = inspect.getmembers(node, lambda a:not(inspect.isroutine(a)))
+    attrs = inspect.getmembers(node, lambda a: not (inspect.isroutine(a)))
     attribute_data = []
     for att in attrs:
-
         attr_name, attr_val = att
         if attr_name.startswith("_"):
             continue
         attr_type = type(attr_val).__name__
 
-        attrs_to_skip = ["component_attrs", "components", "color", "model", "input", "output",
-                         "inputs", "outputs", "sub_domain", "sub_output", "sublinks", "visible",
-                         "fully_qualified_name", "allow_isolated"]
+        attrs_to_skip = [
+            "component_attrs",
+            "components",
+            "color",
+            "model",
+            "input",
+            "output",
+            "inputs",
+            "outputs",
+            "sub_domain",
+            "sub_output",
+            "sublinks",
+            "visible",
+            "fully_qualified_name",
+            "allow_isolated",
+        ]
         if not attr_val or attr_name.lower() in attrs_to_skip:
             continue
 
@@ -290,22 +308,25 @@ def pywr_json_to_d3_json(model, attributes=False):
     nodes = []
     node_classes = create_node_class_trees()
     for node in model["nodes"]:
-
-        if node["type"].lower() in ["annualvirtualstorage", "virtualstorage", "aggregatednode", "aggregatedstorage",
-                                    "seasonalvirtualstorage"]:
+        if node["type"].lower() in [
+            "annualvirtualstorage",
+            "virtualstorage",
+            "aggregatednode",
+            "aggregatedstorage",
+            "seasonalvirtualstorage",
+        ]:
             # Do not add virtual nodes to the graph
             continue
 
-        json_node = {'name': node["name"], 'clss': node_classes[node["type"].lower()]}
+        json_node = {"name": node["name"], "clss": node_classes[node["type"].lower()]}
         try:
-            json_node['position'] = node['position']['schematic']
+            json_node["position"] = node["position"]["schematic"]
         except KeyError:
             pass
 
         if attributes:
             json_node["attributes"] = []
             for name, val in node.items():
-
                 if name == "type":
                     continue
 
@@ -334,11 +355,9 @@ def pywr_json_to_d3_json(model, attributes=False):
     for edge in model["edges"]:
         sourceindex = nodes_names.index(edge[0])
         targetindex = nodes_names.index(edge[1])
-        edges.append({'source': sourceindex, 'target': targetindex})
+        edges.append({"source": sourceindex, "target": targetindex})
 
-    graph = {
-        "nodes": nodes,
-        "links": edges}
+    graph = {"nodes": nodes, "links": edges}
 
     return graph
 

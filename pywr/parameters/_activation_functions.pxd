@@ -11,6 +11,7 @@ cdef class BinaryStepParameter(Parameter):
 cdef class RectifierParameter(Parameter):
     cdef double _value
     cdef public double max_output
+    cdef public double min_output
     cdef double _lower_bounds
     cdef double _upper_bounds
 

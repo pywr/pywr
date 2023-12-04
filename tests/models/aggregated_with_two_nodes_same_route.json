@@ -1,0 +1,54 @@
+{
+    "metadata": {
+        "title": "Test of aggregated node constraints",
+        "minimum_version": "0.1"
+    },
+    "timestepper": {
+        "start": "2016-01-01",
+        "end": "2016-01-02",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "A",
+            "type": "input",
+            "max_flow": 50
+        },
+        {
+            "name": "B",
+            "type": "input",
+            "max_flow": 50
+        },
+        {
+            "name": "C",
+            "type": "input",
+            "max_flow": 50
+        },
+        {
+            "name": "X",
+            "type": "link",
+            "max_flow": 50
+        },
+        {
+            "name": "Z",
+            "type": "output",
+            "max_flow": 100,
+            "cost": -100
+        },
+        {
+            "name": "agg",
+            "type": "AggregatedNode",
+            "nodes": ["A", "B", "C", "X"],
+            "factors": [1.0, 1.0, 1.0, 1.0],
+            "flow_weights": [1.0, 1.0, 1.0, 1.0],
+            "max_flow": 30.0,
+            "min_flow": 5.0
+        }
+    ],
+    "edges": [
+        ["A", "X"],
+        ["X", "Z"],
+        ["B", "Z"],
+        ["C", "Z"]
+    ]
+}

@@ -13,6 +13,7 @@ import pytest
 
 from helpers import assert_model, load_model
 
+
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
 def simple_gauge_model(request):
     """
@@ -62,8 +63,14 @@ def simple_river_split_gauge_model():
     model = pywr.core.Model()
 
     inpt = river.Catchment(model, name="Catchment", flow=in_flow)
-    lnk = river.RiverSplitWithGauge(model, name="Gauge", mrf=min_flow_req, mrf_cost=-100,
-                                    slot_names=("river", "abstraction"), factors=[3, 1])
+    lnk = river.RiverSplitWithGauge(
+        model,
+        name="Gauge",
+        mrf=min_flow_req,
+        mrf_cost=-100,
+        slot_names=("river", "abstraction"),
+        factors=[3, 1],
+    )
     inpt.connect(lnk)
     estuary = pywr.core.Output(model, name="Estuary")
     lnk.connect(estuary, from_slot="river")
@@ -92,7 +99,7 @@ def test_river_gauge():
     demand = model.nodes["demand"]
 
     # test getting properties
-    assert(isinstance(node.mrf, MonthlyProfileParameter))
+    assert isinstance(node.mrf, MonthlyProfileParameter)
     assert_allclose(node.mrf_cost, -1000)
     assert_allclose(node.cost, 0.0)
 
@@ -114,6 +121,7 @@ def test_piecewise_model(simple_gauge_model):
 
 def test_river_split_gauge(simple_river_split_gauge_model):
     assert_model(*simple_river_split_gauge_model)
+
 
 def test_river_split_gauge_json():
     """As test_river_split_gauge, but model is defined in JSON"""
@@ -156,9 +164,17 @@ def test_control_curve():
     demand = pywr.core.Output(model, name="Demand", cost=-10.0, max_flow=10)
     lnk.connect(demand)
     from pywr.parameters import ConstantParameter
+
     control_curve = ConstantParameter(model, 0.8)
-    reservoir = river.Reservoir(model, name="Reservoir", max_volume=10, cost=-20, above_curve_cost=0.0,
-                                control_curve=control_curve, initial_volume=10)
+    reservoir = river.Reservoir(
+        model,
+        name="Reservoir",
+        max_volume=10,
+        cost=-20,
+        above_curve_cost=0.0,
+        control_curve=control_curve,
+        initial_volume=10,
+    )
     reservoir.inputs[0].max_flow = 2.0
     reservoir.outputs[0].max_flow = 2.0
     lnk.connect(reservoir)
@@ -169,28 +185,32 @@ def test_control_curve():
     model.step()
     # Reservoir is currently above control curve. 2 should be taken from the
     # reservoir
-    assert(reservoir.volume == 8)
-    assert(demand.flow == 10)
+    assert reservoir.volume == 8
+    assert demand.flow == 10
     # Reservoir is still at (therefore above) control curve. So 2 is still taken
     model.step()
-    assert(reservoir.volume == 6)
-    assert(demand.flow == 10)
+    assert reservoir.volume == 6
+    assert demand.flow == 10
     # Reservoir now below curve. Better to retain volume and divert some of the
     # inflow
     model.step()
-    assert(reservoir.volume == 8)
-    assert(demand.flow == 6)
+    assert reservoir.volume == 8
+    assert demand.flow == 6
     # Set the above_curve_cost function to keep filling
     from pywr.parameters.control_curves import ControlCurveParameter
+
     # We know what we're doing with the control_curve Parameter so unset its parent before overriding
     # the cost parameter.
     # We need to call setup() again because we're adding a parameter.
-    reservoir.cost = ControlCurveParameter(model, reservoir, control_curve, [-20.0, -20.0])
+    reservoir.cost = ControlCurveParameter(
+        model, reservoir, control_curve, [-20.0, -20.0]
+    )
     reservoir.initial_volume = 8
     model.setup()
     model.step()
-    assert(reservoir.volume == 10)
-    assert(demand.flow == 6)
+    assert reservoir.volume == 10
+    assert demand.flow == 6
+
 
 def test_catchment_many_successors():
     """Test if node with fixed flow can have multiple successors. See #225"""

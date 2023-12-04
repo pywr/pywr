@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "title": "Simple 1",
+    "description": "A very simple example.",
+    "minimum_version": "1.18.0"
+  },
+  "timestepper": {
+    "start": "2015-01-01",
+    "end": "2015-01-05",
+    "timestep": 1
+  },
+  "models": [
+    {
+      "name": "model0",
+      "filename": "sub-model0.json",
+      "solver": "null"
+    },
+    {
+      "name": "model1",
+      "filename": "sub-model1.json"
+    },
+    {
+      "name": "model2",
+      "filename": "sub-model2.json"
+    }
+  ],
+  "parameters": {
+  }
+}

@@ -23,6 +23,7 @@ Nodes that are instantiable by the user
    Storage
    VirtualStorage
    RollingVirtualStorage
+   MonthlyVirtualStorage
    AnnualVirtualStorage
    SeasonalVirtualStorage
    AggregatedStorage

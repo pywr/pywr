@@ -1,4 +1,5 @@
 import pytest
+
 pygmo = pytest.importorskip("pygmo")
 
 import pygmo as pg
@@ -12,8 +13,8 @@ TEST_FOLDER = os.path.dirname(__file__)
 
 @pytest.fixture()
 def two_reservoir_wrapper():
-    """ Two reservoir test optimisation problem in PygmoWrapper. """
-    filename = os.path.join(TEST_FOLDER, 'models', 'two_reservoir.json')
+    """Two reservoir test optimisation problem in PygmoWrapper."""
+    filename = os.path.join(TEST_FOLDER, "models", "two_reservoir.json")
     yield PygmoWrapper(filename)
     # Clean up the
     clear_global_model_cache()
@@ -21,15 +22,15 @@ def two_reservoir_wrapper():
 
 @pytest.fixture()
 def two_reservoir_constrained_wrapper():
-    """ Two reservoir test optimisation problem in PygmoWrapper. """
-    filename = os.path.join(TEST_FOLDER, 'models', 'two_reservoir_constrained.json')
+    """Two reservoir test optimisation problem in PygmoWrapper."""
+    filename = os.path.join(TEST_FOLDER, "models", "two_reservoir_constrained.json")
     yield PygmoWrapper(filename)
     # Clean up the
     clear_global_model_cache()
 
 
 def test_pygmo_single_generation(two_reservoir_wrapper):
-    """ Simple pygmo wrapper test. """
+    """Simple pygmo wrapper test."""
     wrapper = two_reservoir_wrapper
     prob = pg.problem(wrapper)
     algo = pg.algorithm(pg.moead(gen=1))
@@ -40,7 +41,7 @@ def test_pygmo_single_generation(two_reservoir_wrapper):
 
 
 def test_pygmo_single_generation_constrained(two_reservoir_constrained_wrapper):
-    """ Simple pygmo wrapper test of constrained problem. """
+    """Simple pygmo wrapper test of constrained problem."""
     wrapper = two_reservoir_constrained_wrapper
     prob = pg.problem(wrapper)
     algo = pg.algorithm(pg.moead(gen=1))

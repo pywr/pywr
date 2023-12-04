@@ -13,6 +13,7 @@ c = {
     "Cedge": "#008800",
 }
 
+
 def align_series(A, B, names=None, start=None, end=None):
     """Align two series for plotting / comparison
 
@@ -48,11 +49,12 @@ def align_series(A, B, names=None, start=None, end=None):
         idx[1] = pandas.Timestamp(end)
 
     if start or end:
-        df = df.loc[idx[0]:idx[-1],:]
+        df = df.loc[idx[0] : idx[-1], :]
 
     A = df[names[0]]
     B = df[names[1]]
     return A, B
+
 
 def plot_standard1(A, B):
     fig, axarr = plt.subplots(3, figsize=(10, 12), facecolor="white")
@@ -61,9 +63,12 @@ def plot_standard1(A, B):
     plot_percentiles(A, B, axarr[2])
     return fig, axarr
 
+
 def set_000formatter(axis):
     axis.set_major_formatter(
-        matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+        matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ","))
+    )
+
 
 def plot_timeseries(A, B, ax=None):
     if ax is None:
@@ -77,14 +82,17 @@ def plot_timeseries(A, B, ax=None):
     ax.legend([B.name, A.name], loc="best")
     return ax
 
+
 def plot_QQ(A, B, ax=None):
     if ax is None:
         ax = plt.gca()
-    ax.scatter(B.values, A.values, color=c["Cfill"], edgecolor=c["Cedge"], clip_on=False)
+    ax.scatter(
+        B.values, A.values, color=c["Cfill"], edgecolor=c["Cedge"], clip_on=False
+    )
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
     limit = max(xlim[1], ylim[0])
-    ax.plot([0, limit], [0, limit], '-k')
+    ax.plot([0, limit], [0, limit], "-k")
     ax.set_xlim(0, limit)
     ax.set_ylim(0, limit)
     ax.grid(True)
@@ -94,6 +102,7 @@ def plot_QQ(A, B, ax=None):
     ax.set_ylabel(A.name)
     ax.legend(["Equality"], loc="best")
     return ax
+
 
 def plot_percentiles(A, B, ax=None):
     if ax is None:

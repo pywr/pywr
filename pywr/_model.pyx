@@ -9,6 +9,9 @@ import inspect
 import time
 from functools import wraps
 import logging
+
+from .profiler import Profiler
+
 logger = logging.getLogger(__name__)
 
 
@@ -192,7 +195,7 @@ class Model(object):
         return self.graph.edges()
 
     @classmethod
-    def loads(cls, data, model=None, path=None, solver=None, **kwargs):
+    def loads(cls, data, model=None, path=None, **kwargs):
         """Read JSON data from a string and parse it as a model document"""
         try:
             data = json.loads(data)
@@ -202,7 +205,7 @@ class Model(object):
                 e.args = ("{} [{}]".format(e.args[0], os.path.basename(path)),)
             raise(e)
         cls._load_includes(data, path)
-        return cls.load(data, model, path, solver, **kwargs)
+        return cls.load(data, model, path, **kwargs)
 
     @classmethod
     def _load_includes(cls, data, path=None):
@@ -262,7 +265,7 @@ class Model(object):
         return None  # data modified in-place
 
     @classmethod
-    def load(cls, data, model=None, path=None, solver=None, **kwargs):
+    def load(cls, data, model=None, path=None, **kwargs):
         """Load an existing model
 
         Parameters
@@ -280,22 +283,22 @@ class Model(object):
         """
         if isinstance(data, str):
             # argument is a filename
-            logger.info('Loading model from file: "{}"'.format(path))
             path = data
+            logger.info('Loading model from file: "{}"'.format(path))
             with open(path, "r") as f:
                 data = f.read()
-            return cls.loads(data, model, path, solver)
+            return cls.loads(data, model, path, **kwargs)
 
         if hasattr(data, 'read'):
             logger.info('Loading model from file-like object.')
             # argument is a file-like object
             data = data.read()
-            return cls.loads(data, model, path, solver)
+            return cls.loads(data, model, path, **kwargs)
 
-        return cls._load_from_dict(data, model=model, path=path, solver=None, **kwargs)
+        return cls._load_from_dict(data, model=model, path=path, **kwargs)
 
     @classmethod
-    def _load_from_dict(cls, data, model=None, path=None, solver=None, **kwargs):
+    def _load_from_dict(cls, data, model=None, path=None, solver=None, solver_args=None):
         """Load data from a dictionary."""
         # data is a dictionary, make a copy to avoid modify the input
         data = copy.deepcopy(data)
@@ -314,14 +317,15 @@ class Model(object):
 
         cls._load_includes(data, path)
 
-        try:
-            solver_data = data['solver']
-        except KeyError:
-            solver_name = solver
-            solver_args = kwargs.pop('solver_args', {})
-        else:
-            solver_name = data["solver"].pop("name")
-            solver_args = data["solver"]
+        if solver_args is None:
+            solver_args = {}
+
+        solver_name = solver
+        if solver is None:
+            if 'solver' in data:
+                solver_data = data.pop('solver')
+                solver_name = solver_data.pop("name")
+                solver_args = solver_data
 
         try:
             timestepper_data = data['timestepper']
@@ -516,7 +520,7 @@ class Model(object):
         all_routes = []
         for node1 in type1_nodes:
             for node2 in type2_nodes:
-                for route in nx.all_simple_paths(self.graph, node1, node2):
+                for route in nx.all_simple_paths(self.graph, node1, node2, cutoff=max_length):
                     is_valid = True
                     # Check valid intermediate nodes
                     if valid is not None and len(route) > 2:
@@ -647,22 +651,40 @@ class Model(object):
             time_taken_with_overhead=time_taken_with_overhead,
             speed=speed,
             solver_name=self.solver.name,
+            solver_settings=self.solver.settings,
             solver_stats=self.solver.stats,
             version=pywr.__version__,
         )
         logger.info('Model run complete!')
         return result
 
-    def setup(self, ):
-        """Setup the model for the first time or if it has changed since
-        last run."""
+    def setup(self, profile=False, profile_dump_filename=None):
+        """Setup the model for the first time or if it has changed since last run.
+
+        Parameters
+        ==========
+        profile : bool (default=False)
+            If true create and return a Profile object that tracks the setup of each node and
+            component in the model.
+        profile_dump_filename : str, Path
+            A CSV filename to write a dataframe of profile checkpoints. Has no effect if profile is not True.
+        """
         logger.info('Setting up model ...')
         self.timestepper.setup()
         self.scenarios.setup()
         length_changed = self.timestepper.reset()
+
+        # Create a profiler if one is requested.
+        profiler = None
+        if profile:
+            profiler = Profiler()
+
         for node in self.graph.nodes():
             try:
                 node.setup(self)
+                if profiler is not None:
+                    profiler.checkpoint('setup', node.__class__.__name__, node.name)
+
             except Exception as err:
                 # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred setting up node during setup %s",
@@ -670,9 +692,16 @@ class Model(object):
                 raise
 
         components = self.flatten_component_tree(rebuild=True)
+
+        # Reset the resource counters in the profiler after the component tree is re-computed.
+        if profiler is not None:
+            profiler.reset()
+
         for component in components:
             try:
                 component.setup()
+                if profiler is not None:
+                    profiler.checkpoint('setup', component.__class__.__name__, component.name)
             except Exception as err:
                 # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred setting up component during setup %s",
@@ -680,14 +709,41 @@ class Model(object):
                 raise
 
         self.solver.setup(self)
-        self.reset()
+        reset_profiler = self.reset(profile=profile)
         self.dirty = False
-        logger.info('Setting up complete!')
 
-    def reset(self, start=None):
-        """Reset model to it's initial conditions"""
+        # Extend the entries for this profiler with those from the reset profiler
+        if reset_profiler is not None and profiler is not None:
+            profiler.entries.extend(reset_profiler.entries)
+
+        if profiler is not None and profile_dump_filename is not None:
+            profiler.to_dataframe().to_csv(profile_dump_filename)
+
+        logger.info('Setting up complete!')
+        return profiler
+
+    def reset(self, start=None, profile=False, profile_dump_filename=None):
+        """Reset model to it's initial conditions.
+
+        Parameters
+        ==========
+        start : None, pandas.Timestamp
+            The start timestamp to reset the model to. By default this will reset the model to the timestepper's
+            start date.
+        profile : bool (default=False)
+            If true create and return a Profile object that tracks the setup of each node and
+            component in the model.
+        profile_dump_filename : str, Path
+            A CSV filename to write a dataframe of profile checkpoints. Has no effect if profile is not True.
+        """
         logger.info('Resetting model ...')
         length_changed = self.timestepper.reset(start=start)
+
+        # Create a profiler if one is requested.
+        profiler = None
+        if profile:
+            profiler = Profiler()
+
         for node in self.nodes:
             if length_changed:
                 try:
@@ -698,12 +754,19 @@ class Model(object):
                     raise
             try:
                 node.reset()
+                if profiler is not None:
+                    profiler.checkpoint('reset', node.__class__.__name__, node.name)
             except Exception as err:
                 # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred calling reset on node %s", node.name)
                 raise
 
         components = self.flatten_component_tree(rebuild=False)
+
+        # Reset the resource counters in the profiler after the component tree is re-computed.
+        if profiler is not None:
+            profiler.reset()
+
         for component in components:
             if length_changed:
                 try:
@@ -716,6 +779,8 @@ class Model(object):
 
             try:
                 component.reset()
+                if profiler is not None:
+                    profiler.checkpoint('reset', component.__class__.__name__, component.name)
             except Exception as err:
                 # reraise the exception after logging some info about source of error
                 logger.critical("An error occurred calling reset on component %s",
@@ -723,10 +788,16 @@ class Model(object):
                 raise
 
         self.solver.reset()
+
+        if profiler is not None and profile_dump_filename is not None:
+            profiler.to_dataframe().to_csv(profile_dump_filename)
+
         # reset the timers
         self._time_before = 0.0
         self._time_after = 0.0
+
         logger.info('Reset complete!')
+        return profiler
 
     def before(self):
         """ Perform initialisation work before solve on each timestep.
@@ -748,6 +819,7 @@ class Model(object):
         for component in components:
             component.before()
         for component in components:
+            logger.debug("Calculating values for component: %s", component.name)
             if isinstance(component, BaseParameter):
                 param = component
                 param.calc_values(self.timestep)
@@ -968,7 +1040,7 @@ class NamedIterator(object):
 
 class ModelResult(object):
     def __init__(self, num_scenarios, timestep, time_taken, time_taken_before, time_taken_after,
-                 time_taken_with_overhead, speed, solver_name, solver_stats, version):
+                 time_taken_with_overhead, speed, solver_name, solver_settings, solver_stats, version):
         self.timestep = timestep
         self.timesteps = timestep.index + 1
         self.time_taken = time_taken
@@ -978,6 +1050,7 @@ class ModelResult(object):
         self.speed = speed
         self.num_scenarios = num_scenarios
         self.solver_name = solver_name
+        self.solver_settings = solver_settings
         self.solver_stats = solver_stats
         self.version = version
 
@@ -988,6 +1061,10 @@ class ModelResult(object):
         d = self.to_dict()
         # Update timestep to use the underlying pandas Timestamp
         d['timestep'] = d['timestep'].datetime
+        # Must flatten the solver settings dict before passing to pandas
+        solver_settings = d.pop('solver_settings')
+        for k, v in solver_settings.items():
+            d['solver_settings.{}'.format(k)] = v
         # Must flatten the solver stats dict before passing to pandas
         solver_stats = d.pop('solver_stats')
         for k, v in solver_stats.items():
@@ -1008,3 +1085,10 @@ def listify(f):
     def wrapper(*args, **kwargs):
         return list(f(*args, **kwargs))
     return wrapper
+
+
+def collect_components(data, key):
+    components_data = data.get(key, {})
+    for name, component_data in components_data.items():
+        component_data["name"] = name
+    return components_data

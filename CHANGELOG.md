@@ -2,6 +2,206 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## [v1.23.0](https://github.com/pywr/pywr/compare/v1.22.1...v1.23.0) (2023-11-13)
+
+### Features
+
+* Support parameter loss_factor in LossLink. (#1113) ([cb583aa](https://github.com/pywr/pywr/commit/cb583aaa402843098a7de7840acacf0d770ca25b)), closes [#1113](https://github.com/pywr/pywr/issues/1113) [#1091](https://github.com/pywr/pywr/issues/1091)
+
+## [v1.22.1](https://github.com/pywr/pywr/compare/v1.22.0...v1.22.1) (2023-10-20)
+
+### Fixes
+
+* Fix issue with dataframe scenario indexing (#1111) ([e6818a8](https://github.com/pywr/pywr/commit/e6818a8f0b44ed1db081de911688d519098c94cc)), closes [#1111](https://github.com/pywr/pywr/issues/1111) [#1110](https://github.com/pywr/pywr/issues/1110)
+
+
+## [v1.22.0](https://github.com/pywr/pywr/compare/v1.21.0...v1.22.0) (2023-10-06)
+
+### Other
+
+* Updates for Python 3.12 in CI (#1107) ([a0924ea](https://github.com/pywr/pywr/commit/a0924ea2aeffaf1cf99c66da9223c0b37c157829)), closes [#1107](https://github.com/pywr/pywr/issues/1107)
+* Support Cython 3.x (#1104) ([1981de1](https://github.com/pywr/pywr/commit/1981de10ffbbc4cbe74cf2abeda827dbdacf489c)), closes [#1104](https://github.com/pywr/pywr/issues/1104)
+* Add Zulip link to README. (#1108) ([651e949](https://github.com/pywr/pywr/commit/651e9498299670c8c8ac5bf91a3eb9cdf21a7106)), closes [#1108](https://github.com/pywr/pywr/issues/1108)
+
+
+## [v1.21.0](https://github.com/pywr/pywr/compare/v1.20.1...v1.21.0) (2023-06-30)
+
+### Features
+
+* Pass kwargs to model load via optimisation wrappers (#1096) ([3557e4b](https://github.com/pywr/pywr/commit/3557e4be876300189f7762ede8e9a59e8fe0a29e))
+* Add metadata to TablesRecorder arrays. (#1083) ([4dac394](https://github.com/pywr/pywr/commit/4dac394dc6a9a1a22dab3e8ebc0a505e6fda644d))
+
+### Fixes
+
+* Overload get_xxx_flow for PiecewiseLink. (#1088) ([51dcd57](https://github.com/pywr/pywr/commit/51dcd57650537fbfc27e08bba20dec3cee9ab41e)),
+closes [#1087](https://github.com/pywr/pywr/issues/1087)
+* Add pywr.parameter imports from control_curves module. (#1084) ([94bcdad](https://github.com/pywr/pywr/commit/94bcdad3fe3325f1d3d43a6e1ee97734040590f2))
+
+### Other
+
+* Support pandas v2.x (#1089) ([68ee7cc](https://github.com/pywr/pywr/commit/68ee7cc93fa803fc07082e95c4cfbd88ff4e39a7))
+* Use ubuntu-latest image for building wheels. (#1090) ([cce65e3](https://github.com/pywr/pywr/commit/cce65e3df357dd2ee54109124c598e9c9b9dd8db))
+
+
+## v1.20.1
+
+### Bug Fixes
+
+- Fix bug loading `timestep_offset` in `DataFrameParameter` from JSON. (#1078)
+
+## v1.20.0
+
+### New Features
+
+- Allow storage max volume to be set as a constant parameter without specifying both initial volume and initial volume pc. (#1071)
+- Add timestep offset to `DataFrameParameter` and `TablesArrayParameter`. (#1073)
+- Update `TablesRecorder` to save scenario slice data. (#1072)
+- Add `RollingMeanFlowNodeParameter` and deprecate `RollingMeanFlowNodeRecorder`. (#1074) 
+
+### Bug Fixes
+
+- Fix Cython typing warning in `MonthlyProfile`. (#1075)
+
+### Miscellaneous
+
+- Release wheels for Python 3.11.
+
+## v1.19.0
+
+### New Features
+
+- Add `WeightedAverageProfileParameter`. (#1066) 
+- Update to `AnnualCountIndexThresholdRecorder` to include a range of days to record. (#1061)
+
+### Bug Fixes
+
+- Fix `__init__` argument handling in `BisectionSearchModel`. (#1067)
+
+### Miscellaneous
+
+- Remove matplotlib, jinja2 and ipython from core dependencies. (#1040)
+- Fix `LicenceParameter` example in documentation. (#1068) 
+- Remove outdated documentation on constant factors in AggregatedNode. (#1060) 
+
+## v1.18.0
+
+### New Features
+
+- Hash checking is now *not* case-sensitive. (#1046)
+- Add `MonthlyVirtualStorage` node that resets after a given number of months.
+- Add `StorageParameter` that provides the current volume from a storage node.
+- Add support for running multiple Pywr models in an interleaved fashion using a new `MultiModel` class
+ and associated parameters. 
+
+### Bug Fixes
+
+- Update load method of several parameters (`ControlCurveInterpolatedParameter`, `ControlCurveParameter`,
+ `ArrayIndexedScenarioMonthlyFactorsParameter`, several interpolated parameters) to ensure all data 
+ is loaded. (#1048)
+
+
+## v1.17.2
+
+### Bug Fixes
+
+- Fix a bug where the solver specified using a keyword to `Model.load` would be ignored. (#1044)
+
+## v1.17.1
+
+### Miscellaneous
+
+- Release wheels for Python 3.9 (Windows) and Python 3.10 (Linux and Windows).
+
+## v1.17.0
+
+### New Features
+
+- Networks with missing connections will now more reliably raise `ModelStructureError`. (#1025)
+- Improve GLPK API (#1021): 
+  - GLPK errors are now handled by default by raising `GLPKInternalError`.
+  - NaN checks are performed by default.
+  - Added runtime option to use "unsafe" API with no error or NaN handling (see new documentation).
+  - Added documentation describing error handling changes.
+- Improve handling of NaN values in `Storage.current_pc` (i.e. when `max_volume` is zero). 
+  - Added a new method `Storage.get_current_pc` to guarantee a finite value. 
+- Added `min_output` to `RectifierParameter`
+
+### Miscellaneous
+
+- Documentation improvements:
+  - `RiverSplitWithGauge` docstring. (#1030)
+  - Added section describing how to use Dataframe checksums. (#1028)
+  - Added `ControlCurveParameter` to API docs. (#1027)
+
+
+## v1.16.1
+
+### Bug Fixes
+
+- Fix internal node names for `PiecewiseLink`. (#1024) 
+
+## v1.16.0
+
+### New Features
+
+- Supply `initial_volume_pc` in `VirtualStorage` and its subclasses. (#1015)
+- Add `residual_days` option to `UniformDrawdownProfileParameter`. (#1013)
+
+### Bug Fixes
+
+- Fix a JSON formatting error in the documentation. (#1009)
+- Removed a circular import in `pywr.recorders.calibration`. (#1012)
+
+### Miscellaneous
+
+- Removed some older folders related to Travis. (#1016)
+- Re-formatted the Python code using the Black formatter and enforced this for future modifications. (#1010)
+
+
+## v1.15.3
+
+### Bug Fixes
+
+- Fix bug where constraints are not applied between `VirtualStorage` and some complex node types (e.g
+`PiecewiseLink` and `AggregatedNode`). Previously models would run and silently ignore constraints
+that users might reasonably expect to be applied. Now these models will error until a proper fix
+is implemented. See issue #1001 to see details and track progress. (#1002)
+
+## v1.15.2
+
+### Bug Fixes
+
+- Fix bug with `AggregatedParameter.remove()` and `AggregatedIndexParameter.remove()` methods using the
+wrong method internally. (#997)
+
+## v1.15.1
+
+### Bug Fixes
+
+- Fix `AnnualTotalFlowRecorder`'s accounting of flow when a timestep ends in the following year. (#992)
+- Fix divide by zero errors in `NumpyArrayNodeSuppliedRatioRecorder` and `NumpyArrayNodeCurtailmentRatioRecorder`
+when the max flow of the parameter they monitor returned zero. (#993)
+- Fix the load method of `FlowDurationCurveDeviationRecorder` to handle scenario data correctly. (#989)
+
+## v1.15.0
+
+### New Features
+
+- Performance improvements for the GLPK solvers. Several new options have been added to the GLPK solvers that
+  reduce the number of linear programme updates required each time-step. These options are currently off by default,
+  but can be enabled by either passing keyword arguments to the solver instances or via environment variables.
+  (#912, #983, #985)
+  - Update constant and fixed flows only once during reset (`PYWR_SOLVER_GLPK_FIXED_FLOWS_ONCE=True`)
+  - Update constant and fixed costs only once during reset (`PYWR_SOLVER_GLPK_FIXED_COSTS_ONCE=True`)
+  - Update constant and fixed aggregated node factors only once during reset (`PYWR_SOLVER_GLPK_FIXED_FACTORS_ONCE=True`)
+- Improve memory usage in `DataFrameParameter` when running a subset of the defined scenarios. The parameter now only
+  retains the data for the subset of scenarios required for the simulation instead of all scenarios. (#981)
+- Update `MonthlyProfileParameter` and `RbfProfileParameter` to allow variable lower and upper bounds to be defined. (#986)
+
+### Bug Fixes
+
+- Fix use of deprecated `np.int` and `np.float` types. (#982)
+
 ## v1.14.0
 
 ### New Features

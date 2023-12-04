@@ -261,6 +261,9 @@ cdef class CythonLPSolveSolver:
             else:
                 cols = [n for n, route in enumerate(routes) if supply in route]
 
+            if len(cols) == 0:
+                raise ModelStructureError(f'{supply.__class__.__name__} node "{supply.name}" is not part of any routes.')
+
             ind = <int*>malloc(len(cols) * sizeof(int))
             val = <double*>malloc(len(cols) * sizeof(double))
             for n, c in enumerate(cols):
@@ -283,6 +286,10 @@ cdef class CythonLPSolveSolver:
         cross_domain_col = 0
         for col, demand in enumerate(demands):
             cols = [n for n, route in enumerate(routes) if route[-1] is demand]
+
+            if len(cols) == 0:
+                raise ModelStructureError(f'{demand.__class__.__name__} node "{demand.name}" is not part of any routes.')
+
             ind = <int*>malloc((1+len(cols)) * sizeof(int))
             val = <double*>malloc((1+len(cols)) * sizeof(double))
             for n, c in enumerate(cols):

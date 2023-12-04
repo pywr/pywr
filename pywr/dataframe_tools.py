@@ -10,12 +10,14 @@ class ResamplingError(Exception):
     def __init__(self, original_dataframe, target_index):
         self.original_dataframe = original_dataframe
         self.target_index = target_index
-        message = f'Failed to convert input dataframe with index "{original_dataframe.index}" to model index ' \
+        message = (
+            f'Failed to convert input dataframe with index "{original_dataframe.index}" to model index '
             f'"{target_index}".'
+        )
         super().__init__(message)
 
 
-def align_and_resample_dataframe(df, target_index, resample_func='mean'):
+def align_and_resample_dataframe(df, target_index, resample_func="mean"):
     """Align and resample a DataFrame to the provided index.
 
     This function attempts to align an input dataframe to a target index. The
@@ -53,7 +55,7 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
             df = df.to_period(df.index.freq.freqstr)
 
     if not isinstance(target_index, pandas.PeriodIndex):
-        raise ValueError('Period index expected.')
+        raise ValueError("Period index expected.")
 
     model_freq = target_index.freq
     df_freq = df.index.freq
@@ -84,7 +86,9 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
             # Dataframe must be offset based
             # Down sampling (i.e. from high freq to lower model freq)
             try:
-                df = _resample_date_offset_to_date_offset(df, target_index, resample_func)
+                df = _resample_date_offset_to_date_offset(
+                    df, target_index, resample_func
+                )
             except IncompatibleFrequency:
                 raise ResamplingError(df, target_index)
 
@@ -94,7 +98,7 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
         raise ResamplingError(df, target_index)
 
     if df.isnull().values.any():
-        raise ValueError('Missing values detected after resampling dataframe.')
+        raise ValueError("Missing values detected after resampling dataframe.")
 
     return df
 
@@ -102,22 +106,22 @@ def align_and_resample_dataframe(df, target_index, resample_func='mean'):
 def _resample_date_offset_to_date_offset(df, target_index, resample_func):
     """Down sample a date offset data to a target index with date offset."""
     new_df = df.resample(target_index.freq).agg(resample_func)
-    new_df = new_df[target_index[0]:target_index[-1]]
+    new_df = new_df[target_index[0] : target_index[-1]]
     return new_df
 
 
 def _down_sample_tick_to_date_offset(df, target_index, resample_func):
     """Down sampling tick data to a target index with date offset."""
     new_df = df.resample(target_index.freq).agg(resample_func)
-    new_df = new_df[target_index[0]:target_index[-1]]
+    new_df = new_df[target_index[0] : target_index[-1]]
     return new_df
 
 
 def _down_sample_tick_to_tick(df, target_index, resample_func):
     """Down sampling tick data to a tick based target index."""
     # First we try to align the higher frequency data to lower the frequency
-    start = target_index[0].asfreq(df.index.freq, how='start')
-    end = target_index[-1].asfreq(df.index.freq, how='end')
+    start = target_index[0].asfreq(df.index.freq, how="start")
+    end = target_index[-1].asfreq(df.index.freq, how="end")
     new_df = df[start:end]
     # Second we re-sample the aligned data
     new_df = new_df.resample(target_index.freq).agg(resample_func)
@@ -136,8 +140,8 @@ def _resample_date_offset_to_tick(df, target_index, resample_func):
     new_df = df.resample(target_single_tick).ffill()
 
     # Now align to the target index
-    start = target_index[0].asfreq(target_single_tick, how='start')
-    end = target_index[-1].asfreq(target_single_tick, how='end')
+    start = target_index[0].asfreq(target_single_tick, how="start")
+    end = target_index[-1].asfreq(target_single_tick, how="end")
     new_df = new_df[start:end]
 
     # If the target is multi-frequency
@@ -165,12 +169,12 @@ def load_dataframe(model, data):
 
     indexes = data.pop("indexes", None)
 
-    table_ref = data.pop('table', None)
+    table_ref = data.pop("table", None)
     if table_ref is not None:
         name = table_ref
         df = model.tables[table_ref]
     else:
-        name = data.get('url', None)
+        name = data.get("url", None)
         df = read_dataframe(model, data)
 
     # if column is not specified, use the whole dataframe
@@ -199,7 +203,9 @@ def load_dataframe(model, data):
             if df.index.freq is None:
                 freq = pandas.infer_freq(df.index)
                 if freq is None:
-                    raise IndexError("Failed to identify frequency of dataset \"{}\"".format(name))
+                    raise IndexError(
+                        'Failed to identify frequency of dataset "{}"'.format(name)
+                    )
                 df = df.asfreq(freq)
     except AttributeError:
         # Probably wasn't a pandas dataframe at this point.
@@ -210,39 +216,39 @@ def load_dataframe(model, data):
 
 def read_dataframe(model, data):
     # values reference data in an external file
-    url = data.pop('url', None)
+    url = data.pop("url", None)
     if url is not None:
         if not os.path.isabs(url) and model.path is not None:
             url = os.path.join(model.path, url)
     else:
         # Must be an embedded dataframe
-        df_data = data.pop('data', None)
+        df_data = data.pop("data", None)
 
     if url is None and df_data is None:
         raise ValueError('No data specified. Provide a "url" or "data" key.')
 
     if url is not None:
         # Check hashes if given before reading the data
-        checksums = data.pop('checksum', {})
+        checksums = data.pop("checksum", {})
         for algo, hash in checksums.items():
             check_hash(url, hash, algorithm=algo)
 
         try:
-            filetype = data.pop('filetype')
+            filetype = data.pop("filetype")
         except KeyError:
             # guess file type based on extension
-            if url.endswith(('.xls', '.xlsx')):
+            if url.endswith((".xls", ".xlsx")):
                 filetype = "excel"
-            elif url.endswith(('.csv', '.gz')):
+            elif url.endswith((".csv", ".gz")):
                 filetype = "csv"
-            elif url.endswith(('.hdf', '.hdf5', '.h5')):
+            elif url.endswith((".hdf", ".hdf5", ".h5")):
                 filetype = "hdf"
             else:
                 raise NotImplementedError('Unknown file extension: "{}"'.format(url))
     else:
-        if 'filetype' in data:
+        if "filetype" in data:
             raise ValueError('"filetype" is only valid when loading data from a URL.')
-        if 'checksum' in data:
+        if "checksum" in data:
             raise ValueError('"checksum" is only valid when loading data from a URL.')
 
         filetype = "dict"
@@ -257,14 +263,18 @@ def read_dataframe(model, data):
         key = data.pop("key", None)
         df = pandas.read_hdf(url, key=key, **data)
     elif filetype == "dict":
-        parse_dates = data.pop('parse_dates', False)
+        parse_dates = data.pop("parse_dates", False)
         df = pandas.DataFrame.from_dict(df_data, **data)
         if parse_dates:
             df.index = pandas.DatetimeIndex(df.index)
 
     if df.index.dtype.name == "object" and data.get("parse_dates", False):
         # catch dates that haven't been parsed yet
-        raise TypeError("Invalid DataFrame index type \"{}\" in \"{}\".".format(df.index.dtype.name, url))
+        raise TypeError(
+            'Invalid DataFrame index type "{}" in "{}".'.format(
+                df.index.dtype.name, url
+            )
+        )
 
     # clean up
     # Assume all keywords are consumed by pandas.read_* functions

@@ -1,3 +1,5 @@
+from libc.setjmp cimport jmp_buf
+
 cdef extern from "glpk.h":
     ctypedef struct glp_prob:
         pass
@@ -52,6 +54,7 @@ cdef extern from "glpk.h":
     void glp_erase_prob(glp_prob *P)
     void glp_delete_prob(glp_prob *P)
     void glp_free(void *ptr)
+    int glp_free_env()
 
     int glp_add_rows(glp_prob *P, int nrs)
     int glp_add_cols(glp_prob *P, int ncs)
@@ -76,6 +79,7 @@ cdef extern from "glpk.h":
     int glp_get_status(glp_prob *P)
     int glp_term_out(int flag)
     void glp_term_hook(int (*func)(void *info, const char *s), void *info)
+    void glp_error_hook(void (*func)(void *info), void *info)
 
     double glp_get_row_prim(glp_prob *P, int i)
     double glp_get_col_prim(glp_prob *P, int j)
