@@ -1,3 +1,6 @@
+import pandas as pd 
+import numpy as np
+
 from pywr.nodes import (
     Domain,
     Input,
@@ -6,18 +9,31 @@ from pywr.nodes import (
     Storage,
     PiecewiseLink,
     NodeMeta,
-    MultiSplitLink
+    MultiSplitLink,
+    AggregatedNode
 )
+
 from pywr.parameters import (
     pop_kwarg_parameter,
     ConstantParameter,
     Parameter,
     load_parameter,
+    MonthlyProfileParameter,
+    InterpolatedVolumeParameter,
+    AggregatedParameter,
+    NumpyArrayNodeRecorder,
+    ScenarioWrapperParameter
 )
-from pywr.parameters.control_curves import ControlCurveParameter
+
+from pywr.parameters.control_curves import (
+    ControlCurveParameter,
+    ControlCurveInterpolatedParameter
+)
 
 DEFAULT_RIVER_DOMAIN = Domain(name="river", color="#33CCFF")
 
+import logging
+LOG = logging.getLogger(__name__)
 
 class RiverDomainMixin(object):
     def __init__(self, *args, **kwargs):
@@ -187,14 +203,14 @@ class Reservoir(RiverDomainMixin, Storage):
     def _make_evaporation_node(self, model, evaporation, cost):
 
         if not isinstance(self.area, Parameter):
-            log.warning('Evaporation nodes be created only if an area Parameter is given.')
+            LOG.warning('Evaporation nodes be created only if an area Parameter is given.')
             return
 
         if evaporation is None:
             try:
                 evaporation_param = load_parameter(model, f'__{self.name}__:evaporation')
             except KeyError:
-                log.warning(f"Please specify evaporation or weather on node {self.name}")
+                LOG.warning(f"Please specify evaporation or weather on node {self.name}")
                 return
         elif isinstance(evaporation, pd.DataFrame) or isinstance(evaporation, pd.Series):
             evaporation = evaporation.astype(np.float64)
@@ -218,14 +234,14 @@ class Reservoir(RiverDomainMixin, Storage):
     def _make_rainfall_node(self, model, rainfall, cost):
 
         if not isinstance(self.area, Parameter):
-            log.warning('Weather nodes can be created only if an area Parameter is given.')
+            LOG.warning('Weather nodes can be created only if an area Parameter is given.')
             return
 
         if rainfall is None:
             try:
                 rainfall_param = load_parameter(model, f'__{self.name}__:rainfall')
             except KeyError:
-                log.warning(f"Please specify rainfall or weather on node {self.name}")
+                LOG.warning(f"Please specify rainfall or weather on node {self.name}")
                 return
         elif isinstance(rainfall, pd.DataFrame) or isinstance(rainfall, pd.Series):
             rainfall = rainfall.astype(np.float64)
@@ -448,13 +464,6 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         return locals()
 
     cost = property(**cost())
-
-class MonthlyOutput(Output, metaclass=NodeMeta):
-    """
-        TODO: Jose explain this node. Seems redundant. If so, remove it.
-    """
-    def __init__(self, model, name, scenario=None, **kwargs):
-        super().__init__(model, name, **kwargs)
 
 class ProportionalInput(Input, metaclass=NodeMeta):
     """
