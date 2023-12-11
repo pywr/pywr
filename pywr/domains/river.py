@@ -21,8 +21,11 @@ from pywr.parameters import (
     MonthlyProfileParameter,
     InterpolatedVolumeParameter,
     AggregatedParameter,
-    NumpyArrayNodeRecorder,
     ScenarioWrapperParameter
+)
+
+from pywr.recorders import (
+    NumpyArrayNodeRecorder
 )
 
 from pywr.parameters.control_curves import (
