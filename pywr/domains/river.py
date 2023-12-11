@@ -1,4 +1,13 @@
-from pywr.nodes import Domain, Input, Link, Storage, PiecewiseLink, MultiSplitLink
+from pywr.nodes import (
+    Domain,
+    Input,
+    Output,
+    Link,
+    Storage,
+    PiecewiseLink,
+    NodeMeta,
+    MultiSplitLink
+)
 from pywr.parameters import (
     pop_kwarg_parameter,
     ConstantParameter,
