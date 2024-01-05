@@ -19,6 +19,7 @@ from pywr.parameters import (
     Parameter,
     load_parameter,
     MonthlyProfileParameter,
+    DataFrameParameter,
     InterpolatedVolumeParameter,
     AggregatedParameter,
     ScenarioWrapperParameter
@@ -96,12 +97,10 @@ class Reservoir(RiverDomainMixin, Storage):
     TODO: explain these and how they relate to each other. Please be as explicit as possible
     TODO: what format should each of these take? Perhaps provide a simple example
     - bathymetry
-        - volume
         - level
         - area
-        - weather_cost
-        - evaporation_cost
-        - rainfall_cost
+        - evaporation
+        - rainfall
     """
 
     def __init__(self, model, *args, **kwargs):
@@ -111,6 +110,7 @@ class Reservoir(RiverDomainMixin, Storage):
             control_curve - A Parameter object that can return the control curve position,
                 as a percentage of fill, for the given timestep.
         """
+
         control_curve = pop_kwarg_parameter(kwargs, "control_curve", None)
         above_curve_cost = kwargs.pop("above_curve_cost", None)
         cost = kwargs.pop("cost", 0.0)
@@ -136,23 +136,14 @@ class Reservoir(RiverDomainMixin, Storage):
             # reinstate the given cost parameter to pass to the parent constructors
             kwargs["cost"] = cost
 
-        bathymetry = kwargs.pop('bathymetry', None)
-        volume = kwargs.pop('volume', None)
-        level = kwargs.pop('level', None)
-        area = kwargs.pop('area', None)
-        self.weather_cost = kwargs.pop('weather_cost', -999)
         self.evaporation_cost = kwargs.pop('evaporation_cost', -999)
-        self.rainfall_cost = kwargs.pop('rainfall_cost', -999)
-        const = kwargs.pop('const', 1e6 * 1e-3 * 1e-6)
+        self.rainfall_cost = kwargs.pop('rainfall_cost', 0.0)
+        self.unit_conversion = kwargs.pop('unit_conversion', 1e6 * 1e-3 * 1e-6) #This assume area is Km2, level is m and evaporation is mm/day
 
-        # Pywr Storage does not expect a 'weather' kwargs, so move this to instance
-        self.weather = kwargs.pop("weather", None)
-
+        self.evaporation = kwargs.pop("evaporation", None)
+        self.rainfall = kwargs.pop("rainfall", None)
 
         super(Reservoir, self).__init__(model, *args, **kwargs)
-
-
-        self.const = ConstantParameter(model, const)
 
         self.rainfall_node = None
         self.rainfall_recorder = None
@@ -161,67 +152,82 @@ class Reservoir(RiverDomainMixin, Storage):
 
     @classmethod
     def pre_load(cls, model, data):
-
-        bathymetry = data.pop("bathymetry", None)
+        
         name = data.pop("name")
+        area = data.pop('area', None)
+        level = data.pop('level', None)
         node = cls(name=name, model=model, **data)
 
-        if bathymetry is not None:
-            if isinstance(bathymetry, str):
-                bathymetry = load_parameter(model, bathymetry)
-                volumes = bathymetry.dataframe['volume'].astype(np.float64)
-                levels = bathymetry.dataframe['level'].astype(np.float64)
-                areas = bathymetry.dataframe['area'].astype(np.float64)
+        if area is not None:
+            if isinstance(area, InterpolatedVolumeParameter):
+                node.area = load_parameter(model, area)
+
+            elif isinstance(area, DataFrameParameter):
+                area = load_parameter(model, area)
+                volumes = area.dataframe['volume'].astype(np.float64)
+                areas = area.dataframe['area'].astype(np.float64)
+
             else:
-                bathymetry = pd.DataFrame.from_dict(bathymetry)
-                volumes = bathymetry['volume'].astype(np.float64)
-                levels = bathymetry['level'].astype(np.float64)
-                areas = bathymetry['area'].astype(np.float64)
+                area = pd.DataFrame.from_dict(area)
+                volumes = area['volume'].astype(np.float64)
+                areas = area['area'].astype(np.float64)
+        
+        if level is not None:
+            if isinstance(level, InterpolatedVolumeParameter):
+                node.level = load_parameter(model, level)
+
+            elif isinstance(level, DataFrameParameter):
+                level = load_parameter(model, level)
+                volumes = level.dataframe['volume'].astype(np.float64)
+                levels = level.dataframe['level'].astype(np.float64)
+
+            else:
+                level = pd.DataFrame.from_dict(level)
+                volumes = level['volume'].astype(np.float64)
+                levels = level['level'].astype(np.float64)
 
         if volumes is not None and levels is not None:
             node.level = InterpolatedVolumeParameter(model, node, volumes, levels)
 
         if volumes is not None and areas is not None:
             node.area = InterpolatedVolumeParameter(model, node, volumes, areas)
-        if node.weather is not None:
-            node._make_weather_nodes(model, node.weather, node.weather_cost)
+
+        if node.evaporation is not None:
+            node._make_evaporation_node(model, node.evaporation, node.evaporation_cost)
+        
+        if node.rainfall is not None:
+            node._make_rainfall_node(model, node.rainfall, node.rainfall_cost)
+
         setattr(node, "_Loadable__parameters_to_load", {})
+        
         return node
-
-
-    def _make_weather_nodes(self, model, weather, cost):
-
-        if not isinstance(self.area, Parameter):
-            raise ValueError('Weather nodes can only be created if an area Parameter is given.')
-
-        weather = pd.DataFrame.from_dict(weather)
-
-        rainfall = weather['rainfall'].astype(np.float64)
-        evaporation = weather['evaporation'].astype(np.float64)
-
-        self._make_evaporation_node(model, evaporation, cost)
-        self._make_rainfall_node(model, rainfall, cost)
-
 
     def _make_evaporation_node(self, model, evaporation, cost):
 
         if not isinstance(self.area, Parameter):
-            LOG.warning('Evaporation nodes be created only if an area Parameter is given.')
-            return
+            raise ValueError('Evaporation nodes can only be created if an area Parameter is given.')
 
         if evaporation is None:
             try:
                 evaporation_param = load_parameter(model, f'__{self.name}__:evaporation')
             except KeyError:
-                LOG.warning(f"Please specify evaporation or weather on node {self.name}")
+                LOG.warning(f"Please specify evaporation on node {self.name}")
                 return
-        elif isinstance(evaporation, pd.DataFrame) or isinstance(evaporation, pd.Series):
-            evaporation = evaporation.astype(np.float64)
-            evaporation_param = MonthlyProfileParameter(model, evaporation)
-        else:
-            evaporation_param = evaporation
+        
+        elif isinstance(evaporation, Parameter):
+            evaporation_param = load_parameter(model, evaporation)
 
-        evaporation_flow_param = AggregatedParameter(model, [evaporation_param, self.const, self.area],
+        else:
+            evp = pd.DataFrame.from_dict(evaporation)
+            evp = evp['evaporation'].astype(np.float64)
+
+            if evp.shape[0] != 12:
+                raise ValueError('Evaporation must be a 12 element array or a parameter.')
+            
+            else:
+                evaporation_param = MonthlyProfileParameter(model, evp)
+
+        evaporation_flow_param = AggregatedParameter(model, [evaporation_param, self.unit_conversion, self.area],
                                                      agg_func='product')
 
         evaporation_node = Output(model, '{}.evaporation'.format(self.name), parent=self)
@@ -237,23 +243,30 @@ class Reservoir(RiverDomainMixin, Storage):
     def _make_rainfall_node(self, model, rainfall, cost):
 
         if not isinstance(self.area, Parameter):
-            LOG.warning('Weather nodes can be created only if an area Parameter is given.')
-            return
+            raise ValueError('Evaporation nodes can only be created if an area Parameter is given.')
 
         if rainfall is None:
             try:
                 rainfall_param = load_parameter(model, f'__{self.name}__:rainfall')
             except KeyError:
-                LOG.warning(f"Please specify rainfall or weather on node {self.name}")
+                LOG.warning(f"Please specify rainfall on node {self.name}")
                 return
-        elif isinstance(rainfall, pd.DataFrame) or isinstance(rainfall, pd.Series):
-            rainfall = rainfall.astype(np.float64)
-            rainfall_param = MonthlyProfileParameter(model, rainfall)
+            
+        elif isinstance(rainfall, Parameter):
+            rainfall_param = load_parameter(model, rainfall)
+
         else:
-            rainfall_param = rainfall
+            rain = pd.DataFrame.from_dict(rainfall)
+            rain = rain['rainfall'].astype(np.float64)
+
+            if rain.shape[0] != 12:
+                raise ValueError('Rainfall must be a 12 element array or a parameter.')
+            
+            else:
+                rainfall_param = MonthlyProfileParameter(model, rain)
 
         # Create the flow parameters multiplying area by rate of rainfall/evap
-        rainfall_flow_param = AggregatedParameter(model, [rainfall_param, self.const, self.area],
+        rainfall_flow_param = AggregatedParameter(model, [rainfall_param, self.unit_conversion, self.area],
                                                   agg_func='product')
 
         # Create the nodes to provide the flows
@@ -470,7 +483,21 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
 
 class ProportionalInput(Input, metaclass=NodeMeta):
     """
-    TODO: Jose explain this
+    This node is an input node that has a max_flow that is a proportion of another node.
+    An example of this is a return flow from an irrigation node. 
+    The return flow is the proportion of the irrigation node flow.
+    
+    Parameters
+    ----------
+    model : Model
+        The model object
+    name : str
+        The name of the node
+    node : Node
+        The node to which the input is proportional
+    proportion : float
+        The proportion of the node's flow to use as the max_flow
+    
     """
     min_proportion = 1e-6
 
@@ -487,7 +514,6 @@ class ProportionalInput(Input, metaclass=NodeMeta):
             # Create the aggregated node to apply the factors.
             self.aggregated_node = AggregatedNode(model, f'{name}.aggregated', [self.node, self])
             self.aggregated_node.factors = factors
-
 
 
 class LinearStorageReleaseControl(Link, metaclass=NodeMeta):
