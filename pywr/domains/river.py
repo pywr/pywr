@@ -1,5 +1,6 @@
 import pandas as pd 
 import numpy as np
+from pywr.domains import Catchment
 
 from pywr.nodes import (
     Domain,
@@ -93,14 +94,33 @@ class Reservoir(RiverDomainMixin, Storage):
     to represent a benefit of filling the reservoir when it is below its curve.
 
     A reservoir can also be used to simplify evaporation and rainfall by creating
-    these nodes internally when the following properties are set:
-    TODO: explain these and how they relate to each other. Please be as explicit as possible
-    TODO: what format should each of these take? Perhaps provide a simple example
-    - bathymetry
-        - level
-        - area
-        - evaporation
-        - rainfall
+    these nodes internally when the evaporation, rainfall, and area properties are set.
+
+    Parameters
+    ----------
+    model : Model
+        Model instance to which this storage node is attached.
+    name : str
+        The name of the storage node.
+    min_volume : float (optional)
+        The minimum volume of the storage. Defaults to 0.0.
+    max_volume : float, Parameter (optional)
+        The maximum volume of the storage. Defaults to 0.0.
+    initial_volume, initial_volume_pc : float (optional)
+        Specify initial volume in either absolute or proportional terms. Both are required if `max_volume`
+        is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+        and `max_volume` is not a Parameter, then the absolute value is ignored.
+    evaporation :   DataFrame, Parameter (optional)
+        Normally a DataFrame with a index and a single column of 12 evaporation rates, representing each month in a year.
+    evaporation_cost : float (optional)
+        The cost of evaporation. Defaults to -999.
+    unit_conversion : float (optional)
+        The unit conversion factor for evaporation. Defaults to 1e6 * 1e-3 * 1e-6. This assumes area is Km2, level is m and evaporation is mm/day.
+    rainfall : DataFrame, Parameter (optional)
+        Normally a DataFrame with a index and a single column of 12 rainfall rates, representing each month in a year.
+    area, level : float, Parameter (optional)
+        Optional float or Parameter defining the area and level of the storage node. These values are
+        accessible through the `get_area` and `get_level` methods respectively.
     """
 
     def __init__(self, model, *args, **kwargs):
@@ -110,6 +130,8 @@ class Reservoir(RiverDomainMixin, Storage):
             control_curve - A Parameter object that can return the control curve position,
                 as a percentage of fill, for the given timestep.
         """
+
+        __parameter_attributes__ = ("min_volume", "max_volume", "level", "area")
 
         control_curve = pop_kwarg_parameter(kwargs, "control_curve", None)
         above_curve_cost = kwargs.pop("above_curve_cost", None)
@@ -136,8 +158,10 @@ class Reservoir(RiverDomainMixin, Storage):
             # reinstate the given cost parameter to pass to the parent constructors
             kwargs["cost"] = cost
 
+        self.level = pop_kwarg_parameter(kwargs, "level", None)
+        self.area = pop_kwarg_parameter(kwargs, "area", None)
+
         self.evaporation_cost = kwargs.pop('evaporation_cost', -999)
-        self.rainfall_cost = kwargs.pop('rainfall_cost', 0.0)
         self.unit_conversion = kwargs.pop('unit_conversion', 1e6 * 1e-3 * 1e-6) #This assume area is Km2, level is m and evaporation is mm/day
 
         self.evaporation = kwargs.pop("evaporation", None)
@@ -154,49 +178,13 @@ class Reservoir(RiverDomainMixin, Storage):
     def pre_load(cls, model, data):
         
         name = data.pop("name")
-        area = data.pop('area', None)
-        level = data.pop('level', None)
-        node = cls(name=name, model=model, **data)
-
-        if area is not None:
-            if isinstance(area, InterpolatedVolumeParameter):
-                node.area = load_parameter(model, area)
-
-            elif isinstance(area, DataFrameParameter):
-                area = load_parameter(model, area)
-                volumes = area.dataframe['volume'].astype(np.float64)
-                areas = area.dataframe['area'].astype(np.float64)
-
-            else:
-                area = pd.DataFrame.from_dict(area)
-                volumes = area['volume'].astype(np.float64)
-                areas = area['area'].astype(np.float64)
-        
-        if level is not None:
-            if isinstance(level, InterpolatedVolumeParameter):
-                node.level = load_parameter(model, level)
-
-            elif isinstance(level, DataFrameParameter):
-                level = load_parameter(model, level)
-                volumes = level.dataframe['volume'].astype(np.float64)
-                levels = level.dataframe['level'].astype(np.float64)
-
-            else:
-                level = pd.DataFrame.from_dict(level)
-                volumes = level['volume'].astype(np.float64)
-                levels = level['level'].astype(np.float64)
-
-        if volumes is not None and levels is not None:
-            node.level = InterpolatedVolumeParameter(model, node, volumes, levels)
-
-        if volumes is not None and areas is not None:
-            node.area = InterpolatedVolumeParameter(model, node, volumes, areas)
+        node = cls(name=name, model=model, **data)  
 
         if node.evaporation is not None:
             node._make_evaporation_node(model, node.evaporation, node.evaporation_cost)
         
         if node.rainfall is not None:
-            node._make_rainfall_node(model, node.rainfall, node.rainfall_cost)
+            node._make_rainfall_node(model, node.rainfall)
 
         setattr(node, "_Loadable__parameters_to_load", {})
         
@@ -207,25 +195,12 @@ class Reservoir(RiverDomainMixin, Storage):
         if not isinstance(self.area, Parameter):
             raise ValueError('Evaporation nodes can only be created if an area Parameter is given.')
 
-        if evaporation is None:
-            try:
-                evaporation_param = load_parameter(model, f'__{self.name}__:evaporation')
-            except KeyError:
-                LOG.warning(f"Please specify evaporation on node {self.name}")
-                return
-        
-        elif isinstance(evaporation, Parameter):
+        if isinstance(evaporation, Parameter):
             evaporation_param = load_parameter(model, evaporation)
 
         else:
             evp = pd.DataFrame.from_dict(evaporation)
-            evp = evp['evaporation'].astype(np.float64)
-
-            if evp.shape[0] != 12:
-                raise ValueError('Evaporation must be a 12 element array or a parameter.')
-            
-            else:
-                evaporation_param = MonthlyProfileParameter(model, evp)
+            evaporation_param = DataFrameParameter(model, evp)
 
         evaporation_flow_param = AggregatedParameter(model, [evaporation_param, self.unit_conversion, self.area],
                                                      agg_func='product')
@@ -244,39 +219,24 @@ class Reservoir(RiverDomainMixin, Storage):
 
         if not isinstance(self.area, Parameter):
             raise ValueError('Evaporation nodes can only be created if an area Parameter is given.')
-
-        if rainfall is None:
-            try:
-                rainfall_param = load_parameter(model, f'__{self.name}__:rainfall')
-            except KeyError:
-                LOG.warning(f"Please specify rainfall on node {self.name}")
-                return
             
-        elif isinstance(rainfall, Parameter):
+        if isinstance(rainfall, Parameter):
             rainfall_param = load_parameter(model, rainfall)
 
         else:
             rain = pd.DataFrame.from_dict(rainfall)
-            rain = rain['rainfall'].astype(np.float64)
-
-            if rain.shape[0] != 12:
-                raise ValueError('Rainfall must be a 12 element array or a parameter.')
-            
-            else:
-                rainfall_param = MonthlyProfileParameter(model, rain)
+            rainfall_param = DataFrameParameter(model, rain)
 
         # Create the flow parameters multiplying area by rate of rainfall/evap
         rainfall_flow_param = AggregatedParameter(model, [rainfall_param, self.unit_conversion, self.area],
                                                   agg_func='product')
 
         # Create the nodes to provide the flows
-        rainfall_node = Input(model, '{}.rainfall'.format(self.name), parent=self)
+        rainfall_node = Catchment(model, '{}.rainfall'.format(self.name), parent=self)
         rainfall_node.max_flow = rainfall_flow_param
-        rainfall_node.cost = cost
 
         rainfall_node.connect(self)
         self.rainfall_node = rainfall_node
-
         self.rainfall_recorder = NumpyArrayNodeRecorder(model, rainfall_node,
                                                         name=f'__{rainfall_node.name}__:rainfall')
 
@@ -514,73 +474,3 @@ class ProportionalInput(Input, metaclass=NodeMeta):
             # Create the aggregated node to apply the factors.
             self.aggregated_node = AggregatedNode(model, f'{name}.aggregated', [self.node, self])
             self.aggregated_node.factors = factors
-
-
-class LinearStorageReleaseControl(Link, metaclass=NodeMeta):
-    """
-        A specialised node that provides a default max_flow based on a release rule.
-        TODO: Jose explain this in more detail. WHat does it do, so someone reading the docs can understand it.
-    """
-
-    def __init__(self, model, name, storage_node, release_values, scenario=None, **kwargs):
-
-        release_values = pd.DataFrame.from_dict(release_values)
-        storage_node = model.pre_load_node(storage_node)
-
-        if scenario is None:
-            # Only one control curve should be defined. Get it explicitly
-            control_curves = release_values['volume'].iloc[1:-1].astype(np.float64)
-            values = release_values['value'].astype(np.float64)
-            max_flow_param = ControlCurveInterpolatedParameter(model, storage_node, control_curves, values)
-        else:
-            # There should be multiple control curves defined.
-            if release_values.shape[1] % 2 != 0:
-                raise ValueError("An even number of columns (i.e. pairs) is required for the release rules "
-                                 "when using a scenario.")
-
-            ncurves = release_values.shape[1] // 2
-            if ncurves != scenario.size:
-                raise ValueError(f"The number of curves ({ncurves}) should equal the size of the "
-                                 f"scenario ({scenario.size}).")
-
-            curves = []
-            for i in range(ncurves):
-                volume = release_values.iloc[1:-1, i*2]
-                values = release_values.iloc[:, i*2+1]
-                control_curve = ControlCurveInterpolatedParameter(model, storage_node, volume, values)
-                curves.append(control_curve)
-
-            max_flow_param = ScenarioWrapperParameter(model, scenario, curves)
-
-        self.max_flow = max_flow_param
-        self.scenario = scenario
-        super().__init__(model, name, max_flow=max_flow_param, **kwargs)
-
-    @classmethod
-    def pre_load(cls, model, data):
-        name = data.pop("name")
-        cost = data.pop("cost", 0.0)
-        min_flow = data.pop("min_flow", None)
-
-        node = cls(name=name, model=model, **data)
-
-        cost = load_parameter(model, cost)
-        min_flow = load_parameter(model, min_flow)
-        if cost is None:
-            cost = 0.0
-        if min_flow is None:
-            min_flow = 0.0
-
-        node.cost = cost
-        node.min_flow = min_flow
-
-        """
-            The Pywr Loadable base class contains a reference to
-            `self.__parameters_to_load.items()` which will fail unless
-            a pre-mangled name which matches the expected value from
-            inside the Loadable class is added here.
-
-            See pywr/nodes.py:80 Loadable.finalise_load()
-        """
-        setattr(node, "_Loadable__parameters_to_load", {})
-        return node
