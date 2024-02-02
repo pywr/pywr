@@ -15,8 +15,41 @@ from pywr.recorders import (
 )
 
 class Turbine(Link, metaclass=NodeMeta):
-    """
-    TODO: Explain what this does
+    """ A hydropower turbine node.
+
+    This node represents a hydropower turbine. It is used to model the generation of electricity from water flow.
+    Internally, it uses a HydropowerTargetParameter to calculate the flow required to meet a given generation capacity.
+    along with a HydropowerRecorder to record the generation and other relevant parameters.
+
+    Parameters
+    ----------
+    model : Model
+        Model instance to which this turbine node is attached.
+    name : str
+        Name of the node.
+    efficiency : float (default=1.0)
+        Turbine efficiency.
+    density : float (default=1000.0)
+        Water density.
+    flow_unit_conversion : float (default=1.0)
+        A factor used to transform the units of flow to be compatible with the equation here. This
+        should convert flow to units of :math:`m^3/day`
+    energy_unit_conversion : float (default=1e-6)
+        A factor used to transform the units of energy to be compatible with the equation here. This
+        should convert energy to units of :math:`MW`
+    storage_node : str (default=None)
+        Name of the storage node to which this turbine is connected. If not None, the water elevation
+        of the storage node is used to calculate the head of the turbine.
+    generation_capacity : float, Parameter (default=0.0)
+        The maximum generation capacity of the turbine. This is the maximum amount of energy that the
+        turbine can generate. This can be a constant value or a parameter, in :math:`MW`.
+    turbine_elevation : double
+        Elevation of the turbine itself. The difference between the `water_elevation` and this value gives
+        the working head of the turbine.
+    min_operating_elevation : double
+        Minimum operating elevation of the turbine. This is used to calculate the minimum head of the turbine.
+    min_flow : float, Parameter (default=0.0)
+        The minimum flow required to operate the turbine. This can be a constant value or a parameter, in :math:`m^3/day`.
     """
     def __init__(self, model, name, **kwargs):
         hp_recorder_kwarg_names = ('efficiency', 'density', 'flow_unit_conversion', 'energy_unit_conversion')
