@@ -1,6 +1,7 @@
 """
 Test for individual Parameter classes
 """
+
 from pyparsing import col
 
 from pywr.core import (

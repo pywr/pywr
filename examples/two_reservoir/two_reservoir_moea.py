@@ -9,6 +9,7 @@ The example demonstrates the use of two different optimisation libraries: pygmo 
 choice of library can be made with a command line argument.
 
 """
+
 import json
 import os
 import pandas as pd

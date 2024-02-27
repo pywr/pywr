@@ -1,5 +1,6 @@
 """ Generic utilities functions useful for pywr, but not specific to any of the core modules
 """
+
 import io
 import hashlib
 
