@@ -396,7 +396,7 @@ class Model(object):
 
         model._parameters_to_load = collect_components(data, "parameters")
         model._recorders_to_load = collect_components(data, "recorders")
-        model.file_hashes = {}
+        model._file_hashes = {}
 
         @listify
         def load_components(components_to_load, load_component):
