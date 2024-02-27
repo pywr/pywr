@@ -8,6 +8,7 @@ Currently there are only linear programme based solvers using,
     - GLPK
     - LPSolve55
 """
+
 import os
 
 solver_registry = []

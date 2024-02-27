@@ -1,4 +1,5 @@
 """Utilities for working with pandas DataFrame objects."""
+
 import pandas
 from pandas.tseries.offsets import Tick, DateOffset
 from pandas._libs.tslibs.period import IncompatibleFrequency
