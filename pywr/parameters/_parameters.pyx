@@ -507,7 +507,7 @@ cdef class TablesArrayParameter(IndexParameter):
         # Check hashes if given before reading the data
         checksums = data.pop('checksum', {})
         for algo, hash in checksums.items():
-            check_hash(url, hash, algorithm=algo)
+            check_hash(model, url, hash, algorithm=algo)
 
         return cls(model, url, node, where=where, scenario=scenario)
 TablesArrayParameter.register()

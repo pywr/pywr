@@ -231,7 +231,7 @@ def read_dataframe(model, data):
         # Check hashes if given before reading the data
         checksums = data.pop("checksum", {})
         for algo, hash in checksums.items():
-            check_hash(url, hash, algorithm=algo)
+            check_hash(model, url, hash, algorithm=algo)
 
         try:
             filetype = data.pop("filetype")

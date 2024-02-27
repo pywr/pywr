@@ -396,6 +396,7 @@ class Model(object):
 
         model._parameters_to_load = collect_components(data, "parameters")
         model._recorders_to_load = collect_components(data, "recorders")
+        model.file_hashes = {}
 
         @listify
         def load_components(components_to_load, load_component):
@@ -432,6 +433,7 @@ class Model(object):
         del(model._recorders_to_load)
         del(model._parameters_to_load)
         del(model._nodes_to_load)
+        del(model._file_hashes)
 
         # load edges
         for edge_data in data['edges']:
