@@ -30,7 +30,6 @@ def check_hash(model, filename, hash, algorithm="md5", **kwargs):
 
     if (cached_hash := model._file_hashes.get((filename, algorithm))) is not None:
         if cached_hash.lower() == hash.lower():
-            print(f'Cached {algorithm} hash matched for file: "{filename}"')
             return
         else:
             raise HashMismatchError(
