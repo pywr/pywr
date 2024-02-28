@@ -34,7 +34,6 @@ def test_hash_timeseries2_(filename, algorithm, hash, correct):
 
     fullname = os.path.join(TEST_FOLDER, "models", filename)
     model = Model()
-    model._file_hashes = {}
 
     if correct:
         hashes.check_hash(model, fullname, hash, algorithm=algorithm)

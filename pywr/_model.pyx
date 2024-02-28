@@ -65,6 +65,7 @@ class Model(object):
         """
         self.graph = nx.DiGraph()
         self.metadata = {}
+        self._file_hashes = {}
 
         solver_name = kwargs.pop("solver", None)
         solver_args = kwargs.pop("solver_args", {})
@@ -396,7 +397,6 @@ class Model(object):
 
         model._parameters_to_load = collect_components(data, "parameters")
         model._recorders_to_load = collect_components(data, "recorders")
-        model._file_hashes = {}
 
         @listify
         def load_components(components_to_load, load_component):
@@ -433,7 +433,6 @@ class Model(object):
         del(model._recorders_to_load)
         del(model._parameters_to_load)
         del(model._nodes_to_load)
-        del(model._file_hashes)
 
         # load edges
         for edge_data in data['edges']:
