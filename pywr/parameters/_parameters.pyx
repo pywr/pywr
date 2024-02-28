@@ -8,7 +8,6 @@ import calendar
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from pywr.h5tools import H5Store
-from pywr.hashes import check_hash
 from .._core cimport is_leap_year
 from ..dataframe_tools import align_and_resample_dataframe, load_dataframe, read_dataframe
 import warnings
@@ -507,7 +506,7 @@ cdef class TablesArrayParameter(IndexParameter):
         # Check hashes if given before reading the data
         checksums = data.pop('checksum', {})
         for algo, hash in checksums.items():
-            check_hash(model, url, hash, algorithm=algo)
+            model.check_hash(url, hash, algorithm=algo)
 
         return cls(model, url, node, where=where, scenario=scenario)
 TablesArrayParameter.register()

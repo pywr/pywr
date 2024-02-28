@@ -36,8 +36,8 @@ def test_hash_timeseries2_(filename, algorithm, hash, correct):
     model = Model()
 
     if correct:
-        hashes.check_hash(model, fullname, hash, algorithm=algorithm)
+        model.check_hash(fullname, hash, algorithm=algorithm)
         assert model._file_hashes[(fullname, algorithm)] == hash.lower()
     else:
         with pytest.raises(hashes.HashMismatchError):
-            hashes.check_hash(model, fullname, hash, algorithm=algorithm)
+            model.check_hash(fullname, hash, algorithm=algorithm)
