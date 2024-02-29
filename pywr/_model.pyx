@@ -32,7 +32,7 @@ from .dataframe_tools import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
-from pywr.hashes import compute_hash, HashMismatchError
+from pywr.hashes import check_hash
 
 
 class OrphanedParameterWarning(Warning):
@@ -904,33 +904,7 @@ class Model(object):
         return orphans
 
     def check_hash(self, filename, hash, algorithm="md5", **kwargs):
-        """Check the hash for filename using the named algorithm
-
-        First the cache is checked to see if the file hash has already been
-        computed. If it has not, a hash is computed for the file using the given
-        algorithm. The cached/computed cache is then compared against the 
-        provided hash. If the hashes do not match a HashMismatchError error is
-        raised.
-
-        This function is not case sensitive.
-        """
-
-        if (cached_hash := self._file_hashes.get((filename, algorithm))) is not None:
-            if cached_hash.lower() == hash.lower():
-                return
-            else:
-                raise HashMismatchError(
-                    f'Hash mismatch using {algorithm} on file: "{filename}"'
-                )
-
-        actual_hash = compute_hash(filename, algorithm=algorithm, **kwargs)
-
-        if hash.lower() != actual_hash.lower():
-            raise HashMismatchError(
-                'Hash mismatch using {} on file: "{}"'.format(algorithm, filename)
-            )
-        else:
-            self._file_hashes[(filename, algorithm)] = actual_hash
+        check_hash(filename, hash, cache=self._file_hashes, algorithm=algorithm, **kwargs)
 
 
 class NodeIterator(object):
