@@ -1,9 +1,9 @@
 """Utilities for working with pandas DataFrame objects."""
+
 import pandas
 from pandas.tseries.offsets import Tick, DateOffset
 from pandas._libs.tslibs.period import IncompatibleFrequency
 import os
-from .hashes import check_hash
 
 
 class ResamplingError(Exception):
@@ -231,7 +231,7 @@ def read_dataframe(model, data):
         # Check hashes if given before reading the data
         checksums = data.pop("checksum", {})
         for algo, hash in checksums.items():
-            check_hash(url, hash, algorithm=algo)
+            model.check_hash(url, hash, algorithm=algo)
 
         try:
             filetype = data.pop("filetype")

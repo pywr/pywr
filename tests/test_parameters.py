@@ -1,6 +1,7 @@
 """
 Test for individual Parameter classes
 """
+
 from pyparsing import col
 
 from pywr.core import (
@@ -60,6 +61,7 @@ import itertools
 import calendar
 from numpy.testing import assert_allclose
 from scipy.interpolate import Rbf, interp1d
+import warnings
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -1907,7 +1909,7 @@ def test_orphaned_components(simple_linear_model):
     result = model.find_orphaned_parameters()
     assert not result
     # assert that warning not raised by check
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         model.check()
     for w in record:
         if isinstance(w, OrphanedParameterWarning):
