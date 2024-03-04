@@ -32,6 +32,7 @@ from .dataframe_tools import load_dataframe
 from pywr.parameters._parameters import Parameter as BaseParameter
 from pywr.parameters._parameters cimport Parameter as BaseParameter
 from pywr.recorders import ParameterRecorder, IndexParameterRecorder, Recorder
+from pywr.hashes import check_hash
 
 
 class OrphanedParameterWarning(Warning):
@@ -65,6 +66,7 @@ class Model(object):
         """
         self.graph = nx.DiGraph()
         self.metadata = {}
+        self._file_hashes = {}
 
         solver_name = kwargs.pop("solver", None)
         solver_args = kwargs.pop("solver_args", {})
@@ -900,6 +902,9 @@ class Model(object):
         # identify unseen parameters
         orphans = all_parameters - visited
         return orphans
+
+    def check_hash(self, filename, hash, algorithm="md5", **kwargs):
+        check_hash(filename, hash, cache=self._file_hashes, algorithm=algorithm, **kwargs)
 
 
 class NodeIterator(object):

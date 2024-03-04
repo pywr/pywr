@@ -1,6 +1,7 @@
 import os
 import pytest
 from pywr import hashes
+from pywr.model import Model
 
 
 TEST_FOLDER = os.path.dirname(__file__)
@@ -32,9 +33,11 @@ def test_hash_timeseries2_(filename, algorithm, hash, correct):
     """Test the hash value of files in the models directory"""
 
     fullname = os.path.join(TEST_FOLDER, "models", filename)
+    model = Model()
 
     if correct:
-        hashes.check_hash(fullname, hash, algorithm=algorithm)
+        model.check_hash(fullname, hash, algorithm=algorithm)
+        assert model._file_hashes[(fullname, algorithm)] == hash.lower()
     else:
         with pytest.raises(hashes.HashMismatchError):
-            hashes.check_hash(fullname, hash, algorithm=algorithm)
+            model.check_hash(fullname, hash, algorithm=algorithm)
