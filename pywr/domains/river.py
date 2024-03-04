@@ -1,6 +1,5 @@
 import pandas as pd 
 import numpy as np
-from pywr.domains import Catchment
 
 from pywr.nodes import (
     Domain,

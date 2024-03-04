@@ -4,63 +4,65 @@ A collection of tests for pywr.domains.river
 Specific additional functionality of the 'special' classes in the river domain
 are tested here.
 """
-import pywr.core
-from pywr.core import Model, Input, Output, Catchment
-from pywr.domains import river
-import pytest
 
-from helpers import assert_model, load_model
+import numpy as np
+
+from helpers import load_model
+
+from pywr.recorders import (
+    NumpyArrayStorageRecorder
+)   
 
 
-def test_reservoir_weather():
-    """
-        Use a simple model of a Reservoir to test that the bathymetry, weather,
-        volume, area, evaporation, rainfall behave as expected
+def test_hydropower_results():
 
-        (flow = 8.0)          (max_flow = 10.0)
-        Catchment -> River -> DemandCentre
-                         |        ^
-        (max_flow = 2.0) v        | (max_flow = 2.0)
-                        Reservoir
-                        |
-                        v
-                        Turbine -----> TODO ???
+    model = load_model("hydropower_verification.json")
 
+    gerd_rec = NumpyArrayStorageRecorder(model, model.nodes["RES1"])
+
+    model.run()
+
+    gerd_st_df = gerd_rec.to_dataframe()
+    gerd_turbine_df = model.recorders["__RES1_turbine__:hydropowerrecorder"].to_dataframe()
 
     """
-    in_flow = 8
+        Verified values for start and end sequences of results period.
+        Keys must match f"{}_df" var names, values are dicts of
+        slice-as-tuple: np.array expected values.
+    """
+    expected = {
+        "gerd_st": {
+            (0,5): np.array([[46360.63694919],
+                                [42965.88915086],
+                                [39208.38512899],
+                                [35785.00239353],
+                                [32702.58927283]]),
 
-    model = pywr.core.Model()
-    catchment = river.Catchment(model, name="Catchment", flow=in_flow)
-    lnk = river.River(model, name="River")
-    catchment.connect(lnk)
-    demand = pywr.core.Output(model, name="Demand", cost=-10.0, max_flow=10)
-    lnk.connect(demand)
-    from pywr.parameters import ConstantParameter
+            (-5,None): np.array([[40747.57945841],
+                                    [49263.9095238 ],
+                                    [53011.73528208],
+                                    [53127.665874  ],
+                                    [50834.14051615]])
+        },
+        "gerd_turbine": {
+            (0,5): np.array([[1730.1752206 ],
+                                [1595.41837885],
+                                [1466.1889006 ],
+                                [1329.45736668],
+                                [1210.65347216]]),
 
-    control_curve = ConstantParameter(model, 0.8)
-    #TODO: Can we make this reservoir really simple?
-    reservoir = river.Reservoir(
-        model,
-        name="Reservoir",
-    )
-    reservoir.inputs[0].max_flow = 2.0
-    reservoir.outputs[0].max_flow = 2.0
-    lnk.connect(reservoir)
-    reservoir.connect(demand)
+            (-5,None): np.array([[1070.2307505 ],
+                                    [1384.66567242],
+                                    [1706.67934078],
+                                    [1827.94504144],
+                                    [1831.7610369 ]])
+        }
+    }
 
-    turbine = hydropower.Turbine(
-        #TODO: ???
-    )
+    assert gerd_st_df.shape == (240, 1)
+    assert gerd_turbine_df.shape == (240, 1)
 
-    reservoir.connect(turbine)
-    #TODO: What does the turbine connect to?
-
-    model.setup()
-
-    model.step()
-    #TODO assert that something has changed and explain why
-    model.step()
-    #TODO assert that something has changedd and explain why
-    model.step()
-    #TODO assert that something has changedd and explain why
+    for elem, ranges in expected.items():
+        for s,v in ranges.items():
+            df = locals()[f"{elem}_df"]
+            assert np.all(np.isclose(df[slice(*s)].values, v))
