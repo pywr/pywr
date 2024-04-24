@@ -20,8 +20,9 @@ env:
 
   # Windows binary paths to allow linking
   CIBW_ENVIRONMENT_WINDOWS: LIB="c://glpk//w64;c://lpsolve" INCLUDE="c://glpk//src;c://"
-  # Custom repair script that moves the required DLLs to the pywr/.libs folder
-  CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python .github/workflows/repair-wheel-windows.py {wheel} {dest_dir} c:\glpk\w64\glpk_4_65.dll c:\lpsolve\lpsolve55.dll
+  # Use delvewheel on windows
+  CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
+  CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair --add-path \"c://glpk//w64;c://lpsolve\" -w {dest_dir} {wheel}"
 
 jobs:
   build_wheels:
