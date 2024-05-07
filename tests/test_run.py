@@ -959,8 +959,21 @@ def test_breaklink_node():
     assert_allclose(transfer.storage.volume, 0)
 
 
-@pytest.mark.parametrize("loss_factor", [None, 0.2, 0.99, 1.0, 0.0])
-def test_loss_link_node(loss_factor):
+@pytest.mark.parametrize(
+    "loss_factor,loss_factor_type",
+    [
+        (None, None),
+        (0.2, "gross"),
+        (0.2, "net"),
+        (0.98, "gross"),
+        (0.98, "net"),
+        (1.0, "gross"),
+        (1.0, "net"),
+        (0.0, "gross"),
+        (0.0, "net"),
+    ],
+)
+def test_loss_link_node(loss_factor, loss_factor_type):
     """Test LossLink node"""
     model = load_model("loss_link.json")
 
@@ -968,19 +981,26 @@ def test_loss_link_node(loss_factor):
     link1 = model.nodes["link1"]
     demand1 = model.nodes["demand1"]
 
+    if loss_factor_type is not None:
+        link1.loss_factor_type = loss_factor_type
     if loss_factor is not None:
         link1.loss_factor = loss_factor
 
     model.check()
     model.run()
 
-    if loss_factor is None:
+    if loss_factor is None and loss_factor_type is None:
+        # As per JSON file
         expected_supply = 12
         expected_demand = 10
-    elif loss_factor == 1.0:
-        # 100% loss means no flow can be provided.
-        expected_supply = 0.0
-        expected_demand = 0.0
+    elif loss_factor_type == "gross":
+        if loss_factor == 1.0:
+            # 100% loss means no flow can be provided.
+            expected_supply = 0.0
+            expected_demand = 0.0
+        else:
+            expected_supply = 10 / (1 - loss_factor)
+            expected_demand = 10
     else:
         expected_supply = 10 * (1 + loss_factor)
         expected_demand = 10
