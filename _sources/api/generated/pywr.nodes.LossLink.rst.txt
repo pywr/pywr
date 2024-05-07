@@ -59,7 +59,6 @@
       ~LossLink.has_constant_flows
       ~LossLink.has_fixed_cost
       ~LossLink.has_fixed_flows
-      ~LossLink.loss_factor
       ~LossLink.max_flow
       ~LossLink.min_flow
       ~LossLink.model

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.nodes.LossLink &mdash; Pywr 1.24.1.dev1+g691172c4 documentation</title>
+  <title>pywr.nodes.LossLink &mdash; Pywr 1.24.1.dev2+ged8eb8b7 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -16,7 +16,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=04bdea99"></script>
+        <script src="../../_static/documentation_options.js?v=f498c29f"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -38,7 +38,7 @@
             Pywr
           </a>
               <div class="version">
-                1.24.1.dev1+g691172c4
+                1.24.1.dev2+ged8eb8b7
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -139,12 +139,21 @@ in its flow attribute (which would be used by any attached recorders).</p>
 <dt><strong>model</strong><span class="classifier"><cite>pywr.model.Model</cite></span></dt><dd></dd>
 <dt><strong>name</strong><span class="classifier">string</span></dt><dd><p>Name of the node.</p>
 </dd>
-<dt><strong>loss_factor</strong><span class="classifier">float</span></dt><dd><p>The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
-then no-losses are calculated. The percentage is calculated as a percentage of gross flow.</p>
+<dt><strong>loss_factor</strong><span class="classifier">float, Parameter</span></dt><dd><p>The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
+then no-losses are calculated. This value is either a proportion of gross or net flow depending on the
+value of <cite>loss_factor_type</cite>.</p>
+</dd>
+<dt><strong>loss_factor_type: str</strong></dt><dd><dl class="simple">
+<dt>Either “gross” or “net” (default) to specify whether the loss factor is applied as a proportion of gross or</dt><dd><p>net flow respectively.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>There is currently a limitation that the loss factor must be a literal constant (i.e. not a parameter) when
+<cite>loss_factor_type</cite> is set to “gross”.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.nodes.LossLink.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.nodes.LossLink.__init__" title="Link to this definition"></a></dt>
@@ -280,31 +289,28 @@ then no-losses are calculated. The percentage is calculated as a percentage of g
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_fixed_flows</span></code></p></td>
 <td><p>Returns true if both min_flow and max_flow are not Parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">loss_factor</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_flow</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_flow</span></code></p></td>
 <td><p>The maximum flow constraint on the node</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_flow</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_flow</span></code></p></td>
 <td><p>The minimum flow constraint on the node</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
 <td><p>The recorder for the node, e.g. a NumpyArrayRecorder.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
 <td><p>Name of the node.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parent</span></code></p></td>
 <td><p>The parent Node/Storage of this object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev_flow</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev_flow</span></code></p></td>
 <td><p>Total flow via this node in the previous timestep</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recorders</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recorders</span></code></p></td>
 <td><p>Returns a list of <cite>pywr.recorders.Recorder</cite> objects attached to this node.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">virtual</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">virtual</span></code></p></td>
 <td><p>virtual: 'bool'</p></td>
 </tr>
 </tbody>
