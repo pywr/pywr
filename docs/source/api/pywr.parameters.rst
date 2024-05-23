@@ -149,6 +149,16 @@ Hydropower parameters
 
    HydropowerTargetParameter
 
+Multi-model coupling parameters
+-------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    OtherModelParameterValueParameter
+    OtherModelNodeFlowParameter
+    OtherModelNodeStorageParameter
+    OtherModelIndexParameterValueIndexParameter
 
 Other parameters
 ----------------
