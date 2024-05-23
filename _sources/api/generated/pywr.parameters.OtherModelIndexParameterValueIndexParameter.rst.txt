@@ -1,0 +1,61 @@
+﻿pywr.parameters.OtherModelIndexParameterValueIndexParameter
+===========================================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: OtherModelIndexParameterValueIndexParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~OtherModelIndexParameterValueIndexParameter.__init__
+      ~OtherModelIndexParameterValueIndexParameter.after
+      ~OtherModelIndexParameterValueIndexParameter.before
+      ~OtherModelIndexParameterValueIndexParameter.finish
+      ~OtherModelIndexParameterValueIndexParameter.get_all_indices
+      ~OtherModelIndexParameterValueIndexParameter.get_all_values
+      ~OtherModelIndexParameterValueIndexParameter.get_constant_value
+      ~OtherModelIndexParameterValueIndexParameter.get_double_lower_bounds
+      ~OtherModelIndexParameterValueIndexParameter.get_double_upper_bounds
+      ~OtherModelIndexParameterValueIndexParameter.get_double_variables
+      ~OtherModelIndexParameterValueIndexParameter.get_index
+      ~OtherModelIndexParameterValueIndexParameter.get_integer_lower_bounds
+      ~OtherModelIndexParameterValueIndexParameter.get_integer_upper_bounds
+      ~OtherModelIndexParameterValueIndexParameter.get_integer_variables
+      ~OtherModelIndexParameterValueIndexParameter.get_value
+      ~OtherModelIndexParameterValueIndexParameter.index
+      ~OtherModelIndexParameterValueIndexParameter.load
+      ~OtherModelIndexParameterValueIndexParameter.register
+      ~OtherModelIndexParameterValueIndexParameter.reset
+      ~OtherModelIndexParameterValueIndexParameter.set_double_variables
+      ~OtherModelIndexParameterValueIndexParameter.set_integer_variables
+      ~OtherModelIndexParameterValueIndexParameter.setup
+      ~OtherModelIndexParameterValueIndexParameter.unregister
+      ~OtherModelIndexParameterValueIndexParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~OtherModelIndexParameterValueIndexParameter.children
+      ~OtherModelIndexParameterValueIndexParameter.comment
+      ~OtherModelIndexParameterValueIndexParameter.double_size
+      ~OtherModelIndexParameterValueIndexParameter.integer_size
+      ~OtherModelIndexParameterValueIndexParameter.is_constant
+      ~OtherModelIndexParameterValueIndexParameter.is_variable
+      ~OtherModelIndexParameterValueIndexParameter.model
+      ~OtherModelIndexParameterValueIndexParameter.name
+      ~OtherModelIndexParameterValueIndexParameter.parents
+      ~OtherModelIndexParameterValueIndexParameter.size
+      ~OtherModelIndexParameterValueIndexParameter.tags
+   
+   

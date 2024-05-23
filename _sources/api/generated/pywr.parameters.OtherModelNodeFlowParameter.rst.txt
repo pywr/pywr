@@ -1,0 +1,58 @@
+﻿pywr.parameters.OtherModelNodeFlowParameter
+===========================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: OtherModelNodeFlowParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~OtherModelNodeFlowParameter.__init__
+      ~OtherModelNodeFlowParameter.after
+      ~OtherModelNodeFlowParameter.before
+      ~OtherModelNodeFlowParameter.finish
+      ~OtherModelNodeFlowParameter.get_all_values
+      ~OtherModelNodeFlowParameter.get_constant_value
+      ~OtherModelNodeFlowParameter.get_double_lower_bounds
+      ~OtherModelNodeFlowParameter.get_double_upper_bounds
+      ~OtherModelNodeFlowParameter.get_double_variables
+      ~OtherModelNodeFlowParameter.get_integer_lower_bounds
+      ~OtherModelNodeFlowParameter.get_integer_upper_bounds
+      ~OtherModelNodeFlowParameter.get_integer_variables
+      ~OtherModelNodeFlowParameter.get_value
+      ~OtherModelNodeFlowParameter.load
+      ~OtherModelNodeFlowParameter.register
+      ~OtherModelNodeFlowParameter.reset
+      ~OtherModelNodeFlowParameter.set_double_variables
+      ~OtherModelNodeFlowParameter.set_integer_variables
+      ~OtherModelNodeFlowParameter.setup
+      ~OtherModelNodeFlowParameter.unregister
+      ~OtherModelNodeFlowParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~OtherModelNodeFlowParameter.children
+      ~OtherModelNodeFlowParameter.comment
+      ~OtherModelNodeFlowParameter.double_size
+      ~OtherModelNodeFlowParameter.integer_size
+      ~OtherModelNodeFlowParameter.is_constant
+      ~OtherModelNodeFlowParameter.is_variable
+      ~OtherModelNodeFlowParameter.model
+      ~OtherModelNodeFlowParameter.name
+      ~OtherModelNodeFlowParameter.parents
+      ~OtherModelNodeFlowParameter.size
+      ~OtherModelNodeFlowParameter.tags
+   
+   

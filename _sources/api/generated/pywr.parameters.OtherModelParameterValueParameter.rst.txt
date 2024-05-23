@@ -1,0 +1,58 @@
+﻿pywr.parameters.OtherModelParameterValueParameter
+=================================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: OtherModelParameterValueParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~OtherModelParameterValueParameter.__init__
+      ~OtherModelParameterValueParameter.after
+      ~OtherModelParameterValueParameter.before
+      ~OtherModelParameterValueParameter.finish
+      ~OtherModelParameterValueParameter.get_all_values
+      ~OtherModelParameterValueParameter.get_constant_value
+      ~OtherModelParameterValueParameter.get_double_lower_bounds
+      ~OtherModelParameterValueParameter.get_double_upper_bounds
+      ~OtherModelParameterValueParameter.get_double_variables
+      ~OtherModelParameterValueParameter.get_integer_lower_bounds
+      ~OtherModelParameterValueParameter.get_integer_upper_bounds
+      ~OtherModelParameterValueParameter.get_integer_variables
+      ~OtherModelParameterValueParameter.get_value
+      ~OtherModelParameterValueParameter.load
+      ~OtherModelParameterValueParameter.register
+      ~OtherModelParameterValueParameter.reset
+      ~OtherModelParameterValueParameter.set_double_variables
+      ~OtherModelParameterValueParameter.set_integer_variables
+      ~OtherModelParameterValueParameter.setup
+      ~OtherModelParameterValueParameter.unregister
+      ~OtherModelParameterValueParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~OtherModelParameterValueParameter.children
+      ~OtherModelParameterValueParameter.comment
+      ~OtherModelParameterValueParameter.double_size
+      ~OtherModelParameterValueParameter.integer_size
+      ~OtherModelParameterValueParameter.is_constant
+      ~OtherModelParameterValueParameter.is_variable
+      ~OtherModelParameterValueParameter.model
+      ~OtherModelParameterValueParameter.name
+      ~OtherModelParameterValueParameter.parents
+      ~OtherModelParameterValueParameter.size
+      ~OtherModelParameterValueParameter.tags
+   
+   

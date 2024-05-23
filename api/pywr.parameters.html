@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parameters &mdash; Pywr 1.24.1.dev2+ged8eb8b7 documentation</title>
+  <title>Parameters &mdash; Pywr 1.24.1.dev3+gbdb257d9 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -16,7 +16,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f498c29f"></script>
+        <script src="../_static/documentation_options.js?v=1ae3120d"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -39,7 +39,7 @@
             Pywr
           </a>
               <div class="version">
-                1.24.1.dev2+ged8eb8b7
+                1.24.1.dev3+gbdb257d9
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -147,6 +147,13 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#hydropower-parameters">Hydropower parameters</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.HydropowerTargetParameter.html">pywr.parameters.HydropowerTargetParameter</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-model-coupling-parameters">Multi-model coupling parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.OtherModelParameterValueParameter.html">pywr.parameters.OtherModelParameterValueParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.OtherModelNodeFlowParameter.html">pywr.parameters.OtherModelNodeFlowParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.OtherModelNodeStorageParameter.html">pywr.parameters.OtherModelNodeStorageParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="generated/pywr.parameters.OtherModelIndexParameterValueIndexParameter.html">pywr.parameters.OtherModelIndexParameterValueIndexParameter</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#other-parameters">Other parameters</a><ul>
@@ -433,6 +440,25 @@
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.HydropowerTargetParameter.html#pywr.parameters.HydropowerTargetParameter" title="pywr.parameters.HydropowerTargetParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HydropowerTargetParameter</span></code></a>(model, target[, ...])</p></td>
 <td><p>A parameter that returns flow from a hydropower generation target.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="multi-model-coupling-parameters">
+<h2>Multi-model coupling parameters<a class="headerlink" href="#multi-model-coupling-parameters" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.OtherModelParameterValueParameter.html#pywr.parameters.OtherModelParameterValueParameter" title="pywr.parameters.OtherModelParameterValueParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OtherModelParameterValueParameter</span></code></a>(model, ...)</p></td>
+<td><p>Parameter that obtains its value from another model's parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.OtherModelNodeFlowParameter.html#pywr.parameters.OtherModelNodeFlowParameter" title="pywr.parameters.OtherModelNodeFlowParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OtherModelNodeFlowParameter</span></code></a>(model, ...)</p></td>
+<td><p>Parameter that obtains its value from the flow through a node in another model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pywr.parameters.OtherModelNodeStorageParameter.html#pywr.parameters.OtherModelNodeStorageParameter" title="pywr.parameters.OtherModelNodeStorageParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OtherModelNodeStorageParameter</span></code></a>(model, ...)</p></td>
+<td><p>Parameter that obtains its value from the current storage of a node in another model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pywr.parameters.OtherModelIndexParameterValueIndexParameter.html#pywr.parameters.OtherModelIndexParameterValueIndexParameter" title="pywr.parameters.OtherModelIndexParameterValueIndexParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OtherModelIndexParameterValueIndexParameter</span></code></a>(...)</p></td>
+<td><p>Parameter that obtains its value from another model's parameter.</p></td>
 </tr>
 </tbody>
 </table>

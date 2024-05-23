@@ -1,0 +1,58 @@
+﻿pywr.parameters.OtherModelNodeStorageParameter
+==============================================
+
+.. currentmodule:: pywr.parameters
+
+.. autoclass:: OtherModelNodeStorageParameter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~OtherModelNodeStorageParameter.__init__
+      ~OtherModelNodeStorageParameter.after
+      ~OtherModelNodeStorageParameter.before
+      ~OtherModelNodeStorageParameter.finish
+      ~OtherModelNodeStorageParameter.get_all_values
+      ~OtherModelNodeStorageParameter.get_constant_value
+      ~OtherModelNodeStorageParameter.get_double_lower_bounds
+      ~OtherModelNodeStorageParameter.get_double_upper_bounds
+      ~OtherModelNodeStorageParameter.get_double_variables
+      ~OtherModelNodeStorageParameter.get_integer_lower_bounds
+      ~OtherModelNodeStorageParameter.get_integer_upper_bounds
+      ~OtherModelNodeStorageParameter.get_integer_variables
+      ~OtherModelNodeStorageParameter.get_value
+      ~OtherModelNodeStorageParameter.load
+      ~OtherModelNodeStorageParameter.register
+      ~OtherModelNodeStorageParameter.reset
+      ~OtherModelNodeStorageParameter.set_double_variables
+      ~OtherModelNodeStorageParameter.set_integer_variables
+      ~OtherModelNodeStorageParameter.setup
+      ~OtherModelNodeStorageParameter.unregister
+      ~OtherModelNodeStorageParameter.value
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~OtherModelNodeStorageParameter.children
+      ~OtherModelNodeStorageParameter.comment
+      ~OtherModelNodeStorageParameter.double_size
+      ~OtherModelNodeStorageParameter.integer_size
+      ~OtherModelNodeStorageParameter.is_constant
+      ~OtherModelNodeStorageParameter.is_variable
+      ~OtherModelNodeStorageParameter.model
+      ~OtherModelNodeStorageParameter.name
+      ~OtherModelNodeStorageParameter.parents
+      ~OtherModelNodeStorageParameter.size
+      ~OtherModelNodeStorageParameter.tags
+   
+   
