@@ -74,7 +74,12 @@ from .control_curves import (
     ControlCurvePiecewiseInterpolatedParameter,
     WeightedAverageProfileParameter,
 )
-from . import multi_model_parameters
+from .multi_model_parameters import (
+    OtherModelParameterValueParameter,
+    OtherModelNodeFlowParameter,
+    OtherModelNodeStorageParameter,
+    OtherModelIndexParameterValueIndexParameter,
+)
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
