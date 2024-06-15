@@ -2,6 +2,21 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## [v1.24.0](https://github.com/pywr/pywr/compare/v1.23.0...v1.24.0) (2024-03-20)
+
+### Features
+
+* Cache file hashes to avoid recomputation when the same file is referenced multiple times (#1118) ([4afc270](https://github.com/pywr/pywr/commit/4afc27076b9943f03a497c8fe672a30e4498f900)) 
+
+### Fixes
+
+* update warnings check in orphaned components test (#1119) ([582a764](https://github.com/pywr/pywr/commit/582a764b8a5e1f626b273002fed7f246cc0d242d))
+
+### Other
+
+* black formatting updates (#1119) ([7d1b60c](https://github.com/pywr/pywr/commit/7d1b60c8a32fcc56d990727874a13e4af1aa881d))
+
+
 ## [v1.23.0](https://github.com/pywr/pywr/compare/v1.22.1...v1.23.0) (2023-11-13)
 
 ### Features
