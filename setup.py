@@ -53,11 +53,12 @@ def setup_package():
             "setuptools>=62",
             "setuptools_scm[toml]>=8.0",
             "cython>=3",
-            "numpy",
+            "numpy<2",
         ],
         install_requires=[
             "pandas",
             "networkx",
+            "numpy<2",
             "scipy",
             "tables",
             "openpyxl",
