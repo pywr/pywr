@@ -2416,7 +2416,7 @@ class TestEventRecorder:
             if len(event_durations) > 0:
                 expected_durations.append(func(event_durations))
             else:
-                expected_durations.append(0.0)
+                expected_durations.append(np.nan)
 
         assert_allclose(evt_dur.values(), expected_durations)
         assert_allclose(evt_dur.aggregated_value(), np.max(expected_durations))
@@ -2465,7 +2465,11 @@ class TestEventRecorder:
         trigger = StorageThresholdRecorder(m, strg, -1.0, predicate="<")
         evt_rec = EventRecorder(m, trigger)
         evt_dur = EventDurationRecorder(
-            m, evt_rec, recorder_agg_func=recorder_agg_func, agg_func="max"
+            m,
+            evt_rec,
+            recorder_agg_func=recorder_agg_func,
+            agg_func="max",
+            ignore_nan=True,
         )
 
         m.run()
@@ -2475,8 +2479,10 @@ class TestEventRecorder:
         df = evt_rec.to_dataframe()
         assert len(df) == 0
 
-        assert_allclose(evt_dur.values(), np.zeros(len(m.scenarios.combinations)))
-        assert_allclose(evt_dur.aggregated_value(), 0)
+        assert_allclose(
+            evt_dur.values(), np.full(len(m.scenarios.combinations), np.nan)
+        )
+        assert_allclose(evt_dur.aggregated_value(), np.nan)
 
     @pytest.mark.parametrize("minimum_length", [1, 2, 3, 4])
     def test_hysteresis(self, simple_linear_model, minimum_length):

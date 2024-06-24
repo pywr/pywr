@@ -221,7 +221,7 @@ class EventDurationRecorder(Recorder):
         EventRecorder instance to calculate the events.
     agg_func - string, callable
         Function used for aggregating across the recorders. Numpy style functions that
-        support an axis argument are supported. Defulat value is 'mean'.
+        support an axis argument are supported. Default value is 'mean'.
     recorder_agg_func - string, callable
         Optional aggregating function for all events in each scenario. The function
         must be supported by the `DataFrame.group_by` method.  If no value is provided
@@ -241,7 +241,7 @@ class EventDurationRecorder(Recorder):
         self._values = np.empty(len(self.model.scenarios.combinations))
 
     def reset(self):
-        self._values[...] = 0.0
+        self._values[...] = np.nan
 
     def values(self):
         return self._values
@@ -249,7 +249,7 @@ class EventDurationRecorder(Recorder):
     def finish(self):
         df = self.event_recorder.to_dataframe()
 
-        self._values[...] = 0.0
+        self._values[...] = np.nan
         # No events found
         if len(df) == 0:
             return
