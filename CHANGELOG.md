@@ -2,7 +2,13 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
-## [v1.25.0](https://github.com/pywr/pywr/compare/v1.24.0...v1.25.0) (2024-06-19)
+## [v1.26.0](https://github.com/pywr/pywr/compare/v1.25.0...v1.26.0) (2024-06-24)
+
+### Fixes
+
+* Use NaN when calculating duration of no events. (#1131) ([bc7b302](https://github.com/pywr/pywr/commit/bc7b3020f8391e484e25140f44318925292da65d)), closes [#1131](https://github.com/pywr/pywr/issues/1131)
+
+## [v1.25.0](https://github.com/pywr/pywr/compare/v1.24.0...v1.25.0) (2024-06-20)
 
 ### Features
 
