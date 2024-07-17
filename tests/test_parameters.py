@@ -60,7 +60,7 @@ import itertools
 import calendar
 import warnings
 from numpy.testing import assert_allclose
-from scipy.interpolate import Rbf, interp1d, make_interp_spline
+from scipy.interpolate import Rbf, interp1d
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -1305,7 +1305,6 @@ class TestInterpolatedParameter:
         [
             (
                 {"bounds_error": False, "fill_value": [0, 2]},
-                #{},
                 [-2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15],
             ),
             ({"kind": "quadratic"}, [5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 5]),
@@ -1322,12 +1321,9 @@ class TestInterpolatedParameter:
         data = {"parameter": "myparam", "x": x, "y": y, "interp_kwargs": interp_kwargs}
         p2 = InterpolatedParameter.load(model, data)
 
-        #if "kind" in interp_kwargs:
-        #    interp_kwargs["k"] = p2._select_degree(interp_kwargs.pop("kind"))
         if "fill_value" in interp_kwargs:
             interp_kwargs["fill_value"] = tuple(interp_kwargs["fill_value"])
         expected_values = interp1d(x, y, **interp_kwargs)(values)
-        #expected_values = make_interp_spline(x, y, **interp_kwargs)(values)
 
         @assert_rec(model, p2)
         def expected_func(timestep, scenario_index):
@@ -1912,7 +1908,6 @@ def test_orphaned_components(simple_linear_model):
     result = model.find_orphaned_parameters()
     assert not result
     # assert that warning not raised by check
-    #with pytest.warns(None) as record:
     with warnings.catch_warnings(record=True) as record:
         model.check()
     for w in record:
