@@ -76,7 +76,7 @@ from .control_curves import (
 )
 from . import multi_model_parameters
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import make_interp_spline
 from scipy.integrate import quad
 import pandas
 
@@ -131,24 +131,68 @@ class AbstractInterpolatedParameter(Parameter):
     def _value_to_interpolate(self, ts, scenario_index):
         raise NotImplementedError()
 
-    @property
-    def interp_kwargs(self):
-        return self._interp_kwargs
-
-    @interp_kwargs.setter
-    def interp_kwargs(self, data):
-        if "fill_value" in data and isinstance(data["fill_value"], list):
-            # SciPy's interp1d expects a tuple when defining fill values for the upper and lower bounds
-            data["fill_value"] = tuple(data["fill_value"])
-        self._interp_kwargs = data
-
     def setup(self):
         super(AbstractInterpolatedParameter, self).setup()
-        self.interp = interp1d(self.x, self.y, **self.interp_kwargs)
 
-    def value(self, ts, scenario_index):
+        degree = self._select_degree(self.interp_kwargs["kind"])
+        self.interp = make_interp_spline(self.x, self.y, degree)
+
+        AbstractInterpolatedParameter.value = self._unchecked_value
+        if "fill_value" in self.interp_kwargs:
+            # Return fill values for out of bounds args
+            self.fill_value = self.interp_kwargs["fill_value"]
+            AbstractInterpolatedParameter.value = self._filled_value
+
+        if self.interp_kwargs.get("bounds_error"):
+            # Raise ValueError on out of bounds values
+            AbstractInterpolatedParameter.value = self._checked_value
+
+    def _select_degree(self, degree_name):
+        degree_name_map = {
+            "constant": 0,
+            "linear": 1,
+            "quadratic": 2,
+            "cubic": 3
+        }
+
+        degree = degree_name_map.get(degree_name, None)
+        if not degree:
+            raise ValueError(f"Invalid degree type '{degree_name}' "
+                             f"for parameter {self.__class__.__qualname__}")
+
+        return degree
+
+    def _checked_value(self, ts, scenario_index):
+        """
+        Raises ValueError on argument outside of interpolated range
+        """
         v = self._value_to_interpolate(ts, scenario_index)
-        return self.interp(v)
+        if v < self.x[0] or v > self.x[-1]:
+            raise ValueError(f"Value {v} falls outside of interpolation bounds")
+
+        return self._unchecked_value(ts, scenario_index)
+
+    def _filled_value(self, ts, scenario_index):
+        """
+        Returns specified values for arguments outside of interpolated range
+        """
+        v = self._value_to_interpolate(ts, scenario_index)
+        if v < self.x[0]:
+            return self.fill_value[0]
+
+        if v > self.x[-1]:
+            return self.fill_value[-1]
+
+        return self._unchecked_value(ts, scenario_index)
+
+    def _unchecked_value(self, ts, scenario_index):
+        """
+        Arguments outside of the interpolated range invoke
+        the default behaviour of the interpolating instance
+        """
+        v = self._value_to_interpolate(ts, scenario_index)
+        val = self.interp(v)
+        return val
 
 
 class InterpolatedParameter(AbstractInterpolatedParameter):
@@ -200,7 +244,7 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
     values : array_like or from file
         y coordinates of the data points for interpolation.
     interp_kwargs : dict
-        Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
+        Dictionary of keyword arguments to pass to base class and used
         for interpolation.
     """
 
@@ -250,7 +294,7 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
     values : array_like
         y coordinates of the data points for interpolation.
     interp_kwargs : dict
-        Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
+        Dictionary of keyword arguments to pass to base class and used
         for interpolation.
     """
 
@@ -288,7 +332,7 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
         Lower value of the interpolated interval to integrate over. Can be `None` in which
         case the lower value of interval is zero.
     interp_kwargs : dict
-        Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
+        Dictionary of keyword arguments to pass to base class and used
         for interpolation.
 
     Example
