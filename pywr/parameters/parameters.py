@@ -135,17 +135,17 @@ class AbstractInterpolatedParameter(Parameter):
         super(AbstractInterpolatedParameter, self).setup()
 
         degree = self._select_degree(self.interp_kwargs["kind"])
-        self.interp = make_interp_spline(self.x, self.y, degree)
+        self._interp = make_interp_spline(self.x, self.y, degree)
 
-        AbstractInterpolatedParameter.value = self._unchecked_value
+        self.interp = self._interp
         if "fill_value" in self.interp_kwargs:
             # Return fill values for out of bounds args
             self.fill_value = self.interp_kwargs["fill_value"]
-            AbstractInterpolatedParameter.value = self._filled_value
+            self.interp = self._filled_interp
 
         if self.interp_kwargs.get("bounds_error"):
             # Raise ValueError on out of bounds values
-            AbstractInterpolatedParameter.value = self._checked_value
+            self.interp = self._checked_interp
 
     def _select_degree(self, degree_name):
         degree_name_map = {
@@ -162,30 +162,28 @@ class AbstractInterpolatedParameter(Parameter):
 
         return degree
 
-    def _checked_value(self, ts, scenario_index):
+    def _checked_interp(self, v):
         """
         Raises ValueError on argument outside of interpolated range
         """
-        v = self._value_to_interpolate(ts, scenario_index)
         if v < self.x[0] or v > self.x[-1]:
             raise ValueError(f"Value {v} falls outside of interpolation bounds")
 
-        return self._unchecked_value(ts, scenario_index)
+        return self._interp(v)
 
-    def _filled_value(self, ts, scenario_index):
+    def _filled_interp(self, v):
         """
         Returns specified values for arguments outside of interpolated range
         """
-        v = self._value_to_interpolate(ts, scenario_index)
         if v < self.x[0]:
             return self.fill_value[0]
 
         if v > self.x[-1]:
             return self.fill_value[-1]
 
-        return self._unchecked_value(ts, scenario_index)
+        return self._interp(v)
 
-    def _unchecked_value(self, ts, scenario_index):
+    def value(self, ts, scenario_index):
         """
         Arguments outside of the interpolated range invoke
         the default behaviour of the interpolating instance
