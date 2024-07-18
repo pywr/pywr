@@ -191,8 +191,7 @@ class AbstractInterpolatedParameter(Parameter):
         the default behaviour of the interpolating instance
         """
         v = self._value_to_interpolate(ts, scenario_index)
-        val = self.interp(v)
-        return val
+        return self.interp(v)
 
 
 class InterpolatedParameter(AbstractInterpolatedParameter):
