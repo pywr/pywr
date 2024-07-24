@@ -9,60 +9,29 @@ import numpy as np
 
 from helpers import load_model
 
-from pywr.recorders import (
-    NumpyArrayStorageRecorder
-)   
-
-
 def test_hydropower_results():
+    """
+        Use a simple model of a Reservoir to test that the area, level,
+        volume, evaporation, rainfall behave as expected
 
-    model = load_model("hydropower_verification.json")
-
-    gerd_rec = NumpyArrayStorageRecorder(model, model.nodes["RES1"])
-
+        Catchment -> Link -> Reservoir -> Link 
+                       |         |        |    
+                       v         v        |    - > Link -> Output        |
+                    Output     Turbine    |   /       \ 
+                                     \    |  /         - -> Output
+                                      \   V /              
+         Catchment -> Reservoir -------> Link -> Output                                           
+    """
+    model = load_model("TestingReservoirAndTurbineNodes.json")
     model.run()
 
-    gerd_st_df = gerd_rec.to_dataframe()
-    gerd_turbine_df = model.recorders["__RES1_turbine__:hydropowerrecorder"].to_dataframe()
+    df = model.recorders["__Storage reservoir 1__:recorder1"].to_dataframe()
+    assert df.shape == (12, 1)
 
-    """
-        Verified values for start and end sequences of results period.
-        Keys must match f"{}_df" var names, values are dicts of
-        slice-as-tuple: np.array expected values.
-    """
-    expected = {
-        "gerd_st": {
-            (0,5): np.array([[46360.63694919],
-                                [42965.88915086],
-                                [39208.38512899],
-                                [35785.00239353],
-                                [32702.58927283]]),
+    res1_results = [round(c[0], 2) for c in  model.recorders["__Storage reservoir 1__:recorder1"].to_dataframe().values]
+    assert res1_results == [19.15, 0.0, 20.0, 17.88, 0.0, 0.0, 0.0, 0.0,-15.0, -75.0, -24.17, 0.0]
 
-            (-5,None): np.array([[40747.57945841],
-                                    [49263.9095238 ],
-                                    [53011.73528208],
-                                    [53127.665874  ],
-                                    [50834.14051615]])
-        },
-        "gerd_turbine": {
-            (0,5): np.array([[1730.1752206 ],
-                                [1595.41837885],
-                                [1466.1889006 ],
-                                [1329.45736668],
-                                [1210.65347216]]),
+    res2_results = [round(c[0], 2) for c in  model.recorders["__Storage reservoir 1__:recorder1"].to_dataframe().values]
+    assert res1_results == [-56.45, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-            (-5,None): np.array([[1070.2307505 ],
-                                    [1384.66567242],
-                                    [1706.67934078],
-                                    [1827.94504144],
-                                    [1831.7610369 ]])
-        }
-    }
-
-    assert gerd_st_df.shape == (240, 1)
-    assert gerd_turbine_df.shape == (240, 1)
-
-    for elem, ranges in expected.items():
-        for s,v in ranges.items():
-            df = locals()[f"{elem}_df"]
-            assert np.all(np.isclose(df[slice(*s)].values, v))
+    breakpoint()

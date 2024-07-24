@@ -157,8 +157,8 @@ class Reservoir(RiverDomainMixin, Storage):
             # reinstate the given cost parameter to pass to the parent constructors
             kwargs["cost"] = cost
 
-        self.level = pop_kwarg_parameter(kwargs, "level", None)
-        self.area = pop_kwarg_parameter(kwargs, "area", None)
+        # self.level = pop_kwarg_parameter(kwargs, "level", None)
+        # self.area = pop_kwarg_parameter(kwargs, "area", None)
 
         self.evaporation_cost = kwargs.pop('evaporation_cost', -999)
         self.unit_conversion = kwargs.pop('unit_conversion', 1e6 * 1e-3 * 1e-6) #This assume area is Km2, level is m and evaporation is mm/day
@@ -166,77 +166,82 @@ class Reservoir(RiverDomainMixin, Storage):
         self.evaporation = kwargs.pop("evaporation", None)
         self.rainfall = kwargs.pop("rainfall", None)
 
-        super(Reservoir, self).__init__(model, *args, **kwargs)
+        name = kwargs.pop('name')
+        super().__init__(model, name, **kwargs)
 
         self.rainfall_node = None
         self.rainfall_recorder = None
         self.evaporation_node = None
         self.evaporation_recorder = None
 
-    @classmethod
-    def pre_load(cls, model, data):
-        
-        name = data.pop("name")
-        node = cls(name=name, model=model, **data)  
 
-        if node.evaporation is not None:
-            node._make_evaporation_node(model, node.evaporation, node.evaporation_cost)
-        
-        if node.rainfall is not None:
-            node._make_rainfall_node(model, node.rainfall)
+    def finalise_load(self):
+        super(Reservoir, self).finalise_load()
 
-        setattr(node, "_Loadable__parameters_to_load", {})
-        
-        return node
+        #in some cases, this hasn't been converted to a constant parameter, such as in the unit tests, so
+        #check for that here.
+        if not isinstance(self.unit_conversion, Parameter):
+            self.unit_conversion = ConstantParameter(self.model, self.unit_conversion)
 
-    def _make_evaporation_node(self, model, evaporation, cost):
+        if self.evaporation is not None:
+            self._make_evaporation_node(self.evaporation, self.evaporation_cost)
+
+        if self.rainfall is not None:
+            self._make_rainfall_node(self.rainfall)
+
+    def _make_evaporation_node(self, evaporation, cost):
 
         if not isinstance(self.area, Parameter):
             raise ValueError('Evaporation nodes can only be created if an area Parameter is given.')
 
         if isinstance(evaporation, Parameter):
-            evaporation_param = load_parameter(model, evaporation)
-
+            evaporation_param = evaporation
+        elif isinstance(evaporation, str):
+            evaporation_param = load_parameter(self.model, evaporation)
+        elif isinstance(evaporation, (int, float)):
+            evaporation_param = ConstantParameter(self.model, evaporation)
         else:
             evp = pd.DataFrame.from_dict(evaporation)
-            evaporation_param = DataFrameParameter(model, evp)
+            evaporation_param = DataFrameParameter(self.model, evp)
 
-        evaporation_flow_param = AggregatedParameter(model, [evaporation_param, self.unit_conversion, self.area],
+        evaporation_flow_param = AggregatedParameter(self.model, [evaporation_param, self.unit_conversion, self.area],
                                                      agg_func='product')
 
-        evaporation_node = Output(model, '{}.evaporation'.format(self.name), parent=self)
+        evaporation_node = Output(self.model, '{}.evaporation'.format(self.name), parent=self)
         evaporation_node.max_flow = evaporation_flow_param
         evaporation_node.cost = cost
 
         self.connect(evaporation_node)
         self.evaporation_node = evaporation_node
 
-        self.evaporation_recorder = NumpyArrayNodeRecorder(model, evaporation_node,
+        self.evaporation_recorder = NumpyArrayNodeRecorder(self.model, evaporation_node,
                                                            name=f'__{evaporation_node.name}__:evaporation')
 
-    def _make_rainfall_node(self, model, rainfall, cost):
-
-        if not isinstance(self.area, Parameter):
-            raise ValueError('Evaporation nodes can only be created if an area Parameter is given.')
-            
+    def _make_rainfall_node(self, rainfall):
         if isinstance(rainfall, Parameter):
-            rainfall_param = load_parameter(model, rainfall)
-
+            rainfall_param = rainfall  
+        elif isinstance(rainfall, str):
+            rainfall_param = load_parameter(self.model, rainfall)
+        elif isinstance(rainfall, (int, float)):
+            rainfall_param = ConstantParameter(self.model, rainfall)
         else:
+            #it's not a paramter or parameter reference, to try float and dataframe
             rain = pd.DataFrame.from_dict(rainfall)
-            rainfall_param = DataFrameParameter(model, rain)
+            rainfall_param = DataFrameParameter(self.model, rain)
 
         # Create the flow parameters multiplying area by rate of rainfall/evap
-        rainfall_flow_param = AggregatedParameter(model, [rainfall_param, self.unit_conversion, self.area],
+
+        rainfall_flow_param = AggregatedParameter(self.model, [rainfall_param, self.unit_conversion, self.area],
                                                   agg_func='product')
 
         # Create the nodes to provide the flows
-        rainfall_node = Catchment(model, '{}.rainfall'.format(self.name), parent=self)
+        rainfall_node = Catchment(self.model, '{}_rainfall'.format(self.name), parent=self)
         rainfall_node.max_flow = rainfall_flow_param
+
 
         rainfall_node.connect(self)
         self.rainfall_node = rainfall_node
-        self.rainfall_recorder = NumpyArrayNodeRecorder(model, rainfall_node,
+        self.rainfall_recorder = NumpyArrayNodeRecorder(self.model, rainfall_node,
                                                         name=f'__{rainfall_node.name}__:rainfall')
 
 class River(RiverDomainMixin, Link):
