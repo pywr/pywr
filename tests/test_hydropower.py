@@ -31,7 +31,5 @@ def test_hydropower_results():
     res1_results = [round(c[0], 2) for c in  model.recorders["__Storage reservoir 1__:recorder1"].to_dataframe().values]
     assert res1_results == [19.15, 0.0, 20.0, 17.88, 0.0, 0.0, 0.0, 0.0,-15.0, -75.0, -24.17, 0.0]
 
-    res2_results = [round(c[0], 2) for c in  model.recorders["__Storage reservoir 1__:recorder1"].to_dataframe().values]
-    assert res1_results == [-56.45, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
-    breakpoint()
+    res2_results = [round(c[0], 2) for c in  model.recorders["__Storage reservoir 2__:recorder1"].to_dataframe().values]
+    assert res2_results == [-56.45, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
