@@ -85,7 +85,7 @@ class Turbine(Link, metaclass=NodeMeta):
         if cost is None:
             cost = 0.0
         if min_flow is None:
-            min_flow = 0.0
+            min_flow = ConstantParameter(node.model, 0.0)
 
         node.cost = cost
         node.min_flow = min_flow
@@ -118,9 +118,7 @@ class Turbine(Link, metaclass=NodeMeta):
         self.max_flow = hp_target_flow
 
         hp_recorder = HydropowerRecorder(self.model, self,
-                                         name=f"__{self.name}__:hydropowerrecorder",
+                                         name=f"__{self.name}__:hydropower recorder",
                                          water_elevation_parameter=level_parameter,
                                          turbine_elevation=self.turbine_elevation, **self.hp_kwargs)
         self.hydropower_recorder = hp_recorder
-
-        print("hello")

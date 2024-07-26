@@ -1,4 +1,187 @@
 {
+  "metadata": {
+    "description": "Testing Reservoir and Turbines nodes",
+    "title": "Testing Reservoir and Turbines nodes"
+  },
+  "timestepper": {
+    "end": "2021-12-31",
+    "start": "2021-01-01",
+    "timestep": "M"
+  },
+  "nodes": [
+    {
+      "name": " Irrigation water abstraction",
+      "type": "output",
+      "cost": -20,
+      "max_flow": 65,
+      "position": {
+        "geographic": [
+          76.5892,
+          48.3865
+        ]
+      }
+    },
+    {
+      "name": "Hydropower plant",
+      "type": "link",
+      "max_flow": "Hydropower plant: Target",
+      "cost": -1,
+      "position": {
+        "geographic": [
+          64.7164,
+          91.0932
+        ]
+      }
+    },
+    {
+      "name": "Industrial water abstraction",
+      "type": "output",
+      "cost": -5,
+      "max_flow": 50,
+      "position": {
+        "geographic": [
+          69.4985,
+          171.352
+        ]
+      }
+    },
+    {
+      "name": "Inflow_1",
+      "type": "catchment",
+      "flow": "__Inflow_1__:flow",
+      "position": {
+        "geographic": [
+          21.3479,
+          8.9933
+        ]
+      }
+    },
+    {
+      "name": "Inflow_2",
+      "type": "catchment",
+      "flow": "__Inflow_2__:flow",
+      "position": {
+        "geographic": [
+          74.6104,
+          4.94353
+        ]
+      }
+    },
+    {
+      "name": "link_1",
+      "type": "link",
+      "position": {
+        "geographic": [
+          68.0144,
+          33.6601
+        ]
+      }
+    },
+    {
+      "name": "link_3",
+      "type": "link",
+      "position": {
+        "geographic": [
+          50.8705,
+          116.423
+        ]
+      }
+    },
+    {
+      "name": "link_4",
+      "type": "link",
+      "position": {
+        "geographic": [
+          51.0298,
+          153.681
+        ]
+      }
+    },
+    {
+      "name": "link_5",
+      "type": "link",
+      "position": {
+        "geographic": [
+          53.8331,
+          84.4663
+        ]
+      }
+    },
+    {
+      "name": "Municipal water abstraction",
+      "type": "output",
+      "cost": -10,
+      "max_flow": 130,
+      "position": {
+        "geographic": [
+          22.2428,
+          102.853
+        ]
+      }
+    },
+    {
+      "name": "outlet",
+      "type": "output",
+      "position": {
+        "geographic": [
+          51.3596,
+          196.387
+        ]
+      }
+    },
+    {
+      "name": "Storage reservoir 1",
+      "type": "storage",
+      "max_volume": 3500,
+      "initial_volume_pc": 0.5,
+      "area": "__Storage reservoir 1__:area",
+      "level": "__Storage reservoir 1__:level",
+      "position": {
+        "geographic": [
+          34.375,
+          60.904
+        ]
+      }
+    },
+    {
+      "name": "Storage reservoir 2",
+      "type": "storage",
+      "cost": -10,
+      "max_volume": 3500,
+      "initial_volume_pc": 0.5,
+      "area": "__Storage reservoir 2__:area",
+      "level": "__Storage reservoir 2__:level",
+      "position": {
+        "geographic": [
+          62.4079,
+          60.5358
+        ]
+      }
+    },
+    {
+      "name": "Storage reservoir 2_evaporation",
+      "type": "output",
+      "cost": -10000,
+      "max_flow": "__Storage reservoir 2__:evaporation",
+      "position": {
+        "geographic": [
+          62.4079,
+          60.5358
+        ]
+      }
+    },
+    {
+      "name": "Storage reservoir 2_rainfall",
+      "type": "catchment",
+      "flow": "__Storage reservoir 2__:rainfall",
+      "position": {
+        "geographic": [
+          62.4079,
+          60.5358
+        ]
+      }
+    }
+  ],
   "edges": [
     [
       "Hydropower plant",
@@ -18,6 +201,14 @@
     ],
     [
       "link_1",
+      "Storage reservoir 2"
+    ],
+    [
+      "Storage reservoir 2",
+      "Storage reservoir 2_evaporation"
+    ],
+    [
+      "Storage reservoir 2_rainfall",
       "Storage reservoir 2"
     ],
     [
@@ -52,169 +243,6 @@
       "Storage reservoir 1",
       "link_3"
     ]
-  ],
-  "metadata": {
-    "description": "Testing Reservoir and Turbines nodes",
-    "title": "Testing Reservoir and Turbines nodes"
-  },
-  "nodes": [
-    {
-      "cost": -20,
-      "max_flow": 65,
-      "name": " Irrigation water abstraction",
-      "position": {
-        "geographic": [
-          76.5892,
-          48.3865
-        ]
-      },
-      "type": "output"
-    },
-    {
-      "cost": -10,
-      "density": 1000,
-      "efficiency": 0.9,
-      "energy_unit_conversion": 2.4e-05,
-      "flow_unit_conversion": 11.57407407,
-      "generation_capacity": 3960,
-      "name": "Hydropower plant",
-      "position": {
-        "geographic": [
-          64.7164,
-          91.0932
-        ]
-      },
-      "storage_node": "Storage reservoir 2",
-      "turbine_elevation": 40,
-      "type": "turbine"
-    },
-    {
-      "cost": -5,
-      "max_flow": 50,
-      "name": "Industrial water abstraction",
-      "position": {
-        "geographic": [
-          69.4985,
-          171.352
-        ]
-      },
-      "type": "output"
-    },
-    {
-      "flow": "__Inflow_1__:flow",
-      "name": "Inflow_1",
-      "position": {
-        "geographic": [
-          21.3479,
-          8.9933
-        ]
-      },
-      "type": "catchment"
-    },
-    {
-      "flow": "__Inflow_2__:flow",
-      "name": "Inflow_2",
-      "position": {
-        "geographic": [
-          74.6104,
-          4.94353
-        ]
-      },
-      "type": "catchment"
-    },
-    {
-      "name": "link_1",
-      "position": {
-        "geographic": [
-          68.0144,
-          33.6601
-        ]
-      },
-      "type": "link"
-    },
-    {
-      "name": "link_3",
-      "position": {
-        "geographic": [
-          50.8705,
-          116.423
-        ]
-      },
-      "type": "link"
-    },
-    {
-      "name": "link_4",
-      "position": {
-        "geographic": [
-          51.0298,
-          153.681
-        ]
-      },
-      "type": "link"
-    },
-    {
-      "name": "link_5",
-      "position": {
-        "geographic": [
-          53.8331,
-          84.4663
-        ]
-      },
-      "type": "link"
-    },
-    {
-      "cost": -10,
-      "max_flow": 130,
-      "name": "Municipal water abstraction",
-      "position": {
-        "geographic": [
-          22.2428,
-          102.853
-        ]
-      },
-      "type": "output"
-    },
-    {
-      "name": "outlet",
-      "position": {
-        "geographic": [
-          51.3596,
-          196.387
-        ]
-      },
-      "type": "output"
-    },
-    {
-      "area": "__Storage reservoir 1__:area",
-      "initial_volume_pc": 0.5,
-      "level": "__Storage reservoir 1__:level",
-      "max_volume": 3500,
-      "name": "Storage reservoir 1",
-      "position": {
-        "geographic": [
-          34.375,
-          60.904
-        ]
-      },
-      "type": "reservoir"
-    },
-    {
-      "area": "__Storage reservoir 2__:area",
-      "evaporation": "__Storage reservoir 2__:evaporation",
-      "evaporation_cost": -10000,
-      "initial_volume_pc": 0.5,
-      "level": "__Storage reservoir 2__:level",
-      "max_volume": 3500,
-      "name": "Storage reservoir 2",
-      "position": {
-        "geographic": [
-          62.4079,
-          60.5358
-        ]
-      },
-      "rainfall": 4.5,
-      "type": "reservoir"
-    }
   ],
   "parameters": {
     "__Inflow_1__:flow": {
@@ -348,6 +376,17 @@
       ]
     },
     "__Storage reservoir 2__:evaporation": {
+      "type": "AggregatedParameter",
+      "parameters": [
+        "__Storage reservoir 2__:area",
+        "__Storage reservoir 2__:evaporation mm",
+        1e6,
+        1e-3,
+        1e-6
+      ],
+      "agg_func": "product"
+    },
+    "__Storage reservoir 2__:evaporation mm": {
       "type": "monthlyprofileparameter",
       "values": [
         0.96112932,
@@ -364,6 +403,21 @@
         0.997527457
       ]
     },
+    "__Storage reservoir 2__:rainfall": {
+      "type": "AggregatedParameter",
+      "parameters": [
+        "__Storage reservoir 2__:area",
+        "__Storage reservoir 2__:rainfall mm",
+        1e6,
+        1e-3,
+        1e-6
+      ],
+      "agg_func": "product"
+    },
+    "__Storage reservoir 2__:rainfall mm": {
+      "type": "ConstantParameter",
+      "value": 4.5
+    },
     "__Storage reservoir 2__:level": {
       "comment": "",
       "interp_kwargs": {
@@ -379,21 +433,59 @@
         0,
         3500
       ]
+    },
+    "Hydropower plant: Target": {
+      "type": "HydropowerTargetParameter",
+      "target": {
+        "type": "ConstantParameter",
+        "value": 3960
+      },
+      "density": 1000,
+      "efficiency": 0.9,
+      "energy_unit_conversion": 2.4e-05,
+      "flow_unit_conversion": 11.57407407,
+      "turbine_elevation": 40,
+      "water_elevation_parameter": "__Storage reservoir 2__:level"
     }
   },
   "recorders": {
-    "__Storage reservoir 1__:recorder1": {
-      "type": "NumpyArrayNodeRecorder",
+    "__Storage reservoir 1__:volume": {
+      "type": "NumpyArrayStorageRecorder",
       "node":"Storage reservoir 1"
     },
-    "__Storage reservoir 2__:recorder1": {
-      "type": "NumpyArrayNodeRecorder",
+    "__Storage reservoir 2__:volume": {
+      "type": "NumpyArrayStorageRecorder",
       "node":"Storage reservoir 2"
+    },
+    "__Hydropower plant__:hydropower plant flow": {
+      "type": "NumpyArrayNodeRecorder",
+      "node":"Hydropower plant"
+    },
+    "__Storage reservoir 1__:level recorder": {
+      "type": "NumpyArrayParameterRecorder",
+      "parameter":"__Storage reservoir 1__:level"
+    },
+    "__Storage reservoir 1__:area recorder": {
+      "type": "NumpyArrayParameterRecorder",
+      "parameter":"__Storage reservoir 1__:area"
+    },
+    "__Hydropower plant__:hydropower recorder": {
+      "type": "HydropowerRecorder",
+      "node": "Hydropower plant",
+      "water_elevation_parameter":"__Storage reservoir 2__:level",
+      "density": 1000,
+      "efficiency": 0.9,
+      "energy_unit_conversion": 2.4e-05,
+      "flow_unit_conversion": 11.57407407,
+      "turbine_elevation": 40
+    },
+    "__Storage reservoir 2_evaporation__:evaporation": {
+      "type": "NumpyArrayNodeRecorder",
+      "node": "Storage reservoir 2_evaporation"
+    },	
+    "__Storage reservoir 2_rainfall__:rainfall": {
+      "type": "NumpyArrayNodeRecorder",
+      "node": "Storage reservoir 2_rainfall"
     }
-  },
-  "timestepper": {
-    "end": "2021-12-31",
-    "start": "2021-01-01",
-    "timestep": "M"
   }
 }

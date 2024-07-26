@@ -207,7 +207,7 @@ class Reservoir(RiverDomainMixin, Storage):
         evaporation_flow_param = AggregatedParameter(self.model, [evaporation_param, self.unit_conversion, self.area],
                                                      agg_func='product')
 
-        evaporation_node = Output(self.model, '{}.evaporation'.format(self.name), parent=self)
+        evaporation_node = Output(self.model, '{}_evaporation'.format(self.name), parent=self)
         evaporation_node.max_flow = evaporation_flow_param
         evaporation_node.cost = cost
 
