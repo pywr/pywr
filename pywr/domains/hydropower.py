@@ -125,9 +125,7 @@ class Turbine(Link, metaclass=NodeMeta):
         self.max_flow = hp_target_flow
 
         hp_recorder = HydropowerRecorder(self.model, self,
-                                         name=f"__{self.name}__:hydropowerrecorder",
+                                         name=f"__{self.name}__:hydropower recorder",
                                          water_elevation_parameter=level_parameter,
                                          turbine_elevation=self.turbine_elevation, **self.hp_kwargs)
         self.hydropower_recorder = hp_recorder
-
-        print("hello")
