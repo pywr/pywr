@@ -106,6 +106,8 @@ class Turbine(Link, metaclass=NodeMeta):
         level_parameter = None
         if self.storage_node is not None:
             storage_node = self.model.nodes[self.storage_node]
+            #In some cases, the level of the storage node hasn't been assigned to the level parameter of the storage node.
+            #we therefore need to find the parameter in the 'loadable' attribute of the node. Is there another way?
             if hasattr(storage_node, 'level') and not isinstance(storage_node.level, Parameter):
                 if storage_node._Loadable__parameters_to_load.get('level'):
                     level_parameter = self.model.parameters[storage_node._Loadable__parameters_to_load['level']]
@@ -115,6 +117,9 @@ class Turbine(Link, metaclass=NodeMeta):
                         level_parameter = ConstantParameter(self.model, storage_node.level)
                     except:
                         raise Exception(f"An unknown value {storage_node.level} was set on the storage node level.")
+            else:
+                #the level parameter has been assigned to the node so just retrieve it.
+                level_parameter = storage_node.level
 
         hp_target_flow = HydropowerTargetParameter(self.model, self.generation_capacity,
                                                    water_elevation_parameter=level_parameter,
