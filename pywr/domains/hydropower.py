@@ -78,14 +78,21 @@ class Turbine(Link, metaclass=NodeMeta):
         cost = data.pop("cost", 0.0)
         min_flow = data.pop("min_flow", None)
 
+
         node = cls(name=name, model=model, **data)
 
         cost = load_parameter(model, cost)
         min_flow = load_parameter(model, min_flow)
         if cost is None:
-            cost = 0.0
+            cost = ConstantParameter(node.model, 0.0)
         if min_flow is None:
-            min_flow = 0.0
+            min_flow = ConstantParameter(node.model, 0.0)
+
+        try:
+            float(min_flow)
+            min_flow = ConstantParameter(node.model, min_flow)
+        except:
+            pass
 
         node.cost = cost
         node.min_flow = min_flow
@@ -99,7 +106,7 @@ class Turbine(Link, metaclass=NodeMeta):
         level_parameter = None
         if self.storage_node is not None:
             storage_node = self.model.nodes[self.storage_node]
-            if hasattr(storage_node, 'level'):
+            if hasattr(storage_node, 'level') and not isinstance(storage_node.level, Parameter):
                 if storage_node._Loadable__parameters_to_load.get('level'):
                     level_parameter = self.model.parameters[storage_node._Loadable__parameters_to_load['level']]
                 else:
