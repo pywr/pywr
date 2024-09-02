@@ -1223,9 +1223,9 @@ def test_setup_profiler(tmp_path):
 
     assert profile_out.exists()
     df = pandas.read_csv(profile_out)
-    # 4 nodes & 10 parameters for setup & reset
+    # 4 nodes & 11 parameters for setup & reset
     # Plus reservoir has 2 internal nodes that are setup
-    assert len(df) == 14 * 2 + 2
+    assert len(df) == 15 * 2 + 2
 
 
 def test_reset_profiler(tmp_path):
@@ -1238,7 +1238,7 @@ def test_reset_profiler(tmp_path):
 
     assert profile_out.exists()
     df = pandas.read_csv(profile_out)
-    assert len(df) == 14  # 4 nodes & 10 parameters for reset
+    assert len(df) == 15  # 4 nodes & 11 parameters for reset
 
 
 def test_issue1110():
