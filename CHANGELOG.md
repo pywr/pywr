@@ -2,6 +2,28 @@
 
 All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
 
+## [v1.26.0](https://github.com/pywr/pywr/compare/v1.25.0...v1.26.0) (2024-06-24)
+
+### Fixes
+
+* Use NaN when calculating duration of no events. (#1131) ([bc7b302](https://github.com/pywr/pywr/commit/bc7b3020f8391e484e25140f44318925292da65d)), closes [#1131](https://github.com/pywr/pywr/issues/1131)
+
+## [v1.25.0](https://github.com/pywr/pywr/compare/v1.24.0...v1.25.0) (2024-06-20)
+
+### Features
+
+* Add support for defining net or gross loss in LossLink. (#1124) ([ed8eb8b](https://github.com/pywr/pywr/commit/ed8eb8b750fa8c4b320a30308c734a7acf987197)), closes [#1124](https://github.com/pywr/pywr/issues/1124)
+
+### Other
+
+* Pin numpy<2 for now. (#1130) ([2672645](https://github.com/pywr/pywr/commit/2672645728250a9d66ab3ee6f45f215984c5c5e5)), closes [#1130](https://github.com/pywr/pywr/issues/1130)
+* Use delvewheel to repair Windows wheels. (#1125) ([691172c](https://github.com/pywr/pywr/commit/691172c417757193681b7c525f2ab3082a4d118f)), closes [#1125](https://github.com/pywr/pywr/issues/1125) [#1123](https://github.com/pywr/pywr/issues/1123)
+
+### Documentation
+
+* Add OtherModelXXX parameters to API docs. (#1126) ([bdb257d](https://github.com/pywr/pywr/commit/bdb257d98b743f045200c3360e799df8f0ede333)), closes [#1126](https://github.com/pywr/pywr/issues/1126)
+
+
 ## [v1.24.0](https://github.com/pywr/pywr/compare/v1.23.0...v1.24.0) (2024-03-20)
 
 ### Features

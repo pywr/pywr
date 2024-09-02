@@ -113,6 +113,8 @@ cdef class Aggregator:
 
         if ignore_nan:
             values = np.array(values)[~np.isnan(values)]
+            if len(values) == 0:
+                return np.nan
 
         if self._func == AggFuncs.PRODUCT:
             return np.product(values)
@@ -330,7 +332,7 @@ cdef class Recorder(Component):
 
     cpdef double aggregated_value(self) except *:
         cdef double[:] values = self.values()
-        return self._scenario_aggregator.aggregate_1d(values)
+        return self._scenario_aggregator.aggregate_1d(values, ignore_nan=self.ignore_nan)
 
     cpdef double[:] values(self) except *:
         raise NotImplementedError()

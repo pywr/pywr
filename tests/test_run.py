@@ -1012,6 +1012,27 @@ def test_loss_link_node(loss_factor, loss_factor_type):
     assert_allclose(demand1.flow, expected_demand)
 
 
+def test_loss_link_node_table():
+    """Test LossLink node with a table for `loss_factor`."""
+    model = load_model("loss_link_table.json")
+
+    supply1 = model.nodes["supply1"]
+    link1 = model.nodes["link1"]
+    demand1 = model.nodes["demand1"]
+
+    model.check()
+    model.run()
+
+    expected_supply = 10 * (1 + 0.2)
+    expected_demand = 10
+
+    # Supply must provide 20% more flow because of the loss in link1
+    assert_allclose(supply1.flow, expected_supply)
+    # link1 records the net flow after losses
+    assert_allclose(link1.flow, expected_demand)
+    assert_allclose(demand1.flow, expected_demand)
+
+
 def test_loss_link_node_loss_factor_parameter():
     """Test LossLink node with a parameter for `loss_factor`."""
     model = load_model("loss_link_parameter.json")
