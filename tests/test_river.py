@@ -46,7 +46,6 @@ def simple_gauge_model(request):
     }
     return model, expected_node_results
 
-
 @pytest.fixture
 def simple_river_split_gauge_model():
     """

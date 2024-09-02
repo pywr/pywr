@@ -11,16 +11,10 @@ from helpers import load_model
 
 def test_hydropower_results():
     """
-        Use a simple model of a Reservoir to test that the area, level,
-        volume, evaporation, rainfall behave as expected
-
-        Catchment -> Link -> Reservoir -> Link 
-                       |         |        |    
-                       v         v        |    - > Link -> Output        |
-                    Output     Turbine    |   /       \ 
-                                     \    |  /         - -> Output
-                                      \   V /              
-         Catchment -> Reservoir -------> Link -> Output                                           
+        Test the additions made to the reservoir node, which creates nodes internally for ease of use.
+        To test, take a model which contains a hydropower implementation using explitic nodes for evaporaton and rainfall,
+        and compare to an identical model, except using the reservoir node which creates these nodes internally.
+        This is a derivation of the 'two reservoir' model which is used in other tests.
     """
     model1 = load_model("TestingReservoirAndTurbineNodes_NewNodes.json")
     model2 = load_model("TestingReservoirAndTurbineNodes_OldNodes.json")
@@ -46,16 +40,13 @@ def test_hydropower_results():
     evp2_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Storage reservoir 2_evaporation__:evaporation"].to_dataframe().values]
     assert evp2_results_NewNodes == evp2_results_OldNodes
 
-    # The test for the rainfall and volume of the reservoir 1 does not pass the test. To be honest, I am not sure why the results are not same.
-    # I'm thinkg that maybe the difference is due to the solver. Maybe those two solutions are optimal but different.
-
     # Rainfall
-    #ra2_results_NewNodes = [round(c[0], 2) for c in  model1.recorders["__Storage reservoir 2_rainfall__:rainfall"].to_dataframe().values]
-    #ra2_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Storage reservoir 2_rainfall__:rainfall"].to_dataframe().values]
-    #assert ra2_results_NewNodes == ra2_results_OldNodes
+    ra2_results_NewNodes = [round(c[0], 2) for c in  model1.recorders["__Storage reservoir 2_rainfall__:rainfall"].to_dataframe().values]
+    ra2_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Storage reservoir 2_rainfall__:rainfall"].to_dataframe().values]
+    assert ra2_results_NewNodes == ra2_results_OldNodes
 
     # Reservoir 1
-    #res1_results_NewNodes = [round(c[0], 2) for c in  model1.recorders["__Storage reservoir 1__:volume"].to_dataframe().values]
-    #res1_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Storage reservoir 1__:volume"].to_dataframe().values]
-    #assert res1_results_NewNodes == res1_results_OldNodes
+    res1_results_NewNodes = [round(c[0], 2) for c in  model1.recorders["__Storage reservoir 1__:volume"].to_dataframe().values]
+    res1_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Storage reservoir 1__:volume"].to_dataframe().values]
+    assert res1_results_NewNodes == res1_results_OldNodes
 

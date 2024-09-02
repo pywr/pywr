@@ -236,8 +236,7 @@ class Reservoir(RiverDomainMixin, Storage):
 
         # Create the nodes to provide the flows
         rainfall_node = Catchment(self.model, '{}_rainfall'.format(self.name), parent=self)
-        rainfall_node.max_flow = rainfall_flow_param
-
+        rainfall_node.flow = rainfall_flow_param
 
         rainfall_node.connect(self)
         self.rainfall_node = rainfall_node
