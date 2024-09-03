@@ -9,6 +9,7 @@ from pywr.parameters import (
 
 from pywr.recorders import HydropowerRecorder
 
+
 class Turbine(Link, metaclass=NodeMeta):
     """
     A hydropower turbine node.
@@ -110,17 +111,18 @@ class Turbine(Link, metaclass=NodeMeta):
             storage_node = self.model.nodes[self.storage_node]
             # In some cases, the level of the storage node hasn't been assigned to the level parameter of the storage node.
             # we therefore need to find the parameter in the 'loadable' attribute of the node. Is there another way?
-            if hasattr(storage_node, "level") and not isinstance(storage_node.level, Parameter):
+            if hasattr(storage_node, "level") and not isinstance(
+                storage_node.level, Parameter
+            ):
                 if storage_node._Loadable__parameters_to_load.get("level"):
                     level_parameter = self.model.parameters[
-                        storage_node._Loadable__parameters_to_load['level']
+                        storage_node._Loadable__parameters_to_load["level"]
                     ]
                 else:
                     try:
                         float(storage_node.level)
                         level_parameter = ConstantParameter(
-                            self.model,
-                            storage_node.level
+                            self.model, storage_node.level
                         )
                     except:
                         raise Exception(
@@ -137,16 +139,17 @@ class Turbine(Link, metaclass=NodeMeta):
             min_head=self.min_head,
             min_flow=self.min_flow,
             turbine_elevation=self.turbine_elevation,
-            **self.hp_kwargs
+            **self.hp_kwargs,
         )
 
         self.max_flow = hp_target_flow
 
         hp_recorder = HydropowerRecorder(
-            self.model, self,
+            self.model,
+            self,
             name=f"__{self.name}__:hydropower recorder",
             water_elevation_parameter=level_parameter,
             turbine_elevation=self.turbine_elevation,
-            **self.hp_kwargs
+            **self.hp_kwargs,
         )
         self.hydropower_recorder = hp_recorder

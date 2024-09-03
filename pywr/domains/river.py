@@ -38,6 +38,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+
 class RiverDomainMixin(object):
     def __init__(self, *args, **kwargs):
         # if 'domain' not in kwargs:
@@ -162,7 +163,7 @@ class Reservoir(RiverDomainMixin, Storage):
         self.evaporation_cost = kwargs.pop("evaporation_cost", -999)
         self.unit_conversion = kwargs.pop(
             "unit_conversion", 1e6 * 1e-3 * 1e-6
-        ) # This assume area is Km2, level is m and evaporation is mm/day
+        )  # This assume area is Km2, level is m and evaporation is mm/day
 
         self.evaporation = kwargs.pop("evaporation", None)
         self.rainfall = kwargs.pop("rainfall", None)
@@ -209,13 +210,11 @@ class Reservoir(RiverDomainMixin, Storage):
         evaporation_flow_param = AggregatedParameter(
             self.model,
             [evaporation_param, self.unit_conversion, self.area],
-            agg_func="product"
+            agg_func="product",
         )
 
         evaporation_node = Output(
-            self.model,
-            "{}_evaporation".format(self.name),
-            parent=self
+            self.model, "{}_evaporation".format(self.name), parent=self
         )
         evaporation_node.max_flow = evaporation_flow_param
         evaporation_node.cost = cost
@@ -226,7 +225,7 @@ class Reservoir(RiverDomainMixin, Storage):
         self.evaporation_recorder = NumpyArrayNodeRecorder(
             self.model,
             evaporation_node,
-            name=f"__{evaporation_node.name}__:evaporation"
+            name=f"__{evaporation_node.name}__:evaporation",
         )
 
     def _make_rainfall_node(self, rainfall):
@@ -239,33 +238,28 @@ class Reservoir(RiverDomainMixin, Storage):
         else:
             # it's not a paramter or parameter reference, to try float and dataframe
             rain = pd.DataFrame.from_dict(rainfall)
-            rainfall_param = DataFrameParameter(
-                self.model,
-                rain
-            )
+            rainfall_param = DataFrameParameter(self.model, rain)
 
         # Create the flow parameters multiplying area by rate of rainfall/evap
 
         rainfall_flow_param = AggregatedParameter(
             self.model,
             [rainfall_param, self.unit_conversion, self.area],
-            agg_func="product"
+            agg_func="product",
         )
 
         # Create the nodes to provide the flows
         rainfall_node = Catchment(
-            self.model,
-            "{}_rainfall".format(self.name), parent=self
+            self.model, "{}_rainfall".format(self.name), parent=self
         )
         rainfall_node.flow = rainfall_flow_param
 
         rainfall_node.connect(self)
         self.rainfall_node = rainfall_node
         self.rainfall_recorder = NumpyArrayNodeRecorder(
-            self.model,
-            rainfall_node,
-            name=f"__{rainfall_node.name}__:rainfall"
+            self.model, rainfall_node, name=f"__{rainfall_node.name}__:rainfall"
         )
+
 
 class River(RiverDomainMixin, Link):
     """A node in the river network
@@ -468,6 +462,7 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
 
     cost = property(**cost())
 
+
 class ProportionalInput(Input, metaclass=NodeMeta):
     """
     This node is an input node that has a max_flow that is a proportion of another node.
@@ -501,8 +496,6 @@ class ProportionalInput(Input, metaclass=NodeMeta):
             factors = [1, proportion]
             # Create the aggregated node to apply the factors.
             self.aggregated_node = AggregatedNode(
-                model,
-                f"{name}.aggregated",
-                [self.node, self]
+                model, f"{name}.aggregated", [self.node, self]
             )
             self.aggregated_node.factors = factors
