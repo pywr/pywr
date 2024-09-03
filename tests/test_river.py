@@ -14,6 +14,7 @@ import pytest
 
 from helpers import assert_model, load_model
 
+
 @pytest.fixture(params=[(10.0, 10.0, 10.0), (5.0, 5.0, 1.0)])
 def simple_gauge_model(request):
     """
@@ -44,6 +45,7 @@ def simple_gauge_model(request):
         "Demand": expected_sent,
     }
     return model, expected_node_results
+
 
 @pytest.fixture
 def simple_river_split_gauge_model():
@@ -87,6 +89,7 @@ def simple_river_split_gauge_model():
     }
     return model, expected_node_results
 
+
 def test_river_gauge():
     """
     Test loading a model with a RiverGauge from JSON, modifying it, then running it
@@ -112,11 +115,14 @@ def test_river_gauge():
     assert_allclose(node.flow, 40)
     assert_allclose(demand.flow, 60)
 
+
 def test_piecewise_model(simple_gauge_model):
     assert_model(*simple_gauge_model)
 
+
 def test_river_split_gauge(simple_river_split_gauge_model):
     assert_model(*simple_river_split_gauge_model)
+
 
 def test_river_split_gauge_json():
     """As test_river_split_gauge, but model is defined in JSON"""
@@ -134,6 +140,7 @@ def test_river_split_gauge_json():
     assert_allclose(catchment_node.flow, catchment_flow)
     assert_allclose(demand_node.flow, expected_demand_flow)
 
+
 def test_control_curve():
     """
     Use a simple model of a Reservoir to test that a control curve
@@ -149,6 +156,7 @@ def test_control_curve():
                     Reservoir
 
     """
+
     in_flow = 8
 
     model = pywr.core.Model()
@@ -205,6 +213,7 @@ def test_control_curve():
     assert reservoir.volume == 10
     assert demand.flow == 6
 
+
 def test_catchment_many_successors():
     """Test if node with fixed flow can have multiple successors. See #225"""
     model = Model()
@@ -221,12 +230,13 @@ def test_catchment_many_successors():
     assert_allclose(out2.flow, 15)
     assert_allclose(out3.flow, 75)
 
+
 def test_hydropower_results():
     """
-        Test the additions made to the reservoir node, which creates nodes internally for ease of use.
-        To test, take a model which contains a hydropower implementation using explitic nodes for evaporaton and rainfall,
-        and compare to an identical model, except using the reservoir node which creates these nodes internally.
-        This is a derivation of the 'two reservoir' model which is used in other tests.
+    Test the additions made to the reservoir node, which creates nodes internally for ease of use.
+    To test, take a model which contains a hydropower implementation using explitic nodes for evaporaton and rainfall,
+    and compare to an identical model, except using the reservoir node which creates these nodes internally.
+    This is a derivation of the 'two reservoir' model which is used in other tests.
     """
     model1 = load_model("TestingReservoirAndTurbineNodes_NewNodes.json")
     model2 = load_model("TestingReservoirAndTurbineNodes_OldNodes.json")
@@ -240,24 +250,79 @@ def test_hydropower_results():
     df2 = model2.recorders["__Hydropower plant__:hydropower recorder"].to_dataframe()
     assert df2.shape == (12, 1)
 
-    hp1_results_NewNodes = [round(c[0], 2) for c in  model1.recorders["__Hydropower plant__:hydropower recorder"].to_dataframe().values]
-    hp1_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Hydropower plant__:hydropower recorder"].to_dataframe().values]
+    hp1_results_NewNodes = [
+        round(c[0], 2)
+        for c in model1.recorders["__Hydropower plant__:hydropower recorder"]
+        .to_dataframe()
+        .values
+    ]
+
+    hp1_results_OldNodes = [
+        round(c[0], 2)
+        for c in model2.recorders["__Hydropower plant__:hydropower recorder"]
+        .to_dataframe()
+        .values
+    ]
     assert hp1_results_NewNodes == hp1_results_OldNodes
 
-    res2_results_NewNodes = [round(c[0], 2) for c in  model1.recorders["__Storage reservoir 2__:volume"].to_dataframe().values]
-    res2_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Storage reservoir 2__:volume"].to_dataframe().values]
+    res2_results_NewNodes = [
+        round(c[0], 2)
+        for c in model1.recorders["__Storage reservoir 2__:volume"]
+        .to_dataframe()
+        .values
+    ]
+
+    res2_results_OldNodes = [
+        round(c[0], 2)
+        for c in model2.recorders["__Storage reservoir 2__:volume"]
+        .to_dataframe()
+        .values
+    ]
     assert res2_results_NewNodes == res2_results_OldNodes
 
-    evp2_results_NewNodes = [round(c[0], 2) for c in  model1.recorders["__Storage reservoir 2_evaporation__:evaporation"].to_dataframe().values]
-    evp2_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Storage reservoir 2_evaporation__:evaporation"].to_dataframe().values]
+    evp2_results_NewNodes = [
+        round(c[0], 2)
+        for c in model1.recorders["__Storage reservoir 2_evaporation__:evaporation"]
+        .to_dataframe()
+        .values
+    ]
+
+    evp2_results_OldNodes = [
+        round(c[0], 2)
+        for c in model2.recorders["__Storage reservoir 2_evaporation__:evaporation"]
+        .to_dataframe()
+        .values
+    ]
     assert evp2_results_NewNodes == evp2_results_OldNodes
 
     # Rainfall
-    ra2_results_NewNodes = [round(c[0], 2) for c in  model1.recorders["__Storage reservoir 2_rainfall__:rainfall"].to_dataframe().values]
-    ra2_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Storage reservoir 2_rainfall__:rainfall"].to_dataframe().values]
+    ra2_results_NewNodes = [
+        round(c[0], 2)
+        for c in model1.recorders["__Storage reservoir 2_rainfall__:rainfall"]
+        .to_dataframe()
+        .values
+    ]
+
+    ra2_results_OldNodes = [
+        round(c[0], 2)
+        for c in model2.recorders["__Storage reservoir 2_rainfall__:rainfall"]
+        .to_dataframe()
+        .values
+    ]
     assert ra2_results_NewNodes == ra2_results_OldNodes
 
     # Reservoir 1
-    res1_results_NewNodes = [round(c[0], 2) for c in  model1.recorders["__Storage reservoir 1__:volume"].to_dataframe().values]
-    res1_results_OldNodes = [round(c[0], 2) for c in  model2.recorders["__Storage reservoir 1__:volume"].to_dataframe().values]
+    res1_results_NewNodes = [
+        round(c[0], 2)
+        for c in model1.recorders["__Storage reservoir 1__:volume"]
+        .to_dataframe()
+        .values
+    ]
+
+    res1_results_OldNodes = [
+        round(c[0], 2)
+        for c in model2.recorders["__Storage reservoir 1__:volume"]
+        .to_dataframe()
+        .values
+    ]
     assert res1_results_NewNodes == res1_results_OldNodes
