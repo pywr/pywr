@@ -167,6 +167,7 @@ def load_dataframe(model, data):
         # Cast multiindex to a tuple to ensure .loc works correctly
         index = tuple(index)
 
+    columns = data.pop("columns", None)
     indexes = data.pop("indexes", None)
 
     table_ref = data.pop("table", None)
@@ -183,6 +184,12 @@ def load_dataframe(model, data):
             df = df[column]
         except KeyError:
             raise KeyError('Column "{}" not found in dataset "{}"'.format(column, name))
+
+    if columns is not None:
+        try:
+            df = df[columns]
+        except KeyError:
+            raise KeyError('Columns "{}" not found in dataset "{}"'.format(columns, name))
 
     if index is not None:
         try:
