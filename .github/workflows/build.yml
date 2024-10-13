@@ -71,9 +71,9 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
-          name: pywr
+          name: pywr_whl_${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
   build_sdist:
@@ -84,7 +84,7 @@ jobs:
         with:
           fetch-depth: 0   # This is required for setuptools_scm: https://github.com/pypa/setuptools_scm/issues/480
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         name: Install Python
         with:
           python-version: '3.10'
@@ -92,9 +92,9 @@ jobs:
       - name: Build sdist
         run: python setup.py sdist
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
-          name: pywr
+          name: pywr_sdist_${{ matrix.os }}
           path: dist/*.tar.gz
 
   build_docs:
