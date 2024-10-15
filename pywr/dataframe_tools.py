@@ -189,7 +189,9 @@ def load_dataframe(model, data):
         try:
             df = df[columns]
         except KeyError:
-            raise KeyError('Columns "{}" not found in dataset "{}"'.format(columns, name))
+            raise KeyError(
+                'Columns "{}" not found in dataset "{}"'.format(columns, name)
+            )
 
     if index is not None:
         try:
