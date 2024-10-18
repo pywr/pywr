@@ -1,84 +1,111 @@
 # Changelog
 
-All issue numbers are relative to https://github.com/pywr/pywr/issues unless otherwise stated.
+All notable changes to this project will be documented in this file.
 
-## [v1.26.0](https://github.com/pywr/pywr/compare/v1.25.0...v1.26.0) (2024-06-24)
+## [1.27.0] - 2024-10-18
 
-### Fixes
+### 🚀 Features
 
-* Use NaN when calculating duration of no events. (#1131) ([bc7b302](https://github.com/pywr/pywr/commit/bc7b3020f8391e484e25140f44318925292da65d)), closes [#1131](https://github.com/pywr/pywr/issues/1131)
+- Fallback to loading from values or tables. ([#1133](https://github.com/pywr/pywr/issues/1133))
+- Allow a columns attribute to be sepecified for tables and dataframes ([#1140](https://github.com/pywr/pywr/issues/1140))
 
-## [v1.25.0](https://github.com/pywr/pywr/compare/v1.24.0...v1.25.0) (2024-06-20)
+### ⚙️ Miscellaneous Tasks
 
-### Features
+- Upgrade upload-artifact and download-artifact to v4 ([#1141](https://github.com/pywr/pywr/issues/1141))
+- Drop support for Python 3.9 ([#1145](https://github.com/pywr/pywr/issues/1145))
+- Numpy v2 support. ([#1144](https://github.com/pywr/pywr/issues/1144))
+- *(release)* Update changelog for 1.27.0 release.
 
-* Add support for defining net or gross loss in LossLink. (#1124) ([ed8eb8b](https://github.com/pywr/pywr/commit/ed8eb8b750fa8c4b320a30308c734a7acf987197)), closes [#1124](https://github.com/pywr/pywr/issues/1124)
+## [1.26.0] - 2024-06-25
 
-### Other
+### 🐛 Bug Fixes
 
-* Pin numpy<2 for now. (#1130) ([2672645](https://github.com/pywr/pywr/commit/2672645728250a9d66ab3ee6f45f215984c5c5e5)), closes [#1130](https://github.com/pywr/pywr/issues/1130)
-* Use delvewheel to repair Windows wheels. (#1125) ([691172c](https://github.com/pywr/pywr/commit/691172c417757193681b7c525f2ab3082a4d118f)), closes [#1125](https://github.com/pywr/pywr/issues/1125) [#1123](https://github.com/pywr/pywr/issues/1123)
+- Use NaN when calculating duration of no events. ([#1131](https://github.com/pywr/pywr/issues/1131))
 
-### Documentation
+### ⚙️ Miscellaneous Tasks
 
-* Add OtherModelXXX parameters to API docs. (#1126) ([bdb257d](https://github.com/pywr/pywr/commit/bdb257d98b743f045200c3360e799df8f0ede333)), closes [#1126](https://github.com/pywr/pywr/issues/1126)
+- *(release)* Update changelog for 1.26.0 release. ([#1132](https://github.com/pywr/pywr/issues/1132))
 
+## [1.25.0] - 2024-06-20
 
-## [v1.24.0](https://github.com/pywr/pywr/compare/v1.23.0...v1.24.0) (2024-03-20)
+### 🚀 Features
 
-### Features
+- Add support for defining net or gross loss in LossLink. ([#1124](https://github.com/pywr/pywr/issues/1124))
 
-* Cache file hashes to avoid recomputation when the same file is referenced multiple times (#1118) ([4afc270](https://github.com/pywr/pywr/commit/4afc27076b9943f03a497c8fe672a30e4498f900)) 
+### 📚 Documentation
 
-### Fixes
+- Add OtherModelXXX parameters to API docs. ([#1126](https://github.com/pywr/pywr/issues/1126))
 
-* update warnings check in orphaned components test (#1119) ([582a764](https://github.com/pywr/pywr/commit/582a764b8a5e1f626b273002fed7f246cc0d242d))
+### ⚙️ Miscellaneous Tasks
 
-### Other
+- Use delvewheel to repair Windows wheels. ([#1125](https://github.com/pywr/pywr/issues/1125))
+- Pin numpy<2 for now. ([#1130](https://github.com/pywr/pywr/issues/1130))
+- *(release)* Update changelog for 1.25.0 release. ([#1128](https://github.com/pywr/pywr/issues/1128))
 
-* black formatting updates (#1119) ([7d1b60c](https://github.com/pywr/pywr/commit/7d1b60c8a32fcc56d990727874a13e4af1aa881d))
+## [1.24.0] - 2024-03-20
 
+### 🚀 Features
 
-## [v1.23.0](https://github.com/pywr/pywr/compare/v1.22.1...v1.23.0) (2023-11-13)
+- Cache file hashes to avoid recomputation when the same file is referenced multiple times ([#1118](https://github.com/pywr/pywr/issues/1118))
 
-### Features
+### 🐛 Bug Fixes
 
-* Support parameter loss_factor in LossLink. (#1113) ([cb583aa](https://github.com/pywr/pywr/commit/cb583aaa402843098a7de7840acacf0d770ca25b)), closes [#1113](https://github.com/pywr/pywr/issues/1113) [#1091](https://github.com/pywr/pywr/issues/1091)
+- Update warnings check in orphaned components test
 
-## [v1.22.1](https://github.com/pywr/pywr/compare/v1.22.0...v1.22.1) (2023-10-20)
+### ⚙️ Miscellaneous Tasks
 
-### Fixes
+- Black formatting updates
+- *(release)* Update changelog for 1.24.0 release. ([#1120](https://github.com/pywr/pywr/issues/1120))
 
-* Fix issue with dataframe scenario indexing (#1111) ([e6818a8](https://github.com/pywr/pywr/commit/e6818a8f0b44ed1db081de911688d519098c94cc)), closes [#1111](https://github.com/pywr/pywr/issues/1111) [#1110](https://github.com/pywr/pywr/issues/1110)
+## [1.23.0] - 2023-11-13
 
+### 🚀 Features
 
-## [v1.22.0](https://github.com/pywr/pywr/compare/v1.21.0...v1.22.0) (2023-10-06)
+- Support parameter loss_factor in LossLink. ([#1113](https://github.com/pywr/pywr/issues/1113))
 
-### Other
+### ⚙️ Miscellaneous Tasks
 
-* Updates for Python 3.12 in CI (#1107) ([a0924ea](https://github.com/pywr/pywr/commit/a0924ea2aeffaf1cf99c66da9223c0b37c157829)), closes [#1107](https://github.com/pywr/pywr/issues/1107)
-* Support Cython 3.x (#1104) ([1981de1](https://github.com/pywr/pywr/commit/1981de10ffbbc4cbe74cf2abeda827dbdacf489c)), closes [#1104](https://github.com/pywr/pywr/issues/1104)
-* Add Zulip link to README. (#1108) ([651e949](https://github.com/pywr/pywr/commit/651e9498299670c8c8ac5bf91a3eb9cdf21a7106)), closes [#1108](https://github.com/pywr/pywr/issues/1108)
+- *(release)* Update changelog for 1.23.0 release. ([#1114](https://github.com/pywr/pywr/issues/1114))
 
+## [1.22.1] - 2023-10-20
 
-## [v1.21.0](https://github.com/pywr/pywr/compare/v1.20.1...v1.21.0) (2023-06-30)
+### 🐛 Bug Fixes
 
-### Features
+- Fix issue with dataframe scenario indexing ([#1111](https://github.com/pywr/pywr/issues/1111))
 
-* Pass kwargs to model load via optimisation wrappers (#1096) ([3557e4b](https://github.com/pywr/pywr/commit/3557e4be876300189f7762ede8e9a59e8fe0a29e))
-* Add metadata to TablesRecorder arrays. (#1083) ([4dac394](https://github.com/pywr/pywr/commit/4dac394dc6a9a1a22dab3e8ebc0a505e6fda644d))
+### ⚙️ Miscellaneous Tasks
 
-### Fixes
+- *(release)* Update changelog for 1.22.1 release. ([#1112](https://github.com/pywr/pywr/issues/1112))
 
-* Overload get_xxx_flow for PiecewiseLink. (#1088) ([51dcd57](https://github.com/pywr/pywr/commit/51dcd57650537fbfc27e08bba20dec3cee9ab41e)),
-closes [#1087](https://github.com/pywr/pywr/issues/1087)
-* Add pywr.parameter imports from control_curves module. (#1084) ([94bcdad](https://github.com/pywr/pywr/commit/94bcdad3fe3325f1d3d43a6e1ee97734040590f2))
+## [1.22.0] - 2023-10-06
 
-### Other
+### ⚙️ Miscellaneous Tasks
 
-* Support pandas v2.x (#1089) ([68ee7cc](https://github.com/pywr/pywr/commit/68ee7cc93fa803fc07082e95c4cfbd88ff4e39a7))
-* Use ubuntu-latest image for building wheels. (#1090) ([cce65e3](https://github.com/pywr/pywr/commit/cce65e3df357dd2ee54109124c598e9c9b9dd8db))
+- Add Zulip link to README. ([#1108](https://github.com/pywr/pywr/issues/1108))
+- Support Cython 3.x ([#1104](https://github.com/pywr/pywr/issues/1104))
+- Updates for Python 3.12 in CI ([#1107](https://github.com/pywr/pywr/issues/1107))
+- *(release)* Update changelog for v1.22.0 release. ([#1109](https://github.com/pywr/pywr/issues/1109))
 
+## [1.21.0] - 2023-07-24
+
+### 🚀 Features
+
+- Add metadata to TablesRecorder arrays. ([#1083](https://github.com/pywr/pywr/issues/1083))
+- Pass kwargs to model load via optimisation wrappers ([#1096](https://github.com/pywr/pywr/issues/1096))
+
+### 🐛 Bug Fixes
+
+- Add pywr.parameter imports from control_curves module. ([#1084](https://github.com/pywr/pywr/issues/1084))
+- Overload get_xxx_flow for PiecewiseLink. ([#1088](https://github.com/pywr/pywr/issues/1088))
+
+### ⚙️ Miscellaneous Tasks
+
+- Use ubuntu-latest image for building wheels. ([#1090](https://github.com/pywr/pywr/issues/1090))
+- Support pandas v2.x ([#1089](https://github.com/pywr/pywr/issues/1089))
+- Pin Cython<3 until support is resolved. ([#1100](https://github.com/pywr/pywr/issues/1100))
+- *(release)* Update changelog for v1.21.0 release. ([#1099](https://github.com/pywr/pywr/issues/1099))
+
+<!-- generated by git-cliff -->
 
 ## v1.20.1
 
