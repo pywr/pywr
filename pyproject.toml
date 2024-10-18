@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=62", "wheel", "setuptools_scm[toml]>=8.0", "cython>=3", "numpy<2", ]
+requires = ["setuptools>=62", "wheel", "setuptools_scm[toml]>=8.0", "cython>=3", "numpy", ]
 requires-python = ">=3.10"
 
 # enable version inference

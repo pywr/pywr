@@ -714,7 +714,7 @@ class DummyIndexParameter(IndexParameter):
 class TestAggregatedIndexParameter:
     """Tests for AggregatedIndexParameter"""
 
-    funcs = {"min": np.min, "max": np.max, "sum": np.sum, "product": np.product}
+    funcs = {"min": np.min, "max": np.max, "sum": np.sum, "product": np.prod}
 
     @pytest.mark.parametrize("agg_func", ["min", "max", "sum", "product"])
     def test_agg(self, simple_linear_model, agg_func):

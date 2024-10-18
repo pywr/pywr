@@ -117,7 +117,7 @@ cdef class Aggregator:
                 return np.nan
 
         if self._func == AggFuncs.PRODUCT:
-            return np.product(values)
+            return np.prod(values)
         elif self._func == AggFuncs.SUM:
             return np.sum(values)
         elif self._func == AggFuncs.MAX:
@@ -149,7 +149,7 @@ cdef class Aggregator:
             values = np.array(values)[~np.isnan(values)]
 
         if self._func == AggFuncs.PRODUCT:
-            return np.product(values, axis=axis)
+            return np.prod(values, axis=axis)
         elif self._func == AggFuncs.SUM:
             return np.sum(values, axis=axis)
         elif self._func == AggFuncs.MAX:
@@ -419,7 +419,7 @@ cdef class AggregatedRecorder(Recorder):
                     value[i] += value2[i]
         elif self._recorder_agg_func == AggFuncs.MAX:
             value = np.empty(n)
-            value[:] = np.NINF
+            value[:] = -np.inf
             for recorder in self.recorders:
                 value2 = recorder.values()
                 for i in range(n):
@@ -427,7 +427,7 @@ cdef class AggregatedRecorder(Recorder):
                         value[i] = value2[i]
         elif self._recorder_agg_func == AggFuncs.MIN:
             value = np.empty(n)
-            value[:] = np.PINF
+            value[:] = np.inf
             for recorder in self.recorders:
                 value2 = recorder.values()
                 for i in range(n):

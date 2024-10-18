@@ -2,7 +2,7 @@ import os
 import json
 import inspect
 import warnings
-from IPython.core.display import Javascript, display
+from IPython.display import Javascript, display
 from jinja2 import Template
 from pywr.core import Node
 from pywr.core import Model

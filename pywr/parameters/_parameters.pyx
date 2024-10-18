@@ -1495,14 +1495,14 @@ cdef class AggregatedParameter(Parameter):
                 for i in range(n):
                     accum[i] += values[i]
         elif self._agg_func == AggFuncs.MAX:
-            accum[...] = np.NINF
+            accum[...] = -np.inf
             for parameter in self.parameters:
                 values = parameter.get_all_values()
                 for i in range(n):
                     if values[i] > accum[i]:
                         accum[i] = values[i]
         elif self._agg_func == AggFuncs.MIN:
-            accum[...] = np.PINF
+            accum[...] = np.inf
             for parameter in self.parameters:
                 values = parameter.get_all_values()
                 for i in range(n):
