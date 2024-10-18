@@ -1194,7 +1194,7 @@ class NanParameter(Parameter):
     """A parameter that returns a NaN for testing error handling"""
 
     def value(self, ts, si):
-        return np.NAN
+        return np.nan
 
 
 class TestGlpkErrorHandling:
