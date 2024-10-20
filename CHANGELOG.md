@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.27.1] - 2024-10-20
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix downloading all artifacts during deployment. ([#1146](https://github.com/pywr/pywr/issues/1146))
+
 ## [1.27.0] - 2024-10-18
 
 ### 🚀 Features
@@ -14,7 +20,7 @@ All notable changes to this project will be documented in this file.
 - Upgrade upload-artifact and download-artifact to v4 ([#1141](https://github.com/pywr/pywr/issues/1141))
 - Drop support for Python 3.9 ([#1145](https://github.com/pywr/pywr/issues/1145))
 - Numpy v2 support. ([#1144](https://github.com/pywr/pywr/issues/1144))
-- *(release)* Update changelog for 1.27.0 release.
+- *(release)* Update changelog for 1.27.0 release. ([#1142](https://github.com/pywr/pywr/issues/1142))
 
 ## [1.26.0] - 2024-06-25
 
