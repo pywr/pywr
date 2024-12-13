@@ -1077,7 +1077,7 @@ cdef class RbfProfileParameter(Parameter):
                 raise ValueError('At least 3 days of the year are required.')
             if np.any(np.diff(values) <= 0):
                 raise ValueError('The days of the year should be strictly monotonically increasing.')
-            if np.any(0 > values > 365):
+            if np.any((0 > values) | (values > 365)):
                 raise ValueError('Days of the years should be between 1 and 365 inclusive.')
             self._days_of_year = values
 
