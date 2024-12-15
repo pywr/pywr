@@ -1697,6 +1697,38 @@ class TestThresholdParameters:
         # Storage < 10
         assert p1.index(m.timestepper.current, si) == 0
 
+    def test_threshold_parameter_with_agg_threshold(self, simple_storage_model):
+        """Test StorageThresholdParameter"""
+        m = simple_storage_model
+
+        data = {
+            "type": "storagethreshold",
+            "storage_node": "Storage",
+            "threshold": {
+                "type": "aggregated",
+                "agg_func": "min",
+                "parameters": [5.0, 15.0],
+            },
+            "predicate": ">",
+        }
+
+        p1 = load_parameter(m, data)
+
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        m.nodes["Storage"].initial_volume = 15.0
+        m.setup()
+        # step so that value if aggregated parameter is calculated
+        m.step()
+        # Storage > 10
+        assert p1.index(m.timestepper.current, si) == 1
+
+        m.nodes["Storage"].initial_volume = 7.0
+        m.setup()
+        m.step()
+        # Storage < 10
+        assert p1.index(m.timestepper.current, si) == 0
+
     def test_node_threshold_parameter2(self, simple_linear_model):
         model = simple_linear_model
         model.nodes["Input"].max_flow = ArrayIndexedParameter(model, np.arange(0, 20))

@@ -96,7 +96,7 @@ cdef class AbstractThresholdParameter(IndexParameter):
 
         cdef double threshold
         if self._threshold_parameter is not None:
-            threshold = self._threshold_parameter.value(timestep, scenario_index)
+            threshold = self._threshold_parameter.get_value(scenario_index)
         else:
             threshold = self._threshold
 
