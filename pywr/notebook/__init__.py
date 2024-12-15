@@ -266,7 +266,7 @@ def get_node_attr(node):
             "fully_qualified_name",
             "allow_isolated",
         ]
-        if not attr_val or attr_name.lower() in attrs_to_skip:
+        if attr_val is None or attr_name.lower() in attrs_to_skip:
             continue
 
         if isinstance(attr_val, Component):
