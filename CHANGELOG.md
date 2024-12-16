@@ -2,11 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.27.2] - 2024-12-16
+
+### 🐛 Bug Fixes
+
+- Fix numpy test errors ([#1149](https://github.com/pywr/pywr/issues/1149))
+- Use `get_value`` method when fetching threshold param value within threshold parameters ([#1148](https://github.com/pywr/pywr/issues/1148))
+
 ## [1.27.1] - 2024-10-20
 
 ### ⚙️ Miscellaneous Tasks
 
 - Fix downloading all artifacts during deployment. ([#1146](https://github.com/pywr/pywr/issues/1146))
+- *(release)* Update changelog for 1.27.1 release. ([#1147](https://github.com/pywr/pywr/issues/1147))
 
 ## [1.27.0] - 2024-10-18
 
