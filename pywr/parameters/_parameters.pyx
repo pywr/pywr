@@ -1473,6 +1473,9 @@ cdef class AggregatedParameter(Parameter):
         super(AggregatedParameter, self).setup()
         assert(len(self.parameters))
 
+    cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        return self.get_value(scenario_index)
+
     cdef calc_values(self, Timestep timestep):
         cdef Parameter parameter
         cdef double[:] accum = self._Parameter__values  # View of the underlying location for the data
