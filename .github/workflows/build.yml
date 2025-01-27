@@ -7,8 +7,8 @@ env:
   CIBW_BEFORE_TEST_LINUX: "chmod +x {project}/.github/workflows/run-tests.sh"
   CIBW_TEST_COMMAND_LINUX: "{project}/.github/workflows/run-tests.sh {project}"
   CIBW_TEST_COMMAND_WINDOWS: "{project}\\.github\\workflows\\run-tests-windows.bat {project}"
-  # Only build on Python 3.7+
-  CIBW_BUILD: cp39-* cp310-* cp311-* cp312-*
+  # Only build on Python 3.10+
+  CIBW_BUILD: cp310-* cp311-* cp312-*
   # Skip 32-bit builds and MUSL Linux builds
   # MUSL Linux can be re-enabled more easily when updating from manylinux2014
   CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux*"
@@ -71,9 +71,9 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
-          name: pywr
+          name: pywr_whl_${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
   build_sdist:
@@ -84,7 +84,7 @@ jobs:
         with:
           fetch-depth: 0   # This is required for setuptools_scm: https://github.com/pypa/setuptools_scm/issues/480
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         name: Install Python
         with:
           python-version: '3.10'
@@ -92,9 +92,9 @@ jobs:
       - name: Build sdist
         run: python setup.py sdist
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
-          name: pywr
+          name: pywr_sdist_${{ matrix.os }}
           path: dist/*.tar.gz
 
   build_docs:
@@ -115,7 +115,7 @@ jobs:
         # This doesn't really matter for the documentation builds.
         run: |
           sudo apt-get install libglpk-dev
-          pip install sphinx sphinx_rtd_theme numpydoc matplotlib "numpy<2"
+          pip install sphinx sphinx_rtd_theme numpydoc matplotlib "numpy"
           python setup.py install --without-lpsolve
           cd docs
           make html
@@ -140,10 +140,10 @@ jobs:
 
     steps:
     - name: Download all the dists
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
-        name: pywr
         path: dist/
+        merge-multiple: true
     - name: Publish 🐍📦 to TestPyPI
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@release/v1

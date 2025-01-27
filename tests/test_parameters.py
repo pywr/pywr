@@ -714,7 +714,7 @@ class DummyIndexParameter(IndexParameter):
 class TestAggregatedIndexParameter:
     """Tests for AggregatedIndexParameter"""
 
-    funcs = {"min": np.min, "max": np.max, "sum": np.sum, "product": np.product}
+    funcs = {"min": np.min, "max": np.max, "sum": np.sum, "product": np.prod}
 
     @pytest.mark.parametrize("agg_func", ["min", "max", "sum", "product"])
     def test_agg(self, simple_linear_model, agg_func):
@@ -1694,6 +1694,38 @@ class TestThresholdParameters:
 
         m.nodes["Storage"].initial_volume = 5.0
         m.setup()
+        # Storage < 10
+        assert p1.index(m.timestepper.current, si) == 0
+
+    def test_threshold_parameter_with_agg_threshold(self, simple_storage_model):
+        """Test StorageThresholdParameter"""
+        m = simple_storage_model
+
+        data = {
+            "type": "storagethreshold",
+            "storage_node": "Storage",
+            "threshold": {
+                "type": "aggregated",
+                "agg_func": "min",
+                "parameters": [5.0, 15.0],
+            },
+            "predicate": ">",
+        }
+
+        p1 = load_parameter(m, data)
+
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        m.nodes["Storage"].initial_volume = 15.0
+        m.setup()
+        # step so that value if aggregated parameter is calculated
+        m.step()
+        # Storage > 10
+        assert p1.index(m.timestepper.current, si) == 1
+
+        m.nodes["Storage"].initial_volume = 7.0
+        m.setup()
+        m.step()
         # Storage < 10
         assert p1.index(m.timestepper.current, si) == 0
 
