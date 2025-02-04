@@ -83,6 +83,7 @@ def setup_package():
             "pywr.utils",
         ],
         package_data=package_data(),
+        requires_python=">=3.10",
         use_scm_version=True,
     )
 
