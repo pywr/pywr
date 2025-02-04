@@ -87,7 +87,7 @@ jobs:
       - uses: actions/setup-python@v4
         name: Install Python
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Build sdist
         run: python setup.py sdist
@@ -108,7 +108,7 @@ jobs:
       - uses: actions/setup-python@v2
         name: Install Python
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Build docs
         # lpsolve doesn't compile on Ubuntu without building the library from source - disable for the time being.
