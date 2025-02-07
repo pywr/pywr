@@ -6,15 +6,15 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Extending Pywr with custom Nodes &mdash; Pywr 1.27.2.dev2+g0ba9b6c4 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+  <title>Extending Pywr with custom Nodes &mdash; Pywr 1.27.3.dev3+g35ce9337 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=3c2d0f7f"></script>
+      <script src="../_static/documentation_options.js?v=1f51ad05"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -126,10 +126,10 @@ need to use an output node (<code class="docutils literal notranslate"><span cla
 <p>This is a simple structure which represents leakage as a demand with a maximum value and a benefit to be supplied. It
 is slightly flawed as the leakage volume does not vary proportionally to flow through the link, but is sufficient as
 an example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.nodes</span> <span class="kn">import</span> <span class="n">Node</span><span class="p">,</span> <span class="n">Link</span><span class="p">,</span> <span class="n">Output</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pywr.nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span><span class="p">,</span> <span class="n">Link</span><span class="p">,</span> <span class="n">Output</span>
 
-<span class="k">class</span> <span class="nc">LeakyPipe</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">leakage</span><span class="p">,</span> <span class="n">leakage_cost</span><span class="o">=-</span><span class="mi">99999</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LeakyPipe</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">leakage</span><span class="p">,</span> <span class="n">leakage_cost</span><span class="o">=-</span><span class="mi">99999</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allow_isolated</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># Required for compound nodes</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">LeakyPipe</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -147,7 +147,7 @@ an example:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">leak</span><span class="o">.</span><span class="n">max_flow</span> <span class="o">=</span> <span class="n">leakage</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">leak</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">leakage_cost</span>
 
-    <span class="k">def</span> <span class="nf">iter_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_connector</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iter_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_connector</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="c1"># This is required so that connecting to this node actually connects to the outflow sub-node, and</span>
         <span class="c1"># connecting from this node actually connects to the input sub-node</span>
         <span class="k">if</span> <span class="n">is_connector</span><span class="p">:</span>
@@ -155,14 +155,14 @@ an example:</p>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">inflow</span>
 
-    <span class="k">def</span> <span class="nf">after</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">after</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">):</span>
         <span class="c1"># Make the flow on the compound node appear as the flow _after_ the leak</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">commit_all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outflow</span><span class="o">.</span><span class="n">flow</span><span class="p">)</span>
         <span class="c1"># Make sure save is done after setting aggregated flow</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">LeakyPipe</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="n">timestep</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="k">del</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">])</span>
         <span class="n">leakage</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;leakage&quot;</span><span class="p">)</span>
         <span class="n">leakage_cost</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;leakage_cost&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -172,8 +172,8 @@ an example:</p>
 <p>The custom node does not need to be “registered”, unlike <code class="docutils literal notranslate"><span class="pre">Parameters</span></code>, as this is done automatically using
 metaclasses. The new node type can be referenced from a JSON model provided that the class has been imported before
 the JSON is loaded:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.model</span> <span class="kn">import</span> <span class="n">Model</span>
-<span class="kn">import</span> <span class="nn">leakypipe</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pywr.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">leakypipe</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;leaky_pipe_model.sjon&quot;</span><span class="p">)</span>
 </pre></div>

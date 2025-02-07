@@ -6,15 +6,15 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial &mdash; Pywr 1.27.2.dev2+g0ba9b6c4 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+  <title>Tutorial &mdash; Pywr 1.27.3.dev3+g35ce9337 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=3c2d0f7f"></script>
+      <script src="_static/documentation_options.js?v=1f51ad05"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -87,7 +87,7 @@
 <section id="a-minimal-example">
 <h2>A minimal example<a class="headerlink" href="#a-minimal-example" title="Link to this heading"></a></h2>
 <p>The simplest example has two nodes: an <code class="xref py py-func docutils literal notranslate"><span class="pre">Input()</span></code> which adds flow to the network and an <code class="xref py py-func docutils literal notranslate"><span class="pre">Output()</span></code> which removes flow from the network.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.core</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pywr.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
 
 <span class="c1"># create a model (including an empty network)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
@@ -115,8 +115,8 @@
 </pre></div>
 </div>
 <p>Next we need to tell the model how long to run for. As an example, we’ll use a daily timestep for all of 2015.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">from</span> <span class="nn">pywr.core</span> <span class="kn">import</span> <span class="n">Timestepper</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pywr.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Timestepper</span>
 
 <span class="n">model</span><span class="o">.</span><span class="n">timestepper</span> <span class="o">=</span> <span class="n">Timestepper</span><span class="p">(</span>
     <span class="n">pandas</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="s1">&#39;2015-01-01&#39;</span><span class="p">),</span>  <span class="c1"># first day</span>
@@ -126,7 +126,7 @@
 </pre></div>
 </div>
 <p>In order to capture the output from the model we need to use a recorder, such as the <a class="reference internal" href="api/generated/pywr.recorders.NumpyArrayNodeRecorder.html#pywr.recorders.NumpyArrayNodeRecorder" title="pywr.recorders.NumpyArrayNodeRecorder"><code class="xref py py-func docutils literal notranslate"><span class="pre">pywr.recorders.NumpyArrayNodeRecorder()</span></code></a>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pywr.recorders</span> <span class="kn">import</span> <span class="n">NumpyArrayNodeRecorder</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pywr.recorders</span><span class="w"> </span><span class="kn">import</span> <span class="n">NumpyArrayNodeRecorder</span>
 
 <span class="n">recorder</span> <span class="o">=</span> <span class="n">NumpyArrayNodeRecorder</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">supply</span><span class="p">)</span>
 </pre></div>
