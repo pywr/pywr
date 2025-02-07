@@ -2,12 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.27.3] - 2025-02-07
+
+### 🚀 Features
+
+- Support Python 3.13
+
+### ⚙️ Miscellaneous Tasks
+
+- Update doc and sdist GHA to Pyhon 3.11.
+- Fix requires-python definition in setup.
+
 ## [1.27.2] - 2024-12-16
 
 ### 🐛 Bug Fixes
 
 - Fix numpy test errors ([#1149](https://github.com/pywr/pywr/issues/1149))
 - Use `get_value`` method when fetching threshold param value within threshold parameters ([#1148](https://github.com/pywr/pywr/issues/1148))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update changelog for 1.27.2 release. ([#1150](https://github.com/pywr/pywr/issues/1150))
 
 ## [1.27.1] - 2024-10-20
 
