@@ -1238,12 +1238,21 @@ class LossLink(Node):
     model : `pywr.model.Model`
     name : string
         Name of the node.
-    loss_factor : float
+    loss_factor : float, Parameter
         The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
-        then no-losses are calculated. The percentage is calculated as a percentage of gross flow.
+        then no-losses are calculated. This value is either a proportion of gross or net flow depending on the
+        value of `loss_factor_type`.
+    loss_factor_type: str
+        Either "gross" or "net" (default) to specify whether the loss factor is applied as a proportion of gross or
+         net flow respectively.
+
+    Notes
+    -----
+    There is currently a limitation that the loss factor must be a literal constant (i.e. not a parameter) when
+    `loss_factor_type` is set to "gross".
     """
 
-    __parameter_value_attributes__ = ("loss_factor",)
+    __parameter_attributes__ = ("loss_factor", "max_flow", "min_flow", "cost")
 
     def __init__(self, model, name, **kwargs):
         self.allow_isolated = True
@@ -1265,36 +1274,37 @@ class LossLink(Node):
         self.gross.connect(self.net)
 
         self.agg = AggregatedNode(model, name=agg_name, nodes=[self.net, self.output])
+        self.loss_factor_type = kwargs.pop("loss_factor_type", "net")
         self.loss_factor = kwargs.pop("loss_factor", 0.0)
 
         super().__init__(model, name, **kwargs)
 
-    def loss_factor():
-        def fget(self):
-            if self.agg.factors:
-                return self.agg.factors[1]
-            elif self.output.max_flow == 0.0:
-                return 0.0
+    def setup(self, model):
+        super().setup(model)
+        value = self.loss_factor
+
+        if value == 0.0:
+            # 0% loss; no flow to the output loss node.
+            self.agg.factors = None
+            self.output.max_flow = 0.0
+        elif value == 1.0 and self.loss_factor_type == "gross":
+            # 100% loss; all flow to the output loss node
+            self.agg.factors = None
+            self.output.max_flow = float("inf")
+            self.net.max_flow = 0.0
+        else:
+            self.output.max_flow = float("inf")
+            if self.loss_factor_type == "net":
+                self.agg.factors = [1.0, value]
+
+            elif self.loss_factor_type == "gross":
+                # TODO this will error in the case of a `value` being a parameter
+                self.agg.factors = [1.0 - float(value), float(value)]
             else:
-                return 1.0
-
-        def fset(self, value):
-            if value == 0.0:
-                # 0% loss; no flow to the output loss node.
-                self.agg.factors = None
-                self.output.max_flow = 0.0
-            elif value == 1.0:
-                # 100% loss; all flow to the output loss node
-                self.agg.factors = None
-                self.output.max_flow = float("inf")
-                self.net.max_flow = 0.0
-            else:
-                self.output.max_flow = float("inf")
-                self.agg.factors = [1.0, float(value)]
-
-        return locals()
-
-    loss_factor = property(**loss_factor())
+                raise ValueError(
+                    f'Unrecognised `loss_factor_type` "{self.loss_factor_type}".'
+                    f'Please use either "gross" or "net".'
+                )
 
     def min_flow():
         def fget(self):

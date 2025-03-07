@@ -1,4 +1,5 @@
 """Tests for activation function parameters."""
+
 from pywr.parameters import load_parameter
 from pywr.recorders import assert_rec
 from fixtures import simple_linear_model

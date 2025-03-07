@@ -49,10 +49,16 @@ def setup_package():
         author="Joshua Arnott",
         author_email="josh@snorfalorpagus.net",
         url="https://github.com/pywr/pywr",
-        setup_requires=["setuptools>=18.0", "setuptools_scm", "cython", "numpy"],
+        setup_requires=[
+            "setuptools>=62",
+            "setuptools_scm[toml]>=8.0",
+            "cython>=3",
+            "numpy",
+        ],
         install_requires=[
             "pandas",
             "networkx",
+            "numpy",
             "scipy",
             "tables",
             "openpyxl",
@@ -77,6 +83,7 @@ def setup_package():
             "pywr.utils",
         ],
         package_data=package_data(),
+        requires_python=">=3.10",
         use_scm_version=True,
     )
 

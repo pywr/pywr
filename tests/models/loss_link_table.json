@@ -1,0 +1,60 @@
+{
+    "metadata": {
+        "title": "Simple 1",
+        "description": "A very simple example with a loss link which reads loss_factor from a table.",
+        "minimum_version": "1.11.0"
+    },
+    "timestepper": {
+        "start": "2015-01-01",
+        "end": "2015-12-31",
+        "timestep": 1
+    },
+    "nodes": [
+        {
+            "name": "supply1",
+            "type": "Input",
+            "max_flow": 100,
+            "cost": 0.1
+        },
+        {
+            "name": "link1",
+            "type": "LossLink",
+            "max_flow": 10,
+            "loss_factor": {
+                "table": "loss_factors",
+                "index": "link1"
+            }
+        },
+        {
+            "name": "demand1",
+            "type": "Output",
+            "max_flow": 20,
+            "cost": -10
+        }
+    ],
+    "edges": [
+        ["supply1", "link1"],
+        ["link1", "demand1"]
+    ],
+    "tables": {
+        "loss_factors": {
+            "url": "loss_link_table.csv",
+            "index_col": 0,
+            "header": 0
+        }
+    },
+    "recorders": {
+        "supply1": {
+            "type": "numpyarraynoderecorder",
+            "node": "supply1"
+        },
+        "link1": {
+            "type": "numpyarraynoderecorder",
+            "node": "link1"
+        },
+        "demand1": {
+            "type": "numpyarraynoderecorder",
+            "node": "demand1"
+        }
+    }
+}

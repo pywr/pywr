@@ -959,8 +959,21 @@ def test_breaklink_node():
     assert_allclose(transfer.storage.volume, 0)
 
 
-@pytest.mark.parametrize("loss_factor", [None, 0.2, 0.99, 1.0, 0.0])
-def test_loss_link_node(loss_factor):
+@pytest.mark.parametrize(
+    "loss_factor,loss_factor_type",
+    [
+        (None, None),
+        (0.2, "gross"),
+        (0.2, "net"),
+        (0.98, "gross"),
+        (0.98, "net"),
+        (1.0, "gross"),
+        (1.0, "net"),
+        (0.0, "gross"),
+        (0.0, "net"),
+    ],
+)
+def test_loss_link_node(loss_factor, loss_factor_type):
     """Test LossLink node"""
     model = load_model("loss_link.json")
 
@@ -968,19 +981,26 @@ def test_loss_link_node(loss_factor):
     link1 = model.nodes["link1"]
     demand1 = model.nodes["demand1"]
 
+    if loss_factor_type is not None:
+        link1.loss_factor_type = loss_factor_type
     if loss_factor is not None:
         link1.loss_factor = loss_factor
 
     model.check()
     model.run()
 
-    if loss_factor is None:
+    if loss_factor is None and loss_factor_type is None:
+        # As per JSON file
         expected_supply = 12
         expected_demand = 10
-    elif loss_factor == 1.0:
-        # 100% loss means no flow can be provided.
-        expected_supply = 0.0
-        expected_demand = 0.0
+    elif loss_factor_type == "gross":
+        if loss_factor == 1.0:
+            # 100% loss means no flow can be provided.
+            expected_supply = 0.0
+            expected_demand = 0.0
+        else:
+            expected_supply = 10 / (1 - loss_factor)
+            expected_demand = 10
     else:
         expected_supply = 10 * (1 + loss_factor)
         expected_demand = 10
@@ -990,6 +1010,51 @@ def test_loss_link_node(loss_factor):
     # link1 records the net flow after losses
     assert_allclose(link1.flow, expected_demand)
     assert_allclose(demand1.flow, expected_demand)
+
+
+def test_loss_link_node_table():
+    """Test LossLink node with a table for `loss_factor`."""
+    model = load_model("loss_link_table.json")
+
+    supply1 = model.nodes["supply1"]
+    link1 = model.nodes["link1"]
+    demand1 = model.nodes["demand1"]
+
+    model.check()
+    model.run()
+
+    expected_supply = 10 * (1 + 0.2)
+    expected_demand = 10
+
+    # Supply must provide 20% more flow because of the loss in link1
+    assert_allclose(supply1.flow, expected_supply)
+    # link1 records the net flow after losses
+    assert_allclose(link1.flow, expected_demand)
+    assert_allclose(demand1.flow, expected_demand)
+
+
+def test_loss_link_node_loss_factor_parameter():
+    """Test LossLink node with a parameter for `loss_factor`."""
+    model = load_model("loss_link_parameter.json")
+
+    model.check()
+    model.run()
+
+    df_supply1 = model.recorders["supply1"].to_dataframe()
+    df_link1 = model.recorders["link1"].to_dataframe()
+    df_demand1 = model.recorders["demand1"].to_dataframe()
+
+    expected_supply = pandas.DataFrame(
+        df_supply1.index.map(lambda x: 10.0 * (1.0 + x.month / 100.0)),
+        index=df_supply1.index,
+    )
+    expected_demand = 10
+
+    # Supply must provide 20% more flow because of the loss in link1
+    assert_allclose(df_supply1, expected_supply)
+    # link1 records the net flow after losses
+    assert_allclose(df_link1, expected_demand)
+    assert_allclose(df_demand1, expected_demand)
 
 
 def test_reservoir_surface_area():
@@ -1129,7 +1194,7 @@ class NanParameter(Parameter):
     """A parameter that returns a NaN for testing error handling"""
 
     def value(self, ts, si):
-        return np.NAN
+        return np.nan
 
 
 class TestGlpkErrorHandling:
@@ -1195,3 +1260,9 @@ def test_reset_profiler(tmp_path):
     assert profile_out.exists()
     df = pandas.read_csv(profile_out)
     assert len(df) == 14  # 4 nodes & 10 parameters for reset
+
+
+def test_issue1110():
+    """Test for running the model in issue #1110"""
+    model = load_model("issue1110-df-scenario-combinations.json")
+    model.run()

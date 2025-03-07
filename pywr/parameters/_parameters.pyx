@@ -8,7 +8,6 @@ import calendar
 from libc.math cimport cos, M_PI
 from libc.limits cimport INT_MIN, INT_MAX
 from pywr.h5tools import H5Store
-from pywr.hashes import check_hash
 from .._core cimport is_leap_year
 from ..dataframe_tools import align_and_resample_dataframe, load_dataframe, read_dataframe
 import warnings
@@ -63,7 +62,7 @@ cdef class Parameter(Component):
             num_comb = len(self.model.scenarios.combinations)
         else:
             num_comb = 1
-        self.__values = np.empty([num_comb], np.float64)
+        self._Parameter__values = np.empty([num_comb], np.float64)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         raise NotImplementedError("Parameter must be subclassed")
@@ -73,13 +72,13 @@ cdef class Parameter(Component):
         cdef ScenarioIndex scenario_index
         cdef ScenarioCollection scenario_collection = self.model.scenarios
         for scenario_index in scenario_collection.combinations:
-            self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
+            self._Parameter__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
 
     cpdef double get_value(self, ScenarioIndex scenario_index):
-        return self.__values[<int>(scenario_index.global_id)]
+        return self._Parameter__values[<int>(scenario_index.global_id)]
 
     cpdef double[:] get_all_values(self):
-        return self.__values
+        return self._Parameter__values
 
     cpdef double get_constant_value(self):
         """Return a constant value.
@@ -158,7 +157,7 @@ cdef class ConstantParameter(Parameter):
 
     cdef calc_values(self, Timestep timestep):
         # constant parameter can just set the entire array to one value
-        self.__values[...] = self.get_constant_value()
+        self._Parameter__values[...] = self.get_constant_value()
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         return self.get_constant_value()
@@ -228,7 +227,8 @@ cdef class DataFrameParameter(Parameter):
                 raise ValueError("Scenario size ({}) is different to the number of columns ({}) "
                                  "in the DataFrame input.".format(self.scenario.size, dataframe_resampled.shape[1]))
 
-        if self.scenario:
+        if self.scenario is not None:
+            self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
             # if possible, only load the data required
             scenario_indices = None
             # Default to index that is just out of bounds to cause IndexError if something goes wrong
@@ -245,7 +245,6 @@ cdef class DataFrameParameter(Parameter):
             else:
                 # scenario is defined, but all data required
                 self._scenario_ids = None
-
             if scenario_indices is not None:
                 # Now load only the required data
                 for n, i in enumerate(scenario_indices):
@@ -253,8 +252,6 @@ cdef class DataFrameParameter(Parameter):
                 dataframe_resampled = dataframe_resampled.iloc[:, scenario_indices]
 
         self._values = dataframe_resampled.values.astype(np.float64)
-        if self.scenario is not None:
-            self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         cdef double value
@@ -293,7 +290,7 @@ cdef class ArrayIndexedParameter(Parameter):
 
     cdef calc_values(self, Timestep ts):
         # constant parameter can just set the entire array to one value
-        self.__values[...] = self.values[ts.index]
+        self._Parameter__values[...] = self.values[ts.index]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         """Returns the value of the parameter at a given timestep
@@ -509,7 +506,7 @@ cdef class TablesArrayParameter(IndexParameter):
         # Check hashes if given before reading the data
         checksums = data.pop('checksum', {})
         for algo, hash in checksums.items():
-            check_hash(url, hash, algorithm=algo)
+            model.check_hash(url, hash, algorithm=algo)
 
         return cls(model, url, node, where=where, scenario=scenario)
 TablesArrayParameter.register()
@@ -1080,7 +1077,7 @@ cdef class RbfProfileParameter(Parameter):
                 raise ValueError('At least 3 days of the year are required.')
             if np.any(np.diff(values) <= 0):
                 raise ValueError('The days of the year should be strictly monotonically increasing.')
-            if np.any(0 > values > 365):
+            if np.any((0 > values) | (values > 365)):
                 raise ValueError('Days of the years should be between 1 and 365 inclusive.')
             self._days_of_year = values
 
@@ -1184,20 +1181,20 @@ cdef class IndexParameter(Parameter):
             num_comb = len(self.model.scenarios.combinations)
         else:
             num_comb = 1
-        self.__indices = np.empty([num_comb], np.int32)
+        self._IndexParameter__indices = np.empty([num_comb], np.int32)
 
     cdef calc_values(self, Timestep timestep):
         cdef ScenarioIndex scenario_index
         cdef ScenarioCollection scenario_collection = self.model.scenarios
         for scenario_index in scenario_collection.combinations:
-            self.__indices[<int>(scenario_index.global_id)] = self.index(timestep, scenario_index)
-            self.__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
+            self._IndexParameter__indices[<int>(scenario_index.global_id)] = self.index(timestep, scenario_index)
+            self._Parameter__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
 
     cpdef int get_index(self, ScenarioIndex scenario_index):
-        return self.__indices[<int>(scenario_index.global_id)]
+        return self._IndexParameter__indices[<int>(scenario_index.global_id)]
 
     cpdef int[:] get_all_indices(self):
-        return self.__indices
+        return self._IndexParameter__indices
 IndexParameter.register()
 
 
@@ -1478,7 +1475,7 @@ cdef class AggregatedParameter(Parameter):
 
     cdef calc_values(self, Timestep timestep):
         cdef Parameter parameter
-        cdef double[:] accum = self.__values  # View of the underlying location for the data
+        cdef double[:] accum = self._Parameter__values  # View of the underlying location for the data
         cdef double[:] values
         cdef int i
         cdef int nparam
@@ -1498,14 +1495,14 @@ cdef class AggregatedParameter(Parameter):
                 for i in range(n):
                     accum[i] += values[i]
         elif self._agg_func == AggFuncs.MAX:
-            accum[...] = np.NINF
+            accum[...] = -np.inf
             for parameter in self.parameters:
                 values = parameter.get_all_values()
                 for i in range(n):
                     if values[i] > accum[i]:
                         accum[i] = values[i]
         elif self._agg_func == AggFuncs.MIN:
-            accum[...] = np.PINF
+            accum[...] = np.inf
             for parameter in self.parameters:
                 values = parameter.get_all_values()
                 for i in range(n):
@@ -1599,7 +1596,7 @@ cdef class AggregatedIndexParameter(IndexParameter):
 
     cdef calc_values(self, Timestep timestep):
         cdef IndexParameter parameter
-        cdef int[:] accum = self.__indices  # View of the underlying location for the data
+        cdef int[:] accum = self._IndexParameter__indices  # View of the underlying location for the data
         cdef int[:] values
         cdef int i
         cdef int nparam
@@ -1655,7 +1652,7 @@ cdef class AggregatedIndexParameter(IndexParameter):
 
         # Finally set the float values
         for i in range(n):
-            self.__values[i] = accum[i]
+            self._Parameter__values[i] = accum[i]
 
 
 AggregatedIndexParameter.register()
@@ -1702,10 +1699,10 @@ cdef class DivisionParameter(Parameter):
 
     cdef calc_values(self, Timestep timestep):
         cdef int i
-        cdef int n = self.__values.shape[0]
+        cdef int n = self._Parameter__values.shape[0]
 
         for i in range(n):
-            self.__values[i] = self._numerator.__values[i] / self._denominator.__values[i]
+            self._Parameter__values[i] = self._numerator._Parameter__values[i] / self._denominator._Parameter__values[i]
 
     @classmethod
     def load(cls, model, data):
@@ -1730,10 +1727,10 @@ cdef class NegativeParameter(Parameter):
 
     cdef calc_values(self, Timestep timestep):
         cdef int i
-        cdef int n = self.__values.shape[0]
+        cdef int n = self._Parameter__values.shape[0]
 
         for i in range(n):
-            self.__values[i] = -self.parameter.__values[i]
+            self._Parameter__values[i] = -self.parameter._Parameter__values[i]
 
     @classmethod
     def load(cls, model, data):
@@ -1763,10 +1760,10 @@ cdef class MaxParameter(Parameter):
 
     cdef calc_values(self, Timestep timestep):
         cdef int i
-        cdef int n = self.__values.shape[0]
+        cdef int n = self._Parameter__values.shape[0]
 
         for i in range(n):
-            self.__values[i] = max(self.parameter.__values[i], self.threshold)
+            self._Parameter__values[i] = max(self.parameter._Parameter__values[i], self.threshold)
 
     @classmethod
     def load(cls, model, data):
@@ -1779,10 +1776,10 @@ cdef class NegativeMaxParameter(MaxParameter):
     """ Parameter that takes maximum of the negative of a `Parameter` and constant value (threshold) """
     cdef calc_values(self, Timestep timestep):
         cdef int i
-        cdef int n = self.__values.shape[0]
+        cdef int n = self._Parameter__values.shape[0]
 
         for i in range(n):
-            self.__values[i] = max(-self.parameter.__values[i], self.threshold)
+            self._Parameter__values[i] = max(-self.parameter._Parameter__values[i], self.threshold)
 
 NegativeMaxParameter.register()
 
@@ -1808,10 +1805,10 @@ cdef class MinParameter(Parameter):
 
     cdef calc_values(self, Timestep timestep):
         cdef int i
-        cdef int n = self.__values.shape[0]
+        cdef int n = self._Parameter__values.shape[0]
 
         for i in range(n):
-            self.__values[i] = min(self.parameter.__values[i], self.threshold)
+            self._Parameter__values[i] = min(self.parameter._Parameter__values[i], self.threshold)
 
     @classmethod
     def load(cls, model, data):
@@ -1824,10 +1821,10 @@ cdef class NegativeMinParameter(MinParameter):
     """ Parameter that takes minimum of the negative of a `Parameter` and constant value (threshold) """
     cdef calc_values(self, Timestep timestep):
         cdef int i
-        cdef int n = self.__values.shape[0]
+        cdef int n = self._Parameter__values.shape[0]
 
         for i in range(n):
-            self.__values[i] = min(-self.parameter.__values[i], self.threshold)
+            self._Parameter__values[i] = min(-self.parameter._Parameter__values[i], self.threshold)
 NegativeMinParameter.register()
 
 
@@ -1859,10 +1856,10 @@ cdef class OffsetParameter(Parameter):
 
     cdef calc_values(self, Timestep timestep):
         cdef int i
-        cdef int n = self.__values.shape[0]
+        cdef int n = self._Parameter__values.shape[0]
 
         for i in range(n):
-            self.__values[i] = self.parameter.__values[i] + self.offset
+            self._Parameter__values[i] = self.parameter._Parameter__values[i] + self.offset
 
     cpdef set_double_variables(self, double[:] values):
         self.offset = values[0]
@@ -1908,7 +1905,7 @@ cdef class DeficitParameter(Parameter):
         self.node = node
 
     cpdef reset(self):
-        self.__values[...] = 0.0
+        self._Parameter__values[...] = 0.0
 
     cdef calc_values(self, Timestep timestep):
         pass # calculation done in after
@@ -1918,11 +1915,11 @@ cdef class DeficitParameter(Parameter):
         cdef int i
         if self.node._max_flow_param is None:
             for i in range(0, self.node._flow.shape[0]):
-                self.__values[i] = self.node._max_flow - self.node._flow[i]
+                self._Parameter__values[i] = self.node._max_flow - self.node._flow[i]
         else:
             max_flow = self.node._max_flow_param.get_all_values()
             for i in range(0, self.node._flow.shape[0]):
-                self.__values[i] = max_flow[i] - self.node._flow[i]
+                self._Parameter__values[i] = max_flow[i] - self.node._flow[i]
 
     @classmethod
     def load(cls, model, data):
@@ -1965,12 +1962,12 @@ cdef class FlowParameter(Parameter):
 
     cpdef reset(self):
         self.__next_values[...] = self.initial_value
-        self.__values[...] = 0.0
+        self._Parameter__values[...] = 0.0
 
     cdef calc_values(self, Timestep timestep):
         cdef int i
-        for i in range(self.__values.shape[0]):
-            self.__values[i] = self.__next_values[i]
+        for i in range(self._Parameter__values.shape[0]):
+            self._Parameter__values[i] = self.__next_values[i]
 
     cpdef after(self):
         cdef int i
@@ -2294,8 +2291,8 @@ def load_parameter(model, data, parameter_name=None):
         try:
              parameter_type = data['type']
         except KeyError:
-            #raise custom exception that makes the error a bit easier to interpret
-            raise TypeNotFoundError(data)
+            # Not a parameter, try to load values
+            return float(load_parameter_values(model, data))
 
         try:
             parameter_name = data["name"]

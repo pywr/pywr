@@ -1,9 +1,9 @@
 """Utilities for working with pandas DataFrame objects."""
+
 import pandas
 from pandas.tseries.offsets import Tick, DateOffset
 from pandas._libs.tslibs.period import IncompatibleFrequency
 import os
-from .hashes import check_hash
 
 
 class ResamplingError(Exception):
@@ -167,6 +167,7 @@ def load_dataframe(model, data):
         # Cast multiindex to a tuple to ensure .loc works correctly
         index = tuple(index)
 
+    columns = data.pop("columns", None)
     indexes = data.pop("indexes", None)
 
     table_ref = data.pop("table", None)
@@ -183,6 +184,14 @@ def load_dataframe(model, data):
             df = df[column]
         except KeyError:
             raise KeyError('Column "{}" not found in dataset "{}"'.format(column, name))
+
+    if columns is not None:
+        try:
+            df = df[columns]
+        except KeyError:
+            raise KeyError(
+                'Columns "{}" not found in dataset "{}"'.format(columns, name)
+            )
 
     if index is not None:
         try:
@@ -231,7 +240,7 @@ def read_dataframe(model, data):
         # Check hashes if given before reading the data
         checksums = data.pop("checksum", {})
         for algo, hash in checksums.items():
-            check_hash(url, hash, algorithm=algo)
+            model.check_hash(url, hash, algorithm=algo)
 
         try:
             filetype = data.pop("filetype")

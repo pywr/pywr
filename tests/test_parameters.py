@@ -1,6 +1,7 @@
 """
 Test for individual Parameter classes
 """
+
 from pyparsing import col
 
 from pywr.core import (
@@ -60,6 +61,7 @@ import itertools
 import calendar
 from numpy.testing import assert_allclose
 from scipy.interpolate import Rbf, interp1d
+import warnings
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -712,7 +714,7 @@ class DummyIndexParameter(IndexParameter):
 class TestAggregatedIndexParameter:
     """Tests for AggregatedIndexParameter"""
 
-    funcs = {"min": np.min, "max": np.max, "sum": np.sum, "product": np.product}
+    funcs = {"min": np.min, "max": np.max, "sum": np.sum, "product": np.prod}
 
     @pytest.mark.parametrize("agg_func", ["min", "max", "sum", "product"])
     def test_agg(self, simple_linear_model, agg_func):
@@ -1695,6 +1697,38 @@ class TestThresholdParameters:
         # Storage < 10
         assert p1.index(m.timestepper.current, si) == 0
 
+    def test_threshold_parameter_with_agg_threshold(self, simple_storage_model):
+        """Test StorageThresholdParameter"""
+        m = simple_storage_model
+
+        data = {
+            "type": "storagethreshold",
+            "storage_node": "Storage",
+            "threshold": {
+                "type": "aggregated",
+                "agg_func": "min",
+                "parameters": [5.0, 15.0],
+            },
+            "predicate": ">",
+        }
+
+        p1 = load_parameter(m, data)
+
+        si = ScenarioIndex(0, np.array([0], dtype=np.int32))
+
+        m.nodes["Storage"].initial_volume = 15.0
+        m.setup()
+        # step so that value if aggregated parameter is calculated
+        m.step()
+        # Storage > 10
+        assert p1.index(m.timestepper.current, si) == 1
+
+        m.nodes["Storage"].initial_volume = 7.0
+        m.setup()
+        m.step()
+        # Storage < 10
+        assert p1.index(m.timestepper.current, si) == 0
+
     def test_node_threshold_parameter2(self, simple_linear_model):
         model = simple_linear_model
         model.nodes["Input"].max_flow = ArrayIndexedParameter(model, np.arange(0, 20))
@@ -1907,7 +1941,7 @@ def test_orphaned_components(simple_linear_model):
     result = model.find_orphaned_parameters()
     assert not result
     # assert that warning not raised by check
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         model.check()
     for w in record:
         if isinstance(w, OrphanedParameterWarning):
