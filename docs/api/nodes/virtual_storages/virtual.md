@@ -1,0 +1,2 @@
+# Virtual
+::: pywr.nodes.VirtualStorage

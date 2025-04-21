@@ -39,9 +39,6 @@ coverage.xml
 *.pot
 # Django stuff:
 *.log
-# Sphinx documentation
-docs/build/
-docs/source/api/generated
 # PyBuilder
 target/
 # Mac

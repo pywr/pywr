@@ -1,0 +1,127 @@
+site_name: Pywr
+site_url: https://pywr.github.io/pywr
+repo_url: https://github.com/pywr/pywr
+plugins:
+  - search
+  - mermaid2
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            force_inspection: true
+            heading_level: 4
+            inherited_members: true
+            members_order: alphabetical
+            docstring_style: numpy
+            docstring_section_style: table
+            show_bases: false
+            show_if_no_docstring: false
+            show_overloads: false
+            show_root_heading: true
+            show_signature_annotations: true
+            show_source: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_inheritance_diagram: true
+            filters:
+              - "!^__.*__$"      # Exclude all dunder methods
+              - "^__init__$"     # Re-include only __init__
+              - "!^_private"    # Optionally hide private methods
+              - "!_disconnect.*$" # Node method
+              - "!component_attrs"  # Node prop
+markdown_extensions:
+  - admonition
+  - pymdownx.critic
+  - pymdownx.highlight:
+      use_pygments: true
+      linenums: true
+  - pymdownx.superfences:
+      # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+theme:
+  name: material
+  features:
+    - navigation.sections  # Sections are included in the navigation on the left.
+    - navigation.top
+    - header.autohide  # Hide topbar
+    - header.autohide  # header disappears as you scroll
+    - search.suggest
+    - search.highlight
+    - content.code.copy  # Add copy button in code blocks
+  toc:
+    toc_depth: 4
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github  # GitHub logo in top right
+nav:
+  - 'index.md'
+  - Install:
+    - 'install/from_binary.md'
+    - 'install/from_source.md'
+    - 'install/development.md'
+  - Get started:
+    - 'get_started/intro.md'
+    - 'get_started/python.md'
+    - 'get_started/json.md'
+  - Manual:
+    - 'manual/problem.md'
+#    - Nodes
+#    - Parameters
+#    - Recorders
+    - 'manual/tables.md'
+    - 'manual/exceptions.md'
+  - API reference:
+    - Core:
+      - 'api/core/model.md'
+      - 'api/core/time.md'
+      - 'api/core/scenario.md'
+    - Nodes:
+        - 'api/nodes/core.md'
+        - Inputs:
+          - Input: 'api/nodes/inputs/input.md'
+          - Catchment: 'api/nodes/inputs/catchment.md'
+          - Discharge: 'api/nodes/inputs/discharge.md'
+        - Links:
+          - 'api/nodes/links/link.md'
+          - 'api/nodes/links/delay.md'
+          - 'api/nodes/links/break.md'
+          - 'api/nodes/links/loss.md'
+          - 'api/nodes/links/piecewise.md'
+          - 'api/nodes/links/multisplit.md'
+          - River: 'api/nodes/links/river.md'
+          - River gauge: 'api/nodes/links/river_gauge.md'
+          - River with split: 'api/nodes/links/river_split.md'
+          - River split with gauge: 'api/nodes/links/river_split_gauge.md'
+        - 'api/nodes/output.md'
+        - Storage:
+          - 'api/nodes/storages/storage.md'
+          - Reservoir: 'api/nodes/storages/reservoir.md'
+        - Virtual storages:
+          - 'api/nodes/virtual_storages/virtual.md'
+          - 'api/nodes/virtual_storages/annual.md'
+          - 'api/nodes/virtual_storages/monthly.md'
+          - 'api/nodes/virtual_storages/seasonal.md'
+          - 'api/nodes/virtual_storages/rolling.md'
+        - Aggregated:
+            - 'api/nodes/aggregated/node.md'
+            - 'api/nodes/aggregated/storage.md'
+  - 'license.md'
