@@ -7,7 +7,6 @@ from setuptools.command.build_ext import build_ext as _build_ext
 def setup_package():
     compiler_directives = {
         "language_level": 3,
-        "embedsignature": True,
     }
 
     define_macros = []
@@ -35,7 +34,7 @@ def setup_package():
             super().finalize_options()
 
     # Extra optional dependencies
-    docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc", "matplotlib"]
+    docs_extras = ["mkdocs-material", "mkdocs-material-extension", "mkdocstrings[python]", "mkdocs-mermaid2-plugin", "numpydoc", "matplotlib"]
     notebook_extras = ["ipython", "jinja2", "matplotlib"]
     opt_extras = ["platypus-opt", "pygmo"]
     test_extras = ["pytest"] + notebook_extras + opt_extras

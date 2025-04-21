@@ -49,6 +49,13 @@ class Loadable:
         """Create a node instance from data.
 
         Parameter data and references are stored until later, and consumed by a call to `finalise_load`.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        data : dict
+            The node's data.
         """
         # Filter non-parameter data and initialise with it only
         param_data = {}
@@ -92,31 +99,41 @@ class Connectable(object):
     """A mixin class providing methods for connecting nodes in the model graph"""
 
     def iter_slots(self, slot_name=None, is_connector=True):
-        """Returns the object(s) wich should be connected to given slot_name
+        """Returns the object(s) which should be connected to the given `slot_name`.
 
         Overload this method when implementing compound nodes which have
         multiple slots and may return something other than self.
 
-        is_connector is True when self's connect method has been used. I.e. self
-        is connecting to another object. This is useful for providing an
-        appropriate response object in circumstances where a subnode should make
-        the actual connection rather than self.
+        Parameters
+        ----------
+        slot_name : Optional[str], default=None
+            The name of the slot.
+        is_connector : bool, default=True
+            This is True when self's connect method has been used. I.e. self
+            is connecting to another object. This is useful for providing an
+            appropriate response object in circumstances where a sub-node should make
+            the actual connection rather than self.
+
+        Returns
+        -------
+        Iterable[Connectable]
+            The object(s) which should be connected to the given `slot_name`.
         """
         if slot_name is not None:
             raise ValueError("{} does not have slot: {}".format(self, slot_name))
         yield self
 
     def connect(self, node, from_slot=None, to_slot=None):
-        """Create an edge from this Node to another Node
+        """Create an edge from this `Node` to another `Node`.
 
         Parameters
         ----------
         node : Node
-            The node to connect to
-        from_slot : object (optional)
-            The outgoing slot on this node to connect to
-        to_slot : object (optional)
-            The incoming slot on the target node to connect to
+            The node to connect to.
+        from_slot : Option[int], default=None
+            The outgoing slot on this node to connect to.
+        to_slot : Option[int], default=None
+            The incoming slot on the target node to connect to.
         """
         if self.model is not node.model:
             raise RuntimeError("Can't connect Nodes in different Models")
@@ -131,16 +148,17 @@ class Connectable(object):
         self.model.dirty = True
 
     def disconnect(self, node=None, slot_name=None, all_slots=True):
-        """Remove a connection from this Node to another Node
+        """Remove a connection from this `Node` to another `Node`.
 
         Parameters
         ----------
-        node : Node (optional)
+        node : Optional[Node], default=None.
             The node to remove the connection to. If another node is not
             specified, all connections from this node will be removed.
-        slot_name : integer (optional)
+        slot_name : Optional[int], default=None
             If specified, only remove the connection to a specific slot name.
-            Otherwise connections from all slots are removed.
+            Otherwise, connections from all slots are removed.
+        all_slots : bool, default=True
         """
         if node is not None:
             self._disconnect(node, slot_name=slot_name, all_slots=all_slots)
@@ -199,16 +217,16 @@ class NodeMeta(type):
 class Node(Loadable, Drawable, Connectable, BaseNode, metaclass=NodeMeta):
     """Base object from which all other nodes inherit
 
-    This BaseNode is not connectable by default, and the Node class should
-    be used for actual Nodes in the model. The BaseNode provides an abstract
-    class for other Node types (e.g. StorageInput) that are not directly
-    Connectable.
+    This `BaseNode` is not connectable by default, and the `Node` class should
+    be used for actual Nodes in the model. The `BaseNode` provides an abstract
+    class for other `Node` types (e.g. `StorageInput`) that are not directly
+    `Connectable`.
     """
 
     __parameter_attributes__ = ("cost", "min_flow", "max_flow")
 
     def __init__(self, model, name, **kwargs):
-        """Initialise a new Node object
+        """Initialise a new Node object.
 
         Parameters
         ----------
@@ -235,54 +253,122 @@ class Node(Loadable, Drawable, Connectable, BaseNode, metaclass=NodeMeta):
         self.conversion_factor = conversion_factor
 
     def check(self):
-        """Check the node is valid
+        """Check the node is valid.
 
-        Raises an exception if the node is invalid
+        Raises
+        ------
+        Exception
+            If the node is invalid
         """
         pass
 
 
 class Input(Node, BaseInput):
-    """A general input at any point in the network"""
+    """A general input at any point in the network.
+
+    Examples
+    --------
+    Python
+    ======
+    ```python
+    model = Model()
+    Input(model=model, min_flow=1.0,max_flow=10.3, name="In")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "In",
+        "type": "Input",
+        "min_flow": 1.0,
+        "max_flow": 10.3
+    }
+    ```
+    """
 
     def __init__(self, *args, **kwargs):
-        """Initialise a new Input node
+        """Initialise a new Input node.
 
         Parameters
         ----------
-        min_flow : float (optional)
-            A simple minimum flow constraint for the input. Defaults to None
-        max_flow : float (optional)
-            A simple maximum flow constraint for the input. Defaults to 0.0
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        min_flow : Optional[float | Parameter], default=0
+            A simple minimum flow constraint for the node. Defaults to 0.
+        max_flow : Optional[float | Parameter], default=Inf
+            A simple maximum flow constraint for the node. Defaults to infinite.
+        cost : Optional[float | Parameter], default=0
+            The cost of supply.
         """
         super(Input, self).__init__(*args, **kwargs)
         self.color = "#F26C4F"  # light red
 
 
 class Output(Node, BaseOutput):
-    """A general output at any point from the network"""
+    """A general output."""
 
     def __init__(self, *args, **kwargs):
         """Initialise a new Output node
 
         Parameters
         ----------
-        min_flow : float (optional)
-            A simple minimum flow constraint for the output. Defaults to 0.0
-        max_flow : float (optional)
-            A simple maximum flow constraint for the output. Defaults to None
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        min_flow : Optional[float | Parameter], default=0
+            A simple minimum flow constraint for the node. Defaults to 0.
+        max_flow : Optional[float | Parameter], default=Inf
+            A simple maximum flow constraint for the node. Defaults to infinite.
+        cost : Optional[float | Parameter], default=0
+            The cost of supply.
         """
         kwargs["color"] = kwargs.pop("color", "#FFF467")  # light yellow
         super(Output, self).__init__(*args, **kwargs)
 
 
 class Link(Node, BaseLink):
-    """A link in the supply network, such as a pipe
+    """A link in the supply network, such as a pipe.
 
-    Connections between Nodes in the network are created using edges (see the
+    Connections between `Nodes` in the network are created using edges (see the
     Node.connect and Node.disconnect methods). However, these edges cannot
     hold constraints (e.g. a maximum flow constraint). In this instance a Link
     node should be used.
+
+    Parameters
+    ----------
+    model : Model
+        The model instance.
+    name : str
+        The unique name of the node.
+    min_flow : Optional[float | Parameter], default=0
+        A simple minimum flow constraint for the node. Defaults to 0.
+    max_flow : Optional[float | Parameter], default=Inf
+        A simple maximum flow constraint for the node. Defaults to infinite.
+    cost : Optional[float | Parameter], default=0
+        The cost of supply.
+
+    Examples
+    --------
+    Python
+    ======
+    ```python
+    model = Model()
+    Link(model=model, min_flow=1.0, name="Pipe")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Pipe",
+        "type": "Link",
+        "min_flow": 1.0,
+    }
+    ```
     """
 
     def __init__(self, *args, **kwargs):
@@ -290,64 +376,129 @@ class Link(Node, BaseLink):
 
         Parameters
         ----------
-        max_flow : float or function (optional)
-            A maximum flow constraint on the link, e.g. 5.0
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        min_flow : Optional[float | Parameter], default=0
+            A simple minimum flow constraint for the node. Defaults to 0.
+        max_flow : Optional[float | Parameter], default=Inf
+            A simple maximum flow constraint for the node. Defaults to infinite.
+        cost : Optional[float | Parameter], default=0
+            The cost of supply.
         """
         kwargs["color"] = kwargs.pop("color", "#A0A0A0")  # 45% grey
         super(Link, self).__init__(*args, **kwargs)
 
 
 class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta):
-    """A generic storage Node
+    """A generic storage node holdin some water.
 
+    Examples
+    --------
+    Python
+    ==================
+    ```python
+    model = Model()
+    node = Storage(model=model, cost=, name="Reservoir")
+    curve = ConstantParameter(model=model, value=0.5)
+    node.cost = ControlCurveParameter(
+        model=model,
+        name="Cost",
+        storage_node=node,
+        control_curves=[curve],
+        values=[-0.1, -100]
+    )
+    ```
+
+    JSON
+    ==================
+    ```json
+    {
+        "name": "Reservoir",
+        "type": "Storage",
+        "cost": {
+            "type": "ControlCurve",
+            "storage_node": "Reservir",
+            "control_curves" [
+                {
+                    "type": "Constant",
+                    "value": 0.5
+                }
+            ],
+            "values": [-0.1, -100]
+        }
+    }
+    ```
+
+    Initial volume
+    ------
+    1. The `initial_volume` and initial_volume_pc` are both required if `max_volume is a [pywr.parameters.Parameter][]
+    because the parameter will not be evaluated at the first time-step.
+    2. If both `initial_volume` and initial_volume_pc` are given and `max_volume` is not a Parameter, then the absolute
+    value is ignored.
+
+    Connection
+    ------
     In terms of connections in the network the Storage node behaves like any
     other node, provided there is only 1 input and 1 output. If there are
     multiple sub-nodes the connections need to be explicit about which they
     are connecting to. For example:
 
-    >>> storage(model, 'reservoir', num_outputs=1, num_inputs=2)
-    >>> supply.connect(storage)
-    >>> storage.connect(demand1, from_slot=0)
-    >>> storage.connect(demand2, from_slot=1)
-
+    ```python
+    Storage(model, 'reservoir', num_outputs=1, num_inputs=2)
+    supply.connect(storage)
+    storage.connect(demand1, from_slot=0)
+    storage.connect(demand2, from_slot=1)
+    ```
     The attribtues of the sub-nodes can be modified directly (and
     independently). For example:
 
-    >>> storage.outputs[0].max_flow = 15.0
+    ```python
+    storage.outputs[0].max_flow = 15.0
+    ```
 
     If a recorder is set on the storage node, instead of recording flow it
     records changes in storage. Any recorders set on the output or input
     sub-nodes record flow as normal.
-
-    Parameters
-    ----------
-    model : Model
-        Model instance to which this storage node is attached.
-    name : str
-        The name of the storage node.
-    num_inputs, num_outputs : integer (optional)
-        The number of input and output nodes to create internally. Defaults to 1.
-    min_volume : float (optional)
-        The minimum volume of the storage. Defaults to 0.0.
-    max_volume : float, Parameter (optional)
-        The maximum volume of the storage. Defaults to 0.0.
-    initial_volume, initial_volume_pc : float (optional)
-        Specify initial volume in either absolute or proportional terms. Both are required if `max_volume`
-        is a parameter because the parameter will not be evaluated at the first time-step. If both are given
-        and `max_volume` is not a Parameter, then the absolute value is ignored.
-    cost : float, Parameter (optional)
-        The cost of net flow in to the storage node. I.e. a positive cost penalises increasing volume by
-        giving a benefit to negative net flow (release), and a negative cost penalises decreasing volume
-        by giving a benefit to positive net flow (inflow).
-    area, level : float, Parameter (optional)
-        Optional float or Parameter defining the area and level of the storage node. These values are
-        accessible through the `get_area` and `get_level` methods respectively.
     """
 
     __parameter_attributes__ = ("cost", "min_volume", "max_volume", "level", "area")
     __parameter_value_attributes__ = ("initial_volume",)
 
     def __init__(self, model, name, outputs=1, inputs=1, *args, **kwargs):
+        """Initialise the node.
+        Parameters
+        ----------
+        model : Model
+            The model instance to which this storage node is attached.
+        name : str
+            The name of the storage node.
+        inputs : Optional[integer], default=1
+            The number of input nodes to create internally.
+        outputs : Optional[integer], default=1
+            The number of output nodes to create internally.
+        min_volume : Optional[float], default=0
+            The minimum volume of the storage.
+        max_volume : Optional[float | Parameter], default=0
+            The maximum volume of the storage.
+        initial_volume : Optional[float], default=0
+            Specify the initial volume in absolute terms.
+        initial_volume_pc : Optional[float], default=0
+            Specify initial volume in proportional terms. `initial_volume` and initial_volume_pc` are required
+            if `max_volume is a parameter because the parameter will not be evaluated at the first time-step.
+            If both are given and `max_volume` is not a Parameter, then the absolute value is ignored.
+        cost : Optional[float | Parameter], default=0
+            The cost of net flow in to the storage node. I.e. a positive cost penalises increasing volume by
+            giving a benefit to negative net flow (release), and a negative cost penalises decreasing volume
+            by giving a benefit to positive net flow (inflow).
+        area : Optional[float | Parameter], default=None
+            Optional float or Parameter defining the area of the storage node. These values are
+            accessible through the `get_area` method.
+        level : Optional[float | Parameter], default=None
+            Optional float or Parameter defining the level of the storage node. These values are
+            accessible through the `get_level` method.
+        """
         min_volume = pop_kwarg_parameter(kwargs, "min_volume", 0.0)
         if min_volume is None:
             min_volume = 0.0
@@ -425,38 +576,57 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
 
 
 class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMeta):
-    """A virtual storage unit
+    """A virtual storage unit.
 
-    Parameters
+    Attributes
     ----------
-    model: pywr.core.Model
-    name: str
-        The name of the virtual node
-    nodes: list of nodes
-        List of inflow/outflow nodes that affect the storage volume
-    factors: list of floats
-        List of factors to multiply node flow by. Positive factors remove
-        water from the storage, negative factors remove it.
-    min_volume: float or parameter
-        The minimum volume the storage is allowed to reach.
-    max_volume: float or parameter
-        The maximum volume of the storage.
-    initial_volume, initial_volume_pc : float (optional)
-        Specify initial volume in either absolute or proportional terms. Both are required if `max_volume`
-        is a parameter because the parameter will not be evaluated at the first time-step. If both are given
-        and `max_volume` is not a Parameter, then the absolute value is ignored.
-    cost: float or parameter
-        The cost of flow into/outfrom the storage.
-
-    Notes
-    -----
-    TODO: The cost property is not currently respected. See issue #242.
+    model : Model
+        The model instance.
+    name : str
+        The unique name of the node.
+    nodes : list[Node]
+        List of inflow/outflow nodes that affect the storage volume.
+    factors : Optional[list[float]], default=None
+        List of factors to multiply each node's flow in `nodes` by. Positive factors remove
+        water from the storage, negative factors remove it. When `None`, the flow is not scaled.
     """
-
+    # TODO: The cost property is not currently respected. See issue #242.
     __parameter_attributes__ = ("min_volume", "max_volume")
     __node_attributes__ = ("nodes",)
 
     def __init__(self, model, name, nodes, **kwargs):
+        """Instantiate the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        nodes : list[Node]
+            List of inflow/outflow nodes that affect the storage volume.
+        factors : Optional[list[float]], default=None
+            List of factors to multiply each node's flow in `nodes` by. Positive factors remove
+            water from the storage, negative factors remove it. When `None`, the flow is not scaled.
+        min_volume : Optional[float | Parameter], default=0.0
+            The minimum volume the storage is allowed to reach.
+        max_volume : Optional[float | Parameter], default=0.0
+            The maximum volume of the storage.
+        initial_volume : Optional[float], default=None
+            Specify initial volume in absolute terms.
+        initial_volume_pc : Optional[float], default=None
+            Specify initial volume in proportional terms. Both `initial_volume_pc` and `initial_volume` are required if `max_volume`
+            is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+            and `max_volume` is not a Parameter, then the absolute value is ignored.
+        cost : Optional[float | Parameter], default=None
+            The cost of flow into/outfrom the storage. The cost property is not currently respected (see issue #242),
+            therefore leave this to `None`.
+
+        Notes
+        -----
+        This is an abstract class used to build other virtual storages. Do not instantiate it unless you are inheriting
+        for this class.
+        """
         min_volume = pop_kwarg_parameter(kwargs, "min_volume", 0.0)
         if min_volume is None:
             min_volume = 0.0
@@ -498,49 +668,79 @@ class RollingVirtualStorage(
     prior to the rolling period.
 
     If the initial volume of the storage is less than the maximum volume then the parameter will calculate
-    an initial utilisation value. This is set equal to: (max volume - initial volume) / (timesteps - 1). This
-    utilisation is assumed to occurred equally across each timestep of the rolling period. The storage is replenished
+    an initial utilisation value. This is set equal to
+
+        (max volume - initial volume) / (timesteps - 1).
+
+    This utilisation is assumed to occurred equally across each timestep of the rolling period. The storage is replenished
     by this value for each timestep until a full rolling period is completed. At this point, replenishment will
     be based on the previous utilisation of the storage during the model run. Note that this changes the previous
-    default behaviour of the node up to Pywr version 1.17.1, where no initial utilisation was calculated. This meant
+    default behaviour of the node up to Pywr version `1.17.1`, where no initial utilisation was calculated. This meant
     that it was impossible for the storage volume to be higher than the initial volume even if this was lower than the
     max volume.
 
-    Parameters
+    Attributes
     ----------
-    model: pywr.core.Model
-    name: str
-        The name of the virtual node
-    nodes: list of nodes
-        List of inflow/out flow nodes that affect the storage volume
-    factors: list of floats
-        List of factors to multiply node flow by. Positive factors remove
-        water from the storage, negative factors remove it.
-    min_volume: float or parameter
-        The minimum volume the storage is allowed to reach.
-    max_volume: float or parameter
-        The maximum volume of the storage.
-    initial_volume, initial_volume_pc : float (optional)
-        Specify initial volume in either absolute or proportional terms. Both are required if `max_volume`
-        is a parameter because the parameter will not be evaluated at the first time-step. If both are given
-        and `max_volume` is not a Parameter, then the absolute value is ignored.
+    model : Model
+        The model instance.
+    name : str
+        The unique name of the node.
+    nodes : list[Node]
+        List of inflow/outflow nodes that affect the storage volume.
+    factors : Optional[list[float]], default=None
+        List of factors to multiply each node's flow in `nodes` by. Positive factors remove
+        water from the storage, negative factors remove it. When `None`, the flow is not scaled.
     timesteps : int
         The number of timesteps to apply to the rolling storage over.
     days : int
-        The number of days to apply the rolling storage over. Specifying a number of days (instead of a number
-        of timesteps) is only valid with models running a timestep of daily frequency.
-    cost: float or parameter
-        The cost of flow into/outfrom the storage.
+        The number of days to apply the rolling storage over.
 
     Notes
     -----
-    TODO: The cost property is not currently respected. See issue #242.
+    The cost property is not currently respected (see issue #242), therefore leave this to `None`.
     """
 
     __parameter_attributes__ = ("min_volume", "max_volume")
     __node_attributes__ = ("nodes",)
 
     def __init__(self, model, name, nodes, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        nodes : list[Node]
+            List of inflow/outflow nodes that affect the storage volume.
+        factors : Optional[list[float]], default=None
+            List of factors to multiply each node's flow in `nodes` by. Positive factors remove
+            water from the storage, negative factors remove it. When `None`, the flow is not scaled.
+        min_volume : Optional[float | Parameter], default=0.0
+            The minimum volume the storage is allowed to reach.
+        max_volume : Optional[float | Parameter], default=0.0
+            The maximum volume of the storage.
+        initial_volume : Optional[float], default=None
+            Specify initial volume in absolute terms.
+        initial_volume_pc : Optional[float], default=None
+            Specify initial volume in proportional terms. Both `initial_volume_pc` and `initial_volume` are required if `max_volume`
+            is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+            and `max_volume` is not a Parameter, then the absolute value is ignored.
+        cost : Optional[float | Parameter], default=None
+            The cost of flow into/outfrom the storage. The cost property is not currently respected (see issue #242),
+            therefore leave this to `None`.
+        timesteps : Optional[int], default=0
+            The number of timesteps to apply to the rolling storage over.
+        days : Optional[int], default=None
+            The number of days to apply the rolling storage over. Specifying a number of days (instead of a number
+            of timesteps) is only valid with models running a timestep of daily frequency.
+
+        Raises
+        ------
+        ValueError
+            When `timesteps` is 0 and `days` is `None`.
+        """
         min_volume = pop_kwarg_parameter(kwargs, "min_volume", 0.0)
         if min_volume is None:
             min_volume = 0.0
@@ -594,22 +794,102 @@ class RollingVirtualStorage(
 
 
 class AnnualVirtualStorage(VirtualStorage):
-    """A virtual storage which resets annually, useful for licences
+    """A virtual storage which resets annually, useful for annual licences.
 
-    See documentation for `pywr.core.VirtualStorage`.
+    Examples
+    --------
+    Reset the license using the financial year.
 
-    Parameters
+    Python
+    ======
+    ```python
+    model = Model()
+    node = Link(model=model, name="Track flow")
+    AnnualVirtualStorage(model=model, reset_month=4, name="Annual license", max_volume=10, nodes=[node])
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Annual license",
+        "type": "AnnualVirtualStorage",
+        "reset_month": 4,
+        "max_volume": 10,
+        "nodes": ["Track flow"]
+    }
+    ```
+
+    Attributes
     ----------
+    model : Model
+        The model instance.
+    name : str
+        The unique name of the node.
+    nodes : list[Node]
+        List of inflow/outflow nodes that affect the storage volume.
+    factors : Optional[list[float]], default=None
+        List of factors to multiply each node's flow in `nodes` by. Positive factors remove
+        water from the storage, negative factors remove it. When `None`, the flow is not scaled.
+    min_volume : Optional[float | Parameter], default=0.0
+            The minimum volume the storage is allowed to reach.
+    max_volume : Optional[float | Parameter], default=0.0
+        The maximum volume of the storage.
+    initial_volume : Optional[float], default=None
+        Specify initial volume in absolute terms.
+    initial_volume_pc : Optional[float], default=None
+        Specify initial volume in proportional terms. Both `initial_volume_pc` and `initial_volume` are required if `max_volume`
+        is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+        and `max_volume` is not a Parameter, then the absolute value is ignored.
+    cost : Optional[float | Parameter], default=None
+        The cost of flow into/outfrom the storage. The cost property is not currently respected (see issue #242),
+        therefore leave this to `None`.
     reset_day: int
         The day of the month (0-31) to reset the volume to the initial value.
     reset_month: int
         The month of the year (0-12) to reset the volume to the initial value.
     reset_to_initial_volume: bool
-        Reset the volume to the initial volume instead of maximum volume each year (default is False).
+        Reset the volume to the initial volume instead of maximum volume each year.
 
+    Notes
+    -----
+    The cost property is not currently respected (see issue #242), therefore leave this to `None`.
     """
 
     def __init__(self, *args, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        nodes : list[Node]
+            List of inflow/outflow nodes that affect the storage volume.
+        factors : Optional[list[float]], default=None
+            List of factors to multiply each node's flow in `nodes` by. Positive factors remove
+            water from the storage, negative factors remove it. When `None`, the flow is not scaled.
+        min_volume : Optional[float | Parameter], default=0.0
+            The minimum volume the storage is allowed to reach.
+        max_volume : Optional[float | Parameter], default=0.0
+            The maximum volume of the storage.
+        initial_volume : Optional[float], default=None
+            Specify initial volume in absolute terms.
+        initial_volume_pc : Optional[float], default=None
+            Specify initial volume in proportional terms. Both `initial_volume_pc` and `initial_volume` are required if `max_volume`
+            is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+            and `max_volume` is not a Parameter, then the absolute value is ignored.
+        cost : Optional[float | Parameter], default=None
+            The cost of flow into/outfrom the storage. The cost property is not currently respected (see issue #242),
+            therefore leave this to `None`.
+        reset_day: Optional[int], default=1
+            The day of the month (1-31) to reset the volume to the initial value.
+        reset_month: Optional[int], default=1
+            The month of the year (1-12) to reset the volume to the initial value.
+        reset_to_initial_volume: Optional[bool], default=False
+            Reset the volume to the initial volume instead of maximum volume each year (default is False).
+        """
         self.reset_day = kwargs.pop("reset_day", 1)
         self.reset_month = kwargs.pop("reset_month", 1)
         self.reset_to_initial_volume = kwargs.pop("reset_to_initial_volume", False)
@@ -651,11 +931,11 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
     when it stops operating. For the period when the node is not operating, the volume of the node remains unchanged
     and the node does not apply any constraints to the model.
 
-    The end_day and end_month can represent a date earlier in the year that the reset_day and and reset_month. This
+    The `end_day` and `end_month` represents a date when the node stops operating. This
     situation represents a licence that operates across a year boundary. For example, one that is active between
     October and March and not active between April and September.
 
-    Parameters
+    Attributes
     ----------
     reset_day : int
         The day of the month (0-31) when the node starts operating and its volume is reset to the initial value or
@@ -669,9 +949,52 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
         The day of the month (0-31) when the node stops operating.
     end_month : int
         The month of the year (0-12) when the node stops operating.
+
+    Notes
+    -----
+    The cost property is not currently respected (see issue #242), therefore leave this to `None`.
     """
 
     def __init__(self, *args, **kwargs):
+        """Initialise the node.
+
+         Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        nodes : list[Node]
+            List of inflow/outflow nodes that affect the storage volume.
+        factors : Optional[list[float]], default=None
+            List of factors to multiply each node's flow in `nodes` by. Positive factors remove
+            water from the storage, negative factors remove it. When `None`, the flow is not scaled.
+        min_volume : Optional[float | Parameter], default=0.0
+            The minimum volume the storage is allowed to reach.
+        max_volume : Optional[float | Parameter], default=0.0
+            The maximum volume of the storage.
+        initial_volume : Optional[float], default=None
+            Specify initial volume in absolute terms.
+        initial_volume_pc : Optional[float], default=None
+            Specify initial volume in proportional terms. Both `initial_volume_pc` and `initial_volume` are required if `max_volume`
+            is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+            and `max_volume` is not a Parameter, then the absolute value is ignored.
+        cost : Optional[float | Parameter], default=None
+            The cost of flow into/outfrom the storage. The cost property is not currently respected (see issue #242),
+            therefore leave this to `None`.
+        reset_day : int
+            The day of the month (1-31) when the node starts operating and its volume is reset to the initial value or
+            maximum volume.
+        reset_month : int
+            The month of the year (1-12) when the node starts operating and its volume is reset to the initial value or
+            maximum volume.
+        reset_to_initial_volume : Optional[bool], default=False
+            Reset the volume to the initial volume instead of maximum volume each year
+        end_day : Optional[int], default=31
+            The day of the month (1-31) when the node stops operating.
+        end_month : Optional[int], default=12
+            The month of the year (1-12) when the node stops operating.
+        """
         self.end_day = kwargs.pop("end_day", 31)
         self.end_month = kwargs.pop("end_month", 12)
         self._last_active_year = None
@@ -707,19 +1030,89 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
 
 
 class MonthlyVirtualStorage(VirtualStorage):
-    """A virtual storage that resets after a given number of months
+    """A virtual storage that resets after a given number of months.
 
-    Parameters
+    Examples
+    --------
+    Reset the license after 3 months.
+
+    Python
+    ======
+    ```python
+    model = Model()
+    node = Link(model=model, name="Track flow")
+    MonthlyVirtualStorage(model=model, month=3, name="Monthly license", max_volume=10, nodes=[node])
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Monthly license",
+        "type": "MonthlyVirtualStorage",
+        "month": 3,
+        "max_volume": 10,
+        "nodes": ["Track flow"]
+    }
+    ```
+
+    Attributes
     ----------
-    months : int, default 1
+    model : Model
+        The model instance.
+    name : str
+        The unique name of the node.
+    nodes : list[Node]
+        List of inflow/outflow nodes that affect the storage volume.
+    factors : Optional[list[float]], default=None
+        List of factors to multiply each node's flow in `nodes` by. Positive factors remove
+        water from the storage, negative factors remove it. When `None`, the flow is not scaled.
+    months : int
         The number of months after which the storage volume resets.
-    initial_months : int, default 0
+    initial_months : int
         The number of months into the reset period the storages is at when the model run starts.
     reset_to_initial_volume : bool
-        Reset the volume to the initial volume instead of maximum volume each year (default is False).
+        Reset the volume to the initial volume instead of maximum volume each year.
+
+    Notes
+    -----
+    The cost property is not currently respected (see issue #242), therefore leave this to `None`.
     """
 
     def __init__(self, *args, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        nodes : list[Node]
+            List of inflow/outflow nodes that affect the storage volume.
+        factors : Optional[list[float]], default=None
+            List of factors to multiply each node's flow in `nodes` by. Positive factors remove
+            water from the storage, negative factors remove it. When `None`, the flow is not scaled.
+        min_volume : Optional[float | Parameter], default=0.0
+            The minimum volume the storage is allowed to reach.
+        max_volume : Optional[float | Parameter], default=0.0
+            The maximum volume of the storage.
+        initial_volume : Optional[float], default=None
+            Specify initial volume in absolute terms.
+        initial_volume_pc : Optional[float], default=None
+            Specify initial volume in proportional terms. Both `initial_volume_pc` and `initial_volume` are required if `max_volume`
+            is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+            and `max_volume` is not a Parameter, then the absolute value is ignored.
+        cost : Optional[float | Parameter], default=None
+            The cost of flow into/outfrom the storage. The cost property is not currently respected (see issue #242),
+            therefore leave this to `None`.
+        months : Optional[int], default 1
+            The number of months after which the storage volume resets.
+        initial_months : Optional[int], default 0
+            The number of months into the reset period the storages is at when the model run starts.
+        reset_to_initial_volume : Optional[bool], default=False
+            Reset the volume to the initial volume instead of maximum volume each year (default is False).
+        """
         self.months = kwargs.pop("months", 1)
         self.initial_months = kwargs.pop("initial_months", 0)
         self.reset_to_initial_volume = kwargs.pop("reset_to_initial_volume", False)
@@ -745,41 +1138,56 @@ class MonthlyVirtualStorage(VirtualStorage):
 
 
 class PiecewiseLink(Node):
-    """An extension of Node that represents a non-linear Link with a piece wise cost function.
+    """An extension of Node that represents a non-linear Link with a piece-wise cost function.
 
     This object is intended to model situations where there is a benefit of supplying certain flow rates
     but beyond a fixed limit there is a change in (or zero) cost.
 
-    Parameters
-    ----------
-    max_flows : iterable
+    Attributes
+    ---------
+    max_flows : Iterable[float
         A monotonic increasing list of maximum flows for the piece wise function
-    costs : iterable
+    costs : Iterable[float]
         A list of costs corresponding to the max_flow steps
 
     Notes
     -----
-
     This Node is implemented using a compound node structure like so:
 
-    ::
-
-                | Separate Domain         |
-        Output -> Sublink 0 -> Sub Output -> Input
-               -> Sublink 1 ---^
-               ...             |
-               -> Sublink n ---|
+    ```mermaid
+    graph LR
+        Output --> Sublink_0
+        Output --> Sublink_1
+        Output --> Sublink_n
+        Sublink_0 --> Sub_Output
+        Sublink_1 --> Sub_Output
+        Sublink_n --> Sub_Output
+        Sub_Output --> Input
+    ```
 
     This means routes do not directly traverse this node due to the separate
-    domain in the middle. Instead several new routes are made for each of
-    the sublinks and connections to the Output/Input node. The reason for this
-    breaking of the route is to avoid an geometric increase in the number
-    of routes when multiple PiecewiseLinks are present in the same route.
+    domain in the middle. Instead, several new routes are made for each of
+    the sub-links and connections to the Output/Input node. The reason for this
+    breaking of the route is to avoid a geometric increase in the number
+    of routes when multiple `PiecewiseLinks` are present in the same route.
     """
 
     __parameter_attributes__ = ("costs", "max_flows")
 
     def __init__(self, model, nsteps, *args, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        max_flows : Iterable[float
+            A monotonic increasing list of maximum flows for the piece wise function
+        costs : Iterable[float]
+            A list of costs corresponding to the max_flow steps
+        """
         self.allow_isolated = True
         name = kwargs.pop("name")
         costs = kwargs.pop("costs", None)
@@ -818,10 +1226,34 @@ class PiecewiseLink(Node):
         if max_flows is not None:
             self.max_flows = max_flows
 
-    def get_min_flow(self, si):
+    def get_min_flow(self, si: "ScenarioIndex"):
+        """Get the total minimum flow through the sub link.
+
+        Parameters
+        ----------
+        si: ScenarioIndex
+            The scenario index.
+
+        Returns
+        -------
+        float
+            The total min flow.
+        """
         return sum([sl.get_min_flow(si) for sl in self.sublinks])
 
-    def get_max_flow(self, si):
+    def get_max_flow(self, si: "ScenarioIndex"):
+        """Get the total maximum flow through the sub link.
+
+        Parameters
+        ----------
+        si: ScenarioIndex
+            The scenario index.
+
+        Returns
+        -------
+        float
+            The total max flow.
+        """
         return sum([sl.get_max_flow(si) for sl in self.sublinks])
 
     def costs():
@@ -879,53 +1311,64 @@ class MultiSplitLink(PiecewiseLink):
 
     Conceptually this node looks like the following internally,
 
-    ::
+    ```mermaid
+    graph LR
+        A --> X0
+        X0 --> Xi
+        A --> Xo
+        Xo --> X1
+        X1 --> Xi
+        Xo --> X2
+        X2 --> Xi
+        Xi --> C
+        X2 --> Bo
+        Bo --> Bi
+        Bi --> D
+    ```
 
-                 / -->-- X0 -->-- \\
-        A -->-- Xo -->-- X1 -->-- Xi -->-- C
-                 \\ -->-- X2 -->-- /
-                         |
-                         Bo -->-- Bi --> D
-
-    An additional sublink in the PiecewiseLink (i.e. X2 above) and nodes
+    An additional sub-link in the PiecewiseLink (i.e. X2 above) and nodes
     (i.e. Bo and Bi) in this class are added for each extra slot.
 
-    Finally a mechanism is provided to (optionally) fix the ratio between the
-    last non-split sublink (i.e. X1) and each of the extra sublinks (i.e. X2).
+    Finally, a mechanism is provided to (optionally) fix the ratio between the
+    last non-split sub-link (i.e. X1) and each of the extra sub-links (i.e. X2).
     This mechanism uses `AggregatedNode` internally.
-
-    Parameters
-    ----------
-    max_flows : iterable
-        A monotonic increasing list of maximum flows for the piece wise function
-    costs : iterable
-        A list of costs corresponding to the max_flow steps
-    extra_slots : int, optional (default 1)
-        Number of additional slots (and sublinks) to provide. Must be greater
-        than zero.
-    slot_names : iterable, optional (default range of ints)
-        The names by which to refer to the slots during connection to other
-        nodes. Length must be one more than the number of extra_slots. The first
-        item refers to the PiecewiseLink connection with the following items for
-        each extra slot.
-    factors : iterable, optional (default None)
-        If given, the length must be equal to one more than the number of
-        extra_slots. Each item is the proportion of total flow to pass through
-        the additional sublinks. If no factor is required for a particular
-        sublink then use `None` for its items. Factors are normalised prior to
-        use in the solver.
 
     Notes
     -----
     Users must be careful when using the factor mechanism. Factors use the last
-    non-split sublink (i.e. X1 but not X0). If this link is constrained with a
+    non-split sub-link (i.e. X1 but not X0). If this link is constrained with a
     maximum or minimum flow, or if it there is another unconstrained link
     (i.e. if X0 is unconstrained) then ratios across this whole node may not be
     enforced as expected.
-
     """
 
     def __init__(self, model, nsteps, *args, **kwargs):
+        """Initialise the node.
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        max_flows : Iterable[float]
+            A monotonic increasing list of maximum flows for the piece wise function
+        costs : Iterable[float]
+            A list of costs corresponding to the `max_flow` steps
+        extra_slots : Optional[int], default=1
+            Number of additional slots (and sub-links) to provide. Must be greater
+            than zero.
+        slot_names : Optional[Iterable[str | int]], default=range of ints
+            The names by which to refer to the slots during connection to other
+            nodes. Length must be one more than the number of extra_slots. The first
+            item refers to the `PiecewiseLink` connection with the following items for
+            each extra slot.
+        factors : Optional[Iterable[float]], default=None
+            If given, the length must be equal to one more than the number of
+            extra_slots. Each item is the proportion of total flow to pass through
+            the additional sub-links. If no factor is required for a particular
+            sub-link then use `None` for its items. Factors are normalised prior to
+            use in the solver.
+        """
         self.allow_isolated = True
         costs = kwargs.pop("costs", None)
         max_flows = kwargs.pop("max_flows", None)
@@ -1005,54 +1448,123 @@ class MultiSplitLink(PiecewiseLink):
 class AggregatedStorage(
     Loadable, Drawable, _core.AggregatedStorage, metaclass=NodeMeta
 ):
-    """An aggregated sum of other `Storage` nodes
+    """An aggregated sum of other [pywr.nodes.Storage][] nodes.
 
-    This object should behave like `Storage` by returning current `flow`, `volume` and `current_pc`.
-    However this object can not be connected to others within the network.
+    This object should behave like [pywr.nodes.Storage][] by returning the current `flow`,
+    `volume` and `current_pc` as sum of the flows and volumes of the nodes provided in
+    `storage_nodes`. However, this object can not be connected to others within the network.
 
-    Parameters
+    Examples
+    --------
+    Python
+    ======
+    ```python
+    model = Model()
+    st1 = Storage(model=model, name="Storage 1", max_volume=10)
+    st2 = Storage(model=model, name="Storage 2", max_volume=2)
+    AggregatedStorage(model=model, storage_nodes=[st1, st2], name="Combined")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Combined",
+        "type": "AggregatedStorage",
+        "storage_nodes": ["Storage 1", "Storage 2"]
+    }
+    ```
+
+    Attributes
     ----------
-    model - `Model` instance
-    name - str
-    storage_nodes - list or iterable of `Storage` objects
+    model : Model
+        The model instance.
+    name : str
+        The unique name of the node.
+    storage_nodes : list[Storage]
         The `Storage` objects which to return the sum total of
 
     Notes
     -----
     This node can not be connected to other nodes in the network.
-
     """
 
     __node_attributes__ = ("storage_nodes",)
 
     def __init__(self, model, name, storage_nodes, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        storage_nodes : list[Storage]
+            The `Storage` objects which to return the sum total of
+
+        """
         super(AggregatedStorage, self).__init__(model, name, **kwargs)
         self.storage_nodes = storage_nodes
 
 
 class AggregatedNode(Loadable, Drawable, _core.AggregatedNode, metaclass=NodeMeta):
-    """An aggregated sum of other `Node` nodes
+    """An aggregated sum of other [pywr.nodes.Node][] nodes.
 
-    This object should behave like `Node` by returning current `flow`.
-    However this object can not be connected to others within the network.
+    This object should behave like [pywr.nodes.Node][] by returning the current `flow`
+    as sum of the flow through the nodes provided in `nodes`. However, it can not be
+    connected to others within the network.
 
-    Parameters
+    Examples
+    --------
+    Python
+    ======
+    ```python
+    model = Model()
+    link_node = Link(model=model, name="Works", max_flow=2)
+    input_node = Input(model=model, name="Input", min_flow=0.5)
+    AggregatedNode(model=model, nodes=[link_node, input_node], name="Combined flow")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Combined",
+        "type": "AggregatedNode",
+        "nodes": ["Works", "Input"]
+    }
+    ```
+
+    Attributes
     ----------
-    model - `Model` instance
-    name - str
-    nodes - list or iterable of `Node` objects
+    nodes : list[Node]
         The `Node` objects which to return the sum total of
+    flow_weights : Optional[list[float]]
+        Scale the flow of each node by the given weights.
 
     Notes
     -----
     This node can not be connected to other nodes in the network.
-
     """
 
     __parameter_attributes__ = ("factors", "min_flow", "max_flow")
     __node_attributes__ = ("nodes",)
 
     def __init__(self, model, name, nodes, flow_weights=None, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        nodes : list[Node]
+            The `Node` objects which to return the sum total of
+        flow_weights : Optional[list[float]], default=None
+            Scale the flow of each node by the given weights. When `None` weights are ignored.
+        """
         super(AggregatedNode, self).__init__(model, name, **kwargs)
         self.nodes = nodes
         self.flow_weights = flow_weights
@@ -1061,13 +1573,12 @@ class AggregatedNode(Loadable, Drawable, _core.AggregatedNode, metaclass=NodeMet
 class BreakLink(Node):
     """Compound node used to reduce the number of routes in a model
 
-    Parameters
+    Attributes
     ----------
-    model : `pywr.model.Model`
-    name : string
-    min_flow : float or `pywr.parameters.Parameter`
-    max_flow : float or `pywr.parameters.Parameter`
-    cost : float or `pywr.parameters.Parameter`
+    link : Link
+        The link node connect to the storage node.
+    storage : Storage
+        The storage node.
 
     Notes
     -----
@@ -1075,24 +1586,43 @@ class BreakLink(Node):
     In a model with form (3, 1, 3), i.e. 3 (A,B,C) inputs connected to 3
     outputs (D,E,F) via a bottleneck (X), there are 3*3 routes = 9 routes.
 
-    ::
+    ```mermaid
+    graph LR
+        A --> X
+        B --> X
+        C --> X
+        X --> D
+        X --> E
+        X --> F
+    ```
+    If X is a storage, there are only 6 routes: A -> X<sub>_o</sub>, B -> X<sub>_o</sub>, C -> X<sub>_o</sub> and
+    X<sub>_i</sub> -> D, X<sub>_i</sub> -> E, X<sub>_i</sub> -> F_o, where `_o` indicates
+    the output node of the storage and `_i` its input.
 
-        A -->\\ /--> D
-        B --> X --> E
-        C -->/ \\--> F
-
-    If X is a storage, there are only 6 routes: A->X_o, B->X_o, C->X_o and
-    X_i->D_o, X_i->E_o, X_i->F_o.
-
-    The `BreakLink` node is a compound node composed of a `Storage` with zero
-    volume and a `Link`. It can be used in place of a normal `Link`, but
+    The `BreakLink` node is a compound node composed of a [pywr.nodes.Storage]() with zero
+    volume and a [pywr.nodes.Link][]. It can be used in place of a normal [pywr.nodes.Link][], but
     with the benefit that it reduces the number of routes in the model (in
-    the situation described above). The resulting LP is easier to solve.
+    the situation described above). The resulting Linear Porgramming problem is easier to solve.
     """
 
     allow_isolated = True
 
     def __init__(self, model, name, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        min_flow : Optional[float | Parameter], default=0
+            A simple minimum flow constraint for the node. Defaults to 0.
+        max_flow : Optional[float | Parameter], default=Inf
+            A simple maximum flow constraint for the node. Defaults to infinite.
+        cost : Optional[float | Parameter], default=0
+            The cost of supply.
+        """
         storage_name = "{} (storage)".format(name)
         link_name = "{} (link)".format(name)
         assert storage_name not in model.nodes
@@ -1159,31 +1689,70 @@ class BreakLink(Node):
 
 
 class DelayNode(Node):
-    """A node that delays flow for a given number of timesteps or days.
+    """A node that delays flow for a given number of time-steps or days.
 
-    This is a composite node consisting internally of an Input and an Output node. A
-    `FlowDelayParameter` is used to delay the flow of the output node for a given period prior
+    This is a composite node consisting internally of a [pywr.nodes.Input][] and an [pywr.nodes.Output][] node. A
+    [pywr.parameters.FlowDelayParameter][] is used to delay the flow of the output node for a given period prior
     to this delayed flow being set as the flow of the input node. Connections to the node are connected
-    to the internal output node and connection from the node are connected to the internal input node
+    to the internal output node and connection from the node are connected to the internal input
     node.
 
-    Parameters
+    Attributes
     ----------
-    model : `pywr.model.Model`
-    name : string
-        Name of the node.
-    timesteps: int
-        Number of timesteps to delay the flow.
-    days: int
-        Number of days to delay the flow. Specifying a number of days (instead of a number
-        of timesteps) is only valid if the number of days is exactly divisible by the model
-        timestep delta.
-    initial_flow: float
-        Flow provided by node for initial timesteps prior to any delayed flow being available.
-        This is constant across all delayed timesteps and any model scenarios. Default is 0.0.
+    input : Input
+        The internal input node.
+    output : Output
+        The internal output node.
+    delay_param : FlowDelayParameter
+        The parameter applied to the min_flow and max_flow attributes of
+        the input node.
+
+    Examples
+    --------
+    Python
+    ======
+    ```python
+    model = Model()
+    DelayNode(model=model, days=2, name="Release lag", cost=3)
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Release lag",
+        "type": "DelayNode",
+        "days": 2,
+        "cost": 3
+    }
+    ```
     """
 
     def __init__(self, model, name, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        timesteps: [int], default=0
+            Number of time steps to delay the flow.
+        days: Optional[int], default=0
+            Number of days to delay the flow. Specifying a number of days (instead of a number
+            of time steps) is only valid if the number of days is exactly divisible by the model
+            timestep delta.
+        initial_flow: [float], default=0
+            Flow provided by node for initial time steps prior to any delayed flow being available.
+            This is constant across all delayed time steps and any model scenarios. Default is 0.0.
+        min_flow : Optional[float | Parameter], default=0
+            A simple minimum flow constraint for the node. Defaults to 0.
+        max_flow : Optional[float | Parameter], default=Inf
+            A simple maximum flow constraint for the node. Defaults to infinite.
+        cost : Optional[float | Parameter], default=0
+            The cost of supply.
+        """
         self.allow_isolated = True
         output_name = "{} Output".format(name)
         input_name = "{} Input".format(name)
@@ -1233,28 +1802,72 @@ class LossLink(Node):
     applied to this node are enforced on the net output after losses. The node itself records the net output
     in its flow attribute (which would be used by any attached recorders).
 
-    Parameters
+    Attributes
     ----------
-    model : `pywr.model.Model`
-    name : string
-        Name of the node.
-    loss_factor : float, Parameter
-        The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
-        then no-losses are calculated. This value is either a proportion of gross or net flow depending on the
-        value of `loss_factor_type`.
-    loss_factor_type: str
-        Either "gross" or "net" (default) to specify whether the loss factor is applied as a proportion of gross or
-         net flow respectively.
+    output : Output
+        The output node where the lost flow is routed.
+    gross : Link
+        The link node for the gross flow..
+    net : Link
+        The link node for the net flow.
+    agg : AggregatedNode
+        The aggregated node used to enforce the flow constraints.
+    loss_factor_type : Literal["gross", "net"]
+        The type of loss.
+    loss_factor : float
+        The loss factor.
+
+    Examples
+    --------
+    Python
+    ======
+    ```python
+    model = Model()
+    LossLink(model=model, loss_factor=0.02, name="Works")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Works",
+        "type": "LossLink",
+        "loss_factor": 0.02
+    }
+    ```
 
     Notes
     -----
-    There is currently a limitation that the loss factor must be a literal constant (i.e. not a parameter) when
+    1. There is currently a limitation that the loss factor must be a literal constant (i.e. not a parameter) when
     `loss_factor_type` is set to "gross".
+    2. Any recorder attached to this node records the net output.
     """
 
     __parameter_attributes__ = ("loss_factor", "max_flow", "min_flow", "cost")
 
     def __init__(self, model, name, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        min_flow : Optional[float | Parameter], default=0
+            A simple minimum flow constraint for the node. Defaults to 0.
+        max_flow : Optional[float | Parameter], default=Inf
+            A simple maximum flow constraint for the node. Defaults to infinite.
+        cost : Optional[float | Parameter], default=0
+            The cost of supply.
+        loss_factor : float | Parameter
+            The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
+            then no-losses are calculated. This value is either a proportion of gross or net flow depending on the
+            value of `loss_factor_type`.
+        loss_factor_type : Optional[Literal["gross", "net"]], default="net"
+            Either "gross" or "net" to specify whether the loss factor is applied as a proportion of gross or
+             net flow respectively.
+        """
         self.allow_isolated = True
 
         output_name = "{} Output".format(name)
