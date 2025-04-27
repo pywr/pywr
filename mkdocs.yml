@@ -47,7 +47,6 @@ theme:
     - navigation.sections  # Sections are included in the navigation on the left.
     - navigation.top
     - header.autohide  # Hide topbar
-    - header.autohide  # header disappears as you scroll
     - search.suggest
     - search.highlight
     - content.code.copy  # Add copy button in code blocks
@@ -85,10 +84,12 @@ nav:
   - Manual:
     - 'manual/problem.md'
 #    - Nodes
-#    - Parameters
+    - Parameters:
+        - Aggregated: 'manual/parameters/aggregated.md'
 #    - Recorders
     - 'manual/tables.md'
     - 'manual/exceptions.md'
+  - Tools: 'tools.md'
   - API reference:
     - Core:
       - 'api/core/model.md'
@@ -124,4 +125,40 @@ nav:
         - Aggregated:
             - 'api/nodes/aggregated/node.md'
             - 'api/nodes/aggregated/storage.md'
+    - Parameters:
+        - Core: 'api/parameters/core.md'
+        - Simple:
+          - 'api/parameters/simple/constant.md'
+          - 'api/parameters/simple/constant_scenario.md'
+          - 'api/parameters/simple/constant_scenario_index.md'
+        - Combining parameters:
+          - 'api/parameters/combine/aggregated.md'
+          - 'api/parameters/combine/aggregated_index.md'
+          - 'api/parameters/combine/division.md'
+          - 'api/parameters/combine/negative.md'
+          - 'api/parameters/combine/max.md'
+          - 'api/parameters/combine/negative_max.md'
+          - 'api/parameters/combine/min.md'
+          - 'api/parameters/combine/negative_min.md'
+          - 'api/parameters/combine/offset.md'
+        - Annual profiles:
+            - 'api/parameters/profiles/daily.md'
+            - 'api/parameters/profiles/weekly.md'
+            - 'api/parameters/profiles/monthly.md'
+            - 'api/parameters/profiles/uniform_drawdown.md'
+            - 'api/parameters/profiles/daily_scenario.md'
+            - 'api/parameters/profiles/weekly_scenario.md'
+            - 'api/parameters/profiles/monthly_scenario.md'
+            - 'api/parameters/profiles/rbf.md'
+            - 'api/parameters/profiles/weighted_profile.md'
+        - Timeseries:
+            - 'api/parameters/timeseries/pandas.md'
+            - 'api/parameters/timeseries/tables.md'
+        - Control curves:
+            - 'api/parameters/control_curves/control_curve.md'
+            - 'api/parameters/control_curves/control_curve_index.md'
+            - 'api/parameters/control_curves/control_curve_interpolated.md'
+            - 'api/parameters/control_curves/control_curve_piecewise_interpolated.md'
+        - Thresholds:
+            - 'api/parameters/thresholds/storage.md'
   - 'license.md'

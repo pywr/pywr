@@ -54,34 +54,47 @@ class GraphInterface:
 
 
 cdef class Component:
-    """ Components of a Model
+    """ Components of a Model.
 
-    This is the base class for all the elements of a `pywr.Model`,
+    This is the base class for all the elements of a [pywr.core.Model][],
      except the the nodes, that require updates via the `setup`, `reset`,
      `before`, `after` and `finish` methods. This class handles
      registering the instances on the `Model.component_graph` and
      managing the parent/children interface.
 
-    The parent/children interface, through the `pywr.Model.component_graph`
+     The parent/children interface, through the `pywr.Model.component_graph`
      is used to create a dependency tree such that the methods are
      called in the correct order. E.g. that a `before` method in
      one component that is a parent of another is called first.
 
-    Parameters
-    ==========
-    name : str or None
+    Attributes
+    ---------
+    model : Model
+        The model instance.
+    name : Optional[str]
         The name of the component.
-    comment : str or None
+    comment : Optional[str]
         An optional comment for the component.
-    tags : dict (default=None)
+    tags : Optional[dict]
         An optional container of key-value pairs that the user can set to help group and identify components.
 
     See also
     --------
-    pywr.Model
+    pywr.core.Model
 
     """
     def __init__(self, model, name=None, comment=None, tags=None):
+        """Initalise the class.
+        
+        Parameters
+        ----------
+        name : Optional[str], default=none
+            The name of the component.
+        comment : Optional[str], default=none
+            An optional comment for the component.
+        tags : Optional[dict], default=none
+            An optional container of key-value pairs that the user can set to help group and identify components.
+        """
         self.model = model
         self.name = name
         self.comment = comment
@@ -91,6 +104,10 @@ cdef class Component:
         self.children = GraphInterface(self)
 
     property name:
+        """The component name.
+        
+        **Setter:** the name.
+        """
         def __get__(self):
             return self._name
 

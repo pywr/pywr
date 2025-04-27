@@ -40,7 +40,40 @@ class TypeNotFoundError(KeyError):
         return f"Unable to find key 'type' in {data_summary}"
 
 cdef class Parameter(Component):
+    """Abstract class used to create a model parameter. This is a component that returns
+    a value for each model time step and scenario.
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    is_variable : bool
+        Whether the parameter is set as variable to solve an optimisation problem.
+    double_size : int
+        The number of double variables in the parameter.
+    integer_size : int
+        The number of integer variables in the parameter.
+    is_constant : bool
+        Whether the parameter is constant (i.e. the value does not change with the timestep).
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
+    """
     def __init__(self, *args, is_variable=False, **kwargs):
+        """Initialise the class.
+        
+        Parameters
+        ----------
+        args : tuple
+            Any positional argument.
+        is_variable : bool, default=False
+            Whether the parameter is set as variable to solve an optimisation problem.
+        kwargs : dict
+            Any keyword argument.
+        """
         super(Parameter, self).__init__(*args, **kwargs)
         self.is_variable = is_variable
         self.double_size = 0
@@ -49,13 +82,16 @@ cdef class Parameter(Component):
 
     @classmethod
     def register(cls):
+        """Register the parameter in the global registry."""
         parameter_registry[cls.__name__.lower()] = cls
 
     @classmethod
     def unregister(cls):
+        """Remove the parameter from the global registry."""
         del(parameter_registry[cls.__name__.lower()])
 
     cpdef setup(self):
+        """Setup the parameter. This initialises the internal values as empty array."""
         super(Parameter, self).setup()
         cdef int num_comb
         if self.model.scenarios.combinations:
@@ -65,9 +101,35 @@ cdef class Parameter(Component):
         self._Parameter__values = np.empty([num_comb], np.float64)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         raise NotImplementedError("Parameter must be subclassed")
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         # default implementation calls Parameter.value in loop
         cdef ScenarioIndex scenario_index
         cdef ScenarioCollection scenario_collection = self.model.scenarios
@@ -75,40 +137,166 @@ cdef class Parameter(Component):
             self._Parameter__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
 
     cpdef double get_value(self, ScenarioIndex scenario_index):
+        """Get the parameter value for a scenario when its value was last updated.
+        
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         return self._Parameter__values[<int>(scenario_index.global_id)]
 
     cpdef double[:] get_all_values(self):
+        """Get all parameter values for all scenarios when its value was last updated.
+
+        Returns
+        -------
+        numpy.typing.NDArray[np.number]
+            An array with the values. The array size equals the number of scenarios.
+        """
         return self._Parameter__values
 
     cpdef double get_constant_value(self):
         """Return a constant value.
         
+        Returns
+        -------
+        float
+            The value.
+        Notes
+        ------
         This method should only be implemented and called if `is_constant` is True. 
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
         """
         raise NotImplementedError()
 
     cpdef set_double_variables(self, double[:] values):
+        """Set the parameter double variable values during an optimisation problem.
+
+        Parameters
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The variable to set. The size must equal the number of variables the parameter handles.
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
+        """
         raise NotImplementedError()
 
     cpdef double[:] get_double_variables(self):
+        """Get the parameter double variable values for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the variables. The array size equals the number of variables the parameter handles.
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
+        """
         raise NotImplementedError()
 
     cpdef double[:] get_double_lower_bounds(self):
+        """Get the lower bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the lower bounds for each variable. The array size equals the number of variables the parameter handles.
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
+        """
         raise NotImplementedError()
 
     cpdef double[:] get_double_upper_bounds(self):
+        """Get the upper bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
+        """
         raise NotImplementedError()
 
     cpdef set_integer_variables(self, int[:] values):
+        """Set the parameter integer variable values during an optimisation problem.
+
+        Parameters
+        ----------
+        values : numpy.typing.NDArray[np.int_]
+            The variable to set. The size must equal the number of variables the parameter handles.
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
+        """
         raise NotImplementedError()
 
     cpdef int[:] get_integer_variables(self):
+        """Get the parameter integer variable values for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.int_]
+            The array with the variables. The array size equals the number of variables the parameter handles.
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
+        """
         raise NotImplementedError()
 
     cpdef int[:] get_integer_lower_bounds(self):
+        """Get the lower bounds of the integer variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.int_]
+            The array with the lower bounds for each variable. The array size equals the number of variables the parameter handles.
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
+        """
         raise NotImplementedError()
 
     cpdef int[:] get_integer_upper_bounds(self):
+        """Get the upper bounds of the integer variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.int_]
+            The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
+        """
         raise NotImplementedError()
 
     property size:
@@ -124,6 +312,20 @@ cdef class Parameter(Component):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        Parameter
+            The loaded class.
+        """
         # If a scenario is given don't pass this to the load values methods
         scenario = data.pop('scenario', None)
 
@@ -144,7 +346,92 @@ Parameter.register()
 
 
 cdef class ConstantParameter(Parameter):
+    """A parameter that returns a non-time dependant number.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.parameters import ConstantParameter
+    
+    model = Model()
+    ConstantParameter(model=model, value=1.0, scale=0.5, name="My parameter")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "ConstantParameter",
+            "value": 1.0,
+            "scale": 0.5
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    scale : Optional[float], default=1.0
+        Scale the value by the given amount.
+    offset : Optional[float], default=1.0
+        Offset the value by the given amount.
+    is_variable : bool
+        Whether the parameter is set as variable to solve an optimisation problem.
+    lower_bounds : Optional[float], default=0
+        The lower bound to use for the value during an optimisation problem.
+    upper_bounds : Optional[float], default=np.inf
+        The upper bound to use for the value during an optimisation problem.
+    double_size : int
+        The number of double variables in the parameter.
+    integer_size : int
+        The number of integer variables in the parameter.
+    is_constant : bool
+        Whether the parameter is constant (i.e. the value does not change with the timestep).
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
+    
+    Optimisation
+    -----------
+    This parameter can be optimised.
+    """
+
     def __init__(self, model, value, lower_bounds=0.0, upper_bounds=np.inf, scale=1.0, offset=0.0, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        value : float | int
+            The constant value to use at each timestep.
+        scale : Optional[float], default=1.0
+            Scale the value by the given amount.
+        offset : Optional[float], default=1.0
+            Offset the value by the given amount.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        is_variable : bool
+            Whether the parameter is set as variable to solve an optimisation problem.
+        lower_bounds : Optional[float], default=0
+            The lower bound to use for the value during an optimisation problem.
+        upper_bounds : Optional[float], default=np.inf
+            The upper bound to use for the value during an optimisation problem.
+        kwargs : dict
+            Any other keyword argument.
+        """
         super(ConstantParameter, self).__init__(model, **kwargs)
         self._value = value
         self.scale = scale
@@ -156,29 +443,104 @@ cdef class ConstantParameter(Parameter):
         self._upper_bounds = np.ones(self.double_size) * upper_bounds
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         # constant parameter can just set the entire array to one value
         self._Parameter__values[...] = self.get_constant_value()
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         return self.get_constant_value()
 
     cpdef double get_constant_value(self):
+        """Get the parameter value with `scale` and `offset`. 
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         return self.offset + self._value * self.scale
 
     cpdef set_double_variables(self, double[:] values):
+        """Set the parameter double variable values during an optimisation problem.
+
+        Parameters
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The variable to set. The size must equal the number of variables the parameter handles.
+        """
         self._value = values[0]
 
     cpdef double[:] get_double_variables(self):
+        """Get the parameter double variable values for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the variables. The array size equals the number of variables the parameter handles.
+        """
         return np.array([self._value, ], dtype=np.float64)
 
     cpdef double[:] get_double_lower_bounds(self):
+        """Get the lower bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the lower bounds for each variable. The array size equals the number of variables the parameter handles.
+        """
         return self._lower_bounds
 
     cpdef double[:] get_double_upper_bounds(self):
+        """Get the upper bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
+        """
         return self._upper_bounds
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        ConstantParameter
+            The loaded class.
+        """
         if "value" in data:
             value = data.pop("value")
         else:
@@ -190,26 +552,104 @@ ConstantParameter.register()
 
 
 cdef class DataFrameParameter(Parameter):
-    """Timeseries parameter with automatic alignment and resampling
+    """Timeseries parameter with automatic alignment and resampling from a pandas Series or DataFrame object.
+    When a DataFrame is provided, each column represents a different [pywr.core.Scenario][] to run.
 
-    Parameters
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    import pandas as pd
+    from pywr.parameters import DataFrameParameter
+    df = pd.read_csv("file.csv", index_col=[0], parse_dates=True, dayfirst=True)
+    DataFrameParameter(
+        model=model, 
+        dataframe=df["Flow"], 
+    )
+    ```
+
+    JSON
+    ======
+    File in `"url"` is parsed by the `load_dataframe` function in Pywe which accepts
+    Pandas's `read_csv` parameters. The series is extracted using the `"column"` option.
+    ```json
+    {
+        "My parameter": {
+            "type": "DataFrameParameter",
+            "url": "file.csv" 
+            "index_col": [0], 
+            "parse_dates": True,
+            "dayfirst": True,
+            "column": "Flow"
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : pywr.model.Model
-    dataframe : pandas.DataFrame or pandas.Series
-    scenario: pywr._core.Scenario (optional)
-    timestep_offset : int (default=0)
+    model : Model
+        The model instance.
+    dataframe : pandas.DataFrame | pandas.Series
+        The pandas DataFrame or Series object conntaining the data. The index must contain
+        the dates.
+    scenario: Optional[Scenario]
+        When a DataFrame instead oa a Series is provided, you must specify the scenario the DataFrame
+        refers to. Each column in the DataFrame represent a scenario ensemble; the number of column must
+        equal the scenario size.
+    timestep_offset : int
         Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
         backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
         If the offset takes the indexing out of the data bounds then the parameter will return the first or last
         value available.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, dataframe, scenario=None, timestep_offset=0, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The pywr model instance.
+        dataframe : pandas.DataFrame | pandas.Series
+            The pandas DataFrame or Series object conntaining the data. The index must contain
+            the dates.
+        scenario: Optional[Scenario], default=None
+            When a DataFrame instead oa a Series is provided, you must specify the scenario the DataFrame
+            refers to. Each column in the DataFrame represent a scenario ensemble; the number of column must
+            equal the scenario size.
+        timestep_offset : Optional[int], default=0
+            Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
+            backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
+            If the offset takes the indexing out of the data bounds then the parameter will return the first or last
+            value available.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        """
         super(DataFrameParameter, self).__init__(model, *kwargs)
         self.dataframe = dataframe
         self.scenario = scenario
         self.timestep_offset = timestep_offset
 
     cpdef setup(self):
+        """Setup the parameter by aligning and resampling the data.
+        
+        Raises
+        ------
+        ValueError
+            If Pywr fails to align the DataFrame to the [pywr.core.Timestepper][] data or the 
+            DataFrame size does not match the scenario size.
+        """
         cdef Py_ssize_t i
         super(DataFrameParameter, self).setup()
         # align and resample the dataframe
@@ -254,6 +694,20 @@ cdef class DataFrameParameter(Parameter):
         self._values = dataframe_resampled.values.astype(np.float64)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         cdef double value
         cdef Py_ssize_t i = min(max(timestep.index + self.timestep_offset, 0), self._values.shape[0] - 1)
         cdef Py_ssize_t j
@@ -269,6 +723,20 @@ cdef class DataFrameParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        DataFrameParameter
+            The loaded class.
+        """
         scenario = data.pop('scenario', None)
         if scenario is not None:
             scenario = model.scenarios[scenario]
@@ -336,26 +804,51 @@ ArrayIndexedScenarioParameter.register()
 
 
 cdef class TablesArrayParameter(IndexParameter):
-    def __init__(self, model, h5file, node, where='/', scenario=None, timestep_offset=0, **kwargs):
-        """
-        This Parameter reads array data from a PyTables HDF database.
+    """
+    This Parameter reads array data from a [PyTables HDF database](https://www.pytables.org).
 
-        The parameter reads data using the PyTables array interface and therefore
-        does not require loading the entire dataset in to memory. This is useful
-        for large model runs.
+    The parameter reads data using the PyTables array interface and therefore
+    does not require loading the entire dataset into memory. This is useful
+    for large model runs.
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    h5file : tables.File | str | Path
+        The tables file handle or filename to attach the CArray objects to. If a
+        filename is given the object will open and close the file handles.
+    h5store : H5Store
+        The H5Store object with the data. 
+    node : string
+        Name of the node in the tables database to read data from
+    where : string
+        Path to read the node from.
+    scenario : Scenario
+        Scenario to use as the second index in the array.
+    timestep_offset : int
+        Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
+        backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
+        If the offset takes the indexing out of the data bounds then the parameter will return the first or last
+        value available.
+    """
+    def __init__(self, model, h5file, node, where='/', scenario=None, timestep_offset=0, **kwargs):
+        """Initialise the class.
 
         Parameters
         ----------
-        h5file : tables.File or filename
+        model : Model
+            The model instance.
+        h5file : tables.File | str | Path
             The tables file handle or filename to attach the CArray objects to. If a
             filename is given the object will open and close the file handles.
         node : string
             Name of the node in the tables database to read data from
-        where : string
+        where : Optional[string], default="/"
             Path to read the node from.
-        scenario : Scenario
+        scenario : Optional[Scenario], default=None
             Scenario to use as the second index in the array.
-        timestep_offset : int
+        timestep_offset : Optional[int], default=0
             Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
             backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
             If the offset takes the indexing out of the data bounds then the parameter will return the first or last
@@ -378,6 +871,15 @@ cdef class TablesArrayParameter(IndexParameter):
         self._scenario_ids = None  # Lookup of scenario index to the loaded data index
 
     cpdef setup(self):
+        """Read the data.
+        
+        Raises
+        -------
+        TypeError
+            If the node's data is not a valid int or float.
+        IndexError
+            If the table dimensions do not match the scenario size or number of model timesteps.
+        """
         cdef Py_ssize_t n, i
 
         super(TablesArrayParameter, self).setup()
@@ -457,6 +959,20 @@ cdef class TablesArrayParameter(IndexParameter):
                 self._values_int = node.read().astype(np.int32)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         cdef Py_ssize_t i
         cdef Py_ssize_t j
         if self._values_dbl is None:
@@ -473,6 +989,20 @@ cdef class TablesArrayParameter(IndexParameter):
             return self._values_dbl[i, j]
 
     cpdef int index(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Returns the integer value.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        int
+            The value.
+        """
         cdef Py_ssize_t i
         cdef Py_ssize_t j
         if self._values_int is None:
@@ -489,10 +1019,26 @@ cdef class TablesArrayParameter(IndexParameter):
             return self._values_int[i, j]
 
     cpdef finish(self):
+        """Reset the store."""
         self.h5store = None
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+        This also checks the file checksum if given.
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        TablesArrayParameter
+            The loaded class.
+        """
         scenario = data.pop('scenario', None)
         if scenario is not None:
             scenario = model.scenarios[scenario]
@@ -513,13 +1059,42 @@ TablesArrayParameter.register()
 
 
 cdef class ConstantScenarioParameter(Parameter):
-    """A Scenario varying Parameter
+    """A [pywr.core.Scenario][] varying [pywr.parameters.Parameter][].
 
-    The values in this parameter are constant in time, but vary within a single Scenario.
+    The values in this parameter are constant in time, but vary within a single Scenario. Use this
+    parameter if you are using model scenarios and you want to change a constant value based on the
+    scenario Pywr is running.
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, Scenario scenario, values, *args, **kwargs):
-        """
-        values should be an iterable that is the same length as scenario.size
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        scenario : Scenario
+            The scenario the constant parameters are applied to.
+        values : Iterable[float | int]
+            The constant values to use at each timestep and scenario. This iterable must have the same length as scenario.size.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        kwargs : dict
+            Any other keyword argument.
         """
         super(ConstantScenarioParameter, self).__init__(model, *args, **kwargs)
         cdef int i
@@ -531,12 +1106,27 @@ cdef class ConstantScenarioParameter(Parameter):
         self._scenario = scenario
 
     cpdef setup(self):
+        """Setup the parameter."""
         super(ConstantScenarioParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         # This is a bit confusing.
         # scenario_indices contains the current scenario number for all
         # the Scenario objects in the model run. We have cached the
@@ -613,18 +1203,60 @@ ArrayIndexedScenarioMonthlyFactorsParameter.register()
 
 
 cdef class DailyProfileParameter(Parameter):
-    """ An annual profile consisting of daily values.
+    """An annual profile consisting of 366 values.
 
     This parameter provides a repeating annual profile with a daily resolution. A total of 366 values
     must be provided. These values are coerced to a `numpy.array` internally.
 
-    Parameters
+    Attributes
     ----------
-    values : iterable, array
+    model : Model
+        The model instance.
+    values : Iterable[float] | numpy.typing.NDArray[np.number]
         The 366 values that represent the daily profile.
+    is_variable : bool
+        Whether the parameter is set as variable to solve an optimisation problem.
+     lower_bounds : Optional[float]
+        The lower bound to use for the value during an optimisation problem.
+    upper_bounds : Optional[float]
+        The upper bound to use for the value during an optimisation problem.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
+
+    Optimisation
+    -----------
+    This parameter can be optimised.
 
     """
     def __init__(self, model, values, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        values : Iterable[float] | numpy.typing.NDArray[np.number]
+            The 366 values that represent the daily profile.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        is_variable : bool
+            Whether the parameter is set as variable to solve an optimisation problem.
+        lower_bounds : Optional[float], default=0
+            The lower bound to use for the value during an optimisation problem.
+        upper_bounds : Optional[float], default=np.inf
+            The upper bound to use for the value during an optimisation problem.
+        kwargs : dict
+            Any other keyword argument.
+        """
+
         super(DailyProfileParameter, self).__init__(model, *args, **kwargs)
         v = np.squeeze(np.array(values))
         if v.ndim != 1:
@@ -634,18 +1266,71 @@ cdef class DailyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         return self._values[ts.dayofyear_index]
 
     cpdef double[:] get_double_variables(self):
+        """Get the parameter double variable values for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the variables. The array size equals the number of variables the parameter handles.
+        """
         return np.array(self._values).copy()
 DailyProfileParameter.register()
 
 cdef class WeeklyProfileParameter(Parameter):
-    """Weekly profile (52-week year)
+    """Weekly profile of 52 weeks.
 
     The last week of the year will have more than 7 days, as 365 / 7 is not whole.
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    values : Iterable[float] | numpy.typing.NDArray[np.number]
+        The 52 values that represent the daily profile. If the iterable has
+        53 values, it it truncated to 52.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, values, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        values : Iterable[float] | numpy.typing.NDArray[np.number]
+            The 52 values that represent the daily profile. If the iterable has
+            53 values, it it truncated to 52.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        kwargs : dict
+            Any other keyword argument.
+        """
         super(WeeklyProfileParameter, self).__init__(model, *args, **kwargs)
         v = np.squeeze(np.array(values))
         if v.ndim != 1:
@@ -658,12 +1343,26 @@ cdef class WeeklyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         return self._values[ts.week_index]
 WeeklyProfileParameter.register()
 
 
 cdef class MonthlyProfileParameter(Parameter):
-    """Parameter which provides a monthly profile.
+    """Parameter which provides a monthly profile with 12 values.
 
     The monthly profile returns a different value based on the month of the current
     time-step. By default this creates a piecewise profile with a step change at the
@@ -671,23 +1370,36 @@ cdef class MonthlyProfileParameter(Parameter):
     linearly interpolated daily profile assuming the given values correspond to either
     the first or last day of the month.
 
-    Parameters
+    Attributes
     ----------
-    values : iterable, array
+    model : Model
+        The model instance.
+    values : Iterable[float] | numpy.typing.NDArray[np.number]
         The 12 values that represent the monthly profile.
-    lower_bounds : float or array_like (default=0.0)
-        Defines the lower bounds when using optimisation. If a float given, same bound applied for every
-        month. Otherwise an array like object of length 12 should be given for as separate value each month.
-    upper_bounds : float or array_like (default=np.inf)
-        Defines the upper bounds when using optimisation. If a float given, same bound applied for every
-        month. Otherwise an array like object of length 12 should be given for as separate value each month.
-    interp_day : str or None (default=None)
+    interp_day : Optional[Literal["first", "last"]]
         If `interp_day` is None then no interpolation is undertaken, and the parameter
-         returns values representing a piecewise monthly profile. Otherwise `interp_day`
-         must be a string of either "first" or "last" representing which day of the month
-         each of the 12 values represents. The parameter then returns linearly
-         interpolated values between the given day of the month.
+        returns values representing a piecewise monthly profile. Otherwise `interp_day`
+        must be a string of either "first" or "last" representing which day of the month
+        each of the 12 values represents. The parameter then returns linearly
+        interpolated values between the given day of the month.
+    is_variable : bool
+        Whether the parameter is set as variable to solve an optimisation problem.
+    lower_bounds : Optional[float | numpy.typing.NDArray[np.number]]
+        The lower bounds when using optimisation. If a float given, the same bound applied for every
+        month. 
+    upper_bounds : Optional[float | numpy.typing.NDArray[np.number]]
+        The upper bounds when using optimisation. If a float given, the same bound applied for every
+        month. 
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
+    Optimisation
+    -----------
+    This parameter can be optimised.
 
     See also
     --------
@@ -695,6 +1407,35 @@ cdef class MonthlyProfileParameter(Parameter):
     ArrayIndexedScenarioMonthlyFactorsParameter
     """
     def __init__(self, model, values, lower_bounds=0.0, upper_bounds=np.inf, interp_day=None, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+        The model instance.
+        values : Iterable[float] | numpy.typing.NDArray[np.number]
+            The 12 values that represent the monthly profile.
+        interp_day : Optional[Literal["first", "last"]], default=None
+            If `interp_day` is `None` then no interpolation is undertaken, and the parameter
+            returns values representing a piecewise monthly profile. Otherwise `interp_day`
+            must be a string of either "first" or "last" representing which day of the month
+            each of the 12 values represents. The parameter then returns linearly
+            interpolated values between the given day of the month.
+        is_variable : bool
+            Whether the parameter is set as variable to solve an optimisation problem.
+        lower_bounds : Optional[float | numpy.typing.NDArray[np.number]]
+            Define the lower bounds when using optimisation. If a float given, the same bound applied for every
+            month. Otherwise an array like object of length 12 should be given for as separate value each month.
+        upper_bounds : Optional[float | numpy.typing.NDArray[np.number]]
+            Define the upper bounds when using optimisation. If a float given, the same bound applied for every
+            month. Otherwise an array like object of length 12 should be given for as separate value each month.
+        name : Optional[str]
+            The name of the parameter.
+        comment : Optional[str]
+            An optional comment for the parameter.
+        tags : Optional[dict]
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+        """
         super(MonthlyProfileParameter, self).__init__(model, **kwargs)
         self.double_size = 12
         self.integer_size = 0
@@ -721,6 +1462,7 @@ cdef class MonthlyProfileParameter(Parameter):
 
 
     cpdef reset(self):
+        """Reset the interal values."""
         Parameter.reset(self)
         # The interpolated profile is recalculated during reset so that
         # it will update when the _values array is updated via `set_double_variables`
@@ -765,15 +1507,43 @@ cdef class MonthlyProfileParameter(Parameter):
                 self._interp_values[i+1] = values[i]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         if self.interp_day is None:
             return self._values[ts.month-1]
         else:
             return self._interp_values[ts.dayofyear_index]
 
     cpdef set_double_variables(self, double[:] values):
+        """Set the parameter double variable values during an optimisation problem.
+
+        Parameters
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The variable to set. The size must equal the number of variables the parameter handles.
+        """
         self._values[...] = values
 
     cpdef double[:] get_daily_values(self):
+        """Get a profile of daily values.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the monthly profile converted to a daily profile of 366 values.
+        """
         cdef int i, mth
         if self.interp_day is not None:
             return np.array(self._interp_values).copy()
@@ -785,22 +1555,59 @@ cdef class MonthlyProfileParameter(Parameter):
             return np.asarray(daily_values)
 
     cpdef double[:] get_double_variables(self):
+        """Get the parameter double variable values for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the variables. The array size equals the number of variables the parameter handles.
+        """
         # Make sure we return a copy of the data instead of a view.
         return np.array(self._values).copy()
 
     cpdef double[:] get_double_lower_bounds(self):
+        """Get the lower bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the lower bounds for each variable. The array size equals the number of variables the parameter handles.
+        """
         return self._lower_bounds
 
     cpdef double[:] get_double_upper_bounds(self):
+        """Get the upper bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
+        """
         return self._upper_bounds
 MonthlyProfileParameter.register()
 
 
 cdef class ScenarioMonthlyProfileParameter(Parameter):
-    """ Parameter that provides a monthly profile per scenario
+    """Parameter that provides a monthly profile per scenario
 
-    Behaviour is the same as `MonthlyProfileParameter` except a different
-    profile is returned for each ensemble in a given scenario.
+    This parameter provides a repeating annual profile with a monthly resolution. A
+    different profile is returned for each member of a given scenario
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    scenario : Scenario
+        Scenario object over which different profiles should be provided
+    values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+        Length of 1st dimension should equal the number of members in the scenario object
+        and the length of the second dimension should be 12.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs.
 
     See also
     --------
@@ -808,6 +1615,29 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
     ArrayIndexedScenarioMonthlyFactorsParameter
     """
     def __init__(self, model, Scenario scenario, values, **kwargs):
+        """Initialise the class.
+            
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        scenario : Scenario
+            Scenario object over which different profiles should be provided.
+        values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+            Length of 1st dimension should equal the number of members in the scenario object
+            and the length of the second dimension should be 12.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+
+        Raises
+        -------
+        ValueError
+            If the first dimension of `values` is less than 2 or the second dimension is not 12.
+        """
         super(ScenarioMonthlyProfileParameter, self).__init__(model, **kwargs)
 
         if values.ndim != 2:
@@ -821,12 +1651,27 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
         self._values = np.array(values)
 
     cpdef setup(self):
+        """Setup the parameter."""
         super(ScenarioMonthlyProfileParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         return self._values[scenario_index._indices[self._scenario_index], ts.month-1]
 
 ScenarioMonthlyProfileParameter.register()
@@ -835,18 +1680,49 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
     """Parameter that provides a weekly profile per scenario
 
     This parameter provides a repeating annual profile with a weekly resolution. A
-    different profile is returned for each member of a given scenario
+    different profile is returned for each member of a given scenario.
 
-    Parameters
+    Attributes
     ----------
-    scenario: Scenario
-        Scenario object over which different profiles should be provided.
-    values : iterable, array
+    model : Model
+        The model instance.
+    scenario : Scenario
+        Scenario object over which different profiles should be provided
+    values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
         Length of 1st dimension should equal the number of members in the scenario object
         and the length of the second dimension should be 52
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs.
 
     """
     def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        """Initialise the class.
+            
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        scenario : Scenario
+            Scenario object over which different profiles should be provided.
+        values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+            Length of 1st dimension should equal the number of members in the scenario object
+            and the length of the second dimension should be 52.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+
+        Raises
+        -------
+        ValueError
+            If the first dimension of `values` is less than 2 or the second dimension is not 52.
+        """
         super().__init__(model, *args, **kwargs)
         values = np.array(values)
         if values.ndim != 2:
@@ -859,12 +1735,27 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
         self._scenario = scenario
 
     cpdef setup(self):
+        """Setup the parameter."""
         super(ScenarioWeeklyProfileParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         return self._values[scenario_index._indices[self._scenario_index], ts.week_index]
 
 ScenarioWeeklyProfileParameter.register()
@@ -873,18 +1764,48 @@ cdef class ScenarioDailyProfileParameter(Parameter):
     """Parameter which provides a daily profile per scenario.
 
     This parameter provides a repeating annual profile with a daily resolution. A
-    different profile is returned for each member of a given scenario
+    different profile is returned for each member of a given scenario.
 
-    Parameters
+    Attributes
     ----------
-    scenario: Scenario
+    model : Model
+        The model instance.
+    scenario : Scenario
         Scenario object over which different profiles should be provided
-    values : iterable, array
+    values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
         Length of 1st dimension should equal the number of members in the scenario object
         and the length of the second dimension should be 366
-
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs.
     """
     def __init__(self, model, Scenario scenario, values, *args, **kwargs):
+        """Initialise the class.
+            
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        scenario : Scenario
+            Scenario object over which different profiles should be provided.
+        values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+            Length of 1st dimension should equal the number of members in the scenario object
+            and the length of the second dimension should be 366.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+
+        Raises
+        -------
+        ValueError
+            If the first dimension of `values` is less than 2 or the second dimension is not 366.
+        """
         super().__init__(model, *args, **kwargs)
         values = np.array(values)
         if values.ndim != 2:
@@ -897,12 +1818,27 @@ cdef class ScenarioDailyProfileParameter(Parameter):
         self._scenario = scenario
 
     cpdef setup(self):
+        """Setup the parameter."""
         super(ScenarioDailyProfileParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         cdef int i = ts.dayofyear_index
         return self._values[scenario_index._indices[self._scenario_index], i]
 
@@ -912,36 +1848,78 @@ ScenarioDailyProfileParameter.register()
 cdef class UniformDrawdownProfileParameter(Parameter):
     """Parameter which provides a uniformly reducing value from one to zero.
 
-     This parameter is intended to be used with an `AnnualVirtualStorage` node to provide a profile
+     This parameter is intended to be used with an [pywr.nodes.AnnualVirtualStorage][] node to provide a profile
      that represents perfect average utilisation of the annual volume. It returns a value of 1 on the
      reset day, and subsequently reduces by 1/366 every day afterward.
 
-    Parameters
+    Attributes
     ----------
-    reset_day: int
+    model : Model
+        The model instance.
+    reset_day : int
         The day of the month (1-31) to reset the volume to the initial value.
-    reset_month: int
+    reset_month : int
         The month of the year (1-12) to reset the volume to the initial value.
-    residual_days: int
+    residual_days : int
         The number of days of residual licence to target for the end of the year.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
     See also
     --------
     AnnualVirtualStorage
     """
     def __init__(self, model, reset_day=1, reset_month=1, residual_days=0, **kwargs):
+        """Initiliase the parameter.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        reset_day : Optional[int], default=1
+            The day of the month (1-31) to reset the volume to the initial value.
+        reset_month : Optional[int], default=1
+            The month of the year (1-12) to reset the volume to the initial value.
+        residual_days : Optional[int], default=0
+            The number of days of residual licence to target for the end of the year.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        """
         super().__init__(model, **kwargs)
         self.reset_day = reset_day
         self.reset_month = reset_month
         self.residual_days = residual_days
 
     cpdef reset(self):
+        """Reset the day of the year."""
         super(UniformDrawdownProfileParameter, self).reset()
         # Reset day of the year based on a leap year.
         # Note that this is zero-based
         self._reset_idoy = pandas.Period(year=2016, month=self.reset_month, day=self.reset_day, freq='D').dayofyear - 1
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         cdef int current_idoy = ts.dayofyear_index
         cdef int total_days_in_period
         cdef int days_into_period
@@ -978,6 +1956,20 @@ cdef class UniformDrawdownProfileParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        UniformDrawdownProfileParameter
+            The loaded class.
+        """
         return cls(model, **data)
 UniformDrawdownProfileParameter.register()
 
@@ -988,38 +1980,125 @@ cdef class RbfProfileParameter(Parameter):
     The daily profile is computed during model `reset` using a radial basis function with
     day-of-year as the independent variables. The days of the year are defined by the user
     alongside the values to use on each of those days for the interpolation. The first
-    day of the years should always be one, and its value is repeated as the 366th value.
+    day of the years should always be one, and its value is repeated as the 366<sup>th</sup> value.
     In addition the second and penultimate values are mirrored to encourage a consistent
     gradient to appear across the boundary. The RBF calculations are undertaken using
-    the `scipy.interpolate.Rbf` object, please refer to Scipy's documentation for more
-    information.
+    the `scipy.interpolate.Rbf` object, please refer to 
+    [Scipy's documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.Rbf.html#scipy.interpolate.Rbf)
+    for more information.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    model = Model()
+    # optimise parameter and varies x2 between 35 and 55, x3 between 220 and 240,
+    # varies y1 between 0 and 0.2, y2 between 0.4 and 0.8 and y3 between 0.6 and 0.8.
+    RbfProfileParameter(
+        model=model, 
+        name="My parameter", 
+        days_of_year=[1, 45, 230], 
+        values=[0.2, 0.5, 0.7],
+        is_variable=True,
+        lower_bounds=0.1,
+        upper_bounds=[0.1, 0.3, 0.1],
+        variable_days_of_year_range=10
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "RbfProfileParameter",
+            "days_of_year" [1, 45, 230], 
+            "values": [0.2, 0.5, 0.7],
+            "is_variable": true,
+            "lower_bounds" 0.1,
+            "upper_bounds": [0.1, 0.3, 0.1],
+            "variable_days_of_year_range": 10
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    days_of_year : iterable, integer
+    model : Model
+        The model instance.
+    days_of_year : Iterable[integer]
         The days of the year at which the interpolation values are defined. The first
         value should be one.
-    values : iterable, float
-        Values to use for interpolation corresponding to the `days_of_year`.
-    lower_bounds : float or array_like (default=0.0)
-        Defines the lower bounds when using optimisation. If a float given, same bound applied for every day of the
-        year. Otherwise an array like object of length equal to the number of days of the year should be given.
-    upper_bounds : float or array_like (default=np.inf)
-        Defines the upper bounds when using optimisation. If a float given, same bound applied for every day of the
-        year. Otherwise an array like object of length equal to the number of days of the year should be given.
-    variable_days_of_year_range : int (default=0)
+    values : Iterable[float]
+        Values (or y coordinates) to use for interpolation corresponding to the `days_of_year`.
+    min_value : float
+        Optionally cap the interpolated daily profile to a minimum value. 
+    max_value : float
+        Optionally cap the interpolated daily profile to a maximum value. 
+    rbf_kwargs : dict
+        Optional dictionary of keyword arguments to base to the Rbf object.
+    is_variable : bool
+        Whether the parameter is set as variable to solve an optimisation problem.
+    variable_days_of_year_range : int
         The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
         will cause the days of the year values to be exposed as integer variables (except the first value which
         remains at day 1). This value is bounds on those variables as maximum shift from the given `days_of_year`.
-    min_value, max_value : float
-        Optionally cap the interpolated daily profile to a minimum and/or maximum value. The default values
-        are negative and positive infinity for minimum and maximum respectively.
-    rbf_kwargs: Optional, dict
-        Optional dictionary of keyword arguments to base to the Rbf object.
-
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs.
+        
+    Optimisation
+    -----------
+    This parameter can be optimised.
     """
     def __init__(self, model, days_of_year, values, lower_bounds=0.0, upper_bounds=np.inf, rbf_kwargs=None,
                  variable_days_of_year_range=0, min_value=-np.inf, max_value=np.inf, **kwargs):
+        """Initialise the class.
+        
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        days_of_year : Iterable[integer]
+            The days of the year at which the interpolation values are defined. The first
+            value should be one.
+        values : Iterable[float]
+            Values (or y coordinates) to use for interpolation corresponding to the `days_of_year`.
+        min_value : Optional[float], default=-np.inf
+            Optionally cap the interpolated daily profile to a minimum value. 
+        max_value : Optional[float], default=np.inf
+            Optionally cap the interpolated daily profile to a maximum value. 
+        rbf_kwargs : Optional[dict], default=None
+            Optional dictionary of keyword arguments to base to the Rbf object.
+        is_variable : Optional[bool], default=False
+            Whether the parameter is set as variable to solve an optimisation problem.
+        variable_days_of_year_range : Optional[int], default=0
+            The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
+            will cause the days of the year values to be exposed as integer variables (except the first value which
+            remains at day 1). This value is bounds on those variables as maximum shift from the given `days_of_year`.
+        lower_bounds : float | numpy.typing.NDArray[np.number], default=0.0
+            Defines the lower bounds when using optimisation. If a float is iven, the same bound applied for every day of the
+            year. Otherwise an array like object of length equal to the number of days of the year should be given.
+        upper_bounds : float | numpy.typing.NDArray[np.number], default=0.0
+            Defines the upper bounds when using optimisation. If a float is given, the same bound applied for every day of the
+            year. Otherwise an array like object of length equal to the number of days of the year should be given.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+
+        Raises
+        ------
+        ValueError
+            If the optimisation bounds are not valid.
+        """
+
         super(RbfProfileParameter, self).__init__(model, **kwargs)
 
         if len(days_of_year) != len(values):
@@ -1082,6 +2161,7 @@ cdef class RbfProfileParameter(Parameter):
             self._days_of_year = values
 
     cpdef reset(self):
+        """Reset the interal values."""
         Parameter.reset(self)
         # The interpolated profile is recalculated during reset so that
         # it will update when the _values array is updated via `set_double_variables`
@@ -1120,44 +2200,149 @@ cdef class RbfProfileParameter(Parameter):
                 self._interp_values[i+1] = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         cdef int i = ts.dayofyear_index
         return self._interp_values[i]
 
     # Double variables are for the known interpolation values (y-axis)
     cpdef set_double_variables(self, double[:] values):
+        """Set the parameter double variable values during an optimisation problem.
+
+        Parameters
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The variable to set. The size must equal the number of y coordinates.
+        """
         self._values[...] = values
 
     cpdef double[:] get_double_variables(self):
+        """Get the parameter double variable values for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the variables. The array size equals the number of y coordinates.
+        """
         # Make sure we return a copy of the data instead of a view.
         return np.array(self._values).copy()
 
     cpdef double[:] get_double_lower_bounds(self):
+        """Get the lower bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the lower bounds for each variable. The array size equals the number of y coordinates.
+        """
         return self._lower_bounds
 
     cpdef double[:] get_double_upper_bounds(self):
+        """Get the upper bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
+        """
         return self._upper_bounds
 
     # Integer variables are for the days of the year positions (if optimised)
     cpdef set_integer_variables(self, int[:] values):
+        """Set the parameter integer variable values during an optimisation problem.
+
+        Parameters
+        ----------
+        values : numpy.typing.NDArray[np.int_]
+            The variable to set. The size must equal the number of x coordinates minus 1. Day
+            1 is already added by this method in the array of x variables.
+        """
         self.days_of_year = [1] + np.array(values).tolist()
 
     cpdef int[:] get_integer_variables(self):
+        """Get the parameter integer variable values during an optimisation problem.
+
+        Returns
+        ----------
+        numpy.typing.NDArray[np.int_]
+            The array with the values to optimised. The size equals the number of x coordinates minus 1.
+        """
         return np.array(self.days_of_year[1:], dtype=np.int32)
 
     cpdef int[:] get_integer_lower_bounds(self):
+        """Get the lower bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.int_]
+            The array with the lower bounds for each variable. The size equals the number of x coordinates minus 1.
+        """
         return self._doy_lower_bounds
 
     cpdef int[:] get_integer_upper_bounds(self):
+        """Get the upper bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.int_]
+            The array with the upper bounds for each variable. The size equals the number of x coordinates minus 1.
+        """
         return self._doy_upper_bounds
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        RbfProfileParameter
+            The loaded class.
+        """
         return cls(model, **data)
 RbfProfileParameter.register()
 
 
 cdef class IndexParameter(Parameter):
-    """Base parameter providing an `index` method
+    """Base parameter providing an `index` method. This is similar to a Parameter but instead
+    of returning a float via the `value` method, it returns an index via the `index` method.
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    is_variable : bool
+        Whether the parameter is set as variable to solve an optimisation problem.
+    double_size : int
+        The number of double variables in the parameter.
+    integer_size : int
+        The number of integer variables in the parameter.
+    is_constant : bool
+        Whether the parameter is constant (i.e. the value does not change with the timestep).
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
     See also
     --------
@@ -1165,16 +2350,43 @@ cdef class IndexParameter(Parameter):
     ControlCurveIndexParameter
     """
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        """Returns the current index as a float"""
+        """Returns the current index as a float.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter index as float.
+        """
         # return index as a float
         return float(self.get_index(scenario_index))
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        """Returns the current index"""
+        """Returns the current index.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        int
+            The parameter index.
+        """
         # return index as an integer
         return 0
 
     cpdef setup(self):
+        """Setup the parameter. This initialises the internal indexes as empty array."""
         super(IndexParameter, self).setup()
         cdef int num_comb
         if self.model.scenarios.combinations:
@@ -1184,6 +2396,18 @@ cdef class IndexParameter(Parameter):
         self._IndexParameter__indices = np.empty([num_comb], np.int32)
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter indexes and values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         cdef ScenarioIndex scenario_index
         cdef ScenarioCollection scenario_collection = self.model.scenarios
         for scenario_index in scenario_collection.combinations:
@@ -1191,21 +2415,69 @@ cdef class IndexParameter(Parameter):
             self._Parameter__values[<int>(scenario_index.global_id)] = self.value(timestep, scenario_index)
 
     cpdef int get_index(self, ScenarioIndex scenario_index):
+        """Get the parameter index for a scenario when its index was last updated.
+        
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter index.
+        """
         return self._IndexParameter__indices[<int>(scenario_index.global_id)]
 
     cpdef int[:] get_all_indices(self):
+        """Get all parameter indexes for all scenarios when its indexes were last updated.
+
+        Returns
+        -------
+        numpy.typing.NDArray[np.int_]
+            An array with the indexes. The array size equals the number of scenarios.
+        """
         return self._IndexParameter__indices
 IndexParameter.register()
 
 
-cdef class ConstantScenarioIndexParameter(IndexParameter):
-    """A Scenario varying IndexParameter
+cdef class ConstantScenarioIndexParameter(IndexParameter): 
+    """A [pywr.core.Scenario][] varying [pywr.parameters.IndexParameter][].
 
-    The values in this parameter are constant in time, but vary within a single Scenario.
+    The indexes in this parameter are constant in time, but vary within a single Scenario. Use this
+    parameter if you are using model scenarios and you want to change a constant index based on the
+    scenario Pywr is running.
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, Scenario scenario, values, *args, **kwargs):
-        """
-        values should be an iterable that is the same length as scenario.size
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        scenario : Scenario
+            The scenario the constant parameters are applied to.
+        values : Iterable[float | int]
+            The constant values to use at each timestep and scenario. This iterable must have the same length as scenario.size.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        kwargs : dict
+            Any other keyword argument.
         """
         super(ConstantScenarioIndexParameter, self).__init__(model, *args, **kwargs)
         cdef int i
@@ -1217,12 +2489,27 @@ cdef class ConstantScenarioIndexParameter(IndexParameter):
         self._scenario = scenario
 
     cpdef setup(self):
+        """Setup the parameter."""
         super(ConstantScenarioIndexParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter index for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        int
+            The parameter index.
+        """
         # This is a bit confusing.
         # scenario_indices contains the current scenario number for all
         # the Scenario objects in the model run. We have cached the
@@ -1410,21 +2697,78 @@ def wrap_const(model, value):
 
 
 cdef class AggregatedParameter(Parameter):
-    """A collection of IndexParameters
+    """A collection of [pywr.parameters.Parameter][]s whose values can be aggregated
+    using an aggregating function (e.g. sum).
 
     This class behaves like a set. Parameters can be added or removed from it.
-    It's value is the value of it's child parameters aggregated using a
-    aggregating function (e.g. sum).
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    model = Model()
+    p1 = ComstantParameter(model=model, value=1.0)
+    p2 = MonthlyProfileParameter(model=model, values=range(0, 12))
+    AggregatedParameter(model=model, parameters=[p1, p2], agg_func="sum", name="My parameter")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "AggregatedParameter",
+            "parameters": [
+                {
+                    "type": "Constant",
+                    "value": 1.0
+                },
+                {
+                    "type": "MonthlyProfile",
+                    "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                }
+            ],
+            "agg_func": "sum"
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    parameters : iterable of `IndexParameter`
-        The parameters to aggregate
-    agg_func : callable or str
-        The aggregation function. Must be one of {"sum", "min", "max", "mean",
-        "product"}, or a callable function which accepts a list of values.
+    model : Model
+        The model instance.
+    children : Iterable[Parameter]
+        The list of parameters to aggregate.
+    agg_func : Optional[Callable[[Iterable[float], None]] | Literal["sum", "min", "max", "mean", "product", "any", "all", "median"]], default=None
+        The aggregation function. 
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, parameters, agg_func=None, **kwargs):
+        """Initialise the class.
+        
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameters : Iterable[Parameter]
+            The parameters to aggregate.
+        agg_func : Optional[Callable[[Iterable[float], None]] | Literal["sum", "min", "max", "mean", "product", "any", "all", "median"]], default=None
+            The aggregation function. Must be one of {"sum", "min", "max", "mean",
+            "product", "any", "all", "median"}, or a callable function which accepts a list of
+            [pywr.parameters.Parameter][]s.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        """
         super(AggregatedParameter, self).__init__(model, **kwargs)
         self.agg_func = agg_func
         self.parameters = list(parameters)
@@ -1433,6 +2777,20 @@ cdef class AggregatedParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        AggregatedParameter
+            The loaded class.
+        """
         parameters_data = data.pop("parameters")
         parameters = []
         for pdata in parameters_data:
@@ -1459,10 +2817,24 @@ cdef class AggregatedParameter(Parameter):
             self._agg_func = agg_func
 
     cpdef add(self, Parameter parameter):
+        """Add a new parameter to the aggregation.
+        
+        Parameters
+        ----------
+        parameter : Parameter
+            The parameter instance to add.
+        """
         self.parameters.append(parameter)
         parameter.parents.add(self)
 
     cpdef remove(self, Parameter parameter):
+        """Remove a new parameter to the aggregation.
+        
+        Parameters
+        ----------
+        parameter : Parameter
+            The parameter instance to remove.
+        """
         self.parameters.remove(parameter)
         parameter.parents.remove(self)
 
@@ -1470,10 +2842,23 @@ cdef class AggregatedParameter(Parameter):
         return len(self.parameters)
 
     cpdef setup(self):
+        """Setup the parameter."""
         super(AggregatedParameter, self).setup()
         assert(len(self.parameters))
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new aggregated values.
+        """
         cdef Parameter parameter
         cdef double[:] accum = self._Parameter__values  # View of the underlying location for the data
         cdef double[:] values
@@ -1530,21 +2915,47 @@ cdef class AggregatedParameter(Parameter):
 AggregatedParameter.register()
 
 cdef class AggregatedIndexParameter(IndexParameter):
-    """A collection of IndexParameters
+    """A collection of [pywr.parameters.IndexParameter][]s whose indexes can be aggregated
+    using an aggregating function (e.g. sum).
 
     This class behaves like a set. Parameters can be added or removed from it.
-    Its index is the index of it's child parameters aggregated using a
-    aggregating function (e.g. sum).
 
-    Parameters
+    Attributes
     ----------
-    parameters : iterable of `IndexParameter`
-        The parameters to aggregate
-    agg_func : callable or str
-        The aggregation function. Must be one of {"sum", "min", "max", "any",
-        "all", "product"}, or a callable function which accepts a list of values.
+    model : Model
+        The model instance.
+    children : Iterable[IndexParameter]
+        The list of parameters to aggregate.
+    agg_func : Optional[Callable[[Iterable[IndexParameter], None]] | Literal["sum", "min", "max", "mean", "product", "any", "all", "median"]], default=None
+        The aggregation function. 
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
+
     def __init__(self, model, parameters, agg_func=None, **kwargs):
+        """Initialise the class.
+        
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameters : Iterable[IndexParameter]
+            The index parameters to aggregate.
+        agg_func : Optional[Callable[[Iterable[IndexParameter], None]] | Literal["sum", "min", "max", "mean", "product", "any", "all", "median"]], default=None
+            The aggregation function. Must be one of {"sum", "min", "max", "mean",
+            "product", "any", "all", "median"}, or a callable function which accepts a list of
+            [pywr.parameters.Parameter][]s.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        """
         super(AggregatedIndexParameter, self).__init__(model, **kwargs)
         self.agg_func = agg_func
         self.parameters = list(parameters)
@@ -1553,6 +2964,20 @@ cdef class AggregatedIndexParameter(IndexParameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        AggregatedIndexParameter
+            The loaded class.
+        """
         parameters_data = data.pop("parameters")
         parameters = list()
         for pdata in parameters_data:
@@ -1579,10 +3004,24 @@ cdef class AggregatedIndexParameter(IndexParameter):
             self._agg_func = agg_func
 
     cpdef add(self, Parameter parameter):
+        """Add a new parameter to the aggregation.
+        
+        Parameters
+        ----------
+        parameter : IndexParameter
+            The parameter instance to add.
+        """
         self.parameters.append(parameter)
         parameter.parents.add(self)
 
     cpdef remove(self, Parameter parameter):
+        """Remove a new parameter to the aggregation.
+        
+        Parameters
+        ----------
+        parameter : IndexParameter
+            The parameter instance to remove.
+        """
         self.parameters.remove(parameter)
         parameter.parents.remove(self)
 
@@ -1590,11 +3029,24 @@ cdef class AggregatedIndexParameter(IndexParameter):
         return len(self.parameters)
 
     cpdef setup(self):
+        """Setup the parameter."""
         super(AggregatedIndexParameter, self).setup()
         assert len(self.parameters)
         assert all([isinstance(parameter, IndexParameter) for parameter in self.parameters])
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new aggregated values.
+        """
         cdef IndexParameter parameter
         cdef int[:] accum = self._IndexParameter__indices  # View of the underlying location for the data
         cdef int[:] values
@@ -1659,16 +3111,71 @@ AggregatedIndexParameter.register()
 
 
 cdef class DivisionParameter(Parameter):
-    """ Parameter that divides one `Parameter` by another.
+    """ Parameter that divides one [pywr.parameters.Parameter][] by another.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    model = Model()
+    p1 = ComstantParameter(model=model, value=1.0)
+    p2 = MonthlyProfileParameter(model=model, values=range(0, 12))
+    DivisionParameter(model=model, numerator=p1, denominator=p2, name="My parameter")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "DivisionParameter",
+            "numerator":{
+                "type": "Constant",
+                "value": 1.0
+            },
+            "denominator":{
+                "type": "MonthlyProfile",
+                "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+            }
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    denominator : `Parameter`
+    model : Model
+        The model instance.
+    denominator : Parameter
         The parameter to use as the denominator (or divisor).
-    numerator : `Parameter`
+    numerator : Parameter
         The parameter to use as the numerator (or dividend).
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, numerator, denominator, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        denominator : Parameter
+            The parameter to use as the denominator (or divisor).
+        numerator : Parameter
+            The parameter to use as the numerator (or dividend).
+        name : Optional[str]
+            The name of the parameter.
+        comment : Optional[str]
+            An optional comment for the parameter.
+        tags : Optional[dict]
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+        """
         super().__init__(model, **kwargs)
         self._numerator = None
         self._denominator = None
@@ -1698,6 +3205,18 @@ cdef class DivisionParameter(Parameter):
             self.children.add(parameter)
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         cdef int i
         cdef int n = self._Parameter__values.shape[0]
 
@@ -1706,6 +3225,20 @@ cdef class DivisionParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        DivisionParameter
+            The loaded class.
+        """
         numerator = load_parameter(model, data.pop("numerator"))
         denominator = load_parameter(model, data.pop("denominator"))
         return cls(model, numerator, denominator, **data)
@@ -1713,19 +3246,81 @@ DivisionParameter.register()
 
 
 cdef class NegativeParameter(Parameter):
-    """ Parameter that takes negative of another `Parameter`
+    """ Parameter that takes negative of another [pywr.parameters.Parameter][].
 
-    Parameters
+    Examples
+    -------
+    This returns the nagtive of the current month index.
+
+    Python
+    ======
+    ```python
+    model = Model()
+    p = MonthlyProfileParameter(model=model, values=range(0, 12))
+    NegativeParameter(model=model, parameter=p, name="My parameter")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "NegativeParameter",
+            "parameter":{
+                "type": "MonthlyProfile",
+                "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+            }
+        }
+    }
+    ```
+    
+    Attributes
     ----------
-    parameter : `Parameter`
-        The parameter to to compare with the float.
+    model : Model
+        The model instance.
+    parameter : Parameter
+        The parameter to negate.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, parameter, *args, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameter : Parameter
+            The parameter to negate.
+        name : Optional[str]
+            The name of the parameter.
+        comment : Optional[str]
+            An optional comment for the parameter.
+        tags : Optional[dict]
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+        """
         super(NegativeParameter, self).__init__(model, *args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         cdef int i
         cdef int n = self._Parameter__values.shape[0]
 
@@ -1734,31 +3329,109 @@ cdef class NegativeParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        NegativeParameter
+            The loaded class.
+        """
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 NegativeParameter.register()
 
 
 cdef class MaxParameter(Parameter):
-    """ Parameter that takes maximum of another `Parameter` and constant value (threshold)
+    """Parameter that takes maximum between a [pywr.parameters.Parameter][]'s value and constant value (threshold).
 
-    This class is a more efficient version of `AggregatedParameter` where
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    model = Model()
+    p = MonthlyProfileParameter(model=model, values=range(0, 12))
+    MaxParameter(model=model, parameter=p1, threshold=5, name="My parameter")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "MaxParameter",
+            "threshold": 5,
+            "parameter":{
+                "type": "MonthlyProfile",
+                "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+            }
+        }
+    }
+    ```
+
+    Notes
+    -----
+    This class is a more efficient version of [pywr.parameters.AggregatedParameter][] where
     a single `Parameter` is compared to constant value.
 
-    Parameters
+    Attributes
     ----------
-    parameter : `Parameter`
-        The parameter to to compare with the float.
-    threshold : float (default=0.0)
+    model : Model
+        The model instance.
+    parameter : Parameter
+        The parameter to compare with the float.
+    threshold : float
         The threshold value to compare with the given parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, parameter, threshold=0.0, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameter : Parameter
+            The parameter to compare with the float.
+        threshold : float, default=0.0
+            The threshold value to compare with the given parameter.
+        name : Optional[str]
+            The name of the parameter.
+        comment : Optional[str]
+            An optional comment for the parameter.
+        tags : Optional[dict]
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+        """
         super(MaxParameter, self).__init__(model, *args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
         self.threshold = threshold
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         cdef int i
         cdef int n = self._Parameter__values.shape[0]
 
@@ -1767,14 +3440,57 @@ cdef class MaxParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        MaxParameter
+            The loaded class.
+        """
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 MaxParameter.register()
 
 
 cdef class NegativeMaxParameter(MaxParameter):
-    """ Parameter that takes maximum of the negative of a `Parameter` and constant value (threshold) """
+    """Parameter that takes maximum of the negative of a [pywr.parameters.Parameter][] and constant value (threshold).
+    
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    parameter : Parameter
+        The parameter to compare with the float.
+    threshold : float
+        The threshold value to compare with the given parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
+    """
+    
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         cdef int i
         cdef int n = self._Parameter__values.shape[0]
 
@@ -1785,25 +3501,90 @@ NegativeMaxParameter.register()
 
 
 cdef class MinParameter(Parameter):
-    """ Parameter that takes minimum of another `Parameter` and constant value (threshold)
+    """Parameter that takes minimum of another [pywr.parameters.Parameter][]. and constant value (threshold)
 
-    This class is a more efficient version of `AggregatedParameter` where
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    model = Model()
+    p = MonthlyProfileParameter(model=model, values=range(0, 12))
+    MinParameter(model=model, parameter=p1, threshold=5, name="My parameter")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "MinParameter",
+            "threshold": 5,
+            "parameter":{
+                "type": "MonthlyProfile",
+                "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+            }
+        }
+    }
+    ```
+
+    Notes
+    -----
+    This class is a more efficient version of [pywr.parameters.AggregatedParameter][] where
     a single `Parameter` is compared to constant value.
 
-    Parameters
+    Attributes
     ----------
-    parameter : `Parameter`
-        The parameter to to compare with the float.
-    threshold : float (default=0.0)
+    model : Model
+        The model instance.
+    parameter : Parameter
+        The parameter to compare with the float.
+    threshold : float
         The threshold value to compare with the given parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
+
     def __init__(self, model, parameter, threshold=0.0, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameter : Parameter
+            The parameter to compare with the float.
+        threshold : float, default=0.0
+            The threshold value to compare with the given parameter.
+        name : Optional[str]
+            The name of the parameter.
+        comment : Optional[str]
+            An optional comment for the parameter.
+        tags : Optional[dict]
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+        """
         super(MinParameter, self).__init__(model, *args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
         self.threshold = threshold
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         cdef int i
         cdef int n = self._Parameter__values.shape[0]
 
@@ -1812,14 +3593,56 @@ cdef class MinParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        MaxParameter
+            The loaded class.
+        """
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 MinParameter.register()
 
 
 cdef class NegativeMinParameter(MinParameter):
-    """ Parameter that takes minimum of the negative of a `Parameter` and constant value (threshold) """
+    """Parameter that takes minimum of the negative of a [pywr.parameters.Parameter][] and constant value (threshold).
+ 
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    parameter : Parameter
+        The parameter to compare with the float.
+    threshold : float
+        The threshold value to compare with the given parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
+    """
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         cdef int i
         cdef int n = self._Parameter__values.shape[0]
 
@@ -1829,23 +3652,56 @@ NegativeMinParameter.register()
 
 
 cdef class OffsetParameter(Parameter):
-    """Parameter that offsets another `Parameter` by a constant value.
+    """Parameter that offsets another [pywr.parameters.Parameter][] by a constant value (offset).
+    
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    parameter : Parameter
+        The parameter to compare with the float.
+    offset : float
+        The offset to apply to the value returned by `parameter`.
+    lower_bounds : float
+        The lower bounds of the offset when used during optimisation.
+    upper_bounds : float
+        The upper bounds of the offset when used during optimisation.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
+    Notes
+    -----
     This class is a more efficient version of `AggregatedParameter` where
     a single `Parameter` is offset by a constant value.
 
-    Parameters
-    ----------
-    parameter : `Parameter`
-        The parameter to compare with the float.
-    offset : float (default=0.0)
-        The offset to apply to the value returned by `parameter`.
-    lower_bounds : float (default=0.0)
-        The lower bounds of the offset when used during optimisation.
-    upper_bounds : float (default=np.inf)
-        The upper bounds of the offset when used during optimisation.
+    
     """
     def __init__(self, model, parameter, offset=0.0, lower_bounds=0.0, upper_bounds=np.inf, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameter : Parameter
+            The parameter to compare with the float.
+        offset : Optional[float], default=0.0
+            The offset to apply to the value returned by `parameter`.
+        lower_bounds : Optional[float], default=0.0
+            The lower bounds of the offset when used during optimisation.
+        upper_bounds : Optional[float], default=np.inf
+            The upper bounds of the offset when used during optimisation.
+        name : Optional[str]
+            The name of the parameter.
+        comment : Optional[str]
+            An optional comment for the parameter.
+        tags : Optional[dict]
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+        """
         super(OffsetParameter, self).__init__(model, *args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
@@ -1855,6 +3711,18 @@ cdef class OffsetParameter(Parameter):
         self._upper_bounds = np.ones(self.double_size) * upper_bounds
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         cdef int i
         cdef int n = self._Parameter__values.shape[0]
 
@@ -1862,19 +3730,61 @@ cdef class OffsetParameter(Parameter):
             self._Parameter__values[i] = self.parameter._Parameter__values[i] + self.offset
 
     cpdef set_double_variables(self, double[:] values):
+        """Set the parameter double variable values during an optimisation problem.
+
+        Parameters
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The variable to set. The size must equal the number of variables the parameter handles.
+        """
         self.offset = values[0]
 
     cpdef double[:] get_double_variables(self):
+        """Get the parameter double variable values for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the variables. The array size equals the number of variables the parameter handles.
+        """
         return np.array([self.offset, ], dtype=np.float64)
 
     cpdef double[:] get_double_lower_bounds(self):
+        """Get the lower bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the lower bounds for each variable. The array size equals the number of variables the parameter handles.
+        """
         return self._lower_bounds
 
     cpdef double[:] get_double_upper_bounds(self):
+        """Get the upper bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[np.number]
+            The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
+        """
         return self._upper_bounds
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        OffsetParameter
+            The loaded class.
+        """
         parameter = load_parameter(model, data.pop("parameter"))
         return cls(model, parameter, **data)
 OffsetParameter.register()
