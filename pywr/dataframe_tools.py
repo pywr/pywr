@@ -273,7 +273,11 @@ def read_dataframe(model, data):
         df = pandas.read_hdf(url, key=key, **data)
     elif filetype == "dict":
         parse_dates = data.pop("parse_dates", False)
+        index = data.pop("index") if "index" in data else None
+
         df = pandas.DataFrame.from_dict(df_data, **data)
+        if index:
+            df.index = index
         if parse_dates:
             df.index = pandas.DatetimeIndex(df.index)
 
