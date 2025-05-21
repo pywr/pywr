@@ -202,7 +202,7 @@ class PywrRandomGenerator(platypus.RandomGenerator):
                         variables.extend(
                             np.array(var.get_integer_variables(), dtype=np.int32)
                         )
-                solution.variables = variables
+                solution.variables[:] = variables
                 self._wrapped_generated = (
                     True  # Only include one solution with the current config.
                 )
@@ -226,7 +226,7 @@ class PywrRandomGenerator(platypus.RandomGenerator):
                                 given_solution[var.name]["integers"], dtype=np.int32
                             )
                         )
-                solution.variables = variables
+                solution.variables[:] = variables
                 self._solution_pointer += (
                     1  # Increment the internal pointer to return the next solution
                 )
