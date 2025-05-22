@@ -484,7 +484,12 @@ cdef class AbstractNode:
                         yield component
 
     property allow_isolated:
-        """ A property to flag whether this Node can be unconnected in a network. """
+        """A property to flag whether this Node can be unconnected in a network. 
+
+        Returns
+        -------
+        bool
+        """
         def __get__(self):
             return self._allow_isolated
 
@@ -492,7 +497,12 @@ cdef class AbstractNode:
             self._allow_isolated = value
 
     property name:
-        """ Name of the node. """
+        """Name of the node. 
+
+        Returns
+        -------
+        str
+        """
         def __get__(self):
             return self._name
 
@@ -512,15 +522,23 @@ cdef class AbstractNode:
     property recorders:
         """ Returns a list of `pywr.recorders.Recorder` objects attached to this node.
 
-         See also
-         --------
-         [pywr.recorders.Recorder][]
-         """
+        Returns
+        -------
+        Iterable[Recorder]
+
+        See also
+        --------
+        [pywr.recorders.Recorder][]
+        """
         def __get__(self):
             return self._recorders
 
     property model:
-        """The recorder for the node, e.g. a NumpyArrayRecorder
+        """The model instance.
+
+        Returns
+        -------
+        Model
         """
         def __get__(self):
             return self._model
@@ -550,13 +568,21 @@ cdef class AbstractNode:
             self._parent = value
 
     property prev_flow:
-        """Total flow via this node in the previous timestep
+        """Total flow via this node in the previous timestep.
+
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
         """
         def __get__(self):
             return np.array(self._prev_flow)
 
     property flow:
-        """Total flow via this node in the current timestep
+        """Total flow via this node in the current timestep.
+
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
         """
         def __get__(self):
             return np.array(self._flow)
@@ -604,7 +630,7 @@ cdef class AbstractNode:
 
         Parameters
         ----------
-        value : numpy.typing.NDArray[np.number]
+        value : numpy.typing.NDArray[numpy.number]
             The flow values.
         """
         cdef int i
@@ -701,12 +727,12 @@ cdef class Node(AbstractNode):
 
         Parameters
         ----------
-        out : Optional[numpy.typing.NDArray[np.number]], default=None
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
             Save the cost in the provided array. Default to None.
 
         Returns
         -------
-        numpy.typing.NDArray[np.number]
+        numpy.typing.NDArray[numpy.number]
             The array of costs.
         """
         if out is None:
@@ -787,11 +813,11 @@ cdef class Node(AbstractNode):
 
         Parameters
         ----------
-        out : Optional[numpy.typing.NDArray[np.number]], default=None
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
             Save the flows in the provided array. Default to None.
         Returns
         -------
-        numpy.typing.NDArray[np.number]
+        numpy.typing.NDArray[numpy.number]
             The array of values.
         """
         if out is None:
@@ -882,11 +908,11 @@ cdef class Node(AbstractNode):
 
         Parameters
         ----------
-        out : Optional[numpy.typing.NDArray[np.number]], default=None
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
             Save the flows in the provided array. Default to None.
         Returns
         -------
-        numpy.typing.NDArray[np.number]
+        numpy.typing.NDArray[numpy.number]
             The array of values.
         """
         if out is None:
@@ -1016,13 +1042,23 @@ cdef class AggregatedNode(AbstractNode):
             self.model.dirty = True
 
     property has_fixed_factors:
-        """Returns true if all factors are of type `ConstantParameter`"""
+        """Returns true if all factors are of type `ConstantParameter`.
+        
+        Returns
+        -------
+        bool
+        """
         def __get__(self):
             from pywr.parameters import ConstantParameter
             return all([isinstance(p, ConstantParameter) for p in self.factors])
 
     property has_constant_factors:
-        """Returns true if all factors are `is_constant==True`"""
+        """Returns true if all factors are `is_constant==True`.
+        
+        Returns
+        -------
+        bool
+        """
         def __get__(self):
             return all([p.is_constant for p in self.factors])
 
@@ -1048,6 +1084,10 @@ cdef class AggregatedNode(AbstractNode):
 
         The minimum flow may be set to either a constant (i.e. a float) or a
         Parameter.
+
+        Returns
+        -------
+        float
         """
         def __get__(self):
             if self._min_flow_param is None:
@@ -1065,7 +1105,16 @@ cdef class AggregatedNode(AbstractNode):
                 self._min_flow = value
 
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1:
-        """Get the minimum flow at a given timestep
+        """Get the minimum flow at a given timestep.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index.
+
+        Returns
+        -------
+        float
         """
         if self._min_flow_param is None:
             return self._min_flow
@@ -1086,6 +1135,10 @@ cdef class AggregatedNode(AbstractNode):
 
         The maximum flow may be set to either a constant (i.e. a float) or a
         Parameter.
+
+        Returns
+        -------
+        float
         """
         def __get__(self):
             if self._max_flow_param is None:
@@ -1103,7 +1156,16 @@ cdef class AggregatedNode(AbstractNode):
                 self._max_flow = value
 
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1:
-        """Get the maximum flow at a given timestep
+        """Get the maximum flow at a given timestep.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index.
+
+        Returns
+        -------
+        float
         """
         if self._max_flow_param is None:
             return self._max_flow
@@ -1129,14 +1191,27 @@ cdef class AggregatedNode(AbstractNode):
         """Get constant factors.
 
         Will return an array of `NaN` if the factors are no `is_constant`. 
+        
+        Returns
+        -------
+        values : numpy.typing.NDArray[numpy.number]
+            The factors.
+
         """
         cdef Parameter p
         return np.array([p.get_constant_value() for p in self.factors], np.float64)
 
     cpdef double[:] get_factors_norm(self, ScenarioIndex scenario_index):
         """Get node factors normalised by the factor of the first node.
-        
-        If `scenario_index` is `None` assumed to be constant factors.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index. When `None`, it is assumed the factors to be constant.
+        Returns
+        -------
+        values : numpy.typing.NDArray[numpy.number]
+            The factors.
         """
         cdef double f0, f
         cdef int i
@@ -1332,12 +1407,12 @@ cdef class Storage(AbstractStorage):
 
         Parameters
         ----------
-        out : Optional[numpy.typing.NDArray[np.number]], default=None
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
             Save the cost in the provided array. Default to None.
 
         Returns
         -------
-        numpy.typing.NDArray[np.number]
+        numpy.typing.NDArray[numpy.number]
             The array of costs.
         """
         if out is None:
@@ -1497,12 +1572,12 @@ cdef class Storage(AbstractStorage):
 
         Parameters
         ----------
-        out : Optional[numpy.typing.NDArray[np.number]], default=None
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
             Save the values in the provided array. Default to None.
 
         Returns
         -------
-        numpy.typing.NDArray[np.number]
+        numpy.typing.NDArray[numpy.number]
             The array of volumes.
         """
         if out is None:
@@ -1558,12 +1633,12 @@ cdef class Storage(AbstractStorage):
 
         Parameters
         ----------
-        out : Optional[numpy.typing.NDArray[np.number]], default=None
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
             Save the values in the provided array. Default to None.
 
         Returns
         -------
-        numpy.typing.NDArray[np.number]
+        numpy.typing.NDArray[numpy.number]
             The array of volumes.
         """
         if out is None:
@@ -1710,7 +1785,7 @@ cdef class Storage(AbstractStorage):
         ----------
         ts : Timestep
             The [pywr.core.Timestep][] instance.
-        adjustment : Optional[numpy.typing.NDArray[np.number]], default=None
+        adjustment : Optional[numpy.typing.NDArray[numpy.number]], default=None
             Modify the volume by the given values. This is an array of size equals
             to the number of scenarios. Default to `None` to skip.
         """

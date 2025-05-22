@@ -156,7 +156,7 @@ cdef class Parameter(Component):
 
         Returns
         -------
-        numpy.typing.NDArray[np.number]
+        numpy.typing.NDArray[numpy.number]
             An array with the values. The array size equals the number of scenarios.
         """
         return self._Parameter__values
@@ -184,7 +184,7 @@ cdef class Parameter(Component):
 
         Parameters
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The variable to set. The size must equal the number of variables the parameter handles.
 
         Raises
@@ -199,7 +199,7 @@ cdef class Parameter(Component):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the variables. The array size equals the number of variables the parameter handles.
 
         Raises
@@ -214,7 +214,7 @@ cdef class Parameter(Component):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the lower bounds for each variable. The array size equals the number of variables the parameter handles.
 
         Raises
@@ -229,7 +229,7 @@ cdef class Parameter(Component):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
 
         Raises
@@ -413,10 +413,17 @@ cdef class ConstantParameter(Parameter):
             The model instance.
         value : float | int
             The constant value to use at each timestep.
+        lower_bounds : Optional[float], default=0
+            The lower bound to use for the value during an optimisation problem.
+        upper_bounds : Optional[float], default=np.inf
+            The upper bound to use for the value during an optimisation problem.
         scale : Optional[float], default=1.0
             Scale the value by the given amount.
         offset : Optional[float], default=1.0
             Offset the value by the given amount.
+
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -425,10 +432,6 @@ cdef class ConstantParameter(Parameter):
             An optional container of key-value pairs.
         is_variable : bool
             Whether the parameter is set as variable to solve an optimisation problem.
-        lower_bounds : Optional[float], default=0
-            The lower bound to use for the value during an optimisation problem.
-        upper_bounds : Optional[float], default=np.inf
-            The upper bound to use for the value during an optimisation problem.
         kwargs : dict
             Any other keyword argument.
         """
@@ -490,7 +493,7 @@ cdef class ConstantParameter(Parameter):
 
         Parameters
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The variable to set. The size must equal the number of variables the parameter handles.
         """
         self._value = values[0]
@@ -500,7 +503,7 @@ cdef class ConstantParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the variables. The array size equals the number of variables the parameter handles.
         """
         return np.array([self._value, ], dtype=np.float64)
@@ -510,7 +513,7 @@ cdef class ConstantParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the lower bounds for each variable. The array size equals the number of variables the parameter handles.
         """
         return self._lower_bounds
@@ -520,7 +523,7 @@ cdef class ConstantParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
         """
         return self._upper_bounds
@@ -629,6 +632,9 @@ cdef class DataFrameParameter(Parameter):
             backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
             If the offset takes the indexing out of the data bounds then the parameter will return the first or last
             value available.
+            
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -853,6 +859,19 @@ cdef class TablesArrayParameter(IndexParameter):
             backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
             If the offset takes the indexing out of the data bounds then the parameter will return the first or last
             value available.
+
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        is_variable : bool
+            Whether the parameter is set as variable to solve an optimisation problem.
+        kwargs : dict
+            Any other keyword argument.
         """
         super(TablesArrayParameter, self).__init__(model, **kwargs)
 
@@ -1086,6 +1105,9 @@ cdef class ConstantScenarioParameter(Parameter):
         scenario : Scenario
             The scenario the constant parameters are applied to.
         values : Iterable[float | int]
+
+        Other Parameters
+        ----------------
             The constant values to use at each timestep and scenario. This iterable must have the same length as scenario.size.
         name : Optional[str], default=None
             The name of the parameter.
@@ -1212,7 +1234,7 @@ cdef class DailyProfileParameter(Parameter):
     ----------
     model : Model
         The model instance.
-    values : Iterable[float] | numpy.typing.NDArray[np.number]
+    values : Iterable[float] | numpy.typing.NDArray[numpy.number]
         The 366 values that represent the daily profile.
     is_variable : bool
         Whether the parameter is set as variable to solve an optimisation problem.
@@ -1239,7 +1261,10 @@ cdef class DailyProfileParameter(Parameter):
         ----------
         model : Model
             The model instance.
-        values : Iterable[float] | numpy.typing.NDArray[np.number]
+        values : Iterable[float] | numpy.typing.NDArray[numpy.number]
+
+        Other Parameters
+        ----------------
             The 366 values that represent the daily profile.
         name : Optional[str], default=None
             The name of the parameter.
@@ -1287,7 +1312,7 @@ cdef class DailyProfileParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the variables. The array size equals the number of variables the parameter handles.
         """
         return np.array(self._values).copy()
@@ -1302,7 +1327,7 @@ cdef class WeeklyProfileParameter(Parameter):
     ----------
     model : Model
         The model instance.
-    values : Iterable[float] | numpy.typing.NDArray[np.number]
+    values : Iterable[float] | numpy.typing.NDArray[numpy.number]
         The 52 values that represent the daily profile. If the iterable has
         53 values, it it truncated to 52.
     name : Optional[str]
@@ -1319,9 +1344,12 @@ cdef class WeeklyProfileParameter(Parameter):
         ----------
         model : Model
             The model instance.
-        values : Iterable[float] | numpy.typing.NDArray[np.number]
+        values : Iterable[float] | numpy.typing.NDArray[numpy.number]
             The 52 values that represent the daily profile. If the iterable has
             53 values, it it truncated to 52.
+
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -1374,7 +1402,7 @@ cdef class MonthlyProfileParameter(Parameter):
     ----------
     model : Model
         The model instance.
-    values : Iterable[float] | numpy.typing.NDArray[np.number]
+    values : Iterable[float] | numpy.typing.NDArray[numpy.number]
         The 12 values that represent the monthly profile.
     interp_day : Optional[Literal["first", "last"]]
         If `interp_day` is None then no interpolation is undertaken, and the parameter
@@ -1384,10 +1412,10 @@ cdef class MonthlyProfileParameter(Parameter):
         interpolated values between the given day of the month.
     is_variable : bool
         Whether the parameter is set as variable to solve an optimisation problem.
-    lower_bounds : Optional[float | numpy.typing.NDArray[np.number]]
+    lower_bounds : Optional[float | numpy.typing.NDArray[numpy.number]]
         The lower bounds when using optimisation. If a float given, the same bound applied for every
         month. 
-    upper_bounds : Optional[float | numpy.typing.NDArray[np.number]]
+    upper_bounds : Optional[float | numpy.typing.NDArray[numpy.number]]
         The upper bounds when using optimisation. If a float given, the same bound applied for every
         month. 
     name : Optional[str]
@@ -1413,22 +1441,26 @@ cdef class MonthlyProfileParameter(Parameter):
         ----------
         model : Model
         The model instance.
-        values : Iterable[float] | numpy.typing.NDArray[np.number]
+        values : Iterable[float] | numpy.typing.NDArray[numpy.number]
             The 12 values that represent the monthly profile.
+        lower_bounds : Optional[float | numpy.typing.NDArray[numpy.number]]
+            Define the lower bounds when using optimisation. If a float given, the same bound applied for every
+            month. Otherwise an array like object of length 12 should be given for as separate value each month.
+        upper_bounds : Optional[float | numpy.typing.NDArray[numpy.number]]
+            Define the upper bounds when using optimisation. If a float given, the same bound applied for every
+            month. Otherwise an array like object of length 12 should be given for as separate value each month.
         interp_day : Optional[Literal["first", "last"]], default=None
             If `interp_day` is `None` then no interpolation is undertaken, and the parameter
             returns values representing a piecewise monthly profile. Otherwise `interp_day`
             must be a string of either "first" or "last" representing which day of the month
             each of the 12 values represents. The parameter then returns linearly
             interpolated values between the given day of the month.
+
+        Other Parameters
+        ----------------
         is_variable : bool
             Whether the parameter is set as variable to solve an optimisation problem.
-        lower_bounds : Optional[float | numpy.typing.NDArray[np.number]]
-            Define the lower bounds when using optimisation. If a float given, the same bound applied for every
-            month. Otherwise an array like object of length 12 should be given for as separate value each month.
-        upper_bounds : Optional[float | numpy.typing.NDArray[np.number]]
-            Define the upper bounds when using optimisation. If a float given, the same bound applied for every
-            month. Otherwise an array like object of length 12 should be given for as separate value each month.
+        
         name : Optional[str]
             The name of the parameter.
         comment : Optional[str]
@@ -1531,7 +1563,7 @@ cdef class MonthlyProfileParameter(Parameter):
 
         Parameters
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The variable to set. The size must equal the number of variables the parameter handles.
         """
         self._values[...] = values
@@ -1541,7 +1573,7 @@ cdef class MonthlyProfileParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the monthly profile converted to a daily profile of 366 values.
         """
         cdef int i, mth
@@ -1559,7 +1591,7 @@ cdef class MonthlyProfileParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the variables. The array size equals the number of variables the parameter handles.
         """
         # Make sure we return a copy of the data instead of a view.
@@ -1570,7 +1602,7 @@ cdef class MonthlyProfileParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the lower bounds for each variable. The array size equals the number of variables the parameter handles.
         """
         return self._lower_bounds
@@ -1580,7 +1612,7 @@ cdef class MonthlyProfileParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
         """
         return self._upper_bounds
@@ -1599,7 +1631,7 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
         The model instance.
     scenario : Scenario
         Scenario object over which different profiles should be provided
-    values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+    values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[numpy.number]]
         Length of 1st dimension should equal the number of members in the scenario object
         and the length of the second dimension should be 12.
     name : Optional[str]
@@ -1623,9 +1655,12 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
             The model instance.
         scenario : Scenario
             Scenario object over which different profiles should be provided.
-        values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+        values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[numpy.number]]
             Length of 1st dimension should equal the number of members in the scenario object
             and the length of the second dimension should be 12.
+
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -1688,7 +1723,7 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
         The model instance.
     scenario : Scenario
         Scenario object over which different profiles should be provided
-    values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+    values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[numpy.number]]
         Length of 1st dimension should equal the number of members in the scenario object
         and the length of the second dimension should be 52
     name : Optional[str]
@@ -1708,9 +1743,12 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
             The model instance.
         scenario : Scenario
             Scenario object over which different profiles should be provided.
-        values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+        values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[numpy.number]]
             Length of 1st dimension should equal the number of members in the scenario object
             and the length of the second dimension should be 52.
+            
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -1772,7 +1810,7 @@ cdef class ScenarioDailyProfileParameter(Parameter):
         The model instance.
     scenario : Scenario
         Scenario object over which different profiles should be provided
-    values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+    values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[numpy.number]]
         Length of 1st dimension should equal the number of members in the scenario object
         and the length of the second dimension should be 366
     name : Optional[str]
@@ -1791,9 +1829,12 @@ cdef class ScenarioDailyProfileParameter(Parameter):
             The model instance.
         scenario : Scenario
             Scenario object over which different profiles should be provided.
-        values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[np.number]]
+        values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[numpy.number]]
             Length of 1st dimension should equal the number of members in the scenario object
             and the length of the second dimension should be 366.
+            
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -1886,6 +1927,9 @@ cdef class UniformDrawdownProfileParameter(Parameter):
             The month of the year (1-12) to reset the volume to the initial value.
         residual_days : Optional[int], default=0
             The number of days of residual licence to target for the end of the year.
+            
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -2068,30 +2112,33 @@ cdef class RbfProfileParameter(Parameter):
             value should be one.
         values : Iterable[float]
             Values (or y coordinates) to use for interpolation corresponding to the `days_of_year`.
-        min_value : Optional[float], default=-np.inf
-            Optionally cap the interpolated daily profile to a minimum value. 
-        max_value : Optional[float], default=np.inf
-            Optionally cap the interpolated daily profile to a maximum value. 
+            lower_bounds : float | numpy.typing.NDArray[numpy.number], default=0.0
+            Defines the lower bounds when using optimisation. If a float is iven, the same bound applied for every day of the
+            year. Otherwise an array like object of length equal to the number of days of the year should be given.
+        upper_bounds : float | numpy.typing.NDArray[numpy.number], default=0.0
+            Defines the upper bounds when using optimisation. If a float is given, the same bound applied for every day of the
+            year. Otherwise an array like object of length equal to the number of days of the year should be given.
         rbf_kwargs : Optional[dict], default=None
             Optional dictionary of keyword arguments to base to the Rbf object.
-        is_variable : Optional[bool], default=False
-            Whether the parameter is set as variable to solve an optimisation problem.
         variable_days_of_year_range : Optional[int], default=0
             The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
             will cause the days of the year values to be exposed as integer variables (except the first value which
             remains at day 1). This value is bounds on those variables as maximum shift from the given `days_of_year`.
-        lower_bounds : float | numpy.typing.NDArray[np.number], default=0.0
-            Defines the lower bounds when using optimisation. If a float is iven, the same bound applied for every day of the
-            year. Otherwise an array like object of length equal to the number of days of the year should be given.
-        upper_bounds : float | numpy.typing.NDArray[np.number], default=0.0
-            Defines the upper bounds when using optimisation. If a float is given, the same bound applied for every day of the
-            year. Otherwise an array like object of length equal to the number of days of the year should be given.
+        min_value : Optional[float], default=-np.inf
+            Optionally cap the interpolated daily profile to a minimum value. 
+        max_value : Optional[float], default=np.inf
+            Optionally cap the interpolated daily profile to a maximum value. 
+       
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
             An optional comment for the parameter.
         tags : Optional[dict], default=None
             An optional container of key-value pairs.
+        is_variable : Optional[bool], default=False
+            Whether the parameter is set as variable to solve an optimisation problem.
 
         Raises
         ------
@@ -2161,7 +2208,7 @@ cdef class RbfProfileParameter(Parameter):
             self._days_of_year = values
 
     cpdef reset(self):
-        """Reset the interal values."""
+        """Reset the internal values."""
         Parameter.reset(self)
         # The interpolated profile is recalculated during reset so that
         # it will update when the _values array is updated via `set_double_variables`
@@ -2223,7 +2270,7 @@ cdef class RbfProfileParameter(Parameter):
 
         Parameters
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The variable to set. The size must equal the number of y coordinates.
         """
         self._values[...] = values
@@ -2233,7 +2280,7 @@ cdef class RbfProfileParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the variables. The array size equals the number of y coordinates.
         """
         # Make sure we return a copy of the data instead of a view.
@@ -2244,7 +2291,7 @@ cdef class RbfProfileParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the lower bounds for each variable. The array size equals the number of y coordinates.
         """
         return self._lower_bounds
@@ -2254,7 +2301,7 @@ cdef class RbfProfileParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
         """
         return self._upper_bounds
@@ -2470,6 +2517,9 @@ cdef class ConstantScenarioIndexParameter(IndexParameter):
             The scenario the constant parameters are applied to.
         values : Iterable[float | int]
             The constant values to use at each timestep and scenario. This iterable must have the same length as scenario.size.
+       
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -2762,6 +2812,9 @@ cdef class AggregatedParameter(Parameter):
             The aggregation function. Must be one of {"sum", "min", "max", "mean",
             "product", "any", "all", "median"}, or a callable function which accepts a list of
             [pywr.parameters.Parameter][]s.
+       
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -2949,6 +3002,9 @@ cdef class AggregatedIndexParameter(IndexParameter):
             The aggregation function. Must be one of {"sum", "min", "max", "mean",
             "product", "any", "all", "median"}, or a callable function which accepts a list of
             [pywr.parameters.Parameter][]s.
+       
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -3169,6 +3225,9 @@ cdef class DivisionParameter(Parameter):
             The parameter to use as the denominator (or divisor).
         numerator : Parameter
             The parameter to use as the numerator (or dividend).
+       
+        Other Parameters
+        ----------------
         name : Optional[str]
             The name of the parameter.
         comment : Optional[str]
@@ -3297,6 +3356,9 @@ cdef class NegativeParameter(Parameter):
             The model instance.
         parameter : Parameter
             The parameter to negate.
+       
+        Other Parameters
+        ----------------
         name : Optional[str]
             The name of the parameter.
         comment : Optional[str]
@@ -3407,6 +3469,9 @@ cdef class MaxParameter(Parameter):
             The parameter to compare with the float.
         threshold : float, default=0.0
             The threshold value to compare with the given parameter.
+       
+        Other Parameters
+        ----------------
         name : Optional[str]
             The name of the parameter.
         comment : Optional[str]
@@ -3560,6 +3625,9 @@ cdef class MinParameter(Parameter):
             The parameter to compare with the float.
         threshold : float, default=0.0
             The threshold value to compare with the given parameter.
+       
+        Other Parameters
+        ----------------
         name : Optional[str]
             The name of the parameter.
         comment : Optional[str]
@@ -3695,6 +3763,9 @@ cdef class OffsetParameter(Parameter):
             The lower bounds of the offset when used during optimisation.
         upper_bounds : Optional[float], default=np.inf
             The upper bounds of the offset when used during optimisation.
+       
+        Other Parameters
+        ----------------
         name : Optional[str]
             The name of the parameter.
         comment : Optional[str]
@@ -3734,7 +3805,7 @@ cdef class OffsetParameter(Parameter):
 
         Parameters
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The variable to set. The size must equal the number of variables the parameter handles.
         """
         self.offset = values[0]
@@ -3744,7 +3815,7 @@ cdef class OffsetParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the variables. The array size equals the number of variables the parameter handles.
         """
         return np.array([self.offset, ], dtype=np.float64)
@@ -3754,7 +3825,7 @@ cdef class OffsetParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the lower bounds for each variable. The array size equals the number of variables the parameter handles.
         """
         return self._lower_bounds
@@ -3764,7 +3835,7 @@ cdef class OffsetParameter(Parameter):
 
         Returns
         ----------
-        values : numpy.typing.NDArray[np.number]
+        values : numpy.typing.NDArray[numpy.number]
             The array with the upper bounds for each variable. The array size equals the number of variables the parameter handles.
         """
         return self._upper_bounds
@@ -3791,36 +3862,60 @@ OffsetParameter.register()
 
 
 cdef class DeficitParameter(Parameter):
-    """Parameter track the deficit (max_flow - actual flow) of a Node
+    """This parameter tracks the deficit (max_flow - actual flow) of a Node.
 
-    Parameters
+    Attributes
     ----------
-    model : pywr.model.Model
+    model : Model
+        The Model instance.
     node : Node
-      The node that will have it's deficit tracked
+        The node whose deficit is being tracked.
 
     Notes
     -----
-    This parameter is a little unusual in that it's value is calculated during
-    the after method, not calc_values. It is intended to be used in combination
-    with a recorder (e.g. NumpyArrayNodeRecorder) to record the deficit (
+    This parameter is a little unusual in that its value is calculated during
+    the `after` method, not `calc_values`. It is intended to be used in combination
+    with a recorder (e.g. [pywr.recorders.NumpyArrayNodeRecorder][]) to record the deficit (
     defined as requested - actual flow) at a node. Note that this means
     recording this parameter does *not* give you the value that was used by
     the solver in this timestep. Alternatively, this parameter can be used
     in the model by other parameters and will evaluate to *yesterdays* deficit,
-    where the deficit in the zeroth timestep is zero.
+    where the deficit in the zeroth timestep is `0``.
     """
     def __init__(self, model, node, *args, **kwargs):
+        """
+        Initialise the parameter.
+
+        Parameters
+        ----------
+        model : Model
+            The Model instance.
+        node : Node
+            The node that will have its deficit tracked.
+
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        kwargs : dict
+            Any other keyword argument.
+        """
         super(DeficitParameter, self).__init__(model, *args, **kwargs)
         self.node = node
 
     cpdef reset(self):
+        """Reset the internal values."""
         self._Parameter__values[...] = 0.0
 
     cdef calc_values(self, Timestep timestep):
         pass # calculation done in after
 
     cpdef after(self):
+        """Calculate the deficit."""
         cdef double[:] max_flow
         cdef int i
         if self.node._max_flow_param is None:
@@ -3833,6 +3928,20 @@ cdef class DeficitParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        DeficitParameter
+            The loaded class.
+        """
         node = model.nodes[data.pop("node")]
         return cls(model, node=node, **data)
 

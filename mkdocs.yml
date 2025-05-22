@@ -13,7 +13,7 @@ plugins:
             inherited_members: true
             members_order: alphabetical
             docstring_style: numpy
-            docstring_section_style: table
+            docstring_section_style: spacy
             show_bases: false
             show_if_no_docstring: false
             show_overloads: false
@@ -22,7 +22,10 @@ plugins:
             show_source: false
             show_symbol_type_heading: true
             show_symbol_type_toc: true
+            signature_crossrefs: true
             show_inheritance_diagram: true
+            parameter_headings: true
+            separate_signature: true
             filters:
               - "!^__.*__$"      # Exclude all dunder methods
               - "^__init__$"     # Re-include only __init__
@@ -35,6 +38,8 @@ markdown_extensions:
   - pymdownx.highlight:
       use_pygments: true
       linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.superfences:
       # make exceptions to highlighting of code:
       custom_fences:
@@ -46,7 +51,10 @@ theme:
   features:
     - navigation.sections  # Sections are included in the navigation on the left.
     - navigation.top
-    - header.autohide  # Hide topbar
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.path
+    - navigation.footer
     - search.suggest
     - search.highlight
     - content.code.copy  # Add copy button in code blocks
@@ -73,14 +81,15 @@ theme:
     repo: fontawesome/brands/github  # GitHub logo in top right
 nav:
   - 'index.md'
-  - Install:
-    - 'install/from_binary.md'
-    - 'install/from_source.md'
-    - 'install/development.md'
   - Get started:
-    - 'get_started/intro.md'
-    - 'get_started/python.md'
-    - 'get_started/json.md'
+      - Install:
+        - 'install/from_binary.md'
+        - 'install/from_source.md'
+        - 'install/development.md'
+      - Build your first model:
+        - 'get_started/intro.md'
+        - 'get_started/python.md'
+        - 'get_started/json.md'
   - Manual:
     - 'manual/problem.md'
 #    - Nodes
@@ -161,4 +170,18 @@ nav:
             - 'api/parameters/control_curves/control_curve_piecewise_interpolated.md'
         - Thresholds:
             - 'api/parameters/thresholds/storage.md'
+            - 'api/parameters/thresholds/node.md'
+            - 'api/parameters/thresholds/parameter.md'
+            - 'api/parameters/thresholds/recorder.md'
+            - 'api/parameters/thresholds/multiple_node.md'
+            - 'api/parameters/thresholds/multiple_parameter.md'
+            - 'api/parameters/thresholds/current_year.md'
+            - 'api/parameters/thresholds/current_ordinal.md'
+        - Interpolated:
+            - 'api/parameters/interpolated/parameter.md'
+            - 'api/parameters/interpolated/storage.md'
+            - 'api/parameters/interpolated/flow.md'
+            - 'api/parameters/interpolated/integrate.md'
+        - Flow:
+            - 'api/parameters/flow/deficit.md'
   - 'license.md'

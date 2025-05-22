@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 
 import pandas
 import numpy as np
@@ -65,7 +65,7 @@ class Timestepper(object):
 
     def setup(self):
         """
-        Setup the timestep.
+        Setup the timestepper.
 
         Returns
         -------
@@ -85,12 +85,12 @@ class Timestepper(object):
         self.reset()
         self._dirty = False
 
-    def reset(self, start=None):
+    def reset(self, start:  Optional[pandas.Timestamp] =None):
         """Reset the timestepper.
 
         Parameters
         ----------
-        start: pd.Timestamp | None
+        start: Optional[pandas.Timestamp]
             The start date. If None it resets to the original `self.start`,
             otherwise start is used as the new starting point.
 
@@ -314,7 +314,7 @@ class Timestepper(object):
         return pandas.tseries.frequencies.to_offset(self.freq)
 
     @property
-    def current(self) -> Union["Timestepper", None]:
+    def current(self) -> Optional["Timestepper"]:
         """The current timestep.
 
         Returns
@@ -332,8 +332,8 @@ class Timestepper(object):
 
         Returns
         -------
-            object : pandas.PeriodIndex
-        The `PeriodIndex` object using the start, end and delta.
+        pandas.PeriodIndex
+            The `PeriodIndex` object using the start, end and delta.
         """
         return pandas.period_range(self.start, self.end, freq=self.freq)
 

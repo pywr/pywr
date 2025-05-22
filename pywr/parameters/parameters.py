@@ -1,5 +1,11 @@
-import os
-import datetime
+from typing_extensions import TYPE_CHECKING
+from typing import Iterable, Optional
+
+if TYPE_CHECKING:
+    from ..model import Model
+    from ..core import ScenarioIndex, Timestep
+    from ..nodes import Node
+
 from ..parameter_property import parameter_property
 from ._parameters import (
     Parameter,
@@ -157,18 +163,94 @@ class AbstractInterpolatedParameter(Parameter):
 
 
 class InterpolatedParameter(AbstractInterpolatedParameter):
-    """
-    Parameter value is equal to the interpolation of another parameter
+    """Given a function with discrete data points x and y coordinates,
+    this parameter interpolates over the function using the value from another
+    parameter.
 
-    Example
+    Notes
+    -----
+    The interpolation relies on the `interp1d` function in the Scipy package.
+    By default, the interpolation method defaults to linear and the `bounds_error`
+    option is set to True. This means that a `ValueError` is raised any time the
+    interpolation is attempted on a value outside the range of x.
+
+    Examples
     -------
-    >>> x = [0, 5, 10, 20]
-    >>> y = [0, 10, 30, -5]
-    >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
-    >>> p2 = InterpolatedParameter(model, p1, x, y, interp_kwargs={"kind": "linear"})
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.parameters import ConstantParameter, InterpolatedParameter
+    x = [0, 5, 10, 20]
+    y = [0, 10, 30, -5]
+    model = Model()
+    p1 = ConstantParameter(model=model, value=9.3, name="p1")
+    p2 = InterpolatedParameter(
+        model=model,
+        parameter=p1,
+        x=x,
+        y=y,
+        interp_kwargs={"kind": "linear"}
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "InterpolatedParameter",
+            "parameter": "p1",
+            "x": [0, 5, 10, 20],
+            "y": [0, 10, 30, -5],
+            "interp_kwargs": {"kind": "linear"}
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    parameter : Parameter
+        The parameter instance whose value is used in the interpolation.
+    x : Iterable[float]
+        The x coordinates of the data points for interpolation.
+    y : Iterable[float]
+        The y coordinates of the data points for interpolation.
+    interp_kwargs : dict
+        The scipy.interp1d keyword arguments.
+    interp : scipy.interpolate.interp1d
+        The interpolation instance.
     """
 
-    def __init__(self, model, parameter, x, y, interp_kwargs=None, **kwargs):
+    def __init__(
+        self,
+        model: "Model",
+        parameter: "Parameter",
+        x: Iterable[float],
+        y: Iterable[float],
+        interp_kwargs: Optional[dict] = None,
+        **kwargs,
+    ):
+        """Initialise the parameter.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameter : Parameter
+            The parameter instance whose value is used in the interpolation.
+        x : Iterable[float]
+            The x coordinates of the data points for interpolation.
+        y : Iterable[float]
+            The y coordinates of the data points for interpolation.
+        interp_kwargs : Optional[dict]
+            The option to pass to the scipy.interp1d keyword arguments.
+            See https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#interp1d
+            The interpolation method defaults to linear with exception when the parameter value
+            is outside the range of x.
+        """
         super(InterpolatedParameter, self).__init__(
             model, x, y, interp_kwargs, **kwargs
         )
@@ -182,6 +264,20 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        InterpolatedParameter
+            The loaded class.
+        """
         parameter = load_parameter(model, data.pop("parameter"))
         x = np.array(data.pop("x"))
         y = np.array(data.pop("y"))
@@ -194,22 +290,103 @@ InterpolatedParameter.register()
 
 class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
     """
-    Generic interpolation parameter calculated from current volume
+    Given a function between volume data points (as x coordinates) as some
+    values (as y coordinates), this parameter interpolates over the given
+    relationship using the current storage from a node.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import InterpolatedParameter
+
+    model = Model()
+    storage = Storage(model=model, max_volume=500, name="Storage")
+    p2 = InterpolatedVolumeParameter(
+        model=model,
+        node=storage,
+        volumes=[100, 200, 340, 450, 510],
+        values=[0.1, 0.32, 0.98, 1.2, 2.5],
+        interp_kwargs={"kind": "quadratic"}
+    )
+    ```
+
+    JSON
+    ======
+
+    ```json
+    {
+        "My parameter": {
+            "type": "InterpolatedVolumeParameter",
+            "node": "Storage",
+            "volumes": [100, 200, 340, 450, 510],
+            "values": [0.1, 0.32, 0.98, 1.2, 2.5],
+            "interp_kwargs": {"kind": "quadratic"}
+        }
+    }
+    ```
+
+    The x and y coordinates can also be loaded from a file in the JSON document:
+    ```json
+    {
+        "My parameter": {
+            "type": "InterpolatedVolumeParameter",
+            "node": "Storage",
+            "volumes": {
+                "table": "Storage table",
+                "column": "Volume"
+            },
+            "values": {
+                "table": "Storage table",
+                "column": "Area"
+            },
+            "interp_kwargs": {"kind": "quadratic"}
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    node: Node
-        Storage node to provide input volume values to interpolation calculation
-    volumes: array_like or from file
-        x coordinates of the data points for interpolation.
-    values : array_like or from file
-        y coordinates of the data points for interpolation.
+    x : Iterator[float]
+        The x coordinates of the data points for interpolation.
+    y : Iterator[float]
+        The y coordinates of the data points for interpolation.
     interp_kwargs : dict
-        Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
-        for interpolation.
+        The scipy.interp1d keyword arguments.
+    interp : scipy.interpolate.interp1d
+        The interpolation instance.
     """
 
-    def __init__(self, model, node, volumes, values, interp_kwargs=None, **kwargs):
+    def __init__(
+        self,
+        model: "Model",
+        node: "Node",
+        volumes: Iterable[float],
+        values: Iterable[float],
+        interp_kwargs: Optional[dict] = None,
+        **kwargs,
+    ):
+        """Initialise the parameter.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node: Node
+            Storage node to provide input volume values to interpolation calculation.
+        volumes : Iterable[float]
+            The x coordinates of the data points for interpolation.
+        values : Iterable[float]
+            The y coordinates of the data points for interpolation.
+        interp_kwargs : Optional[dict]
+            The option to pass to the scipy.interp1d keyword arguments.
+            See https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#interp1d
+            The interpolation method defaults to linear with exception when the storage
+            is outside the range of x.
+        """
         super(InterpolatedVolumeParameter, self).__init__(
             model, volumes, values, interp_kwargs, **kwargs
         )
@@ -220,6 +397,20 @@ class InterpolatedVolumeParameter(AbstractInterpolatedParameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        InterpolatedVolumeParameter
+            The loaded class.
+        """
         node = model.nodes[data.pop("node")]
         volumes = data.pop("volumes")
         if isinstance(volumes, list):
@@ -244,22 +435,85 @@ InterpolatedVolumeParameter.register()
 
 class InterpolatedFlowParameter(AbstractInterpolatedParameter):
     """
-    Generic interpolation parameter that uses a node's flow at the previous time-step for interpolation.
+    Given a function between flow data points (as x coordinates) as some
+    values (as y coordinates), this parameter interpolates over the given
+    relationship using a node's flow at the previous time-step.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Link
+    from pywr.parameters import InterpolatedFlowParameter
+
+    model = Model()
+    link = Link(model=model, max_flow=20, name="Link")
+    parameter = InterpolatedFlowParameter(
+        model=model,
+        node=link,
+        flows=[0, 5, 10, 20],
+        values=[0, 10, 30, -5],
+        interp_kwargs={"kind": "linear"}
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "InterpolatedFlowParameter",
+            "node": "Link",
+            "flows": [0, 5, 10, 20],
+            "values": [0, 10, 30, -5],
+            "interp_kwargs": {"kind": "linear"}
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    node: Node
-        Node to provide input flow values to interpolation caluculation
-    flows: array_like
-        x coordinates of the data points for interpolation.
-    values : array_like
-        y coordinates of the data points for interpolation.
+    model : Model
+        The model instance.
+    x : Iterable[float]
+        The x coordinates of the data points for interpolation.
+    y : Iterable[float]
+        The y coordinates of the data points for interpolation.
     interp_kwargs : dict
-        Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
-        for interpolation.
+        The scipy.interp1d keyword arguments.
+    interp : scipy.interpolate.interp1d
+        The interpolation instance.
     """
 
-    def __init__(self, model, node, flows, values, interp_kwargs=None, **kwargs):
+    def __init__(
+        self,
+        model: "Model",
+        node: "Node",
+        flows: Iterable[float],
+        values: Iterable[float],
+        interp_kwargs: Optional[dict] = None,
+        **kwargs,
+    ):
+        """Initialise the parameter.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            The node instance whose flow is used in the interpolation.
+        flows : Iterable[float]
+            The x coordinates of the data points for interpolation.
+        values : Iterable[float]
+            The y coordinates of the data points for interpolation.
+        interp_kwargs : Optional[dict]
+            The option to pass to the scipy.interp1d keyword arguments.
+            See https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#interp1d
+            The interpolation method defaults to linear with exception when the parameter value
+            is outside the range of x.
+        """
         super().__init__(model, flows, values, interp_kwargs, **kwargs)
         self._node = node
 
@@ -268,6 +522,20 @@ class InterpolatedFlowParameter(AbstractInterpolatedParameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        InterpolatedFlowParameter
+            The loaded class.
+        """
         node = model.nodes[data.pop("node")]
         flows = np.array(data.pop("flows"))
         values = np.array(data.pop("values"))
@@ -279,41 +547,101 @@ InterpolatedFlowParameter.register()
 
 
 class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
-    """Parameter value is equal to the quadrature of the interpolation of another parameter
+    """This parameter integrates a function over an interval. The function is defined
+    as a set of x and y coordinate, whereas the interval is defined using the values from
+    two parameters, one that returns that lower limit and the other that returns
+    the upper limit. When the x value needed for the integration is not available
+    in the given x values, the value for y is interpolated.
 
-    Parameters
+    Notes
+    -----
+    The integration is performed using [scipy.integrate.quad](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.quad.html#quad)
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.parameters import (
+        ConstantParameter,
+        InterpolatedQuadratureParameter
+    )
+
+    x =  [0, 5, 10, 20]
+    y = [0, 10, 30, -5]
+    model = Model()
+    p1 = ConstantParameter(model=model, value=9.3, name="p1")
+    p2 = InterpolatedQuadratureParameter(
+        model=model,
+        upper_parameter=p1,
+        x=x,
+        y=y,
+        interp_kwargs={"kind": "linear"}
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "InterpolatedQuadratureParameter",
+            "upper_parameter": "p1",
+            "x": [0, 5, 10, 20],
+            "y": [0, 10, 30, -5],
+            "interp_kwargs": {"kind": "linear"}
+        }
+    }
+    ```
+
+    Attributes
     ----------
+    model : Model
+        The model instance.
+    x : Iterable[float]
+        The x coordinates of the data points for interpolation.
+    y : Iterable[float]
+        The y coordinates of the data points for interpolation.
+    lower_parameter : Optional[Parameter]
+        Lower value of the interpolation interval to integrate
+        over. Can be `None` in which case the lower value of interval is zero.
     upper_parameter : Parameter
         Upper value of the interpolated interval to integrate over.
-    x : array_like
-        x coordinates of the data points for interpolation.
-    y : array_like
-        y coordinates of the data points for interpolation.
-    lower_parameter : Parameter or None
-        Lower value of the interpolated interval to integrate over. Can be `None` in which
-        case the lower value of interval is zero.
     interp_kwargs : dict
-        Dictionary of keyword arguments to pass to `scipy.interpolate.interp1d` class and used
-        for interpolation.
-
-    Example
-    -------
-    >>> x = [0, 5, 10, 20]
-    >>> y = [0, 10, 30, -5]
-    >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
-    >>> p2 = InterpolatedQuadratureParameter(model, p1, x, y, interp_kwargs={"kind": "linear"})
+        The scipy.interp1d keyword arguments.
+    interp : scipy.interpolate.interp1d
+        The interpolation instance.
     """
 
     def __init__(
         self,
-        model,
-        upper_parameter,
-        x,
-        y,
-        lower_parameter=None,
-        interp_kwargs=None,
+        model: "Model",
+        upper_parameter: Parameter,
+        x: Iterable[float],
+        y: Iterable[float],
+        lower_parameter: Optional[Parameter] = None,
+        interp_kwargs: dict = None,
         **kwargs,
     ):
+        """Initialise the parameter.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        upper_parameter : Parameter
+            Upper value of the interpolated interval to integrate over.
+        x : Iterable[float]
+            The x coordinates of the data points for interpolation.
+        y : Iterable[float]
+            The y coordinates of the data points for interpolation.
+        lower_parameter : Optional[Parameter]
+            Lower value of the interpolation interval to integrate
+            over. Can be `None` in which case the lower value of interval is zero.
+        interp_kwargs : dict
+            The scipy.interp1d keyword arguments.
+        """
         super().__init__(model, x, y, interp_kwargs, **kwargs)
         self._upper_parameter = None
         self.upper_parameter = upper_parameter
@@ -326,7 +654,21 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
     def _value_to_interpolate(self, ts, scenario_index):
         return self._upper_parameter.get_value(scenario_index)
 
-    def value(self, ts, scenario_index):
+    def value(self, ts: "Timestep", scenario_index: "ScenarioIndex") -> float:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         a = 0
         if self._lower_parameter is not None:
             a = self._lower_parameter.get_value(scenario_index)
@@ -337,6 +679,20 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        InterpolatedQuadratureParameter
+            The loaded class.
+        """
         upper_parameter = load_parameter(model, data.pop("upper_parameter"))
         lower_parameter = load_parameter(model, data.pop("lower_parameter", None))
         x = np.array(data.pop("x"))

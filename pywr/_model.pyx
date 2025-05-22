@@ -789,7 +789,7 @@ class Model(object):
         profile : bool, default=False
             If true create and return a Profile object that tracks the setup of each node and
             component in the model.
-        profile_dump_filename : Union[str, Path, None], default=None
+        profile_dump_filename : Optional[str, Path], default=None
             A CSV filename to write a dataframe of profile checkpoints. Has no effect if profile is not True.
 
         Returns

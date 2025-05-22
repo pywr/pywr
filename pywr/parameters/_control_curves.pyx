@@ -215,7 +215,10 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             length of the list should be 2 + len(control_curves).
         parameters : Optional[Iterable[Parameter]], default=None
             If `values` is `None` then `parameters` can specify a [pywr.parameters.Parameter][] 
-            object to use at each of the control curves. The number of parameters should be 2 + len(control_curves)
+            object to use at each of the control curves. The number of parameters should be 2 + len(control_curves).
+       
+        Other Parameters
+        ----------------
         is_variable : Optional[bool], default=False
             Whether the parameter is set as variable to solve an optimisation problem.
         variable_indices : Optional[Iterable[ints]], default=None
@@ -448,6 +451,9 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
             The storage considered the bottom of the lower curve between 0 and 1.
         maximum : Optional[float], default=1
             The storage considered the top of the upper curve between 0 and 1.
+       
+        Other Parameters
+        ----------------
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -561,22 +567,25 @@ cdef class ControlCurveIndexParameter(IndexParameter):
     def __init__(self, model, storage_node, control_curves, **kwargs):
         """Initialise the class.
                  
-            Parameters
-            ----------
-            model : Model
-                The model instance.
-            storage_node : Storage
-                A Storage node that can be used to query the current percentage volume.
-            control_curves : float | int | Parameter | Iterable[Parameter] | Iterable[float]
-                The position of the control curves. Internally `float` or `int` types are cast to
-                [pywr.parameters.ConstantParameter][]. Multiple control should **always** be specified 
-                in descending order.
-            name : Optional[str], default=None
-                The name of the parameter.
-            comment : Optional[str], default=None
-                An optional comment for the parameter.
-            tags : Optional[dict], default=None
-                An optional container of key-value pairs that the user can set to help group and identify parameters.
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        storage_node : Storage
+            A Storage node that can be used to query the current percentage volume.
+        control_curves : float | int | Parameter | Iterable[Parameter] | Iterable[float]
+            The position of the control curves. Internally `float` or `int` types are cast to
+            [pywr.parameters.ConstantParameter][]. Multiple control should **always** be specified 
+            in descending order.
+    
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
 
         """
         super(ControlCurveIndexParameter, self).__init__(model, **kwargs)
@@ -715,57 +724,60 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
                  variable_indices=None, upper_bounds=None, lower_bounds=None, **kwargs):
         """Initialise the class.
                  
-            Parameters
-            ----------
-            model : Model
-                The model instance.
-            storage_node : Storage
-                A Storage node that can be used to query the current percentage volume.
-            control_curves : float | int | Parameter | Iterable[Parameter] | Iterable[float]
-                The position of the control curves. Internally `float` or `int` types are cast to
-                [pywr.parameters.ConstantParameter][]. Multiple control should **always** be specified 
-                in descending order.
-            values : Optional[numpy.typing.NDArray[np.number]], default=None
-                The values to return if the `storage_node` is above the correspond control curve.
-                I.e. the first value is returned if the current volume is above the first control curve,
-                and second value if above the second control curve, and so on. The length of `values`
-                must be one more than than the length of `control_curves`.
-            parameters : Optional[Iterable[Parameter]], default=None
-                If `values` is `None` then `parameters` can specify a list of `Parameter` objects to use 
-                for the values. In the same way as `values`, the first `Parameter` is used if
-                `storage_node` is above the first control curve, and the second `Parameter` if above the
-                second control curve, and so on.
-            is_variable : Optional[bool], default=False
-                Whether the parameter is set as variable to solve an optimisation problem.
-            variable_indices : Optional[Iterable[ints]], default=None
-                A list of indices that correspond to items in `values` which are to be considered variables
-                when `self.is_variable` is True. This mechanism allows a subset of `values` to be variable
-                during an optimisation problem.
-            lower_bounds : Optional[numpy.typing.NDArray[np.number]], default=None
-                The lower bound to use for the values during an optimisation problem. The length must 
-                correspond to the length of `variable_indices`, i.e. there are bounds for each index 
-                to be considered as a variable.
-            upper_bounds : Optional[numpy.typing.NDArray[np.number]], default=None
-                The upper bound to use for the values during an optimisation problem. The length must 
-                correspond to the length of `variable_indices`, i.e. there are bounds for each index 
-                to be considered as a variable.
-            name : Optional[str], default=None
-                The name of the parameter.
-            comment : Optional[str], default=None
-                An optional comment for the parameter.
-            tags : Optional[dict], default=None
-                An optional container of key-value pairs that the user can set to help group and identify parameters.
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        storage_node : Storage
+            A Storage node that can be used to query the current percentage volume.
+        control_curves : float | int | Parameter | Iterable[Parameter] | Iterable[float]
+            The position of the control curves. Internally `float` or `int` types are cast to
+            [pywr.parameters.ConstantParameter][]. Multiple control should **always** be specified 
+            in descending order.
+        values : Optional[numpy.typing.NDArray[np.number]], default=None
+            The values to return if the `storage_node` is above the correspond control curve.
+            I.e. the first value is returned if the current volume is above the first control curve,
+            and second value if above the second control curve, and so on. The length of `values`
+            must be one more than than the length of `control_curves`.
+        parameters : Optional[Iterable[Parameter]], default=None
+            If `values` is `None` then `parameters` can specify a list of `Parameter` objects to use 
+            for the values. In the same way as `values`, the first `Parameter` is used if
+            `storage_node` is above the first control curve, and the second `Parameter` if above the
+            second control curve, and so on.
+        variable_indices : Optional[Iterable[ints]], default=None
+            A list of indices that correspond to items in `values` which are to be considered variables
+            when `self.is_variable` is True. This mechanism allows a subset of `values` to be variable
+            during an optimisation problem.
+        lower_bounds : Optional[numpy.typing.NDArray[np.number]], default=None
+            The lower bound to use for the values during an optimisation problem. The length must 
+            correspond to the length of `variable_indices`, i.e. there are bounds for each index 
+            to be considered as a variable.
+        upper_bounds : Optional[numpy.typing.NDArray[np.number]], default=None
+            The upper bound to use for the values during an optimisation problem. The length must 
+            correspond to the length of `variable_indices`, i.e. there are bounds for each index 
+            to be considered as a variable.
+       
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+        is_variable : Optional[bool], default=False
+            Whether the parameter is set as variable to solve an optimisation problem.
             
-            Notes
-            -----
-            If `values` and `parameters` are both `None`, the default, then `values` defaults to
-            a range of integers, starting at zero, one more than length of `control_curves`.
+        Notes
+        -----
+        If `values` and `parameters` are both `None`, the default, then `values` defaults to
+        a range of integers, starting at zero, one more than length of `control_curves`.
 
-            Raises
-            -------
-            ValueError
-                If the length of values or parameters does not match the number of control curves plus 1. Or
-                the size of the lower or upper bounds does not match the size of `variable_indices`.
+        Raises
+        -------
+        ValueError
+            If the length of values or parameters does not match the number of control curves plus 1. Or
+            the size of the lower or upper bounds does not match the size of `variable_indices`.
         """
         super(ControlCurveParameter, self).__init__(model, storage_node, control_curves, **kwargs)
         # Expected number of values is number of control curves plus one.
@@ -1000,6 +1012,8 @@ cdef class WeightedAverageProfileParameter(Parameter):
 
         Parameters
         ----------
+        model : Model
+            The model instance.
         storages: Iterable[Storage].
             The list of storage instances. The length should equal to the length of
             profiles parameter.
@@ -1008,6 +1022,15 @@ cdef class WeightedAverageProfileParameter(Parameter):
             [pywr.parameters.ConstantParameter][], [pywr.parameters.DailyProfileParameter][], or 
             [pywr.parameters.MonthlyProfileParameter][].
             The length should equal to the length of storages parameter.
+       
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
         """
         super(WeightedAverageProfileParameter, self).__init__(model, **kwargs)
         self.storages = storages
