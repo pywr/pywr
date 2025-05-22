@@ -215,17 +215,15 @@ class PywrRandomGenerator(platypus.RandomGenerator):
                 variables = []
                 for ivar, var in enumerate(self.wrapper.model_variables):
                     if var.double_size > 0:
-                        variables.extend(
-                            np.array(
-                                given_solution[var.name]["doubles"], dtype=np.float64
-                            )
+                        values = np.array(given_solution[var.name]["doubles"], dtype=np.float64).clip(
+                            var.get_double_lower_bounds(), var.get_double_upper_bounds()
                         )
+                        variables.extend(values)
                     if var.integer_size > 0:
-                        variables.extend(
-                            np.array(
-                                given_solution[var.name]["integers"], dtype=np.int32
-                            )
+                        values = np.array(given_solution[var.name]["integers"], dtype=np.int32).clip(
+                            var.get_integer_lower_bounds(), var.get_integer_upper_bounds()
                         )
+                        variables.extend(values)
                 solution.variables[:] = variables
                 self._solution_pointer += (
                     1  # Increment the internal pointer to return the next solution
