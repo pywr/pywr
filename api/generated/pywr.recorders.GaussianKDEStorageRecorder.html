@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.recorders.GaussianKDEStorageRecorder &mdash; Pywr 1.27.3.dev4+ge1f3c3d0 documentation</title>
+  <title>pywr.recorders.GaussianKDEStorageRecorder &mdash; Pywr 1.27.4.dev2+g8a5bc150 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=740240bf"></script>
+      <script src="../../_static/documentation_options.js?v=542f3a5a"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -121,7 +121,7 @@
 <h1>pywr.recorders.GaussianKDEStorageRecorder<a class="headerlink" href="#pywr-recorders-gaussiankdestoragerecorder" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.recorders.GaussianKDEStorageRecorder">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.recorders.</span></span><span class="sig-name descname"><span class="pre">GaussianKDEStorageRecorder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.GaussianKDEStorageRecorder" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.recorders.</span></span><span class="sig-name descname"><span class="pre">GaussianKDEStorageRecorder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.recorders.GaussianKDEStorageRecorder" title="Link to this definition"></a></dt>
 <dd><p>A recorder that fits a KDE to a time-series of volume.</p>
 <p>This recorder is an extension to <cite>NumpyArrayStorageRecorder</cite> which, at the end of a simulation,
 uses kernel density estimation (KDE) to estimate the probability density function of the storage time-series.
@@ -207,7 +207,7 @@ the boundedness of the distribution. Defaults to true.</p>
 <td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">comment</span></code></p></td>
-<td><p>comment: unicode</p></td>
+<td><p>comment: str</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">constraint_lower_bounds</span></code></p></td>
 <td><p></p></td>
