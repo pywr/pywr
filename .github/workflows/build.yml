@@ -116,7 +116,7 @@ jobs:
         run: |
           sudo apt-get install libglpk-dev
           pip install sphinx sphinx_rtd_theme numpydoc matplotlib "numpy"
-          python setup.py install --without-lpsolve
+          PYWR_BUILD_LPSOLVE=false python setup.py install
           cd docs
           make html
 

@@ -1,5 +1,42 @@
+[project]
+name="pywr"
+description="Python Water Resource model"
+license = "GPL-3.0"
+readme="README.rst"
+dynamic = ["version"]
+authors = [
+  {name = "Joshua Arnott", email = "josh@snorfalorpagus.net"},
+  {name = "James Tomlinson", email = "tomo.bbe@gmail.com"},
+]
+requires-python=">=3.10"
+dependencies=[
+    "pandas",
+    "networkx",
+    "numpy",
+    "scipy",
+    "tables",
+    "openpyxl",
+    "packaging",
+]
+
+
+[project.urls]
+Documentation="https://pywr.github.io/pywr/"
+Repository="https://github.com/pywr/pywr"
+
+[project.optional-dependencies]
+docs = ["sphinx", "sphinx_rtd_theme", "numpydoc", "matplotlib"]
+notebook = ["ipython", "jinja2", "matplotlib"]
+opt = ["platypus-opt", "pygmo"]
+dev = ["pytest", "platypus-opt", "black"]
+
+
+
 [build-system]
-requires = ["setuptools>=62", "wheel", "setuptools_scm[toml]>=8.0", "cython>=3", "numpy", ]
+requires = ["setuptools", "cython>=3", "numpy",]
+build-backend = "setuptools.build_meta"
+
+
 
 # enable version inference
 [tool.setuptools_scm]
