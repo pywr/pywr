@@ -103,8 +103,10 @@ class TestPywrRandomGenerator:
 
         # Create some alternative initial solutions
         solutions = [
-            {"control_curve": {"doubles": [1] * 12}},
-            {"control_curve": {"doubles": [2] * 12}},
+            {"control_curve": {"doubles": [0.5] * 12}},
+            {
+                "control_curve": {"doubles": [-2] * 6 + [2] * 6}
+            },  # This solution is out of bounds
         ]
 
         generator = PywrRandomGenerator(
@@ -117,12 +119,16 @@ class TestPywrRandomGenerator:
         # Ensure the first solution in the population has variable values from the model
         if use_current:
             np.testing.assert_allclose(algorithm.population[0].variables, np.zeros(12))
-            np.testing.assert_allclose(algorithm.population[1].variables, np.ones(12))
             np.testing.assert_allclose(
-                algorithm.population[2].variables, np.ones(12) * 2
+                algorithm.population[1].variables, np.ones(12) * 0.5
+            )
+            np.testing.assert_allclose(
+                algorithm.population[2].variables, np.r_[np.zeros(6), np.ones(6)]
             )
         else:
-            np.testing.assert_allclose(algorithm.population[0].variables, np.ones(12))
             np.testing.assert_allclose(
-                algorithm.population[1].variables, np.ones(12) * 2
+                algorithm.population[0].variables, np.ones(12) * 0.5
+            )
+            np.testing.assert_allclose(
+                algorithm.population[1].variables, np.r_[np.zeros(6), np.ones(6)]
             )
