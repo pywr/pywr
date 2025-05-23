@@ -47,17 +47,14 @@ Pywr has several external dependencies, listed below.
 Installing (in general)
 -----------------------
 
-When installing Pywr you must specific which solvers to build. This is done by passing ``--with-<solver>`` as an argument to ``setup.py``. The following command will build and install Pywr with both the GLPK and lpsolve solvers:
+When installing Pywr you can specify which solvers to build. This is done via environment variables.
+We recommend using `uv` for package management, as it is the easiest way to install the dependencies.
+The following command will build and install Pywr with only the GLPK solver:
 
 .. code-block:: shell
 
-  python setup.py install --with-glpk --with-lpsolve
+  PYWR_BUILD_LPSOLVE=false uv pip install -e .
 
-To install Pywr in-place in developer mode, use the ``develop`` command instead of ``install``. This is only useful if you plan to modify the Pywr source code and is not required for general use.
-
-.. code-block:: shell
-
-  python setup.py develop --with-glpk --with-lpsolve
 
 Installing binary wheels with pip
 ---------------------------------
@@ -92,7 +89,7 @@ It's possible to install the dependencies as Anaconda packages, but still build 
   set LIBRARY=%CONDA_PREFIX%\Library
   set LIBRARY_INC=%LIBRARY%\include
   set LIBRARY_LIB=%LIBRARY%\lib
-  python setup.py build_ext -I"%LIBRARY_INC%" -L"%LIBRARY_LIB%" --inplace --with-glpk --with-lpsolve install
+  python setup.py build_ext -I"%LIBRARY_INC%" -L"%LIBRARY_LIB%" --inplace install
 
 Installing on Windows
 ---------------------
@@ -161,13 +158,13 @@ There are a collection of unit tests for Pywr written using ``pytest``. These ca
 
 .. code-block:: shell
 
-  pytest tests
+  uv run python -m pytest tests
 
 This will run all avaialble tests using the default solver. A specific solver can be tested by specifying the `PYWR_SOLVER` environment variable:
 
 .. code-block:: shell
 
-  PYWR_SOLVER=lpsolve pytest tests
+  PYWR_SOLVER=lpsolve uv run python -m pytest tests
 
 Continuous Integration
 ~~~~~~~~~~~~~~~~~~~~~~
