@@ -1,7 +1,6 @@
 [project]
 name="pywr"
 description="Python Water Resource model"
-license = "GPL-3.0-only"
 readme="README.rst"
 dynamic = ["version"]
 authors = [

@@ -37,6 +37,16 @@ def setup_package():
 
     metadata = dict(
         name="pywr",
+        packages=[
+            "pywr",
+            "pywr.solvers",
+            "pywr.domains",
+            "pywr.parameters",
+            "pywr.recorders",
+            "pywr.notebook",
+            "pywr.optimisation",
+            "pywr.utils",
+        ],
     )
 
     ext_modules = [
