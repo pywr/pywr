@@ -116,9 +116,8 @@ jobs:
         # lpsolve doesn't compile on Ubuntu without building the library from source - disable for the time being.
         # This doesn't really matter for the documentation builds.
         run: |
-          sudo apt-get install libglpk-dev
-          pip install sphinx sphinx_rtd_theme numpydoc matplotlib "numpy"
-          PYWR_BUILD_LPSOLVE=false python setup.py install
+          sudo apt-get install libglpk-dev          
+          PYWR_BUILD_LPSOLVE=false pip install -e .[docs]
           cd docs
           make html
 
