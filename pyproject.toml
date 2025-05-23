@@ -33,7 +33,7 @@ dev = ["pytest", "platypus-opt", "black"]
 
 
 [build-system]
-requires = ["setuptools", "cython>=3", "numpy",]
+requires = ["setuptools", "setuptools-scm>=8", "cython>=3", "numpy"]
 build-backend = "setuptools.build_meta"
 
 
