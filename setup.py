@@ -5,7 +5,6 @@ from setuptools.command.build_ext import build_ext as _build_ext
 
 
 def setup_package():
-    print("Building pywr with Cython extensions")
     compiler_directives = {
         "language_level": 3,
         "embedsignature": True,
