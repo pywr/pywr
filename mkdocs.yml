@@ -1,4 +1,4 @@
-site_name: Pywr
+site_name: Pywr documentation
 site_url: https://pywr.github.io/pywr
 repo_url: https://github.com/pywr/pywr
 plugins:
@@ -35,11 +35,17 @@ plugins:
 markdown_extensions:
   - admonition
   - pymdownx.critic
+  - pymdownx.tabbed
   - pymdownx.highlight:
       use_pygments: true
       linenums: true
   - pymdownx.tabbed:
       alternate_style: true
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.superfences:
       # make exceptions to highlighting of code:
       custom_fences:
@@ -80,7 +86,7 @@ theme:
   icon:
     repo: fontawesome/brands/github  # GitHub logo in top right
 nav:
-  - 'index.md'
+  - Welcome: 'index.md'
   - Get started:
       - Install:
         - 'install/from_binary.md'
@@ -91,13 +97,27 @@ nav:
         - 'get_started/python.md'
         - 'get_started/json.md'
   - Manual:
-    - 'manual/problem.md'
-#    - Nodes
+    - Key concepts:
+      - 'manual/problem.md'
+      - 'manual/costs.md'
+      - 'manual/control_curves.md' # TODO
+      - 'manual/exceptions.md'
+      - 'manual/tables.md'
+    - Nodes:
+      - 'manual/nodes/input.md'
+      - 'manual/nodes/link.md'
+      - 'manual/nodes/aggregated.md'
+      - 'manual/nodes/output.md'
     - Parameters:
+        - Simple: '' # TODO
+        - Profiles: '' # TODO
+        - Timeseries: '' # TODO
         - Aggregated: 'manual/parameters/aggregated.md'
+        - Thresholds: '' # TODO
+        - Interpolated: '' # TODO
 #    - Recorders
-    - 'manual/tables.md'
-    - 'manual/exceptions.md'
+    - Custom components:
+      - 'manual/custom_parameters.md'
   - Tools: 'tools.md'
   - API reference:
     - Core:
