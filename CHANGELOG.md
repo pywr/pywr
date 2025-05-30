@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.27.4] - 2025-05-23
+
+### 🐛 Bug Fixes
+
+- Fix warning about assigning to variables attribute.
+- Ensure variables given to platypus are clipped to bounds.
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix linting. ([#1155](https://github.com/pywr/pywr/issues/1155))
+
 ## [1.27.3] - 2025-02-07
 
 ### 🚀 Features
@@ -12,6 +23,7 @@ All notable changes to this project will be documented in this file.
 
 - Update doc and sdist GHA to Pyhon 3.11.
 - Fix requires-python definition in setup.
+- *(release)* Update changelog for 1.27.3 release. ([#1152](https://github.com/pywr/pywr/issues/1152))
 
 ## [1.27.2] - 2024-12-16
 
