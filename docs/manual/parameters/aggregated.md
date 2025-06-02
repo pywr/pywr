@@ -162,19 +162,23 @@ using `max(negative(X))`. This setup is shown in JSON below.
 
 ```json
 {
-  "original": {...},
-  "inflow": {
-    "type": "max",
-    "parameter": "original",
-    "threshold": 0.0
-  },
-  "evaporation": {
-    "type": "max",
-    "parameter": {
-      "type": "negative",
-      "parameter": "original"
+  "parameters": {
+    "original": {
+      ...
     },
-    "threshold": 0.0
+    "inflow": {
+      "type": "max",
+      "parameter": "original",
+      "threshold": 0.0
+    },
+    "evaporation": {
+      "type": "max",
+      "parameter": {
+        "type": "negative",
+        "parameter": "original"
+      },
+      "threshold": 0.0
+    }
   }
 }
 ```
@@ -183,10 +187,12 @@ The pattern above was common enough to warrant the creation of the [pywr.paramet
 
 ```json
 {
+  "parameters": {
     "evaporation": {
-        "type": "negativemax",
-        "parameter": "original",
-        "threshold": 0.0
+      "type": "negativemax",
+      "parameter": "original",
+      "threshold": 0.0
     }
+  }
 }
 ```

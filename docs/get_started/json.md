@@ -112,9 +112,9 @@ The only required item is the name of the solver to use.
 
 ```json
 {
-    "solver": {
-        "name": "glpk"
-    }
+  "solver": {
+      "name": "glpk"
+  }
 }
 ```
 
@@ -148,14 +148,14 @@ This is an example of an [pywr.nodes.Input][] being used to represent a groundwa
 
 ```json
 {
-    "nodes": [
-        {
-            "name": "groundwater",
-            "type": "input",
-            "max_flow": 23.0,
-            "cost": 10.0
-        }
-    ]
+  "nodes": [
+    {
+        "name": "groundwater",
+        "type": "input",
+        "max_flow": 23.0,
+        "cost": 10.0
+    }
+  ]
 }
 ```
 
@@ -169,20 +169,20 @@ using a [pywr.parameters.ConstantParameter][] which returns the same number at e
 
 ```json
 {
-    "nodes": [
-        {
-            "name": "groundwater",
-            "type": "input",
-            "max_flow": {
-              "type": "constant",
-              "value": 23.0
-            },
-            "cost": {
-              "type": "constant",
-              "value": 10.0
-            }
+  "nodes": [
+    {
+        "name": "groundwater",
+        "type": "input",
+        "max_flow": {
+          "type": "constant",
+          "value": 23.0
+        },
+        "cost": {
+          "type": "constant",
+          "value": 10.0
         }
-    ]
+    }
+  ]
 }
 ```
 
@@ -198,20 +198,20 @@ on the simulated month:
 
 ```json
 {
-    "nodes": [
-        {
-            "name": "groundwater",
-            "type": "input",
-            "max_flow": {
-              "type": "monthlyprofile",
-              "value": [10, 10, 10, 45, 56, 57, 89, 110, 90, 11, 0, 12]
-            },
-            "cost": {
-              "type": "constant",
-              "value": 10.0
-            }
+  "nodes": [
+    {
+        "name": "groundwater",
+        "type": "input",
+        "max_flow": {
+          "type": "monthlyprofile",
+          "value": [10, 10, 10, 45, 56, 57, 89, 110, 90, 11, 0, 12]
+        },
+        "cost": {
+          "type": "constant",
+          "value": 10.0
         }
-    ]
+    }
+  ]
 }
 ```
 
@@ -325,6 +325,9 @@ Instead of defining the data inline using the `values` property, external data c
 
 !!! warning
     The URL should be relative to the JSON document and *not* the current working directory.
+
+The [External data section](../manual/tables.md) covers in much detail the supported file types and how to
+setup the data parsers.
 
 ## Run the model
 A Pywr JSON document can be loaded into a [pywr.core.Model][] instance by using the `load` class-method:

@@ -1,8 +1,9 @@
 # Build model in Python
 
 
-The simplest example has two nodes: an [pywr.nodes.Input][] which adds flow 
-to the network and an [pywr.nodes.Output][] which removes flow from the network.
+The simple example has two nodes: a [pywr.nodes.Input][] node which adds flow 
+to the network and a [pywr.nodes.Output][] node which removes water from the network. You
+can copy the code below and run it in your virtual environment.
 
 ```python
 from pywr.core import Model, Input, Output
@@ -20,9 +21,7 @@ supply.connect(demand)
 
 ## Set constraints
 While technically valid, this model isn't very interesting because we haven't set any constraints or
-costs on flows in the network.
-
-Let's add some flow constraints to the problem:
+costs on flows in the network. Let's add some flow constraints to the problem:
 
 ```python
 # set maximum flows
@@ -41,18 +40,19 @@ will occur (within the models constraints).
 supply.cost = 3.0
 demand.cost = -100.0
 ```
+
+A detailed explanation on how costs works is provided in the [Cost section](../manual/costs.md) of the manual.
+
 ## Set the start and end date
 Next we need to tell the model how long to run for. As an example, we'll use a daily timestep for all of 2015.
 
 ```python
-import datetime
-import pandas
 from pywr.core import Timestepper
 
 model.timestepper = Timestepper(
-    pandas.to_datetime('2015-01-01'),  # first day
-    pandas.to_datetime('2015-12-31'),  # last day
-    datetime.timedelta(1)  # interval
+    start='2015-01-01',  # first day
+    end='2015-12-31',  # last day
+    delta=1  # interval
 )
 ```
 
@@ -129,9 +129,6 @@ from pywr.core import Model, Input, Output
 from pywr.recorders import NumpyArrayNodeRecorder
 from pywr.core import Timestepper
 
-import datetime
-import pandas
-
 # create a model (including an empty network)
 model = Model()
 
@@ -150,9 +147,9 @@ supply.cost = 3.0
 demand.cost = -100.0
 
 model.timestepper = Timestepper(
-    pandas.to_datetime('2015-01-01'),  # first day
-    pandas.to_datetime('2015-12-31'),  # last day
-    datetime.timedelta(1)  # interval
+    start='2015-01-01',  # first day
+    end='2015-12-31',  # last day
+    delta=1  # interval
 )
 
 recorder = NumpyArrayNodeRecorder(model, supply)

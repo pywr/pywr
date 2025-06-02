@@ -1,12 +1,11 @@
 # Installing from source
-This section describes how to build and install Pywr from source. You can read the sections below
-that explain how to do so depending on the Operating System you are using.
+This section describes how to build and install Pywr from source depending on the Operating System you are using.
 
-!!!note
-    Building Pywr from source requires a working C compiler. It has been built successfully with MSVC on 
-    Windows, GCC on Linux and clang/LLVM on MacOS.
+## Choose the solver
+When installing Pywr you must specify which solvers to build. This is done by setting the `PYWR_BUILD_GLPK` and 
+`PYWR_BUILD_LPSOLVE` environment variables to either true or false before calling the `setup.py` script.
 
-## Dependencies
+## Install the pywr dependencies
 Pywr has several external dependencies which are:
  
 - Core dependencies (required)
@@ -26,19 +25,37 @@ Pywr has several external dependencies which are:
     - [Jupyter](https://jupyter.org/)
     - [Matplotlib](http://matplotlib.org/)
 
-## Solver options
-When installing Pywr you must specify which solvers to build. This is done by passing `--with-<solver>` as
-an argument to the `setup.py` file in the root folder of the project. For example, the following command will build and 
-install Pywr with both the GLPK and lpsolve solvers:
+Activate your virtual environment first: 
 
-    python setup.py install --with-glpk --with-lpsolve
+    source myvenv/bin/activate
 
-To install Pywr in-place in developer mode, use the develop command instead of install. This is only useful if 
-you plan to modify the Pywr source code and is not required for general use.
+We recommend using [uv](https://docs.astral.sh/uv/) for package management, as it is the easiest way to install 
+the dependencies. The following command will build and install Pywr with only the GLPK solver:
 
-    python setup.py develop --with-glpk --with-lpsolve
+    PYWR_BUILD_LPSOLVE=false uv pip install -e .
+
+If you prefer using `pip` you can simply run:
+
+    pip install -e .
+
+The dependencies are taken from the `pyproject.toml` file in the root folder of the repository.
+
+!!! note "MacOS ARM"
+
+    If you have a mac with an ARM processor, there is no compiled version for the `tables` 
+    wheel. `pip` will attempt to install it from source which will likely fail. Install `hdf5`
+    with brew first and then install the wheel from PyPI:
+
+        brew install hdf5
+        pip install tables
 
 ## Compile on Ubuntu
+### Install the compiler
+To install the GCC compiler, run the following command in the terminal:
+
+    sudo apt install build-essential
+
+### Download the solvers
 The following commands install the GLPK and lpsolve libraries:
 
     sudo apt-get install libgmp3-dev libglpk-dev glpk
@@ -50,8 +67,39 @@ to remove it:
     sudo rm /usr/lib/liblpsolve55.a
     sudo ln -s /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
 
+### Compile pywr
+To build Pywr use:
+
+    python setup.py build_ext --inplace --verbose 
+
 ## Compile on Windows
-TODO: use Windows Kit
+
+### Install the compiler
+Install the Microsoft Compiler first:
+
+1. Install the MSVC tool and Windows Kit by running [Visual Studio Installer](https://visualstudio.microsoft.com/downloads/)
+2. Tick the option below to install all the dependencies:
+
+![Items1.png](../assets/msvc-1.png)
+![Items1.png](../assets/msvc-2.png)
+
+Copy the file `rc.exe` and `rc.dll` from `C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64` to:
+
+- C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin 
+- C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.29.30133\bin\Hostx86\x64. 
+
+You may need to adjust the paths based on the version of the Windows Kit you installed.
+
+### Download the solvers
+TODO
+
+
+
+### Compile pywr
+To build Pywr use:
+
+    python setup.py build_ext --inplace --verbose 
+
 
 ## Compile on MacOS
 This section describes how to install the necessary dependencies
@@ -63,25 +111,7 @@ assumes you have:
 2. You have already created a [Python virtual environment](https://docs.python.org/3/tutorial/venv.html#creating-virtual-environments).
 3. You have already installed the `gcc` compiler. The easiest option is to install [Apple’s XCode](https://developer.apple.com/).
 
-### Python
-Activate the virtual environment 
-
-    source myvenv/bin/activate
-
-Install then the Python dependencies using `pip`:
-
-    pip install cython pandas networkx numpy scipy tables openpyxl
-
-!!! note
-
-    If you have a mac with an ARM processor, there is no compiled version for the `tables` 
-    wheel. `pip` will attempt to install it from source which will likely fail. Install `hdf5`
-    with brew first and then install the wheel from PyPI:
-
-        brew install hdf5
-        pip install tables
-
-### Solver
+### Get the solvers
 The GLPK solver with the header and library files is available via `brew`, to install it run:
 
     brew install glpk
@@ -90,12 +120,10 @@ Obtain the path where the solver was installed using
 
     brew info glpk
 
-The path looks like: `/opt/homebrew/Cellar/glpk/5.0` but you may have a different version
-
 ### Compile pywr
 Compile pywr using the command below. Remember to replace the path to the glpk solver
 
     CFLAGS="-I /opt/homebrew/Cellar/glpk/5.0/include" LDFLAGS="-L /opt/homebrew/Cellar/glpk/5.0/lib" python setup.py build_ext --inplace --verbose
   
 The `-I` includes the `glpk.h` header file pywr needs, the `-L` option includes the dynamic library already compiled
-for MacOS.
+for MacOS. Make sure to adjust the paths to the solvers installed by `brew` if you are using a different version.

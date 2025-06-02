@@ -1,9 +1,9 @@
 # Output
 
-| What it does         | <span style="font-weight:normal;">This node adds water into the network using the `max_flow`, `min_flow` and `cost` options.</span> |
-|----------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| **When is it used?** | Use this node from demand centres, zonal exports or spill nodes.                                                                    |
-| **Pywr class**       | [pywr.nodes.Output][]                                                                                                               |
+| What it does         | <span style="font-weight:normal;">This node removes water from the network using the `max_flow`, `min_flow` and `cost` options.</span> |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| **When is it used?** | Use this node from demand centres, zonal exports, termination or spill nodes.                                                          |
+| **Pywr class**       | [pywr.nodes.Output][]                                                                                                                  |
                                                                                                                                   
 
 ## Available key options

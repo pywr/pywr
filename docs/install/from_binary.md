@@ -11,7 +11,7 @@ The official page of the wheel is: [https://pypi.org/project/pywr/](https://pypi
 ## Installing with Anaconda
 A binary distribution of Pywr is provided for Python 3.7+ (64-bit) on Windows,
 Linux and OS X for the [Anaconda Python distribution](https://www.continuum.io/downloads). 
-You will need to install and configure Anaconda before proceeding. Please read
+You will need to install and configure Anaconda before proceeding. Please read the
 [getting started section](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html)
 available on the official Conda website.
 

@@ -1,10 +1,10 @@
 # Network inputs
 
-## Input
+## Input node
 | What it does         | <span style="font-weight:normal;">This node adds water into the network using the `max_flow`, `min_flow` and `cost` options.</span> |
 |----------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| **When is it used?** | Use this node to represent a groundwater source or a zonal import.                                                                  |
-| **Pywr class**       | [pywr.nodes.Input][]                                                                                                            |
+| **When is it used?** | Use this node to represent a groundwater source, zonal import or any input of water into the netwrok.                               |
+| **Pywr class**       | [pywr.nodes.Input][]                                                                                                                |
                                                                                                                                   
 
 ### Available key options
@@ -40,7 +40,8 @@ This is an example of a node used to import water from another system:
 | flow | Set the amount of water that the nodes must deliver. | No       | 0             |
 | cost | The penality cost per unit flow via the node         | No       | 0             |
 
-> NOTE: this is a simple node where `max_flow` and `min_flow` are set equal to `flow`
+!!!warning "Node constraints"
+    This is a simple node where `max_flow` and `min_flow` are set equal to `flow`
 
 ### Example
 This is an example of a node used to deliver water into a reservoirs:
@@ -59,7 +60,7 @@ This is an example of a node used to deliver water into a reservoirs:
 ### What is the difference between an input and catchment node?
 An input node stops delivering water based on the downstream network restrictions. For example if 
 you set the `max_flow` of an input node to `6` Ml/d and the downstream  demand to `4` Ml/d, the model will 
-deliver only `4` Ml/d.
+deliver only `4` Ml/d (if the costs allow).
 
 ```mermaid
 graph LR;
@@ -69,13 +70,14 @@ A(["Input
 ```
 
 
-If you use the same setup, but you use a catchment node , the model will stop and the solver will fail. 
-A catchment node always needs to deliver the amount of water you set.
+If you use the same setup, but you use a catchment node, the model will stop and the solver will fail, as
+a catchment node always must deliver the amount of water you set. The node internally set the flow to deliver as
+`max_flow` and `min_flow`. 
 
 ```mermaid
 graph LR;
 A(["Catchment 
-6 Ml/d"])   -- X--o  B(["Output 
+6 Ml/d"])   -- X-->  B(["Output 
 4 Ml/d"]);
 ```
 
@@ -91,7 +93,7 @@ Another example is when you have a river intake:
 ```
 
 The above model will not work because the abstraction node limits the flow to
-4 Ml/d and the "Catchment" node has not way of discharging the water that is not
+4 Ml/d and the "Catchment" node has no means of discharging the water that is not
 abstracted (pywr will give you a "infeasible solution" message). The correct implementation is:
 
 ```mermaid

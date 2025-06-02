@@ -1,5 +1,5 @@
 # Exceptions
-This section lists potential exceptions raised by Pywr or library and how to troubleshoot them
+This section lists potential exceptions raised by Pywr or libraries and how to troubleshoot them.
 
 ## JSON syntax errors
 The JSON format is not sensitive to white space but is otherwise quite strict. 

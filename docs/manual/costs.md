@@ -1,10 +1,7 @@
 # Costs
 
-Pywr uses synthetic costs or allocation penalties to control water allocation. These costs can be **positive**, to
-penalise supplying of water, or **negative**, representing a benefit from supplying water. At each timestep, pywr
-solves the supply-demand balance problem using the [linear programming algorithm](./problem.md).
-
-In very general terms, the problem of routing water along a route of nodes can be expressed as:
+Pywr uses synthetic costs or allocation penalties to control water allocation. In very general terms, 
+the problem of routing water along a route of nodes can be expressed as:
 
 <p style="text-align: center;"> minimise  C<sub>i</sub> * X<sub>i</sub> </p>
 
@@ -13,7 +10,25 @@ Where:
 - C<sub>i</sub> represents the cost or penalty per unit flow at node i, and
 - X<sub>i</sub> is the unknown flow that the solver must determine.
 
-The problem may also be subjected to minimum and maximum flow constraints you define on the nodes.
+At each timestep, pywr solves the supply-demand balance problem using the [linear programming algorithm](./problem.md). 
+The solver then chooses the set of flows that results in the **minimum total system cost** at each timestep, while adhering to all
+physical constraints and operational rules (e.g., max and min flow on links, reservoir capacity).
+
+In Pywr:
+
+- Costs are not necessarily financial, but you can use operational costs as a proxy for synthetic costs to assign to assets.
+- Costs can be positive or negative.
+- Low costs (including negative costs) indicate preferred actions (such as meeting demand or using a preferred route to supply water).
+- High costs indicate actions that should be avoided if possible. They can be used as "penalty functions" to 
+strongly discourage certain actions, like violating a minimum environmental flow or letting a reservoir fall 
+below a critical level.
+- Costs can be constant numerical values or vary during the simulation.
+
+Determining the costs is a critical step to ensure the model is a reasonable representation of the real-world system.
+It is a modeller's responsibility to adjust the model costs so that the model's outputs match historical observations or the
+expected system response. 
+
+The following sections explain how costs generally work and how you can set them on nodes.
 
 ## A simple example
 
@@ -83,8 +98,7 @@ A("Input
     ```
 
 If you run this model for one day with no costs assigned, no water will be supplied to the demand node. To make it work,
-you
-need to assign costs to the nodes:
+you need to assign costs to the nodes:
 
 ```mermaid
 graph LR;
@@ -456,12 +470,13 @@ For example:
 ```
 
 When the storage:
+
 - is above the curve (50%), the cost in linearly interpolated between `-0.1` and `-1` based on the available storage.
 - when you are below, the cost decreases considerably and is interpolated between `-100` and `-200`.
 
 
 !!!info "Conjunctive system"
-    If you have a conjunctive system and want to equally balance the sources, you can 
+    If you have a conjunctive system and want to equally balance the sources, you may 
     use the [pywr.parameters.ControlCurvePiecewiseInterpolatedParameter][] on all reservoirs with a different 
     control curve but same cost pairs. 
 
@@ -472,7 +487,7 @@ at the end of the year, you need to set a cost that controls how Pywr should use
 
 ### Create the annual license
 An annual license is created using an `AnnualVirtualStorage` node to track the amount of 
-license being used through a year. In the following example the license resets on the 1st April: 
+license being used through a year. In the following example the license resets on 1st April: 
 
 ```json
 {
@@ -530,11 +545,13 @@ The "My WTW" node is setup as follows:
 
 We then set a cost using a control curve, when the license volume is above the control curve, the cost is `0` 
 (the flow is not restricted) otherwise we set a high cost to prevent the model from abstracting too much water from
-the source. The [pywr.parameters.ControlCurveParameter][] looks at the available volume in the 
-`AnnualVirtualStorage` node named "My annual license", takes the relative storage (between 0 and 1) and 
-compare the values against the control curve named "My license usage profile" (whose values must be between 0 and 1) . 
+the source. The cost choice depends on the network setup and model behaviour you want to achieve.
 
-The following section explains how to set the usage profile parameter.
+The [pywr.parameters.ControlCurveParameter][] looks at the available volume in the 
+`AnnualVirtualStorage` node named "My annual license", takes the relative storage (between 0 and 1) and 
+compares the values against the control curve named "My license usage profile" (whose values must be between 0 and 1) . 
+
+The following section explains how to set the usage profile parameter in the `"control_curve"`.
 
 ### License usage profile
 The license usage is defined using a pywr `Parameter`. You can implement your own parameter, for very particular 
@@ -549,9 +566,11 @@ In the example above you can set the control curve as:
 
 ```json
 {
-  "My license usage profile": {
+  "parameters": {
+   "My license usage profile": {
       "type": "UniformDrawdownProfile"
- }
+    }
+  }
 }
 ```
 
@@ -564,15 +583,18 @@ This can be achieved by customising the parameter as follows:
 
 ```json
 {
-  "My license usage profile": {
+  "parameters": {
+    "My license usage profile": {
       "type": "UniformDrawdownProfile",
       "reset_day": 1,
       "reset_month": 4
- }
+    }
+  }
 }
 ```
 
 Putting all together in one block:
+
 ```json
 {
   "nodes": [

@@ -11,12 +11,15 @@ The data is loaded during the setup/reset process, before the model is run.
 Pywr uses the [Pandas](http://pandas.pydata.org/pandas-docs/stable/io.html) module to load data, which 
 supports the following file formats:
 
-- Comma separated values (.csv)
-- Excel spreadsheets (.xls, .xlsx)
-- HDF5 (.h5)
+- **Comma separated values (.csv)**: these are text files where the value on each row is separated by a comma or another
+separator character. This should always be the format of your choice unless the file is very large.
+- **Excel spreadsheets (.xls, .xlsx)**: pywr can read data from different sheets. However, this file format **is discouraged** because 
+reading Excel files is slow and changes made to the file cannot be tracked using version control systems.
+- **Hierarchical Data Format (HDF5)**: this is a file format designed to store and organize large amounts of
+data (for example for multiple sites). 
 
 External data is read using the appropriate ``pandas.read_xxx`` function determined by the file extension
-(e.g. ``pandas.read_excel`` for xls/xlsx). Keywords that are not recognised by Pywr are passed on to these 
+(e.g. `pandas.read_excel` for xls/xlsx). Keywords that are not recognised by Pywr are passed on to these 
 functions. For example, when reading timeseries data from a CSV you can parse the date strings into
 pandas timestamps by passing `parse_dates=True` (see example below).
 
@@ -25,10 +28,11 @@ pandas timestamps by passing `parse_dates=True` (see example below).
     the value read is the value present when the document was last saved.
 
 !!! tip "Large data"
-    When working with large amounts of timeseries data the [HDF5 format](https://www.hdfgroup.org/why-hdf) is 
+    When working with large amounts of timeseries data (for example if you are running different climate change scenarios 
+    for your zone or a different inflow timeseries for a catchment), the [HDF5 format](https://www.hdfgroup.org/why-hdf) is 
     recommended as it has superior read speeds. Where data access speed is critical, users are advised to look at 
     the [pywr.parameters.TablesArrayParameter][] parameter instead, which supports very fast access via
-    `pytables` directly (rather than indirectly via `pandas`).
+    [PyTables library](https://www.pytables.org/).
 
 The sections below explain how to import timeseries, constants, profiles and tables with multi-index and
 assume you are already familiar with the Pandas library.
@@ -64,14 +68,14 @@ The parameter configuration references the `timeseries1.csv` file in its `"url"`
 Pandas's [read_csv](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html) function
 can also be provided within the configuration of the parameter. For example, the index of the time series is 
 defined by `"index_col"` and the data column is
-defined by the ``"column"`` keyword (in this case, `"Flow"`). The `"parse_dates"` keyword is required in 
+defined by the ``"column"`` keyword (in this case `"Flow"`). The `"parse_dates"` keyword is required in 
 order to parse the dates from strings in the CSV file into pandas date objects.
 
 When the parameter is assigned to a node's property (for example `max_flow`), it will return `23.92` when the 
 timestep is `1910-01-01`, `22.14` on `1910-01-02` and so on.
 
 !!!note "Data frequency"
-    If the index column of the dataframe is a timestamp the parameter will support automatic resampling, if required. 
+    If the index column of the dataframe is a timestamp, the parameter will support automatic resampling, if required. 
     For example, if the external data is on a daily timestep the model can still be run on a weekly timestep.
 
 !!!danger "Missing dates"
@@ -191,14 +195,14 @@ You can extract constant values using:
 In the example above, `max_flow` evaluates to `10` and `cost` evaluates to `-100`.
 
 ## Tables
-
-Tables
 Each time an external data source is referenced using the `"url"` keyword, 
 the data is reloaded from disk. If a dataset is going to be used multiple times in a
 model, it can be defined in the `"tables"` section of the JSON document. 
-In this way the data will only be loaded once. Parameters can then reference the data using the 
-`"table"` keyword instead of the `"url"` keyword. Although the index column applied to the data must 
-be defined in the `"tables"` section, the index used for each lookup can be different.
+In this way the data will only be loaded once. 
+
+Parameters can then reference the data using the 
+`"table"` keyword instead of the `"url"` keyword. Although the column used as row index must 
+be defined in the `"tables"` section, the index or column used for each lookup can be different.
 
 An example is given below using the `demands.csv` dataset shown previously. 
 Two constant parameters are defined referencing data in the table.
@@ -219,31 +223,114 @@ Two constant parameters are defined referencing data in the table.
         "index": "Cambridge"
       }
   },
-    "tables": {
-        "simple_data": {
-            "url": "demands.csv",
-            "index_col": "City"
-        }
+  "tables": {
+    "simple_data": {
+      "url": "demands.csv",
+      "index_col": "City"
     }
+  }
 }
 ```
 
-## Checksum check
-Often external boundary condition data is very large in comparison to the model definition (JSON) itself. Model definitions
-might be stored in a version control system (e.g. Git) but this may not be suitable for large amounts of binary data.
-Users of a model therefore might need to obtain the external data via another means. Tracking revisions of this external
-data can become problematic.
+## Pandas' HDF specific topics
+These sections cover specific topics about HDF files saved with Pandas.
 
-To address this [pywr.parameters.DataFrameParameter][] and [pywr.parameters.TablesArrayParameter][] support 
+### Parse dates
+Like the Excel format, you do not need to parse any date because the H5 file already stores dates that
+Python can understand (i.e. dates are not stored as string like in the CSV file format). For example, if you import 
+a CSV file and parse the dates in the first column, when you export the file as H5, the date object is preserved:
+
+```python
+import pandas as pd
+
+df = pd.read_csv("my_inflow_file.csv", index_col=0, parse_dates=True)  
+df.to_hdf('data.h5', key='/Inflows')
+```
+
+### Export an HDF file
+You can use the Pandas library:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]}, index=['a', 'b', 'c'])  
+df.to_hdf('data.h5', key='/My key')  
+```
+
+Given the `df` DataFrame, you can save it as HDF file (with .h5 extension) using the
+[pandas.DataFrame.to_hdf](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_hdf.html#pandas.DataFrame.to_hdf) 
+function. The `key` is a mandatory option and tells Pandas the path where to store your table. 
+A file may contain multiple tables with different `key`(s). For example, you can have one key to store the inflows 
+of different catchments, another table where to store the rainfall data and another one with evaporation timeseries. 
+Each table can be accessed via the `key` parameter.
+
+### Add more than one table to the same H5 file
+If you already have a H5 file containing data, you can add a new table using the `mode` option as follows:
+
+```python
+import pandas as pd
+
+df = pd.read_csv("my_inflow_file.csv", index_col=0, parse_dates=True)  
+df.to_hdf('data.h5', key='/Inflows')
+
+# Add a new table to the same file
+df = pd.read_csv("my_rainfall_file.csv", index_col=0, parse_dates=True)
+# "a: stands for append
+df.to_hdf('data.h5', key='/Rainfall', mode="a")
+```
+
+## PyTables specific topics
+
+### Create a table file
+This file format is meant to be used in a [pywr.parameters.TablesArrayParameter][] when, for example, you 
+want to run multiple scenarios. The following code snippet shows how to store all historic RCM hydrology files in one file
+using the `h5py` library.
+The input folder `Historic_Climate_Change_Regional_R001` contains CSV files, one for each RCM scenario; each file contains
+the data for all hydrological sites as timeseries. You can adapt the script depending on you data:
+
+```python
+from pathlib import Path  
+  
+import h5py  
+import pandas as pd  
+
+# this is the path with all hydrology data
+folder = Path(r"/var/data/Historic_Climate_Change_Regional_R001")  
+# open the destination file
+store = h5py.File("historic_rcm_scenarios.h5", "w")  
+
+# read data
+for csv_file in folder.glob("*.csv"):  
+    # get the scenario name from the file name  
+    scenario_name = csv_file.name.replace(".csv", "")  
+    # read the data  
+    data = pd.read_csv(csv_file, parse_dates=True, dayfirst=True, index_col=0)  
+    # store the dataset - compressed with the maximum compression level. 
+    store.create_dataset(scenario_name, data=data, compression="gzip", compression_opts=9)  
+  
+# close the destination file  
+store.close()
+```
+
+## Checksum check
+Often external dataset files can be very large in comparison to the JSON document file. The JSON file
+might be stored in a version control system (e.g. Git), but this may not be suitable for large amounts of binary data.
+Users of a model therefore might need to obtain the external data via another means.
+
+To address this, the [pywr.parameters.DataFrameParameter][] and [pywr.parameters.TablesArrayParameter][] support 
 validating external file checksums before reading the external data. The example below shows how to define
 a checksum in the JSON definition of a `DataFrameParameter`.
 If the local file does not match the checksum in the JSON definition a `HashMismatchError` is raised. Pywr uses
 [hashlib](https://docs.python.org/3/library/hashlib.html) and supports all of its algorithms.
 
-The example below shows checksums for two different algorithms, but usually one is sufficient.
+### Parameter configuration
+
+The example below shows checksums for two different algorithms for a `DataFrameParameter`, but usually only one 
+checksum is enough:
 
 ```json
 {
+  "parameters": {
     "max_flow": {
         "type": "dataframe",
         "url" : "timeseries2.csv",
@@ -252,12 +339,13 @@ The example below shows checksums for two different algorithms, but usually one 
             "sha256": "0f75b3cee325d37112687d3d10596f44e0add374f4e40a1b6687912c05e65366"
         }
     }
+  }
 }
 ```
 
 ### Generating the checksum
-The author of the external data will need to produce a file checksum to add the JSON definition. The following script
-shows how Python can be used to calculate the checksum of a file.
+The author of the external data will need to produce a file checksum to add to the JSON document. The following script
+shows how Python can be used to calculate the checksum of a file using the `md5` algorithm:
 
 ```python
 import hashlib
