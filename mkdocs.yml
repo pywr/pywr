@@ -41,6 +41,8 @@ markdown_extensions:
       linenums: true
   - pymdownx.tabbed:
       alternate_style: true
+  - toc:
+      permalink: "#"
   - attr_list
   - md_in_html
   - pymdownx.emoji:
@@ -52,6 +54,10 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:mermaid2.fence_mermaid_custom
+        - name: python
+          class: python
+          validator: !!python/name:markdown_exec.validator
+          format: !!python/name:markdown_exec.formatter
 theme:
   name: material
   features:
@@ -85,6 +91,9 @@ theme:
         name: Switch to light mode
   icon:
     repo: fontawesome/brands/github  # GitHub logo in top right
+extra:
+  version:
+    provider: mike
 nav:
   - Welcome: 'index.md'
   - Get started:
@@ -100,7 +109,6 @@ nav:
     - Key concepts:
       - 'manual/problem.md'
       - 'manual/costs.md'
-      - 'manual/control_curves.md' # TODO
       - 'manual/exceptions.md'
       - 'manual/tables.md'
     - Nodes:
@@ -113,11 +121,20 @@ nav:
         - Profiles: '' # TODO
         - Timeseries: '' # TODO
         - Aggregated: 'manual/parameters/aggregated.md'
+        - Control curves:  '' # TODO
         - Thresholds: '' # TODO
         - Interpolated: '' # TODO
-#    - Recorders
+    - Recorders:
+        - Introduction: 'manual/recorders/index.md'
+        - 'manual/recorders/file.md' #TODO
+        - Save results in memory: '' #TODO
+    - Optimisation: '' # TODO
     - Custom components:
       - 'manual/custom_parameters.md'
+    - How to implement:
+      - 'manual/misc/demand_savings.md'
+      - 'manual/misc/soft_constraints.md'
+      - 'manual/misc/abs_license_with_bands.md'
   - Tools: 'tools.md'
   - API reference:
     - Core:
