@@ -12,6 +12,7 @@ DEFAULT_RIVER_DOMAIN = Domain(name="river", color="#33CCFF")
 
 class RiverDomainMixin(object):
     """Class to identify a river domain."""
+
     def __init__(self, *args, **kwargs):
         # if 'domain' not in kwargs:
         #     kwargs['domain'] = DEFAULT_RIVER_DOMAIN
@@ -126,6 +127,14 @@ class Reservoir(RiverDomainMixin, Storage):
 
         Parameters
         ----------
+        model : Model
+            The model instance.
+
+
+        Other Parameters
+        ----------------
+        name : string
+            A unique name for the node.
         control_curve : Optional[float | Parameter], default=None
             This can be a number (to assume a flat control curve) or a Parameter that returns the control curve position,
             as relative volume of fill for the given timestep. When `None`, the control curve
@@ -203,7 +212,7 @@ class River(RiverDomainMixin, Link):
         name : str
             The unique name of the node.
         min_flow : Optional[float | Parameter], default=0
-            A simple minimum flow constraint for the node. Defaults to 0.
+            A simple minimum flow constraint for the node. Default to 0.
         max_flow : Optional[float | Parameter], default=Inf
             A simple maximum flow constraint for the node. Defaults to infinite.
         cost : Optional[float | Parameter], default=0
@@ -233,10 +242,15 @@ class RiverSplit(MultiSplitLink):
         ----------
         model : Model
             The model instance.
+        nsteps : int
+            The number of steps to split.
+
+        Other Parameters
+        ----------------
         name : str
             The unique name of the node.
         factors : Iterable[float]
-            The factors to force on the additional splits. Number of extra_slot is assumed to be one less
+            The factors to force on the additional splits. The number of extra_slot is assumed to be one less
             than the length of factors (as per [pywr.nodes.MultiSplitLink][] documentation).
         slot_names : Iterable
             The identifiers to refer to the slots when connect from this Node. Length must be one more than
@@ -320,6 +334,9 @@ class RiverSplitWithGauge(RiverSplit):
         ----------
         model : Model
             The model instance.
+
+        Other Parameters
+        ----------------
         name : str
             The unique name of the node.
         mrf : Optional[float], default = 0
@@ -439,16 +456,12 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
             The model instance.
         name : str
             The unique name of the node.
-        mrf : float
+        mrf : Optional[float], default=0
             The minimum residual flow (MRF) at the gauge.
-        mrf_cost : float
+        mrf_cost : Optional[float], default=0
             The cost of the route via the MRF.
         cost : Optional[float], default=0
             The cost of the other (unconstrained) route.
-        min_flow : Optional[float | Parameter], default=0
-            A simple minimum flow constraint for the node. Defaults to 0.
-        max_flow : Optional[float | Parameter], default=Inf
-            A simple maximum flow constraint for the node. Defaults to infinite.
         """
         # create keyword arguments for PiecewiseLink
         cost = kwargs.pop("cost", 0.0)

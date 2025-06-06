@@ -61,63 +61,113 @@ cpdef double inverse_hydropower_calculation(double power, double water_elevation
 
 
 cdef class HydropowerTargetParameter(Parameter):
-    """ A parameter that returns flow from a hydropower generation target.
+    """A parameter that returns flow from a hydropower generation target.
 
-    This parameter calculates the flow required to generate a particular hydropower production target. It
-    is intended to be used on a node representing a turbine where a particular production target is required
-    each time-step.
+    This parameter calculates the flow required to generate a given hydropower production target `P`. It
+    is intended to be used on a node representing a turbine where a particular production target
+    is required at each time-step. The parameter uses the following (hydropower) equation to calculate
+    the flow `q` required to produce `P`:
 
-    Parameters
+    q = P / ( C<sub>E</sub> * ρ * g * H * δ * C<sub>F</sub>)
+
+    where:
+
+    - `q` is the flow needed to achieve `P`.
+    - `P` is the desired hydropower production target.
+    - C<sub>E</sub> is a coefficient to convert the energy unit.
+    - `ρ` is the water density.
+    - `g` is the gravitational acceleration (9.81 m s<sup>-2</sup>).
+    - `H` is the turbine head. If `water_elevation` is given, then the head is the difference between `water_elevation`
+        and `turbine_elevation`. If `water_elevation` is not provided, then the head is simply `turbine_elevation`.
+    - `δ` is the turbine efficiency.
+    - C<sub>E</sub> is a coefficient to convert the flow unit. Use the `flow_unit_conversion` parameter to convert `q`
+        from units of m<sup>3</sup> day<sup>-1</sup> to those used by the model.
+        
+    Attributes
     ----------
-
-    target : Parameter instance
+    model : Model
+        The model instance.
+    target : Parameter
         Hydropower production target. Units should be in units of energy per day.
-    water_elevation_parameter : Parameter instance (default=None)
+    water_elevation_parameter : Optional[Parameter]
         Elevation of water entering the turbine. The difference of this value with the `turbine_elevation` gives
         the working head of the turbine.
-    max_flow : Parameter instance (default=None)
+    max_flow : Optional[Parameter]
         Upper bounds on the calculated flow. If set the flow returned by this parameter is at most the value
         of the max_flow parameter.
-    min_flow : Parameter instance (default=None)
+    min_flow : Optional[Parameter]
         Lower bounds on the calculated flow. If set the flow returned by this parameter is at least the value
         of the min_flow parameter.
-    min_head : double (default=0.0)
+    min_head : float
         Minimum head for flow to occur. If actual head is less than this value zero flow is returned.
-    turbine_elevation : double
+    turbine_elevation : float
         Elevation of the turbine itself. The difference between the `water_elevation` and this value gives
         the working head of the turbine.
-    efficiency : float (default=1.0)
+    efficiency : float
         The efficiency of the turbine.
-    density : float (default=1000.0)
+    density : float
         The density of water.
-    flow_unit_conversion : float (default=1.0)
+    flow_unit_conversion : float
         A factor used to transform the units of flow to be compatible with the equation here. This
-        should convert flow to units of :math:`m^3/day`
-    energy_unit_conversion : float (default=1e-6)
-        A factor used to transform the units of total energy. Defaults to 1e-6 to return :math:`MJ`.
-
-    Notes
-    -----
-    The inverse hydropower calculation uses the following equation.
-
-    .. math:: q = \\frac{P}{\\rho * g * \\delta H}
-
-    The energy rate in should be converted to units of energy per day. The returned flow rate in should is
-    converted from units of :math:`m^3` per day to those used by the model using the `flow_unit_conversion` parameter.
-
-    Head is calculated from the given `water_elevation_parameter` and `turbine_elevation` value. If water elevation
-    is given then head is the difference in elevation between the water and the turbine. If water elevation parameter
-    is `None` then the head is simply the turbine elevation.
+        should convert flow to units of `m^3/day`.
+    energy_unit_conversion : float
+        A factor used to transform the units of total energy. 
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
     See Also
     --------
-    pywr.recorders.TotalHydroEnergyRecorder
-    pywr.recorders.HydropowerRecorder
-
+    [pywr.recorders.TotalHydroEnergyRecorder][]
+    [pywr.recorders.HydropowerRecorder][]
     """
     def __init__(self, model, target, water_elevation_parameter=None, max_flow=None, min_flow=None,
                  turbine_elevation=0.0, efficiency=1.0, density=1000, min_head=0.0,
                  flow_unit_conversion=1.0, energy_unit_conversion=1e-6, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        target : Parameter
+            Hydropower production target. Units should be in units of energy per day.
+        water_elevation_parameter : Optional[Parameter], default=None
+            Elevation of water entering the turbine. The difference of this value with the `turbine_elevation` gives
+            the working head of the turbine.
+        max_flow : Optional[Parameter], default=None
+            Upper bounds on the calculated flow. If set the flow returned by this parameter is at most the value
+            of the max_flow parameter.
+        min_flow : Optional[Parameter], default=None
+            Lower bounds on the calculated flow. If set the flow returned by this parameter is at least the value
+            of the min_flow parameter.
+        turbine_elevation : Optional[float], default=0
+            Elevation of the turbine itself. The difference between the `water_elevation` and this value gives
+            the working head of the turbine.
+        efficiency : Optional[float], default=1
+            The efficiency of the turbine.
+        density : Optional[float], default=1000
+            The density of water.
+        min_head : Optional[float], default=0
+            Minimum head for flow to occur. If actual head is less than this value zero flow is returned.
+        flow_unit_conversion : Optional[float], default=1
+            A factor used to transform the units of flow to be compatible with the equation here. This
+            should convert flow to units of `m^3/day`
+        energy_unit_conversion : Optional[float], default=1e-6
+            A factor used to transform the units of total energy. Defaults to 1e-6 to return `MJ`.
+
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        """
         super(HydropowerTargetParameter, self).__init__(model, **kwargs)
 
         self.target = target
@@ -168,6 +218,20 @@ cdef class HydropowerTargetParameter(Parameter):
             self._min_flow = parameter
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         cdef int i
         cdef double q, head, power
 
@@ -206,6 +270,20 @@ cdef class HydropowerTargetParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        HydropowerTargetParameter
+            The loaded class.
+        """
 
         target = load_parameter(model, data.pop("target"))
         if "water_elevation_parameter" in data:

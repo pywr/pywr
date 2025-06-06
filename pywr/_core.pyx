@@ -658,11 +658,9 @@ cdef class AbstractNode:
 
 
 cdef class Node(AbstractNode):
-    """ Node class from which all others inherit
-    """
+    """ Node class from which all others inherit."""
     def __cinit__(self):
-        """Initialise the node attributes
-        """
+        """Initialise the node attributes."""
         # Initialised attributes to zero
         self._min_flow = 0.0
         self._max_flow = inf

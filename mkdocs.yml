@@ -32,6 +32,8 @@ plugins:
               - "!^_private"    # Optionally hide private methods
               - "!_disconnect.*$" # Node method
               - "!component_attrs"  # Node prop
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
 markdown_extensions:
   - admonition
   - pymdownx.critic
@@ -44,6 +46,7 @@ markdown_extensions:
   - toc:
       permalink: "#"
   - attr_list
+  - mdx_math
   - md_in_html
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
@@ -135,7 +138,7 @@ nav:
       - 'manual/misc/demand_savings.md'
       - 'manual/misc/soft_constraints.md'
       - 'manual/misc/abs_license_with_bands.md'
-  - Tools: 'tools.md'
+  - Resources: 'tools.md'
   - API reference:
     - Core:
       - 'api/core/model.md'
@@ -221,4 +224,33 @@ nav:
             - 'api/parameters/interpolated/integrate.md'
         - Flow:
             - 'api/parameters/flow/deficit.md'
+            - 'api/parameters/flow/flow.md'
+            - 'api/parameters/flow/flow_delay.md'
+            - 'api/parameters/flow/rolling_mean_flow_delay.md'
+            - 'api/parameters/flow/hydropower.md'
+        - Array based:
+            - 'api/parameters/array/indexed_array.md'
+            - 'api/parameters/array/array_index.md'
+            - 'api/parameters/array/array_index_scenario.md'
+            - 'api/parameters/array/array_index_scenario_monthly.md'
+            - 'api/parameters/array/scenario_wrapper.md'
+        - Activation:
+            - 'api/parameters/activation/binary_step.md'
+            - 'api/parameters/activation/rectifier.md'
+            - 'api/parameters/activation/logistic.md'
+        - Functions:
+            - 'api/parameters/functions/1d_polynomial.md'
+            - 'api/parameters/functions/2d_polynomial.md'
+            - 'api/parameters/functions/piecewise_integral.md'
+            - 'api/parameters/functions/harmonic.md'
+        - Multi model:
+            - 'api/parameters/other_model/other_parameter_value.md'
+            - 'api/parameters/other_model/other_parameter_index.md'
+            - 'api/parameters/other_model/other_node_flow.md'
+            - 'api/parameters/other_model/other_node_storage.md'
+        - Misc:
+            - 'api/parameters/misc/storage.md'
+            - 'api/parameters/misc/discount_parameter.md'
+            - 'api/parameters/misc/keating_aquifer.md'
+
   - 'license.md'

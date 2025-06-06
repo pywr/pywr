@@ -231,9 +231,9 @@ class Node(Loadable, Drawable, Connectable, BaseNode, metaclass=NodeMeta):
         Parameters
         ----------
         model : Model
-            The model the node belongs to
+            The model the node belongs to.
         name : string
-            A unique name for the node
+            A unique name for the node.
         """
         color = kwargs.pop("color", "black")
         min_flow = pop_kwarg_parameter(kwargs, "min_flow", 0.0)
@@ -478,6 +478,9 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
             The number of input nodes to create internally.
         outputs : Optional[integer], default=1
             The number of output nodes to create internally.
+
+        Other Parameters
+        ----------------
         min_volume : Optional[float], default=0
             The minimum volume of the storage.
         max_volume : Optional[float | Parameter], default=0
@@ -590,6 +593,7 @@ class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMet
         List of factors to multiply each node's flow in `nodes` by. Positive factors remove
         water from the storage, negative factors remove it. When `None`, the flow is not scaled.
     """
+
     # TODO: The cost property is not currently respected. See issue #242.
     __parameter_attributes__ = ("min_volume", "max_volume")
     __node_attributes__ = ("nodes",)
@@ -605,6 +609,9 @@ class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMet
             The unique name of the node.
         nodes : list[Node]
             List of inflow/outflow nodes that affect the storage volume.
+
+        Other Parameters
+        ----------------
         factors : Optional[list[float]], default=None
             List of factors to multiply each node's flow in `nodes` by. Positive factors remove
             water from the storage, negative factors remove it. When `None`, the flow is not scaled.
@@ -620,7 +627,7 @@ class VirtualStorage(Loadable, Drawable, _core.VirtualStorage, metaclass=NodeMet
             and `max_volume` is not a Parameter, then the absolute value is ignored.
         cost : Optional[float | Parameter], default=None
             The cost of flow into/outfrom the storage. The cost property is not currently respected (see issue #242),
-            therefore leave this to `None`.
+            therefore, leave this to `None`.
 
         Notes
         -----
@@ -714,6 +721,9 @@ class RollingVirtualStorage(
             The unique name of the node.
         nodes : list[Node]
             List of inflow/outflow nodes that affect the storage volume.
+
+        Other Parameters
+        ----------------
         factors : Optional[list[float]], default=None
             List of factors to multiply each node's flow in `nodes` by. Positive factors remove
             water from the storage, negative factors remove it. When `None`, the flow is not scaled.
@@ -958,7 +968,7 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
     def __init__(self, *args, **kwargs):
         """Initialise the node.
 
-         Parameters
+        Parameters
         ----------
         model : Model
             The model instance.
@@ -1140,19 +1150,19 @@ class MonthlyVirtualStorage(VirtualStorage):
 class PiecewiseLink(Node):
     """An extension of Node that represents a non-linear Link with a piece-wise cost function.
 
-    This object is intended to model situations where there is a benefit of supplying certain flow rates
-    but beyond a fixed limit there is a change in (or zero) cost.
+    This object is intended to model situations where there is a benefit of supplying certain flow rates,
+    but beyond a fixed limit, there is a change in (or zero) cost.
 
     Attributes
     ---------
-    max_flows : Iterable[float
+    max_flows : Iterable[float]
         A monotonic increasing list of maximum flows for the piece wise function
     costs : Iterable[float]
         A list of costs corresponding to the max_flow steps
 
     Notes
     -----
-    This Node is implemented using a compound node structure like so:
+    This node is implemented using a compound node structure like so:
 
     ```mermaid
     graph LR
@@ -1181,12 +1191,22 @@ class PiecewiseLink(Node):
         ----------
         model : Model
             The model instance.
+        nsteps : int
+            The number of internal piecewise links to add.
+
+        Other Parameters
+        ----------------
+        max_flows : Optional[Iterable[float]] = None
+            A monotonic increasing list of maximum flows for the piece wise function
+        costs : Optional[Iterable[float]] = None
+            A list of costs corresponding to the max_flow steps
+
+        Other parameters
+        ----------
+        model : Model
+            The model instance.
         name : str
             The unique name of the node.
-        max_flows : Iterable[float
-            A monotonic increasing list of maximum flows for the piece wise function
-        costs : Iterable[float]
-            A list of costs corresponding to the max_flow steps
         """
         self.allow_isolated = True
         name = kwargs.pop("name")
@@ -1307,9 +1327,9 @@ class PiecewiseLink(Node):
 
 
 class MultiSplitLink(PiecewiseLink):
-    """ An extension of PiecewiseLink that includes additional slots to connect from.
+    """An extension of PiecewiseLink that includes additional slots to connect from.
 
-    Conceptually this node looks like the following internally,
+    Conceptually, this node looks like the following internally:
 
     ```mermaid
     graph LR
@@ -1326,19 +1346,19 @@ class MultiSplitLink(PiecewiseLink):
         Bi --> D
     ```
 
-    An additional sub-link in the PiecewiseLink (i.e. X2 above) and nodes
-    (i.e. Bo and Bi) in this class are added for each extra slot.
+    An additional sub-link in the PiecewiseLink (i.e., X2 above) and nodes
+    (i.e., Bo and Bi) in this class are added for each extra slot.
 
     Finally, a mechanism is provided to (optionally) fix the ratio between the
-    last non-split sub-link (i.e. X1) and each of the extra sub-links (i.e. X2).
+    last non-split sub-link (i.e., X1) and each of the extra sub-links (i.e., X2).
     This mechanism uses `AggregatedNode` internally.
 
     Notes
     -----
     Users must be careful when using the factor mechanism. Factors use the last
-    non-split sub-link (i.e. X1 but not X0). If this link is constrained with a
+    non-split sub-link (i.e., X1 but not X0). If this link is constrained with a
     maximum or minimum flow, or if it there is another unconstrained link
-    (i.e. if X0 is unconstrained) then ratios across this whole node may not be
+    (i.e., if X0 is unconstrained) then ratios across this whole node may not be
     enforced as expected.
     """
 
@@ -1348,6 +1368,11 @@ class MultiSplitLink(PiecewiseLink):
         ----------
         model : Model
             The model instance.
+        nsteps : int
+            The number of sub-links.
+
+        Other Parameters
+        ----------------
         name : str
             The unique name of the node.
         max_flows : Iterable[float]
@@ -1482,11 +1507,11 @@ class AggregatedStorage(
     name : str
         The unique name of the node.
     storage_nodes : list[Storage]
-        The `Storage` objects which to return the sum total of
+        The `Storage` objects to return the sum of
 
     Notes
     -----
-    This node can not be connected to other nodes in the network.
+    This node cannot be connected to other nodes in the network.
     """
 
     __node_attributes__ = ("storage_nodes",)
@@ -1501,7 +1526,7 @@ class AggregatedStorage(
         name : str
             The unique name of the node.
         storage_nodes : list[Storage]
-            The `Storage` objects which to return the sum total of
+            The `Storage` objects to return the sum of
 
         """
         super(AggregatedStorage, self).__init__(model, name, **kwargs)
@@ -1512,7 +1537,7 @@ class AggregatedNode(Loadable, Drawable, _core.AggregatedNode, metaclass=NodeMet
     """An aggregated sum of other [pywr.nodes.Node][] nodes.
 
     This object should behave like [pywr.nodes.Node][] by returning the current `flow`
-    as sum of the flow through the nodes provided in `nodes`. However, it can not be
+    as a sum of the flow through the nodes provided in `nodes`. However, it cannot be
     connected to others within the network.
 
     Examples
@@ -1545,7 +1570,7 @@ class AggregatedNode(Loadable, Drawable, _core.AggregatedNode, metaclass=NodeMet
 
     Notes
     -----
-    This node can not be connected to other nodes in the network.
+    This node cannot be connected to other nodes in the network.
     """
 
     __parameter_attributes__ = ("factors", "min_flow", "max_flow")
@@ -1616,8 +1641,11 @@ class BreakLink(Node):
             The model instance.
         name : str
             The unique name of the node.
+
+        Other Parameters
+        ----------------
         min_flow : Optional[float | Parameter], default=0
-            A simple minimum flow constraint for the node. Defaults to 0.
+            A simple minimum flow constraint for the node. Default to 0.
         max_flow : Optional[float | Parameter], default=Inf
             A simple maximum flow constraint for the node. Defaults to infinite.
         cost : Optional[float | Parameter], default=0
@@ -1694,7 +1722,7 @@ class DelayNode(Node):
     This is a composite node consisting internally of a [pywr.nodes.Input][] and an [pywr.nodes.Output][] node. A
     [pywr.parameters.FlowDelayParameter][] is used to delay the flow of the output node for a given period prior
     to this delayed flow being set as the flow of the input node. Connections to the node are connected
-    to the internal output node and connection from the node are connected to the internal input
+    to the internal output node and connections from the node are connected to the internal input
     node.
 
     Attributes
@@ -1737,6 +1765,9 @@ class DelayNode(Node):
             The model instance.
         name : str
             The unique name of the node.
+
+        Other Parameters
+        ----------------
         timesteps: [int], default=0
             Number of time steps to delay the flow.
         days: Optional[int], default=0
@@ -1798,7 +1829,7 @@ class DelayNode(Node):
 class LossLink(Node):
     """A node that has a proportional loss.
 
-    A fixed proportional loss of all flow through this node is sent to an internal output node. Max and min flows
+    A fixed proportional loss of all flows through this node is sent to an internal output node. Max and min flows
     applied to this node are enforced on the net output after losses. The node itself records the net output
     in its flow attribute (which would be used by any attached recorders).
 
@@ -1854,8 +1885,11 @@ class LossLink(Node):
             The model instance.
         name : str
             The unique name of the node.
+
+        Other Parameters
+        ----------------
         min_flow : Optional[float | Parameter], default=0
-            A simple minimum flow constraint for the node. Defaults to 0.
+            A simple minimum flow constraint for the node. Default to 0.
         max_flow : Optional[float | Parameter], default=Inf
             A simple maximum flow constraint for the node. Defaults to infinite.
         cost : Optional[float | Parameter], default=0

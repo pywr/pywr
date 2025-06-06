@@ -279,7 +279,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
             self._values = np.array(values)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -486,7 +486,7 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
             self._values = np.array(values)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -756,6 +756,8 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
             The upper bound to use for the values during an optimisation problem. The length must 
             correspond to the length of `variable_indices`, i.e. there are bounds for each index 
             to be considered as a variable.
+        name : Optional[str]
+            The name of the parameter.
        
         Other Parameters
         ----------------
@@ -883,7 +885,7 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
         return cls(model, storage_node, control_curves, values=values, parameters=parameters, **data)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -998,6 +1000,8 @@ cdef class WeightedAverageProfileParameter(Parameter):
         [pywr.parameters.ConstantParameter][], [pywr.parameters.DailyProfileParameter][], or 
         [pywr.parameters.MonthlyProfileParameter][].
         The length should equal to the length of storages parameter.
+    name : Optional[str]
+        The name of the parameter.
 
     Notes
     -----
@@ -1078,7 +1082,7 @@ cdef class WeightedAverageProfileParameter(Parameter):
         self.daily_values = total_absolute_profile / total_volume
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------

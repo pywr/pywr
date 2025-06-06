@@ -36,7 +36,7 @@ significant differences. Pywr’s principle design goals are that it is:
     Explore the manual with lot of examples on how to use
     pywr components and customise your model
 
-    [:octicons-arrow-right-24: Manual](./manual)
+    [:octicons-arrow-right-24: Manual](./manual/problem.md)
 
 -   :material-code-array:{ .lg .middle } __APIs__
 
@@ -44,7 +44,7 @@ significant differences. Pywr’s principle design goals are that it is:
 
     Access the pywr APIs
 
-    [:octicons-arrow-right-24: Reference](./api)
+    [:octicons-arrow-right-24: Reference](./api/core/model.md)
 
 -   :material-cog:{ .lg .middle } __Tools__
 

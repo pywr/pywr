@@ -462,7 +462,7 @@ cdef class ConstantParameter(Parameter):
         self._Parameter__values[...] = self.get_constant_value()
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -700,7 +700,7 @@ cdef class DataFrameParameter(Parameter):
         self._values = dataframe_resampled.values.astype(np.float64)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -754,33 +754,186 @@ cdef class DataFrameParameter(Parameter):
 DataFrameParameter.register()
 
 cdef class ArrayIndexedParameter(Parameter):
-    """Time varying parameter using an array and Timestep.index
-
+    """This parameter returns a value from a given array based on the index of the current timestep.
     The values in this parameter are constant across all scenarios.
+
+    Examples
+    -------
+    In this example the parameter returns `10.1` at the first timestep (index #0),
+    `12` at the second timestep (index #1) and so on.
+
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ArrayIndexedParameter
+    
+    model = Model()
+    ArrayIndexedParameter(
+        model=model, 
+        values=[10.1, 12, 15, 19], 
+        name="My parameter"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "ArrayIndexedParameter",
+            "values": [10.1, 12, 15, 19], 
+        }
+    }
+    ```
+    
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    values : numpy.typing.NDArray[numpy.number]
+        The array of values.
+    name : Optional[str]
+        The name of the parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, values, *args, **kwargs):
+        """Initalise the parameter.
+        
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        values : Iterable[float]
+            The array of values.
+        
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        """
         super(ArrayIndexedParameter, self).__init__(model, *args, **kwargs)
         self.values = np.asarray(values, dtype=np.float64)
 
     cdef calc_values(self, Timestep ts):
+        """Calculate the parameter values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         # constant parameter can just set the entire array to one value
         self._Parameter__values[...] = self.values[ts.index]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Returns the value of the parameter at a given timestep
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
         """
         return self.values[ts.index]
 ArrayIndexedParameter.register()
 
 
 cdef class ArrayIndexedScenarioParameter(Parameter):
-    """A Scenario varying Parameter
+    """This parameter returns a time-varying value from an array values, based on the index of a
+    [pywr.core.Scenario][]. The array must be 2-dimensional, where the first dimenstion
+    contains the value for a timestep index and the second dimenson the value for the
+    scenario index.
 
-    The values in this parameter are vary in time based on index and vary within a single Scenario.
+    !!!note
+        This parameter cannot be loaded via JSON.
+
+    Examples
+    -------
+    In the example below at the first timestep (index #0) and first scenario index (index #0),
+    '1.0' is returned. At the second timestep (index #1) and second scenario index (index #1),
+    '-99' is returned.
+
+    ```python
+    from pywr.core import Model, Scenario
+    from pywr.parameters import ConstantParameter, ArrayIndexedScenarioParameter
+    
+    model = Model()
+    scenario = Scenario(
+        model=model,
+        name="Demand", 
+        size=2,
+        ensemble_names=["Low demand", "High demand"]
+    )
+    ArrayIndexedScenarioParameter(
+        model=model, 
+        values=[[1.0, 2.0], [5.0, -99]], 
+        scenario=scenario,
+        name="My parameter"
+    )
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    scenario : Scenario
+        The scenario instance.
+    values : numpy.typing.NDArray[numpy.number]
+        The list of values to choose from based on the scenario index.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, Scenario scenario, values, *args, **kwargs):
-        """
-        values should be an iterable that is the same length as scenario.size
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        scenario : Scenario
+            The scenario instance.
+        values : numpy.typing.NDArray[numpy.number]
+            The list of values to choose from based on the scenario index.
+
+        Other parameters
+        ----------
+        name : Optional[str]
+            The name of the parameter.
+        comment : Optional[str]
+            An optional comment for the parameter.
+        tags : Optional[dict]
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+
+        Raises
+        ------
+        ValueError
+            If the number of `values` differs from the size of the scenario or the shape of `values`  is not 2.
         """
         super(ArrayIndexedScenarioParameter, self).__init__(model, *args, **kwargs)
         cdef int i
@@ -793,12 +946,27 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         self._scenario = scenario
 
     cpdef setup(self):
+        """Setup the parameter. This tracks the scenario index."""
         super(ArrayIndexedScenarioParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         # This is a bit confusing.
         # scenario_indices contains the current scenario number for all
         # the Scenario objects in the model run. We have cached the
@@ -837,6 +1005,14 @@ cdef class TablesArrayParameter(IndexParameter):
         backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
         If the offset takes the indexing out of the data bounds then the parameter will return the first or last
         value available.
+    name : Optional[str]
+        The name of the parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, h5file, node, where='/', scenario=None, timestep_offset=0, **kwargs):
         """Initialise the class.
@@ -978,7 +1154,7 @@ cdef class TablesArrayParameter(IndexParameter):
                 self._values_int = node.read().astype(np.int32)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -1159,14 +1335,93 @@ ConstantScenarioParameter.register()
 
 
 cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
-    """Time varying parameter using an array and Timestep.index with
-    multiplicative factors per Scenario
+    """This parameter returns a time varying value taken from an array indexed using
+    the timestep index; the value is then multiplied by a factor that changes monthly and
+    per scenario.
+
+    Examples
+    -------
+    In the example below the parameter returns `10*0.28` for the first scenario and month,
+    `10*0.14` for the second scenario and first month. At the second timestep, the month is Febrary,
+    and the parameter returns `30*0.3` and `30*0.88` for the first and second scenario respectively.
+
+    ```python
+    from pywr.core import Model, Scenario, Timestepper
+    from pywr.parameters import ArrayIndexedScenarioMonthlyFactorsParameter
+    
+    model = Model()
+    model.timestepper = Timestepper("2001-1-1", "2001-3-31", 31)
+    scenario = Scenario(
+        model=model,
+        name="Demand", 
+        size=2,
+        ensemble_names=["Low demand", "High demand"]
+    )
+
+    factors = [
+        # 12 factors for scenario "Low demand"
+        [0.28, 0.3 , 0.72, 0.57, 0.1 , 0.24, 0.91, 0.58, 0.26, 0.79, 0.27, 0.82],
+        # 12 factors for scenario "High demand"
+        [0.14, 0.88, 0.15, 0.84, 0.93, 0.95, 0.91, 0.27, 0.64, 0.04, 0.76, 0.38]
+    ]
+    # values for three timesteps
+    values = [10, 30, 129]
+    ArrayIndexedScenarioMonthlyFactorsParameter(
+        model=model, 
+        values=values, 
+        factors=factors,
+        scenario=scenario,
+        name="My parameter"
+    )
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    scenario : Scenario
+        The scenario instance.
+    values : numpy.typing.NDArray[numpy.number]
+        The list of values to choose from based on the scenario index.
+    factors : numpy.typing.NDArray[numpy.number]
+        The list of factors used to pertubate the values on a monthly basis.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
+
     """
     def __init__(self, model, Scenario scenario, values, factors, *args, **kwargs):
-        """
-        values is the baseline timeseries data that is perturbed by a factor. The
-        factor is taken from factors which is shape (scenario.size, 12). Therefore
-        factors vary with the individual scenarios in scenario and month.
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        scenario : Scenario
+            The scenario instance.
+        values : numpy.typing.NDArray[numpy.number]
+            The list of values to choose from based on the timestep index.
+        factors : numpy.typing.NDArray[numpy.number]
+            The list of factors used to pertubate the values on a monthly basis. This must have
+            a shape equal to (N, 12), where `N` is the scenario size.
+
+        Other parameters
+        ----------
+        name : Optional[str]
+            The name of the parameter.
+        comment : Optional[str]
+            An optional comment for the parameter.
+        tags : Optional[dict]
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+
+        Raises
+        ------
+        ValueError
+            If the first dimension of `factors` does not equal the size of the scenario or the second dimension
+            does not equal 12 (the number of months).
         """
         super(ArrayIndexedScenarioMonthlyFactorsParameter, self).__init__(model, *args, **kwargs)
 
@@ -1184,12 +1439,27 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         self._factors = factors
 
     cpdef setup(self):
+        """Setup the internal value index to track the scenario. """
         super(ArrayIndexedScenarioMonthlyFactorsParameter, self).setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self.model.scenarios.get_scenario_index(self._scenario)
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         # This is a bit confusing.
         # scenario_indices contains the current scenario number for all
         # the Scenario objects in the model run. We have cached the
@@ -1201,6 +1471,20 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        ArrayIndexedScenarioMonthlyFactorsParameter
+            The loaded class.
+        """
         scenario = data.pop("scenario", None)
         if scenario is not None:
             scenario = model.scenarios[scenario]
@@ -1238,7 +1522,7 @@ cdef class DailyProfileParameter(Parameter):
         The 366 values that represent the daily profile.
     is_variable : bool
         Whether the parameter is set as variable to solve an optimisation problem.
-     lower_bounds : Optional[float]
+    lower_bounds : Optional[float]
         The lower bound to use for the value during an optimisation problem.
     upper_bounds : Optional[float]
         The upper bound to use for the value during an optimisation problem.
@@ -1262,10 +1546,10 @@ cdef class DailyProfileParameter(Parameter):
         model : Model
             The model instance.
         values : Iterable[float] | numpy.typing.NDArray[numpy.number]
+            The 366 values that represent the daily profile.
 
         Other Parameters
         ----------------
-            The 366 values that represent the daily profile.
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -1291,7 +1575,7 @@ cdef class DailyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -1371,7 +1655,7 @@ cdef class WeeklyProfileParameter(Parameter):
         self._values = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -1459,8 +1743,7 @@ cdef class MonthlyProfileParameter(Parameter):
         Other Parameters
         ----------------
         is_variable : bool
-            Whether the parameter is set as variable to solve an optimisation problem.
-        
+            Whether the parameter is set as variable to solve an optimisation problem.   
         name : Optional[str]
             The name of the parameter.
         comment : Optional[str]
@@ -1494,7 +1777,7 @@ cdef class MonthlyProfileParameter(Parameter):
 
 
     cpdef reset(self):
-        """Reset the interal values."""
+        """Reset the internal values."""
         Parameter.reset(self)
         # The interpolated profile is recalculated during reset so that
         # it will update when the _values array is updated via `set_double_variables`
@@ -1539,7 +1822,7 @@ cdef class MonthlyProfileParameter(Parameter):
                 self._interp_values[i+1] = values[i]
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -1950,7 +2233,7 @@ cdef class UniformDrawdownProfileParameter(Parameter):
         self._reset_idoy = pandas.Period(year=2016, month=self.reset_month, day=self.reset_day, freq='D').dayofyear - 1
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -2247,7 +2530,7 @@ cdef class RbfProfileParameter(Parameter):
                 self._interp_values[i+1] = v
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
-        """Get the parameter value. This is scaled and offset and the given timestep and scenario are ignored.
+        """Get the parameter value for the given timestep and scenario.
 
         Parameters
         ----------
@@ -2393,8 +2676,8 @@ cdef class IndexParameter(Parameter):
 
     See also
     --------
-    IndexedArrayParameter
-    ControlCurveIndexParameter
+    [pywr.parameters.IndexedArrayParameter][]
+    [pywr.parameters.ControlCurveIndexParameter][]
     """
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         """Returns the current index as a float.
@@ -2471,7 +2754,7 @@ cdef class IndexParameter(Parameter):
         
         Returns
         -------
-        float
+        int
             The parameter index.
         """
         return self._IndexParameter__indices[<int>(scenario_index.global_id)]
@@ -2570,23 +2853,100 @@ ConstantScenarioIndexParameter.register()
 
 
 cdef class IndexedArrayParameter(Parameter):
-    """Parameter which uses an IndexParameter to index an array of Parameters
+    """This parameter returns a value from an array of parameters, based on the index of an
+    [pywr.parameters.IndexParameter][].
 
-    An example use of this parameter is to return a demand saving factor (as
-    a float) based on the current demand saving level (calculated by an
-    `IndexParameter`).
+    Examples
+    --------
+    In the example below, when the parameter "Rule curve position" returns `0`, "My parameter", returns `0.5`; when
+    `1` is returned, "My parameter", returns `0.9`. The number of parameters in `params` must 
+    match the maximum index returned by the `IndexParameter`.
 
-    Parameters
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes imort Storage
+    from pywr.parameters import ControlCurveIndexParameter, IndexedArrayParameter, ConstantParameter
+
+    model = Model()
+    storage_node = Storage(
+        model=model,
+        name="reservoir",
+        max_volume=100, 
+        initial_volume=100
+    )
+    index_parameter = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve position",
+        storage_node=storage_node,
+        control_curves=[ConstantParameter(model, 0.76), ConstantParameter(model, 0.56)],
+    )
+    parameter = IndexedArrayParameter(
+        model=model,
+        index_parameter=index_parameter,
+        params=[0.5, 0.9, 1.4],
+        name="My parameter"
+    )
+    ```
+
+    JSON
+    ======    
+    ```json
+    {
+        "My parameter": {
+            "type": "IndexedArrayParameter",
+            "index_parameter": {
+                "type": "ControlCurveIndexParameter".
+                "name": "Rule curve position",
+                "storage_node": "reservoir",
+                "control_curves": [0.76, 0.56],
+            },
+            "params": [0.5, 0.9, 1.4],
+        }
+    }
+    ```
+    Both `params` and `parameters` keys are accepted in the JSON format.
+
+    Attributes
     ----------
-    index_parameter : `IndexParameter`
-    params : iterable of `Parameters` or floats
-
-
-    Notes
-    -----
-    Float arguments `params` are converted to `ConstantParameter`
+    model : Model
+        The model instance.
+    index_parameter : IndexParameter
+        The index parameter whose index is used to fetch the parameter from `params`.
+    params : Iterable[Parameter | float]
+        The list of parameter instances. If an item is a float, this is converted to a 
+        [pywr.parameters.ConstantParameter][].
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, index_parameter, params, **kwargs):
+        """Initialise the parameter.
+        
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        index_parameter : IndexParameter
+            The index parameter whose index is used to fetch the parameter from `params`.
+        params : Iterable[Parameter | float]
+            The list of parameter instances. If an item is a float, this is converted to a 
+            [pywr.parameters.ConstantParameter][].
+
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+        
+        """
         super(IndexedArrayParameter, self).__init__(model, **kwargs)
         assert(isinstance(index_parameter, IndexParameter))
         self.index_parameter = index_parameter
@@ -2604,7 +2964,20 @@ cdef class IndexedArrayParameter(Parameter):
         self.children.add(index_parameter)
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        """Returns the value of the Parameter at the current index"""
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         cdef int index
         index = self.index_parameter.get_index(scenario_index)
         cdef Parameter parameter = self.params[index]
@@ -2612,6 +2985,20 @@ cdef class IndexedArrayParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        IndexedArrayParameter
+            The loaded class.
+        """
         index_parameter = load_parameter(model, data.pop("index_parameter"))
         try:
             parameters = data.pop("params")
@@ -2623,30 +3010,86 @@ IndexedArrayParameter.register()
 
 
 cdef class AnnualHarmonicSeriesParameter(Parameter):
-    """ A `Parameter` which returns the value from an annual harmonic series
+    """This parameter returns the value from an annual harmonic series. The series
+    comprises `N` cosine functions with a period of 365 days. The calculation is
+    performed using the Julien day of the year minus 1:
 
-    This `Parameter` comprises a series N cosine function with a period of 365
-     days. The calculation is performed using the Julien day of the year minus 1
-     This causes a small discontinuity in non-leap years.
+    $$ f(t) = A + \sum_{n=1}^N  A_n \cdot \cos{(2\pi nt)/365+\phi_n} $$
 
-    .. math:: f(t) = A + \sum_{n=1}^N A_n\cdot \cos((2\pi nt)/365+\phi_n)
+    where:
 
-    Parameters
+    - A is the mean (the position of zeroth harmonic).
+    - A<sub>n</sub> the amplitudes.
+    - $$\phi_n$$ the phases.
+
+    !!!warning
+        The calculation causes a small discontinuity in non-leap years.
+
+    Attributes
     ----------
-
+    model : Model
+        The model instance.
     mean : float
-        Mean value for the series (i.e. the position of zeroth harmonic)
-    amplitudes : array_like
-        The amplitudes for the N harmonic cosine functions. Must be the same
-        length as phases.
-    phases : array_like
-        The phase shift of the N harmonic cosine functions. Must be the same
-        length as amplitudes.
+        Mean value for the series (i.e. the position of zeroth harmonic).
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
+    Optimisation
+    -----------
+    This parameter can be optimised.
     """
     def __init__(self, model, mean, amplitudes, phases, *args, **kwargs):
+        """Initialise the parametetr.
+        
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        mean : float
+            Mean value for the series (i.e. the position of zeroth harmonic).
+        amplitudes : Iterable[float]
+            The amplitudes for the N harmonic cosine functions. Must be the same
+            length as phases.
+        phases : Iterable[float]
+            The phase shift of the N harmonic cosine functions. Must be the same
+            length as amplitudes.
+
+        Other Parameters
+        ----------------
+        mean_lower_bounds : Optional[float], default=0
+            The lower bound during an optimisation for the mean amplitude.
+        mean_upper_bounds : Optional[float], default=numpy.Inf
+            The upper bound during an optimisation for the mean amplitude.
+        amplitude_lower_bounds : Optional[float]
+            The lower bounds during an optimisation for the amplitude. This must have same size of
+            `amplitidues`. This defaults to an array of zeros.
+        amplitude_upper_bounds : Optional[float]
+            The upper bounds during an optimisation for the amplitude. This must have same size of
+            `amplitidues`. This defaults to an array of numpy.Inf.
+        phase_lower_bounds : Optional[float]
+            The lower bounds during an optimisation for the phasesd. This must have same size of
+            `phases`. This defaults to an array of zeros.
+        phase_upper_bounds : Optional[float], default=numpy.Inf
+            The upper bounds during an optimisation for the phasesd. This must have same size of
+            `phases`. This defaults to an array of numpy.Inf.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+
+        Raises
+        ------
+        ValueError
+            If the number of amplitudes differs from the number of phases.
+        """
         if len(amplitudes) != len(phases):
-            raise ValueError("The number  of amplitudes and phases must be the same.")
+            raise ValueError("The number of amplitudes and phases must be the same.")
         n = len(amplitudes)
         self.mean = mean
         self._amplitudes = np.array(amplitudes)
@@ -2666,6 +3109,20 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        AnnualHarmonicSeriesParameter
+            The loaded class.
+        """
         mean = data.pop('mean')
         amplitudes = data.pop('amplitudes')
         phases = data.pop('phases')
@@ -2681,11 +3138,26 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
             return np.asarray(self._phases)
 
     cpdef reset(self):
+        """Reset the internal values."""
         Parameter.reset(self)
         self._value_cache = 0.0
         self._ts_index_cache = -1
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns the current index as a float.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter index as float.
+        """
         cdef int ts_index = timestep.index
         cdef int doy = timestep.dayofyear - 1
         cdef int n = self._amplitudes.shape[0]
@@ -2702,18 +3174,52 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         return val
 
     cpdef set_double_variables(self, double[:] values):
+        """Set the parameter double variable values during an optimisation problem. The mean amplitiude
+        must be at index 0, followed by the `N` amplitidues and then the `N` phases.
+
+        Parameters
+        ----------
+        values : numpy.typing.NDArray[numpy.number]
+            The variable to set. The size must equal the number of variables the parameter handles.
+
+        Raises
+        -------
+        NotImplementedError
+            If the parameter does not support variable values.
+        """
         n = len(self.amplitudes)
         self.mean = values[0]
         self._amplitudes[...] = values[1:n+1]
         self._phases[...] = values[n+1:]
 
     cpdef double[:] get_double_variables(self):
+        """Get the parameter double variable values for an optimisation problem. 
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[numpy.number]
+            The array with the variables with the mean amplitiude (at index 0), followed by the `N` amplitidues and then the `N` phases.. The array size equals the number 2*`N` + 1.
+        """
         return np.r_[np.array([self.mean, ]), np.array(self.amplitudes), np.array(self.phases)]
 
     cpdef double[:] get_double_lower_bounds(self):
+        """Get the lower bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[numpy.number]
+            The array with the variables with the mean amplitiude (at index 0), followed by the `N` amplitidues and then the `N` phases.. The array size equals the number 2*`N` + 1.
+        """
         return np.r_[self._mean_lower_bounds, self._amplitude_lower_bounds, self._phase_lower_bounds]
 
     cpdef double[:] get_double_upper_bounds(self):
+        """Get the upper bounds of the double variables for an optimisation problem.
+
+        Returns
+        ----------
+        values : numpy.typing.NDArray[numpy.number]
+            The array with the variables with the mean amplitiude (at index 0), followed by the `N` amplitidues and then the `N` phases.. The array size equals the number 2*`N` + 1.
+        """
         return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
 AnnualHarmonicSeriesParameter.register()
 
@@ -3870,6 +4376,14 @@ cdef class DeficitParameter(Parameter):
         The Model instance.
     node : Node
         The node whose deficit is being tracked.
+    name : Optional[str]
+        The name of the parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
     Notes
     -----
@@ -3949,15 +4463,49 @@ DeficitParameter.register()
 
 
 cdef class FlowParameter(Parameter):
-    """Parameter that provides the flow from a node from the previous time-step.
+    """Parameter that provides the flow from a node at the previous time-step.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Input
+    from pywr.parameters import FlowParameter
+    
+    model = Model()
+    node = Input(model=model, name="Input")
+    FlowParameter(model=model, node=node name="My parameter")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "FlowParameter",
+            "node": "Input"
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : pywr.model.Model
+    model : Model
+        The model instance.
     node : Node
-      The node that will have its flow tracked
-    initial_value : float (default=0.0)
+      The node to track the flow of.
+    initial_value : float
       The value to return on the first  time-step before the node has any past flow.
+    name : Optional[str]
+        The name of the parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
     Notes
     -----
@@ -3966,11 +4514,32 @@ cdef class FlowParameter(Parameter):
     other parameter.
     """
     def __init__(self, model, node, *args, **kwargs):
+        """Initialise the class.
+        
+        Parameters
+        ----------
+        model : pywr.model.Model
+            The model instance.
+        node : Node
+            The node to track the flow of.
+
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        initial_value : float, default=0.0
+            The value to return on the first  time-step before the node has any past flow.
+        """
         self.initial_value = kwargs.pop('initial_value', 0)
         super().__init__(model, *args, **kwargs)
         self.node = node
 
     cpdef setup(self):
+        """Setup the parameter."""
         super(FlowParameter, self).setup()
         cdef int num_comb
         if self.model.scenarios.combinations:
@@ -3980,21 +4549,49 @@ cdef class FlowParameter(Parameter):
         self.__next_values = np.empty([num_comb], np.float64)
 
     cpdef reset(self):
+        """Reset the internal values."""
         self.__next_values[...] = self.initial_value
         self._Parameter__values[...] = 0.0
 
     cdef calc_values(self, Timestep timestep):
+        """Calculate the parameter indexes and values for all scenarios for the given timestep.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        
+        Returns
+        -------
+        None
+            This only internally stores the new values.
+        """
         cdef int i
         for i in range(self._Parameter__values.shape[0]):
             self._Parameter__values[i] = self.__next_values[i]
 
     cpdef after(self):
+        """Fetch the node's flow at the previous time step."""
         cdef int i
         for i in range(self.node._flow.shape[0]):
             self.__next_values[i] = self.node._flow[i]
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        FlowParameter
+            The loaded class.
+        """
         node = model.nodes[data.pop("node")]
         return cls(model, node=node, **data)
 FlowParameter.register()
@@ -4003,13 +4600,49 @@ FlowParameter.register()
 cdef class StorageParameter(Parameter):
     """Parameter that provides the current volume from a storage node.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import StorageParameter
+    
+    model = Model()
+    node = Storage(model=model, name="Reservoir", max_volume=100)
+    StorageParameter(model=model, storage_node=node, use_proportional_volume=True, name="My parameter")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "StorageParameter",
+            "storage_node": "Reservoir",
+            "max_volume": 100,
+            "use_proportional_volume": true
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : pywr.model.Model
-    storage_node : AbstractStorage
-      The node that will have its volume tracked
+    model : Model
+        The model instance.
+    storage_node : Storage
+        The node that will have its volume tracked
     use_proportional_volume : bool
-        An optional boolean only to switch between returning absolute or proportional volume.
+        Whether to return the absolute or proportional volume.
+    name : Optional[str]
+        The name of the parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
     Notes
     -----
@@ -4018,11 +4651,47 @@ cdef class StorageParameter(Parameter):
     other parameter.
     """
     def __init__(self, model, storage_node, *args, use_proportional_volume=False, **kwargs):
+        """
+        Initialise the class.
+        
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        storage_node : Storage
+            The node that will have its volume tracked
+        use_proportional_volume : Optional[bool], default=False
+            Whether to return the absolute or proportional volume.
+
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+
+        """
         super().__init__(model, *args, **kwargs)
         self.storage_node = storage_node
         self.use_proportional_volume = use_proportional_volume
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Returns the current index as a float.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter index as float.
+        """
         if self.use_proportional_volume:
             return self.storage_node._current_pc[scenario_index.global_id]
         else:
@@ -4030,28 +4699,112 @@ cdef class StorageParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        StorageParameter
+            The loaded class.
+        """
         storage_node = model.nodes[data.pop("storage_node")]
         return cls(model, storage_node=storage_node, **data)
 StorageParameter.register()
 
 
 cdef class PiecewiseIntegralParameter(Parameter):
-    """Parameter that integrates a piecewise function.
+    """This parameter integrates a piecewise function given as two arrays of `x` and `y`. 
+    `x` should be monotonically increasing and greater than zero and `y` shuould start from 0. 
+    At a given timestep, this parameter then integrates `y` over `x` between 0 and the value
+    given by a given parameter value.
 
-    This parameter calculates the integral of a piecewise function. The
-    piecewise function is given as two arrays (`x` and `y`) and is assumed to
-    start from (0, 0). The values of `x` should be monotonically increasing
-    and greater than zero.
+    Examples
+    -------
+    In the following example, a [pywr.parameters.StorageParameter][] tracks the storage of a reservoir.
+    If the storage is `45%`, the parametetr will integrate between `0.01` and `0.45` the values in `y`
+    (between `0.2` and `0.5`).
 
-    Parameters
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import StorageParameter, PiecewiseIntegralParameter
+
+    model = Model()
+    node = Storage(model=model, name="Reservoir", max_volume=100)
+    parameter = StorageParameter(
+        model=model, 
+        storage_node=node, 
+        use_proportional_volume=True,
+        name="Storage"
+    )
+    PiecewiseIntegralParameter(
+        model=model, 
+        name="My parameter", 
+        x=[0.01, 0.45, 0.90, 1], 
+        y=[0.2, 0.5, 0.67, 0.7],
+        parameter=parameter
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "PiecewiseIntegralParameter",
+            "x": [1, 45, 90, 100], 
+            "y": [0.2, 0.5, 0.67, 0.7],
+            "parameter": "Storage"
+        }
+    }
+    ```
+
+    Attributes
     ----------
+    x : Iterable[float]
+        The x values of the piecewise function.
+    y : Iterable[float]
+        The y values of the piecewise function.
     parameter : `Parameter`
         The parameter the defines the right hand bounds of the integration.
-    x : iterable of doubles
-    y : iterable of doubles
-
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, parameter, x, y, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameter : `Parameter`
+            The parameter the defines the right hand bounds of the integration.
+        x : Iterable[float]
+            The x values of the piecewise function.
+        y : Iterable[float]
+            The y values of the piecewise function.
+
+        Other parameters
+        ----------
+        name : Optional[str]
+            The name of the parameter.
+        comment : Optional[str]
+            An optional comment for the parameter.
+        tags : Optional[dict]
+            An optional container of key-value pairs that the user can set to help group and identify parameters.
+        """
         super().__init__(model, *args, **kwargs)
         self.parameter = parameter
         self.children.add(parameter)
@@ -4059,6 +4812,13 @@ cdef class PiecewiseIntegralParameter(Parameter):
         self.y = np.array(y, dtype=float)
 
     cpdef setup(self):
+        """Setup the parameter.
+        
+        Raises
+        ------
+        ValueError
+            If the length of x and y is not the same or x is not monotonically increasing.
+        """
         super(PiecewiseIntegralParameter, self).setup()
 
         if len(self.x) != len(self.y):
@@ -4068,6 +4828,20 @@ cdef class PiecewiseIntegralParameter(Parameter):
             raise ValueError('The array `x` should be monotonically increasing.')
 
     cpdef double value(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         cdef double integral = 0.0
         cdef double x = self.parameter.get_value(scenario_index)
         cdef int i
@@ -4089,19 +4863,60 @@ cdef class PiecewiseIntegralParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        PiecewiseIntegralParameter
+            The loaded class.
+        """
         parameter = load_parameter(model, data.pop('parameter'))
         return cls(model, parameter, **data)
 PiecewiseIntegralParameter.register()
 
 
 cdef class FlowDelayParameter(Parameter):
-    """Parameter that returns the delayed flow for a node after a given number of timesteps or days
+    """This parameter returns the delayed flow for a node after a given number of timesteps or days.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Input
+    from pywr.parameters import FlowDelayParameter
+    
+    model = Model()
+    node = Input(model=model, name="Input")
+    FlowDelayParameter(model=model, node=node days=3, name="My parameter")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "FlowDelayParameter",
+            "node": "Input",
+            "days": 3
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.model.Model`
-    node: Node
-        The node to delay for.
+    model : Model
+        The model instance.
+    node : Node
+        The node to track the flow of.
     timesteps: int
         Number of timesteps to delay the flow.
     days: int
@@ -4109,10 +4924,45 @@ cdef class FlowDelayParameter(Parameter):
         of timesteps) is only valid if the number of days is exactly divisible by the model timestep length.
     initial_flow: float
         Flow value to return for initial model timesteps prior to any delayed flow being available. This
-        value is constant across all delayed timesteps and any model scenarios. Default is 0.0.
+        value is constant across all delayed timesteps and any model scenarios.
+    name : Optional[str]
+        The name of the parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
 
     def __init__(self, model, node, *args, **kwargs):
+        """
+        Initialise the parameter.
+        
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            The node to track the flow of.
+        
+        Other parameters
+        ----------------
+        timesteps: Optional[int], default=0
+            Number of timesteps to delay the flow.
+        days: Optional[int], default=0
+            Number of days to delay the flow. Specifying a number of days (instead of a number
+            of timesteps) is only valid if the number of days is exactly divisible by the model timestep length.
+        initial_flow: Optional[float], default=0
+            Flow value to return for initial model timesteps prior to any delayed flow being available. This
+            value is constant across all delayed timesteps and any model scenarios.
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        """
         self.node = node
         self.timesteps = kwargs.pop('timesteps', 0)
         self.days = kwargs.pop('days', 0)
@@ -4120,6 +4970,13 @@ cdef class FlowDelayParameter(Parameter):
         super().__init__(model, *args, **kwargs)
 
     cpdef setup(self):
+        """Setup the parameter.
+        
+        Raises
+        ------
+        ValueError
+            If `timesteps` is not divisible by the timestep delta or when `timesteps` is less than 1.
+        """
         super(FlowDelayParameter, self).setup()
         cdef int r
         if self.days > 0:
@@ -4134,6 +4991,7 @@ cdef class FlowDelayParameter(Parameter):
         self._memory_pointer = 0
 
     cpdef reset(self):
+        """Reset the internal values."""
         self._memory[...] = self.initial_flow
         self._memory_pointer = 0
 
@@ -4141,6 +4999,7 @@ cdef class FlowDelayParameter(Parameter):
         return self._memory[self._memory_pointer, scenario_index.global_id]
 
     cpdef after(self):
+        """Fetch the node's flow at the previous time step with delay."""
         for i in range(self._memory.shape[1]):
             self._memory[self._memory_pointer, i] = self.node._flow[i]
         if self.timesteps > 1:
@@ -4148,6 +5007,20 @@ cdef class FlowDelayParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        FlowDelayParameter
+            The loaded class.
+        """
         node = model.nodes[data.pop("node")]
         return cls(model, node, **data)
 
@@ -4155,50 +5028,154 @@ FlowDelayParameter.register()
 
 
 cdef class DiscountFactorParameter(Parameter):
-    """Parameter that returns the current discount factor based on discount rate and a base year.
+    """This parameter returns the current discount factor based on a discount rate and a base year using
+    the following equation:
 
-    Parameters
+        1 / pow(1.0 + rate, current_year - base_year)
+
+    where:
+
+    - current_year is the year for the current time step.
+    - base_year the discounting constant year.
+    - rate a number between 0 and 1
+    
+    The discount rate equals 1 when current_year is base_year.
+
+    Attributes
     ----------
+    model : Model
+        The model instance.
     discount_rate : float
         Discount rate (expressed as 0 - 1) used calculate discount factor for each year.
     base_year : int
         Discounting base year (i.e. the year with a discount factor equal to 1.0).
+    name : Optional[str]
+        The name of the parameter.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
 
     def __init__(self, model, rate, base_year, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        discount_rate : float
+            Discount rate (expressed as 0 - 1) used calculate discount factor for each year.
+        base_year : int
+            Discounting base year (i.e. the year with a discount factor equal to 1.0).
+
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+        """
         super(DiscountFactorParameter, self).__init__(model, **kwargs)
         self.rate = rate
         self.base_year = base_year
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Returns the current index as a float.
+        
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter index as float.
+        """
         return 1 / pow(1.0 + self.rate, ts.year - self.base_year)
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        DiscountFactorParameter
+            The loaded class.
+        """
         return cls(model, **data)
 
 DiscountFactorParameter.register()
 
 
 cdef class RollingMeanFlowNodeParameter(Parameter):
-    """Returns the mean flow of a Node for the previous N timesteps or days.
+    """This parameter returns the mean flow of a Node for the previous `N` timesteps or days.
 
-    Parameters
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        The node to record
-    timesteps : int (optional)
+    model : Model
+        The model instance.
+    node : Node
+        The node to record the flkow of.
+    timesteps : Optional[int]
         The number of timesteps to calculate the mean flow for. If `days` is provided then timesteps is ignored.
-    days : int (optional)
+    days : Optional[int]
         The number of days to calculate the mean flow for. This is converted into a number of timesteps
         internally provided the timestep is a number of days.
-    name : str (optional)
-        The name of the parameter
     initial_flow : float
         The initial value to use in the first timestep before any flows have been recorded.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, node, timesteps=None, days=None, initial_flow=0.0, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            The node to record the flkow of.
+        timesteps : Optional[int], default=None
+            The number of timesteps to calculate the mean flow for. If `days` is provided then timesteps is ignored.
+        days : Optional[int], default=None
+            The number of days to calculate the mean flow for. This is converted into a number of timesteps
+            internally provided the timestep is a number of days.
+        initial_flow : Optional[float], default=0
+            The initial value to use in the first timestep before any flows have been recorded.
+
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+
+        Raises
+        ------
+        ValueError
+            If the `timesteps` or `days` is not provided.
+        """
         super(RollingMeanFlowNodeParameter, self).__init__(model, **kwargs)
         self.node = node
         self.initial_flow = initial_flow
@@ -4217,6 +5194,7 @@ cdef class RollingMeanFlowNodeParameter(Parameter):
         self.position = 0
 
     cpdef setup(self):
+        """Setup the parameter. This initialises the internal values."""
         super(RollingMeanFlowNodeParameter, self).setup()
         if self.days > 0:
             try:
@@ -4228,11 +5206,26 @@ cdef class RollingMeanFlowNodeParameter(Parameter):
         self._memory = np.zeros([len(self.model.scenarios.combinations), self.timesteps])
 
     cpdef reset(self):
+        """Reset the internal values."""
         super(RollingMeanFlowNodeParameter, self).reset()
         self.position = 0
         self._memory[:] = 0.0
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+        
+        Returns
+        -------
+        float
+            The parameter value.
+        """
 
         cdef int n
         # No data in memory yet
@@ -4247,6 +5240,7 @@ cdef class RollingMeanFlowNodeParameter(Parameter):
         return np.mean(self._memory[scenario_index.global_id, :n])
 
     cpdef after(self):
+        """Calculate the flow with delay."""
         cdef int i
         # save today's flow (NB - this won't change the parameter until tomorrow)
         for i in range(0, self._memory.shape[0]):
@@ -4259,6 +5253,20 @@ cdef class RollingMeanFlowNodeParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        RollingMeanFlowNodeParameter
+            The loaded class.
+        """
         node = model.nodes[data.pop("node")]
         return cls(model, node, **data)
 

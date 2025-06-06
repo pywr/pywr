@@ -221,6 +221,12 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
     ratchet : bool
         If true the parameter behaves like a ratchet. Once it is triggered first
         it stays in the triggered position.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
 
     """
@@ -347,6 +353,12 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
     ratchet : bool
         If true the parameter behaves like a ratchet. Once it is triggered first
         it stays in the triggered position.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
     """
     def __init__(self, model, AbstractNode node, *args, **kwargs):
@@ -480,6 +492,12 @@ cdef class MultipleThresholdIndexParameter(IndexParameter):
         The node used for the flow
     thresholds : Iterable[Parameter | float]
         The thresholds.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, node, thresholds, use_max_flow=False, **kwargs):
         """Initialise the class.
@@ -632,6 +650,12 @@ cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
         The parameter instance whose value is compared against the thresholds.
     thresholds : Iterable[Parameter | float]
             The thresholds.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, parameter, thresholds, use_max_flow=False, **kwargs):
         """Initialise the class.
@@ -780,6 +804,12 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     ratchet : bool
         If true the parameter behaves like a ratchet. Once it is triggered first
         it stays in the triggered position.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     def __init__(self, model, Parameter param, *args, **kwargs):
         """Initialise the class.
@@ -906,6 +936,12 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
     ratchet : bool
         If true the recorder behaves like a ratchet. Once it is triggered first
         it stays in the triggered position.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
 
     def __init__(self,  model, Recorder recorder, *args, initial_value=1, **kwargs):
@@ -1050,6 +1086,12 @@ cdef class CurrentYearThresholdParameter(AbstractThresholdParameter):
         Threshold to compare against the current year.
     values : Iterable[float
         The values to pick when the year is above or below the `threshold`.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         return float(timestep.year)
@@ -1130,6 +1172,12 @@ cdef class CurrentOrdinalDayThresholdParameter(AbstractThresholdParameter):
         Threshold to compare against the current ordinal.
     values : Iterable[float
         The values to pick when the year is above or below the `threshold`.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
     cpdef double _value_to_compare(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
         return float(timestep.datetime.toordinal())

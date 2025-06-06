@@ -2,9 +2,7 @@ from typing_extensions import TYPE_CHECKING
 from typing import Iterable, Optional
 
 if TYPE_CHECKING:
-    from ..model import Model
-    from ..core import ScenarioIndex, Timestep
-    from ..nodes import Node
+    from ..core import ScenarioIndex, Timestep, Model, Node
 
 from ..parameter_property import parameter_property
 from ._parameters import (
@@ -612,6 +610,12 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
         The scipy.interp1d keyword arguments.
     interp : scipy.interpolate.interp1d
         The interpolation instance.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
     """
 
     def __init__(
@@ -713,25 +717,114 @@ InterpolatedQuadratureParameter.register()
 
 
 class ScenarioWrapperParameter(Parameter):
-    """Parameter that utilises a different child parameter in each scenario ensemble.
-
-    This parameter is used to switch between different child parameters based on different
-    ensembles in a given `Scenario`. It can be used to vary data in a non-scenario aware
+    """This parameter uses a different parameter depending on the scenario ensemble being modelled
+    in a given `Scenario`. It can be used to vary data in a non-scenario aware
     parameter type across multiple scenario ensembles. For example, many of control curve or
     interpolation parameters do not explicitly support scenarios. This parameter can be used
     to test multiple control curve definitions as part of a single simulation.
 
-    Parameters
+    Examples
+    -------
+    In the example below, when the model runs the first scenario, the first control curve
+    parameter `p1` is used, otherwise `p2` is used to assign the cost to the reservoir node.
+
+    Python
+    ======
+    ```python
+    from pywr.core import Model, Scenario
+    from pywr.nodes imort Storage
+    from pywr.parameters import ScenarioWrapperParameter, ControlCurveInterpolatedParameter, ConstantParameter
+
+    model = Model()
+    scenario = Scenario(
+        model=model,
+        name="Demand",
+        size=2,
+        ensemble_names=["Low demand", "High demand"]
+    )
+    storage_node = Storage(
+        model=model,
+        name="reservoir",
+        max_volume=100,
+        initial_volume=100
+    )
+    p1 = ControlCurveInterpolatedParameter(
+        name="CC1",
+        storage_node=storage_node,
+        control_curves=[ConstantParameter(model, 0.5), ConstantParameter(model, 0.3)],
+        values=[0.0, -5.0, -10.0, -20.0]
+    )
+    p2 = ControlCurveInterpolatedParameter(
+        name="CC2",
+        storage_node=storage_node,
+        control_curves=[ConstantParameter(model, 0.3), ConstantParameter(model, 0.1)],
+        values=[0.0, -5.0, -10.0, -20.0]
+    )
+    storage.cost = ScenarioWrapperParameter(model=model, scenario=scenario, parameters[p1, p2])
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "My parameter": {
+            "type": "ScenarioWrapperParameter",
+            "scenario": "Demand",
+            "parameters": ["CC1,", "CC2"]
+        }
+    }
+    ```
+
+    Attributes
     ----------
+    model : Model
+        The model instance.
     scenario : Scenario
         The scenario instance which is used to select the parameters.
-    parameters : iterable of Parameter instances
-        The child parameters that are used in each of `scenario`'s ensembles. The number
-        of parameters must equal the size of the given scenario.
+    parameters : Iterable[Parameter]
+        The child parameters that are used in each of `scenario`'s ensembles.
+    name : Optional[str]
+        The name of the parameter.
+    comment : Optional[str]
+        An optional comment for the parameter.
+    tags : Optional[dict]
+        An optional container of key-value pairs that the user can set to help group and identify parameters.
 
     """
 
-    def __init__(self, model, scenario, parameters, **kwargs):
+    def __init__(
+        self,
+        model: "Model",
+        scenario: "Scenario",
+        parameters: list["Parameter"],
+        **kwargs,
+    ):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        scenario : Scenario
+            The scenario instance which is used to select the parameters.
+        parameters : Iterable[Parameter]
+            The child parameters that are used in each of `scenario`'s ensembles. The number
+            of parameters must equal the size of the given scenario.
+
+        Other Parameters
+        ----------------
+        name : Optional[str], default=None
+            The name of the parameter.
+        comment : Optional[str], default=None
+            An optional comment for the parameter.
+        tags : Optional[dict], default=None
+            An optional container of key-value pairs.
+
+        Raises
+        ------
+        ValueError
+            If the number of parameters is different from the scenario size.
+        """
         super().__init__(model, **kwargs)
         if scenario.size != len(parameters):
             raise ValueError(
@@ -746,12 +839,27 @@ class ScenarioWrapperParameter(Parameter):
         self._scenario_index = None
 
     def setup(self):
+        """Setup the internal variables."""
         super().setup()
         # This setup must find out the index of self._scenario in the model
         # so that it can return the correct value in value()
         self._scenario_index = self.model.scenarios.get_scenario_index(self.scenario)
 
-    def value(self, ts, scenario_index):
+    def value(self, ts: "Timestep", scenario_index: "ScenarioIndex") -> float:
+        """Get the parameter value for the given timestep and scenario.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The timestep instance.
+        scenario_index : ScenarioIndex
+            The scenario index instance.
+
+        Returns
+        -------
+        float
+            The parameter value.
+        """
         # This is a bit confusing.
         # scenario_indices contains the current scenario number for all
         # the Scenario objects in the model run. We have cached the
@@ -762,6 +870,20 @@ class ScenarioWrapperParameter(Parameter):
 
     @classmethod
     def load(cls, model, data):
+        """Load the parameter from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        ScenarioWrapperParameter
+            The loaded class.
+        """
         scenario = model.scenarios[data.pop("scenario")]
 
         parameters = [load_parameter(model, p) for p in data.pop("parameters")]

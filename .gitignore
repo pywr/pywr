@@ -63,3 +63,8 @@ venv/
 
 pywr_glpk_debug.lp
 pywr_glpk_debug.mps
+
+
+glpk-4.65
+docs_
+.eggs
