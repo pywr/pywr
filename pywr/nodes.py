@@ -10,6 +10,10 @@ from pywr.parameters import (
 )
 from pywr.domains import Domain
 import networkx as nx
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from pywr._core import Timestep, Model, Storage
 
 
 class Drawable(object):
@@ -406,6 +410,7 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
         model=model,
         name="Cost",
         storage_node=node,
+        max_volume=1000,
         control_curves=[curve],
         values=[-0.1, -100]
     )
@@ -417,10 +422,11 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
     {
         "name": "Reservoir",
         "type": "Storage",
+        "max_volume": 1000,
         "cost": {
             "type": "ControlCurve",
-            "storage_node": "Reservir",
-            "control_curves" [
+            "storage_node": "Reservoir",
+            "control_curves": [
                 {
                     "type": "Constant",
                     "value": 0.5
@@ -435,7 +441,7 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
     ------
     1. The `initial_volume` and initial_volume_pc` are both required if `max_volume is a [pywr.parameters.Parameter][]
     because the parameter will not be evaluated at the first time-step.
-    2. If both `initial_volume` and initial_volume_pc` are given and `max_volume` is not a Parameter, then the absolute
+    2. If both `initial_volume` and `initial_volume_pc` are given and `max_volume` is not a Parameter, then the absolute
     value is ignored.
 
     Connection
@@ -488,7 +494,7 @@ class Storage(Loadable, Drawable, Connectable, _core.Storage, metaclass=NodeMeta
         initial_volume : Optional[float], default=0
             Specify the initial volume in absolute terms.
         initial_volume_pc : Optional[float], default=0
-            Specify initial volume in proportional terms. `initial_volume` and initial_volume_pc` are required
+            Specify initial volume in proportional terms. `initial_volume` and `initial_volume_pc` are required
             if `max_volume is a parameter because the parameter will not be evaluated at the first time-step.
             If both are given and `max_volume` is not a Parameter, then the absolute value is ignored.
         cost : Optional[float | Parameter], default=0
@@ -679,7 +685,7 @@ class RollingVirtualStorage(
 
         (max volume - initial volume) / (timesteps - 1).
 
-    This utilisation is assumed to occurred equally across each timestep of the rolling period. The storage is replenished
+    This utilisation is assumed to occur equally across each timestep of the rolling period. The storage is replenished
     by this value for each timestep until a full rolling period is completed. At this point, replenishment will
     be based on the previous utilisation of the storage during the model run. Note that this changes the previous
     default behaviour of the node up to Pywr version `1.17.1`, where no initial utilisation was calculated. This meant
@@ -789,6 +795,18 @@ class RollingVirtualStorage(
             )
 
     def setup(self, model):
+        """Check the storage configuration.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+
+        Raises
+        ------
+        ValueError
+            If the timestep is not daily when `days` is given or when `timesteps` is less than 1.
+        """
         if self.days is not None and self.days > 0:
             try:
                 self.timesteps = self.days // self.model.timestepper.delta
@@ -815,7 +833,13 @@ class AnnualVirtualStorage(VirtualStorage):
     ```python
     model = Model()
     node = Link(model=model, name="Track flow")
-    AnnualVirtualStorage(model=model, reset_month=4, name="Annual license", max_volume=10, nodes=[node])
+    AnnualVirtualStorage(
+        model=model,
+        reset_month=4,
+        name="Annual license",
+        max_volume=10,
+        nodes=[node]
+    )
     ```
 
     JSON
@@ -852,12 +876,12 @@ class AnnualVirtualStorage(VirtualStorage):
         is a parameter because the parameter will not be evaluated at the first time-step. If both are given
         and `max_volume` is not a Parameter, then the absolute value is ignored.
     cost : Optional[float | Parameter], default=None
-        The cost of flow into/outfrom the storage. The cost property is not currently respected (see issue #242),
+        The cost of flow into/out the storage. The cost property is not currently respected (see issue #242),
         therefore leave this to `None`.
     reset_day: int
-        The day of the month (0-31) to reset the volume to the initial value.
+        The day of the month (1-31) to reset the volume to the initial value.
     reset_month: int
-        The month of the year (0-12) to reset the volume to the initial value.
+        The month of the year (1-12) to reset the volume to the initial value.
     reset_to_initial_volume: bool
         Reset the volume to the initial volume instead of maximum volume each year.
 
@@ -891,7 +915,7 @@ class AnnualVirtualStorage(VirtualStorage):
             is a parameter because the parameter will not be evaluated at the first time-step. If both are given
             and `max_volume` is not a Parameter, then the absolute value is ignored.
         cost : Optional[float | Parameter], default=None
-            The cost of flow into/outfrom the storage. The cost property is not currently respected (see issue #242),
+            The cost of flow into/out the storage. The cost property is not currently respected (see issue #242),
             therefore leave this to `None`.
         reset_day: Optional[int], default=1
             The day of the month (1-31) to reset the volume to the initial value.
@@ -908,10 +932,18 @@ class AnnualVirtualStorage(VirtualStorage):
         super(AnnualVirtualStorage, self).__init__(*args, **kwargs)
 
     def reset(self):
+        """Reset the interal variables."""
         super(AnnualVirtualStorage, self).reset()
         self._last_reset_year = None
 
-    def before(self, ts):
+    def before(self, ts: "Timestep"):
+        """Reset the license if the conditions are met.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The current timestep.
+        """
         super(AnnualVirtualStorage, self).before(ts)
 
         # Reset the storage volume if necessary
@@ -939,10 +971,7 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
     This node is most useful for representing licences that are only enforced during specified periods. The
     `reset_day` and `reset_month` parameters indicate when the node starts operating and the `end_day` and `end_month`
     when it stops operating. For the period when the node is not operating, the volume of the node remains unchanged
-    and the node does not apply any constraints to the model.
-
-    The `end_day` and `end_month` represents a date when the node stops operating. This
-    situation represents a licence that operates across a year boundary. For example, one that is active between
+    and the node does not apply any constraints to the model. For example, one that is active between
     October and March and not active between April and September.
 
     Attributes
@@ -1011,7 +1040,14 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
 
         super().__init__(*args, **kwargs)
 
-    def before(self, ts):
+    def before(self, ts: "Timestep"):
+        """Reset the license if the conditions are met.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The current timestep.
+        """
         super().before(ts)
 
         if ts.year != self._last_active_year:
@@ -1131,11 +1167,19 @@ class MonthlyVirtualStorage(VirtualStorage):
         super(MonthlyVirtualStorage, self).__init__(*args, **kwargs)
 
     def reset(self):
+        """Reset the interal variables."""
         super().reset()
         self._count = self.initial_months - 1
         self._last_month = None
 
-    def before(self, ts):
+    def before(self, ts: "Timestep"):
+        """Reset the license if the conditions are met.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The current timestep.
+        """
         super().before(ts)
         if ts.month != self._last_month:
             self._last_month = ts.month
@@ -1184,7 +1228,7 @@ class PiecewiseLink(Node):
 
     __parameter_attributes__ = ("costs", "max_flows")
 
-    def __init__(self, model, nsteps, *args, **kwargs):
+    def __init__(self, model: "Model", nsteps: int, *args, **kwargs):
         """Initialise the node.
 
         Parameters
@@ -1246,7 +1290,7 @@ class PiecewiseLink(Node):
         if max_flows is not None:
             self.max_flows = max_flows
 
-    def get_min_flow(self, si: "ScenarioIndex"):
+    def get_min_flow(self, si: "ScenarioIndex") -> float:
         """Get the total minimum flow through the sub link.
 
         Parameters
@@ -1261,7 +1305,7 @@ class PiecewiseLink(Node):
         """
         return sum([sl.get_min_flow(si) for sl in self.sublinks])
 
-    def get_max_flow(self, si: "ScenarioIndex"):
+    def get_max_flow(self, si: "ScenarioIndex") -> float:
         """Get the total maximum flow through the sub link.
 
         Parameters
@@ -1310,13 +1354,13 @@ class PiecewiseLink(Node):
 
     max_flows = property(**max_flows())
 
-    def iter_slots(self, slot_name=None, is_connector=True):
+    def iter_slots(self, slot_name: Optional[str] = None, is_connector: bool = True):
         if is_connector:
             yield self.input
         else:
             yield self.output
 
-    def after(self, timestep):
+    def after(self, timestep: "Timestep"):
         """
         Set total flow on this link as sum of sublinks
         """
@@ -1362,7 +1406,7 @@ class MultiSplitLink(PiecewiseLink):
     enforced as expected.
     """
 
-    def __init__(self, model, nsteps, *args, **kwargs):
+    def __init__(self, model: "Model", nsteps: int, *args, **kwargs):
         """Initialise the node.
         Parameters
         ----------
@@ -1459,7 +1503,7 @@ class MultiSplitLink(PiecewiseLink):
             agg = AggregatedNode(self.model, "{} Agg".format(self.name), nodes)
             agg.factors = valid_factors
 
-    def iter_slots(self, slot_name=None, is_connector=True):
+    def iter_slots(self, slot_name: Optional[str] = None, is_connector: bool = True):
         if is_connector:
             i = self.slot_names.index(slot_name)
             if i == 0:
@@ -1516,7 +1560,9 @@ class AggregatedStorage(
 
     __node_attributes__ = ("storage_nodes",)
 
-    def __init__(self, model, name, storage_nodes, **kwargs):
+    def __init__(
+        self, model: "Model", name: str, storage_nodes: list["Storage"], **kwargs
+    ):
         """Initialise the node.
 
         Parameters
@@ -1576,7 +1622,14 @@ class AggregatedNode(Loadable, Drawable, _core.AggregatedNode, metaclass=NodeMet
     __parameter_attributes__ = ("factors", "min_flow", "max_flow")
     __node_attributes__ = ("nodes",)
 
-    def __init__(self, model, name, nodes, flow_weights=None, **kwargs):
+    def __init__(
+        self,
+        model: "Model",
+        name: str,
+        nodes: list["Node"],
+        flow_weights: Optional[list[float]] = None,
+        **kwargs,
+    ):
         """Initialise the node.
 
         Parameters
@@ -1632,7 +1685,7 @@ class BreakLink(Node):
 
     allow_isolated = True
 
-    def __init__(self, model, name, **kwargs):
+    def __init__(self, model: "Model", name: str, **kwargs):
         """Initialise the node.
 
         Parameters
@@ -1702,7 +1755,7 @@ class BreakLink(Node):
 
     cost = property(**cost())
 
-    def iter_slots(self, slot_name=None, is_connector=True):
+    def iter_slots(self, slot_name: Optional[str] = None, is_connector: bool = True):
         if is_connector:
             # connecting FROM the transfer TO something else
             yield self.link
@@ -1710,9 +1763,9 @@ class BreakLink(Node):
             # connecting FROM something else TO the transfer
             yield self.storage.outputs[0]
 
-    def after(self, timestep):
+    def after(self, timestep: "Timestep"):
+        """Update the flow on transfer node to flow via link node."""
         super(BreakLink, self).after(timestep)
-        # update flow on transfer node to flow via link node
         self.commit_all(self.link.flow)
 
 
@@ -1756,7 +1809,7 @@ class DelayNode(Node):
     ```
     """
 
-    def __init__(self, model, name, **kwargs):
+    def __init__(self, model: "Model", name: str, **kwargs):
         """Initialise the node.
 
         Parameters
@@ -1814,13 +1867,14 @@ class DelayNode(Node):
         )
         super().__init__(model, name, **kwargs)
 
-    def iter_slots(self, slot_name=None, is_connector=True):
+    def iter_slots(self, slot_name: Optional[str] = None, is_connector: bool = True):
         if is_connector:
             yield self.input
         else:
             yield self.output
 
-    def after(self, timestep):
+    def after(self, timestep: "Timestep"):
+        """Save the dealyed flow."""
         super().after(timestep)
         # delayed flow is saved to the DelayNode
         self.commit_all(self.input.flow)
@@ -1876,7 +1930,7 @@ class LossLink(Node):
 
     __parameter_attributes__ = ("loss_factor", "max_flow", "min_flow", "cost")
 
-    def __init__(self, model, name, **kwargs):
+    def __init__(self, model: "Model", name: str, **kwargs):
         """Initialise the node.
 
         Parameters
@@ -1926,7 +1980,19 @@ class LossLink(Node):
 
         super().__init__(model, name, **kwargs)
 
-    def setup(self, model):
+    def setup(self, model: "Model"):
+        """Setup the conditions on the nodes.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+
+        Raises
+        ------
+        ValueError
+            If the loss_factor_type is not valid.
+        """
         super().setup(model)
         value = self.loss_factor
 
@@ -1986,13 +2052,14 @@ class LossLink(Node):
 
     cost = property(**cost())
 
-    def iter_slots(self, slot_name=None, is_connector=True):
+    def iter_slots(self, slot_name: Optional[str] = None, is_connector: bool = True):
         if is_connector:
             yield self.net
         else:
             yield self.gross
 
-    def after(self, timestep):
+    def after(self, timestep: "Timestep"):
+        """Save the net flow."""
         super().after(timestep)
         # Net flow is saved to the node.
         self.commit_all(self.net.flow)

@@ -1,5 +1,11 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 # Available tools
-The following complementary tools ara available:
+The following complementary tools are available:
 
 - [Pywr editor](https://github.com/pywr-editor/editor): this is a user-friendly, free and open‑source 
 graphical user interface (UI) to build and customise pywr models written in JSON-based document format. The 

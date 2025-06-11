@@ -106,7 +106,13 @@ class Reservoir(RiverDomainMixin, Storage):
     ==================
     ```python
     model = Model()
-    Reservoir(model=model, control_curve=0.4, above_curve_cost=-0.1, cost=-100, name="Reservoir")
+    Reservoir(
+        model=model,
+        control_curve=0.4,
+        above_curve_cost=-0.1,
+        cost=-100,
+        name="Reservoir"
+    )
     ```
 
     JSON

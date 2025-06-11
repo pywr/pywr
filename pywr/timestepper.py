@@ -85,7 +85,7 @@ class Timestepper(object):
         self.reset()
         self._dirty = False
 
-    def reset(self, start:  Optional[pandas.Timestamp] =None):
+    def reset(self, start: Optional[pandas.Timestamp] = None):
         """Reset the timestepper.
 
         Parameters
