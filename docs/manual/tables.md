@@ -39,7 +39,7 @@ assume you are already familiar with the Pandas library.
 
 ### Timeseries
 The most common kind of data to store in an external file is timeseries data. For example, the flow used 
-by a [pywr.domains.river.Catchment][] node. Timeseries are loaded using the [pywr.parameters.DataframeParameter][]
+by a [pywr.domains.river.Catchment][] node. Timeseries are loaded using the [pywr.parameters.DataFrameParameter][]
 parameter, which internally stored the data as `DataFrame` objects.
 
 An example dataset is given below with three columns: a timestamp (used as the index), rainfall and flow.
@@ -76,7 +76,7 @@ timestep is `1910-01-01`, `22.14` on `1910-01-02` and so on.
 
 !!!note "Data frequency"
     If the index column of the dataframe is a timestamp, the parameter will support automatic resampling, if required. 
-    For example, if the external data is on a daily timestep the model can still be run on a weekly timestep.
+    For example, if the external data is on a daily timestep, the model can still be run on a weekly timestep.
 
 !!!danger "Missing dates"
     If you run the model outside the date limits of a timeseries, Pywr will raise an `Exception`. For example,
