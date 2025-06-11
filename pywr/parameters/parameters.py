@@ -603,7 +603,7 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
         The y coordinates of the data points for interpolation.
     lower_parameter : Optional[Parameter]
         Lower value of the interpolation interval to integrate
-        over. Can be `None` in which case the lower value of interval is zero.
+        over. It can be `None` in which case the lower value of the interval is zero.
     upper_parameter : Parameter
         Upper value of the interpolated interval to integrate over.
     interp_kwargs : dict
@@ -642,7 +642,7 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
             The y coordinates of the data points for interpolation.
         lower_parameter : Optional[Parameter]
             Lower value of the interpolation interval to integrate
-            over. Can be `None` in which case the lower value of interval is zero.
+            over. Can be `None` in which case the lower value of the interval is zero.
         interp_kwargs : dict
             The scipy.interp1d keyword arguments.
         """
@@ -718,8 +718,8 @@ InterpolatedQuadratureParameter.register()
 
 class ScenarioWrapperParameter(Parameter):
     """This parameter uses a different parameter depending on the scenario ensemble being modelled
-    in a given `Scenario`. It can be used to vary data in a non-scenario aware
-    parameter type across multiple scenario ensembles. For example, many of control curve or
+    in a given `Scenario`. It can be used to vary data in a non-scenario-aware
+    parameter type across multiple scenario ensembles. For example, many of the control curves or
     interpolation parameters do not explicitly support scenarios. This parameter can be used
     to test multiple control curve definitions as part of a single simulation.
 
@@ -732,7 +732,7 @@ class ScenarioWrapperParameter(Parameter):
     ======
     ```python
     from pywr.core import Model, Scenario
-    from pywr.nodes imort Storage
+    from pywr.nodes import Storage
     from pywr.parameters import ScenarioWrapperParameter, ControlCurveInterpolatedParameter, ConstantParameter
 
     model = Model()

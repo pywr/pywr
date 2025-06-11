@@ -68,7 +68,7 @@ cdef class HydropowerTargetParameter(Parameter):
     is required at each time-step. The parameter uses the following (hydropower) equation to calculate
     the flow `q` required to produce `P`:
 
-    q = P / ( C<sub>E</sub> * ρ * g * H * δ * C<sub>F</sub>)
+    q = P / (C<sub>E</sub> * ρ * g * H * δ * C<sub>F</sub>)
 
     where:
 
@@ -93,13 +93,13 @@ cdef class HydropowerTargetParameter(Parameter):
         Elevation of water entering the turbine. The difference of this value with the `turbine_elevation` gives
         the working head of the turbine.
     max_flow : Optional[Parameter]
-        Upper bounds on the calculated flow. If set the flow returned by this parameter is at most the value
+        Upper bounds on the calculated flow. If set, the flow returned by this parameter is at most the value
         of the max_flow parameter.
     min_flow : Optional[Parameter]
         Lower bounds on the calculated flow. If set the flow returned by this parameter is at least the value
         of the min_flow parameter.
     min_head : float
-        Minimum head for flow to occur. If actual head is less than this value zero flow is returned.
+        Minimum head for flow to occur. If the actual head is less than this value, zero flows are returned.
     turbine_elevation : float
         Elevation of the turbine itself. The difference between the `water_elevation` and this value gives
         the working head of the turbine.
@@ -139,7 +139,7 @@ cdef class HydropowerTargetParameter(Parameter):
             Elevation of water entering the turbine. The difference of this value with the `turbine_elevation` gives
             the working head of the turbine.
         max_flow : Optional[Parameter], default=None
-            Upper bounds on the calculated flow. If set the flow returned by this parameter is at most the value
+            Upper bounds on the calculated flow. If set, the flow returned by this parameter is at most the value
             of the max_flow parameter.
         min_flow : Optional[Parameter], default=None
             Lower bounds on the calculated flow. If set the flow returned by this parameter is at least the value
@@ -152,7 +152,7 @@ cdef class HydropowerTargetParameter(Parameter):
         density : Optional[float], default=1000
             The density of water.
         min_head : Optional[float], default=0
-            Minimum head for flow to occur. If actual head is less than this value zero flow is returned.
+            Minimum head for flow to occur. If the actual head is less than this value, zero flows are returned.
         flow_unit_conversion : Optional[float], default=1
             A factor used to transform the units of flow to be compatible with the equation here. This
             should convert flow to units of `m^3/day`

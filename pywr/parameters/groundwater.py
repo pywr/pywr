@@ -19,7 +19,7 @@ class KeatingStreamFlowParameter(Parameter):
     This Parameter calculates the perennial and winterbourne stream flow components based on the Storage node.
     It requires the Storage node to have a valid level Parameter.
 
-    In contrast to the Keating paper a general coefficient is provided for calibration. The Keating approach
+    In contrast to the Keating paper, a general coefficient is provided for calibration. The Keating approach
     utilised a coefficient of `B/L` where "`B` and `L` are the dimensions of the aquifer block parallel
     and perpendicular to the stream."
 

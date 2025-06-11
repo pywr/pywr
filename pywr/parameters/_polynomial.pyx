@@ -16,7 +16,7 @@ cdef class Polynomial1DParameter(Parameter):
 
     Examples
     -------
-    The following example use the parameter to find the surface area of a reservoir based 
+    The following example uses the parameter to find the surface area of a reservoir based
     on the current storage. The area-volume relationship is represented using the following
     2-degree polynomial:
 
@@ -26,7 +26,7 @@ cdef class Polynomial1DParameter(Parameter):
     ======
     ```python
     from pywr.core import Model
-    from pywr.nodes imort Storage
+    from pywr.nodes import Storage
     from pywr.parameters import Polynomial1DParameter
 
     model = Model()
@@ -64,7 +64,7 @@ cdef class Polynomial1DParameter(Parameter):
         The model instance.
     coefficients : Iterable[float]
         The 1 dimensional array of polynomial coefficients. The first item is the polynomial
-        constant, the second item is the coefficient associated to x<sup>1</sup>, the third 
+        constant, the second item is the coefficient associated with x<sup>1</sup>, the third
         item to x<sup>2</sup>, and so on.
     node : Optional[Node]
         An optional [pywr.core.Node][] the flow of which is used to evaluate the polynomial.
@@ -97,7 +97,7 @@ cdef class Polynomial1DParameter(Parameter):
             The model instance.
         coefficients : Iterable[float]
             The 1 dimensional array of polynomial coefficients. The first item is the polynomial
-            constant, the second item is the coefficient associated to x<sup>1</sup>, the third 
+            constant, the second item is the coefficient associated with x<sup>1</sup>, the third
             item to x<sup>2</sup>, and so on.
         
         Other parameters
@@ -233,12 +233,12 @@ cdef class Polynomial2DStorageParameter(Parameter):
     model : Model
         The model instance.
     coefficients : numpy.typing.NDArray[numpy.number]
-        The 2 dimensional array of polynomial coefficients. Index (0, 0) is the polynomial
+        The 2-dimensional array of polynomial coefficients. Index (0, 0) is the polynomial
         constant, index (1, 0) the coefficient for x<sub>1</sub><sup>1</sup> and x<sub>2</sub><sup>0</sup>,
         index (1, 1) the coefficient for x<sub>1</sub><sup>1</sup> and x<sub>2</sub><sup>1</sup>,
         and so on.
     use_proportional_volume : bool
-        An optional boolean only used with a storage` node to switch between using absolute
+        An optional boolean only used with a storage node to switch between using absolute
         or proportional volume when evaluating the polynomial.
     storage_scale : float
         A scaling factor to apply to the storage value before calculation. This is
@@ -247,7 +247,7 @@ cdef class Polynomial2DStorageParameter(Parameter):
         An offset to apply to the storage value before calculation. This is applied after
         and scaling
     parameter_scale : float
-        An scaling factor to apply to the parameter value before calculation. This is
+        A scaling factor to apply to the parameter value before calculation. This is
         applied before any offset.
     parameter_offset : float
         An offset to apply to the parameter value before calculation. This is applied after
@@ -261,7 +261,7 @@ cdef class Polynomial2DStorageParameter(Parameter):
         model : Model
             The model instance.
         coefficients : numpy.typing.NDArray[numpy.number]
-            The 2 dimensional array of polynomial coefficients. Index (0, 0) is the polynomial
+            The 2-dimensional array of polynomial coefficients. Index (0, 0) is the polynomial
             constant, index (1, 0) the coefficient for x<sub>1</sub><sup>1</sup> and x<sub>2</sub><sup>0</sup>,
             index (1, 1) the coefficient for x<sub>1</sub><sup>1</sup> and x<sub>2</sub><sup>1</sup>,
             and so on.
@@ -274,7 +274,7 @@ cdef class Polynomial2DStorageParameter(Parameter):
         Other parameters
         ----------
         use_proportional_volume : Optional[bool], default=False
-            An optional boolean only used with a storage` node to switch between using absolute
+            An optional boolean only used with a storage node to switch between using absolute
             or proportional volume when evaluating the polynomial.
         storage_scale : Optional[float], default=1
             A scaling factor to apply to the storage value before calculation. This is
@@ -283,7 +283,7 @@ cdef class Polynomial2DStorageParameter(Parameter):
             An offset to apply to the storage value before calculation. This is applied after
             and scaling
         parameter_scale : Optional[float], default=1
-            An scaling factor to apply to the parameter value before calculation. This is
+            A scaling factor to apply to the parameter value before calculation. This is
             applied before any offset.
         parameter_offset : Optional[float], default=0
             An offset to apply to the parameter value before calculation. This is applied after

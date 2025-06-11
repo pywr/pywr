@@ -15,7 +15,7 @@ cdef class BinaryStepParameter(Parameter):
         return output
     ```
 
-    This allows for a model component's value to change abruptly (for example to represent
+    This allows for a model component's value to change abruptly (for example, to represent
     on/off states or decision points).
 
 
@@ -82,7 +82,7 @@ cdef class BinaryStepParameter(Parameter):
         self.is_constant = True
 
     cpdef double get_constant_value(self):
-        """Return the parameter's output based on the interal value.
+        """Return the parameter's output based on the internal value.
         
         Returns
         -------

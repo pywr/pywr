@@ -1,4 +1,4 @@
-# Aggregated parameter
+# Aggregated
 
 ## Basic usage
 An aggregated parameter returns the values of its child parameters and aggregates them using an 

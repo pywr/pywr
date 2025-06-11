@@ -18,7 +18,7 @@ _predicate_lookup = {
 }
 
 cdef class AbstractThresholdParameter(IndexParameter):
-    """ Base class for parameters returning one of two values depending on other state.
+    """ Base class for parameters returning one of two values depending on another state.
 
     Parameters
     ----------
@@ -30,13 +30,13 @@ cdef class AbstractThresholdParameter(IndexParameter):
     predicate : string
         One of {"LT", "GT", "EQ", "LE", "GE"}.
     ratchet : bool
-        If true the parameter behaves like a ratchet. Once it is triggered first
+        If true the parameter behaves like a ratchet. Once it is triggered,
         it stays in the triggered position (default=False).
 
     Notes
     -----
-    On the first day of the model run the recorder will not have a value for
-    the previous day. In this case the predicate evaluates to True.
+    On the first day of the model runs, the recorder will not have a value for
+    the previous day. In this case, the predicate evaluates to True.
 
     """
     def __init__(self, model, threshold, *args, values=None, predicate=None, ratchet=False, **kwargs):
@@ -163,18 +163,18 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
 
         storage predicate_sign threshold
 
-    where the predicate_sign is one of the inequality sign ("<", ">", "<=", ">=") or the equal ("=") sign.
-    When true the parameter returns the second value of the two values, when false it returns the first
+    where the predicate_sign is one of the inequality signs ("<", ">", "<=", ">=") or the equal ("=") sign.
+    When true, the parameter returns the second value of the two values, when false it returns the first
     number.
 
     Notes
     -----
     On the first day of the model run, the calculated storage will not have a value for
-    the previous day. In this case the predicate evaluates to True.
+    the previous day. In this case, the predicate evaluates to True.
 
     Examples
     -------
-    In the example below the node "Reservoir" is comparaed against the constant threshold `0.5`. When 
+    In the example below the storage in the node "Reservoir" is compared against the constant threshold `0.5`. When
     the storage is less than `0.5`, `0` is returned, otherwise `10` is returned. 
 
     Python
@@ -182,7 +182,7 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
     ```python
     from pywr.core import Model
     from pywr.nodes import Storage
-    from pywr.parameter import StorageThresholdParameter
+    from pywr.parameters import StorageThresholdParameter
 
     model = Model()
     node = Storage(model=model, max_volume=100, name="Reservoir", initial_volume=100)
@@ -219,7 +219,7 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
     storage : Storage
         The storage node to use as value to compare against the `threshold`.
     ratchet : bool
-        If true the parameter behaves like a ratchet. Once it is triggered first
+        If true the parameter behaves like a ratchet. Once it is triggered,
         it stays in the triggered position.
     name : Optional[str]
         The name of the parameter.
@@ -250,7 +250,7 @@ cdef class StorageThresholdParameter(AbstractThresholdParameter):
         predicate : Optional[Literal["LT", "GT", "EQ", "LE", "GE"]], default="LT"
             Compare the threshold against the storage using the given predicate.
         ratchet : Optional[bool], default=False
-            If true the parameter behaves like a ratchet. Once it is triggered first
+            If true the parameter behaves like a ratchet. Once it is triggered,
             it stays in the triggered position.
         name : Optional[str], default=None
             The name of the parameter.
@@ -295,18 +295,18 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
 
         flow predicate_sign threshold
 
-    where the predicate_sign is one of the inequality sign ("<", ">", "<=", ">=") or the equal ("=") sign.
-    When true the parameter returns the second value of the two values, when false it returns the first
+    where the predicate_sign is one of the inequality signs ("<", ">", "<=", ">=") or the equal ("=") sign.
+    When true, the parameter returns the second value of the two values, when false it returns the first
     number.
     
     Notes
     -----
-    On the first day of the model run, the calculated storage will not have a value for
-    the previous day. In this case the predicate evaluates to True.
+    On the first day of the model run, the calculated flow will not have a value for
+    the previous day. In this case, the predicate evaluates to True.
 
     Examples
     -------
-    In the example below the node "WTW" is comparaed against the constant threshold `0.5`. When 
+    In the example below the flow of the "WTW" node is compared against the constant threshold `0.5`. When
     the previous flow is less than `0.1`, `0` is returned, otherwise `10` is returned. 
 
     Python
@@ -314,7 +314,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
     ```python
     from pywr.core import Model
     from pywr.nodes import Storage
-    from pywr.parameter import StorageThresholdParameter
+    from pywr.parameters import StorageThresholdParameter
 
     model = Model()
     node = Link(model=model, max_flow=10, name="WTW")
@@ -334,7 +334,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
     {
         "My parameter": {
             "type": "NodeThresholdParameter",
-            "storage":"WTW",    
+            "node":"WTW",
             "predicate": "LT", 
             "values": [10, 0], 
             "threshold": 0.1,
@@ -351,7 +351,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
     storage : Storage
         The storage node to use as value to compare against the `threshold`.
     ratchet : bool
-        If true the parameter behaves like a ratchet. Once it is triggered first
+        If true the parameter behaves like a ratchet. Once it is triggered,
         it stays in the triggered position.
     name : Optional[str]
         The name of the parameter.
@@ -381,7 +381,7 @@ cdef class NodeThresholdParameter(AbstractThresholdParameter):
         predicate : Optional[Literal["LT", "GT", "EQ", "LE", "GE"]], default="LT"
             Compare the threshold against the storage using the given predicate.
         ratchet : Optional[bool], default=False
-            If true the parameter behaves like a ratchet. Once it is triggered first
+            If true the parameter behaves like a ratchet. Once it is triggered,
             it stays in the triggered position.
         name : Optional[str], default=None
             The name of the parameter.
@@ -431,8 +431,8 @@ cdef class MultipleThresholdIndexParameter(IndexParameter):
     against multiple given thresholds. 
 
     The index is zero-based. For example, if only one threshold is
-    supplied then the index is either 0 (above) or 1 (below). For two
-    thresholds the index is either 0 (above both), 1 (in between), or 2 (below
+    supplied, then the index is either 0 (above) or 1 (below). For two
+    thresholds, the index is either 0 (above both), 1 (in between), or 2 (below
     both), and so on.
 
     The parameter always returns the index of the first threshold the node flow is above.
@@ -446,20 +446,16 @@ cdef class MultipleThresholdIndexParameter(IndexParameter):
     import numpy as np
     from pywr.core import Model
     from pywr.nodes import Input
-    from pywr.parsmeters import ArrayIndexedParameter
+    from pywr.parameters import ArrayIndexedParameter, MultipleThresholdIndexParameter
 
     model = Model()
     node = Input(
+        model,
         max_flow=ArrayIndexedParameter(
             model, np.arange(0, 20)
         ), 
         name="input"
     )
-
-    model.timestepper.start = "1920-01-01"
-    model.timestepper.end = "1920-01-15"
-    model.timestepper.delta = 1
-
     parameter = MultipleThresholdIndexParameter(
         model=model,
         name="My parameter",
@@ -480,9 +476,10 @@ cdef class MultipleThresholdIndexParameter(IndexParameter):
     }
     ```
     
-    In the example, the parameter will return the following arra if recorder:
+    In the example, the parameter will return the following array if recorder and when
+    the model runs for 13 timesteps:
         
-        [3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1] 
+        [3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0]
 
     Attributes
     ----------
@@ -594,8 +591,8 @@ cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
     multiple given thresholds.
     
     The index is zero-based. For example, if only one threshold is
-    supplied then the index is either 0 (above) or 1 (below). For two
-    thresholds the index is either 0 (above both), 1 (in between), or 2 (below
+    supplied, then the index is either 0 (above) or 1 (below). For two
+    thresholds, the index is either 0 (above both), 1 (in between), or 2 (below
     both), and so on.
 
     The parameter always returns the index of the first threshold the node flow is above.
@@ -609,16 +606,15 @@ cdef class MultipleThresholdParameterIndexParameter(IndexParameter):
     from pywr.core import Model
     import numpy as np
     from pywr.nodes import Input
-    from pywr.parsmeters import ArrayIndexedParameter
+    from pywr.parameters import ArrayIndexedParameter, MultipleThresholdParameterIndexParameter
 
     model = Model()
     parameter = ArrayIndexedParameter(
-        model, 
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], 
+        model,
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
         name="Index"
     )
-       
-    parameter = MultipleThresholdParameterIndexParameter(
+    MultipleThresholdParameterIndexParameter(
         model=model,
         name="My parameter",
         parameter=parameter,
@@ -752,8 +748,8 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
 
         parameter_value predicate_sign threshold
 
-    where the predicate_sign is one of the inequality sign ("<", ">", "<=", ">=") or the equal ("=") sign.
-    When true the parameter returns the second value of the two values, when false it returns the first
+    where the predicate_sign is one of the inequality signs ("<", ">", "<=", ">=") or the equal ("=") sign.
+    When true, the parameter returns the second value of the two values, when false it returns the first
     number.
 
     Examples
@@ -765,7 +761,7 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
     ======
     ```python
     from pywr.core import Model
-    from pywr.parameter import ConstantParameter, ParameterThresholdParameter
+    from pywr.parameters import ConstantParameter, ParameterThresholdParameter
 
     model = Model()
     parameter = ConstantParameter(model=model, value=100, name="My parameter")
@@ -831,7 +827,7 @@ cdef class ParameterThresholdParameter(AbstractThresholdParameter):
         predicate : Optional[Literal["LT", "GT", "EQ", "LE", "GE"]], default="LT"
             Compare the threshold against the storage using the given predicate.
         ratchet : Optional[bool], default=False
-            If true the parameter behaves like a ratchet. Once it is triggered first
+            If true the parameter behaves like a ratchet. Once it is triggered,
             it stays in the triggered position.
         name : Optional[str], default=None
             The name of the parameter.
@@ -872,12 +868,12 @@ ParameterThresholdParameter.register()
 
 
 cdef class RecorderThresholdParameter(AbstractThresholdParameter):
-    """This parameter returns one of two values depending on a recorder value:
+    """This parameter returns one of two values depending on a recorder value at the previous timestep:
 
         recorder_value predicate_sign threshold
 
-    where the predicate_sign is one of the inequality sign ("<", ">", "<=", ">=") or the equal ("=") sign.
-    When true the parameter returns the second value of the two values, when false it returns the first
+    where the predicate_sign is one of the inequality signs ("<", ">", "<=", ">=") or the equal ("=") sign.
+    When true, the parameter returns the second value of the two values, when false it returns the first
     number.
 
     Examples
@@ -889,7 +885,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
     ======
     ```python
     from pywr.core import Model
-    from pywr.recorder import RollingMeanFlowNodeRecorder
+    from pywr.recorders import RollingMeanFlowNodeRecorder
     from pywr.parameters import RecorderThresholdParameter
 
     model = Model()
@@ -932,9 +928,9 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
     recorder : Recorder
         The recorder whose value is compared against the `threshold`.
     initial_value : float
-        The value to use when the model starts and the recorder has not value.
+        The value to use when the model starts, and the recorder has no value.
     ratchet : bool
-        If true the recorder behaves like a ratchet. Once it is triggered first
+        If true the recorder behaves like a ratchet. Once it is triggered,
         it stays in the triggered position.
     name : Optional[str]
         The name of the parameter.
@@ -957,7 +953,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
         Other Parameters
         ----------------
         initial_value : float
-            The value to use when the model starts and the recorder has not value.
+            The value to use when the model starts and the recorder has no value.
         threshold : double or Parameter
             Threshold to compare the value of the recorder to.
         values : iterable of doubles
@@ -966,7 +962,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
         predicate : Optional[Literal["LT", "GT", "EQ", "LE", "GE"]], default="LT"
             Compare the threshold against the storage using the given predicate.
         ratchet : Optional[bool], default=False
-            If true the parameter behaves like a ratchet. Once it is triggered first
+            If true the parameter behaves like a ratchet. Once it is triggered,
             it stays in the triggered position.
         name : Optional[str], default=None
             The name of the parameter.
@@ -985,7 +981,7 @@ cdef class RecorderThresholdParameter(AbstractThresholdParameter):
         return self.recorder.data[timestep.index - 1, scenario_index.global_id]
 
     cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
-        """Returns 1 if the predicate evalutes True, else 0
+        """Returns 1 if the predicate evaluates True, else 0
         
         Parameters
         ----------
@@ -1040,8 +1036,8 @@ cdef class CurrentYearThresholdParameter(AbstractThresholdParameter):
 
         current_year predicate_sign threshold
 
-    where the predicate_sign is one of the inequality sign ("<", ">", "<=", ">=") or the equal ("=") sign.
-    When true the parameter returns the second value of the two values, when false it returns the first
+    where the predicate_sign is one of the inequality signs ("<", ">", "<=", ">=") or the equal ("=") sign.
+    When true, the parameter returns the second value of the two values, when false it returns the first
     number.
 
     Examples
@@ -1126,8 +1122,8 @@ cdef class CurrentOrdinalDayThresholdParameter(AbstractThresholdParameter):
 
         current_ordinal predicate_sign threshold
 
-    where the predicate_sign is one of the inequality sign ("<", ">", "<=", ">=") or the equal ("=") sign.
-    When true the parameter returns the second value of the two values, when false it returns the first
+    where the predicate_sign is one of the inequality signs ("<", ">", "<=", ">=") or the equal ("=") sign.
+    When true, the parameter returns the second value of the two values, when false it returns the first
     number.
 
     Examples

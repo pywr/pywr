@@ -555,7 +555,7 @@ ConstantParameter.register()
 
 
 cdef class DataFrameParameter(Parameter):
-    """Timeseries parameter with automatic alignment and resampling from a pandas Series or DataFrame object.
+    """Timeseries parameter with automatic alignment and resampling from a pandas' Series or DataFrame object.
     When a DataFrame is provided, each column represents a different [pywr.core.Scenario][] to run.
 
 
@@ -576,7 +576,8 @@ cdef class DataFrameParameter(Parameter):
     JSON
     ======
     File in `"url"` is parsed by the `load_dataframe` function in Pywe which accepts
-    Pandas's `read_csv` parameters. The series is extracted using the `"column"` option.
+    Pandas' `read_csv` parameters. The series is extracted using the `"column"` option.
+
     ```json
     {
         "My parameter": {
@@ -595,11 +596,11 @@ cdef class DataFrameParameter(Parameter):
     model : Model
         The model instance.
     dataframe : pandas.DataFrame | pandas.Series
-        The pandas DataFrame or Series object conntaining the data. The index must contain
+        The pandas DataFrame or Series object containing the data. The index must contain
         the dates.
     scenario: Optional[Scenario]
-        When a DataFrame instead oa a Series is provided, you must specify the scenario the DataFrame
-        refers to. Each column in the DataFrame represent a scenario ensemble; the number of column must
+        When a DataFrame instead of a Series is provided, you must specify the scenario the DataFrame
+        refers to. Each column in the DataFrame represents a scenario ensemble; the number of columns must
         equal the scenario size.
     timestep_offset : int
         Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
@@ -621,11 +622,11 @@ cdef class DataFrameParameter(Parameter):
         model : Model
             The pywr model instance.
         dataframe : pandas.DataFrame | pandas.Series
-            The pandas DataFrame or Series object conntaining the data. The index must contain
+            The pandas DataFrame or Series object containing the data. The index must contain
             the dates.
         scenario: Optional[Scenario], default=None
-            When a DataFrame instead oa a Series is provided, you must specify the scenario the DataFrame
-            refers to. Each column in the DataFrame represent a scenario ensemble; the number of column must
+            When a DataFrame instead of a Series is provided, you must specify the scenario the DataFrame
+            refers to. Each column in the DataFrame represents a scenario ensemble; the number of columns must
             equal the scenario size.
         timestep_offset : Optional[int], default=0
             Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
@@ -759,7 +760,7 @@ cdef class ArrayIndexedParameter(Parameter):
 
     Examples
     -------
-    In this example the parameter returns `10.1` at the first timestep (index #0),
+    In this example, the parameter returns `10.1` at the first timestep (index #0),
     `12` at the second timestep (index #1) and so on.
 
     Python
@@ -862,8 +863,8 @@ ArrayIndexedParameter.register()
 
 cdef class ArrayIndexedScenarioParameter(Parameter):
     """This parameter returns a time-varying value from an array values, based on the index of a
-    [pywr.core.Scenario][]. The array must be 2-dimensional, where the first dimenstion
-    contains the value for a timestep index and the second dimenson the value for the
+    [pywr.core.Scenario][]. The array must be 2-dimensional, where the first dimension
+    contains the value for a timestep index and the second dimension the value for the
     scenario index.
 
     !!!note
@@ -933,7 +934,7 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         Raises
         ------
         ValueError
-            If the number of `values` differs from the size of the scenario or the shape of `values`  is not 2.
+            If the number of `values` differs from the size of the scenario or the shape of `values` is not 2.
         """
         super(ArrayIndexedScenarioParameter, self).__init__(model, *args, **kwargs)
         cdef int i
@@ -970,7 +971,7 @@ cdef class ArrayIndexedScenarioParameter(Parameter):
         # This is a bit confusing.
         # scenario_indices contains the current scenario number for all
         # the Scenario objects in the model run. We have cached the
-        # position of self._scenario in self._scenario_index to lookup the
+        # position of self._scenario in self._scenario_index to look up the
         # correct number to use in this instance.
         return self.values[ts.index, scenario_index._indices[self._scenario_index]]
 
@@ -990,12 +991,12 @@ cdef class TablesArrayParameter(IndexParameter):
     model : Model
         The model instance.
     h5file : tables.File | str | Path
-        The tables file handle or filename to attach the CArray objects to. If a
-        filename is given the object will open and close the file handles.
+        The table file handle or filename to attach the CArray objects to. If a
+        filename is given, the object will open and close the file handles.
     h5store : H5Store
         The H5Store object with the data. 
     node : string
-        Name of the node in the tables database to read data from
+        Name of the node in the table database to read data from
     where : string
         Path to read the node from.
     scenario : Scenario
@@ -1003,7 +1004,7 @@ cdef class TablesArrayParameter(IndexParameter):
     timestep_offset : int
         Optional offset to apply to the timestep look-up. This can be used to look forward (positive value) or
         backward (negative value) in the dataset. The offset is applied to dataset after alignment and resampling.
-        If the offset takes the indexing out of the data bounds then the parameter will return the first or last
+        If the offset takes the indexing out of the data bounds, then the parameter will return the first or last
         value available.
     name : Optional[str]
         The name of the parameter.
@@ -1022,10 +1023,10 @@ cdef class TablesArrayParameter(IndexParameter):
         model : Model
             The model instance.
         h5file : tables.File | str | Path
-            The tables file handle or filename to attach the CArray objects to. If a
-            filename is given the object will open and close the file handles.
+            The table file handle or filename to attach the CArray objects to. If a
+            filename is given, the object will open and close the file handles.
         node : string
-            Name of the node in the tables database to read data from
+            Name of the node in the table database to read data from
         where : Optional[string], default="/"
             Path to read the node from.
         scenario : Optional[Scenario], default=None
@@ -1119,7 +1120,7 @@ cdef class TablesArrayParameter(IndexParameter):
             # Default to index that is just out of bounds to cause IndexError if something goes wrong
             self._scenario_ids = np.ones(self.scenario.size, dtype=np.int32) * self.scenario.size
 
-            # Calculate the scenario indices to load dependning on how scenario combinations are defined.
+            # Calculate the scenario indices to load depending on how scenario combinations are defined.
             if self.model.scenarios.user_combinations:
                 scenario_indices = set()
                 for user_combination in self.model.scenarios.user_combinations:
@@ -1257,7 +1258,7 @@ cdef class ConstantScenarioParameter(Parameter):
     """A [pywr.core.Scenario][] varying [pywr.parameters.Parameter][].
 
     The values in this parameter are constant in time, but vary within a single Scenario. Use this
-    parameter if you are using model scenarios and you want to change a constant value based on the
+    parameter if you are using model scenarios, and you want to change a constant value based on the
     scenario Pywr is running.
 
     Attributes
@@ -1281,10 +1282,10 @@ cdef class ConstantScenarioParameter(Parameter):
         scenario : Scenario
             The scenario the constant parameters are applied to.
         values : Iterable[float | int]
+            The constant values to use at each timestep and scenario. This iterable must have the same length as scenario.size.
 
         Other Parameters
         ----------------
-            The constant values to use at each timestep and scenario. This iterable must have the same length as scenario.size.
         name : Optional[str], default=None
             The name of the parameter.
         comment : Optional[str], default=None
@@ -1405,7 +1406,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
         values : numpy.typing.NDArray[numpy.number]
             The list of values to choose from based on the timestep index.
         factors : numpy.typing.NDArray[numpy.number]
-            The list of factors used to pertubate the values on a monthly basis. This must have
+            The list of factors used to perpetuate the values on a monthly basis. This must have
             a shape equal to (N, 12), where `N` is the scenario size.
 
         Other parameters
@@ -1514,6 +1515,35 @@ cdef class DailyProfileParameter(Parameter):
     This parameter provides a repeating annual profile with a daily resolution. A total of 366 values
     must be provided. These values are coerced to a `numpy.array` internally.
 
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    import numpy as np
+    from pywr.model import Model
+    from pywr.parameters import DailyProfileParameter
+
+    model = Model()
+    DailyProfileParameter(
+        model=model,
+        name="Random data",
+        # generate a random sequence between 1 and 100 of 366 values
+        values=np.random.rand(366)
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Random data": {
+            "type": "DailyProfileParameter",
+            "values": [1, 34, ..., 100]
+        }
+    }
+    ```
+
     Attributes
     ----------
     model : Model
@@ -1607,13 +1637,43 @@ cdef class WeeklyProfileParameter(Parameter):
 
     The last week of the year will have more than 7 days, as 365 / 7 is not whole.
 
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    import numpy as np
+    from pywr.model import Model
+    from pywr.parameters import WeeklyProfileParameter
+
+    model = Model()
+    WeeklyProfileParameter(
+        model=model,
+        name="Random data",
+        # generate a random sequence of 52 values
+        values=np.random.rand(52)
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Random data": {
+            "type": "WeeklyProfileParameter",
+            "values": [1, 34, ..., 100]
+        }
+    }
+    ```
+
+
     Attributes
     ----------
     model : Model
         The model instance.
     values : Iterable[float] | numpy.typing.NDArray[numpy.number]
         The 52 values that represent the daily profile. If the iterable has
-        53 values, it it truncated to 52.
+        53 values, it is truncated to 52.
     name : Optional[str]
         The name of the parameter.
     comment : Optional[str]
@@ -1630,7 +1690,7 @@ cdef class WeeklyProfileParameter(Parameter):
             The model instance.
         values : Iterable[float] | numpy.typing.NDArray[numpy.number]
             The 52 values that represent the daily profile. If the iterable has
-            53 values, it it truncated to 52.
+            53 values, it truncated to 52.
 
         Other Parameters
         ----------------
@@ -1677,10 +1737,37 @@ cdef class MonthlyProfileParameter(Parameter):
     """Parameter which provides a monthly profile with 12 values.
 
     The monthly profile returns a different value based on the month of the current
-    time-step. By default this creates a piecewise profile with a step change at the
+    time-step. By default, this creates a piecewise profile with a step change at the
     beginning of each month. An optional `interp_day` keyword can instead create a
     linearly interpolated daily profile assuming the given values correspond to either
     the first or last day of the month.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.model import Model
+    from pywr.parameters import MonthlyProfileParameter
+
+    model = Model()
+    MonthlyProfileParameter(
+        model=model,
+        name="Profile",
+        values=[1.0, 9.0, 45.0, 23.0, 120.0, 190.0, 30.0, 90.0, 200.0, 101.0, 32.0, 12.0]
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Random data": {
+            "type": "MonthlyProfileParameter",
+            "values": [1, 9, 45, 23, 120, 190, 300, 900, 200, 101, 32, 12]
+        }
+    }
+    ```
 
     Attributes
     ----------
@@ -1690,17 +1777,17 @@ cdef class MonthlyProfileParameter(Parameter):
         The 12 values that represent the monthly profile.
     interp_day : Optional[Literal["first", "last"]]
         If `interp_day` is None then no interpolation is undertaken, and the parameter
-        returns values representing a piecewise monthly profile. Otherwise `interp_day`
+        returns values representing a piecewise monthly profile. Otherwise, `interp_day`
         must be a string of either "first" or "last" representing which day of the month
         each of the 12 values represents. The parameter then returns linearly
         interpolated values between the given day of the month.
     is_variable : bool
         Whether the parameter is set as variable to solve an optimisation problem.
     lower_bounds : Optional[float | numpy.typing.NDArray[numpy.number]]
-        The lower bounds when using optimisation. If a float given, the same bound applied for every
+        The lower bounds when using optimisation. If a float is given, the same bound applied for every
         month. 
     upper_bounds : Optional[float | numpy.typing.NDArray[numpy.number]]
-        The upper bounds when using optimisation. If a float given, the same bound applied for every
+        The upper bounds when using optimisation. If a float is given, the same bound applied for every
         month. 
     name : Optional[str]
         The name of the parameter.
@@ -1728,14 +1815,14 @@ cdef class MonthlyProfileParameter(Parameter):
         values : Iterable[float] | numpy.typing.NDArray[numpy.number]
             The 12 values that represent the monthly profile.
         lower_bounds : Optional[float | numpy.typing.NDArray[numpy.number]]
-            Define the lower bounds when using optimisation. If a float given, the same bound applied for every
-            month. Otherwise an array like object of length 12 should be given for as separate value each month.
+            Define the lower bounds when using optimisation. If a float is given, the same bound applied for every
+            month. Otherwise, an array like object of length 12 should be given as separate value each month.
         upper_bounds : Optional[float | numpy.typing.NDArray[numpy.number]]
-            Define the upper bounds when using optimisation. If a float given, the same bound applied for every
-            month. Otherwise an array like object of length 12 should be given for as separate value each month.
+            Define the upper bounds when using optimisation. If a float is given, the same bound applied for every
+            month. Otherwise, an array like object of length 12 should be given as separate value each month.
         interp_day : Optional[Literal["first", "last"]], default=None
             If `interp_day` is `None` then no interpolation is undertaken, and the parameter
-            returns values representing a piecewise monthly profile. Otherwise `interp_day`
+            returns values representing a piecewise monthly profile. Otherwise, `interp_day`
             must be a string of either "first" or "last" representing which day of the month
             each of the 12 values represents. The parameter then returns linearly
             interpolated values between the given day of the month.
@@ -1937,9 +2024,9 @@ cdef class ScenarioMonthlyProfileParameter(Parameter):
         model : Model
             The model instance.
         scenario : Scenario
-            Scenario object over which different profiles should be provided.
+            The scenario object over which different profiles should be provided.
         values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[numpy.number]]
-            Length of 1st dimension should equal the number of members in the scenario object
+            Length of 1st dimension should equal the number of members in the scenario object,
             and the length of the second dimension should be 12.
 
         Other Parameters
@@ -2025,9 +2112,9 @@ cdef class ScenarioWeeklyProfileParameter(Parameter):
         model : Model
             The model instance.
         scenario : Scenario
-            Scenario object over which different profiles should be provided.
+            The scenario object over which different profiles should be provided.
         values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[numpy.number]]
-            Length of 1st dimension should equal the number of members in the scenario object
+            Length of 1st dimension should equal the number of members in the scenario object,
             and the length of the second dimension should be 52.
             
         Other Parameters
@@ -2113,7 +2200,7 @@ cdef class ScenarioDailyProfileParameter(Parameter):
         scenario : Scenario
             Scenario object over which different profiles should be provided.
         values : Iterable[Iterable[float]] | numpy.typing.NDArray[numpy.typing.NDArray[numpy.number]]
-            Length of 1st dimension should equal the number of members in the scenario object
+            Length of 1st dimension should equal the number of members in the scenario object,
             and the length of the second dimension should be 366.
             
         Other Parameters
@@ -2172,7 +2259,7 @@ ScenarioDailyProfileParameter.register()
 cdef class UniformDrawdownProfileParameter(Parameter):
     """Parameter which provides a uniformly reducing value from one to zero.
 
-     This parameter is intended to be used with an [pywr.nodes.AnnualVirtualStorage][] node to provide a profile
+     This parameter is intended to be used with a [pywr.nodes.AnnualVirtualStorage][] node to provide a profile
      that represents perfect average utilisation of the annual volume. It returns a value of 1 on the
      reset day, and subsequently reduces by 1/366 every day afterward.
 
@@ -2307,8 +2394,8 @@ cdef class RbfProfileParameter(Parameter):
     The daily profile is computed during model `reset` using a radial basis function with
     day-of-year as the independent variables. The days of the year are defined by the user
     alongside the values to use on each of those days for the interpolation. The first
-    day of the years should always be one, and its value is repeated as the 366<sup>th</sup> value.
-    In addition the second and penultimate values are mirrored to encourage a consistent
+    day of the year should always be one, and its value is repeated as the 366<sup>th</sup> value.
+    In addition, the second and penultimate values are mirrored to encourage a consistent
     gradient to appear across the boundary. The RBF calculations are undertaken using
     the `scipy.interpolate.Rbf` object, please refer to 
     [Scipy's documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.Rbf.html#scipy.interpolate.Rbf)
@@ -2397,10 +2484,10 @@ cdef class RbfProfileParameter(Parameter):
             Values (or y coordinates) to use for interpolation corresponding to the `days_of_year`.
             lower_bounds : float | numpy.typing.NDArray[numpy.number], default=0.0
             Defines the lower bounds when using optimisation. If a float is iven, the same bound applied for every day of the
-            year. Otherwise an array like object of length equal to the number of days of the year should be given.
+            year. Otherwise, an array like object of length equal to the number of days of the year should be given.
         upper_bounds : float | numpy.typing.NDArray[numpy.number], default=0.0
             Defines the upper bounds when using optimisation. If a float is given, the same bound applied for every day of the
-            year. Otherwise an array like object of length equal to the number of days of the year should be given.
+            year. Otherwise, an array like object of length equal to the number of days of the year should be given.
         rbf_kwargs : Optional[dict], default=None
             Optional dictionary of keyword arguments to base to the Rbf object.
         variable_days_of_year_range : Optional[int], default=0
@@ -2775,7 +2862,7 @@ cdef class ConstantScenarioIndexParameter(IndexParameter):
     """A [pywr.core.Scenario][] varying [pywr.parameters.IndexParameter][].
 
     The indexes in this parameter are constant in time, but vary within a single Scenario. Use this
-    parameter if you are using model scenarios and you want to change a constant index based on the
+    parameter if you are using model scenarios, and you want to change a constant index based on the
     scenario Pywr is running.
 
     Attributes
@@ -2853,7 +2940,7 @@ ConstantScenarioIndexParameter.register()
 
 
 cdef class IndexedArrayParameter(Parameter):
-    """This parameter returns a value from an array of parameters, based on the index of an
+    """This parameter returns a value from an array of parameters, based on the index of a
     [pywr.parameters.IndexParameter][].
 
     Examples
@@ -3014,7 +3101,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
     comprises `N` cosine functions with a period of 365 days. The calculation is
     performed using the Julien day of the year minus 1:
 
-    $$ f(t) = A + \sum_{n=1}^N  A_n \cdot \cos{(2\pi nt)/365+\phi_n} $$
+    $$ f(t) = A + \sum_{n=1}^N A_n \cdot \cos{(2\pi nt)/365+\phi_n} $$
 
     where:
 
@@ -3043,7 +3130,7 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
     This parameter can be optimised.
     """
     def __init__(self, model, mean, amplitudes, phases, *args, **kwargs):
-        """Initialise the parametetr.
+        """Initialise the parameter.
         
         Parameters
         ----------
@@ -3052,10 +3139,10 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         mean : float
             Mean value for the series (i.e. the position of zeroth harmonic).
         amplitudes : Iterable[float]
-            The amplitudes for the N harmonic cosine functions. Must be the same
+            The amplitudes for the N harmonic cosine functions. This must be the same
             length as phases.
         phases : Iterable[float]
-            The phase shift of the N harmonic cosine functions. Must be the same
+            The phase shift of the N harmonic cosine functions. This must be the same
             length as amplitudes.
 
         Other Parameters
@@ -3065,16 +3152,16 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         mean_upper_bounds : Optional[float], default=numpy.Inf
             The upper bound during an optimisation for the mean amplitude.
         amplitude_lower_bounds : Optional[float]
-            The lower bounds during an optimisation for the amplitude. This must have same size of
-            `amplitidues`. This defaults to an array of zeros.
+            The lower bounds during an optimisation for the amplitude. This must have the same size of
+            `amplitudes`. This defaults to an array of zeros.
         amplitude_upper_bounds : Optional[float]
-            The upper bounds during an optimisation for the amplitude. This must have same size of
-            `amplitidues`. This defaults to an array of numpy.Inf.
+            The upper bounds during an optimisation for the amplitude. This must have the same size of
+            `amplitudes`. This defaults to an array of numpy.Inf.
         phase_lower_bounds : Optional[float]
-            The lower bounds during an optimisation for the phasesd. This must have same size of
+            The lower bounds during an optimisation for the phases. This must have the  same size of
             `phases`. This defaults to an array of zeros.
         phase_upper_bounds : Optional[float], default=numpy.Inf
-            The upper bounds during an optimisation for the phasesd. This must have same size of
+            The upper bounds during an optimisation for the phases. This must have the  same size of
             `phases`. This defaults to an array of numpy.Inf.
         name : Optional[str], default=None
             The name of the parameter.
@@ -3174,8 +3261,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         return val
 
     cpdef set_double_variables(self, double[:] values):
-        """Set the parameter double variable values during an optimisation problem. The mean amplitiude
-        must be at index 0, followed by the `N` amplitidues and then the `N` phases.
+        """Set the parameter double variable values during an optimisation problem. The mean amplitude
+        must be at index 0, followed by the `N` amplitudes and then the `N` phases.
 
         Parameters
         ----------
@@ -3198,7 +3285,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         Returns
         ----------
         values : numpy.typing.NDArray[numpy.number]
-            The array with the variables with the mean amplitiude (at index 0), followed by the `N` amplitidues and then the `N` phases.. The array size equals the number 2*`N` + 1.
+            The array with the variables with the mean amplitude (at index 0), followed by the `N` amplitudes
+            and then the `N` phases. The array size equals the number 2*`N` + 1.
         """
         return np.r_[np.array([self.mean, ]), np.array(self.amplitudes), np.array(self.phases)]
 
@@ -3208,7 +3296,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         Returns
         ----------
         values : numpy.typing.NDArray[numpy.number]
-            The array with the variables with the mean amplitiude (at index 0), followed by the `N` amplitidues and then the `N` phases.. The array size equals the number 2*`N` + 1.
+            The array with the variables with the mean amplitude (at index 0), followed by the `N` amplitudes
+            and then the `N` phases.. The array size equals the number 2*`N` + 1.
         """
         return np.r_[self._mean_lower_bounds, self._amplitude_lower_bounds, self._phase_lower_bounds]
 
@@ -3218,7 +3307,8 @@ cdef class AnnualHarmonicSeriesParameter(Parameter):
         Returns
         ----------
         values : numpy.typing.NDArray[numpy.number]
-            The array with the variables with the mean amplitiude (at index 0), followed by the `N` amplitidues and then the `N` phases.. The array size equals the number 2*`N` + 1.
+            The array with the variables with the mean amplitude (at index 0), followed by the `N` amplitudes
+            and then the `N` phases.. The array size equals the number 2*`N` + 1.
         """
         return np.r_[self._mean_upper_bounds, self._amplitude_upper_bounds, self._phase_upper_bounds]
 AnnualHarmonicSeriesParameter.register()
@@ -3264,7 +3354,7 @@ cdef class AggregatedParameter(Parameter):
     ======
     ```python
     model = Model()
-    p1 = ComstantParameter(model=model, value=1.0)
+    p1 = ConstantParameter(model=model, value=1.0)
     p2 = MonthlyProfileParameter(model=model, values=range(0, 12))
     AggregatedParameter(model=model, parameters=[p1, p2], agg_func="sum", name="My parameter")
     ```
@@ -3681,7 +3771,7 @@ cdef class DivisionParameter(Parameter):
     ======
     ```python
     model = Model()
-    p1 = ComstantParameter(model=model, value=1.0)
+    p1 = ConstantParameter(model=model, value=1.0)
     p2 = MonthlyProfileParameter(model=model, values=range(0, 12))
     DivisionParameter(model=model, numerator=p1, denominator=p2, name="My parameter")
     ```
@@ -3815,7 +3905,7 @@ cdef class NegativeParameter(Parameter):
 
     Examples
     -------
-    This returns the nagtive of the current month index.
+    This returns the nagative of the current month index.
 
     Python
     ======
@@ -4031,7 +4121,7 @@ MaxParameter.register()
 
 
 cdef class NegativeMaxParameter(MaxParameter):
-    """Parameter that takes maximum of the negative of a [pywr.parameters.Parameter][] and constant value (threshold).
+    """Parameter that takes the maximum of the negative of a [pywr.parameters.Parameter][] and constant value (threshold).
     
     Attributes
     ----------
@@ -4187,7 +4277,7 @@ MinParameter.register()
 
 
 cdef class NegativeMinParameter(MinParameter):
-    """Parameter that takes minimum of the negative of a [pywr.parameters.Parameter][] and constant value (threshold).
+    """Parameter that takes the minimum of the negative of a [pywr.parameters.Parameter][] and constant value (threshold).
  
     Attributes
     ----------
@@ -4497,7 +4587,7 @@ cdef class FlowParameter(Parameter):
     node : Node
       The node to track the flow of.
     initial_value : float
-      The value to return on the first  time-step before the node has any past flow.
+      The value to return on the first time-step before the node has any past flow.
     name : Optional[str]
         The name of the parameter.
     name : Optional[str]
@@ -4720,14 +4810,14 @@ StorageParameter.register()
 
 cdef class PiecewiseIntegralParameter(Parameter):
     """This parameter integrates a piecewise function given as two arrays of `x` and `y`. 
-    `x` should be monotonically increasing and greater than zero and `y` shuould start from 0. 
+    `x` should be monotonically increasing and greater than zero and `y` should start from 0.
     At a given timestep, this parameter then integrates `y` over `x` between 0 and the value
     given by a given parameter value.
 
     Examples
     -------
     In the following example, a [pywr.parameters.StorageParameter][] tracks the storage of a reservoir.
-    If the storage is `45%`, the parametetr will integrate between `0.01` and `0.45` the values in `y`
+    If the storage is `45%`, the parameter will integrate between `0.01` and `0.45` the values in `y`
     (between `0.2` and `0.5`).
 
     Python
@@ -4773,8 +4863,8 @@ cdef class PiecewiseIntegralParameter(Parameter):
         The x values of the piecewise function.
     y : Iterable[float]
         The y values of the piecewise function.
-    parameter : `Parameter`
-        The parameter the defines the right hand bounds of the integration.
+    parameter : Parameter
+        The parameter the defines that right-hand bounds of the integration.
     name : Optional[str]
         The name of the parameter.
     comment : Optional[str]
@@ -4790,7 +4880,7 @@ cdef class PiecewiseIntegralParameter(Parameter):
         model : Model
             The model instance.
         parameter : `Parameter`
-            The parameter the defines the right hand bounds of the integration.
+            The parameter that defines the right-hand bounds of the integration.
         x : Iterable[float]
             The x values of the piecewise function.
         y : Iterable[float]
@@ -5046,7 +5136,7 @@ cdef class DiscountFactorParameter(Parameter):
     model : Model
         The model instance.
     discount_rate : float
-        Discount rate (expressed as 0 - 1) used calculate discount factor for each year.
+        Discount rate (expressed as 0-1) used to calculate the discount factor for each year.
     base_year : int
         Discounting base year (i.e. the year with a discount factor equal to 1.0).
     name : Optional[str]
@@ -5067,7 +5157,7 @@ cdef class DiscountFactorParameter(Parameter):
         model : Model
             The model instance.
         discount_rate : float
-            Discount rate (expressed as 0 - 1) used calculate discount factor for each year.
+            Discount rate (expressed as 0-1) used to calculate the discount factor for each year.
         base_year : int
             Discounting base year (i.e. the year with a discount factor equal to 1.0).
 
@@ -5130,9 +5220,9 @@ cdef class RollingMeanFlowNodeParameter(Parameter):
     model : Model
         The model instance.
     node : Node
-        The node to record the flkow of.
+        The node to record the flow of.
     timesteps : Optional[int]
-        The number of timesteps to calculate the mean flow for. If `days` is provided then timesteps is ignored.
+        The number of timesteps to calculate the mean flow for. If `days` is provided, then timesteps is ignored.
     days : Optional[int]
         The number of days to calculate the mean flow for. This is converted into a number of timesteps
         internally provided the timestep is a number of days.
@@ -5153,9 +5243,9 @@ cdef class RollingMeanFlowNodeParameter(Parameter):
         model : Model
             The model instance.
         node : Node
-            The node to record the flkow of.
+            The node to record the flow of.
         timesteps : Optional[int], default=None
-            The number of timesteps to calculate the mean flow for. If `days` is provided then timesteps is ignored.
+            The number of timesteps to calculate the mean flow for. If `days` is provided, then timesteps is ignored.
         days : Optional[int], default=None
             The number of days to calculate the mean flow for. This is converted into a number of timesteps
             internally provided the timestep is a number of days.

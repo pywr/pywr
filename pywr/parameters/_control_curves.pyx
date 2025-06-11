@@ -25,7 +25,7 @@ cpdef double _interpolate(double current_position, double lower_bound, double up
 
 
 cdef class BaseControlCurveParameter(Parameter):
-    """ Base class for all Parameters that rely on a the attached Node containing a control_curve Parameter."""
+    """ Base class for all Parameters that rely on the attached Node containing a control_curve Parameter."""
     def __init__(self, model, AbstractStorage storage_node, control_curves, **kwargs):
         """
 
@@ -33,7 +33,7 @@ cdef class BaseControlCurveParameter(Parameter):
         ----------
         model : Model
             The model instance.
-        storage_node : `Storage`
+        storage_node : Storage
             A Storage node that can be used to query the current percentage volume.
         control_curves : Iterable[Parameter] | Parameter
             The Parameter objects to use as a control curve(s).
@@ -125,7 +125,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
     ======
     ```python
     from pywr.core import Model
-    from pywr.nodes imort Storage
+    from pywr.nodes import Storage
     from pywr.parameters import ConstantParameter, ControlCurveInterpolatedParameter
 
     model = Model()
@@ -207,7 +207,7 @@ cdef class ControlCurveInterpolatedParameter(BaseControlCurveParameter):
         control_curves : Iterable[Parameter] | Iterable[float]
             A list of parameters or floats representing the control curves. Control should **always** be specified 
             in descending order.
-            These are often [pywr.parameters.MonthlyProfileParameters][] or [pywr.parameters.DailyProfileParameters][], 
+            These are often [pywr.parameters.MonthlyProfileParameter][] or [pywr.parameters.DailyProfileParameter][],
             but may be any [pywr.parameters.Parameter][] that returns values between 0.0 and 1.0. 
             Internally `float` or `int` types are cast to [pywr.parameters.ConstantParameter][].
         values : Optional[numpy.typing.NDArray[np.number]], default=None
@@ -370,7 +370,7 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
     """A control curve Parameter that interpolates between two or more pairs of values.
 
     Return values are linearly interpolated between a pair of values depending on the current
-    storage. The first pair is used between maximum and the first control curve, the next pair
+    storage. The first pair is used between maximum and the first control curve; the next pair
     between the first control curve and second control curve, and so on until the last pair is
     used between the last control curve and the minimum value. The first value in each pair is the
     value at the upper position, and the second the value at the lower position.
@@ -391,7 +391,7 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
     ======
     ```python
     from pywr.core import Model
-    from pywr.nodes imort Storage
+    from pywr.nodes import Storage
     from pywr.parameters import ConstantParameter, ControlCurvePiecewiseInterpolatedParameter
 
     model = Model()
@@ -441,9 +441,9 @@ cdef class ControlCurvePiecewiseInterpolatedParameter(BaseControlCurveParameter)
             The Storage node that is used to query the current percentage volume.
         control_curves : list of `Parameter` or floats
             A list of parameters representing the control curve(s). These are
-            often [pywr.parameter.MonthlyProfileParameters][] or [pywr.parameter.DailyProfileParameters][], 
-            but may be any [pywr.parameter.Parameter][] that returns values between 0.0 and 1.0. If floats are
-            passed they are converted to [pywr.parameter.ConstantParameter][].
+            often [pywr.parameters.MonthlyProfileParameter][] or [pywr.parameters.DailyProfileParameter][],
+            but may be any [pywr.parameters.Parameter][] that returns values between 0.0 and 1.0. If floats are
+             passed, they are converted to [pywr.parameters.ConstantParameter][].
         values : numpy.typing.NDArray[numpy.typing.NDArray[np.number]] | list[list[float | int]]
             A list of value pairs to interpolate between. The length of the list should be
             1 + len(control_curves).
@@ -773,7 +773,7 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
         Notes
         -----
         If `values` and `parameters` are both `None`, the default, then `values` defaults to
-        a range of integers, starting at zero, one more than length of `control_curves`.
+        a range of integers, starting at zero, one more than the length of `control_curves`.
 
         Raises
         -------
@@ -985,21 +985,21 @@ cdef class WeightedAverageProfileParameter(Parameter):
     """Generates a weighted average daily profile from pairs of storage nodes and
     profile parameters.
 
-    For each profile and storage pairs, this scales the daily values using the `max_volume` 
+    For each profile and storage pair, this scales the daily values using the `max_volume`
     property of the storage node. All the weighted profiles
-    are summed together on a dialy basis and the final profile is finally scaled using 
+    are summed together daily, and the final profile is finally scaled using
     the sum of the maximum volume of all nodes.
 
     Attributes
     ----------
     storages: Iterable[Storage].
-        The list of storage instances. The length should equal to the length of
-        profiles parameter.
+        The list of storage instances. The length should be equal to the length of
+        profile parameter.
     profiles: Iterable[ConstantParameter | DailyProfileParameter | MonthlyProfileParameter]
         The list of profile parameters. These can be either a
         [pywr.parameters.ConstantParameter][], [pywr.parameters.DailyProfileParameter][], or 
         [pywr.parameters.MonthlyProfileParameter][].
-        The length should equal to the length of storages parameter.
+        The length should be equal to the length of storage parameter.
     name : Optional[str]
         The name of the parameter.
 
@@ -1019,13 +1019,13 @@ cdef class WeightedAverageProfileParameter(Parameter):
         model : Model
             The model instance.
         storages: Iterable[Storage].
-            The list of storage instances. The length should equal to the length of
-            profiles parameter.
+            The list of storage instances. The length should be equal to the length of
+            profile parameter.
         profiles: Iterable[ConstantParameter | DailyProfileParameter | MonthlyProfileParameter]
             The list of profile parameters. These can be either a
             [pywr.parameters.ConstantParameter][], [pywr.parameters.DailyProfileParameter][], or 
             [pywr.parameters.MonthlyProfileParameter][].
-            The length should equal to the length of storages parameter.
+            The length should be equal to the length of storage parameter.
        
         Other Parameters
         ----------------
@@ -1077,7 +1077,7 @@ cdef class WeightedAverageProfileParameter(Parameter):
                 vals = np.asarray(profile.get_daily_values())
                 total_absolute_profile += (vals * max_volume)
             else:
-                raise ValueError("Control curve should be a ContantParameter, MonthlyProfileParameter, \
+                raise ValueError("Control curve should be a ConstantParameter, MonthlyProfileParameter, \
                                   or DailyProfileParameter")
         self.daily_values = total_absolute_profile / total_volume
 
