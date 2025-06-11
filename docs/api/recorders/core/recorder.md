@@ -1,0 +1,3 @@
+# Recorder
+
+::: pywr.recorders.Recorder

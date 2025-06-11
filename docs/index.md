@@ -12,9 +12,9 @@ timesteps using a linear programming approach. It is written in Python and aims 
 It has many similarities with other software packages such as WEAP, Wathnet, Aquator and MISER, but also has some
 significant differences. Pywr’s principle design goals are that it is:
 
-- Fast enough to handle large stochastic datasets and large numbers of scenarios and function evaluations required by advanced decision making methodologies;
-- Free to use without restriction – licensed under the GNU General Public Licence;
-- Extendable – uses the Python programming language to define complex operational rules and control model runs.
+- **Fast** enough to handle large stochastic datasets and large numbers of scenarios and function evaluations required by advanced decision making methodologies;
+- **Free** to use without restriction – licensed under the GNU General Public Licence;
+- **Extendable** – uses the Python programming language to define complex operational rules and control model runs.
 
 ## Contents
 
@@ -50,8 +50,8 @@ significant differences. Pywr’s principle design goals are that it is:
 
     ---
 
-    Available tools for Pywr
+    Available resources for Pywr
 
-    [:octicons-arrow-right-24: Tool list](./tools)
+    [:octicons-arrow-right-24: Tool list](./tools.md)
 
 </div>

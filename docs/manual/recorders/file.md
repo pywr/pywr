@@ -2,7 +2,7 @@
 Pywr can export the timeseries of the model results into two different formats:
 
 - as CSV file, using the [pywr.recorders.CSVRecorder][]
-- as [PyTable](http://pytables.org) HDF file, using the [pywr.recorders.TableRecorder][]
+- as [PyTable](http://pytables.org) HDF file, using the [pywr.recorders.TablesRecorder][]
 
 ## CSV recorder
 The basic configuration for this recorder needs:
@@ -16,6 +16,7 @@ For example:
 {
   "recorders": {
     "CSV recorder": {
+      "type": "CSVRecorder",
       "url": "/path/to/file/with/results.csv",
       "nodes": ["Works", "Reservoir"]
     }
@@ -33,17 +34,19 @@ volume is reordered instead.
 ### Data compression
 If your CSV file is large, Pywr can compress the file when it is done exporting the data. This is done:
 
-- using the `complib` option. You can use `gzip` or `bzip2` as value to compress the CSV file using the `gzip` and `bz2` library respectively;
-- setting a compression level with the `complevel`. This is an integer from 0 to 9; 1 is fastest and
-produces the least compression, and 9 is slowest and produces the most compression. 0 is no compression
-at all. This defaults to `9`.
+- using the `complib` option. You can use `gzip` or `bzip2` as value to compress the CSV file using the [gzip](https://docs.python.org/3/library/gzip.html)
+and [bz2](https://docs.python.org/3/library/bz2.html#module-bz2) library respectively;
+- setting a compression level with the `complevel` option. This is an integer from 0 to 9; 1 means fast saving time and
+produces the least compression, and 9 is the slowest and produces the most compression. 0 is no compression
+at all. When compression is enabled, this option defaults to `9`.
 
-For example:
+For example to compress the file with the `bz2` library at level `5` use:
 
 ```json
 {
   "recorders": {
     "CSV recorder": {
+      "type": "CSVRecorder",
       "url": "/path/to/file/with/results.csv",
       "nodes": ["Works", "Reservoir"],
       "complib": "bzip2",
@@ -55,20 +58,22 @@ For example:
 
 ### Scenarios
 If you are running scenarios, you can change the scenario to export using the `scenario_index` option. By default, this
-is `0`, which means the first scenario il always exported.
+is `0`, which means the first scenario is always exported.
 
 
-For example:
+For example to export two scenarios into two separate files, you can use:
 
 ```json
 {
   "recorders": {
     "CSV recorder - scenario 1": {
+      "type": "CSVRecorder",
       "url": "/path/to/file/with/results_1.csv",
       "nodes": ["Works", "Reservoir"],
       "scenario_index": 0
     },
     "CSV recorder - scenario 2": {
+      "type": "CSVRecorder",
       "url": "/path/to/file/with/results_2.csv",
       "nodes": ["Pumping station", "Reservoir"],
       "scenario_index": 2
@@ -79,8 +84,9 @@ For example:
 
 ### Additional arguments
 The recorder also accepts additional keyword arguments accepted by the [CSV writer](https://docs.python.org/3/library/csv.html#csv.writer)
-in the Python's `csv` library.  For full details about dialects and formatting parameters, see
-the [Dialects and Formatting Parameters section](https://docs.python.org/3/library/csv.html#csv-fmt-params). 
+in the Python's [csv library](https://docs.python.org/3/library/csv.html).  For full details about dialects and formatting parameters, see
+the [Dialects and Formatting Parameters section](https://docs.python.org/3/library/csv.html#csv-fmt-params) on
+the official Python documentation. 
 
 For example, to change the column delimiter to space use:
 
@@ -88,6 +94,7 @@ For example, to change the column delimiter to space use:
 {
   "recorders": {
     "CSV recorder": {
+      "type": "CSVRecorder",
       "url": "/path/to/file/with/results.csv",
       "nodes": ["Works", "Reservoir"],
       "delimiter": " "
@@ -97,14 +104,15 @@ For example, to change the column delimiter to space use:
 ```
 
 ### Read/plot the data
-You can parse the export file using the [Pandas library](http://pandas.pydata.org). The model timestep is saved
-in the first column named `Datetime` with the Pandas' default format (`YYYY-mm-dd`). For example:
+You can easily parse the exported file using the [Pandas library](http://pandas.pydata.org). The model timestep is saved
+in the first column named `Datetime` with the Pandas' default format (`YYYY-mm-dd`). For example, to parse and
+plot a timeseries of a specific node or all the data you can use:
 
 ```python
 import matplotlib.pyplot as plt
-
 import pandas as pd
 
+# read the file and set the date as index
 df = pd.read_csv("results.csv", index_col=[0], parse_dates=True)
 
 # plot one node
@@ -121,28 +129,29 @@ plt.show()
 ```
 
 ## Table recorder
-This recorder saves the model outputs to an HDF file. The data is saved in a 2-dimensional array,
-where each row contains the outputs at each timestep, and the columns contain the results for
+This recorder saves the model outputs to an [HDF file](https://en.wikipedia.org/wiki/Hierarchical_Data_Format). 
+The data for a node is saved in a 2-dimensional array, where each row contains the outputs at each timestep, and the columns contain the results for
 each model scenario. This recorder is more powerful than the CSV recorder as:
 
-- it allows calculating statistics across multiple scenarios;
+- it exports all scenarios and allows calculating statistics across multiple scenarios;
 - it can export data of nodes (flow or storage) and parameter (a number for parameter's
 values or an integer for parameter's indexes);
 - it exports information about the scenarios as metadata;
 - it can save other information such as the route tables.
 
-## Basic configuration
+### Basic configuration
 The basic configuration for this recorder requires:
 
 - the path to the HDF file where to save the data. This must be an existing path.
 - the list of nodes to export.
 
-For example:
+For example to export two nodes:
 
 ```json
 {
   "recorders": {
     "Table recorder": {
+      "type": "TablesRecorder",
       "url": "/path/to/file/with/results.h5",
       "nodes": ["Works", "Reservoir"]
     }
@@ -161,6 +170,7 @@ This recorder allows you to export parameter values and indexes too using the `"
 {
   "recorders": {
     "Table recorder": {
+      "type": "TablesRecorder",
       "url": "/path/to/file/with/results.h5",
       "parameters": ["My control curve", "My index parameter"]
     }
@@ -169,12 +179,13 @@ This recorder allows you to export parameter values and indexes too using the `"
 ```
 
 ### Export time
-To export the timesteps, you can use the `"time"` option. This is
+To export the timesteps, you can use the `"time"` option which accepts the HDF node or path name:
 
 ```json
 {
   "recorders": {
     "Table recorder": {
+      "type": "TablesRecorder",
       "url": "/path/to/file/with/results.h5",
       "nodes": ["Link"],
       "time": "/time"
@@ -184,14 +195,15 @@ To export the timesteps, you can use the `"time"` option. This is
 ```
 
 The root identifier `/` in the string is optional. If omitted, this is automatically prepended. The final file will
-contain as many rows in the `/time` table as the number of timesteps. Each row contains the following attributes: year,
-month, day and index. The latter represents the timestep.
+contain a new table called `/time` which is an array with as many rows as the number of timesteps. Each row contains 
+the following attributes: `year`, `month`, `day` and `index`. The latter represents the timestep index starting from `0`.
 
 ### Export additional information
 The following options can also be provided to store additional outputs:
 
+- `where` : this is the default path where to create the tables with the data inside the file. This defaults to `/`.
 - `scenarios`: this is a string representing the path where to store the scenario table. This table will contain the following
-scenario property: name, start, stop and step. See the [Scenario page](../scenarios.md) for a description of these properties.
+scenario property: `name`, `start`, `stop` and `step`. See the [Scenario page](../scenarios.md) for a description of these properties.
 The value of this property defaults to `/scenarios`.
 - `routes_flows`: this is a string representing the path (relative to `where`) where to store the routes flow.  When this 
 attribute is omitted, no additional data is saved.
@@ -230,6 +242,7 @@ node_a = Input(
     )
 )
 node_b = Link(model, name="B", cost=10.0)
+# this node has two scenarios with two different demand levels
 node_c = Output(
     model,
     name="C",
@@ -252,15 +265,16 @@ TablesRecorder(model, h5file="./results.h5", time="/time")
 result = model.run()
 ```
 
-After the model runs, the recorder will create the `results.h5` file. To parse the data, you can use the following script 
-(each line is commented to explain what it does and how to fetch specific data):
+After the model runs, the recorder will create the `results.h5` file. To parse the data, you can use the following script;
+each line is commented to explain what it does and how to fetch specific data:
 
 ```python
-from datetime import date
 import matplotlib.pyplot as plt
 import tables
+import pandas as pd
 
-with tables.open_file("../results.h5", mode="r") as table:
+# read the file with the tables library
+with tables.open_file("results.h5", mode="r") as table:
     # read the time
     time = table.get_node("/time").read()
     # print the first timestep
@@ -269,10 +283,12 @@ with tables.open_file("../results.h5", mode="r") as table:
 
     # unpack the tuple - t1[0] is the day / t[1] the timestep index / t[2] the month / t[3] the year
     year, _, month, day = t1
-    print(year, _, month, day)
+    print(year, month, day)
 
     # build the vector of date objects
-    time_vector = [date(t[3], t[2], t[0]) for t in time]
+    time_vector = pd.to_datetime(
+        {k: table.get_node("/time").col(k) for k in ("year", "month", "day")}
+    )
     print(time_vector)
 
      # get the numpy array of node A's flow; this is a 2D array
@@ -289,5 +305,19 @@ with tables.open_file("../results.h5", mode="r") as table:
         axs[ni].plot(time_vector, table.get_node(f"/{node}").read())
         axs[ni].set_title(node)
 
+    plt.show()
+```
+
+Alternatively, you can use the utility method available in the recorder which
+yields pairs of node names and Pandas' DataFrames:
+
+```python
+from pywr.recorders import TablesRecorder
+import matplotlib.pyplot as plt
+
+for node, df in TablesRecorder.generate_dataframes("./results.h5"):
+    print(node, df)
+    df.plot()
+    plt.title(node)
     plt.show()
 ```

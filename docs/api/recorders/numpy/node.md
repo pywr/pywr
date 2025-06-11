@@ -1,0 +1,3 @@
+# Node
+
+::: pywr.recorders.NumpyArrayNodeRecorder

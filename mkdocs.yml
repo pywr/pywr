@@ -117,20 +117,24 @@ nav:
     - Nodes:
       - 'manual/nodes/input.md'
       - 'manual/nodes/link.md'
+      - 'manual/nodes/storage.md'
       - 'manual/nodes/aggregated.md'
       - 'manual/nodes/output.md'
     - Parameters:
-        - Simple: '' # TODO
-        - Profiles: '' # TODO
-        - Timeseries: '' # TODO
+        - 'manual/parameters/index.md'
+        - 'manual/parameters/simple.md'
+        - 'manual/parameters/profiles.md'
+        - 'manual/parameters/timeseries.md'
         - Aggregated: 'manual/parameters/aggregated.md'
         - Control curves:  '' # TODO
-        - Thresholds: '' # TODO
+        - 'manual/parameters/threshold.md'
         - Interpolated: '' # TODO
     - Recorders:
         - Introduction: 'manual/recorders/index.md'
-        - 'manual/recorders/file.md' #TODO
-        - Save results in memory: '' #TODO
+        - 'manual/recorders/file.md'
+        - Save results in memory:
+          - 'manual/recorders/memory/index.md'
+          - 'manual/recorders/memory/numpy.md'
     - Optimisation: '' # TODO
     - Custom components:
       - 'manual/custom_parameters.md'
@@ -138,7 +142,6 @@ nav:
       - 'manual/misc/demand_savings.md'
       - 'manual/misc/soft_constraints.md'
       - 'manual/misc/abs_license_with_bands.md'
-  - Resources: 'tools.md'
   - API reference:
     - Core:
       - 'api/core/model.md'
@@ -252,5 +255,45 @@ nav:
             - 'api/parameters/misc/storage.md'
             - 'api/parameters/misc/discount_parameter.md'
             - 'api/parameters/misc/keating_aquifer.md'
-
+    - Recorders:
+        - Core:
+            - 'api/recorders/core/aggregator.md'
+            - 'api/recorders/core/recorder.md'
+            - 'api/recorders/core/aggregated_recorder.md' # TODO move
+        - Node:
+            - 'api/recorders/node/node.md'
+            - 'api/recorders/node/mean_node_flow.md'
+            - 'api/recorders/node/total_node_flow.md'
+            - 'api/recorders/node/total_node_deficit.md'
+            - 'api/recorders/node/annual_total_node_flow.md'
+            - 'api/recorders/node/rolling_mean_flow.md'
+        - Storage:
+            - 'api/recorders/storage/storage.md'
+            - 'api/recorders/storage/min_storage.md'
+            - 'api/recorders/storage/min_threshold_volume.md'
+        - Numpy:
+            - 'api/recorders/numpy/node.md'
+            - 'api/recorders/numpy/node_deficit.md'
+            - 'api/recorders/numpy/node_supply_ratio.md'
+            - 'api/recorders/numpy/node_curtailment_ratio.md'
+            - 'api/recorders/numpy/cost.md'
+            - 'api/recorders/numpy/storage.md'
+            - 'api/recorders/numpy/normalised_storage.md'
+            - 'api/recorders/numpy/storage_level.md'
+            - 'api/recorders/numpy/storage_area.md'
+            - 'api/recorders/numpy/parameter_value.md'
+            - 'api/recorders/numpy/parameter_index.md'
+            - 'api/recorders/numpy/daily_profile_parameter.md'
+        - File:
+            - 'api/recorders/file/csv.md'
+            - 'api/recorders/file/hdf.md'
+        - Frequency-based:
+            - 'api/recorders/frequency/fdc.md'
+            - 'api/recorders/frequency/fdc_deviations.md'
+            - 'api/recorders/frequency/seasonal_fdc.md'
+            - 'api/recorders/frequency/sdc.md'
+            - 'api/recorders/frequency/deficit_frequency.md'
+            - 'api/recorders/frequency/kde.md'
+            - 'api/recorders/frequency/normalised_kde.md'
+  - Resources: 'tools.md'
   - 'license.md'
