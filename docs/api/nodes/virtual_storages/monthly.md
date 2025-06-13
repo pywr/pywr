@@ -1,0 +1,2 @@
+# Monthly
+::: pywr.nodes.MonthlyVirtualStorage
