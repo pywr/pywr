@@ -22,6 +22,8 @@ cdef class Polynomial1DParameter(Parameter):
 
     area = 19.1 + 123 * x + 12 * x<sup>1</sup> + 0.192 * x<sup>2</sup>
 
+    where `x` is the storage.
+
     Python
     ======
     ```python
@@ -51,7 +53,7 @@ cdef class Polynomial1DParameter(Parameter):
     {
         "My parameter": {
             "type": "Polynomial1DParameter",
-            "storage" "reservoir"
+            "storage": "reservoir",
             "coefficients": [19.1, 123, 12, 0.192],
             "use_proportional_volume": true
         }

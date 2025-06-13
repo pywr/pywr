@@ -80,7 +80,7 @@ cdef class HydropowerTargetParameter(Parameter):
     - `H` is the turbine head. If `water_elevation` is given, then the head is the difference between `water_elevation`
         and `turbine_elevation`. If `water_elevation` is not provided, then the head is simply `turbine_elevation`.
     - `δ` is the turbine efficiency.
-    - C<sub>E</sub> is a coefficient to convert the flow unit. Use the `flow_unit_conversion` parameter to convert `q`
+    - C<sub>F</sub> is a coefficient to convert the flow unit. Use the `flow_unit_conversion` parameter to convert `q`
         from units of m<sup>3</sup> day<sup>-1</sup> to those used by the model.
         
     Attributes

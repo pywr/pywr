@@ -1026,7 +1026,7 @@ cdef class TablesArrayParameter(IndexParameter):
             The table file handle or filename to attach the CArray objects to. If a
             filename is given, the object will open and close the file handles.
         node : string
-            Name of the node in the table database to read data from
+            Name of the node in the table database to read data from.
         where : Optional[string], default="/"
             Path to read the node from.
         scenario : Optional[Scenario], default=None
@@ -1343,7 +1343,7 @@ cdef class ArrayIndexedScenarioMonthlyFactorsParameter(Parameter):
     Examples
     -------
     In the example below the parameter returns `10*0.28` for the first scenario and month,
-    `10*0.14` for the second scenario and first month. At the second timestep, the month is Febrary,
+    `10*0.14` for the second scenario and first month. At the second timestep, the month is February,
     and the parameter returns `30*0.3` and `30*0.88` for the first and second scenario respectively.
 
     ```python
@@ -2953,7 +2953,7 @@ cdef class IndexedArrayParameter(Parameter):
     ======
     ```python
     from pywr.core import Model
-    from pywr.nodes imort Storage
+    from pywr.nodes import Storage
     from pywr.parameters import ControlCurveIndexParameter, IndexedArrayParameter, ConstantParameter
 
     model = Model()
@@ -4484,7 +4484,7 @@ cdef class DeficitParameter(Parameter):
     recording this parameter does *not* give you the value that was used by
     the solver in this timestep. Alternatively, this parameter can be used
     in the model by other parameters and will evaluate to *yesterdays* deficit,
-    where the deficit in the zeroth timestep is `0``.
+    where the deficit in the zeroth timestep is `0`.
     """
     def __init__(self, model, node, *args, **kwargs):
         """

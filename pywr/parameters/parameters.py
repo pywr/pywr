@@ -246,7 +246,7 @@ class InterpolatedParameter(AbstractInterpolatedParameter):
         interp_kwargs : Optional[dict]
             The option to pass to the scipy.interp1d keyword arguments.
             See https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#interp1d
-            The interpolation method defaults to linear with exception when the parameter value
+            The interpolation method defaults to linear with exception raised when the parameter value
             is outside the range of x.
         """
         super(InterpolatedParameter, self).__init__(
