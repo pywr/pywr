@@ -32,6 +32,8 @@ plugins:
               - "!^_private"    # Optionally hide private methods
               - "!_disconnect.*$" # Node method
               - "!component_attrs"  # Node prop
+extra_css:
+  - extra.css
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
 markdown_extensions:
@@ -69,7 +71,6 @@ theme:
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.path
-    - navigation.footer
     - search.suggest
     - search.highlight
     - content.code.copy  # Add copy button in code blocks
@@ -125,10 +126,13 @@ nav:
         - 'manual/parameters/simple.md'
         - 'manual/parameters/profiles.md'
         - 'manual/parameters/timeseries.md'
+        - 'manual/parameters/flow.md'
         - Aggregated: 'manual/parameters/aggregated.md'
         - Control curves:  '' # TODO
         - 'manual/parameters/threshold.md'
-        - Interpolated: '' # TODO
+        - 'manual/parameters/interpolated.md'
+        - 'manual/parameters/array_based.md'
+        - 'manual/parameters/functions.md'
     - Recorders:
         - Introduction: 'manual/recorders/index.md'
         - 'manual/recorders/file.md'
@@ -137,7 +141,8 @@ nav:
           - 'manual/recorders/memory/numpy.md'
     - Optimisation: '' # TODO
     - Custom components:
-      - 'manual/custom_parameters.md'
+      - 'manual/custom_components/parameters.md'
+      - 'manual/custom_components/node.md'
     - How to implement:
       - 'manual/misc/demand_savings.md'
       - 'manual/misc/soft_constraints.md'

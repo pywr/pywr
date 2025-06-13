@@ -16,6 +16,6 @@ Memory recorders can be configured to record various attributes of a model compo
 - any parameter, such as cost, reservoir level, control curves position, etc.
 - any statistics on the model results (such as min storage, mean flow or flow duration curve).
 
-The following sections explain how to use most of the recorders available in Pywr.
+The following sections explain how to use most of the available recorders in Pywr.
 For a comprehensive list of all available recorders, please refer to the
 [API reference](../../api/recorders/core/recorder.md).

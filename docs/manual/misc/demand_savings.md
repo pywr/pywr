@@ -73,6 +73,8 @@ _p_ is the profile implemented as a monthly profile called `"demand_profile"` th
 August is 1.2x the baseline demand, with the rest of the year at 0.9x the baseline, forming the common "top hat" 
 profile shown below.
 
+<p align="center">
+
 ```python exec="1" html="1"
 from io import StringIO
 
@@ -101,6 +103,7 @@ buffer = StringIO()
 plt.savefig(buffer, format="svg")
 print(buffer.getvalue())
 ```    
+</p>
 
 ## Demand restriction level
 The demand restriction level or index is often related to the storage of strategic reservoirs in relation to a

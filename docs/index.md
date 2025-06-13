@@ -20,7 +20,7 @@ significant differences. Pywr’s principle design goals are that it is:
 
 <div class="grid cards" markdown>
 
--   :material-download:{ .lg .middle } __Getting started__
+-   :material-download:{ .lg .middle .orange } <span class="orange">__Getting started__</span>
 
     ---
 
@@ -29,7 +29,7 @@ significant differences. Pywr’s principle design goals are that it is:
 
     [:octicons-arrow-right-24: Getting started](./get_started/intro.md)
 
--   :material-help-box:{ .lg .middle } __Manual__
+-   :material-help-box:{ .lg .middle .teal } <span class="teal">__Manual__</span>
 
     ---
 
@@ -38,7 +38,7 @@ significant differences. Pywr’s principle design goals are that it is:
 
     [:octicons-arrow-right-24: Manual](./manual/problem.md)
 
--   :material-code-array:{ .lg .middle } __APIs__
+-   :material-code-array:{ .lg .middle .purple } <span class="purple">__APIs__</span>
 
     ---
 
@@ -46,7 +46,7 @@ significant differences. Pywr’s principle design goals are that it is:
 
     [:octicons-arrow-right-24: Reference](./api/core/model.md)
 
--   :material-cog:{ .lg .middle } __Tools__
+-   :material-cog:{ .lg .middle .brown } <span class="brown">__Tools__</span>
 
     ---
 

@@ -625,3 +625,12 @@ Putting all together in one block:
   ]
 }
 ```
+
+## Best practice
+When setting costs you should use standard or default costs for each node type
+within your model. For example:
+
+- For demand centres use a negative cost: `-500`
+- For minimum residual flow of a [river guage node](../manual/nodes/link.md#river-gauge): `-1000`
+- For reservoirs: `0` to `-200`.
+- For reservoir spill nodes (to allow spill only when needed): `2000`

@@ -236,7 +236,7 @@ is used to access the scenario number. Line
 current_storage = self.storage_node.volume[sid]
 ```
 
-get today's storage for the current scenario. `volume` is a property of the [pywr.nodes.Storage[] which contains an
+get today's storage for the current scenario. `volume` is a property of the [pywr.nodes.Storage][] which contains an
 array of current storages for all scenario.
 
 The method finally returns half the storage. Pywr always exepts only one number (`float`) is returned by the `value()` 
@@ -608,21 +608,47 @@ which is the shared library you can import in Python.
 
 For additional documentation on Cython you can read the [official Cython documentation](https://cython.readthedocs.io/en/stable/index.html).
 
+## Implement an IndexParameter
+There are certain Pywr components that require a [pywr.parameters.IndexParameter][]; this is
+a subclass of [pywr.parameters.Parameter][], that instead of returning a `float` via the `value()` method, it 
+returns an index via the `index()` method. The [pywr.parameters.IndexedArrayParameter][] is an example of
+a parameter requiring an `IndexParameter`. 
+
+The implementation of this parameter type follows the same approach and principles seen
+so far, but instead of implementing the `value()` method, you need to implement the `index()` method:
+
+```python
+def index(self, timestep: Timestep, scenario_index: ScenarioIndex) -> int:
+```
+
+If you are using Cython, the method signature is:
+
+```python
+cpdef int index(self, Timestep timestep, ScenarioIndex scenario_index) except? -1:
+```
+
+The method signature is similar but it must returns an `int` instead of `float`.
+
 ## Best practices 
 ### Type hints
 It is a good practise to add [type hints](https://docs.python.org/3/library/typing.html) to your parameter
 methods. These are not used by Python or pywr and do not affect the behaviour of the Python code. They are
-used by [IDEs](https://en.wikipedia.org/wiki/Integrated_development_environment) to spot errors in the 
+used by [IDEs](https://en.wikipedia.org/wiki/Integrated_development_environment) or
+[static type checker tools](https://realpython.com/python-type-checking/#static-type-checking) to spot errors in the 
 parameter implementation or when you are initialising the custom class from a Python script. Type hints also give you
 some guidance about the accepted types by the `__init__` method. 
 
 ### Documentation (docstrings)
 It is always a good practise to add documentation to your class and methods, in particular if another modeller 
-has never worked with your parameter before. There are 4 types of documentation you should implement:
+has never worked with your parameter before. There are four types of documentation strings
+you should implement:
 
 - at top of the file: this explains what the file contains (in terms of functions or classes)
 - below the `class` statement: this explains what the class does.
 - below each method: this explains what the method does, and about the input and output arguments.
+
+[Ruff](https://docs.astral.sh/ruff/rules/#pydocstyle-d) and the [`pydocstyle` package](https://pypi.org/project/pydocstyle/)
+are two good tools to enforce these rules.
 
 ### Code formatting
 Your Python code should always be formatted so that is readable. Use 

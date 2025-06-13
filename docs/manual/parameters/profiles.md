@@ -145,6 +145,7 @@ Input(model, name="I").connect(Output(model, name="O"))
 
 r = NumpyArrayParameterRecorder(model, p)
 model.run()
+del model
 df = r.to_dataframe()
 dfs.append(df)
 
@@ -222,6 +223,7 @@ for interp_day in options:
 
     r = NumpyArrayParameterRecorder(model, p)
     model.run()
+    del model
     df = r.to_dataframe()
     df.columns = [str(interp_day)]
     dfs.append(df)

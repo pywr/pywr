@@ -5,6 +5,10 @@ simulation timestep and scenario being processed. For example, they can return t
 depending on the month the simulation is in; or restrict a flow based on the position of a
 reservoir with respect to its rule curves.
 
+The next sections and pages explain how to use most of the available parameters in Pywr.
+For a comprehensive list of all available parameters, please refer to the
+[API reference](../../api/parameters/core.md).
+
 ## Parameter types
 Pywr includes a rich library of built-in parameter types to handle common modelling tasks. Some
 of the most frequently used categories include:

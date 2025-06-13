@@ -128,10 +128,12 @@ df.plot(subplots=True)
 plt.show()
 ```
 
-## Table recorder
-This recorder saves the model outputs to an [HDF file](https://en.wikipedia.org/wiki/Hierarchical_Data_Format). 
-The data for a node is saved in a 2-dimensional array, where each row contains the outputs at each timestep, and the columns contain the results for
-each model scenario. This recorder is more powerful than the CSV recorder as:
+## Table recorder (PyTables)
+The [pywr.recorders.TablesRecorder][] lets you save the model results into a 
+[Hierarchical Data Format, version 5 (HDF5) file](https://en.wikipedia.org/wiki/Hierarchical_Data_Format). 
+This binary format is efficient for storing large numerical datasets especially those with multiple scenarios.
+The data is saved in a 2-dimensional array, where each row contains the outputs at each timestep, and the columns contain the results for
+each model scenario. This recorder is more powerful than the [CSV recorder](#csv-recorder) as:
 
 - it exports all scenarios and allows calculating statistics across multiple scenarios;
 - it can export data of nodes (flow or storage) and parameter (a number for parameter's
