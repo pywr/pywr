@@ -13,3 +13,7 @@ software is written in Python and offers an interactive model schematic and full
 components.
 - [Pywr viewer desktop releases](https://github.com/jtaltd/pywr-viewer-desktop-releases): this is a desktop
 application for Windows and Linux for viewing Pywr models and results.
+- [Water Strategy](https://waterstrategy.org): is an online platform for water management and planning
+that relies on Pywr.
+- [Pywr introduction presentation](assets/Pywr%20introduction%20-%20September%202018.pdf)
+- [Pywr training material](https://github.com/jtaltd/pywr-training-public/releases/tag/v1.2.0)
