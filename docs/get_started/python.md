@@ -41,7 +41,7 @@ supply.cost = 3.0
 demand.cost = -100.0
 ```
 
-A detailed explanation on how costs works is provided in the [Cost section](../manual/costs.md) of the manual.
+A detailed explanation on how costs works is provided in the [Cost section](../manual/key_concepts/costs.md) of the manual.
 
 ## Set the start and end date
 Next we need to tell the model how long to run for. As an example, we'll use a daily timestep for all of 2015.

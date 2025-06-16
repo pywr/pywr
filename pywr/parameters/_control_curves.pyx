@@ -681,9 +681,8 @@ cdef class ControlCurveParameter(BaseControlCurveParameter):
     volumes is at different percentage of `max_volume` relative to predefined control curves.
     Control curves must be defined in the range [0, 1] corresponding to 0% and 100% volume.
 
-    By default this parameter returns an integer sequence from zero,if the first control curve
-    is passed, and incrementing by one for each control curve (or "level") the `Storage` node
-    is below.
+    By default, this parameter returns an integer sequence from zero and incrementing
+    by one for each control curve (or "level") the `Storage` node is below.
 
     Attributes
     ----------

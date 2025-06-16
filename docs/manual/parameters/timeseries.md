@@ -1,7 +1,7 @@
 # Timeseries
 
 Before reading this section, make sure you are familiar with how Pywr
-handles [tables and external data](../tables.md#timeseries).
+handles [tables and external data](../key_concepts/tables.md#timeseries).
 
 ## Dataframe parameter
 Timeseries can be loaded using the [pywr.parameters.DataFrameParameter][] parameter, which

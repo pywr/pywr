@@ -326,7 +326,7 @@ Instead of defining the data inline using the `values` property, external data c
 !!! warning
     The URL should be relative to the JSON document and *not* the current working directory.
 
-The [External data section](../manual/tables.md) covers in much detail the supported file types and how to
+The [External data section](../manual/key_concepts/tables.md) covers in much detail the supported file types and how to
 setup the data parsers.
 
 ## Run the model

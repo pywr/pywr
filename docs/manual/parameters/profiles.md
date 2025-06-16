@@ -300,7 +300,7 @@ print(buffer.getvalue())
 
 !!!info
     This parameter is intended to be used with a [pywr.nodes.AnnualVirtualStorage][] node to provide a profile
-    that represents perfect average utilisation of the annual volume. See [the cost section](../costs.md#annual-license)
+    that represents perfect average utilisation of the annual volume. See [the cost section](../key_concepts/costs.md#annual-license)
     to understand how to combine the two components.
 
 ### Change the reset date

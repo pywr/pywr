@@ -36,7 +36,7 @@ significant differences. Pywr’s principle design goals are that it is:
     Explore the manual with lot of examples on how to use
     pywr components and customise your model
 
-    [:octicons-arrow-right-24: Manual](./manual/problem.md)
+    [:octicons-arrow-right-24: Manual](manual/key_concepts/problem.md)
 
 -   :material-code-array:{ .lg .middle .purple } <span class="purple">__APIs__</span>
 

@@ -1,4 +1,4 @@
-# The Linear Programming Problem
+# The linear programming problem
 
 ## Formulation
 Pywr is a water resource model software that relies on [Linear Programming (LP)](https://en.wikipedia.org/wiki/Linear_programming)

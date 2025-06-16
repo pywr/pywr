@@ -65,7 +65,8 @@ This parameter is particularly useful, if for example, you need to implement com
 where different rules apply depending on the reservoir's water level. Instead of using multiple
 `ControlCurveParameter`s using the same curves but returning different values, you can couple
 the `ControlCurveIndexParameter` with multiple `IndexedArrayParameter`s. This makes the model more
-efficient and easy to read.
+efficient and easy to read. Have a look at the [control curve page](control_curves.md#control-curve-index) for more
+details.
 
 ## Array indexed
 The [pywr.parameters.ArrayIndexedParameter][] returns a value from a given array based on the index of the 
@@ -98,7 +99,7 @@ In the following example, the parameter returns `10.1` at the first timestep (in
     }
     ```
 
-The values in this parameter are constant across all scenarios and the array length
+The values in this parameter are constant across all scenarios, and the array length
 must equal the number of model timesteps.
 
 ## Array indexed scenario

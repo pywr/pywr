@@ -287,7 +287,8 @@ class ReservoirWithRelease(Storage):
 ```
 
 The implementation is simpler as the node inherits all the properties and methods from the
-storage node (including `iter_slots()`). The only exception is:
+storage node (including `iter_slots()` as any node will be directly connected to the
+object we created). The only exception is:
 
 - `__parameter_attributes__` (L14): this attribute contains all the values in the parent node
 and the new `release` attribute, otherwise the node will not work.

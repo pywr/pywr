@@ -10,7 +10,7 @@ Where:
 - C<sub>i</sub> represents the cost or penalty per unit flow at node i, and
 - X<sub>i</sub> is the unknown flow that the solver must determine.
 
-At each timestep, pywr solves the supply-demand balance problem using the [linear programming algorithm](./problem.md). 
+At each timestep, pywr solves the supply-demand balance problem using the [linear programming algorithm](problem.md). 
 The solver then chooses the set of flows that results in the **minimum total system cost** at each timestep, while adhering to all
 physical constraints and operational rules (e.g., max and min flow on links, reservoir capacity).
 
@@ -236,7 +236,6 @@ To properly configure the reservoir node, set:
 The following sections explain how to set the cost in more detail depending on the problem you are solving.
 
 ### Constant cost
-
 A constant cost does not change throughout the simulation. If you have the following model, set a negative cost
 on the reservoir and run the model for three days:
 
@@ -337,7 +336,7 @@ If you were to set a positive cost on the storage node, the solver will empty th
 will deliver 20 Ml/d to the demand node on the first day and 80 Ml/d to the spill, leaving the reservoir always 
 empty and supplying only 2 Ml/d to the demand node.
 
-### Two set of constant costs
+### Two sets of constant costs
 In a conjunctive system, where multiple sources are available, you may need to balance sources; for example if a reservoir
 reaches low-storage conditions, you want the model to use a more expensive storage node when a certain storage in the
 other reservoir is crossed. This can be achieved by setting a user-defined control curve on a reservoir:
@@ -391,11 +390,12 @@ You can also assign more than one control curve as follows:
 Pywr will use `-35` as cost when the storage is between the two control curves. The number of costs is always equal
 the number of control curves plus 1.
 
+Control curves are explained in detail in [this page](../parameters/control_curves.md).
 
 ### Two interpolated costs
 In the previous section, we used a control curve to set reservoir costs based on whether a storage is above or below
 a defined threshold (or set of thresholds). In that approach, the cost changes abruptly when the control line is crossed and
-is not affected by the storage that is actually left in the reservoir.
+is not affected by the storage actually left in the reservoir.
 
 A more refined method is to make the reservoir cost vary continuously with the available storage by interpolating between two
 or more costs. This allows the model to better balance resources as water will be preserved first in those sources 
@@ -426,7 +426,7 @@ need to provide is equal to the number of control curves plus 2:
        {
          "type": "constant",
          "value": 0.3
-       },
+       }
     ],
     "values": [-1, -5, -90, -100]
   }
@@ -558,7 +558,7 @@ The license usage is defined using a pywr `Parameter`. You can implement your ow
 license usages, or rely on the most simple and used approach: a pro-rata approach using the built-in
 [pywr.parameters.UniformDrawdownProfileParameter][]. The `UniformDrawdownProfile` gives a profile representing a perfect average utilisation of the annual volume:
 
-![image.png](../assets/al_uniform_drawdown_parameter.png)
+![image.png](../../assets/al_uniform_drawdown_parameter.png)
 
 It returns a value of 1 on the reset day, and subsequently reduces by 1/366 every day afterward. As long as 
 you are above the profile (i.e. above the average daily utilisation), it is acceptable to use the license. 
@@ -577,7 +577,7 @@ In the example above you can set the control curve as:
 However, you need to make sure the uniform profile resets on the same date as your license (in the example on 1st April)
 and you a profile needs to look like this:
 
-![image.png](../assets/al_uniform_drawdown_parameter_2.png)
+![image.png](../../assets/al_uniform_drawdown_parameter_2.png)
 
 This can be achieved by customising the parameter as follows:
 
@@ -631,6 +631,6 @@ When setting costs you should use standard or default costs for each node type
 within your model. For example:
 
 - For demand centres use a negative cost: `-500`
-- For minimum residual flow of a [river guage node](../manual/nodes/link.md#river-gauge): `-1000`
+- For minimum residual flow of a [river guage node](../nodes/link.md#river-gauge): `-1000`
 - For reservoirs: `0` to `-200`.
 - For reservoir spill nodes (to allow spill only when needed): `2000`

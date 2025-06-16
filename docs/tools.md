@@ -16,4 +16,5 @@ application for Windows and Linux for viewing Pywr models and results.
 - [Water Strategy](https://waterstrategy.org): is an online platform for water management and planning
 that relies on Pywr.
 - [Pywr introduction presentation](assets/Pywr%20introduction%20-%20September%202018.pdf)
+- [Pywr paper](https://www.sciencedirect.com/science/article/pii/S1364815219307133)
 - [Pywr training material](https://github.com/jtaltd/pywr-training-public/releases/tag/v1.2.0)
