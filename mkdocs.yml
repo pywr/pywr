@@ -111,10 +111,11 @@ nav:
         - 'get_started/json.md'
   - Manual:
     - Key concepts:
-      - 'manual/problem.md'
-      - 'manual/costs.md'
-      - 'manual/exceptions.md'
-      - 'manual/tables.md'
+      - 'manual/key_concepts/problem.md'
+      - 'manual/key_concepts/costs.md'
+      - 'manual/key_concepts/exceptions.md'
+      - 'manual/key_concepts/tables.md'
+      - 'manual/key_concepts/use_api.md'
     - Nodes:
       - 'manual/nodes/input.md'
       - 'manual/nodes/link.md'
@@ -128,7 +129,7 @@ nav:
         - 'manual/parameters/timeseries.md'
         - 'manual/parameters/flow.md'
         - Aggregated: 'manual/parameters/aggregated.md'
-        - Control curves:  '' # TODO
+        - 'manual/parameters/control_curves.md'
         - 'manual/parameters/threshold.md'
         - 'manual/parameters/interpolated.md'
         - 'manual/parameters/array_based.md'
@@ -139,6 +140,9 @@ nav:
         - Save results in memory:
           - 'manual/recorders/memory/index.md'
           - 'manual/recorders/memory/numpy.md'
+          - 'manual/recorders/memory/flow.md'
+          - 'manual/recorders/memory/storage.md'
+          - 'manual/recorders/memory/parameter.md'
     - Optimisation: '' # TODO
     - Custom components:
       - 'manual/custom_components/parameters.md'
@@ -292,6 +296,10 @@ nav:
         - File:
             - 'api/recorders/file/csv.md'
             - 'api/recorders/file/hdf.md'
+        - Parameter:
+            - 'api/recorders/parameter/mean.md'
+            - 'api/recorders/parameter/rolling_mean.md'
+            - 'api/recorders/parameter/total.md'
         - Frequency-based:
             - 'api/recorders/frequency/fdc.md'
             - 'api/recorders/frequency/fdc_deviations.md'
