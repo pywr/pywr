@@ -735,7 +735,8 @@ class Model(object):
 
         Returns
         -------
-        None
+        ModelResult
+            The model stats.
         """
         logger.info('Start model run ...')
         t0 = time.time()

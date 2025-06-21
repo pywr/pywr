@@ -1,5 +1,7 @@
 import numpy as np
 import platypus
+from fontTools.qu2cu.qu2cu import Solution
+
 from . import (
     cache_constraints,
     cache_objectives,
@@ -29,9 +31,46 @@ def count_constraints(constraints):
 
 
 class PlatypusWrapper(BaseOptimisationWrapper):
-    """A helper class for running pywr optimisations with platypus."""
+    """A helper class for running pywr optimisations with the
+    [platypus library](http://platypus.readthedocs.io).
+
+    Attributes
+    ----------
+    pywr_model_json : str | dict
+        The pywr model.
+    pywr_model_klass : Model
+        The pywr model class to use.
+    pywr_model_kwargs : dict
+        Additional keyword arguments to pass to the pywr model.
+    uid : str
+        A unique ID used for caching.
+    problem : platypus.Problem
+        The instance of the platypus Problem.
+    run_stats : ModelResult
+        The statistics from Model.run().
+    """
 
     def __init__(self, *args, **kwargs):
+        """
+        Initialize the wrapper instance.
+
+        Parameters
+        ----------
+        pywr_model_json : str | dict
+            The pywr model to pass to Model.load().
+
+        Other Parameters
+        ----------------
+        pywr_model_klass : Optional[Model], default = Model
+            The pywr model class to use.
+        pywr_model_kwargs : Optional[dict], default = {}
+            Additional keyword arguments to pass to the pywr model.
+
+        Raises
+        ------
+        ValueError
+            If there are no defined objectives or variables.
+        """
         super(PlatypusWrapper, self).__init__(*args, **kwargs)
 
         # To determine the number of variables, etc
@@ -112,7 +151,9 @@ class PlatypusWrapper(BaseOptimisationWrapper):
                     f'The bounds of constraint "{c.name}" could not be identified correctly.'
                 )
 
-    def evaluate(self, solution):
+    def evaluate(self, solution: Solution):
+        """Evaluate the solution; this runs the Pywr model. Do not call this method,
+        as it is called by Platypus."""
         logger.info("Evaluating solution ...")
 
         for ivar, var in enumerate(self.model_variables):
@@ -157,28 +198,45 @@ class PlatypusWrapper(BaseOptimisationWrapper):
 class PywrRandomGenerator(platypus.RandomGenerator):
     """A Platypus Generator that injects current and/or alternative setups of the Pywr model into the population.
 
-    When use_current is true the first Solution returned from the generate method is taken from the wrapper
+    When `use_current` is True, the first `Solution` returned from the `generate()` method is taken from the wrapper
     (i.e. the Pywr model being wrapped) as the current values of the variable Parameters. This allows the population
     to be seeded with the current model configuration, which is often an initial solution. Additional solutions
-    can be provided in as an iterable of solutions. These can come from an alternative source such as previous
+    can be provided in as iterable of solutions. These can come from an alternative source such as previous
     optimisation.
 
-    Parameters
-    ==========
-    wrapper : PlatypusWrapper
-        Wrapper from which to grab the current model and decision variables.
-    use_current: Bool
+    Attributes
+    -----------
+    wrapper : Optional[PlatypusWrapper]
+        The wrapper instance from which to grab the current model and decision variables.
+    use_current: bool
         Whether to generate an initial solution using the model's current configuration. Default is true.
         Set this to False and pass some solutions to use pre-generated
-    solutions : List of dicts
-        An iterable of initial solutions to use (default is None). If given these alternative solutions
-        are provided to Platypus in order. Each item in the list should be a dictionary containing keys
+    solutions : Optional[Iterable[dicts]]
+        An iterable of initial solutions to us. If given, these alternative solutions
+        are given to Platypus in provided order. Each item in the list should be a dictionary containing keys
         for each of the variable Parameters in the optimisation. The value of each key should be another
         dictionary container keys "doubles" and/or "integers" to provide the appropriate values as
         dictated by the Parameter's type.
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        Initialise the random generator with the provided parameters.
+
+        Parameters
+        -----------
+        wrapper : Optional[PlatypusWrapper], default=None
+            The wrapper instance from which to grab the current model and decision variables.
+        use_current: Optional[bool], default=True
+            Whether to generate an initial solution using the model's current configuration. Default is true.
+            Set this to False and pass some solutions to use pre-generated
+        solutions : Optional[Iterable[dicts]], default=None
+            An iterable of initial solutions to us. If given, these alternative solutions
+            are given to Platypus in provided order. Each item in the list should be a dictionary containing keys
+            for each of the variable Parameters in the optimisation. The value of each key should be another
+            dictionary container keys "doubles" and/or "integers" to provide the appropriate values as
+            dictated by the Parameter's type.
+        """
         self.wrapper = kwargs.pop("wrapper", None)
         self.use_current = kwargs.pop("use_current", True)
         self.solutions = kwargs.pop("solutions", None)
@@ -186,7 +244,8 @@ class PywrRandomGenerator(platypus.RandomGenerator):
         self._wrapped_generated = False
         self._solution_pointer = 0
 
-    def generate(self, problem):
+    def generate(self, problem: platypus.Problem) -> platypus.Solution:
+        """Generate the solution. Do not call this method, as it is called by Platypus."""
         solution = None
         if self.wrapper is not None:
             if self.use_current and not self._wrapped_generated:

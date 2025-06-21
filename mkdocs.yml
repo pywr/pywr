@@ -324,5 +324,9 @@ nav:
             - 'api/recorders/calibration/bias.md'
             - 'api/recorders/calibration/rmse_std_ratio.md'
             - 'api/recorders/calibration/nse.md'
+    - Optimisation:
+        - 'api/optimisation/core.md'
+        - 'api/optimisation/platypus.md'
+        - 'api/optimisation/pygmo.md'
   - Resources: 'tools.md'
   - 'license.md'

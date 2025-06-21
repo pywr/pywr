@@ -1,0 +1,3 @@
+# Core
+
+::: pywr.optimisation.BaseOptimisationWrapper
