@@ -1045,8 +1045,6 @@ cdef class TablesArrayParameter(IndexParameter):
             An optional comment for the parameter.
         tags : Optional[dict], default=None
             An optional container of key-value pairs.
-        is_variable : bool
-            Whether the parameter is set as variable to solve an optimisation problem.
         kwargs : dict
             Any other keyword argument.
         """

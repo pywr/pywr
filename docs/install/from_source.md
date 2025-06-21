@@ -91,8 +91,30 @@ Copy the file `rc.exe` and `rc.dll` from `C:\Program Files (x86)\Windows Kits\10
 You may need to adjust the paths based on the version of the Windows Kit you installed.
 
 ### Download the solvers
-TODO
+### GLPK
+For the GLPK solver:
 
+1. Go to https://sourceforge.net/projects/winglpk/ and press the Download button
+2. Extract the ZIP file in `C:\Data`. This is the folder referenced in this documentation but you can
+place the files wherever you want
+3. Go to `C:\Data\gplk-4.65\w64` (or the version you downloaded) and copy the file `glpk_4_65.lib` to `gplk.lib`. 
+This is the version the compiler looks for.
+
+
+### lpsolve
+For the lpsolve solver:
+
+1. Go to https://sourceforge.net/projects/lpsolve/files/lpsolve/ and select a folder without the beta suffix
+2. Look for a file named `lp_solve_*_source.tar.gz` where `*` is the version you selected.
+3. Extract the ZIP file in `C:\Data`.
+4. Rename the folder in `C:\Data` to `lpsolve` without the `_` and version number.
+5. From the same website download a file name `lp_solve_*_dev_win64.zip` where `*` is the version you selected above.
+6. Copy all files in the archive to `C:\Data\lpsolve`, overwriting any already-existing file.
+
+## Set the environment variable
+The glpk and lpsolve library must be made available to the compiler by providing the folder where we saved the files.
+
+TODO env variables
 
 
 ### Compile pywr

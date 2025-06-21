@@ -153,11 +153,11 @@ where:
     ```python
     from pywr.core import Model
     from pywr.nodes import Link
-    from pywr.parameters import HydropowerTargetParameter
+    from pywr.parameters import HydropowerTargetParameter, ConstantParameter
     
     model = Model()
     node = Link(model=model, name="WTW")
-    RollingMeanFlowNodeParameter(
+    HydropowerTargetParameter(
         model=model, 
         target=ConstantParameter(model, value=100),
         min_head=2.3,
@@ -169,7 +169,7 @@ where:
 === "JSON"
     ```json
     {
-        "HydropowerTargetParameter": {
+        "Power": {
             "type": "HydropowerTargetParameter",
             "target": 100,
             "min_head": 2.3,

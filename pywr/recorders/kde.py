@@ -16,7 +16,7 @@ class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
     a single PDF is produced and returned via `.to_dataframe()`.
 
     The user can specify an optional resampling (e.g. to create annual minimum time-series) before fitting
-    the KDE. By default, the KDE is reflected at the proportional storage bounds (0.0 and 1.0) to represent the
+    the KDE using the Pandas library. By default, the KDE is reflected at the proportional storage bounds (0.0 and 1.0) to represent the
     boundedness of the distribution (i.e. the distribution may leak outside the bounded domain when
     not reflected). This can be disabled if required.
 
@@ -52,7 +52,7 @@ class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
     ```json
     {
         "KDE storage": {
-            "type": "StorageDurationCurveRecorder",
+            "type": "GaussianKDEStorageRecorder",
             "node": "Reservoir",
             "resample_freq": "Y",
             "target_volume_pc": 0.3
@@ -105,9 +105,12 @@ class GaussianKDEStorageRecorder(NumpyArrayStorageRecorder):
         node : Storage
             Storage instance to record.
         resample_freq : Optional[str]
-            The resampling frequency used by prior to distribution fitting.
+            The resampling frequency used by prior to distribution fitting. See [this page](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
+            for a list of available resampling frequencies.
         resample_func : Optional[str]
-            The resampling function used prior to distribution fitting.
+            The resampling function used prior to distribution fitting. See
+            [this page](https://pandas.pydata.org/pandas-docs/stable/reference/groupby.html#dataframegroupby-computations-descriptive-stats)
+            for a list of the function names you can use.
         target_volume_pc : float
             The proportional target volume for which a probability of being at or lower is estimated.
         num_pdf : Optional[int], default=101
@@ -243,7 +246,7 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
     from pywr.core import Model
     from pywr.nodes import Storage
     from pywr.parameters import ConstantParameter
-    from pywr.recorders import GaussianKDEStorageRecorder
+    from pywr.recorders import NormalisedGaussianKDEStorageRecorder
 
     model = Model()
     storage = Storage(
@@ -253,7 +256,7 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
         cost=-20.0,
         initial_volume_pc=0.8
     )
-    GaussianKDEStorageRecorder(
+    NormalisedGaussianKDEStorageRecorder(
         model=model,
         name="KDE storage",
         node=storage,
@@ -268,7 +271,7 @@ class NormalisedGaussianKDEStorageRecorder(NumpyArrayNormalisedStorageRecorder):
     ```json
     {
         "KDE storage": {
-            "type": "StorageDurationCurveRecorder",
+            "type": "NormalisedGaussianKDEStorageRecorder",
             "node": "Reservoir",
             "resample_freq": "Y",
             "target_volume_pc": 0.3,

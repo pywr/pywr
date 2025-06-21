@@ -96,11 +96,11 @@ This behaviour is implemented as follows:
         "parameters": {
             "Top line": {
                 "type": "MonthlyProfileParameter",
-                "values": [0.8, 0.73, 0.7, 0.62, 0.6, 0.55, 0.6, 0.65, 0.72, 0.75, 0.83, 0.8],
+                "values": [0.8, 0.73, 0.7, 0.62, 0.6, 0.55, 0.6, 0.65, 0.72, 0.75, 0.83, 0.8]
             },
             "Second line": {
                 "type": "MonthlyProfileParameter",
-                "values": [0.6, 0.52, 0.5, 0.45, 0.4, 0.35, 0.4, 0.43, 0.51, 0.55, 0.63, 0.6],
+                "values": [0.6, 0.52, 0.5, 0.45, 0.4, 0.35, 0.4, 0.43, 0.51, 0.55, 0.63, 0.6]
             },
             "Last line": {
                 "type": "ConstantParameter",

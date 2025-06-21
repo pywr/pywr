@@ -220,6 +220,8 @@ print(rec.aggregated_value()) # >>> 459.379
 ## Storage
 To record the time series of the relative or absolute volume of a storage node, you can use the [pywr.recorders.NumpyArrayStorageRecorder][].
 
+### Available key options
+
 | Name              | Description                                                                                                      | Required | Default value |
 |-------------------|------------------------------------------------------------------------------------------------------------------|----------|---------------|
 | node              | The node to record as instance or node name from JSON                                                            | Yes      |               |
@@ -228,8 +230,45 @@ To record the time series of the relative or absolute volume of a storage node, 
 | agg_func          | An aggregation function used to aggregate over scenario in the `aggregated_value()` method.                      | No       | "mean"        |
 | ignore_nan        | A flag to ignore NaN values when calling `value()` or `aggregated_value()`.                                      | No       | false         |
 
+### Example
+=== "Python"
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import NumpyArrayStorageRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    NumpyArrayStorageRecorder(
+        model=model,
+        name="Relative storage",
+        node=storage,
+        proportional=True,
+        temporal_agg_func="sum"
+    )
+    ```
+
+=== "JSON"
+    ```json
+    {
+        "Relative storage": {
+            "type": "NumpyArrayStorageRecorder",
+            "node": "Reservoir",
+            "temporal_agg_func": "sum",
+            "proportional": true,
+        }
+    }
+    ```
+
 ## Storage level
 To record the time series of the level in a storage node, you can use the [pywr.recorders.NumpyArrayLevelRecorder][].
+
+### Available key options
 
 | Name              | Description                                                                                                      | Required | Default value |
 |-------------------|------------------------------------------------------------------------------------------------------------------|----------|---------------|
@@ -237,10 +276,45 @@ To record the time series of the level in a storage node, you can use the [pywr.
 | temporal_agg_func | An aggregation function used to aggregate over time when computing a value per scenario in the `value()` method. | No       | "mean"        |
 | agg_func          | An aggregation function used to aggregate over scenario in the `aggregated_value()` method.                      | No       | "mean"        |
 | ignore_nan        | A flag to ignore NaN values when calling `value()` or `aggregated_value()`.                                      | No       | false         |
+
+### Example
+=== "Python"
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import NumpyArrayLevelRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    NumpyArrayLevelRecorder(
+        model=model,
+        name="Level",
+        node=storage,
+        temporal_agg_func="sum"
+    )
+    ```
+
+=== "JSON"
+    ```json
+    {
+        "Level": {
+            "type": "NumpyArrayLevelRecorder",
+            "node": "Reservoir",
+            "temporal_agg_func": "sum",
+        }
+    }
+    ```
 
 ## Storage area
 To record the time series of the area in a storage node, you can use the [pywr.recorders.NumpyArrayAreaRecorder][].
 
+### Available key options
+
 | Name              | Description                                                                                                      | Required | Default value |
 |-------------------|------------------------------------------------------------------------------------------------------------------|----------|---------------|
 | node              | The node to record as instance or node name from JSON                                                            | Yes      |               |
@@ -248,8 +322,42 @@ To record the time series of the area in a storage node, you can use the [pywr.r
 | agg_func          | An aggregation function used to aggregate over scenario in the `aggregated_value()` method.                      | No       | "mean"        |
 | ignore_nan        | A flag to ignore NaN values when calling `value()` or `aggregated_value()`.                                      | No       | false         |
 
+### Example
+=== "Python"
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import NumpyArrayAreaRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    NumpyArrayAreaRecorder(
+        model=model,
+        name="Area",
+        node=storage,
+        temporal_agg_func="sum"
+    )
+    ```
+
+=== "JSON"
+    ```json
+    {
+        "Area": {
+            "type": "NumpyArrayAreaRecorder",
+            "node": "Reservoir",
+            "temporal_agg_func": "sum",
+        }
+    }
+    ```
 ## Parameter value
 To record the time series of a parameter values, you can use the [pywr.recorders.NumpyArrayParameterRecorder][].
+
+### Available key options
 
 | Name              | Description                                                                                                      | Required | Default value |
 |-------------------|------------------------------------------------------------------------------------------------------------------|----------|---------------|
@@ -258,8 +366,51 @@ To record the time series of a parameter values, you can use the [pywr.recorders
 | agg_func          | An aggregation function used to aggregate over scenario in the `aggregated_value()` method.                      | No       | "mean"        |
 | ignore_nan        | A flag to ignore NaN values when calling `value()` or `aggregated_value()`.                                      | No       | false         |
 
+### Example
+=== "Python"
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveParameter, ConstantParameter
+    from pywr.recorders import NumpyArrayParameterRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter = ControlCurveParameter(
+        model=model,
+        name="Rule curve position",
+        storage_node=storage,
+        values=[1.0, 45.0, 90.0],
+        control_curves=[ConstantParameter(model, 0.76), ConstantParameter(model, 0.56)],
+    )
+    NumpyArrayParameterRecorder(
+        model=model,
+        name="Control curve value",
+        param=parameter,
+        temporal_agg_func="sum"
+    )
+    ```
+
+=== "JSON"
+    ```json
+    {
+        "Control curve value": {
+            "type": "NumpyArrayParameterRecorder",
+            "param": "Rule curve position",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
+
 ## Index parameter
 To record the time series of the index of a parameter index, you can use the [pywr.recorders.NumpyArrayIndexParameterRecorder][].
+
+### Available key options
 
 | Name              | Description                                                                                                      | Required | Default value |
 |-------------------|------------------------------------------------------------------------------------------------------------------|----------|---------------|
@@ -268,9 +419,51 @@ To record the time series of the index of a parameter index, you can use the [py
 | agg_func          | An aggregation function used to aggregate over scenario in the `aggregated_value()` method.                      | No       | "mean"        |
 | ignore_nan        | A flag to ignore NaN values when calling `value()` or `aggregated_value()`.                                      | No       | false         |
 
+### Example
+=== "Python"
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveIndexParameter, ConstantParameter
+    from pywr.recorders import NumpyArrayIndexParameterRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.76), ConstantParameter(model, 0.56)],
+    )
+    NumpyArrayIndexParameterRecorder(
+        model=model,
+        name="Control curve value",
+        param=parameter,
+        temporal_agg_func="sum"
+    )
+    ```
+
+=== "JSON"
+    ```json
+    {
+        "Control curve value": {
+            "type": "NumpyArrayIndexParameterRecorder",
+            "param": "Rule curve index",
+            "temporal_agg_func": "sum",
+        }
+    }
+    ```
+
 ## Daily profile parameter
 The [pywr.recorders.NumpyArrayDailyProfileParameterRecorder][] is designed to recorder parameters that define a daily profile (with 366
 values). It records the value from the profile corresponding to the day of the year at each timestep.
+
+### Available key options
 
 | Name              | Description                                                                                                     | Required | Default value |
 |-------------------|-----------------------------------------------------------------------------------------------------------------|----------|---------------|
@@ -288,12 +481,47 @@ attribute and the flow allocated during the time-step in [`flow`](../../../../ap
 
     deficit = max_flow - actual_flow
 
+### Available key options
+
 | Name              | Description                                                                                                      | Required | Default value |
 |-------------------|------------------------------------------------------------------------------------------------------------------|----------|---------------|
 | node              | The node to record as instance or node name from JSON                                                            | Yes      |               |
 | temporal_agg_func | An aggregation function used to aggregate over time when computing a value per scenario in the `value()` method. | No       | "mean"        |
 | agg_func          | An aggregation function used to aggregate over scenario in the `aggregated_value()` method.                      | No       | "mean"        |
 | ignore_nan        | A flag to ignore NaN values when calling `value()` or `aggregated_value()`.                                      | No       | false         |
+
+### Example
+=== "Python"
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import NumpyArrayNodeDeficitRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    NumpyArrayNodeDeficitRecorder(
+        model=model,
+        name="Demand deficit",
+        node=demand,
+        temporal_agg_func="sum"
+    )
+    ```
+
+=== "JSON"
+    ```json
+    {
+        "Demand deficit": {
+            "type": "NumpyArrayNodeDeficitRecorder",
+            "node": "Demand",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
 
 ## Node's supply ratio
 To record the time series of a node's supply ratio, you can use the [pywr.recorders.NumpyArrayNodeSuppliedRatioRecorder][].
@@ -305,12 +533,47 @@ and the node's [`max_flow`](../../../../api/nodes/core/#pywr.core.Node.max_flow)
 
 If the node's `max_flow` returns zero, then the ratio is recorded as `1.0`.
 
+### Available key options
+
 | Name              | Description                                                                                                      | Required | Default value |
 |-------------------|------------------------------------------------------------------------------------------------------------------|----------|---------------|
 | node              | The node to record as instance or node name from JSON                                                            | Yes      |               |
 | temporal_agg_func | An aggregation function used to aggregate over time when computing a value per scenario in the `value()` method. | No       | "mean"        |
 | agg_func          | An aggregation function used to aggregate over scenario in the `aggregated_value()` method.                      | No       | "mean"        |
 | ignore_nan        | A flag to ignore NaN values when calling `value()` or `aggregated_value()`.                                      | No       | false         |
+
+### Example
+=== "Python"
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import NumpyArrayNodeSuppliedRatioRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    NumpyArrayNodeSuppliedRatioRecorder(
+        model=model,
+        name="Demand supply ratio",
+        node=demand,
+        temporal_agg_func="sum"
+    )
+    ```
+
+=== "JSON"
+    ```json
+    {
+        "Demand supply ratio": {
+            "type": "NumpyArrayNodeSuppliedRatioRecorder",
+            "node": "Demand",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
 
 ## Node's curtailment ratio
 To record the time series of a node's curtailment ratio, you can use the [pywr.recorders.NumpyArrayNodeCurtailmentRatioRecorder][].
@@ -322,9 +585,111 @@ and the [`max_flow`](../../../../api/nodes/core/#pywr.core.Node.max_flow) attrib
 
 If the node's `max_flow` returns zero, then the curtailment ratio is recorded as `0.0`.
 
+### Available key options
+
 | Name              | Description                                                                                                      | Required | Default value |
 |-------------------|------------------------------------------------------------------------------------------------------------------|----------|---------------|
 | node              | The node to record as instance or node name from JSON                                                            | Yes      |               |
 | temporal_agg_func | An aggregation function used to aggregate over time when computing a value per scenario in the `value()` method. | No       | "mean"        |
 | agg_func          | An aggregation function used to aggregate over scenario in the `aggregated_value()` method.                      | No       | "mean"        |
 | ignore_nan        | A flag to ignore NaN values when calling `value()` or `aggregated_value()`.                                      | No       | false         |
+
+### Example
+=== "Python"
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import NumpyArrayNodeCurtailmentRatioRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    NumpyArrayNodeCurtailmentRatioRecorder(
+        model=model,
+        name="Demand curtailment ratio",
+        node=demand,
+        temporal_agg_func="sum"
+    )
+    ```
+
+=== "JSON"
+    ```json
+    {
+        "Demand curtailment ratio": {
+            "type": "NumpyArrayNodeCurtailmentRatioRecorder",
+            "node": "Demand",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
+
+## Hydropower production
+You can use the [pywr.recorders.HydropowerRecorder][] to calculate the timeseries of the
+power production using the hydropower equation:
+
+P = q *  C<sub>F</sub> * ρ * g * H * δ  * C<sub>E</sub>
+
+where:
+
+- `P` is the hydropower production.
+- `q` is the turbine flow.
+- C<sub>F</sub> is a coefficient to convert the flow unit. Use the `flow_unit_conversion` parameter to convert `q`
+    from units of m<sup>3</sup> day<sup>-1</sup> to those used by the model.
+- C<sub>E</sub> is a coefficient to convert the energy unit.
+- `ρ` is the water density.
+- `g` is the gravitational acceleration (9.81 m s<sup>-2</sup>).
+- `H` is the turbine head. If `water_elevation` is given, then the head is the difference between `water_elevation`
+    and `turbine_elevation`. If `water_elevation` is not provided, then the head is simply `turbine_elevation`.
+- `δ` is the turbine efficiency.
+
+### Available key options
+
+| Name                      | Description                                                                                                                                                                     | Required | Default value         |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-----------------------|
+| node                      | The node to record as instance or node name from JSON                                                                                                                           | Yes      |                       |
+| turbine_elevation         | A number to set the elevation of the turbine itself. The difference between the `water_elevation` and this value gives the working head of the turbine (`H`).                   | No       | 0                     |
+| water_elevation_parameter | This an optional parameter to set the elevation of water entering the turbine. The difference of this value with the `turbine_elevation` gives the working head of the turbine. | No       | 0                     |
+| efficiency                | The efficiency of the turbine (`δ`).                                                                                                                                            | No       | 1                     |
+| flow_unit_conversion      | The factor (C<sub>F</sub>) used to transform the units of flow to be compatible with the equation above. This should convert flow to units of `m^3/day`                         | No       | 1                     |
+| energy_unit_conversion    | The factor (C<sub>E</sub>) used to transform the units of total energy.                                                                                                         | No       | `1e-6` to return `MJ` |
+| temporal_agg_func         | An aggregation function used to aggregate over years when computing a value per scenario in the `value()` method.                                                               | No       | "mean"                |
+| agg_func                  | An aggregation function used to aggregate over scenario in the `aggregated_value()` method.                                                                                     | No       | "mean"                |
+| factor                    | A factor can be provided to scale the total flow (e.g. for calculating operational costs).                                                                                      | No       | 1                     |
+| ignore_nan                | A flag to ignore NaN values when calling `value()` or `aggregated_value()`.                                                                                                     | No       | false                 |
+
+
+### Example
+To recorder the power production you can use:
+
+=== "Python"
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Link
+    from pywr.recorders import HydropowerRecorder
+
+    model = Model()
+    node = Link(model=model, name="Release")
+    HydropowerRecorder(
+        model=model,
+        node=node,
+        efficiency=0.98,
+        turbine_elevation=10.3,
+        name="Power"
+    )
+    ```
+
+=== "JSON"
+    ```json
+    {
+        "Power": {
+            "type": "HydropowerRecorder",
+            "node": "Release",
+            "efficiency": 0.98,
+            "turbine_elevation": 10.3,
+        }
+    }
+    ```

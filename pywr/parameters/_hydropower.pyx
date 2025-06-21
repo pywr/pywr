@@ -82,7 +82,40 @@ cdef class HydropowerTargetParameter(Parameter):
     - `δ` is the turbine efficiency.
     - C<sub>F</sub> is a coefficient to convert the flow unit. Use the `flow_unit_conversion` parameter to convert `q`
         from units of m<sup>3</sup> day<sup>-1</sup> to those used by the model.
-        
+
+    Examples
+    -------
+    Python
+    ======
+     ```python
+    from pywr.core import Model
+    from pywr.nodes import Link
+    from pywr.parameters import HydropowerTargetParameter, ConstantParameter
+
+    model = Model()
+    node = Link(model=model, name="WTW")
+    HydropowerTargetParameter(
+        model=model,
+        target=ConstantParameter(model, value=100),
+        min_head=2.3,
+        turbine_elevation=10.3,
+        name="Power"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Power": {
+            "type": "HydropowerTargetParameter",
+            "target": 100,
+            "min_head": 2.3,
+            "turbine_elevation": 10.3,
+        }
+    }
+    ```
+
     Attributes
     ----------
     model : Model
@@ -182,6 +215,10 @@ cdef class HydropowerTargetParameter(Parameter):
         self.energy_unit_conversion = energy_unit_conversion
 
     property water_elevation_parameter:
+        """The water elevation parameter.
+
+        **Setter:** set the parameter instance.
+        """
         def __get__(self):
             return self._water_elevation_parameter
         def __set__(self, parameter):
@@ -191,6 +228,10 @@ cdef class HydropowerTargetParameter(Parameter):
             self._water_elevation_parameter = parameter
 
     property target:
+        """The production target.
+
+        **Setter:** set the parameter instance.
+        """
         def __get__(self):
             return self._target
         def __set__(self, parameter):
@@ -200,6 +241,10 @@ cdef class HydropowerTargetParameter(Parameter):
             self._target = parameter
 
     property max_flow:
+        """The node max flow.
+
+        **Setter:** set the maximum flow.
+        """
         def __get__(self):
             return self._max_flow
         def __set__(self, parameter):
@@ -209,6 +254,10 @@ cdef class HydropowerTargetParameter(Parameter):
             self._max_flow = parameter
 
     property min_flow:
+        """The node min flow.
+
+        **Setter:** set the minimum flow.
+        """
         def __get__(self):
             return self._min_flow
         def __set__(self, parameter):

@@ -40,6 +40,7 @@ markdown_extensions:
   - admonition
   - pymdownx.critic
   - pymdownx.tabbed
+  - pymdownx.details
   - pymdownx.highlight:
       use_pygments: true
       linenums: true
@@ -143,7 +144,9 @@ nav:
           - 'manual/recorders/memory/flow.md'
           - 'manual/recorders/memory/storage.md'
           - 'manual/recorders/memory/parameter.md'
-    - Optimisation: '' # TODO
+          - 'manual/recorders/memory/threshold.md'
+          - 'manual/recorders/memory/frequency.md'
+    - 'manual/optimisation.md'
     - Custom components:
       - 'manual/custom_components/parameters.md'
       - 'manual/custom_components/node.md'
@@ -276,6 +279,7 @@ nav:
             - 'api/recorders/node/total_node_deficit.md'
             - 'api/recorders/node/annual_total_node_flow.md'
             - 'api/recorders/node/rolling_mean_flow.md'
+            - 'api/recorders/node/hydropower_energy.md'
         - Storage:
             - 'api/recorders/storage/storage.md'
             - 'api/recorders/storage/min_storage.md'
@@ -293,6 +297,7 @@ nav:
             - 'api/recorders/numpy/parameter_value.md'
             - 'api/recorders/numpy/parameter_index.md'
             - 'api/recorders/numpy/daily_profile_parameter.md'
+            - 'api/recorders/numpy/hydropower_power.md'
         - File:
             - 'api/recorders/file/csv.md'
             - 'api/recorders/file/hdf.md'
@@ -300,6 +305,10 @@ nav:
             - 'api/recorders/parameter/mean.md'
             - 'api/recorders/parameter/rolling_mean.md'
             - 'api/recorders/parameter/total.md'
+        - Counter with threshold:
+            - 'api/recorders/threshold/timestep_count_index.md'
+            - 'api/recorders/threshold/annual_count_index.md'
+            - 'api/recorders/threshold/annual_count_index_multi.md'
         - Frequency-based:
             - 'api/recorders/frequency/fdc.md'
             - 'api/recorders/frequency/fdc_deviations.md'
@@ -308,5 +317,12 @@ nav:
             - 'api/recorders/frequency/deficit_frequency.md'
             - 'api/recorders/frequency/kde.md'
             - 'api/recorders/frequency/normalised_kde.md'
+        - Calibration:
+            - 'api/recorders/calibration/rmse.md'
+            - 'api/recorders/calibration/mae.md'
+            - 'api/recorders/calibration/mse.md'
+            - 'api/recorders/calibration/bias.md'
+            - 'api/recorders/calibration/rmse_std_ratio.md'
+            - 'api/recorders/calibration/nse.md'
   - Resources: 'tools.md'
   - 'license.md'

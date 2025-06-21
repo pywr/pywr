@@ -253,7 +253,7 @@ cdef class Recorder(Component):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -262,7 +262,7 @@ cdef class Recorder(Component):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
 
@@ -569,7 +569,7 @@ cdef class AggregatedRecorder(Recorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -578,7 +578,7 @@ cdef class AggregatedRecorder(Recorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -767,7 +767,7 @@ cdef class NodeRecorder(Recorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -776,7 +776,7 @@ cdef class NodeRecorder(Recorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -886,7 +886,7 @@ cdef class StorageRecorder(Recorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -895,7 +895,7 @@ cdef class StorageRecorder(Recorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -1090,7 +1090,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -1099,7 +1099,7 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
 
@@ -1275,7 +1275,7 @@ cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -1284,7 +1284,7 @@ cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
 
     See also
@@ -1369,7 +1369,7 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -1378,7 +1378,7 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
 
     See also
@@ -1466,7 +1466,7 @@ cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -1475,7 +1475,7 @@ cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
 
     See also
@@ -1555,7 +1555,7 @@ cdef class NumpyArrayNodeCostRecorder(NumpyArrayNodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -1564,7 +1564,7 @@ cdef class NumpyArrayNodeCostRecorder(NumpyArrayNodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
 
@@ -1646,7 +1646,7 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -1655,7 +1655,7 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -1816,7 +1816,7 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -1825,7 +1825,7 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
 
@@ -1917,7 +1917,7 @@ SeasonalFlowDurationCurveRecorder.register()
 
 cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     """This recorder calculates a flow duration curves (FDC) for each scenario and then
-    calculates their deviation from an upper and lower target FDCs using the following steps:
+    returns their deviations from an upper and lower target FDCs using the following steps:
 
     For each percentile, the recorder calculates the difference between the flow duration curve
     of a node and a user-defined upper (`upper_target_fdc`) and/or lower target (`lower_target_fdc`) curves divided
@@ -1933,10 +1933,10 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
 
         (lower_target_fdc[k] - fdc[k]) / lower_target_fdc[k]
 
-    The shape of the target arrays depend whether you provide `scenario`:
+    The shape of the target arrays depend on whether you provide `scenario`:
 
     - When `scenario` is `None`, this can either be a 1D array of size equal to `percentiles`
-      or a 2D array where the shape is (scenario_size, percentile_size).
+      or a 2D array where the shape is (scenario_combination_size, percentile_size).
     - If `scenario` is given, then this must be a 2D array where the shape is (scenario_size,
       percentile_size).
 
@@ -1999,6 +1999,8 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         The model instance.
     node : Node
         Node instance to record.
+    scenario : Optional[Scenario]
+        The scenario to use to calculate the FDC.
     temporal_agg_func : str | Callable
         An aggregation function used to aggregate the FDC deviations over the percentiles when computing a value per scenario in the
         `value()` method.
@@ -2010,7 +2012,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -2019,7 +2021,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -2038,16 +2040,18 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
             Values must be in the range 0-100.
         lower_target_fdc : Optional[Iterable[float]], default=None
             The lower FDC against which the scenario FDCs are compared. When `scenario` is `None`, this can be
-            a 1D array of size equal to `percentiles` or a 2D array where the shape is (scenario_size, percentile_size).
+            a 1D array of size equal to `percentiles` or a 2D array where the shape is (scenario_combination_size, percentile_size).
             If `scenario` is given, then this must be a 2D array where the shape is (scenario_size, percentile_size).
             If this is not provided, then deviations from a lower target FDC are recorded as 0.0. If targets are loaded from an external file, this needs to be indexed using
             the percentile values.
         upper_target_fdc : Optional[Iterable[float]], default=None
             The upper FDC against which the scenario FDCs are compared.  When `scenario` is `None`, this can be
-            a 1D array of size equal to `percentiles` or a 2D array where the shape is (scenario_size, percentile_size).
+            a 1D array of size equal to `percentiles` or a 2D array where the shape is (scenario_combination_size, percentile_size).
             If `scenario` is given, then this must be a 2D array where the shape is (scenario_size, percentile_size).
             If values are not provided, then deviations from a upper target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
             the percentile values.
+        scenario : Optional[Scenario], default=None
+            The scenario to use to calculate the FDC.
 
         Other parameters
         ----------------
@@ -2078,7 +2082,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
         Raises
         ------
         ValueError
-            If `lower_target_fdc` or `upper_target_fdc` is not provided or when thw two arguments
+            If `lower_target_fdc` or `upper_target_fdc` is not provided or when the two arguments
             do not match the length of `percentiles`. When the first dimension of
             `lower_target_fdc` or `upper_target_fdc` does not match the scenario size (when `scenario` is
              given) or the model scenario combinations.
@@ -2426,7 +2430,7 @@ cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -2435,7 +2439,7 @@ cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -2552,7 +2556,7 @@ cdef class NumpyArrayNormalisedStorageRecorder(NumpyArrayAbstractStorageRecorder
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -2561,7 +2565,7 @@ cdef class NumpyArrayNormalisedStorageRecorder(NumpyArrayAbstractStorageRecorder
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -2704,6 +2708,8 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
         The model instance.
     node : Storage
         Storage node instance to record.
+    proportional : bool
+        Whether to record proportional [0, 1.0] or absolute storage volumes.
     temporal_agg_func : str | Callable
         An aggregation function used to aggregate the SDCs over the percentiles when computing a value per scenario in the
         `value()` method.
@@ -2713,7 +2719,7 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -2722,7 +2728,7 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -2744,6 +2750,8 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
 
         Other parameters
         ----------------
+        proportional : Optional[bool], default=False
+            Whether to record proportional [0, 1.0] or absolute storage volumes.
         temporal_agg_func : str | Callable, default="mean"
             An aggregation function used to aggregate the SDCs over the percentiles when computing a value per scenario in the
             `value()` method. This can be used to return, for example, the mean storage over a scenario.
@@ -2873,7 +2881,7 @@ cdef class NumpyArrayLevelRecorder(NumpyArrayAbstractStorageRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -2882,7 +2890,7 @@ cdef class NumpyArrayLevelRecorder(NumpyArrayAbstractStorageRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -2955,7 +2963,7 @@ cdef class NumpyArrayAreaRecorder(NumpyArrayAbstractStorageRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -2964,7 +2972,7 @@ cdef class NumpyArrayAreaRecorder(NumpyArrayAbstractStorageRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -3024,7 +3032,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         "Control curve value": {
             "type": "NumpyArrayParameterRecorder",
             "param": "Rule curve position",
-            "temporal_agg_func": "sum",
+            "temporal_agg_func": "sum"
         }
     }
     ```
@@ -3044,7 +3052,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -3053,7 +3061,7 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -3179,7 +3187,7 @@ cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -3188,7 +3196,7 @@ cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -3346,7 +3354,7 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -3355,7 +3363,7 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -3516,7 +3524,7 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -3525,7 +3533,7 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -3831,7 +3839,7 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -3840,7 +3848,7 @@ cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -3910,7 +3918,7 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -3919,7 +3927,7 @@ cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -4019,7 +4027,7 @@ cdef class MeanFlowNodeRecorder(BaseConstantNodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -4028,7 +4036,7 @@ cdef class MeanFlowNodeRecorder(BaseConstantNodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -4138,7 +4146,7 @@ cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -4147,7 +4155,7 @@ cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint.
     """
@@ -4236,7 +4244,7 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -4245,7 +4253,7 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -4315,7 +4323,7 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -4324,7 +4332,7 @@ cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -4379,31 +4387,125 @@ MinimumThresholdVolumeStorageRecorder.register()
 
 
 cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
-    """Record the number of times an index parameter exceeds a threshold for each scenario.
+    """This recorder counts the number of timesteps an index parameter is equal or
+    exceeds a threshold for each scenario. When the model runs on a daily timestep, this returns
+    the number of days.
 
-    This recorder will count the number of timesteps so will be a daily count when running on a
-    daily timestep.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveIndexParameter, ConstantParameter
+    from pywr.recorders import TimestepCountIndexParameterRecorder
 
-    Parameters
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.76)],
+    )
+    TimestepCountIndexParameterRecorder(
+        model=model,
+        name="Control curve counter",
+        threshold=1,
+        parameter=parameter,
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Control curve counter": {
+            "type": "TimestepCountIndexParameterRecorder",
+            "parameter": "Rule curve index",
+            "threshold": 1
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    parameter : `pywr.core.IndexParameter`
-        The parameter to record
+    model : Model
+        The model instance.
     threshold : int
-        The threshold to compare the parameter to
+        The threshold to compare the parameter to.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, IndexParameter parameter, int threshold, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameter : IndexParameter
+            The parameter instance to record.
+        threshold : int
+            The threshold to compare the parameter to.
+
+        Other parameters
+        ----------------
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
+
         super().__init__(model, parameter, *args, **kwargs)
         self.threshold = threshold
 
     cpdef setup(self):
-        """Setup the internal variable."""
+        """Setup the internal counter."""
         self._count = np.zeros(len(self.model.scenarios.combinations), np.int32)
 
     cpdef reset(self):
+        """Reset the internal counter."""
         self._count[...] = 0
 
     cpdef after(self):
+        """Increase the counter if the threshold is reached."""
         cdef Timestep ts = self.model.timestepper.current
         cdef int value
         cdef ScenarioIndex scenario_index
@@ -4415,42 +4517,193 @@ cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
                 self._count[scenario_index.global_id] += 1
 
     cpdef double[:] values(self) except *:
+        """
+        Returns the counter for each scenario.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
+        """
         return np.asarray(self._count).astype(np.float64)
 TimestepCountIndexParameterRecorder.register()
 
 
 cdef class AnnualCountIndexThresholdRecorder(Recorder):
-    """For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
+    """For each scenario, this recorder counts the number of times a list of index
+    parameters exceeds a threshold in each year.
 
-    If multiple parameters exceed in one timestep then it is only counted once. The recorder also allows
-    for exclusion of months and for the inclusion of a range of dates within a calendar year to which
+    If multiple parameters exceed the threshold in one timestep then the counter is only incremented once. The recorder
+    also allows for exclusion of months and for the inclusion of a range of dates within a calendar year to which
     the parameter exceedence is counted. Both the exclusion of months and the inclusion of dates can
     simultaneously be provided, where the intersection of excluded months with a range of dates will result
     in the day not counting any exceedences.
 
-    Output from data property has shape: (years, scenario combinations)
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveIndexParameter, ConstantParameter
+    from pywr.recorders import AnnualCountIndexThresholdRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter1 = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve 1 index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.76)],
+    )
+    parameter2 = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve 2 index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.56)],
+    )
+    AnnualCountIndexThresholdRecorder(
+        model=model,
+        name="Control curve value",
+        parameters=[parameter1, parameter2],
+        threshold=1,
+        include_from_month=4,
+        include_from_day=1,
+        include_to_day=15,
+        include_to_month=8,
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Rule curve 1 index": {
+            "type": "ControlCurveIndexParameter",
+            "control_curves": [0.76],
+            "storage_node": "Reservoir"
+        },
+        "Rule curve 2 index": {
+            "type": "ControlCurveIndexParameter",
+            "control_curves": [0.56],
+            "storage_node": "Reservoir"
+        },
+        "Control curve value": {
+            "type": "AnnualCountIndexThresholdRecorder",
+            "parameters": ["Rule curve 1 index", "Rule curve 2 index"],
+            "threshold"=1,
+            "include_from_month": 4,
+            "include_from_day": 1,
+            "include_to_day": 15,
+            "include_to_month": 8
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    parameters : list
-        List of `pywr.core.IndexParameter` to record against
+    model : Model
+        The model instance.
+    parameters : Iterable[IndexParameter]
+        The list of `IndexParameter` to record against.
     name : str
         The name of the recorder
     threshold : int
         Threshold to compare parameters against
-    exclude_months : list or None
+    exclude_months : Optional[list[int]]
         Optional list of month numbers to exclude from the count.
-    include_from_month, include_from_day : int or None
-        Optional start date to specify a range of dates to include in the count. If intended to be used,
-        both arguments must be supplied, otherwise the recorder will assume that this is not used and default
-        to the 1st Jan. Period to count is inclusive of the start date.
-    include_to_month, include_to_day : int or None
-        Optional end date to specify a range of dates to include in the count. If intended to be used,
-        both arguments must be supplied, otherwise the recorder will assume that this is not used and default
-        to the 31st Dec. Period to count is inclusive of the end date.
+    include_from_month : Optional[int]
+        Optional start month to specify a range of dates to include in the count. If intended to be used,
+        both `include_from_month` and `include_from_day` must be supplied, otherwise the recorder will
+        assume that this is not used and default to the 1st Jan. Period to count is inclusive of the start date.
+    include_from_day : Optional[int]
+            Same as above but this specifies the start day.
+    include_to_month : Optional[int]
+        Optional end month to specify a range of dates to include in the count. If intended to be used,
+        both `include_to_month` and `include_to_day` must be supplied, otherwise the recorder will assume
+        that this is not used and default to the 31st Dec. Period to count is inclusive of the end date.
+    include_to_day : Optional[int]
+        Same as above but this specifies the end day.
+
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameters : Iterable[IndexParameter]
+            The list of `pywr.core.IndexParameter` to record against
+        name : str
+            The name of the recorder
+        threshold : int
+            Threshold to compare parameters against
+
+        Other parameters
+        -----------------
+        exclude_months : Optional[list[int]], default=None
+            Optional list of month numbers to exclude from the count.
+        include_from_month : Optional[int], default=None
+            Optional start month to specify a range of dates to include in the count. If intended to be used,
+            both `include_from_month` and `include_from_day` must be supplied, otherwise the recorder will
+            assume that this is not used and default to the 1st Jan. Period to count is inclusive of
+            the start date.
+        include_from_day : Optional[int], default=None
+            Same as above but this specifies the start day.
+        include_to_month : Optional[int], default=None
+            Optional end month to specify a range of dates to include in the count. If intended to be used,
+            both `include_to_month` and `include_to_day` must be supplied, otherwise the recorder will assume
+            that this is not used and default to the 31st Dec. Period to count is inclusive of the end date.
+        include_to_day : Optional[int], default=None
+            Same as above but this specifies the end day.
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate over time when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the median flow for a scenario.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         self.exclude_months = kwargs.pop('exclude_months', None)
         self.include_from_month = kwargs.pop('include_from_month', None)
         self.include_from_day = kwargs.pop('include_from_day', None)
@@ -4482,11 +4735,13 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         self._data_this_year = np.zeros([len(self.parameters), self._ncomb])
 
     cpdef reset(self):
+        """Reset the internal variables."""
         self._data[...] = 0
         self._current_year = -1
         self._start_year = self.model.timestepper.start.year
 
     cpdef after(self):
+        """Count if the parameters have exceeded the threshold."""
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = self._current_year - self._start_year
         cdef int p
@@ -4531,6 +4786,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
                     break  # if multiple parameters exceed, only count once
 
     cpdef finish(self):
+        """Calculate the total number of years exceeding the threshold."""
         cdef int idx = self._current_year - self._start_year
         cdef Py_ssize_t i
         for i in range(self._ncomb):
@@ -4538,6 +4794,11 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
 
     cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
@@ -4565,6 +4826,20 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        AnnualCountIndexThresholdRecorder
+            The loaded class.
+        """
         from pywr.parameters import load_parameter
         parameters = [load_parameter(model, p) for p in data.pop("parameters")]
         return cls(model, parameters=parameters, **data)
@@ -4628,7 +4903,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -4637,7 +4912,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -4787,22 +5062,126 @@ AnnualTotalFlowRecorder.register()
 
 
 cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
-    """ Record the number of years where an IndexParameter is greater than or equal to a threshold """
+    """This recorder returns the number of years where an IndexParameter is greater than or equal
+    to a threshold.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveIndexParameter, ConstantParameter
+    from pywr.recorders import AnnualCountIndexParameterRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.76)],
+    )
+    AnnualCountIndexParameterRecorder(
+        model=model,
+        name="Control curve counter",
+        threshold=1,
+        param=parameter,
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Control curve counter": {
+            "type": "AnnualCountIndexParameterRecorder",
+            "parameter": "Rule curve index",
+            "threshold": 1
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    threshold : int
+        The threshold to compare the parameter to.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    """
     def __init__(self, model, IndexParameter param, int threshold, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        param : IndexParameter
+            The parameter instance to record.
+        threshold : int
+            The threshold to compare the parameter to.
+
+        Other parameters
+        ----------------
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         super(AnnualCountIndexParameterRecorder, self).__init__(model, param, *args, **kwargs)
         self.threshold = threshold
 
     cpdef setup(self):
-        """Setup the internal variables."""
+        """Setup the internal counter."""
         self._count = np.zeros(len(self.model.scenarios.combinations), np.int32)
         self._current_max = np.zeros_like(self._count)
 
     cpdef reset(self):
+        """Reset the internal counter."""
         self._count[...] = 0
         self._current_max[...] = 0
         self._current_year = -1
 
     cpdef after(self):
+        """Increase the counter if the threshold is reached."""
         cdef int i, ncomb, value
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -4833,6 +5212,7 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
         return 0
 
     cpdef finish(self):
+        """Complete the current year by updating the count if threshold equal to or exceeded."""
         cdef int i
         cdef int ncomb = len(self.model.scenarios.combinations)
         # Complete the current year by updating the count if threshold equal to or exceeded
@@ -4841,6 +5221,14 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
                 self._count[i] += 1
 
     cpdef double[:] values(self) except *:
+        """
+        Returns the counter for each scenario.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
+        """
         return np.asarray(self._count).astype(np.float64)
 AnnualCountIndexParameterRecorder.register()
 
@@ -4985,7 +5373,7 @@ cdef class TotalParameterRecorder(BaseConstantParameterRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -4994,7 +5382,7 @@ cdef class TotalParameterRecorder(BaseConstantParameterRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
@@ -5116,7 +5504,7 @@ cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
         Name of the recorder.
     comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : Optional[bool]
+    ignore_nan : bool
         Flag to ignore NaN values when calling `aggregated_value()`.
     is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
@@ -5125,7 +5513,7 @@ cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
     constraint_lower_bounds : Optional[float | Iterable[float]]
         The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
-    constraint_upper_bounds : Optional[float | Iterable[float]
+    constraint_upper_bounds : Optional[float | Iterable[float]]
         The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
          constraint during an optimisation problem.
     """
