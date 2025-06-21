@@ -211,6 +211,7 @@ class PywrRandomGenerator(platypus.RandomGenerator):
             ):
                 # Use one of the given solutions
                 solution = platypus.Solution(problem)
+                print(self.solutions)
                 given_solution = self.solutions[self._solution_pointer]
                 variables = []
                 for ivar, var in enumerate(self.wrapper.model_variables):
