@@ -146,10 +146,13 @@ nav:
           - 'manual/recorders/memory/parameter.md'
           - 'manual/recorders/memory/threshold.md'
           - 'manual/recorders/memory/frequency.md'
+    - 'manual/scenarios.md'
+    - 'manual/solvers.md'
     - 'manual/optimisation.md'
     - Custom components:
       - 'manual/custom_components/parameters.md'
       - 'manual/custom_components/node.md'
+      - 'manual/custom_components/recorder.md'
     - How to implement:
       - 'manual/misc/demand_savings.md'
       - 'manual/misc/soft_constraints.md'

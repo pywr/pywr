@@ -28,7 +28,7 @@ This example defines a constant parameter named `"Demand"` with a fixed value of
 === "JSON"
 
     ```json
-    { 
+    {
         "Demand": {
             "type": "ConstantParameter",
             "value": 25.5

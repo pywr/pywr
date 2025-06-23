@@ -42,7 +42,7 @@ GLPK are caught gracefully and translated to Python exceptions. Two exceptions `
 are raised for these cases respectively.
 
 Internal errors (i.e. `GLPKInternalError`) will invalidate the entire GLPK environment and is very difficult to recover
-from. In general if either of these errors occur users are recommended to debug their causes and re-load (ideally with
+from. In general, if either of these errors occur users are recommended to debug their causes and re-load (ideally with
 an new process) the models. It is *not* recommended to attempt to catch these exceptions, recover and continue with
 a simulation.
 

@@ -7,7 +7,7 @@ This may be the cases for complex licenses or reservoir release rules.
     prefer this option.
 
 ## A simple parameter
-This sections explains how to implement a parameter that takes today's storage of a `StorageNode` and
+This section explains how to implement a parameter that takes today's storage of a `StorageNode` and
 returns half of the current volume. Although this parameter can be easily implemented using 
 an [pywr.parameters.AggregatedParameter][], it is simple enough to understand some key concepts about custom parameters.
 
@@ -76,7 +76,7 @@ defined inside the pywr code and contains additional methods pywr relies on.
 
 !!!info "Parameter class name"
     Make sure to always use a parameter name that explains what the component does and always use the 
-    [CamelCase](https://en.wikipedia.org/wiki/Camel_case) notation to name classes. The class name should ends with
+    [CamelCase](https://en.wikipedia.org/wiki/Camel_case) notation to name classes. The class name should end with
     the "Parameter" suffix to highlight this is a parameter, although this is not mandatory for the code to work. 
 
 !!!info "Parent class"
@@ -105,7 +105,6 @@ def load(cls, model: Model, data: dict) -> "HalveStorageParameter":
 - `cls`: this is the class being initialised.
 - `model`: this is the [pywr.core.Model][] object containing the loaded pywr model.
 - `data`: this is the dictionary in the JSON file you define to configure your parameter. 
-
 
 If the parameter JSON configuration is:
 
@@ -484,7 +483,7 @@ Parameters are evaluated many times and can be a significant part of the model r
 pywr have been written in [Cython](https://cython.org) to improve performance. Custom parameters can be written in 
 Cython too and can also be used to link to external C/C++ libraries. 
 
-When working with Cython, to improve performance you should:
+When working with Cython, to improve performance, you should:
 
 - define the types of all variables and class attributes you initialise throughout your code. Adding
 types allows Cython to compile your code down to C, often resulting in dramatic performance gains.

@@ -467,14 +467,14 @@ cdef class Recorder(Component):
 
     @classmethod
     def load(cls, model, data):
-        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
 
         Parameters
         ---------
         model : Model
             The model instance.
         data : dict
-            The dictionary with the parameter configuration.
+            The dictionary with the recorder configuration.
 
         Returns
         -------
@@ -697,14 +697,14 @@ cdef class AggregatedRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
 
         Parameters
         ---------
         model : Model
             The model instance.
         data : dict
-            The dictionary with the parameter configuration.
+            The dictionary with the recorder configuration.
 
         Returns
         -------
@@ -988,7 +988,7 @@ cdef class ParameterRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        # when the parameter being recorder is defined inline (i.e. not in the
+        # when the recorder being recorder is defined inline (i.e. not in the
         # parameters section, but within the node) we need to make sure the
         # node has been loaded first
         try:
@@ -2247,14 +2247,14 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
 
     @classmethod
     def load(cls, model, data):
-        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
 
         Parameters
         ---------
         model : Model
             The model instance.
         data : dict
-            The dictionary with the parameter configuration.
+            The dictionary with the recorder configuration.
 
         Returns
         -------
@@ -2634,14 +2634,14 @@ cdef class NumpyArrayNormalisedStorageRecorder(NumpyArrayAbstractStorageRecorder
 
     @classmethod
     def load(cls, model, data):
-        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
 
         Parameters
         ---------
         model : Model
             The model instance.
         data : dict
-            The dictionary with the parameter configuration.
+            The dictionary with the recorder configuration.
 
         Returns
         -------
@@ -3653,14 +3653,14 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
 
     @classmethod
     def load(cls, model, data):
-        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
 
         Parameters
         ---------
         model : Model
             The model instance.
         data : dict
-            The dictionary with the parameter configuration.
+            The dictionary with the recorder configuration.
 
         Returns
         -------
@@ -4826,14 +4826,14 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
 
         Parameters
         ---------
         model : Model
             The model instance.
         data : dict
-            The dictionary with the parameter configuration.
+            The dictionary with the recorder configuration.
 
         Returns
         -------
@@ -5042,14 +5042,14 @@ cdef class AnnualTotalFlowRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
 
         Parameters
         ---------
         model : Model
             The model instance.
         data : dict
-            The dictionary with the parameter configuration.
+            The dictionary with the recorder configuration.
 
         Returns
         -------

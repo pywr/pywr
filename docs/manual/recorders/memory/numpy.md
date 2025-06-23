@@ -130,8 +130,6 @@ save the demanded flow.
     }
     ```
 
-
-
 #### Access the data using
 You can access the stored data in the following ways
 
@@ -186,6 +184,13 @@ This will output the following table and show a chart with two lines:
     
     [209 rows x 2 columns]
 
+!!!info "Model"
+    You can also call the method on the model instance. Pywr will collect all the results in
+    one `DataFrame` object for all recorders with a `to_dataframe()` method.
+    
+    ```python
+    print(model.to_dataframe())
+    ```
 
 ##### the `values()` method
 You can call `values()` on the recorder instance to aggregate the data temporally. Since
