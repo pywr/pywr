@@ -429,7 +429,11 @@ class Model(object):
 
         # load the remaining nodes
         for node_name in list(nodes_to_load.keys()):
-            model.finalise_node(node_name)
+            try:
+                model.finalise_node(node_name)
+            except (KeyError, TypeError) as e:
+                logger.critical(f"Unable to load node {node_name}. Error was: {e}")
+                raise
 
         del(model._recorders_to_load)
         del(model._parameters_to_load)
