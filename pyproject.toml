@@ -27,8 +27,9 @@ Repository="https://github.com/pywr/pywr"
 docs = ["sphinx", "sphinx_rtd_theme", "numpydoc", "matplotlib"]
 notebook = ["ipython", "jinja2", "matplotlib"]
 opt = ["platypus-opt", "pygmo"]
-dev = ["pytest", "platypus-opt", "black"]
 
+[dependency-groups]
+dev = ["pytest", "platypus-opt", "black"]
 
 
 [build-system]
