@@ -52,7 +52,8 @@ jobs:
         env:
           WINGLPK_URL: "https://anaconda.org/conda-forge/glpk/5.0/download/win-64/glpk-5.0-h8ffe710_0.tar.bz2"
         run: |
-          curl -L $WINGLPK_URL --output glpk.tar.bz2          
+          curl -L $WINGLPK_URL --output glpk.tar.bz2
+          mkdir /c/glpk
           tar -xf glpk.tar.bz2 -C /c/glpk/
 
       - name: Install LpSolve (Windows)
