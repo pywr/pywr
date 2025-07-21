@@ -34,44 +34,8 @@ def setup_package():
             self.include_dirs.append(numpy.get_include())
             super().finalize_options()
 
-    # Extra optional dependencies
-    docs_extras = ["sphinx", "sphinx_rtd_theme", "numpydoc", "matplotlib"]
-    notebook_extras = ["ipython", "jinja2", "matplotlib"]
-    opt_extras = ["platypus-opt", "pygmo"]
-    test_extras = ["pytest"] + notebook_extras + opt_extras
-    dev_extras = docs_extras + test_extras
-
     metadata = dict(
         name="pywr",
-        description="Python Water Resource model",
-        long_description=long_description(),
-        long_description_content_type="text/x-rst",
-        author="Joshua Arnott",
-        author_email="josh@snorfalorpagus.net",
-        url="https://github.com/pywr/pywr",
-        setup_requires=[
-            "setuptools>=62",
-            "setuptools_scm[toml]>=8.0",
-            "cython>=3",
-            "numpy",
-        ],
-        install_requires=[
-            "pandas",
-            "networkx",
-            "numpy",
-            "scipy",
-            "tables",
-            "openpyxl",
-            "packaging",
-        ],
-        extras_require={
-            "docs": docs_extras,
-            "test": test_extras,
-            "dev": dev_extras,
-            "optimisation": opt_extras,
-            "notebook": notebook_extras,
-        },
-        cmdclass={"build_ext": new_build_ext},
         packages=[
             "pywr",
             "pywr.solvers",
@@ -82,11 +46,9 @@ def setup_package():
             "pywr.optimisation",
             "pywr.utils",
         ],
-        package_data=package_data(),
-        use_scm_version=True,
     )
 
-    metadata["ext_modules"] = ext_modules = [
+    ext_modules = [
         Extension("pywr._core", ["pywr/_core.pyx"]),
         Extension("pywr._model", ["pywr/_model.pyx"]),
         Extension("pywr._component", ["pywr/_component.pyx"]),
@@ -130,6 +92,9 @@ def setup_package():
                 define_macros=lpsolve_macros,
             )
         )
+
+    metadata["ext_modules"] = ext_modules
+    metadata["cmdclass"] = {"build_ext": new_build_ext}
 
     annotate = config["annotate"]
 
@@ -175,55 +140,35 @@ def parse_optional_arguments():
         "trace": False,
     }
 
-    if "--with-glpk" in sys.argv:
-        config["glpk"] = True
-        sys.argv.remove("--with-glpk")
-    elif "PYWR_BUILD_GLPK" in os.environ:
+    if "PYWR_BUILD_GLPK" in os.environ:
         config["glpk"] = os.environ["PYWR_BUILD_GLPK"].lower() in (
             "true",
             "1",
         )
-    elif "--without-glpk" in sys.argv:
-        config["glpk"] = False
-        sys.argv.remove("--without-glpk")
 
-    if "--with-lpsolve" in sys.argv:
-        config["lpsolve"] = True
-        sys.argv.remove("--with-lpsolve")
-    elif "PYWR_BUILD_LPSOLVE" in os.environ:
+    if "PYWR_BUILD_LPSOLVE" in os.environ:
         config["lpsolve"] = os.environ["PYWR_BUILD_LPSOLVE"].lower() in (
             "true",
             "1",
         )
-    elif "--without-lpsolve" in sys.argv:
-        config["lpsolve"] = False
-        sys.argv.remove("--without-lpsolve")
 
-    if "--annotate" in sys.argv:
-        config["annotate"] = True
-        sys.argv.remove("--annotate")
-
-    if "--enable-profiling" in sys.argv:
-        config["profile"] = True
-        sys.argv.remove("--enable-profiling")
-
-    if "--enable-trace" in sys.argv:
-        config["trace"] = True
-        sys.argv.remove("--enable-trace")
-    elif "PYWR_BUILD_TRACE" in os.environ:
-        config["trace"] = os.environ["PYWR_BUILD_TRACE"].lower() in (
+    if "PYWR_BUILD_ANNOTATE" in os.environ:
+        config["annotate"] = os.environ["PYWR_BUILD_ANNOTATE"].lower() in (
             "true",
             "1",
         )
 
-    if "--enable-debug" in sys.argv:
-        import warnings
-
-        warnings.warn(
-            "--enable-debug has been deprecated. Its functionality is now enabled by default. To disable"
-            "GLPK error handling please use the `use_unsafe_api` option in the GLPK solvers."
+    if "PYWR_BUILD_PROFILE" in os.environ:
+        config["profile"] = os.environ["PYWR_BUILD_PROFILE"].lower() in (
+            "true",
+            "1",
         )
-        sys.argv.remove("--enable-debug")
+
+    if "PYWR_BUILD_TRACE" in os.environ:
+        config["trace"] = os.environ["PYWR_BUILD_TRACE"].lower() in (
+            "true",
+            "1",
+        )
 
     return config
 

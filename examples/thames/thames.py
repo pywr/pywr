@@ -1,8 +1,4 @@
-""" Example Pywr model using a simple reservoir system.
-
-
-
-"""
+"""Example Pywr model using a simple reservoir system."""
 
 from pywr.model import Model
 from pywr.recorders import TablesRecorder
