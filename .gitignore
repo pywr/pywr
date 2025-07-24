@@ -39,9 +39,6 @@ coverage.xml
 *.pot
 # Django stuff:
 *.log
-# Sphinx documentation
-docs/build/
-docs/source/api/generated
 # PyBuilder
 target/
 # Mac
@@ -66,3 +63,8 @@ venv/
 
 pywr_glpk_debug.lp
 pywr_glpk_debug.mps
+
+
+glpk-4.65
+docs_
+.eggs

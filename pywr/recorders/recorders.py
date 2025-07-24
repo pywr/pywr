@@ -114,24 +114,55 @@ class AssertionRecorder(Recorder):
 
 
 class CSVRecorder(Recorder):
-    """
-    A Recorder that saves Node values to a CSV file.
+    """A Recorder that saves Node values to a CSV file. This uses the csv package from
+    the Python standard library.
 
-    This class uses the csv package from the Python standard library
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.recorders import CSVRecorder
 
-    Parameters
+    model = Model()
+    CSVRecorder(
+        model=model,
+        name="CSV recorder",
+        node=[model.nodes["A"], model.nodes["B"]]
+        csvfile="/path/to/file/with/results.csv"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+      "recorders": {
+        "CSV recorder": {
+          "type": "CSVRecorder",
+          "url": "/path/to/file/with/results.csv",
+          "nodes": ["A", "B"]
+        }
+      }
+    }
+    ```
+
+    Attributes
     ----------
-
-    model : `pywr.model.Model`
+    model :Model
         The model to record nodes from.
     csvfile : str
         The path to the CSV file.
     scenario_index : int
         The scenario index of the model to save.
-    nodes : iterable (default=None)
-        An iterable of nodes to save data. It defaults to None which is all nodes in the model
-    kwargs : Additional keyword arguments to pass to the `csv.writer` object
-
+    nodes : iterable
+        An iterable of nodes to save data.
+    complib : Optional[Literal['gzip' or 'bzip2']]
+         Compress the CSV file using one of the two libraries.
+    complevel : int
+        The compression level of the CSV file. Defaults to 9.
+    csv_kwargs : Additional keyword arguments to pass to the `csv.writer` object.
     """
 
     def __init__(
@@ -144,6 +175,29 @@ class CSVRecorder(Recorder):
         complevel=9,
         **kwargs,
     ):
+        """
+        Initialize the recorder.
+
+        Parameters
+        ----------
+        model :Model
+            The model to record nodes from.
+        csvfile : str
+            The path to the CSV file.
+        scenario_index : Optional[int], default=0
+            The scenario index of the model to save.
+        nodes : Optional[Iterable[Node]], default=None
+            An iterable of nodes to save data. It defaults to `None`, which is all nodes in the model.
+        complib : Optional[Literal['gzip' or 'bzip2']], default=None
+             Compress the CSV file using one of the two libraries.
+        complevel : Optional[int], default=9
+            The compression level of the CSV file. Defaults to 9.
+
+        Other parameters
+        ----------
+        csv_kwargs : Optional[dict], default={}
+            Additional keyword arguments to pass to the `csv.writer` object
+        """
         super(CSVRecorder, self).__init__(model, **kwargs)
         self.csvfile = csvfile
         self.scenario_index = scenario_index
@@ -157,6 +211,20 @@ class CSVRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        CSVRecorder
+            The loaded class.
+        """
         import os
 
         url = data.pop("url")
@@ -165,9 +233,7 @@ class CSVRecorder(Recorder):
         return cls(model, url, **data)
 
     def setup(self):
-        """
-        Setup the CSV file recorder.
-        """
+        """Setup the CSV file recorder."""
 
         if self.nodes is None:
             self._node_names = sorted(self.model.nodes.keys())
@@ -183,6 +249,7 @@ class CSVRecorder(Recorder):
             self._node_names = node_names
 
     def reset(self):
+        """Reset the file object."""
         import csv
 
         kwargs = {"newline": "", "encoding": "utf-8"}
@@ -206,9 +273,7 @@ class CSVRecorder(Recorder):
         self._writer.writerow(row)
 
     def after(self):
-        """
-        Write the node values to the CSV file
-        """
+        """Write the node values to the CSV file."""
         values = [self.model.timestepper.current.datetime.isoformat()]
         for node_name in self._node_names:
             node = self.model.nodes[node_name]
@@ -224,6 +289,7 @@ class CSVRecorder(Recorder):
         self._writer.writerow(values)
 
     def finish(self):
+        """Close the CSV file."""
         if self._fh:
             self._fh.close()
 
@@ -232,8 +298,7 @@ CSVRecorder.register()
 
 
 class TablesRecorder(Recorder):
-    """
-    A recorder that saves model outputs to an HDF file.
+    """A recorder that saves model outputs to an HDF file.
 
     This Recorder creates a CArray in the HDF file for every node passed to the
     constructor. Each CArray stores the data for all scenarios on the specific node.
@@ -244,10 +309,81 @@ class TablesRecorder(Recorder):
     time table stores a row containing index, year, month and day values for every
     timestep. A scenario table is created containing the name and size of each
     scenario defined for the Model. If scenario combinations are defined for the
-    model then a separate table is created that saves the scenario indices of each
-    combination. If there are no combinations but some of the scenarios have slices
-    defined then scenario slice information, including the slice start, end, and
+    model, then a separate table is created that saves the scenario indices of each
+    combination. If there are no combinations but some scenarios have slices
+    defined, then scenario slice information, including the slice start, end, and
     step, is stored in a table.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.recorders import TablesRecorder
+
+    model = Model()
+    TablesRecorder(
+        model=model,
+        name="HDF recorder",
+        node=[model.nodes["A"], model.nodes["B"]]
+        h5file="/path/to/file/with/results.h5"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+      "recorders": {
+        "HDF recorder": {
+          "type": "TablesRecorder",
+          "url": "/path/to/file/with/results.h5",
+          "nodes": ["A", "B"]
+        }
+      }
+    }
+    ```
+
+    Attributes
+    ----------
+    model :Model
+        The model to record nodes from.
+    h5file : tables.File | str
+        The table file handle or filename to attach the CArray objects to. If a
+        filename is given, the object will open and close the file handles.
+    h5store : tables.H5Store
+        The object to store the CArray objects in.
+    nodes : Optional[Iterable[Node | str | tuple[str, Node]], default=None
+        Nodes to save in the table database; this can be an iterable of Node objects or
+        node names. It can also be an iterable of tuples with a node specific where
+        keyword as the first item and a Node object or name as the second item. If
+        an iterable of tuples is provided, then the node specific where keyword is
+        used in preference to the where keyword (see below).
+    parameters : Optional[Iterable[Parameter | str | tuple[str, Parameter]]], default=None
+        Parameters to save. Similar to the nodes keyword, except refers to Parameter
+        objects or names thereof.
+    where : Optional[str], default="/"
+        Default path to create the CArrays inside the database.
+    time : Optional[str], default="/time"
+        Default full node path to save a time tables.Table. If `None` no table is created.
+    routes_flows : Optional[str], default=None
+        Relative (to `where`) node path to save the routes flow CArray. If `None` no array is created.
+    routes : Optional[str], default="/routes"
+        Full node path to save the route tables. If None not table is created.
+    scenarios : Optional[str], default="/scenarios"
+        Default full node path to save a scenario tables.Table. If `None` no table is created.
+    title : str
+        The title of the table.
+    filter_kwds : Optional[dict], default={}
+        Filter keywords to pass to tables.open_file when opening a file.
+    mode : Optional[str], default="w
+        Model argument to pass to tables.open_file. Defaults to 'w'
+    metadata : Optional[dict], default={}
+        Dict of user defined attributes to save on the root node (`root._v_attrs`)
+    create_directories : Optional[bool], default=False
+        If a file path is given, and create_directories is True then attempt to make the intermediate
+        directories. This uses `os.makedirs()` underneath.
     """
 
     def __init__(
@@ -263,43 +399,46 @@ class TablesRecorder(Recorder):
         scenarios="/scenarios",
         **kwargs,
     ):
-        """
+        """Initialise the class.
 
         Parameters
         ----------
-        model : `pywr.model.Model`
+        model :Model
             The model to record nodes from.
-        h5file : tables.File or filename
-            The tables file handle or filename to attach the CArray objects to. If a
-            filename is given the object will open and close the file handles.
-        nodes : iterable or None
-            Nodes to save in the tables database. Can be an iterable of Node objects or
-            node names. It can also be a iterable of tuples with a node specific where
+        h5file : tables.File | str
+            The table file handle or filename to attach the CArray objects to. If a
+            filename is given, the object will open and close the file handles.
+        nodes : Optional[Iterable[Node | str | tuple[str, Node]], default=None
+            Nodes to save in the table database; this can be an iterable of Node objects or
+            node names. It can also be an iterable of tuples with a node specific where
             keyword as the first item and a Node object or name as the second item. If
-            an iterable of tuples is provided then the node specific where keyword is
+            an iterable of tuples is provided, then the node specific where keyword is
             used in preference to the where keyword (see below).
-        parameters : iterable or None
+        parameters : Optional[Iterable[Parameter | str | tuple[str, Parameter]]], default=None
             Parameters to save. Similar to the nodes keyword, except refers to Parameter
             objects or names thereof.
-        where : string
+        where : Optional[str], default="/"
             Default path to create the CArrays inside the database.
-        time : string
-            Default full node path to save a time tables.Table. If None no table is created.
-        scenarios : string
-            Default full node path to save a scenarios tables.Table. If None no table is created.
-        routes_flows : string
-            Relative (to `where`) node path to save the routes flow CArray. If None (default) no array is created.
-        routes : string
-            Full node path to save the routes tables.Table. If None not table is created.
-        filter_kwds : dict
+        time : Optional[str], default="/time"
+            Default full node path to save a time tables.Table. If `None` no table is created.
+        routes_flows : Optional[str], default=None
+            Relative (to `where`) node path to save the routes flow CArray. If `None` no array is created.
+        routes : Optional[str], default="/routes"
+            Full node path to save the route tables. If None not table is created.
+        scenarios : Optional[str], default="/scenarios"
+            Default full node path to save a scenario tables.Table. If `None` no table is created.
+
+        Other parameters
+        ----------------
+        filter_kwds : Optional[dict], default={}
             Filter keywords to pass to tables.open_file when opening a file.
-        mode : string
+        mode : Optional[str], default="w
             Model argument to pass to tables.open_file. Defaults to 'w'
-        metadata : dict
+        metadata : Optional[dict], default={}
             Dict of user defined attributes to save on the root node (`root._v_attrs`)
-        create_directories : bool
-            If a file path is given and create_directories is True then attempt to make the intermediate
-            directories. This uses os.makedirs() underneath.
+        create_directories : Optional[bool], default=False
+            If a file path is given, and create_directories is True then attempt to make the intermediate
+            directories. This uses `os.makedirs()` underneath.
         """
         self.filter_kwds = kwargs.pop("filter_kwds", {})
         self.mode = kwargs.pop("mode", "w")
@@ -378,6 +517,20 @@ class TablesRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the parameter is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the parameter configuration.
+
+        Returns
+        -------
+        TablesRecorder
+            The loaded class.
+        """
         import os
 
         url = data.pop("url")
@@ -404,9 +557,7 @@ class TablesRecorder(Recorder):
             )
 
     def setup(self):
-        """
-        Setup the tables
-        """
+        """Setup the tables."""
         from pywr.parameters import IndexParameter
         import tables
 
@@ -538,6 +689,7 @@ class TablesRecorder(Recorder):
         self.h5store = None
 
     def reset(self):
+        """Reset the interal data."""
         import tables
 
         mode = "r+"  # always need to append, as file already created in setup
@@ -628,9 +780,7 @@ class TablesRecorder(Recorder):
                 tbl.flush()
 
     def after(self):
-        """
-        Save data to the tables
-        """
+        """Save data to the tables."""
         from pywr._core import AbstractNode, AbstractStorage
         from pywr.parameters import Parameter, IndexParameter
 
@@ -671,6 +821,7 @@ class TablesRecorder(Recorder):
             )
 
     def finish(self):
+        """Flush the table."""
         if self._time_table is not None:
             self._time_table.flush()
         self.h5store = None
@@ -682,12 +833,18 @@ class TablesRecorder(Recorder):
         """Helper function to generate pandas dataframes from `TablesRecorder` data.
 
         Parameters
+        ----------
         h5file : str
             A path to a H5 file created by `TablesRecorder`.
-        time : str
-            The internal table that contains the time information (default "/time")
-        scenarios : str
-            The internal table that contains the scenario information (default "/scenarios")
+        time : Optional[str], default "/time"
+            The internal table that contains the time information.
+        scenarios : Optional[str], default "/scenarios"
+            The internal table that contains the scenario information.
+
+        Yields
+        -------
+        str, pandas.DataFrame
+            The node name and the DataFrame with the data for the scenarios.
         """
         store = H5Store(h5file, mode="r")
 

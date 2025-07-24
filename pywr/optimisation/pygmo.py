@@ -7,7 +7,26 @@ logger = logging.getLogger(__name__)
 
 
 class PygmoWrapper(BaseOptimisationWrapper):
+    """A helper class for running pywr optimisations with the
+    [pygmo library](https://esa.github.io/pygmo2).
+
+    Attributes
+    ----------
+    pywr_model_json : str | dict
+        The pywr model.
+    pywr_model_klass : Model
+        The pywr model class to use.
+    pywr_model_kwargs : dict
+        Additional keyword arguments to pass to the pywr model.
+    uid : str
+        A unique ID used for caching.
+    run_stats : ModelResult
+        The statistics from Model.run().
+    """
+
     def fitness(self, solution):
+        """Evaluate the solution; this runs the Pywr model. Do not call this method,
+        as it is called by Pygmo."""
         logger.info("Evaluating solution ...")
 
         for ivar, var in enumerate(self.model_variables):
@@ -76,13 +95,16 @@ class PygmoWrapper(BaseOptimisationWrapper):
 
         return lower, upper
 
-    def get_nobj(self):
+    def get_nobj(self) -> int:
+        """Get the number of objectives."""
         return len(self.model_objectives)
 
-    def get_nec(self):
+    def get_nec(self) -> int:
+        """Get the number of equality constraints."""
         return len([c for c in self.model_constraints if c.is_equality_constraint])
 
-    def get_nic(self):
+    def get_nic(self) -> int:
+        """Get the number of inequality constraints."""
         count = 0
         for c in self.model_constraints:
             if c.is_double_bounded_constraint:

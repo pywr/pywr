@@ -1,4 +1,11 @@
-from ..core import Model
+from typing_extensions import TYPE_CHECKING
+from typing import Union, Iterator
+
+if TYPE_CHECKING:
+    from pywr.core import Model
+    from pywr.parameters import Parameter
+    from pywr.recorders import Recorder
+
 import uuid
 import logging
 
@@ -55,9 +62,38 @@ MODEL_CACHE = {}
 
 
 class BaseOptimisationWrapper(object):
-    """A helper class for running pywr optimisations with platypus."""
+    """An abstract helper class for running pywr optimisations.
 
-    def __init__(self, pywr_model_json, *args, **kwargs):
+    Attributes
+    ----------
+    pywr_model_json : str | dict
+        The pywr model.
+    pywr_model_klass : Model
+        The pywr model class to use.
+    pywr_model_kwargs : dict
+        Additional keyword arguments to pass to the pywr model.
+    uid : str
+        A unique ID used for caching.
+    """
+
+    def __init__(self, pywr_model_json: Union[str, dict], *args, **kwargs):
+        """
+        Initialize the wrapper.
+
+        Parameters
+        ----------
+        pywr_model_json : str | dict
+            The pywr model to pass to Model.load().
+
+        Other Parameters
+        ----------------
+        pywr_model_klass : Optional[Model], default = Model
+            The pywr model class to use.
+        pywr_model_kwargs : Optional[dict], default = {}
+            Additional keyword arguments to pass to the pywr model.
+        run_stats : ModelResult
+            The statistics from Model.run().
+        """
         uid = kwargs.pop("uid", None)
         self.pywr_model_klass = kwargs.pop("model_klass", Model)
         self.pywr_model_kwargs = kwargs.pop("model_kwargs", {})
@@ -88,26 +124,41 @@ class BaseOptimisationWrapper(object):
         return cache
 
     @property
-    def model(self):
+    def model(self) -> "Model":
+        """
+        Get the pywr model instance.
+        """
         return self._cached.model
 
     @property
-    def model_variables(self):
+    def model_variables(self) -> Iterator["Parameter"]:
+        """Get the variable parameter instances."""
         return self._cached.variables
 
     @property
-    def model_variable_map(self):
+    def model_variable_map(self) -> list[int]:
+        """Get the position of each variable parameter in the variable list."""
         return self._cached.variable_map
 
     @property
-    def model_objectives(self):
+    def model_objectives(self) -> Iterator["Recorder"]:
+        """Get the variable recorder instances."""
         return self._cached.objectives
 
     @property
-    def model_constraints(self):
+    def model_constraints(self) -> Iterator["Recorder"]:
+        """Get the variable recorder instances with constraints."""
         return self._cached.constraints
 
-    def make_model(self):
+    def make_model(self) -> "Model":
+        """
+        Create a pywr model.
+
+        Returns
+        -------
+        Model
+            The pywr model.
+        """
         m = self.pywr_model_klass.load(self.pywr_model_json, **self.pywr_model_kwargs)
         # Apply any user defined changes to the model
         self.customise_model(m)

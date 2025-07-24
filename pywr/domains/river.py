@@ -11,6 +11,8 @@ DEFAULT_RIVER_DOMAIN = Domain(name="river", color="#33CCFF")
 
 
 class RiverDomainMixin(object):
+    """Class to identify a river domain."""
+
     def __init__(self, *args, **kwargs):
         # if 'domain' not in kwargs:
         #     kwargs['domain'] = DEFAULT_RIVER_DOMAIN
@@ -20,21 +22,45 @@ class RiverDomainMixin(object):
 
 
 class Catchment(RiverDomainMixin, Input):
-    """A hydrological catchment, supplying water to the river network"""
+    """A hydrological catchment, supplying water to the river network.
+
+    A Catchment is an `Input` node with a fixed inflow. I.e. `min_flow` and
+    `max_flow` are the same. The value is specified as a flow keyword, and
+    overrides any `min_flow` or `max_flow` keyword arguments.
+
+    Examples
+    --------
+    Python
+    ======
+    ```python
+    model = Model()
+    Catchment(model=model, flow=1.0, name="Inflow")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Inflow",
+        "type": "Catchment",
+        "flow": 1.0,
+    }
+    ```
+    """
 
     __parameter_attributes__ = ("cost", "flow")
 
     def __init__(self, *args, **kwargs):
         """Initialise a new Catchment node.
 
-        A Catchment is an input node with a fixed inflow. I.e. min_flow and
-        max_flow are the same. The value is specified as a flow keyword, and
-        overrides any min_flow or max_flow keyword arguments.
-
         Parameters
         ----------
-        flow : float or function
-            The amount of water supplied by the catchment each timestep
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        flow : Optional[float | Parameter], default=0
+            The amount of water supplied by the catchment each timestep.
         """
         self.color = "#82CA9D"  # green
         # Grab flow from kwargs
@@ -43,9 +69,20 @@ class Catchment(RiverDomainMixin, Input):
         super(Catchment, self).__init__(*args, **kwargs)
         self.flow = flow
 
-    def get_flow(self, timestep):
-        """flow is ensured that both min_flow and max_flow are the same."""
-        return self.get_min_flow(timestep)
+    def get_flow(self, scenario_index):
+        """Get the flow.
+
+        Parameters
+        ---------
+        scenario_index : ScenarioIndex
+            The scenario index to get the min flow of.
+
+        Returns
+        -------
+        float
+            The flow.
+        """
+        return self.get_min_flow(scenario_index)
 
     def __setattr__(self, name, value):
         if name == "flow":
@@ -56,20 +93,63 @@ class Catchment(RiverDomainMixin, Input):
 
 
 class Reservoir(RiverDomainMixin, Storage):
-    """A reservoir node with control curve.
+    """A [pywr.nodes.Storage][] with one control curve.
 
-    The Reservoir is a subclass of Storage with additional functionality to provide a
-    simple control curve. The Reservoir has above_curve_cost when it is above its curve
-    and the user defined cost when it is below. Typically the costs are negative
+    The Reservoir is a subclass of [pywr.nodes.Storage][] with additional functionality to provide a
+    simple control curve to control the cost. The Reservoir has above_curve_cost when it is above its curve
+    and the user defined cost when it is below. Typically, the costs are negative
     to represent a benefit of filling the reservoir when it is below its curve.
+
+    Examples
+    --------
+    Python
+    ==================
+    ```python
+    model = Model()
+    Reservoir(
+        model=model,
+        control_curve=0.4,
+        above_curve_cost=-0.1,
+        cost=-100,
+        name="Reservoir"
+    )
+    ```
+
+    JSON
+    ==================
+    ```json
+    {
+        "name": "Reservoir",
+        "type": "Reservoir",
+        "control_curve": 0.4,
+        "above_curve_cost": -0.1,
+        "cost": -100
+    }
+    ```
     """
 
     def __init__(self, model, *args, **kwargs):
-        """
+        """Initialise the node.
 
-        Keywords:
-            control_curve - A Parameter object that can return the control curve position,
-                as a percentage of fill, for the given timestep.
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+
+
+        Other Parameters
+        ----------------
+        name : string
+            A unique name for the node.
+        control_curve : Optional[float | Parameter], default=None
+            This can be a number (to assume a flat control curve) or a Parameter that returns the control curve position,
+            as relative volume of fill for the given timestep. When `None`, the control curve
+            defaults to 1 (full reservoir).
+        above_curve_cost : Optional[float], default=None
+            The cost when the reservoir is above the control curve. When `None`, the reservoir cost
+            defaults to `cost` and the control curve is ignored.
+        cost: Optional[float], default=0.0
+            The cost when the reservoir is below the control curve.
         """
         control_curve = pop_kwarg_parameter(kwargs, "control_curve", None)
         above_curve_cost = kwargs.pop("above_curve_cost", None)
@@ -99,39 +179,96 @@ class Reservoir(RiverDomainMixin, Storage):
 
 
 class River(RiverDomainMixin, Link):
-    """A node in the river network
+    """A node in the river network.
 
-    This node may have multiple upstream nodes (i.e. a confluence) but only
+    This node may have multiple upstream nodes (i.e. a confluence), but only
     one downstream node.
+
+    Examples
+    --------
+    Python
+    ======
+    ```python
+    model = Model()
+    River(model=model, min_flow=1.0, name="Thames")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Thames",
+        "type": "River",
+        "min_flow": 1.0,
+    }
+    ```
+
+    Notes
+    -----
+    This node is an extension of the [pywr.core.Link][] node.
     """
 
     def __init__(self, *args, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        min_flow : Optional[float | Parameter], default=0
+            A simple minimum flow constraint for the node. Default to 0.
+        max_flow : Optional[float | Parameter], default=Inf
+            A simple maximum flow constraint for the node. Defaults to infinite.
+        cost : Optional[float | Parameter], default=0
+            The cost of supply.
+        """
         super(River, self).__init__(*args, **kwargs)
 
 
 class RiverSplit(MultiSplitLink):
-    """A split in the river network
+    """A split in the river network.
 
-    RiverSplit is a specialised version of `pywr.nodes.MultiSplitLink` with a more convenient init method.
+    RiverSplit is a specialised version of [pywr.nodes.MultiSplitLink][] with a
+    more convenient `init` method.
     It is intended for a simple case of where fixed ratio of flow is required to be distributed
     to multiple downstream routes.
 
-    Parameters
-    ----------
-    factors : iterable of floats
-        The factors to force on the additional splits. Number of extra_slot is assumed to be one less
-        than the length of factors (as per `pywr.nodes.MultiSplitLink` documentation).
-    slot_names : iterable
-        The identifiers to refer to the slots when connect from this Node. Length must be one more than
-         the number of extra slots required.
-
     See also
     --------
-    pywr.nodes.MultiSplitLink
+    [pywr.nodes.MultiSplitLink][]
 
     """
 
     def __init__(self, model, *args, nsteps=1, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        nsteps : int
+            The number of steps to split.
+
+        Other Parameters
+        ----------------
+        name : str
+            The unique name of the node.
+        factors : Iterable[float]
+            The factors to force on the additional splits. The number of extra_slot is assumed to be one less
+            than the length of factors (as per [pywr.nodes.MultiSplitLink][] documentation).
+        slot_names : Iterable
+            The identifiers to refer to the slots when connect from this Node. Length must be one more than
+             the number of extra slots required.
+        min_flow : Optional[float | Parameter], default=0
+            A simple minimum flow constraint for the node. Defaults to 0.
+        max_flow : Optional[float | Parameter], default=Inf
+            A simple maximum flow constraint for the node. Defaults to infinite.
+        cost : Optional[float | Parameter], default=0
+            The cost of supply.
+
+        """
         factors = kwargs.pop("factors")
         extra_slots = len(factors) - 1
 
@@ -156,40 +293,75 @@ class RiverSplit(MultiSplitLink):
 class RiverSplitWithGauge(RiverSplit):
     """A split in the river network with a minimum residual flow.
 
-    As per `RiverSplit` but by default creates another route in the underlying object
+    As per [pywr.domains.river.RiverSplit][] but by default creates another route in the underlying object
     to model an MRF. This route is such that the MRF is not part of forced ratios. The
     intent of this object is to model the case where a proportion of flow can be
     abstracted above the MRF (e.g. 90% of flow above MRF).
 
-    ::
+    ```mermaid
+    graph LR
+        A --> Xo
+        Xo --> D{X0 <br/>max_flow: mrf, cost: mrf_cost}
+        D --> Xi
+        Xo --> E{X1 <br/> max_flow: None, cost: cost}
+        E --> Xi
+        Xo --> F{X2 <br/>max_flow: None, cost: 0.0}
+        F --> Xi
+        Xi --> C
+        F --> Bo
+        Bo --> Bi
+        Bi --> H
 
-                 /  -->-- X0 {max_flow: mrf,  cost: mrf_cost} -->-- \\
-        A -->-- Xo  -->-- X1 {max_flow: None, cost: cost}     -->-- Xi -->-- C
-                 \\  -->-- X2 {max_flow: None, cost: 0.0}      -->-- /
-                           |
-                           Bo -->-- Bi --> D
+        L{Ag <br/>nodes: X1, X2, factors: factors}
+    ```
 
-        Ag {nodes: [X1, X2], factors: factors}
-
-    Parameters
+    Attributes
     ----------
     mrf : float
-        The minimum residual flow (MRF) at the gauge
+        The minimum residual flow (MRF) at the gauge.
+
+        **Setter:** set the minimum residual flow.
     mrf_cost : float
-        The cost of the route via the MRF
-    cost : float
-        The cost of the other (unconstrained) route
-    factors : iterable of floats
-        The factors to force on the additional splits. Number of extra_slot is assumed to be one less
-        than the length of factors (as per `MultiSplitLink` documentation).
-    slot_names : iterable
-        The identifiers to refer to the slots when connect from this Node. Length must be one more than
-         the number of extra slots required.
+        The cost of the route via the MRF.
+
+        **Setter:** set the minimum residual flow cost.
+    mrf_cost : float
+         The cost of the other (unconstrained) route.
+
+        **Setter:** set the other route cost.
     """
 
     __parameter_attributes__ = ("cost", "mrf_cost", "mrf")
 
     def __init__(self, model, *args, mrf=0.0, cost=0.0, mrf_cost=0.0, **kwargs):
+        """Initialise the node.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+
+        Other Parameters
+        ----------------
+        name : str
+            The unique name of the node.
+        mrf : Optional[float], default = 0
+            The minimum residual flow (MRF) at the gauge.
+        mrf_cost : Optional[float], default = 0
+            The cost of the route via the MRF.
+        cost : Optional[float], default = 0
+            The cost of the other (unconstrained) route.
+        factors : Iterable[float]
+            The factors to force on the additional splits. Number of extra_slot is assumed to be one less
+            than the length of factors (as per `MultiSplitLink` documentation).
+        slot_names : Iterable
+            The identifiers to refer to the slots when connect from this Node. Length must be one more than
+             the number of extra slots required.
+        min_flow : Optional[float | Parameter], default=0
+            A simple minimum flow constraint for the node. Defaults to 0.
+        max_flow : Optional[float | Parameter], default=Inf
+            A simple maximum flow constraint for the node. Defaults to infinite.
+        """
         super(RiverSplitWithGauge, self).__init__(
             model,
             *args,
@@ -234,7 +406,7 @@ class RiverSplitWithGauge(RiverSplit):
 
 
 class Discharge(Catchment):
-    """An inline discharge to the river network
+    """An inline discharge to the river network.
 
     This node is similar to a catchment, but sits inline to the river network,
     rather than at the head of the river.
@@ -244,21 +416,58 @@ class Discharge(Catchment):
 
 
 class RiverGauge(RiverDomainMixin, PiecewiseLink):
-    """A river gauging station, with a minimum residual flow (MRF)"""
+    """A river gauging station, with a minimum residual flow (MRF). This
+    extends a [pywr.nodes.PiecewiseLink][] node.
+
+    Attributes
+    ----------
+    mrf : float
+        The minimum residual flow (MRF) at the gauge.
+
+        **Setter:** set the minimum residual flow.
+    mrf_cost : float
+        The cost of the route via the MRF.
+
+        **Setter:** set the minimum residual flow cost.
+
+    Examples
+    --------
+    Python
+    ======
+    ```python
+    model = Model()
+    RiverGauge(model=model, mrf=1.0, mrf_cost=-100, name="Compensation")
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "name": "Compensation",
+        "type": "RiverGauge",
+        "mrf": 1.0,
+        "mrf_cost": -100
+    }
+    ```
+    """
 
     __parameter_attributes__ = ("cost", "mrf_cost", "mrf")
 
     def __init__(self, *args, **kwargs):
-        """Initialise a new RiverGauge instance
+        """Initialise a new RiverGauge instance.
 
         Parameters
         ----------
-        mrf : float
-            The minimum residual flow (MRF) at the gauge
-        mrf_cost : float
-            The cost of the route via the MRF
-        cost : float
-            The cost of the other (unconstrained) route
+        model : Model
+            The model instance.
+        name : str
+            The unique name of the node.
+        mrf : Optional[float], default=0
+            The minimum residual flow (MRF) at the gauge.
+        mrf_cost : Optional[float], default=0
+            The cost of the route via the MRF.
+        cost : Optional[float], default=0
+            The cost of the other (unconstrained) route.
         """
         # create keyword arguments for PiecewiseLink
         cost = kwargs.pop("cost", 0.0)

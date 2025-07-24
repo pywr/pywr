@@ -1,0 +1,3 @@
+# Aggregate
+
+::: pywr.recorders.AggregatedRecorder

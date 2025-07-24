@@ -1,14 +1,14 @@
 [project]
-name="pywr"
-description="Python Water Resource model"
-readme="README.rst"
+name = "pywr"
+description = "Python Water Resource model"
+readme = "README.rst"
 dynamic = ["version"]
 authors = [
-  {name = "Joshua Arnott", email = "josh@snorfalorpagus.net"},
-  {name = "James Tomlinson", email = "tomo.bbe@gmail.com"},
+    { name = "Joshua Arnott", email = "josh@snorfalorpagus.net" },
+    { name = "James Tomlinson", email = "tomo.bbe@gmail.com" },
 ]
-requires-python=">=3.10"
-dependencies=[
+requires-python = ">=3.10"
+dependencies = [
     "pandas",
     "networkx",
     "numpy",
@@ -20,11 +20,11 @@ dependencies=[
 
 
 [project.urls]
-Documentation="https://pywr.github.io/pywr/"
-Repository="https://github.com/pywr/pywr"
+Documentation = "https://pywr.github.io/pywr/"
+Repository = "https://github.com/pywr/pywr"
 
 [project.optional-dependencies]
-docs = ["sphinx", "sphinx_rtd_theme", "numpydoc", "matplotlib"]
+docs = ["mkdocs", "mkdocs-material", "mkdocstrings[python]", "mkdocs-material-extensions", "mkdocs-mermaid2-plugin", "markdown-exec[ansi]", "numpydoc", "matplotlib", "python-markdown-math", "pywr"]
 notebook = ["ipython", "jinja2", "matplotlib"]
 opt = ["platypus-opt", "pygmo"]
 
