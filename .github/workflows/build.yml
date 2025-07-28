@@ -13,16 +13,17 @@ env:
   # MUSL Linux can be re-enabled more easily when updating from manylinux2014
   CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux*"
   # Install GLPK
-  CIBW_BEFORE_ALL_LINUX: yum install -y glpk-devel lpsolve-devel
-  # build using the manylinux2014 image. Can link to system provided GLPk
-  CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+  CIBW_BEFORE_ALL_LINUX: dnf install -y almalinux-release-devel && dnf install -y glpk-devel lpsolve-devel
+
+  # build using the manylinux_2_34 image. Can link to system provided GLPk (v5.0)
+  CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_34
   CIBW_MANYLINUX_I686_IMAGE: manylinux2014
 
   # Windows binary paths to allow linking
-  CIBW_ENVIRONMENT_WINDOWS: LIB="c://glpk//w64;c://lpsolve" INCLUDE="c://glpk//src;c://"
+  CIBW_ENVIRONMENT_WINDOWS: LIB="c://glpk//Library//bin;c://glpk//Library//lib;c://lpsolve" INCLUDE="c://glpk//Library//include;c://"
   # Use delvewheel on windows
   CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
-  CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair --add-path \"c://glpk//w64;c://lpsolve\" -w {dest_dir} {wheel}"
+  CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair --add-path \"c://glpk//Library//bin;c://lpsolve\" -w {dest_dir} {wheel}"
 
 jobs:
   build_wheels:
@@ -40,7 +41,7 @@ jobs:
       - uses: actions/setup-python@v2
         name: Install Python
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install cibuildwheel
         run: |
@@ -50,13 +51,11 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         env:
-          WINGLPK_URL: "https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-4.65/winglpk-4.65.zip/download"
+          WINGLPK_URL: "https://anaconda.org/conda-forge/glpk/5.0/download/win-64/glpk-5.0-h8ffe710_0.tar.bz2"
         run: |
-          curl -L $WINGLPK_URL --output glpk.zip
-          7z x glpk.zip -o/c/
-          mv /c/glpk-4.65 /c/glpk
-          cp /c/glpk/w64/glpk_4_65.lib /c/glpk/w64/glpk.lib
-          cp /c/glpk/w64/glpk_4_65.dll /c/glpk/w64/glpk.dll
+          curl -L $WINGLPK_URL --output glpk.tar.bz2
+          mkdir /c/glpk
+          tar -xf glpk.tar.bz2 -C /c/glpk/
 
       - name: Install LpSolve (Windows)
         if: runner.os == 'Windows'
@@ -90,7 +89,9 @@ jobs:
           python-version: '3.11'
 
       - name: Build sdist
-        run: python setup.py sdist
+        run: |
+          python -m pip install build
+          python -m build --sdist
 
       - uses: actions/upload-artifact@v4
         with:
@@ -114,9 +115,8 @@ jobs:
         # lpsolve doesn't compile on Ubuntu without building the library from source - disable for the time being.
         # This doesn't really matter for the documentation builds.
         run: |
-          sudo apt-get install libglpk-dev
-          pip install sphinx sphinx_rtd_theme numpydoc matplotlib "numpy"
-          python setup.py install --without-lpsolve
+          sudo apt-get install libglpk-dev          
+          PYWR_BUILD_LPSOLVE=false pip install -e .[docs]
           cd docs
           make html
 
