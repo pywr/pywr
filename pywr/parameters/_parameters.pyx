@@ -508,7 +508,7 @@ cdef class TablesArrayParameter(IndexParameter):
         for algo, hash in checksums.items():
             model.check_hash(url, hash, algorithm=algo)
 
-        return cls(model, url, node, where=where, scenario=scenario)
+        return cls(model, url, node, where=where, scenario=scenario, **data)
 TablesArrayParameter.register()
 
 
