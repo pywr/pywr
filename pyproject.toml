@@ -41,7 +41,6 @@ build-backend = "setuptools.build_meta"
 # enable version inference
 [tool.setuptools_scm]
 version_file = "pywr/_version.py"
-version_scheme = "no-guess-dev"
 
 [tool.black]
 line-length = 88
