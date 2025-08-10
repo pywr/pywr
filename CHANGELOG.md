@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.28.1] - 2025-08-07
+
+### 🐛 Bug Fixes
+
+- Pass remaining JSON data to TablesArrayParameter initialisation. ([#1164](https://github.com/pywr/pywr/issues/1164))
+
 ## [1.28.0] - 2025-07-17
 
 ### ⚙️ Miscellaneous Tasks
