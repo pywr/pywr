@@ -1,0 +1,335 @@
+site_name: Pywr documentation
+site_url: https://pywr.github.io/pywr
+repo_url: https://github.com/pywr/pywr
+plugins:
+  - search
+  - mermaid2
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            force_inspection: true
+            heading_level: 4
+            inherited_members: true
+            members_order: alphabetical
+            docstring_style: numpy
+            docstring_section_style: spacy
+            show_bases: false
+            show_if_no_docstring: false
+            show_overloads: false
+            show_root_heading: true
+            show_signature_annotations: true
+            show_source: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            show_inheritance_diagram: true
+            parameter_headings: true
+            separate_signature: true
+            filters:
+              - "!^__.*__$"      # Exclude all dunder methods
+              - "^__init__$"     # Re-include only __init__
+              - "!^_private"    # Optionally hide private methods
+              - "!_disconnect.*$" # Node method
+              - "!component_attrs"  # Node prop
+extra_css:
+  - extra.css
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+markdown_extensions:
+  - admonition
+  - pymdownx.critic
+  - pymdownx.tabbed
+  - pymdownx.details
+  - pymdownx.highlight:
+      use_pygments: true
+      linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: "#"
+  - attr_list
+  - mdx_math
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+        - name: python
+          class: python
+          validator: !!python/name:markdown_exec.validator
+          format: !!python/name:markdown_exec.formatter
+theme:
+  name: material
+  features:
+    - navigation.sections  # Sections are included in the navigation on the left.
+    - navigation.top
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.path
+    - search.suggest
+    - search.highlight
+    - content.code.copy  # Add copy button in code blocks
+  toc:
+    toc_depth: 4
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github  # GitHub logo in top right
+extra:
+  version:
+    provider: mike
+nav:
+  - Welcome: 'index.md'
+  - Get started:
+      - Install:
+        - 'install/from_binary.md'
+        - 'install/from_source.md'
+        - 'install/development.md'
+      - Build your first model:
+        - 'get_started/intro.md'
+        - 'get_started/python.md'
+        - 'get_started/json.md'
+  - Manual:
+    - Key concepts:
+      - 'manual/key_concepts/problem.md'
+      - 'manual/key_concepts/costs.md'
+      - 'manual/key_concepts/exceptions.md'
+      - 'manual/key_concepts/tables.md'
+      - 'manual/key_concepts/use_api.md'
+    - Nodes:
+      - 'manual/nodes/input.md'
+      - 'manual/nodes/link.md'
+      - 'manual/nodes/storage.md'
+      - 'manual/nodes/aggregated.md'
+      - 'manual/nodes/output.md'
+    - Parameters:
+        - 'manual/parameters/index.md'
+        - 'manual/parameters/simple.md'
+        - 'manual/parameters/profiles.md'
+        - 'manual/parameters/timeseries.md'
+        - 'manual/parameters/flow.md'
+        - Aggregated: 'manual/parameters/aggregated.md'
+        - 'manual/parameters/control_curves.md'
+        - 'manual/parameters/threshold.md'
+        - 'manual/parameters/interpolated.md'
+        - 'manual/parameters/array_based.md'
+        - 'manual/parameters/functions.md'
+    - Recorders:
+        - Introduction: 'manual/recorders/index.md'
+        - 'manual/recorders/file.md'
+        - Save results in memory:
+          - 'manual/recorders/memory/index.md'
+          - 'manual/recorders/memory/numpy.md'
+          - 'manual/recorders/memory/flow.md'
+          - 'manual/recorders/memory/storage.md'
+          - 'manual/recorders/memory/parameter.md'
+          - 'manual/recorders/memory/threshold.md'
+          - 'manual/recorders/memory/frequency.md'
+    - 'manual/scenarios.md'
+    - 'manual/solvers.md'
+    - 'manual/optimisation.md'
+    - Custom components:
+      - 'manual/custom_components/parameters.md'
+      - 'manual/custom_components/node.md'
+      - 'manual/custom_components/recorder.md'
+    - How to implement:
+      - 'manual/misc/demand_savings.md'
+      - 'manual/misc/soft_constraints.md'
+      - 'manual/misc/abs_license_with_bands.md'
+  - API reference:
+    - Core:
+      - 'api/core/model.md'
+      - 'api/core/time.md'
+      - 'api/core/scenario.md'
+    - Nodes:
+        - 'api/nodes/core.md'
+        - Inputs:
+          - Input: 'api/nodes/inputs/input.md'
+          - Catchment: 'api/nodes/inputs/catchment.md'
+          - Discharge: 'api/nodes/inputs/discharge.md'
+        - Links:
+          - 'api/nodes/links/link.md'
+          - 'api/nodes/links/delay.md'
+          - 'api/nodes/links/break.md'
+          - 'api/nodes/links/loss.md'
+          - 'api/nodes/links/piecewise.md'
+          - 'api/nodes/links/multisplit.md'
+          - River: 'api/nodes/links/river.md'
+          - River gauge: 'api/nodes/links/river_gauge.md'
+          - River with split: 'api/nodes/links/river_split.md'
+          - River split with gauge: 'api/nodes/links/river_split_gauge.md'
+        - 'api/nodes/output.md'
+        - Storage:
+          - 'api/nodes/storages/storage.md'
+          - Reservoir: 'api/nodes/storages/reservoir.md'
+        - Virtual storages:
+          - 'api/nodes/virtual_storages/virtual.md'
+          - 'api/nodes/virtual_storages/annual.md'
+          - 'api/nodes/virtual_storages/monthly.md'
+          - 'api/nodes/virtual_storages/seasonal.md'
+          - 'api/nodes/virtual_storages/rolling.md'
+        - Aggregated:
+            - 'api/nodes/aggregated/node.md'
+            - 'api/nodes/aggregated/storage.md'
+    - Parameters:
+        - Core: 'api/parameters/core.md'
+        - Simple:
+          - 'api/parameters/simple/constant.md'
+          - 'api/parameters/simple/constant_scenario.md'
+          - 'api/parameters/simple/constant_scenario_index.md'
+        - Combining parameters:
+          - 'api/parameters/combine/aggregated.md'
+          - 'api/parameters/combine/aggregated_index.md'
+          - 'api/parameters/combine/division.md'
+          - 'api/parameters/combine/negative.md'
+          - 'api/parameters/combine/max.md'
+          - 'api/parameters/combine/negative_max.md'
+          - 'api/parameters/combine/min.md'
+          - 'api/parameters/combine/negative_min.md'
+          - 'api/parameters/combine/offset.md'
+        - Annual profiles:
+            - 'api/parameters/profiles/daily.md'
+            - 'api/parameters/profiles/weekly.md'
+            - 'api/parameters/profiles/monthly.md'
+            - 'api/parameters/profiles/uniform_drawdown.md'
+            - 'api/parameters/profiles/daily_scenario.md'
+            - 'api/parameters/profiles/weekly_scenario.md'
+            - 'api/parameters/profiles/monthly_scenario.md'
+            - 'api/parameters/profiles/rbf.md'
+            - 'api/parameters/profiles/weighted_profile.md'
+        - Timeseries:
+            - 'api/parameters/timeseries/pandas.md'
+            - 'api/parameters/timeseries/tables.md'
+        - Control curves:
+            - 'api/parameters/control_curves/control_curve.md'
+            - 'api/parameters/control_curves/control_curve_index.md'
+            - 'api/parameters/control_curves/control_curve_interpolated.md'
+            - 'api/parameters/control_curves/control_curve_piecewise_interpolated.md'
+        - Thresholds:
+            - 'api/parameters/thresholds/storage.md'
+            - 'api/parameters/thresholds/node.md'
+            - 'api/parameters/thresholds/parameter.md'
+            - 'api/parameters/thresholds/recorder.md'
+            - 'api/parameters/thresholds/multiple_node.md'
+            - 'api/parameters/thresholds/multiple_parameter.md'
+            - 'api/parameters/thresholds/current_year.md'
+            - 'api/parameters/thresholds/current_ordinal.md'
+        - Interpolated:
+            - 'api/parameters/interpolated/parameter.md'
+            - 'api/parameters/interpolated/storage.md'
+            - 'api/parameters/interpolated/flow.md'
+            - 'api/parameters/interpolated/integrate.md'
+        - Flow:
+            - 'api/parameters/flow/deficit.md'
+            - 'api/parameters/flow/flow.md'
+            - 'api/parameters/flow/flow_delay.md'
+            - 'api/parameters/flow/rolling_mean_flow_delay.md'
+            - 'api/parameters/flow/hydropower.md'
+        - Array based:
+            - 'api/parameters/array/indexed_array.md'
+            - 'api/parameters/array/array_index.md'
+            - 'api/parameters/array/array_index_scenario.md'
+            - 'api/parameters/array/array_index_scenario_monthly.md'
+            - 'api/parameters/array/scenario_wrapper.md'
+        - Activation:
+            - 'api/parameters/activation/binary_step.md'
+            - 'api/parameters/activation/rectifier.md'
+            - 'api/parameters/activation/logistic.md'
+        - Functions:
+            - 'api/parameters/functions/1d_polynomial.md'
+            - 'api/parameters/functions/2d_polynomial.md'
+            - 'api/parameters/functions/piecewise_integral.md'
+            - 'api/parameters/functions/harmonic.md'
+        - Multi model:
+            - 'api/parameters/other_model/other_parameter_value.md'
+            - 'api/parameters/other_model/other_parameter_index.md'
+            - 'api/parameters/other_model/other_node_flow.md'
+            - 'api/parameters/other_model/other_node_storage.md'
+        - Misc:
+            - 'api/parameters/misc/storage.md'
+            - 'api/parameters/misc/discount_parameter.md'
+            - 'api/parameters/misc/keating_aquifer.md'
+    - Recorders:
+        - Core:
+            - 'api/recorders/core/aggregator.md'
+            - 'api/recorders/core/recorder.md'
+            - 'api/recorders/core/aggregated_recorder.md' # TODO move
+        - Node:
+            - 'api/recorders/node/node.md'
+            - 'api/recorders/node/mean_node_flow.md'
+            - 'api/recorders/node/total_node_flow.md'
+            - 'api/recorders/node/total_node_deficit.md'
+            - 'api/recorders/node/annual_total_node_flow.md'
+            - 'api/recorders/node/rolling_mean_flow.md'
+            - 'api/recorders/node/hydropower_energy.md'
+        - Storage:
+            - 'api/recorders/storage/storage.md'
+            - 'api/recorders/storage/min_storage.md'
+            - 'api/recorders/storage/min_threshold_volume.md'
+        - Numpy:
+            - 'api/recorders/numpy/node.md'
+            - 'api/recorders/numpy/node_deficit.md'
+            - 'api/recorders/numpy/node_supply_ratio.md'
+            - 'api/recorders/numpy/node_curtailment_ratio.md'
+            - 'api/recorders/numpy/cost.md'
+            - 'api/recorders/numpy/storage.md'
+            - 'api/recorders/numpy/normalised_storage.md'
+            - 'api/recorders/numpy/storage_level.md'
+            - 'api/recorders/numpy/storage_area.md'
+            - 'api/recorders/numpy/parameter_value.md'
+            - 'api/recorders/numpy/parameter_index.md'
+            - 'api/recorders/numpy/daily_profile_parameter.md'
+            - 'api/recorders/numpy/hydropower_power.md'
+        - File:
+            - 'api/recorders/file/csv.md'
+            - 'api/recorders/file/hdf.md'
+        - Parameter:
+            - 'api/recorders/parameter/mean.md'
+            - 'api/recorders/parameter/rolling_mean.md'
+            - 'api/recorders/parameter/total.md'
+        - Counter with threshold:
+            - 'api/recorders/threshold/timestep_count_index.md'
+            - 'api/recorders/threshold/annual_count_index.md'
+            - 'api/recorders/threshold/annual_count_index_multi.md'
+        - Frequency-based:
+            - 'api/recorders/frequency/fdc.md'
+            - 'api/recorders/frequency/fdc_deviations.md'
+            - 'api/recorders/frequency/seasonal_fdc.md'
+            - 'api/recorders/frequency/sdc.md'
+            - 'api/recorders/frequency/deficit_frequency.md'
+            - 'api/recorders/frequency/kde.md'
+            - 'api/recorders/frequency/normalised_kde.md'
+        - Calibration:
+            - 'api/recorders/calibration/rmse.md'
+            - 'api/recorders/calibration/mae.md'
+            - 'api/recorders/calibration/mse.md'
+            - 'api/recorders/calibration/bias.md'
+            - 'api/recorders/calibration/rmse_std_ratio.md'
+            - 'api/recorders/calibration/nse.md'
+    - Optimisation:
+        - 'api/optimisation/core.md'
+        - 'api/optimisation/platypus.md'
+        - 'api/optimisation/pygmo.md'
+  - Resources: 'tools.md'
+  - 'license.md'

@@ -1,6 +1,10 @@
+from typing import Union, Optional
+
 import pandas
 import numpy as np
 import datetime
+
+
 from pywr import _core
 
 # Constants
@@ -8,7 +12,31 @@ SECONDS_IN_DAY = 3600 * 24
 
 
 class Timestepper(object):
+    """
+    The timestepper object to handle the start, end date, and the model timestep.
+
+    Attributes
+    ----------
+    start : str
+        The start date of the model simulation.
+    end : str
+        The end date of the model simulation.
+    delta: int
+        The time step in days.
+    """
+
     def __init__(self, start="2015-01-01", end="2015-12-31", delta=1):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        start : str
+            The start date of the model simulation.
+        end : str
+            The end date of the model simulation.
+        delta: int
+            The time step in days.
+        """
         self.start = start
         self.end = end
         self.delta = delta
@@ -36,6 +64,14 @@ class Timestepper(object):
         return self._dirty
 
     def setup(self):
+        """
+        Setup the timestepper.
+
+        Returns
+        -------
+        None
+            This function returns `None`.
+        """
         periods = self.datetime_index
 
         # Compute length of each period
@@ -49,11 +85,19 @@ class Timestepper(object):
         self.reset()
         self._dirty = False
 
-    def reset(self, start=None):
-        """Reset the timestepper
+    def reset(self, start: Optional[pandas.Timestamp] = None):
+        """Reset the timestepper.
 
-        If start is None it resets to the original self.start, otherwise
-        start is used as the new starting point.
+        Parameters
+        ----------
+        start: Optional[pandas.Timestamp]
+            The start date. If None it resets to the original `self.start`,
+            otherwise start is used as the new starting point.
+
+        Returns
+        -------
+        None
+            This function returns `None`.
         """
         self._current = None
         current_length = len(self)
@@ -86,6 +130,14 @@ class Timestepper(object):
     def next(
         self,
     ):
+        """
+        Advance the timestep.
+
+        Returns
+        -------
+        None
+            This function returns `None`.
+        """
         self._current = current = self._next
 
         if current.index >= len(self._periods):
@@ -111,6 +163,17 @@ class Timestepper(object):
 
     @property
     def start(self):
+        """
+        The timestepper start date.
+
+        **Setter:** set the start date as `pandas.Timestamp` or any type accepted
+        by `pandas.to_datetime`.
+
+        Returns
+        -------
+        start : pandas.Timestamp
+            The start date.
+        """
         return self._start
 
     @start.setter
@@ -122,15 +185,47 @@ class Timestepper(object):
         self._dirty = True
 
     @property
-    def start_period(self):
+    def start_period(self) -> pandas.Period:
+        """
+        Get the start date as pandas `Period`.
+
+        Returns
+        -------
+        period: pandas.Period
+            The period.
+        """
         return pandas.Period(self.start, freq=self.freq)
 
     @property
-    def end(self):
+    def end(self) -> pandas.Timestamp:
+        """
+        Get the end date.
+
+        **Setter:** set the end date as `pandas.Timestamp` or any type accepted
+        by `pandas.to_datetime`.
+
+        Returns
+        -------
+        period: pandas.Timestamp
+            The end date.
+        """
         return self._end
 
     @end.setter
-    def end(self, value):
+    def end(self, value: Union[pandas.Period, datetime.datetime]) -> None:
+        """
+        Set the timestepper's end date.
+
+        Parameters
+        ----------
+        value: pd.Period
+            The end date to set.
+
+        Returns
+        -------
+        None
+            This function returns `None`.
+        """
         if isinstance(value, pandas.Timestamp):
             self._end = value
         else:
@@ -138,20 +233,64 @@ class Timestepper(object):
         self._dirty = True
 
     @property
-    def end_period(self):
+    def end_period(self) -> pandas.Period:
+        """
+        Get the end date as pandas `Period`.
+
+        Returns
+        -------
+        period: pandas.Period
+            The period.
+        """
         return pandas.Period(self.end, freq=self.freq)
 
     @property
-    def delta(self):
+    def delta(self) -> str:
+        """
+        Get the delta.
+
+        **Setter:** Set a new delta as `Union[str, int, datetime.timedelta]`. This
+        can be a string for example "1D" or an integer for the number of days or
+        a `datetime.timedelta` object.
+
+        Returns
+        -------
+        delta: str
+            The timestepper delta as string.
+        """
         return self._delta
 
     @delta.setter
-    def delta(self, value):
+    def delta(self, value: Union[str, int, datetime.timedelta]) -> None:
+        """
+        Set the timestepper's delta.
+
+        Parameters
+        ----------
+        value : Union[str, int, datetime.timedelta]
+        The delta to set. This can be a string for example "1D" or an integer for the
+        number of days or a `datetime.timedelta` object.
+
+        Returns
+        -------
+        None
+            This function returns `None`.
+
+        """
         self._delta = value
         self._dirty = True
 
     @property
-    def freq(self):
+    def freq(self) -> str:
+        """
+        Get the frequency as string. This represents the time-step followed by the frequency
+        identifier, for example `3D` for three days.
+
+        Returns
+        -------
+        frequency : str
+            The frequency as string.
+        """
         d = self._delta
         if isinstance(d, int):
             freq = "{}D".format(d)
@@ -162,22 +301,39 @@ class Timestepper(object):
         return freq
 
     @property
-    def offset(self):
+    def offset(self) -> pandas.DateOffset:
+        """
+        Get the timestepper offset as `pandas.DateOffset`.
+
+        Returns
+        -------
+        offset : pandas.DateOffset
+            The offset.
+        """
+        # noinspection PyTypeChecker
         return pandas.tseries.frequencies.to_offset(self.freq)
 
     @property
-    def current(self):
-        """The current timestep
+    def current(self) -> Optional["Timestepper"]:
+        """The current timestep.
 
-        If iteration has not begun this will return None.
+        Returns
+        -------
+        current : Union["Timestepper", None]
+            The current timestep or `None` if the iteration has not begun.
         """
         return self._current
 
     @property
-    def datetime_index(self):
-        """Return a `pandas.DatetimeIndex` using the start, end and delta of this object
+    def datetime_index(self) -> pandas.PeriodIndex:
+        """Return a `pandas.PeriodIndex` using the start, end and delta of this object.
 
-        This is useful for creating `pandas.DataFrame` objects from Model results
+        This is useful for creating `pandas.DataFrame` objects from Model results.
+
+        Returns
+        -------
+        pandas.PeriodIndex
+            The `PeriodIndex` object using the start, end and delta.
         """
         return pandas.period_range(self.start, self.end, freq=self.freq)
 

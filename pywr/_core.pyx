@@ -19,27 +19,48 @@ cdef class Scenario:
     some `Parameter` values vary with one scenario, but not another. Scenarios are defined
     with a size that represents the number of ensembles in that scenario.
 
-    Parameters
+    Attributes
     ----------
-    model : `pywr.core.Model`
-        The model instance to attach the scenario to.
     name : str
-        The name of the scenario.
-    size : int, optional
-        The number of ensembles in the scenario. The default value is 1.
-    slice : slice, optional
-        If given this defines the subset of the ensembles that are actually run
-         in the model. This is useful if a large number of ensembles is defined, but
-         certain analysis (e.g. optimisation) can only be done on a small subset.
-    ensemble_names : iterable of str, optional
-        User defined names describing each ensemble.
+        The scenario name.
+    size : int
+        The number of ensembles in the scenario.
+    slice : Union[slice | None]
+        The subset of the ensembles that are actually run in the model. This
+        is `None` when the slice is not set.
+    ensemble_names : Union[Iterable[str], Iterable[int]]
+        User defined names describing each ensemble. When the user provides
+        no names, the names is a list of index (from zero to `size`-1).
 
     See Also
     --------
-    ScenarioCollection
-    ScenarioIndex
+    [pywr.core.ScenarioCollection][]
+    [pywr.core.ScenarioIndex][]
     """
+
     def __init__(self, model, name, int size=1, slice slice=None, ensemble_names=None):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : `pywr.core.Model`
+            The model instance to attach the scenario to.
+        name : str
+            The name of the scenario.
+        size : Union[int | None], default=1
+            The number of ensembles in the scenario. The default value is 1.
+        slice : Union[slice | None], default=None
+            If given this defines the subset of the ensembles that are actually run
+            in the model. This is useful if a large number of ensembles is defined, but
+            certain analysis (e.g. optimisation) can only be done on a small subset.
+        ensemble_names : Union[Iterable[str], None]], default=None
+            User defined names describing each ensemble.
+
+        Raises
+        -----
+        ValueError
+            If the size is less than 1.
+        """
         self._name = name
         if size < 1:
             raise ValueError("Size must be greater than or equal to 1.")
@@ -72,7 +93,7 @@ cdef class Scenario:
             self._ensemble_names = names
 
 cdef class ScenarioCollection:
-    """ Represents a collection of `Scenario` objects.
+    """Represents a collection of `Scenario` objects.
 
     This class is used by a `Model` instance to hold the defined scenarios and control
     which combinations of ensembles are used during model execution. By default the
@@ -83,12 +104,34 @@ cdef class ScenarioCollection:
     should be run. The latter approach takes precedent over the former per `Scenario`
     slices.
 
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    combinations : Iterable[ScenarioIndex]
+        A list of `ScenarioIndices` for every combination of `Scenario`s
+    user_combinations : Iterable[ScenarioIndex]
+        A list of `ScenarioIndices` combinations set by the user.
+    combination_names: list[str]
+        A list of the scenario names used in `combinations`.
+    shape: tuple[int]
+        The shape of the scenario collection.
+    scenarios : list[Scenario]
+        The list of scenario instances.
+
     See Also
     --------
-    Scenario
-    ScenarioIndex
+    [pywr.core.Scenario][]
+    [pywr.core.ScenarioIndex][]
     """
     def __init__(self, model):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        """
         self.model = model
         self._scenarios = []
         self.combinations = None
@@ -106,7 +149,17 @@ cdef class ScenarioCollection:
         raise KeyError("Scenario with name '{}' not found.".format(name))
 
     def get_combinations(self):
-        """Returns a list of ScenarioIndices for every combination of Scenarios
+        """Return a list of `ScenarioIndices` for every combination of `Scenario`s.
+
+        Returns
+        -------
+        Iterable[ScenarioIndex]
+            The list of combinations.
+
+        Raises
+        -------
+        ValueError
+            If there is no combination to run.
         """
         cdef Scenario scenario
         cdef int i
@@ -128,6 +181,12 @@ cdef class ScenarioCollection:
         return combinations
 
     def setup(self):
+        """Setup the collection.
+
+        Returns
+        -------
+        None
+        """
         self.combinations = self.get_combinations()
 
     property user_combinations:
@@ -154,10 +213,33 @@ cdef class ScenarioCollection:
             self._user_combinations = values
 
     cpdef int get_scenario_index(self, Scenario sc) except? -1:
-        """Return the index of Scenario in this controller."""
+        """Return the index of Scenario in this controller.
+
+        Parameters
+        ----------
+        sc : Scenario
+            The scenario instance.
+
+        Returns
+        -------
+        int
+            The scenario index.
+        """
         return self._scenarios.index(sc)
 
     cpdef add_scenario(self, Scenario sc):
+        """Add a new scenario to the collection.
+
+        Parameter
+        ---------
+        sc : Scenario
+            The scenario instance to add.
+
+        Raises
+        ------
+        ValueError
+            If the scenario is already in the collection.
+        """
         if sc in self._scenarios:
             raise ValueError("The same scenario can not be added twice.")
         self.model.dirty = True
@@ -210,7 +292,7 @@ cdef class ScenarioCollection:
 cdef class ScenarioIndex:
     """A ScenarioIndex is an indexer for a given combination of scenarios.
 
-    The ScenarioIndex is used to represent a given combination of scenarios
+    The `ScenarioIndex` is used to represent a given combination of scenarios
     during a simulation. It is given to Parameter instances to allow them
     to alter their calculations based on each scenario. Instances of this
     class are generated by Pywr, and users are unlikely to need to
@@ -219,16 +301,25 @@ cdef class ScenarioIndex:
     Attributes
     ----------
     global_id : int
-        Read-only global scenario index that this ScenarioIndex refers to.
-    indices : np.array
-        The indices for each of the Scenarios in this model.
+        Read-only global scenario index that this `ScenarioIndex` refers to.
+    indices : numpy.typing.NDArray[numpy.int_]
+        The indices for each of the `Scenario`s in this model.
 
     See Also
     --------
-    Scenario
-    ScenarioCollection
+    [pywr.core.Scenario][]
+    [pywr.core.ScenarioCollection][]
     """
     def __init__(self, int global_id, int[:] indices):
+        """Initialise the class.
+
+        Parameters
+        -----------
+        global_id : int
+            Read-only global scenario index that this `ScenarioIndex` refers to.
+        indices : numpy.typing.NDArray[numpy.int_]
+            The indices for each of the `Scenario`s in this model.
+        """
         self.global_id = global_id
         self._indices = indices
 
@@ -251,7 +342,7 @@ cdef class Timestep:
     Attributes
     ----------
     period : pandas.Period
-        Read-only global scenario index that this ScenarioIndex refers to.
+        Timestep as pandas Period instance.
     index : int
         The time-step index of the simulation.
     days : int
@@ -272,8 +363,27 @@ cdef class Timestep:
         The year.
     is_leap_year : bool
         True if the current year is a leap year; false otherwise.
+    datetime: datetime.datetime
+        Timestep representation as a `datetime` object.
     """
     def __init__(self, period, int index, double days):
+        """Initialise the class.
+
+        Parameters
+        ---------
+        period : pandas.Period
+            Timestep as pandas Period instance.
+        index : int
+            The time-step index of the simulation.
+        days : int
+            The time-step length in days.
+
+        Examples
+        ----------
+        To create a new timestep use:
+        >>> pywr.core.Timestep(period=pd.Period("2000-1-1", freq="1D"), index=0, days=1)
+        <Timestep date="2000-01-01">
+        """
         self.period = period
         self.index = index
         if days <= 0:
@@ -374,7 +484,12 @@ cdef class AbstractNode:
                         yield component
 
     property allow_isolated:
-        """ A property to flag whether this Node can be unconnected in a network. """
+        """A property to flag whether this Node can be unconnected in a network. 
+
+        Returns
+        -------
+        bool
+        """
         def __get__(self):
             return self._allow_isolated
 
@@ -382,7 +497,12 @@ cdef class AbstractNode:
             self._allow_isolated = value
 
     property name:
-        """ Name of the node. """
+        """Name of the node. 
+
+        Returns
+        -------
+        str
+        """
         def __get__(self):
             return self._name
 
@@ -402,15 +522,23 @@ cdef class AbstractNode:
     property recorders:
         """ Returns a list of `pywr.recorders.Recorder` objects attached to this node.
 
-         See also
-         --------
-         pywr.recorders.Recorder
-         """
+        Returns
+        -------
+        Iterable[Recorder]
+
+        See also
+        --------
+        [pywr.recorders.Recorder][]
+        """
         def __get__(self):
             return self._recorders
 
     property model:
-        """The recorder for the node, e.g. a NumpyArrayRecorder
+        """The model instance.
+
+        Returns
+        -------
+        Model
         """
         def __get__(self):
             return self._model
@@ -440,13 +568,21 @@ cdef class AbstractNode:
             self._parent = value
 
     property prev_flow:
-        """Total flow via this node in the previous timestep
+        """Total flow via this node in the previous timestep.
+
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
         """
         def __get__(self):
             return np.array(self._prev_flow)
 
     property flow:
-        """Total flow via this node in the current timestep
+        """Total flow via this node in the current timestep.
+
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
         """
         def __get__(self):
             return np.array(self._flow)
@@ -465,7 +601,7 @@ cdef class AbstractNode:
         self._prev_flow = np.zeros(ncomb, dtype=np.float64)
 
     cpdef reset(self):
-        """Called at the beginning of a run"""
+        """Called at the beginning of a run to reset the node's flow values."""
         cdef int i
         for i in range(self._flow.shape[0]):
             self._flow[i] = 0.0
@@ -478,11 +614,25 @@ cdef class AbstractNode:
             self._flow[i] = 0.0
 
     cpdef commit(self, int scenario_index, double value):
-        """Called once for each route the node is a member of"""
+        """Called once for each route the node is a member of.
+
+        Parameters
+        ----------
+        scenario_index : int
+            The scenario index.
+        value : float
+            The flow value.
+        """
         self._flow[scenario_index] += value
 
     cpdef commit_all(self, double[:] value):
-        """Called once for each route the node is a member of"""
+        """Called once for each route the node is a member of.
+
+        Parameters
+        ----------
+        value : numpy.typing.NDArray[numpy.number]
+            The flow values.
+        """
         cdef int i
         for i in range(self._flow.shape[0]):
             self._flow[i] += value[i]
@@ -508,11 +658,9 @@ cdef class AbstractNode:
 
 
 cdef class Node(AbstractNode):
-    """ Node class from which all others inherit
-    """
+    """ Node class from which all others inherit."""
     def __cinit__(self):
-        """Initialise the node attributes
-        """
+        """Initialise the node attributes."""
         # Initialised attributes to zero
         self._min_flow = 0.0
         self._max_flow = inf
@@ -530,12 +678,12 @@ cdef class Node(AbstractNode):
     component_attrs = ["min_flow", "max_flow", "cost", "conversion_factor"]
 
     property cost:
-        """The cost per unit flow via the node
+        """The cost per unit flow via the node.
 
-        The cost may be set to either a constant (i.e. a float) or a Parameter.
+        The cost may be set to either a constant (i.e. a float) or a `Parameter`.
 
         The value returned can be positive (i.e. a cost), negative (i.e. a
-        benefit) or netural. Typically supply nodes will have an associated
+        benefit) or neutral. Typically supply nodes will have an associated
         cost and demands will provide a benefit.
         """
         def __get__(self):
@@ -551,18 +699,40 @@ cdef class Node(AbstractNode):
                 self._cost = value
 
     property has_fixed_cost:
-        """Returns true if cost is not a Parameter."""
+        """Returns true if cost is not a `Parameter`."""
         def __get__(self):
             return self._cost_param is None
 
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
-        """Get the cost per unit flow at a given timestep
+        """Get the cost per unit flow at a given timestep.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index to get the cost of.
+
+        Returns
+        -------
+        float
+            The cost.
         """
         if self._cost_param is None:
             return self._cost
         return self._cost_param.get_value(scenario_index)
 
     cpdef double[:] get_all_cost(self, double[:] out=None):
+        """Get all costs for all scenarios.
+
+        Parameters
+        ----------
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
+            Save the cost in the provided array. Default to None.
+
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
+            The array of costs.
+        """
         if out is None:
             out = np.empty(len(self.model.scenarios.combinations))
 
@@ -573,10 +743,10 @@ cdef class Node(AbstractNode):
         return out
 
     property min_flow:
-        """The minimum flow constraint on the node
+        """The minimum flow constraint on the node.
 
-        The minimum flow may be set to either a constant (i.e. a float) or a
-        Parameter.
+        **Setter:** the minimum flow may be set to either a
+        constant (i.e. a float) or a `Parameter`.
         """
         def __get__(self):
             if self._min_flow_param is None:
@@ -594,13 +764,25 @@ cdef class Node(AbstractNode):
                 self._min_flow = value
 
     cpdef double get_fixed_min_flow(self):
-        """Returns min_flow value if it is a fixed value otherwise returns NaN."""
+        """Returns min_flow value if it is a fixed value otherwise returns NaN.
+
+        Returns
+        -------
+        float
+            The fixed minimum flow.
+        """
         if self.has_fixed_flows:
             return self._min_flow
         return float('nan')
 
     cpdef double get_constant_min_flow(self):
-        """Returns min_flow value if it is a constant parameter or fixed value otherwise returns NaN."""
+        """Returns min_flow value if it is a constant parameter or fixed value otherwise returns NaN.
+
+        Returns
+        -------
+        float
+            The constant minimum flow.
+        """
         if self._min_flow_param is None:
             return self._min_flow
         elif self._min_flow_param.is_constant:
@@ -608,13 +790,34 @@ cdef class Node(AbstractNode):
         return float('nan')
 
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1:
-        """Get the minimum flow at a given timestep
+        """Get the minimum flow at a given timestep.
+
+        Parameters
+        ---------
+        scenario_index : ScenarioIndex
+            The scenario index to get the min flow of.
+
+        Returns
+        -------
+        float
+            The minimum flow.
         """
         if self._min_flow_param is None:
             return self._min_flow
         return self._min_flow_param.get_value(scenario_index)
 
     cpdef double[:] get_all_min_flow(self, double[:] out=None):
+        """Get the minimum flow for all scenarios.
+
+        Parameters
+        ----------
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
+            Save the flows in the provided array. Default to None.
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
+            The array of values.
+        """
         if out is None:
             out = np.empty(len(self.model.scenarios.combinations))
 
@@ -627,8 +830,8 @@ cdef class Node(AbstractNode):
     property max_flow:
         """The maximum flow constraint on the node
 
-        The maximum flow may be set to either a constant (i.e. a float) or a
-        Parameter.
+        **Setter:** set the maximum flow may be set to either a
+        constant (i.e. a float) or a `Parameter`.
         """
         def __get__(self):
             if self._max_flow_param is None:
@@ -646,24 +849,35 @@ cdef class Node(AbstractNode):
                 self._max_flow = value
 
     property has_fixed_flows:
-        """Returns true if both min_flow and max_flow are not Parameters."""
+        """Returns true if both min_flow and max_flow are not `Parameter`s."""
         def __get__(self):
             return self._max_flow_param is None and self._min_flow_param is None
 
     property has_constant_flows:
-        """Returns true if both min_flow and max_flow are literal constants or "constant" Parameters."""
+        """Returns true if both min_flow and max_flow are literal constants or "constant" `Parameter`s."""
         def __get__(self):
             return (self._max_flow_param is None or self._max_flow_param.is_constant) and \
                    (self._min_flow_param is None or self._min_flow_param.is_constant)
 
     cpdef double get_fixed_max_flow(self):
-        """Returns max_flow value if it is fixed value otherwise returns NaN."""
+        """Returns the max_flow value if it is fixed value otherwise returns NaN.
+        Returns
+        -------
+        float
+            The fixed minimum flow.
+        """
         if self.has_fixed_flows:
             return self._max_flow
         return float('nan')
 
     cpdef double get_constant_max_flow(self):
-        """Returns max_flow value if it is a constant parameter or fixed value otherwise returns NaN."""
+        """Returns max_flow value if it is a constant parameter or fixed value otherwise returns NaN.
+
+        Returns
+        -------
+        float
+            The constant minimum flow.
+        """
         if self._max_flow_param is None:
             return self._max_flow
         elif self._max_flow_param.is_constant:
@@ -671,13 +885,34 @@ cdef class Node(AbstractNode):
         return float('nan')
 
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1:
-        """Get the maximum flow at a given timestep
+        """Get the maximum flow at a given timestep.
+
+        Parameters
+        ---------
+        scenario_index : ScenarioIndex
+            The scenario index to get the min flow of.
+
+        Returns
+        -------
+        float
+            The maximum flow.
         """
         if self._max_flow_param is None:
             return self._max_flow
         return self._max_flow_param.get_value(scenario_index)
 
     cpdef double[:] get_all_max_flow(self, double[:] out=None):
+        """Get the maximum flow for all scenarios.
+
+        Parameters
+        ----------
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
+            Save the flows in the provided array. Default to None.
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
+            The array of values.
+        """
         if out is None:
             out = np.empty(len(self.model.scenarios.combinations))
 
@@ -688,10 +923,10 @@ cdef class Node(AbstractNode):
         return out
 
     property conversion_factor:
-        """The conversion between inflow and outflow for the node
+        """The conversion between inflow and outflow for the node.
 
-        The conversion factor may be set to either a constant (i.e. a float) or
-        a Parameter.
+        **Setter:** set the conversion factor to either a constant (i.e. a `float`) or
+        a `Parameter`.
         """
         def __set__(self, value):
             self._conversion_factor_param = None
@@ -701,17 +936,22 @@ cdef class Node(AbstractNode):
                 self._conversion_factor = value
 
     cpdef double get_conversion_factor(self) except? -1:
-        """Get the conversion factor
+        """Get the conversion factor.
 
         Note: the conversion factor must be a constant.
         """
         return self._conversion_factor
 
     cdef set_parameters(self, ScenarioIndex scenario_index):
-        """Update the constant attributes by evaluating any Parameter objects
+        """Update the constant attributes by evaluating any `Parameter` objects.
 
         This is useful when the `get_` functions need to be accessed multiple
         times and there is a benefit to caching the values.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index to set the parameters of.
         """
         if self._min_flow_param is not None:
             self._min_flow = self._min_flow_param.get_value(scenario_index)
@@ -800,13 +1040,23 @@ cdef class AggregatedNode(AbstractNode):
             self.model.dirty = True
 
     property has_fixed_factors:
-        """Returns true if all factors are of type `ConstantParameter`"""
+        """Returns true if all factors are of type `ConstantParameter`.
+        
+        Returns
+        -------
+        bool
+        """
         def __get__(self):
             from pywr.parameters import ConstantParameter
             return all([isinstance(p, ConstantParameter) for p in self.factors])
 
     property has_constant_factors:
-        """Returns true if all factors are `is_constant==True`"""
+        """Returns true if all factors are `is_constant==True`.
+        
+        Returns
+        -------
+        bool
+        """
         def __get__(self):
             return all([p.is_constant for p in self.factors])
 
@@ -832,6 +1082,10 @@ cdef class AggregatedNode(AbstractNode):
 
         The minimum flow may be set to either a constant (i.e. a float) or a
         Parameter.
+
+        Returns
+        -------
+        float
         """
         def __get__(self):
             if self._min_flow_param is None:
@@ -849,7 +1103,16 @@ cdef class AggregatedNode(AbstractNode):
                 self._min_flow = value
 
     cpdef double get_min_flow(self, ScenarioIndex scenario_index) except? -1:
-        """Get the minimum flow at a given timestep
+        """Get the minimum flow at a given timestep.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index.
+
+        Returns
+        -------
+        float
         """
         if self._min_flow_param is None:
             return self._min_flow
@@ -870,6 +1133,10 @@ cdef class AggregatedNode(AbstractNode):
 
         The maximum flow may be set to either a constant (i.e. a float) or a
         Parameter.
+
+        Returns
+        -------
+        float
         """
         def __get__(self):
             if self._max_flow_param is None:
@@ -887,7 +1154,16 @@ cdef class AggregatedNode(AbstractNode):
                 self._max_flow = value
 
     cpdef double get_max_flow(self, ScenarioIndex scenario_index) except? -1:
-        """Get the maximum flow at a given timestep
+        """Get the maximum flow at a given timestep.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index.
+
+        Returns
+        -------
+        float
         """
         if self._max_flow_param is None:
             return self._max_flow
@@ -913,14 +1189,27 @@ cdef class AggregatedNode(AbstractNode):
         """Get constant factors.
 
         Will return an array of `NaN` if the factors are no `is_constant`. 
+        
+        Returns
+        -------
+        values : numpy.typing.NDArray[numpy.number]
+            The factors.
+
         """
         cdef Parameter p
         return np.array([p.get_constant_value() for p in self.factors], np.float64)
 
     cpdef double[:] get_factors_norm(self, ScenarioIndex scenario_index):
         """Get node factors normalised by the factor of the first node.
-        
-        If `scenario_index` is `None` assumed to be constant factors.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index. When `None`, it is assumed the factors to be constant.
+        Returns
+        -------
+        values : numpy.typing.NDArray[numpy.number]
+            The factors.
         """
         cdef double f0, f
         cdef int i
@@ -1064,12 +1353,12 @@ cdef class Storage(AbstractStorage):
     component_attrs = ["cost", "min_volume", "max_volume", "level", "area"]
 
     property cost:
-        """The cost per unit increased in volume stored
+        """The cost per unit increased in volume stored.
 
-        The cost may be set to either a constant (i.e. a float) or a Parameter.
+        The cost may be set to either a constant (i.e. a float) or a [pywr.parameters.Parameter][].
 
         The value returned can be positive (i.e. a cost), negative (i.e. a
-        benefit) or netural. Typically supply nodes will have an associated
+        benefit) or neutral. Typically supply nodes will have an associated
         cost and demands will provide a benefit.
         """
         def __get__(self):
@@ -1085,18 +1374,45 @@ cdef class Storage(AbstractStorage):
                 self._cost = value
 
     property has_fixed_cost:
-        """Returns true if cost is not a Parameter."""
+        """Returns true if cost is not a Parameter.
+
+        Returns
+        -------
+        bool
+        """
         def __get__(self):
             return self._cost_param is None
 
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1:
-        """Get the cost per unit flow at a given timestep
+        """Get the cost per unit flow at a given timestep.
+
+        Parameters
+        ---------
+        scenario_index : ScenarioIndex
+            The scenario index.
+
+        Returns
+        --------
+        float
+            The total cost.
         """
         if self._cost_param is None:
             return self._cost
         return self._cost_param.get_value(scenario_index)
 
     cpdef double[:] get_all_cost(self, double[:] out=None):
+        """Get all costs for all scenario combinations.
+
+        Parameters
+        ----------
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
+            Save the cost in the provided array. Default to None.
+
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
+            The array of costs.
+        """
         if out is None:
             out = np.empty(len(self.model.scenarios.combinations))
 
@@ -1107,6 +1423,15 @@ cdef class Storage(AbstractStorage):
         return out
 
     property initial_volume:
+        """The initial volume.
+
+        **Setter:** the initial volume may be set to a `float`.
+
+        Returns
+        -------
+        float
+            The reservoir initial volume.
+        """
         def __get__(self, ):
             return self._initial_volume
 
@@ -1117,6 +1442,15 @@ cdef class Storage(AbstractStorage):
                 self._initial_volume = value
 
     property initial_volume_pc:
+        """The relative initial volume.
+
+        **Setter:** the initial volume may be set to a `float`.
+
+        Returns
+        -------
+        float
+            The reservoir relative initial volume.
+        """
         def __get__(self, ):
             return self._initial_volume_pc
 
@@ -1127,7 +1461,13 @@ cdef class Storage(AbstractStorage):
                 self._initial_volume_pc = value
 
     cpdef double get_initial_volume(self) except? -1:
-        """Returns the absolute initial volume. """
+        """get the absolute initial volume.
+
+        Returns
+        -------
+        float
+            The reservoir initial volume.
+        """
         cdef double mxv
 
         if self._max_volume_param is not None and not self._max_volume_param.is_constant:
@@ -1153,7 +1493,13 @@ cdef class Storage(AbstractStorage):
         return initial_volume
 
     cpdef double get_initial_pc(self) except? -1:
-        """Returns the initial volume as a proportion. """
+        """get the initial volume as a proportion.
+
+        Returns
+        -------
+        float
+            The reservoir relative initial volume.
+        """
         cdef double mxv
 
         if self._max_volume_param is not None and not self._max_volume_param.is_constant:
@@ -1181,6 +1527,15 @@ cdef class Storage(AbstractStorage):
         return initial_pc
 
     property min_volume:
+        """The minimum volume.
+
+        **Setter:** the minimum volume may be set to a `float` or [pywr.parameters.Parameter][].
+
+        Returns
+        -------
+        float | Parameter
+            The reservoir minimum volume.
+        """
         def __get__(self):
             if self._min_volume_param is None:
                 return self._min_volume
@@ -1194,11 +1549,35 @@ cdef class Storage(AbstractStorage):
                 self._min_volume = value
 
     cpdef double get_min_volume(self, ScenarioIndex scenario_index) except? -1:
+        """Get the minimum volume for a scenario.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index. This is ignored if the minimum volume is not a [pywr.parameters.Parameter][].
+
+        Returns
+        -------
+        float
+            The minimum volume.
+        """
         if self._min_volume_param is None:
             return self._min_volume
         return self._min_volume_param.get_value(scenario_index)
 
     cpdef double[:] get_all_min_volume(self, double[:] out=None):
+        """Get the minimum volume for all scenario combinations.
+
+        Parameters
+        ----------
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
+            Save the values in the provided array. Default to None.
+
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
+            The array of volumes.
+        """
         if out is None:
             out = np.empty(len(self.model.scenarios.combinations))
 
@@ -1209,6 +1588,15 @@ cdef class Storage(AbstractStorage):
         return out
 
     property max_volume:
+        """The maximum volume.
+
+        **Setter:** the maximum volume may be set to a `float` or [pywr.parameters.Parameter][].
+
+        Returns
+        -------
+        float | Parameter
+            The reservoir maximum volume.
+        """
         def __get__(self):
             if self._max_volume_param is None:
                 return self._max_volume
@@ -1222,11 +1610,35 @@ cdef class Storage(AbstractStorage):
                 self._max_volume = value
 
     cpdef double get_max_volume(self, ScenarioIndex scenario_index) except? -1:
+        """Get the maximum volume for a scenario.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index. This is ignored if the maximum volume is not a [pywr.parameters.Parameter][].
+
+        Returns
+        -------
+        float
+            The maximum volume.
+        """
         if self._max_volume_param is None:
             return self._max_volume
         return self._max_volume_param.get_value(scenario_index)
 
     cpdef double[:] get_all_max_volume(self, double[:] out=None):
+        """Get the maximum volume for all scenario combinations.
+
+        Parameters
+        ----------
+        out : Optional[numpy.typing.NDArray[numpy.number]], default=None
+            Save the values in the provided array. Default to None.
+
+        Returns
+        -------
+        numpy.typing.NDArray[numpy.number]
+            The array of volumes.
+        """
         if out is None:
             out = np.empty(len(self.model.scenarios.combinations))
 
@@ -1237,6 +1649,10 @@ cdef class Storage(AbstractStorage):
         return out
 
     property level:
+        """The levels.
+
+        **Setter:** set the levels.
+        """
         def __get__(self):
             if self._level_param is None:
                 return self._level
@@ -1253,11 +1669,27 @@ cdef class Storage(AbstractStorage):
                 self._level = value
 
     cpdef double get_level(self, ScenarioIndex scenario_index) except? -1:
+        """Get the current level for a scenario.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index to set the parameters of.
+
+        Returns
+        -------
+        float
+            The current level for the scenario.
+        """
         if self._level_param is None:
             return self._level
         return self._level_param.get_value(scenario_index)
 
     property area:
+        """The areas.
+
+        **Setter:** set the areas.
+        """
         def __get__(self):
             if self._area_param is None:
                 return self._area
@@ -1274,6 +1706,18 @@ cdef class Storage(AbstractStorage):
                 self._area = value
 
     cpdef double get_area(self, ScenarioIndex scenario_index) except? -1:
+        """Get the current area for a scenario.
+
+        Parameters
+        ----------
+        scenario_index : ScenarioIndex
+            The scenario index to set the parameters of.
+
+        Returns
+        -------
+        float
+            The current area for the scenario.
+        """
         if self._area_param is None:
             return self._area
         return self._area_param.get_value(scenario_index)
@@ -1286,7 +1730,7 @@ cdef class Storage(AbstractStorage):
             self._domain = value
 
     cpdef reset(self):
-        """Called at the beginning of a run"""
+        """Called at the beginning of a run."""
         AbstractStorage.reset(self)
         self._reset_storage_only()
 
@@ -1294,8 +1738,8 @@ cdef class Storage(AbstractStorage):
         """Reset the current volume of the storage node.
 
         Parameters
-        ==========
-        use_initial_volume : bool (default: True)
+        ----------
+        use_initial_volume : bool, default=True
             Reset the volume to the initial volume of the storage node. If false the volume is reset to max_volume.
         """
         cdef int i
@@ -1332,6 +1776,17 @@ cdef class Storage(AbstractStorage):
             self._current_pc[i] = reset_pc
 
     cpdef after(self, Timestep ts, double[:] adjustment=None):
+        """
+        Calculate the absolute and relative volume at the end of the time step.
+
+        Parameters
+        ----------
+        ts : Timestep
+            The [pywr.core.Timestep][] instance.
+        adjustment : Optional[numpy.typing.NDArray[numpy.number]], default=None
+            Modify the volume by the given values. This is an array of size equals
+            to the number of scenarios. Default to `None` to skip.
+        """
         AbstractStorage.after(self, ts)
         cdef int i
         cdef double mxv, mnv
@@ -1360,7 +1815,7 @@ cdef class Storage(AbstractStorage):
                 self._current_pc[i] = np.nan
 
 cdef class AggregatedStorage(AbstractStorage):
-    """ Base class for a special type of storage node that is the aggregated sum of `Storage` objects.
+    """Base class for a special type of storage node that is the aggregated sum of `Storage` objects.
 
     This class is intended to be used isolated from the network.
     """

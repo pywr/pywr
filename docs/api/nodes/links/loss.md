@@ -1,0 +1,2 @@
+# Loss
+::: pywr.core.LossLink

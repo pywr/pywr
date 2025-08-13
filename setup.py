@@ -1,14 +1,10 @@
 import os
-import sys
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 
 
 def setup_package():
-    compiler_directives = {
-        "language_level": 3,
-        "embedsignature": True,
-    }
+    compiler_directives = {"language_level": 3}
 
     define_macros = []
     compile_time_env = {}

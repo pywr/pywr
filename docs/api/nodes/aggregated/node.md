@@ -1,0 +1,2 @@
+# Node
+::: pywr.nodes.AggregatedNode

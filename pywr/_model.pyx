@@ -48,21 +48,61 @@ class ModelStructureError(Exception):
 
 
 class Model(object):
-    """Model of a water supply network"""
+    """Model of a water supply network.
+
+    Attributes
+    ----------
+    metadata : dict[str, Any]
+        A dictionary with the model's metadata.
+    scenarios : ScenarioCollection
+        The collection of model's scenarios.
+    tables : dict[str, pandas.DataFrame]
+        A dictionary containing the table name as key and the pandas `DataFrame` object as value.
+    timestepper : Timestepper
+        The `Timestepper` instance.
+
+    Examples
+    --------
+    Create an empty model
+    =====================
+    To create an empty model, you can instantiate the `Model` class without arguments
+
+    ```python
+    model = Model()
+    # create two nodes: a supply, and a demand
+    supply = Input(model, name='supply')
+    demand = Output(model, name='demand')
+
+    # create a connection from the supply to the demand
+    supply.connect(demand)
+    ```
+
+    Load a model from a JSON file
+    ==============================
+    If you built your model with the JSON format, you can load it using:
+
+    ```python
+    model = Model.load("path/to/model.json")
+    ```
+
+    > The load method also supports loading a model as dictionary or string.
+    """
     def __init__(self, **kwargs):
-        """Initialise a new Model instance
+        """Initialise a new Model instance.
 
         Parameters
         ----------
-        solver : string
+        start : str, default="2015-01-01"
+            The date of the first timestep in the model
+        end : str, default="2015-12-31"
+            The date of the last timestep in the model
+        timestep : Union[int, datetime.timedelta], default=1
+            Number of days in each timestep
+        solver : Optional[string], default=None
             The name of the underlying solver to use. See the `pywr.solvers`
             package. If no value is given, the default GLPK solver is used.
-        start : pandas.Timestamp
-            The date of the first timestep in the model
-        end : pandas.Timestamp
-            The date of the last timestep in the model
-        timestep : int or datetime.timedelta
-            Number of days in each timestep
+        solver_args : Optional[dict], default=None
+            An optional dictionary to customise the solver options.
         """
         self.graph = nx.DiGraph()
         self.metadata = {}
@@ -127,30 +167,70 @@ class Model(object):
 
     @property
     def recorders(self):
+        """Get the list of `Recorder` instances.
+
+        Returns
+        -------
+        Iterator[Recorder]
+            An iterator with the `Recorder` instances.
+        """
         return NamedIterator(n for n in self.components if isinstance(n, Recorder))
 
     @property
     def parameters(self):
+        """Get the list of `Parameter` instances.
+
+        Returns
+        -------
+        Iterator[Parameter]
+            An iterator with the `Parameter` instances.
+        """
         return NamedIterator(n for n in self.components if isinstance(n, BaseParameter))
 
     @property
     def variables(self):
+        """Get the list of Parameter instances that are variable.
+
+        Returns
+        -------
+        Iterator[Parameter]
+            An iterator with the `Parameter` instances that contain optimisation variables.
+        """
         return NamedIterator(n for n in self.parameters if n.is_variable)
 
     @property
     def constraints(self):
+        """Get the list of Recorder instances whose `is_constraint` property returns true.
+
+        Returns
+        -------
+        Iterator[Recorder]
+            An iterator with the `Recorder` instances that have a constraint set.
+        """
         return NamedIterator(n for n in self.recorders if n.is_constraint)
 
     @property
     def objectives(self):
+        """Get the list of Recorder instances whose `is_objective` property returns true.
+
+        Returns
+        -------
+        Iterator[Recorder]
+            An iterator with the `Recorder` instances that are set as objectives.
+        """
         return NamedIterator(n for n in self.recorders if n.is_objective)
 
     def is_feasible(self):
-        """Returns True if none of the constraints are violated.
+        """Returns `True` if none of the constraints are violated.
 
-        This function checks `is_constraint_violated()` for all defined constraints. If any constraints
+        This function checks `Model.is_constraint_violated()` for all defined constraints. If any constraints
         are violated this function returns False. The checking of constraint violation requires that a
         simulation has been completed before this function is called.
+
+        Returns
+        -------
+        bool
+            True if no constraints are violated, False otherwise.
         """
         for c in self.constraints:
             if c.is_constraint_violated():
@@ -160,7 +240,10 @@ class Model(object):
     def check(self):
         """Check the validity of the model
 
-        Raises an Exception if the model is invalid.
+        Raises
+        -----
+        Exception
+            If the model is invalid.
         """
         logger.info("Checking model ...")
         for node in self.nodes:
@@ -171,7 +254,13 @@ class Model(object):
             warnings.warn("Model has {} orphaned parameters".format(len(orphans)), OrphanedParameterWarning)
 
     def check_graph(self):
-        """Check the connectivity of the graph is valid"""
+        """Check the connectivity of the graph is valid.
+
+        Raises
+        ------
+        ModelStructureError
+            If the structure of the model is not valid.
+        """
         all_nodes = set(self.graph.nodes())
         routes = self.find_all_routes(BaseInput, BaseOutput, valid=(BaseLink, BaseInput, BaseOutput))
         # identify nodes that aren't in at least one route
@@ -186,19 +275,39 @@ class Model(object):
 
     @property
     def nodes(self):
-        """Returns a model node iterator"""
+        """Returns a model node iterator.
+
+        Returns
+        -------
+        Iterator[Node]
+            The iterator with the nodes.
+        """
         return NodeIterator(self)
 
     def edges(self):
-        """Returns a list of Edges in the model
+        """Returns a list of Edges in the model.
 
-        An edge is described as a 2-tuple of the source and dest Nodes.
+        Returns
+        --------
+        edges: OutEdgeView
+            `OutEdgeView` instance with the model edges. An edge is described as a 2-tuple of the source and
+            destination `Node`s.
         """
         return self.graph.edges()
 
     @classmethod
     def loads(cls, data, model=None, path=None, **kwargs):
-        """Read JSON data from a string and parse it as a model document"""
+        """Read JSON data from a string and parse it as a model document.
+
+        Parameters
+        ----------
+        data : str
+            The JSON model as string.
+        model : Union[Model, None], default=None
+            An existing model to append to. Optional.
+        path : Union[str, None], default=None
+            Path to the model document for relative path names. Optional.
+        """
         try:
             data = json.loads(data)
         except ValueError as e:
@@ -268,20 +377,20 @@ class Model(object):
 
     @classmethod
     def load(cls, data, model=None, path=None, **kwargs):
-        """Load an existing model
+        """Load an existing model.
 
         Parameters
         ----------
-        data : file-like, string, or dict
+        data : Union[typing.TextIO, str, dict]
             A file-like object to read JSON data from, a filename to read,
-            or a parsed dict
-        model : Model (optional)
-            An existing model to append to
-        path : str (optional)
-            Path to the model document for relative pathnames
-        solver : str (optional)
+            or a parsed dict.
+        model : Optional[Model], default=None
+            An existing model to append to. Optional.
+        path : Optional[str], default=None
+            Path to the model document for relative path names. Optional.
+        solver : Optional[str], default=None
             Name of the solver to use for the model. This overrides the solver
-            section of the model document.
+            section of the model document. Optional
         """
         if isinstance(data, str):
             # argument is a filename
@@ -477,25 +586,28 @@ class Model(object):
 
         Parameters
         ----------
-        type1 : Node class or instance
-            The source node instance (or class)
-        type2 : Node class or instance
+        type1 : Union[Node, Type[Node]]
+            The source node instance or class
+        type2 : Union[Node, Type[Node]]
             The destination  node instance (or class)
-        valid : tuple of Node classes
-            A tuple of Node classes that the route can traverse. For example,
-            a route between a Catchment and Terminator can generally only
-            traverse River nodes.
-        max_length : integer
-            Maximum length of the route including start and end nodes.
-        domain_match : string
+        valid : tuple[Node]
+            A tuple of `Node` classes that the route can traverse. For example,
+            a route between a `Catchment` and `Output` can generally only
+            traverse `River` nodes.
+        max_length : Union[int, None], default=None
+            Maximum length of the route including start and end nodes. When `None` the maximum
+            length between the nodes is not checked.
+        domain_match : str, default='strict'
             A string to control the behaviour of different domains on the route.
-                'strict' : all nodes must have the same domain as the first node.
-                'any' : any domain is permitted on any node (i.e. nodes can have different domains)
-                'different' : at least two different domains must be present on the route
+                - 'strict' : all nodes must have the same domain as the first node.
+                - 'any' : any domain is permitted on any node (i.e. nodes can have different domains)
+                '- different' : at least two different domains must be present on the route
 
-        Returns a list of all the routes between the two nodes. A route is
-        specified as a list of all the nodes between the source and
-        destination with the same domain has the source.
+        Returns
+        ------
+        nodes : list
+            A list of all the routes between the two nodes. A route is specified as a list of all
+            the nodes between the source and destination with the same domain has the source.
         """
 
         nodes = sorted(self.graph.nodes(), key=lambda n: n.name)
@@ -561,10 +673,11 @@ class Model(object):
         return all_routes
 
     def step(self):
-        """ Step the model forward by one day
+        """ Step the model forward by one day.
 
         This method progresses the model by one time-step. The anatomy
         of a time-step is as follows:
+
           1. Call `Model.setup` if the `Model.dirty` is True.
           2. Progress the `Model.timestepper` by one step.
           3. Call `Model.before` to ensure all nodes and components are ready for solve.
@@ -590,6 +703,9 @@ class Model(object):
         components. This ensures that components that rely on the state of
         another component are updated first.
 
+        Returns
+        -------
+        None
 
         See also
         --------
@@ -610,11 +726,17 @@ class Model(object):
         return ret
 
     def solve(self):
-        """Call solver to solve the current timestep"""
+        """Call solver to solve the current timestep."""
+
         return self.solver.solve(self)
 
     def run(self):
-        """Run the model
+        """Run the model.
+
+        Returns
+        -------
+        ModelResult
+            The model stats.
         """
         logger.info('Start model run ...')
         t0 = time.time()
@@ -664,12 +786,16 @@ class Model(object):
         """Setup the model for the first time or if it has changed since last run.
 
         Parameters
-        ==========
-        profile : bool (default=False)
+        ----------
+        profile : bool, default=False
             If true create and return a Profile object that tracks the setup of each node and
             component in the model.
-        profile_dump_filename : str, Path
+        profile_dump_filename : Optional[str, Path], default=None
             A CSV filename to write a dataframe of profile checkpoints. Has no effect if profile is not True.
+
+        Returns
+        -------
+        None
         """
         logger.info('Setting up model ...')
         self.timestepper.setup()
@@ -728,14 +854,14 @@ class Model(object):
         """Reset model to it's initial conditions.
 
         Parameters
-        ==========
-        start : None, pandas.Timestamp
+        ----------
+        start : Union[None, pandas.Timestamp]
             The start timestamp to reset the model to. By default this will reset the model to the timestepper's
             start date.
-        profile : bool (default=False)
+        profile : bool, default=False
             If true create and return a Profile object that tracks the setup of each node and
             component in the model.
-        profile_dump_filename : str, Path
+        profile_dump_filename : Union[str, Path | None], default=None
             A CSV filename to write a dataframe of profile checkpoints. Has no effect if profile is not True.
         """
         logger.info('Resetting model ...')
@@ -809,7 +935,7 @@ class Model(object):
 
         See also
         --------
-        `Model.step`
+        `pywr.core.Model.step`
         """
         cdef AbstractNode node
         cdef Component component
@@ -851,8 +977,12 @@ class Model(object):
                 raise
 
     def to_dataframe(self):
-        """ Return a DataFrame from any Recorders with a `to_dataframe` attribute
+        """ Return a DataFrame from any `Recorders` with a `to_dataframe` attribute.
 
+        Returns
+        -------
+        pandas.DataFrame
+            The DataFrame with the recorder's data.
         """
         dfs = {r.name: r.to_dataframe() for r in self.recorders if hasattr(r, 'to_dataframe')}
         df = pandas.concat(dfs, axis=1)
@@ -883,11 +1013,14 @@ class Model(object):
         return self.component_tree_flat
 
     def find_orphaned_parameters(self):
-        """Helper function to find orphaned parameters
+        """Helper function to find orphaned parameters.
 
-        Returns a set of parameters which:
-            1) Have no parent components
-            2) Are not referenced directly by a node
+        Returns
+        --------
+        set[Parameter]
+            A set of parameters which:
+                1) Have no parent components
+                2) Are not referenced directly by a node
         """
         all_parameters = set(self.parameters)
         visited = set()

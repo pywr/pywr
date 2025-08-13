@@ -48,38 +48,50 @@ _obj_direction_lookup = {
 cdef class Aggregator:
     """Utility class for computing aggregate values.
 
-    Users are unlikely to use this class directly. Instead `Recorder` sub-classes will use this functionality
-    to aggregate their results across different dimensions (e.g. time, scenarios, etc.).
-
-    Parameters
-    ==========
-    func : str, dict or callable
-        The aggregation function to use. Can be a string or dict defining aggregation functions, or a callable
-        custom function that performs aggregation.
-
-        When a string it can be one of: "sum", "min", "max", "mean", "median", "product", or "count_nonzero". These
-        strings map to and cause the aggregator to use the corresponding `numpy` functions.
-
-        A dict can be provided containing a "func" key, and optional "args" and "kwargs" keys. The value of "func"
-        should be a string corresponding to the aforementioned numpy function names with the additional options of
-        "percentile" and "percentileofscore". These latter two functions require additional arguments (the percentile
-        and score) to function and must be provided as the values in either the "args" or "kwargs" keys of the
-        dictionary. Please refer to the corresponding numpy (or scipy) function definitions for documentation on these
-        arguments.
-
-        Finally, a callable function can be given. This function must accept either a 1D or 2D numpy array as the
-        first argument, and support the "axis" keyword as integer value that determines which axis over which the
-        function should apply aggregation. The axis keyword is only supplied when a 2D array is given. Therefore,`
-        the callable function should behave in a similar fashion to the numpy functions.
+    Users are unlikely to use this class directly. Instead [pywr.recorders.Recorder][] subclasses will use this functionality
+    to aggregate their results across different dimensions (e.g., time, scenarios, etc.).
 
     Examples
-    ========
-    >>> Aggregator("sum")
-    >>> Aggregator({"func": "percentile", "args": [95],"kwargs": {}})
-    >>> Aggregator({"func": "percentileofscore", "kwargs": {"score": 0.5, "kind": "rank"}})
+    -------
+    ```python
+    a = Aggregator("sum")
+    a.aggregated_1d([1.0, 4.0, 9.0]) # this returns 14
+
+    Aggregator({"func": "percentile", "args": [95],"kwargs": {}})
+    Aggregator({"func": "percentileofscore", "kwargs": {"score": 0.5, "kind": "rank"}})
+    ```
+
+    Attributes
+    ----------
+    func : str | dict | Callable
+        The aggregation function to use. 
 
     """
     def __init__(self, func):
+        """Initialise the class.
+        
+        Parameters
+        ----------
+        func : str | dict | Callable
+            The aggregation function to use. This can be a string or dict defining aggregation functions, or a callable
+            custom function that performs aggregation.
+
+            When a string it can be one of: "sum", "min", "max", "mean", "median", "product", or "count_nonzero". These
+            strings map to and cause the aggregator to use the corresponding [numpy functions](https://numpy.org/doc/stable/reference/routines.statistics.html).
+
+            A dict can be provided containing a "func" key, and optional "args" and "kwargs" keys. The value of "func"
+            should be a string corresponding to the aforementioned numpy function names with the additional options of
+            "percentile" and "percentileofscore". These latter two functions require additional arguments (the percentile
+            and score) to function and must be provided as the values in either the "args" or "kwargs" keys of the
+            dictionary. Please refer to the corresponding numpy (or scipy) function definitions for documentation on these
+            arguments.
+
+            Finally, a callable function can be given. This function must accept either a 1D or 2D numpy array as the
+            first argument, and support the "axis" keyword as integer value that determines which axis over which the
+            function should apply aggregation. The axis keyword is only supplied when a 2D array is given. Therefore,`
+            the callable function should behave in a similar fashion to the numpy functions.
+        
+        """
         self.func = func
 
     property func:
@@ -108,6 +120,23 @@ cdef class Aggregator:
 
     cpdef double aggregate_1d(self, double[:] data, ignore_nan=False) except *:
         """Compute an aggregated value across 1D array.
+
+        Parameters
+        ---------
+        data : Iterable[float]
+            The 1D array to aggregated from.
+        ignore_nan : Optional[bool], default=False
+            Remove NaNs before aggregating.
+
+        Returns
+        -------
+        float
+            The result of the aggregation.
+
+        Raises
+        ------
+        ValueError
+            If the aggregation function does not exist.
         """
         cdef double[:] values = data
 
@@ -141,6 +170,25 @@ cdef class Aggregator:
 
     cpdef double[:] aggregate_2d(self, double[:, :] data, axis=0, ignore_nan=False) except *:
         """Compute an aggregated value along an axis of a 2D array.
+
+        Parameters
+        ---------
+        data : Iterable[float]
+            The 2D array to aggregated from.
+        axis : Optional[int], default=0
+            The dimension or axis along which the aggregation is computed. 
+        ignore_nan : Optional[bool], default=False
+            Remove NaNs before aggregating.
+
+        Returns
+        -------
+        Iterable[float]
+            The result of the aggregation for each other dimension.
+
+        Raises
+        ------
+        ValueError
+            If the aggregation function or axis do not exist.
         """
         cdef double[:, :] values = data
         cdef Py_ssize_t i
@@ -176,7 +224,7 @@ cdef class Aggregator:
                 for i in range(data.shape[0]):
                     out[i] = percentileofscore(values[i, :], *self.func_args, **self.func_kwargs)
             else:
-                raise ValueError('Axis "{}" not recognised for percentileofscore function.'.format(axis))
+                raise ValueError('Axis "{}" not recognised for "percentileofscore" function.'.format(axis))
             return out
         elif self._func == AggFuncs.COUNT_NONZERO:
             return np.count_nonzero(values, axis=axis).astype(np.float64)
@@ -185,38 +233,78 @@ cdef class Aggregator:
 
 
 cdef class Recorder(Component):
-    """Base class for recording information from a `pywr.model.Model`.
+    """Base class for recording information from a [pywr.core.Model][].
 
     Recorder components are used to calculate, aggregate and save data from a simulation. This
-    base class provides the basic functionality for all recorders.
+    base class provides the basic functionality for all recorders. The recorder has two key methods:
 
-    Parameters
-    ==========
-    model : `pywr.core.Model`
-    agg_func : str or callable (default="mean")
-        Scenario aggregation function to use when `aggregated_value` is called.
-    name : str (default=None)
+    - `.values()` which is implemented by a recorder inherited from this object.
+    - `.aggregated_value()` which aggregates the array of numbers returned by `.values()`
+        using `agg_func` (usually these contain a number for each model scenario).
+        This method returns just one number.
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
         Name of the recorder.
-    comment : str (default=None)
+    comment : Optional[str]
         Comment or description of the recorder.
-    ignore_nan : bool (default=False)
-        Flag to ignore NaN values when calling `aggregated_value`.
-    is_objective : {None, 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min'}
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
         Flag to denote the direction, if any, of optimisation undertaken with this recorder.
-    epsilon : float (default=1.0)
+    epsilon : Optional[float]
         Epsilon distance used by some optimisation algorithms.
-    constraint_lower_bounds, constraint_upper_bounds : double (default=None)
-        The value(s) to use for lower and upper bound definitions. These values determine whether the recorder
-        instance is marked as a constraint. Either bound can be `None` (the default) to disable the respective
-        bound. If both bounds are `None` then the `is_constraint` property will return `False`. The lower bound must
-        be strictly less than the upper bound. An equality constraint can be created by setting both bounds to the
-        same value.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
 
-        The constraint bounds are not used during model simulation. Instead they are intended for use by optimisation
-        wrappers (or other external tools) to define constrained optimisation problems.
+
+    !!!info "Optimisation bounds"
+        -  The constraint bounds are not used during model simulation. Instead, they are intended for use by optimisation
+            wrappers (or other external tools) to define constrained optimisation problems.
+        - The bound can be `None` (the default) to disable the respective bound. If both bounds are `None` then the
+            `is_constraint` property will return `False`. The lower bound must
+            be strictly less than the upper bound. An equality constraint can be created by setting both bounds to the
+            same value.
     """
     def __init__(self, model, agg_func="mean", ignore_nan=False, is_objective=None, epsilon=1.0,
                  name=None, constraint_lower_bounds=None, constraint_upper_bounds=None, **kwargs):
+        """Initialise the recorder.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+
+        Other Parameters
+        ----------------
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         # Default the constraints internal values to be +/- inf.
         # This ensures the bounds checking works later in the init.
         self._constraint_lower_bounds = -np.inf
@@ -233,12 +321,20 @@ cdef class Recorder(Component):
         self._scenario_aggregator = Aggregator(agg_func)
 
     property agg_func:
+        """The aggregation function.
+        
+        **Setter:** set the aggregation function.
+        """
         def __get__(self):
             return self._scenario_aggregator.func
         def __set__(self, agg_func):
             self._scenario_aggregator.func = agg_func
 
     property is_objective:
+        """Whether the recorder is set as objective.
+        
+        **Setter:** the objective direction.
+        """
         def __set__(self, value):
             if value is None:
                 self._is_objective = ObjDirection.NONE
@@ -255,6 +351,10 @@ cdef class Recorder(Component):
                 raise ValueError("Objective direction type not recognised.")
 
     property constraint_lower_bounds:
+        """The lower bound value(s).
+        
+        **Setter:** set new bounds.
+        """
         def __set__(self, value):
             if value is None:
                 self._constraint_lower_bounds = -np.inf
@@ -269,6 +369,10 @@ cdef class Recorder(Component):
                 return self._constraint_lower_bounds
 
     property constraint_upper_bounds:
+        """The upper bound value(s).
+        
+        **Setter:** set new bounds.
+        """
         def __set__(self, value):
             if value is None:
                 self._constraint_upper_bounds = np.inf
@@ -284,35 +388,38 @@ cdef class Recorder(Component):
 
     @property
     def is_equality_constraint(self):
-        """Returns true if upper and lower constraint bounds are both defined and equal to one another."""
+        """This returns true if upper and lower constraint bounds are both defined and equal to one another."""
         return self.constraint_upper_bounds is not None and self.constraint_lower_bounds is not None and \
                self.constraint_lower_bounds == self.constraint_upper_bounds
 
     @property
     def is_double_bounded_constraint(self):
-        """Returns true if upper and lower constraint bounds are both defined and not-equal to one another."""
+        """This returns true if upper and lower constraint bounds are both defined and not-equal to one another."""
         return self.constraint_upper_bounds is not None and self.constraint_lower_bounds is not None and \
                self.constraint_lower_bounds != self.constraint_upper_bounds
 
     @property
     def is_lower_bounded_constraint(self):
-        """Returns true if lower constraint bounds is defined and upper constraint bounds is not."""
+        """This returns true if lower constraint bounds is defined and upper constraint bounds is not."""
         return self.constraint_upper_bounds is None and self.constraint_lower_bounds is not None
 
     @property
     def is_upper_bounded_constraint(self):
-        """Returns true if upper constraint bounds is defined and lower constraint bounds is not."""
+        """This returns true if upper constraint bounds is defined and lower constraint bounds is not."""
         return self.constraint_upper_bounds is not None and self.constraint_lower_bounds is None
 
     @property
     def is_constraint(self):
-        """Returns true if either upper or lower constraint bounds is defined."""
+        """This returns true if either upper or lower constraint bounds is defined."""
         return self.constraint_upper_bounds is not None or self.constraint_lower_bounds is not None
 
     def is_constraint_violated(self):
-        """Returns true if the value from this Recorder violates its constraint bounds.
+        """This returns true if the value from this Recorder violates its constraint bounds.
 
-        If no constraint bounds are defined (i.e. self.is_constraint == False) then a ValueError is raised.
+        Raises
+        -------
+        ValueError
+            If no constraint bounds are defined (i.e. self.is_constraint == False)
         """
         value = self.aggregated_value()
         if self.is_equality_constraint:
@@ -331,14 +438,49 @@ cdef class Recorder(Component):
         return '<{} "{}">'.format(self.__class__.__name__, self.name)
 
     cpdef double aggregated_value(self) except *:
+        """
+        Aggregate the recorder value using `agg_func`. This returns one number to expose to an optimisation algorithm.
+        
+        Returns
+        -------
+        float
+            The aggregated number.
+        """
         cdef double[:] values = self.values()
         return self._scenario_aggregator.aggregate_1d(values, ignore_nan=self.ignore_nan)
 
     cpdef double[:] values(self) except *:
+        """
+        Get the values stored by the recorder.
+        
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
+        
+        Raises
+        ------
+        NotImplementedError
+            This must be implemented by a recorder inheriting from this class.
+        """
         raise NotImplementedError()
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the recorder configuration.
+
+        Returns
+        -------
+        Recorder
+            The loaded class.
+        """
         try:
             node_name = data["node"]
         except KeyError:
@@ -349,37 +491,131 @@ cdef class Recorder(Component):
 
     @classmethod
     def register(cls):
+        """Register the recorder in the global register."""
         recorder_registry[cls.__name__.lower()] = cls
 
     @classmethod
     def unregister(cls):
+        """De-register the recorder in the global register."""
         del(recorder_registry[cls.__name__.lower()])
 
 cdef class AggregatedRecorder(Recorder):
-    """
-    This Recorder is used to aggregate across multiple other Recorder objects.
+    """This recorder provides a method to produce a complex aggregated recorder by taking
+    the results of other records.
 
-    The class provides a method to produce a complex aggregated recorder by taking
-    the results of other records. The `.values()` method first collects unaggregated values
-    from the provided recorders. These are then aggregated on a per scenario basis and returned
-    by this classes `.values()` method. This method allows `AggregatedRecorder` to be used as
-    a recorder for in other `AggregatedRecorder` instances.
+    When:
 
-    By default the same `agg_func` function is used for both steps, but an optional
-    `recorder_agg_func` can undertake a different aggregation across scenarios. For
-    example summing recorders per scenario, and then taking a mean of the sum totals.
+    - the `.values()` method is called, this collects the values from the provided
+    recorders and aggregates the results using the `recorder_agg_func` parameter. When
+    `recorder_agg_func` is omitted, this defaults to `agg_func`. This allows to, for example,
+    sum all the recorder values or take the maximum values. The aggregation is done
+    by scenario, which means that this recorder returns an array whose size equals the
+    number of model scenarios.
+    - the `.aggregated_value()` method is called, this aggregates the array of numbers
+    using `agg_func`, returning one number.
 
-    Parameters
-    ==========
-    model : `pywr.core.Model`
-    recorders: iterable of `Recorder` objects.
-        The other `Recorder` instances to perform aggregation over.
-    agg_func : str or callable, optional
-        Scenario aggregation function to use when `aggregated_value` is called (default="mean").
-    recorder_agg_func : str or callable, optional
-        Recorder aggregation function to use when `aggregated_value` is called (default=`agg_func`).
+    Examples
+    -------
+    In the model below, the recorder aggregates the arrays from the `NumpyArrayNodeRecorder`,
+    which stored the time series of the data.
+
+    ```python
+    import numpy as np
+    from pywr.nodes import Input, Output
+    from pywr.core import Model, Scenario
+    from pywr.recorders import AggregatedRecorder, NumpyArrayNodeRecorder
+
+    model = Model()
+    i = Input(model, "A", max_flow=10)
+    o1 = Output(model, "B", max_flow=2, cost=-10)
+    o2 = Output(model, "C", max_flow=3, cost=-10)
+    i.connect(o1)
+    i.connect(o2)
+
+    node1 = NumpyArrayNodeRecorder(model, o1, temporal_agg_func="sum")
+    node2 = NumpyArrayNodeRecorder(model, o2, temporal_agg_func="sum")
+    rec = AggregatedRecorder(
+        model=model,
+        recorders=[node1, node2],
+        recorder_agg_func="sum",
+        agg_func="mean",
+        name="Combined flow"
+    )
+
+    model.run()
+
+    # each NumpyArrayNodeRecorder.values() returns the total delivered flow at the end of
+    # the simulation (`temporal_agg_func="sum")`. The aggregated recorder then sums
+    # these two numbers (`recorder_agg_func="sum"`) and returns an array with one
+    # number (as the scenario size is 1).
+    print(np.asarray(rec.values()))  # >> [1825.]
+
+    # this averages the numbers in the array above (`agg_func="mean",`) and returns
+    # one number. This the same number as above as the model contains one scenario.
+    print(rec.aggregated_value())  # >> 1825.
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    recorders: Iterable[Recorder]
+        The other `Recorder` instances to perform the aggregation over.
+    recorder_agg_func : Optional[str | Callable]
+        Recorder aggregation function to use when `value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, recorders, **kwargs):
+        """
+        Initialize the recorder.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        recorders: Iterable[Recorder]
+            The other `Recorder` instances to perform the aggregation over.
+
+        Other Parameters
+        ----------------
+        recorder_agg_func : Optional[str | Callable], default=agg_func
+            Recorder aggregation function to use when `value()` is called.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         # Optional different method for aggregating across self.recorders scenarios
         agg_func = kwargs.pop('recorder_agg_func', kwargs.get('agg_func'))
 
@@ -399,6 +635,20 @@ cdef class AggregatedRecorder(Recorder):
             self.children.add(rec)
 
     cpdef double[:] values(self) except *:
+        """
+        Aggregate the values from the recorders. 
+        
+        This collects the values from the `recorders` and aggregates the results using the 
+        `_recorder_agg_func` attribute. This allows to, for example,
+        sum all the recorder values or take the maximum values. The aggregation is done
+        by scenario, which means that this recorder returns an array whose size equals the 
+        number of model scenarios.
+        
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
+        """
         cdef Recorder recorder
         cdef double[:] value, value2
         assert(len(self.recorders))
@@ -447,6 +697,20 @@ cdef class AggregatedRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the recorder configuration.
+
+        Returns
+        -------
+        AggregatedRecorder
+            The loaded class.
+        """
         recorder_names = data.pop("recorders")
         recorders = [load_recorder(model, name) for name in recorder_names]
         rec = cls(model, recorders, **data)
@@ -456,7 +720,97 @@ AggregatedRecorder.register()
 
 
 cdef class NodeRecorder(Recorder):
+    """This recorder records the flow of a node. Note that this does not return a timeseries
+    but store the latest flow(s) when `.value()` is called.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import NodeRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    NodeRecorder(
+        model=model,
+        name="Demanded flow",
+        node=demand
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Demanded flow": {
+            "type": "NodeRecorder",
+            "node": "Demand"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    """
     def __init__(self, model, AbstractNode node, name=None, **kwargs):
+        """Initialise the recorder.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            The node instance to recorder the flow of.
+        name : Optional[str], default=None
+            Name of the recorder.
+
+        Other Parameters
+        ----------------
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), node.name)
         super(NodeRecorder, self).__init__(model, name=name, **kwargs)
@@ -464,6 +818,14 @@ cdef class NodeRecorder(Recorder):
         node._recorders.append(self)
 
     cpdef double[:] values(self) except *:
+        """
+        Get the node's flow.
+        
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
+        """
         return self._node._flow
 
     property node:
@@ -477,7 +839,98 @@ NodeRecorder.register()
 
 
 cdef class StorageRecorder(Recorder):
+    """This recorder records the absolute volume of a storage node. Note that this does not return a timeseries
+    but store the latest storage(s) when `.value()` is called.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import StorageRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    StorageRecorder(
+        model=model,
+        name="Last volume",
+        node=storage
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Last volume": {
+            "type": "StorageRecorder",
+            "node": "Reservoir"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    """
     def __init__(self, model, AbstractStorage node, name=None, **kwargs):
+        """Initialise the recorder.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Storage
+            The storage instance to recorder the volume of.
+        name : Optional[str], default=None
+            Name of the recorder.
+
+        Other Parameters
+        ----------------
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
+
         if name is None:
             name = "{}.{}".format(self.__class__.__name__.lower(), node.name)
         super(StorageRecorder, self).__init__(model, name=name, **kwargs)
@@ -485,6 +938,14 @@ cdef class StorageRecorder(Recorder):
         node._recorders.append(self)
 
     cpdef double[:] values(self) except *:
+        """
+        Get the node's absolute volume.
+        
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
+        """
         return self._node._volume
 
     property node:
@@ -527,7 +988,7 @@ cdef class ParameterRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
-        # when the parameter being recorder is defined inline (i.e. not in the
+        # when the recorder being recorder is defined inline (i.e. not in the
         # parameters section, but within the node) we need to make sure the
         # node has been loaded first
         try:
@@ -572,31 +1033,119 @@ IndexParameterRecorder.register()
 
 
 cdef class NumpyArrayNodeRecorder(NodeRecorder):
-    """Recorder for timeseries information from a `Node`.
+    """This recorder recorders a timeseries of a [pywr.core.Node]'s flow
+    for each time-step and scenario. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores flow from a specific node for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import NumpyArrayNodeRecorder
 
-    Parameters
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    NumpyArrayNodeRecorder(
+        model=model,
+        name="Demanded flow",
+        node=demand,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Demanded flow": {
+            "type": "NumpyArrayNodeRecorder",
+            "node": "Demand",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
+    model : Model
+        The model instance.
+    node : Node
         Node instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
-    factor: float (default=1.0)
-        A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    factor: float
+        The factor used to scale the total flow.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
 
     See also
     --------
-    NumpyArrayNodeDeficitRecorder
-    NumpyArrayNodeSuppliedRatioRecorder
-    NumpyArrayNodeCurtailmentRatioRecorder
+    [pywr.recorders.NumpyArrayNodeDeficitRecorder][]
+    [pywr.recorders.NumpyArrayNodeSuppliedRatioRecorder][]
+    [pywr.recorders.NumpyArrayNodeCurtailmentRatioRecorder][]
     """
     def __init__(self, model, AbstractNode node, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            Node instance to record.
+
+        Other parameters
+        ----------------
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate over time when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the median flow for a scenario.
+        factor : Optional[int], default=1
+            A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
         factor = kwargs.pop('factor', 1.0)
@@ -605,18 +1154,25 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         self.factor = factor
 
     property temporal_agg_func:
+        """The temporal aggregation function used in `values()`.
+        
+        **Setter:** set the aggregation function.
+        """
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
+        """Setup the internal variables."""
         cdef int ncomb = len(self.model.scenarios.combinations)
         cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb))
 
     cpdef reset(self):
+        """Reset the internal variables."""
         self._data[:, :] = 0.0
 
     cpdef after(self):
+        """Calculate the total flow and scale it with `factor`."""
         cdef int i
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
@@ -624,20 +1180,31 @@ cdef class NumpyArrayNodeRecorder(NodeRecorder):
         return 0
 
     property data:
+        """This contains an array with shape (total_timesteps, number_of_scenarios) with
+        the node's flow."""
         def __get__(self, ):
             return np.array(self._data)
 
     cpdef double[:] values(self) except *:
-        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        Compute a value for each scenario using `temporal_agg_func`.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
+        """Get a `pandas.DataFrame` of the recorder data.
 
-        This DataFrame contains a MultiIndex for the columns with the recorder name
-        as the first level and scenario combination names as the second level. This
-        allows for easy combination with multiple recorder's DataFrames
+        Returns
+        -------
+        pandas DataFrame
+            This DataFrame contains a MultiIndex for the columns with the recorder name
+            as the first level and scenario combination names as the second level. The model
+            timesteps are in the row index.
         """
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
@@ -648,28 +1215,77 @@ NumpyArrayNodeRecorder.register()
 
 
 cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
-    """Recorder for timeseries of deficit from a `Node`.
+    """This recorder recorders a timeseries of a [pywr.core.Node]'s deficit
+    for each time-step and scenario. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores deficit from a specific node for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
-
-    Parameters
-    ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        Node instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
-
-    Notes
-    -----
-    Deficit is calculated as the difference between `max_flow` and `self.node.flow` (i.e. the actual
-    flow allocated during the time-step)::
+    The deficit is calculated as the difference between the value in the node's `max_flow`
+    attribute and the flow allocated during the time-step in `flow`:
 
         deficit = max_flow - actual_flow
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import NumpyArrayNodeDeficitRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    NumpyArrayNodeDeficitRecorder(
+        model=model,
+        name="Demand deficit",
+        node=demand,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Demand deficit": {
+            "type": "NumpyArrayNodeDeficitRecorder",
+            "node": "Demand",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    node : Node
+        Node instance to record.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
 
     See also
     --------
@@ -678,6 +1294,7 @@ cdef class NumpyArrayNodeDeficitRecorder(NumpyArrayNodeRecorder):
     NumpyArrayNodeCurtailmentRatioRecorder
     """
     cpdef after(self):
+        """Calculate the deficit."""
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -690,29 +1307,79 @@ NumpyArrayNodeDeficitRecorder.register()
 
 
 cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
-    """Recorder for timeseries of ratio of supplied flow from a `Node`.
+    """This recorder recorders a timeseries of a [pywr.core.Node]'s supply ratio
+    for each time-step and scenario. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores supply ratio from a specific node for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method. If the node's max_flow returns zero then the ratio
-    is recorded as 1.0.
-
-    Parameters
-    ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        Node instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
-
-    Notes
-    -----
-    Supply ratio is calculated calculated as the ratio of `self.node.flow` to `self.node.max_flow`
-    for each time-step::
+    The supply ratio is calculated as the ratio of the flow allocated during the time-step in `flow`
+    and the node's `max_flow` attribute:
 
         supply_ratio = actual_flow / max_flow
+
+    If the node's max_flow returns zero, then the ratio is recorded as 1.0.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import NumpyArrayNodeSuppliedRatioRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    NumpyArrayNodeSuppliedRatioRecorder(
+        model=model,
+        name="Demand supply ratio",
+        node=demand,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Demand supply ratio": {
+            "type": "NumpyArrayNodeSuppliedRatioRecorder",
+            "node": "Demand",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    node : Node
+        Node instance to record.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
 
     See also
     --------
@@ -721,6 +1388,7 @@ cdef class NumpyArrayNodeSuppliedRatioRecorder(NumpyArrayNodeRecorder):
     NumpyArrayNodeCurtailmentRatioRecorder
     """
     cpdef after(self):
+        """Calculate the supply ratio."""
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -736,29 +1404,79 @@ NumpyArrayNodeSuppliedRatioRecorder.register()
 
 
 cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
-    """Recorder for timeseries of curtailment ratio from a `Node`.
+    """This recorder recorders a timeseries of a [pywr.core.Node]'s curtailment ratio
+    for each time-step and scenario. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores curtailment ratio from a specific node for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method. If the node's max_flow returns zero then the curtailment ratio
-    is recorded as 0.0.
-
-    Parameters
-    ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        Node instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
-
-    Notes
-    -----
-    Curtailment ratio is calculated calculated as one minues the ratio of `self.node.flow` to
-    `self.node.max_flow` for each time-step::
+    The curtailment ratio is calculated as one minus the ratio of the flow allocated during the time-step in `flow`
+    and the `max_flow` attribute:
 
         curtailment_ratio = 1 - actual_flow / max_flow
+
+    If the node's `max_flow` returns zero, then the curtailment ratio is recorded as 0.0.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import NumpyArrayNodeCurtailmentRatioRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    NumpyArrayNodeCurtailmentRatioRecorder(
+        model=model,
+        name="Demand curtailment ratio",
+        node=demand,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Demand curtailment ratio": {
+            "type": "NumpyArrayNodeCurtailmentRatioRecorder",
+            "node": "Demand",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    node : Node
+        Node instance to record.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
 
     See also
     --------
@@ -767,6 +1485,7 @@ cdef class NumpyArrayNodeCurtailmentRatioRecorder(NumpyArrayNodeRecorder):
     NumpyArrayNodeSuppliedRatioRecorder
     """
     cpdef after(self):
+        """Calculate the curtailment ratio."""
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -781,27 +1500,80 @@ NumpyArrayNodeCurtailmentRatioRecorder.register()
 
 
 cdef class NumpyArrayNodeCostRecorder(NumpyArrayNodeRecorder):
-    """Recorder for timeseries of cost from a `Node`.
-
-    This class stores the unit cost from a specific node for each time-step of a simulation. The data is
+    """This recorder stores the timeseries of unit cost from a `Node`. The data is
     saved internally using a memory view. The data can be accessed through the `data` attribute or
     `to_dataframe()` method.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import NumpyArrayNodeCostRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    NumpyArrayNodeCostRecorder(
+        model=model,
+        name="Output cost",
+        node=demand,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Output cost": {
+            "type": "NumpyArrayNodeCostRecorder",
+            "node": "Demand",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
+    model : Model
+        The model instance.
+    node : Node
         Node instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
 
     See also
     --------
     NumpyArrayNodeRecorder
     """
     cpdef after(self):
+        """Calculate the cost."""
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -812,25 +1584,121 @@ NumpyArrayNodeCostRecorder.register()
 
 
 cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
-    """
-    This recorder calculates a flow duration curve for each scenario.
+    """This recorder calculates a flow duration curve for each scenario from a node's flow.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    import numpy as np
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import FlowDurationCurveRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    FlowDurationCurveRecorder(
+        model=model,
+        name="FDC demand",
+        node=demand,
+        percentiles=np.arange(1, 101, 0.5),
+        temporal_agg_func="mean"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "FDC demand": {
+            "type": "FlowDurationCurveRecorder",
+            "node": "Demand",
+            "percentiles": [1, 5, 20, 40, 60, 80, 100],
+            "temporal_agg_func": "mean"
+        }
+    }
+    ```
+
+    !!!note "Aggregation"
+        When you call the `value()` method, the recorder aggregates the flow duration curve over
+        the percentiles using the function specified in the `temporal_agg_func` attribute.
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        The node to record
-    percentiles : array
-        The percentiles to use in the calculation of the flow duration curve.
-        Values must be in the range 0-100.
-    agg_func: str, optional
-        function used for aggregating the FDC across percentiles.
-        Numpy style functions that support an axis argument are supported.
-    fdc_agg_func: str, optional
-        optional different function for aggregating across scenarios.
+    model : Model
+        The model instance.
+    node : Node
+        Node instance to record.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate the FDCs over the percentiles when computing a value per scenario in the
+        `value()` method.
+    factor: float
+        The factor used to scale the total flow.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, AbstractNode node, percentiles, **kwargs):
+        """
+        Initialise the class.
 
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            Node instance to record.
+        percentiles : Iterable[float]
+            The percentiles to use in the calculation of the flow duration curve.
+            Values must be in the range 0-100.
+
+        Other parameters
+        ----------------
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate the FDCs over the percentiles when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the median exceeded flow for a scenario.
+        factor : Optional[int], default=1
+            A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         # Optional different method for aggregating across percentiles
         if 'fdc_agg_func' in kwargs:
             # Support previous behaviour
@@ -846,19 +1714,27 @@ cdef class FlowDurationCurveRecorder(NumpyArrayNodeRecorder):
         self._percentiles = np.asarray(percentiles, dtype=np.float64)
 
     cpdef finish(self):
+        """Calculate the flow duration curve."""
         self._fdc = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
 
     property fdc:
+        """Get the flow duration curve."""
         def __get__(self, ):
             return np.array(self._fdc)
 
     cpdef double[:] values(self) except *:
-        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        Compute a value for each scenario by aggregating over the percentiles using the `temporal_agg_func`.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
         """
         return self._temporal_aggregator.aggregate_2d(self._fdc, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
+        """ Return a `pandas.DataFrame` of the recorder data.
 
         This DataFrame contains a MultiIndex for the columns with the recorder name
         as the first level and scenario combination names as the second level. This
@@ -873,9 +1749,85 @@ FlowDurationCurveRecorder.register()
 
 
 cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
-    """
-    This recorder calculates a flow duration curve for each scenario for a given season
-    specified in months.
+    """This recorder calculates a flow duration curve for each scenario for a given season
+    specified as months.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    import numpy as np
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import SeasonalFlowDurationCurveRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    SeasonalFlowDurationCurveRecorder(
+        model=model,
+        name="FDC demand",
+        node=demand,
+        percentiles=np.arange(1, 101, 0.5),
+        months=[7, 8, 9],
+        temporal_agg_func="mean"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "FDC demand": {
+            "type": "SeasonalFlowDurationCurveRecorder",
+            "node": "Demand",
+            "percentiles": [1, 5, 20, 40, 60, 80, 100],
+            "months": [7, 8, 9],
+            "temporal_agg_func": "mean"
+        }
+    }
+    ```
+
+    !!!note "Aggregation"
+        When you call the `value()` method, the recorder aggregates the flow duration curve over
+        the percentiles using the function specified in the `temporal_agg_func` attribute.
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    node : Node
+        Node instance to record.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate the FDCs over the percentiles when computing a value per scenario in the
+        `value()` method.
+    months: Iterable[int]
+        The values of the months the flow duration curve should be calculated for.
+    factor: float
+        The factor used to scale the total flow.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
 
     Parameters
     ----------
@@ -890,15 +1842,55 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
         Numpy style functions that support an axis argument are supported.
     fdc_agg_func: str, optional
         optional different function for aggregating across scenarios.
-    months: array
-        The numeric values of the months the flow duration curve should be calculated for.
     """
 
     def __init__(self, model, AbstractNode node, percentiles, months, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            Node instance to record.
+        percentiles : Iterable[float]
+            The percentiles to use in the calculation of the flow duration curve.
+            Values must be in the range 0-100.
+        months: Iterable[int]
+            The values of the months the flow duration curve should be calculated for.
+
+        Other parameters
+        ----------------
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate the FDCs over the percentiles when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the median exceeded flow for a scenario.
+        factor : Optional[int], default=1
+            A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         super(SeasonalFlowDurationCurveRecorder, self).__init__(model, node, percentiles, **kwargs)
         self._months = set(months)
 
     cpdef finish(self):
+        """Calculate the flow duration curve."""
         # this is a def method rather than cpdef because closures inside cpdef functions are not supported yet.
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
@@ -908,44 +1900,193 @@ cdef class SeasonalFlowDurationCurveRecorder(FlowDurationCurveRecorder):
         self._fdc = np.percentile(df.loc[mask, :], np.asarray(self._percentiles), axis=0)
 
     def is_season(self, x):
+        """Whether the given month is in `self._months`
+
+        Parameters
+        ----------
+        x : int
+            The month.
+
+        Returns
+        -------
+        bool
+        """
         return x.month in self._months
 
 SeasonalFlowDurationCurveRecorder.register()
 
 cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
-    """
-    This recorder calculates a Flow Duration Curve (FDC) for each scenario and then
-    calculates their deviation from upper and lower target FDCs. The 2nd dimension of the target
-    duration curves and percentiles list must be of the same length and have the same
-    order (high to low values or low to high values).
+    """This recorder calculates a flow duration curves (FDC) for each scenario and then
+    returns their deviations from an upper and lower target FDCs using the following steps:
 
-    Deviation is calculated as positive if actual FDC is above the upper target or below the lower
-    target. If actual FDC falls between the upper and lower targets zero deviation is returned.
+    For each percentile, the recorder calculates the difference between the flow duration curve
+    of a node and a user-defined upper (`upper_target_fdc`) and/or lower target (`lower_target_fdc`) curves divided
+    by the target.
 
-    Parameters
+    For the upper target, the deviation for one scenario is calculated as:
+
+        (fdc[k] - upper_target_fdc[k]) / upper_target_fdc[k]
+
+    where `k` is the percentile.
+
+    For the upper target, the deviation for one scenario is calculated as:
+
+        (lower_target_fdc[k] - fdc[k]) / lower_target_fdc[k]
+
+    The shape of the target arrays depend on whether you provide `scenario`:
+
+    - When `scenario` is `None`, this can either be a 1D array of size equal to `percentiles`
+      or a 2D array where the shape is (scenario_combination_size, percentile_size).
+    - If `scenario` is given, then this must be a 2D array where the shape is (scenario_size,
+      percentile_size).
+
+    If you provide one target curve, the deviation is calculated only using the provided target. If you provide both the lower and upper
+    target curves, the overall deviation is the worst of the upper and lower difference.
+    The deviation is positive if the node's FDC is above the upper target or below the lower
+    target. If the FDC falls between the upper and lower targets, the deviation is zero.
+
+    The 2nd dimension of the target duration curves must equal the size of the percentile list
+    have the same order (high to low values or low to high values).
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    import numpy as np
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import FlowDurationCurveDeviationRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    FlowDurationCurveDeviationRecorder(
+        model=model,
+        name="FDC deviation",
+        node=demand,
+        percentiles=np.array([1, 5, 20, 40, 60, 80, 100]),
+        lower_target_fdc=np.array([100, 80, 56, 51, 43, 23, 12]),
+        temporal_agg_func="mean"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "FDC deviation": {
+            "type": "FlowDurationCurveDeviationRecorder",
+            "node": "Demand",
+            "percentiles": [1, 5, 20, 40, 60, 80, 100],
+            "lower_target_fdc": [100, 80, 56, 51, 43, 23, 12],
+            "temporal_agg_func": "mean"
+        }
+    }
+    ```
+
+    !!!note "Aggregation"
+        When you call the `value()` method, the recorder aggregates the flow duration curve over
+        the percentiles using the function specified in the `temporal_agg_func` attribute.
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        The node to record
-    percentiles : array
-        The percentiles to use in the calculation of the flow duration curve.
-        Values must be in the range 0-100.
-    lower_target_fdc : array, optional
-        The lower FDC against which the scenario FDCs are compared. If values are not provided then deviations from a
-        lower target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
-        the percentile values.
-    upper_target_fdc : array, optional
-        The upper FDC against which the scenario FDCs are compared. If values are not provided then deviations from a
-        upper target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
-        the percentile values.
-    agg_func: str, optional
-        Function used for aggregating the FDC deviations across percentiles.
-        Numpy style functions that support an axis argument are supported.
-    fdc_agg_func: str, optional
-        Optional different function for aggregating across scenarios.
-
+    model : Model
+        The model instance.
+    node : Node
+        Node instance to record.
+    scenario : Optional[Scenario]
+        The scenario to use to calculate the FDC.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate the FDC deviations over the percentiles when computing a value per scenario in the
+        `value()` method.
+    factor: float
+        The factor used to scale the total flow.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, AbstractNode node, percentiles, lower_target_fdc=None, upper_target_fdc=None, scenario=None, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            Node instance to record.
+        percentiles : Iterable[float]
+            The percentiles to use in the calculation of the flow duration curve.
+            Values must be in the range 0-100.
+        lower_target_fdc : Optional[Iterable[float]], default=None
+            The lower FDC against which the scenario FDCs are compared. When `scenario` is `None`, this can be
+            a 1D array of size equal to `percentiles` or a 2D array where the shape is (scenario_combination_size, percentile_size).
+            If `scenario` is given, then this must be a 2D array where the shape is (scenario_size, percentile_size).
+            If this is not provided, then deviations from a lower target FDC are recorded as 0.0. If targets are loaded from an external file, this needs to be indexed using
+            the percentile values.
+        upper_target_fdc : Optional[Iterable[float]], default=None
+            The upper FDC against which the scenario FDCs are compared.  When `scenario` is `None`, this can be
+            a 1D array of size equal to `percentiles` or a 2D array where the shape is (scenario_combination_size, percentile_size).
+            If `scenario` is given, then this must be a 2D array where the shape is (scenario_size, percentile_size).
+            If values are not provided, then deviations from a upper target FDC are recorded as 0.0. If targets are loaded from an external file this needs to be indexed using
+            the percentile values.
+        scenario : Optional[Scenario], default=None
+            The scenario to use to calculate the FDC.
+
+        Other parameters
+        ----------------
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate the FDC deviations over the percentiles when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the mean deviation for a scenario.
+        factor : Optional[int], default=1
+            A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+
+        Raises
+        ------
+        ValueError
+            If `lower_target_fdc` or `upper_target_fdc` is not provided or when the two arguments
+            do not match the length of `percentiles`. When the first dimension of
+            `lower_target_fdc` or `upper_target_fdc` does not match the scenario size (when `scenario` is
+             given) or the model scenario combinations.
+        """
         super(FlowDurationCurveDeviationRecorder, self).__init__(model, node, percentiles, **kwargs)
 
         if lower_target_fdc is None and upper_target_fdc is None:
@@ -976,6 +2117,15 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
                 raise ValueError("The lengths of the upper target FDC and the percentiles list do not match")
 
     cpdef setup(self):
+        """Check the size of the FDC targets.
+        
+        Raises
+        ------
+        ValueError
+            If the first dimension of the targets does not match the scenario size, when
+            `scenario` is given. Or when `scenario` is `None`, but the target is a 2D array,
+            the first dimension of the targets does not match the scenario combination length.
+        """
         super(FlowDurationCurveDeviationRecorder, self).setup()
         # Check target FDC is the correct size; this is done in setup rather than __init__
         # because the scenarios might change after the Recorder is created.
@@ -997,6 +2147,7 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
                     raise ValueError("The number of upper target FDCs does not match the number of scenarios")
 
     cpdef finish(self):
+        """Calculate the deviations."""
         super(FlowDurationCurveDeviationRecorder, self).finish()
 
         cdef int i, j, jl, ju, k, sc_index
@@ -1054,23 +2205,36 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
                     self._fdc_deviations[k, i] = np.nan
 
     property fdc_deviations:
+        """Get the flow duration curve deviations as numpy array."""
         def __get__(self, ):
             return np.array(self._fdc_deviations)
 
 
     cpdef double[:] values(self) except *:
-        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        Compute a value for each scenario by aggregating over the percentiles using the `temporal_agg_func`.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
         """
         return self._temporal_aggregator.aggregate_2d(self._fdc_deviations, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self, return_fdc=False):
-        """ Return a `pandas.DataFrame` of the deviations from the target FDCs
+        """Return a `pandas.DataFrame` of the deviations from the target FDCs.
 
         Parameters
         ----------
-        return_fdc : bool (default=False)
-            If true returns a tuple of two dataframes. The first is the deviations, the second
-            is the actual FDC.
+        return_fdc : Optional[bool], default=False
+            If True returns a tuple of two dataframes. The first is the deviations, the second
+            is the actual FDC. Otherwise, this returns the DataFrame.
+
+        Returns
+        -------
+        pandas.DataFrame | tuple[pandas.DataFrame, pandas.DataFrame]
+            The DataFrame with the FDC deviations or a tuple with the deviation and actual FDC
+            DataFrames, if `return_fdc` is `True`.
         """
         index = np.array(self._percentiles)
         sc_index = self.model.scenarios.multiindex
@@ -1083,6 +2247,20 @@ cdef class FlowDurationCurveDeviationRecorder(FlowDurationCurveRecorder):
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the recorder configuration.
+
+        Returns
+        -------
+        FlowDurationCurveDeviationRecorder
+            The loaded class.
+        """
         node = model.nodes[data.pop("node")]
         percentiles = data.pop("percentiles")
         scenario = data.pop('scenario', None)
@@ -1105,6 +2283,40 @@ FlowDurationCurveDeviationRecorder.register()
 
 cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
     def __init__(self, model, AbstractStorage node, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Storage
+            Storage instance to record.
+
+        Other parameters
+        ----------------
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate over time when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the mean storage for a scenario.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
         super().__init__(model, node, **kwargs)
@@ -1112,35 +2324,45 @@ cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
     property temporal_agg_func:
+        """The temporal aggregation function used in `.value()`.
+        
+        **Setter:** set the aggregation function.
+        """
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
+        """Setup the internal variable."""
         cdef int ncomb = len(self.model.scenarios.combinations)
         cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb))
 
     cpdef reset(self):
+        """Reset the internal variable."""
         self._data[:, :] = 0.0
 
     cpdef after(self):
         raise NotImplementedError()
 
     property data:
+        """This contains an array with shape (total_timesteps, number_of_scenarios) with
+        the storage's data."""
         def __get__(self, ):
             return np.array(self._data)
 
     cpdef double[:] values(self) except *:
-        """Compute a value for each scenario using `temporal_agg_func`.
-        """
+        """Compute a value for each scenario using `temporal_agg_func`."""
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
+        """Convert the data to a `pandas.DataFrame`.
 
-        This DataFrame contains a MultiIndex for the columns with the recorder name
-        as the first level and scenario combination names as the second level. This
-        allows for easy combination with multiple recorder's DataFrames
+        Returns
+        -------
+        pandas.DataFrame
+            This DataFrame contains a MultiIndex for the columns with the recorder name
+            as the first level and scenario combination names as the second level. The row index
+            contains the timesteps.
         """
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
@@ -1149,30 +2371,118 @@ cdef class NumpyArrayAbstractStorageRecorder(StorageRecorder):
 
 
 cdef class NumpyArrayStorageRecorder(NumpyArrayAbstractStorageRecorder):
-    """Recorder for timeseries information from a `Storage` node.
+    """This recorder recorders a timeseries of a [pywr.nodes.Storage]'s volume
+    for each time-step and scenario. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores volume from a specific node for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import NumpyArrayStorageRecorder
 
-    Parameters
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    NumpyArrayStorageRecorder(
+        model=model,
+        name="Relative storage",
+        node=storage,
+        proportional=True,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Relative storage": {
+            "type": "NumpyArrayStorageRecorder",
+            "node": "Reservoir",
+            "temporal_agg_func": "sum",
+            "proportional": true,
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        Node instance to record.
+    model : Model
+        The model instance.
+    node : Storage
+        Storage instance to record.
     proportional : bool
-        Whether to record proportional [0, 1.0] or absolute storage volumes (default=False).
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
+        Whether to record proportional [0, 1.0] or absolute storage volumes.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, *args, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Storage
+            Storage instance to record.
+        proportional : Optional[bool], default=False
+            Whether to record proportional [0, 1.0] or absolute storage volumes.
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate over time when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the mean storage for a scenario.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         # Optional different method for aggregating across time.
         self.proportional = kwargs.pop('proportional', False)
         super().__init__(*args, **kwargs)
 
     cpdef after(self):
+        """Calculate the storage."""
         cdef int i
         cdef Timestep ts = self.model.timestepper.current
         for i in range(self._data.shape[1]):
@@ -1185,32 +2495,123 @@ NumpyArrayStorageRecorder.register()
 
 
 cdef class NumpyArrayNormalisedStorageRecorder(NumpyArrayAbstractStorageRecorder):
-    """Recorder for timeseries information normalised relative to a control curve for a `Storage` node.
+    """This recorder stores the storage's volume and normalised the volume relative to a user-defined
+    control curve. The data is normalised such that values of 1, 0 and -1 align with full, at control
+    curve and empty volumes respectively. The data is saved internally using a
+    memory view. The data can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores normalised storage from a specific node for each time-step of a simulation. The normalisation
-    is relative to a `Parameter` which defines a control curve. The data is normalised such that values of 1, 0 and
-    -1 align with full, at control curve and empty volumes respectively. The data is saved internally using a
-     memory view. The data can be accessed through the `data` attribute or `to_dataframe()` method.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    import numpy as np
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ConstantParameter
+    from pywr.recorders import NumpyArrayNormalisedStorageRecorder
 
-    Parameters
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        max_volume=500,
+        cost=-20.0,
+        initial_volume_pc=0.8
+    )
+    NumpyArrayNormalisedStorageRecorder(
+        model=model,
+        name="Normalised 80% storage",
+        node=storage,
+        parameter=ConstantParameter(model, 0.8),
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Normalised 80% storage": {
+            "type": "NumpyArrayNormalisedStorageRecorder",
+            "node": "Reservoir",
+            "parameter": 0.8
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        Node instance to record.
-    parameter : `Parameter`
-        The control curve for normalisation.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used to return, for
-        example, the minimum normalised storage reached over a simulation. For aggregation over scenarios see the
-        `agg_func` keyword argument.
+    model : Model
+        The model instance.
+    node : Storage
+        Storage instance to record.
+    parameter : Parameter
+        The control curve parameter to use to normalise the storage between -1.0 and 1.0.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, *args, **kwargs):
+
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Storage
+            Storage instance to record.
+        parameter : Parameter
+            The control curve parameter to use to normalise the storage between -1.0 and 1.0.
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate over time when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the mean normalised storage for a scenario.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
+
         # Optional different method for aggregating across time.
         self.parameter = kwargs.pop('parameter')
         super().__init__(*args, **kwargs)
         self.children.add(self.parameter)
 
     cpdef after(self):
+        """Calculate the normalised storage."""
         cdef int i
         cdef Timestep ts = self.model.timestepper.current
         cdef double[:] values = self.parameter.get_all_values()
@@ -1233,6 +2634,20 @@ cdef class NumpyArrayNormalisedStorageRecorder(NumpyArrayAbstractStorageRecorder
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the recorder configuration.
+
+        Returns
+        -------
+        NumpyArrayNormalisedStorageRecorder
+            The loaded class.
+        """
         from pywr.parameters import load_parameter
         node = model.nodes[data.pop("node")]
         parameter = load_parameter(model, data.pop("parameter"))
@@ -1241,27 +2656,124 @@ NumpyArrayNormalisedStorageRecorder.register()
 
 
 cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
-    """
-    This recorder calculates a storage duration curve for each scenario.
+    """This recorder calculates a storage duration curve for each scenario.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    import numpy as np
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import StorageDurationCurveRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        max_volume=500,
+        cost=-20.0,
+        initial_volume_pc=0.8
+    )
+    StorageDurationCurveRecorder(
+        model=model,
+        name="FDC storage",
+        node=storage,
+        percentiles=np.arange(1, 101, 0.5),
+        temporal_agg_func="mean"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "FDC storage": {
+            "type": "StorageDurationCurveRecorder",
+            "node": "Reservoir",
+            "percentiles": [1, 5, 20, 40, 60, 80, 100],
+            "temporal_agg_func": "mean"
+        }
+    }
+    ```
+
+    !!!note "Aggregation"
+        When you call the `value()` method, the recorder aggregates the storage duration curve over
+        the percentiles using the function specified in the `temporal_agg_func` attribute.
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.AbstractStorage`
-        The node to record
-    percentiles : array
-        The percentiles to use in the calculation of the flow duration curve.
-        Values must be in the range 0-100.
-    agg_func: str, optional
-        function used for aggregating the FDC across percentiles.
-        Numpy style functions that support an axis argument are supported.
-    sdc_agg_func: str, optional
-        optional different function for aggregating across scenarios.
-
+    model : Model
+        The model instance.
+    node : Storage
+        Storage node instance to record.
+    proportional : bool
+        Whether to record proportional [0, 1.0] or absolute storage volumes.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate the SDCs over the percentiles when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
 
     def __init__(self, model, AbstractStorage node, percentiles, **kwargs):
 
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Storage
+            Storage node instance to record.
+        percentiles : Iterable[float]
+            The percentiles to use in the calculation of the storage duration curve.
+            Values must be in the range 0-100.
+
+        Other parameters
+        ----------------
+        proportional : Optional[bool], default=False
+            Whether to record proportional [0, 1.0] or absolute storage volumes.
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate the SDCs over the percentiles when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the mean storage over a scenario.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         if "sdc_agg_func" in kwargs:
             # Support previous behaviour
             warnings.warn('The "sdc_agg_func" key is deprecated for defining the temporal '
@@ -1277,23 +2789,34 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
 
 
     cpdef finish(self):
+        """Calculate the storage duration curve."""
         self._sdc = np.percentile(np.asarray(self._data), np.asarray(self._percentiles), axis=0)
 
     property sdc:
+        """Get the storage duration curve."""
         def __get__(self, ):
             return np.array(self._sdc)
 
     cpdef double[:] values(self) except *:
-        """Compute a value for each scenario using `temporal_agg_func`.
+        """
+        Compute a value for each scenario by aggregating over the percentiles using the `temporal_agg_func`.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
         """
         return self._temporal_aggregator.aggregate_2d(self._sdc, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
+        """Convert the data to a `pandas.DataFrame`.
 
-        This DataFrame contains a MultiIndex for the columns with the recorder name
-        as the first level and scenario combination names as the second level. This
-        allows for easy combination with multiple recorder's DataFrames
+        Returns
+        -------
+        pandas.DataFrame
+            This DataFrame contains a MultiIndex for the columns with the recorder name
+            as the first level and scenario combination names as the second level. The row index
+            contains the percentiles.
         """
         index = np.array(self._percentiles)
         sc_index = self.model.scenarios.multiindex
@@ -1303,23 +2826,77 @@ cdef class StorageDurationCurveRecorder(NumpyArrayStorageRecorder):
 StorageDurationCurveRecorder.register()
 
 cdef class NumpyArrayLevelRecorder(NumpyArrayAbstractStorageRecorder):
-    """Recorder for level timeseries from a `Storage` node.
+    """This recorder recorders a timeseries of a [pywr.nodes.Storage]'s level
+    for each time-step and scenario. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores level from a specific node for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import NumpyArrayLevelRecorder
 
-    Parameters
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    NumpyArrayLevelRecorder(
+        model=model,
+        name="Level",
+        node=storage,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Level": {
+            "type": "NumpyArrayLevelRecorder",
+            "node": "Reservoir",
+            "temporal_agg_func": "sum",
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        Node instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
+    model : Model
+        The model instance.
+    node : Storage
+        Storage instance to record.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
+
     cpdef after(self):
+        """Calculate the level."""
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -1331,23 +2908,76 @@ NumpyArrayLevelRecorder.register()
 
 
 cdef class NumpyArrayAreaRecorder(NumpyArrayAbstractStorageRecorder):
-    """Recorder for area timeseries from a `Storage` node.
+    """This recorder recorders a timeseries of a [pywr.nodes.Storage]'s area
+    for each time-step and scenario. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores area from a specific node for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import NumpyArrayAreaRecorder
 
-    Parameters
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    NumpyArrayAreaRecorder(
+        model=model,
+        name="Area",
+        node=storage,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Area": {
+            "type": "NumpyArrayAreaRecorder",
+            "node": "Reservoir",
+            "temporal_agg_func": "sum",
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        Node instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
+    model : Model
+        The model instance.
+    node : Storage
+        Storage instance to record.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     cpdef after(self):
+        """Calculate the level."""
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -1359,23 +2989,117 @@ NumpyArrayAreaRecorder.register()
 
 
 cdef class NumpyArrayParameterRecorder(ParameterRecorder):
-    """Recorder for timeseries information from a `Parameter`.
+    """This recorder recorders a timeseries of a parameter's value
+    for each time-step and scenario. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores the value from a specific `Parameter` for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveParameter, ConstantParameter
+    from pywr.recorders import NumpyArrayParameterRecorder
 
-    Parameters
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter = ControlCurveParameter(
+        model=model,
+        name="Rule curve position",
+        storage_node=storage,
+        values=[1.0, 45.0, 90.0],
+        control_curves=[ConstantParameter(model, 0.76), ConstantParameter(model, 0.56)],
+    )
+    NumpyArrayParameterRecorder(
+        model=model,
+        name="Control curve value",
+        param=parameter,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Control curve value": {
+            "type": "NumpyArrayParameterRecorder",
+            "param": "Rule curve position",
+            "temporal_agg_func": "sum"
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    param : `pywr.parameters.Parameter`
+    model : Model
+        The model instance.
+    param : Parameter
         Parameter instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, Parameter param, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        param : Parameter
+            Parameter instance to record.
+
+        Other parameters
+        ----------------
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate over time when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the mean parameter value for a scenario,
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
         super(NumpyArrayParameterRecorder, self).__init__(model, param, **kwargs)
@@ -1383,18 +3107,25 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
     property temporal_agg_func:
+        """The temporal aggregation function used in `.value()`.
+        
+        **Setter:** set the aggregation function.
+        """
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
+        """Setup the internal variable."""
         cdef int ncomb = len(self.model.scenarios.combinations)
         cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb))
 
     cpdef reset(self):
+        """Reset the internal variable."""
         self._data[:, :] = 0.0
 
     cpdef after(self):
+        """Save the data."""
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -1402,19 +3133,24 @@ cdef class NumpyArrayParameterRecorder(ParameterRecorder):
         return 0
 
     property data:
+        """This contains an array with shape (total_timesteps, number_of_scenarios) with
+        the parameter's values."""
         def __get__(self, ):
             return np.array(self._data)
 
     cpdef double[:] values(self) except *:
-        """Compute a value for each scenario using `temporal_agg_func`.
-        """
+        """Compute a value for each scenario using `temporal_agg_func`."""
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
-        This DataFrame contains a MultiIndex for the columns with the recorder name
-        as the first level and scenario combination names as the second level. This
-        allows for easy combination with multiple recorder's DataFrames
+        """Convert the data to a `pandas.DataFrame`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            This DataFrame contains a MultiIndex for the columns with the recorder name
+            as the first level and scenario combination names as the second level. The row index
+            contains the timesteps.
         """
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
@@ -1424,29 +3160,81 @@ NumpyArrayParameterRecorder.register()
 
 
 cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
-    """Recorder for an annual profile from a `Parameter`.
+    """This recorder recorders an annual profile parameter and stores 366 values per scenario.
 
-    This recorder stores a daily profile returned by a specific parameter. For each day of the year
-    it stores the value encountered for that day during a simulation. This results in the final profile
-    being the last value encountered on each day of the year during a simulation. This recorder is useful
-    for returning the daily profile that may result from the combination of one or more parameters. For
-    example, during optimisation of new profiles non-daily parameters (e.g. `RbfProfileParameter`) and/or
-    aggregations of several parameters might be used. With this recorder the daily profile used in the simulation
-    can be easily saved.
+    For each day of the year, it stores the value encountered for that day during a simulation. This recorder is
+    useful for returning the daily profile that may result from the combination of one or more parameters. For
+    example, during optimisation of new profiles non-daily parameters (e.g. [pywr.parameters.RbfProfileParameter][]) and/or
+    aggregations of several parameters might be used. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    The data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
+    !!!info
+        This differs from a [pywr.recorders.NumpyArrayParameterRecorder][] as it does not
+        store the profile for each timestep, but it stores 366 values only.
 
-    Parameters
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    param : `pywr.parameters.Parameter`
+    model : Model
+        The model instance.
+    param : Parameter
         Parameter instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. For aggregation over scenarios
-        see the `agg_func` keyword argument.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, Parameter param, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        param : Parameter
+            Parameter instance to record.
+
+        Other parameters
+        ----------------
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate over time when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the median value for a scenario.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
         super().__init__(model, param, **kwargs)
@@ -1454,10 +3242,15 @@ cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
     property temporal_agg_func:
+        """The temporal aggregation function used in `.value()`.
+        
+        **Setter:** set the aggregation function.
+        """
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
+        """Setup the internal variable."""
         cdef int ncomb = len(self.model.scenarios.combinations)
         self._data = np.zeros((366, ncomb))
 
@@ -1465,6 +3258,7 @@ cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
         self._data[:, :] = 0.0
 
     cpdef after(self):
+        """Save the data."""
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
         cdef int i = ts.dayofyear_index
@@ -1472,19 +3266,24 @@ cdef class NumpyArrayDailyProfileParameterRecorder(ParameterRecorder):
         return 0
 
     property data:
+        """This contains an array with shape (366, number_of_scenarios) with
+        the profile data."""
         def __get__(self, ):
             return np.array(self._data)
 
     cpdef double[:] values(self) except *:
-        """Compute a value for each scenario using `temporal_agg_func`.
-        """
+        """Compute a value for each scenario using `temporal_agg_func`."""
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
-        This DataFrame contains a MultiIndex for the columns with the recorder name
-        as the first level and scenario combination names as the second level. This
-        allows for easy combination with multiple recorder's DataFrames
+        """Convert the data to a `pandas.DataFrame`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            This DataFrame contains a MultiIndex for the columns with the recorder name
+            as the first level and scenario combination names as the second level. The row index
+            contains a number between 1 and 366.
         """
         index = np.arange(1, 367)
         sc_index = self.model.scenarios.multiindex
@@ -1493,23 +3292,116 @@ NumpyArrayDailyProfileParameterRecorder.register()
 
 
 cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
-    """Recorder for timeseries information from an `IndexParameter`.
+    """This recorder recorders a timeseries of a parameter's index
+    for each time-step and scenario. The data is saved internally using a
+    memory view and can be accessed through the `data` attribute or `to_dataframe()` method.
 
-    This class stores the value from a specific `IndexParameter` for each time-step of a simulation. The
-    data is saved internally using a memory view. The data can be accessed through the `data`
-    attribute or `to_dataframe()` method.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveIndexParameter, ConstantParameter
+    from pywr.recorders import NumpyArrayIndexParameterRecorder
 
-    Parameters
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.76), ConstantParameter(model, 0.56)],
+    )
+    NumpyArrayIndexParameterRecorder(
+        model=model,
+        name="Control curve value",
+        param=parameter,
+        temporal_agg_func="sum"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Control curve value": {
+            "type": "NumpyArrayIndexParameterRecorder",
+            "param": "Rule curve index",
+            "temporal_agg_func": "sum",
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    param : `pywr.parameters.IndexParameter`
-        Parameter instance to record.
-    temporal_agg_func : str or callable (default="mean")
-        Aggregation function used over time when computing a value per scenario. This can be used
-        to return, for example, the median flow over a simulation. For aggregation over scenarios
-        see the `agg_func` keyword argument.
+    model : Model
+        The model instance.
+    param : IndexParameter
+        IndexParameter instance to record.
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, IndexParameter param, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        param : IndexParameter
+            IndexParameter instance to record.
+
+        Other parameters
+        ----------------
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate over time when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the mean index for a scenario.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         # Optional different method for aggregating across time.
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'mean')
         super(NumpyArrayIndexParameterRecorder, self).__init__(model, param, **kwargs)
@@ -1517,18 +3409,25 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
     property temporal_agg_func:
+        """The temporal aggregation function used in `.value()`.
+        
+        **Setter:** set the aggregation function.
+        """
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
+        """Setup the internal variable."""
         cdef int ncomb = len(self.model.scenarios.combinations)
         cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb), dtype=np.int32)
 
     cpdef reset(self):
+        """Reset the internal variable."""
         self._data[:, :] = 0
 
     cpdef after(self):
+        """Save the data."""
         cdef int i
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -1536,14 +3435,20 @@ cdef class NumpyArrayIndexParameterRecorder(IndexParameterRecorder):
         return 0
 
     property data:
+        """This contains an array with shape (total_timesteps, number_of_scenarios) with
+        the parameter's index."""
         def __get__(self, ):
             return np.array(self._data)
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
-        This DataFrame contains a MultiIndex for the columns with the recorder name
-        as the first level and scenario combination names as the second level. This
-        allows for easy combination with multiple recorder's DataFrames
+        """Convert the data to a `pandas.DataFrame`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            This DataFrame contains a MultiIndex for the columns with the recorder name
+            as the first level and scenario combination names as the second level. The row index
+            contains the timesteps.
         """
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
@@ -1553,10 +3458,123 @@ NumpyArrayIndexParameterRecorder.register()
 
 
 cdef class RollingWindowParameterRecorder(ParameterRecorder):
-    """Records the mean value of a Parameter for the last N timesteps.
-    """
-    def __init__(self, model, Parameter param, int window, *args, **kwargs):
+    """This recorder calculates the rolling value of a [pywr.parameters.Parameter][] for the
+    last N timesteps. The metric to use over the rolling window can be provided in `temporal_agg_func`.
 
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Link
+    from pywr.parameters import NodeThresholdParameter
+    from pywr.recorders import RollingWindowParameterRecorder
+
+    model = Model()
+    river = Link(model=model, name="River")
+    parameter = NodeThresholdParameter(
+        model=model,
+        node=river,
+        predicate="LT",
+        values=[10, 2],
+        threshold=1000,
+        name="Daily river-dependant license"
+    )
+    RollingWindowParameterRecorder(
+        model=model,
+        name="Mean max abstraction",
+        param=parameter,
+        window=4
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+
+        "Daily river-dependant license": {
+            "type": "NodeThresholdParameter",
+             "node": "River",
+            "predicate": "LT",
+            "values": [10, 2],
+            "threshold": 1000,
+        },
+        "Mean max abstraction": {
+            "type": "RollingWindowParameterRecorder",
+            "parameter": "Daily river-dependant license",
+            "window": 4
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    window : int
+        The number of timestep to use to calculate the rolling window.
+    temporal_agg_func : str | Callable
+        The function to use to aggregate the values of `param` over the rolling window.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    """
+
+    def __init__(self, model, Parameter param, int window, *args, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        param : Parameter
+            The parameter instance to use to get the value.
+        window : int
+            The number of timestep to use to calculate the rolling window.
+
+        Other parameters
+        ----------------
+        temporal_agg_func : Optional[str | Callable], default="mean"
+            The function to use to aggregate the values of `param` over the rolling window. For example,
+            "mean" to calculate the rolling mean.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         if "agg_func" in kwargs and "temporal_agg_func" not in kwargs:
             # Support previous behaviour
             warnings.warn('The "agg_func" key is deprecated for defining the temporal '
@@ -1571,10 +3589,15 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
     property temporal_agg_func:
+        """The temporal aggregation function used in `.after()`.
+        
+        **Setter:** set the aggregation function.
+        """
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
+        """Setup the internal variable."""
         cdef int ncomb = len(self.model.scenarios.combinations)
         cdef int nts = len(self.model.timestepper)
         self._data = np.zeros((nts, ncomb,), np.float64)
@@ -1582,10 +3605,12 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
         self.position = 0
 
     cpdef reset(self):
+        """Reset the internal variable."""
         self._data[...] = 0
         self.position = 0
 
     cpdef after(self):
+        """Calculate the rolling mean after aggregating with `temporal_agg_func`"""
         cdef int i, n
         cdef double[:] value
         cdef ScenarioIndex scenario_index
@@ -1607,16 +3632,41 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
             self.position = 0
 
     property data:
+        """This contains an array with shape (total_timesteps, number_of_scenarios) with
+        the data."""
         def __get__(self):
             return np.array(self._data, dtype=np.float64)
 
     def to_dataframe(self):
+        """Convert the data to a `pandas.DataFrame`.
+
+        Returns
+        -------
+        pandas.DataFrame
+            This DataFrame contains a MultiIndex for the columns with the recorder name
+            as the first level and scenario combination names as the second level. The row index
+            contains the timesteps.
+        """
         index = self.model.timestepper.datetime_index
         sc_index = self.model.scenarios.multiindex
         return pd.DataFrame(data=self.data, index=index, columns=sc_index)
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the recorder configuration.
+
+        Returns
+        -------
+        RollingWindowParameterRecorder
+            The loaded class.
+        """
         from pywr.parameters import load_parameter
         parameter = load_parameter(model, data.pop("parameter"))
         window = int(data.pop("window"))
@@ -1625,21 +3675,12 @@ cdef class RollingWindowParameterRecorder(ParameterRecorder):
 RollingWindowParameterRecorder.register()
 
 cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
-    """Records the mean flow of a Node for the previous N timesteps
+    """This records the mean flow of a Node for previous `N` timesteps or number of days.
 
-    Parameters
-    ----------
-    model : `pywr.core.Model`
-    node : `pywr.core.Node`
-        The node to record
-    timesteps : int
-        The number of timesteps to calculate the mean flow for
-    name : str (optional)
-        The name of the recorder
-
-    See also
-    --------
-    RollingMeanFlowNodeParameter
+    !!!danger "Deprecated"
+        This recorder has been deprecated in favour of [pywr.parameters.RollingMeanFlowNodeParameter][].
+        If you need to record the value, use a recorder capable of recording an arbitrary parameter, such as
+        [pywr.recorders.NumpyArrayParameterRecorder][].
     """
     def __init__(self, model, node, timesteps=None, days=None, name=None, **kwargs):
         warnings.warn("`RollingMeanFlowNodeRecorder` has been deprecated in favour of `RollingMeanFlowNodeParameter`."
@@ -1663,6 +3704,7 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
         self.position = 0
 
     cpdef setup(self):
+        """Setup the internal variable."""
         super(RollingMeanFlowNodeRecorder, self).setup()
         self._data = np.empty([len(self.model.timestepper), len(self.model.scenarios.combinations)])
         if self.days > 0:
@@ -1700,6 +3742,8 @@ cdef class RollingMeanFlowNodeRecorder(NodeRecorder):
             self.position = 0
 
     property data:
+        """This contains an array with shape (total_timesteps, number_of_scenarios) with
+        the flow data."""
         def __get__(self):
             return np.array(self._data, dtype=np.float64)
 
@@ -1725,23 +3769,91 @@ cdef class BaseConstantNodeRecorder(NodeRecorder):
     """
 
     cpdef setup(self):
+        """Setup the internal variable."""
         self._values = np.zeros(len(self.model.scenarios.combinations))
 
     cpdef reset(self):
+        """Reset the internal variable."""
         self._values[...] = 0.0
 
     cpdef after(self):
         raise NotImplementedError()
 
     cpdef double[:] values(self) except *:
+        """Return the internal values."""
         return self._values
 
 
 cdef class TotalDeficitNodeRecorder(BaseConstantNodeRecorder):
-    """
-    Recorder to total the difference between modelled flow and max_flow for a Node
+    """This recorder calculates a node's deficit at each timestep and returns the total
+    deficit at the end of the run.
+
+    The deficit is calculated as the difference between the value in the node's `max_flow`
+    attribute and the flow allocated in `flow`:
+
+        deficit = max_flow - actual_flow
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import TotalDeficitNodeRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    TotalDeficitNodeRecorder(
+        model=model,
+        name="Demand total deficit",
+        node=demand
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Demand total deficit": {
+            "type": "TotalDeficitNodeRecorder",
+            "node": "Demand"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    factor : int
+        The value to use to scale the flow.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     cpdef after(self):
+        """Calculate the deficit for the timestep."""
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -1757,15 +3869,103 @@ TotalDeficitNodeRecorder.register()
 
 cdef class TotalFlowNodeRecorder(BaseConstantNodeRecorder):
     """
-    Recorder to total the flow for a Node.
+    This recorder returns the total flow for a Node at the end of the simulation for each
+    scenario. A factor can also be provided to scale the total flow (for example, to calculate
+    the operational costs).
 
-    A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+    Examples
+    -------
+    In the following example, the total operational cost of supply is recorded:
+
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import TotalFlowNodeRecorder
+
+    model = Model()
+    node = Output(model, name="Demand", max_flow=5)
+    TotalFlowNodeRecorder(
+        model=model,
+        node=node,
+        factor=100,
+        name="Total cost"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Total cost": {
+            "type": "TotalFlowNodeRecorder",
+            "factor": 100,
+            "node": "Demand"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    factor : int
+        The value to use to scale the flow.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, *args, **kwargs):
+        """Initialise the recorder.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            The node instance to recorder the flow of.
+        factor : Optional[int], default=1
+            The value to use to scale the flow.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         self.factor = kwargs.pop('factor', 1.0)
         super(TotalFlowNodeRecorder, self).__init__(*args, **kwargs)
 
     cpdef after(self):
+        """Calculate the total flow for each scenario."""
         cdef ScenarioIndex scenario_index
         cdef int i
         cdef double days = self.model.timestepper.current.days
@@ -1778,15 +3978,103 @@ TotalFlowNodeRecorder.register()
 
 cdef class MeanFlowNodeRecorder(BaseConstantNodeRecorder):
     """
-    Record the mean flow for a Node.
+    This recorder returns the mean flow for a Node at the end of the simulation for each
+    scenario. A factor can also be provided to scale the mean flow (for example, to calculate
+    the operational costs).
 
-    A factor can be provided to scale the total flow (e.g. for calculating operational costs).
+    Examples
+    -------
+    In the following example, the mean operational cost of supply is recorded:
+
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import MeanFlowNodeRecorder
+
+    model = Model()
+    node = Output(model, name="Demand", max_flow=5)
+    MeanFlowNodeRecorder(
+        model=model,
+        node=node,
+        factor=100,
+        name="Total cost"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Total cost": {
+            "type": "MeanFlowNodeRecorder",
+            "factor": 100,
+            "node": "Demand"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    factor : int
+        The value to use to scale the flow.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, *args, **kwargs):
+        """Initialise the recorder.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Node
+            The node instance to recorder the flow of.
+        factor : Optional[int], default=1
+            The value to use to scale the flow.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         self.factor = kwargs.pop('factor', 1.0)
         super(MeanFlowNodeRecorder, self).__init__(*args, **kwargs)
 
     cpdef after(self):
+        """Calculate the total flow for each scenario."""
         cdef ScenarioIndex scenario_index
         cdef int i
         for scenario_index in self.model.scenarios.combinations:
@@ -1795,6 +4083,7 @@ cdef class MeanFlowNodeRecorder(BaseConstantNodeRecorder):
         return 0
 
     cpdef finish(self):
+        """Scale the total flow by the number of steps to calculate the average flow."""
         cdef int i
         cdef int nt = self.model.timestepper.current.index
         for i in range(self._values.shape[0]):
@@ -1803,9 +4092,75 @@ MeanFlowNodeRecorder.register()
 
 
 cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
-    """Recorder to return the frequency of timesteps with a failure to meet max_flow.
+    """This recorder returns the frequency of timesteps with a failure to meet a node's `max_flow`.
+
+    The deficit is calculated as the difference between the value in the node's `max_flow`
+    attribute and the flow allocated in `flow` at each timestep:
+
+        deficit = max_flow - actual_flow
+
+    When this is not zero, the recorder internal counter increases by one (timestep). At the end
+    of the run this number is divided by the total number of timesteps to return a frequency.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import DeficitFrequencyNodeRecorder
+
+    model = Model()
+    demand = Output(
+        model,
+        name="Demand",
+        max_flow=5,
+        cost=-20.0,
+    )
+    DeficitFrequencyNodeRecorder(
+        model=model,
+        name="Demand deficit frequency",
+        node=demand
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Demand deficit frequency": {
+            "type": "DeficitFrequencyNodeRecorder",
+            "node": "Demand"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint.
     """
     cpdef after(self):
+        """Count the number of timesteps where there is a deficit for each scenario."""
         cdef double max_flow
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -1816,6 +4171,7 @@ cdef class DeficitFrequencyNodeRecorder(BaseConstantNodeRecorder):
                 self._values[scenario_index.global_id] += 1.0
 
     cpdef finish(self):
+        """Calculate the frequency for each scenario."""
         cdef int i
         cdef int nt = self.model.timestepper.current.index
         for i in range(self._values.shape[0]):
@@ -1828,6 +4184,7 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
     """
 
     cpdef setup(self):
+        """Setup the internal variable."""
         self._values = np.zeros(len(self.model.scenarios.combinations))
 
     cpdef reset(self):
@@ -1841,11 +4198,71 @@ cdef class BaseConstantStorageRecorder(StorageRecorder):
 BaseConstantStorageRecorder.register()
 
 cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
-    """Record the minimum volume in a `Storage` node during a simulation."""
+    """This recorder stores the minimum volume in a `Storage` node during a simulation.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import MinimumVolumeStorageRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    MinimumVolumeStorageRecorder(
+        model=model,
+        name="Min volume",
+        node=storage
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Min volume": {
+            "type": "MinimumVolumeStorageRecorder",
+            "node": "Reservoir"
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    """
     cpdef reset(self):
+        """Reset the internal variables."""
         self._values[...] = np.inf
 
     cpdef after(self):
+        """Calculate the min storage per scenario."""
         cdef int i
         for i in range(self._values.shape[0]):
             self._values[i] = np.min([self._node._volume[i], self._values[i]])
@@ -1853,19 +4270,114 @@ cdef class MinimumVolumeStorageRecorder(BaseConstantStorageRecorder):
 MinimumVolumeStorageRecorder.register()
 
 cdef class MinimumThresholdVolumeStorageRecorder(BaseConstantStorageRecorder):
-    """Record whether a `Storage` node falls below a particular volume threshold during a simulation.
+    """This recorder checks whether the absolute volume in a `Storage` node during a simulation
+    falls below a particular volume threshold It returns a value
+    of `1.0`, for each scenario, when the absolute volume is less than or equal to the threshold
+    at any time-step during the simulation. Otherwise, it will return zero.
 
-    This recorder will return a value of `1.0` for scenarios where the volume `Storage` is less
-    than or equal to the threshold at any time-step during the simulation. Otherwise it will return zero.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.recorders import MinimumThresholdVolumeStorageRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    MinimumThresholdVolumeStorageRecorder(
+        model=model,
+        name="Threshold",
+        threshold=10,
+        node=storage
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Threshold": {
+            "type": "MinimumThresholdVolumeStorageRecorder",
+            "node": "Reservoir",
+            "threshold": 10
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    threshold : float
+        The storage threshold.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, node, threshold, *args, **kwargs):
+        """Initialise the recorder.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        node : Storage
+            The storage instance to recorder the volume of.
+        threshold : float
+            The storage threshold.
+
+        Other Parameters
+        ----------------
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        name : Optional[str], default=None
+            Name of the recorder.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         self.threshold = threshold
         super(MinimumThresholdVolumeStorageRecorder, self).__init__(model, node, *args, **kwargs)
 
     cpdef reset(self):
+        """Reset the internal variables."""
         self._values[...] = 0.0
 
     cpdef after(self):
+        """Calculate the min storage per scenario if the threshold is exceeded."""
         cdef int i
         for i in range(self._values.shape[0]):
             if self._node._volume[i] <= self.threshold:
@@ -1875,30 +4387,125 @@ MinimumThresholdVolumeStorageRecorder.register()
 
 
 cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
-    """Record the number of times an index parameter exceeds a threshold for each scenario.
+    """This recorder counts the number of timesteps an index parameter is equal or
+    exceeds a threshold for each scenario. When the model runs on a daily timestep, this returns
+    the number of days.
 
-    This recorder will count the number of timesteps so will be a daily count when running on a
-    daily timestep.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveIndexParameter, ConstantParameter
+    from pywr.recorders import TimestepCountIndexParameterRecorder
 
-    Parameters
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.76)],
+    )
+    TimestepCountIndexParameterRecorder(
+        model=model,
+        name="Control curve counter",
+        threshold=1,
+        parameter=parameter,
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Control curve counter": {
+            "type": "TimestepCountIndexParameterRecorder",
+            "parameter": "Rule curve index",
+            "threshold": 1
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    parameter : `pywr.core.IndexParameter`
-        The parameter to record
+    model : Model
+        The model instance.
     threshold : int
-        The threshold to compare the parameter to
+        The threshold to compare the parameter to.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, IndexParameter parameter, int threshold, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameter : IndexParameter
+            The parameter instance to record.
+        threshold : int
+            The threshold to compare the parameter to.
+
+        Other parameters
+        ----------------
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
+
         super().__init__(model, parameter, *args, **kwargs)
         self.threshold = threshold
 
     cpdef setup(self):
+        """Setup the internal counter."""
         self._count = np.zeros(len(self.model.scenarios.combinations), np.int32)
 
     cpdef reset(self):
+        """Reset the internal counter."""
         self._count[...] = 0
 
     cpdef after(self):
+        """Increase the counter if the threshold is reached."""
         cdef Timestep ts = self.model.timestepper.current
         cdef int value
         cdef ScenarioIndex scenario_index
@@ -1910,42 +4517,193 @@ cdef class TimestepCountIndexParameterRecorder(IndexParameterRecorder):
                 self._count[scenario_index.global_id] += 1
 
     cpdef double[:] values(self) except *:
+        """
+        Returns the counter for each scenario.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
+        """
         return np.asarray(self._count).astype(np.float64)
 TimestepCountIndexParameterRecorder.register()
 
 
 cdef class AnnualCountIndexThresholdRecorder(Recorder):
-    """For each scenario, count the number of times a list of parameters exceeds a threshold in each year.
+    """For each scenario, this recorder counts the number of times a list of index
+    parameters exceeds a threshold in each year.
 
-    If multiple parameters exceed in one timestep then it is only counted once. The recorder also allows
-    for exclusion of months and for the inclusion of a range of dates within a calendar year to which
+    If multiple parameters exceed the threshold in one timestep then the counter is only incremented once. The recorder
+    also allows for exclusion of months and for the inclusion of a range of dates within a calendar year to which
     the parameter exceedence is counted. Both the exclusion of months and the inclusion of dates can
     simultaneously be provided, where the intersection of excluded months with a range of dates will result
     in the day not counting any exceedences.
 
-    Output from data property has shape: (years, scenario combinations)
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveIndexParameter, ConstantParameter
+    from pywr.recorders import AnnualCountIndexThresholdRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter1 = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve 1 index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.76)],
+    )
+    parameter2 = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve 2 index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.56)],
+    )
+    AnnualCountIndexThresholdRecorder(
+        model=model,
+        name="Control curve value",
+        parameters=[parameter1, parameter2],
+        threshold=1,
+        include_from_month=4,
+        include_from_day=1,
+        include_to_day=15,
+        include_to_month=8,
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Rule curve 1 index": {
+            "type": "ControlCurveIndexParameter",
+            "control_curves": [0.76],
+            "storage_node": "Reservoir"
+        },
+        "Rule curve 2 index": {
+            "type": "ControlCurveIndexParameter",
+            "control_curves": [0.56],
+            "storage_node": "Reservoir"
+        },
+        "Control curve value": {
+            "type": "AnnualCountIndexThresholdRecorder",
+            "parameters": ["Rule curve 1 index", "Rule curve 2 index"],
+            "threshold"=1,
+            "include_from_month": 4,
+            "include_from_day": 1,
+            "include_to_day": 15,
+            "include_to_month": 8
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    parameters : list
-        List of `pywr.core.IndexParameter` to record against
+    model : Model
+        The model instance.
+    parameters : Iterable[IndexParameter]
+        The list of `IndexParameter` to record against.
     name : str
         The name of the recorder
     threshold : int
         Threshold to compare parameters against
-    exclude_months : list or None
+    exclude_months : Optional[list[int]]
         Optional list of month numbers to exclude from the count.
-    include_from_month, include_from_day : int or None
-        Optional start date to specify a range of dates to include in the count. If intended to be used,
-        both arguments must be supplied, otherwise the recorder will assume that this is not used and default
-        to the 1st Jan. Period to count is inclusive of the start date.
-    include_to_month, include_to_day : int or None
-        Optional end date to specify a range of dates to include in the count. If intended to be used,
-        both arguments must be supplied, otherwise the recorder will assume that this is not used and default
-        to the 31st Dec. Period to count is inclusive of the end date.
+    include_from_month : Optional[int]
+        Optional start month to specify a range of dates to include in the count. If intended to be used,
+        both `include_from_month` and `include_from_day` must be supplied, otherwise the recorder will
+        assume that this is not used and default to the 1st Jan. Period to count is inclusive of the start date.
+    include_from_day : Optional[int]
+            Same as above but this specifies the start day.
+    include_to_month : Optional[int]
+        Optional end month to specify a range of dates to include in the count. If intended to be used,
+        both `include_to_month` and `include_to_day` must be supplied, otherwise the recorder will assume
+        that this is not used and default to the 31st Dec. Period to count is inclusive of the end date.
+    include_to_day : Optional[int]
+        Same as above but this specifies the end day.
+
+    temporal_agg_func : str | Callable
+        An aggregation function used to aggregate over time when computing a value per scenario in the
+        `value()` method.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, list parameters, str name, int threshold, *args, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        parameters : Iterable[IndexParameter]
+            The list of `pywr.core.IndexParameter` to record against
+        name : str
+            The name of the recorder
+        threshold : int
+            Threshold to compare parameters against
+
+        Other parameters
+        -----------------
+        exclude_months : Optional[list[int]], default=None
+            Optional list of month numbers to exclude from the count.
+        include_from_month : Optional[int], default=None
+            Optional start month to specify a range of dates to include in the count. If intended to be used,
+            both `include_from_month` and `include_from_day` must be supplied, otherwise the recorder will
+            assume that this is not used and default to the 1st Jan. Period to count is inclusive of
+            the start date.
+        include_from_day : Optional[int], default=None
+            Same as above but this specifies the start day.
+        include_to_month : Optional[int], default=None
+            Optional end month to specify a range of dates to include in the count. If intended to be used,
+            both `include_to_month` and `include_to_day` must be supplied, otherwise the recorder will assume
+            that this is not used and default to the 31st Dec. Period to count is inclusive of the end date.
+        include_to_day : Optional[int], default=None
+            Same as above but this specifies the end day.
+        temporal_agg_func : str | Callable, default="mean"
+            An aggregation function used to aggregate over time when computing a value per scenario in the
+            `value()` method. This can be used to return, for example, the median flow for a scenario.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         self.exclude_months = kwargs.pop('exclude_months', None)
         self.include_from_month = kwargs.pop('include_from_month', None)
         self.include_from_day = kwargs.pop('include_from_day', None)
@@ -1961,10 +4719,15 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
     property temporal_agg_func:
+        """The temporal aggregation function used in `.value()`.
+        
+        **Setter:** set the aggregation function.
+        """
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
 
     cpdef setup(self):
+        """Setup the internal variables."""
         super(AnnualCountIndexThresholdRecorder, self).setup()
         self._num_years = self.model.timestepper.end.year - self.model.timestepper.start.year + 1
         self._ncomb = len(self.model.scenarios.combinations)
@@ -1972,11 +4735,13 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         self._data_this_year = np.zeros([len(self.parameters), self._ncomb])
 
     cpdef reset(self):
+        """Reset the internal variables."""
         self._data[...] = 0
         self._current_year = -1
         self._start_year = self.model.timestepper.start.year
 
     cpdef after(self):
+        """Count if the parameters have exceeded the threshold."""
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = self._current_year - self._start_year
         cdef int p
@@ -2021,6 +4786,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
                     break  # if multiple parameters exceed, only count once
 
     cpdef finish(self):
+        """Calculate the total number of years exceeding the threshold."""
         cdef int idx = self._current_year - self._start_year
         cdef Py_ssize_t i
         for i in range(self._ncomb):
@@ -2028,15 +4794,23 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
 
     cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
+        """Convert the data to a `pandas.DataFrame`.
 
-        This DataFrame contains a MultiIndex for the columns with the recorder name
-        as the first level and scenario combination names as the second level. This
-        allows for easy combination with multiple recorder's DataFrames.
+        Returns
+        -------
+        pandas.DataFrame
+            This DataFrame contains a MultiIndex for the columns with the recorder name
+            as the first level and scenario combination names as the second level. The row index
+            contains the years.
         """
         start_year = self.model.timestepper.start.year
         end_year = self.model.timestepper.end.year
@@ -2045,11 +4819,27 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         return pd.DataFrame(data=np.array(self._data, dtype=int), index=index, columns=sc_index)
 
     property data:
+        """This contains an array with shape (total_timesteps, number_of_scenarios) with
+        the counters."""
         def __get__(self):
             return np.array(self._data, dtype=np.int16)
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the recorder configuration.
+
+        Returns
+        -------
+        AnnualCountIndexThresholdRecorder
+            The loaded class.
+        """
         from pywr.parameters import load_parameter
         parameters = [load_parameter(model, p) for p in data.pop("parameters")]
         return cls(model, parameters=parameters, **data)
@@ -2058,22 +4848,109 @@ AnnualCountIndexThresholdRecorder.register()
 
 cdef class AnnualTotalFlowRecorder(Recorder):
     """
-    For each scenario, record the total flow in each year across a list of nodes.
-    Output from data property has shape: (years, scenario combinations)
+    This recorder calculates the total flow in each year across a list of nodes
+    for each scenario. The output is saved in the `data` property which returns
+    an array with shape: (years, scenario combinations).
 
-    A list of factors can be provided to scale the total flow (e.g. for calculating operational costs).
+    A list of factors can be provided to scale the total flow (e.g. for calculating the operational costs).
 
-    Parameters
+    Examples
+    -------
+    In the following example, the total operational cost of supply is recorded:
+
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Output
+    from pywr.recorders import AnnualTotalFlowRecorder
+
+    model = Model()
+    node1 = Output(model, name="Demand 1", max_flow=5)
+    node2 = Output(model, name="Demand 2", max_flow=3.4)
+    AnnualTotalFlowRecorder(
+        model=model,
+        nodes=[node1, node2],
+        factors=[100, 12],
+        name="Total costs"
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Total costs": {
+            "type": "AnnualTotalFlowRecorder",
+            "factors": [100, 12],
+            "nodes": ["Demand 1, "Demand 2"]
+        }
+    }
+    ```
+
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    name : str
-        The name of the recorder
-    nodes : list
-        List of `pywr.core.Node` instances to record
-    factors : list, optional
-        List of factors to apply to each node
+    model : Model
+        The model instance.
+    nodes : list[Node]
+        The list of nodes to calculate the annual total flow of.
+    factors : list[float]
+        Scale each flow by the given factors.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, model, str name, list nodes, *args, **kwargs):
+        """Initialise the recorder.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        name : Optional[str], default=None
+            Name of the recorder.
+        nodes : list[Node]
+            The list of nodes to calculate the annual total flow of.
+
+        Other parameters
+        ----------------
+        factors : Optional[list[float]], default=None
+            Scale each flow by the given factors.
+        temporal_agg_func : Optional[str | Callable], default="sum"
+            When `.values()` is called, temporally aggregate the data using the given function for each scenario.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         temporal_agg_func = kwargs.pop('temporal_agg_func', 'sum')
         factors = kwargs.pop('factors', None)
         super().__init__(model, name=name, *args, **kwargs)
@@ -2082,10 +4959,18 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         self._temporal_aggregator = Aggregator(temporal_agg_func)
 
     property temporal_agg_func:
+        """The temporal aggregation function used in `.value()`.
+        
+        **Setter:** set the aggregation function.
+        """
         def __set__(self, agg_func):
             self._temporal_aggregator.func = agg_func
 
     property factors:
+        """The factors used to scale the total flow.
+        
+        **Setter:** set the factors.
+        """
         # Property provides np.array style access to the internal memoryview.
         def __get__(self):
             return np.array(self._factors)
@@ -2095,17 +4980,20 @@ cdef class AnnualTotalFlowRecorder(Recorder):
             self._factors = np.array(factors)
 
     cpdef setup(self):
+        """Setup the interval variables."""
         super(AnnualTotalFlowRecorder, self).setup()
         self._num_years = self.model.timestepper.end.year - self.model.timestepper.start.year + 1
         self._ncomb = len(self.model.scenarios.combinations)
         self._data = np.empty([self._num_years, self._ncomb])
 
     cpdef reset(self):
+        """Reset the interval variables."""
         self._data[...] = 0
         self._current_year = -1
         self._start_year = self.model.timestepper.start.year
 
     cpdef after(self):
+        """Calculate the total annual flows."""
         cdef int i, j
         cdef Timestep ts = self.model.timestepper.current
         cdef int idx = ts.year - self._start_year
@@ -2123,19 +5011,28 @@ cdef class AnnualTotalFlowRecorder(Recorder):
 
     cpdef double[:] values(self) except *:
         """Compute a value for each scenario using `temporal_agg_func`.
+        
+        Returns
+        numpy.typing.NDArray[numpy.number]
+            An array with the aggregated values. This has a size equal to the number of scenarios.
         """
         return self._temporal_aggregator.aggregate_2d(self._data, axis=0, ignore_nan=self.ignore_nan)
 
     property data:
+        """This contains an array with shape (total_years, number_of_scenarios) with
+        the total scaled flow in each year and scenario."""
         def __get__(self):
             return np.array(self._data, dtype=np.float64)
 
     def to_dataframe(self):
-        """ Return a `pandas.DataFrame` of the recorder data
+        """Convert the data to a `pandas.DataFrame`.
 
-        This DataFrame contains a MultiIndex for the columns with the recorder name
-        as the first level and scenario combination names as the second level. This
-        allows for easy combination with multiple recorder's DataFrames.
+        Returns
+        -------
+        pandas.DataFrame
+            This DataFrame contains a MultiIndex for the columns with the recorder name
+            as the first level and scenario combination names as the second level. The row index
+            contains the years.
         """
         start_year = self.model.timestepper.start.year
         end_year = self.model.timestepper.end.year
@@ -2145,27 +5042,146 @@ cdef class AnnualTotalFlowRecorder(Recorder):
 
     @classmethod
     def load(cls, model, data):
+        """Load the recorder from the data dictionary (i.e. when the recorder is defined in JSON format).
+
+        Parameters
+        ---------
+        model : Model
+            The model instance.
+        data : dict
+            The dictionary with the recorder configuration.
+
+        Returns
+        -------
+        AnnualTotalFlowRecorder
+            The loaded class.
+        """
         nodes = [model.nodes[n] for n in data.pop("nodes")]
         return cls(model, nodes=nodes, **data)
 AnnualTotalFlowRecorder.register()
 
 
 cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
-    """ Record the number of years where an IndexParameter is greater than or equal to a threshold """
+    """This recorder returns the number of years where an IndexParameter is greater than or equal
+    to a threshold.
+
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Storage
+    from pywr.parameters import ControlCurveIndexParameter, ConstantParameter
+    from pywr.recorders import AnnualCountIndexParameterRecorder
+
+    model = Model()
+    storage = Storage(
+        model,
+        name="Reservoir",
+        initial_volume_pc=1,
+        max_volume=50,
+    )
+    parameter = ControlCurveIndexParameter(
+        model=model,
+        name="Rule curve index",
+        storage_node=storage,
+        control_curves=[ConstantParameter(model, 0.76)],
+    )
+    AnnualCountIndexParameterRecorder(
+        model=model,
+        name="Control curve counter",
+        threshold=1,
+        param=parameter,
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+        "Control curve counter": {
+            "type": "AnnualCountIndexParameterRecorder",
+            "parameter": "Rule curve index",
+            "threshold": 1
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    model : Model
+        The model instance.
+    threshold : int
+        The threshold to compare the parameter to.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    """
     def __init__(self, model, IndexParameter param, int threshold, *args, **kwargs):
+        """Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        param : IndexParameter
+            The parameter instance to record.
+        threshold : int
+            The threshold to compare the parameter to.
+
+        Other parameters
+        ----------------
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         super(AnnualCountIndexParameterRecorder, self).__init__(model, param, *args, **kwargs)
         self.threshold = threshold
 
     cpdef setup(self):
+        """Setup the internal counter."""
         self._count = np.zeros(len(self.model.scenarios.combinations), np.int32)
         self._current_max = np.zeros_like(self._count)
 
     cpdef reset(self):
+        """Reset the internal counter."""
         self._count[...] = 0
         self._current_max[...] = 0
         self._current_year = -1
 
     cpdef after(self):
+        """Increase the counter if the threshold is reached."""
         cdef int i, ncomb, value
         cdef ScenarioIndex scenario_index
         cdef Timestep ts = self.model.timestepper.current
@@ -2196,6 +5212,7 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
         return 0
 
     cpdef finish(self):
+        """Complete the current year by updating the count if threshold equal to or exceeded."""
         cdef int i
         cdef int ncomb = len(self.model.scenarios.combinations)
         # Complete the current year by updating the count if threshold equal to or exceeded
@@ -2204,6 +5221,14 @@ cdef class AnnualCountIndexParameterRecorder(IndexParameterRecorder):
                 self._count[i] += 1
 
     cpdef double[:] values(self) except *:
+        """
+        Returns the counter for each scenario.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
+        """
         return np.asarray(self._count).astype(np.float64)
 AnnualCountIndexParameterRecorder.register()
 
@@ -2259,45 +5284,147 @@ cdef class BaseConstantParameterRecorder(ParameterRecorder):
     """Base class for `ParameterRecorder` classes with a single value for each scenario combination
     """
     cpdef setup(self):
+        """Setup the internal variable."""
         self._values = np.zeros(len(self.model.scenarios.combinations))
 
     cpdef reset(self):
+        """Reset the internal variable."""
         self._values[...] = 0.0
 
     cpdef after(self):
         raise NotImplementedError()
 
     cpdef double[:] values(self) except *:
+        """
+        Get the values stored by the recorder.
+
+        Returns
+        -------
+        Iterable[float]
+            A memory view of the values.
+        """
         return self._values
 
 
 cdef class TotalParameterRecorder(BaseConstantParameterRecorder):
-    """Record the total value of a `Parameter` during a simulation.
-
-    This recorder can be used to track the sum total of the values returned by a
-    `Parameter` during a models simulation. An optional factor can be provided to
+    """The recorder calculates the total value of a [pywr.parameters.Parameter][]
+    over a simulation. An optional `factor` can be provided to
     apply a linear scaling of the values. If the parameter represents a flux
     the `integrate` keyword argument can be used to multiply the values by the time-step
     length in days.
 
-    Parameters
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Link
+    from pywr.parameters import NodeThresholdParameter
+    from pywr.recorders import TotalParameterRecorder
+
+    model = Model()
+    river = Link(model=model, name="River")
+    parameter = NodeThresholdParameter(
+        model=model,
+        node=river,
+        predicate="LT",
+        values=[10, 2],
+        threshold=1000,
+        name="Daily river-dependant license"
+    )
+    TotalParameterRecorder(
+        model=model,
+        name="Mean max abstraction",
+        param=parameter
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+
+        "Daily river-dependant license": {
+            "type": "NodeThresholdParameter",
+             "node": "River",
+            "predicate": "LT",
+            "values": [10, 2],
+            "threshold": 1000,
+        },
+        "Mean max abstraction": {
+            "type": "TotalParameterRecorder",
+            "parameter": "Daily river-dependant license"
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    param : `pywr.parameters.Parameter`
-        The parameter to record.
-    name : str (optional)
-        The name of the recorder
-    factor : float (default=1.0)
-        Scaling factor for the values of `param`.
-    integrate : bool (default=False)
-        Whether to multiply by the time-step length in days during summation.
+    model : Model
+        The model instance.
+    factor : float
+        The scaling factor for the values of `param`.
+    integrate : bool
+        Whether to multiply the value by the time-step length in days during the summation.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, *args, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        param : Parameter
+            The parameter instance to use to get the value.
+        factor : Optional[float], default=1.0
+            The scaling factor for the values of `param`.
+        integrate : Optional[bool], default=False
+            Whether to multiply the value by the time-step length in days during the summation.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         self.factor = kwargs.pop('factor', 1.0)
         self.integrate = kwargs.pop('integrate', False)
         super(TotalParameterRecorder, self).__init__(*args, **kwargs)
 
     cpdef after(self):
+        """Add the value of the current timestep."""
         cdef ScenarioIndex scenario_index
         cdef int i
         cdef double[:] values
@@ -2315,27 +5442,117 @@ TotalParameterRecorder.register()
 
 
 cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
-    """Record the mean value of a `Parameter` during a simulation.
+    """This recorder calculates the mean value of a [pywr.parameters.Parameter][]
+    over a simulation. An optional `factor` can be provided to apply a linear
+    scaling of the values.
 
-    This recorder can be used to track the mean of the values returned by a
-    `Parameter` during a models simulation. An optional factor can be provided to
-    apply a linear scaling of the values.
+    Examples
+    -------
+    Python
+    ======
+    ```python
+    from pywr.core import Model
+    from pywr.nodes import Link
+    from pywr.parameters import NodeThresholdParameter
+    from pywr.recorders import MeanParameterRecorder
 
-    Parameters
+    model = Model()
+    river = Link(model=model, name="River")
+    parameter = NodeThresholdParameter(
+        model=model,
+        node=river,
+        predicate="LT",
+        values=[10, 2],
+        threshold=1000,
+        name="Daily river-dependant license"
+    )
+    MeanParameterRecorder(
+        model=model,
+        name="Mean max abstraction",
+        param=parameter
+    )
+    ```
+
+    JSON
+    ======
+    ```json
+    {
+
+        "Daily river-dependant license": {
+            "type": "NodeThresholdParameter",
+             "node": "River",
+            "predicate": "LT",
+            "values": [10, 2],
+            "threshold": 1000,
+        },
+        "Mean max abstraction": {
+            "type": "MeanParameterRecorder",
+            "parameter": "Daily river-dependant license"
+        }
+    }
+    ```
+
+    Attributes
     ----------
-    model : `pywr.core.Model`
-    param : `pywr.parameters.Parameter`
-        The parameter to record.
-    name : str (optional)
-        The name of the recorder
-    factor : float (default=1.0)
-        Scaling factor for the values of `param`.
+    model : Model
+        The model instance.
+    factor : float
+        The scaling factor for the values of `param`.
+    agg_func : str | Callable
+        Scenario aggregation function to use when `aggregated_value()` is called.
+    name : Optional[str]
+        Name of the recorder.
+    comment : Optional[str]
+        Comment or description of the recorder.
+    ignore_nan : bool
+        Flag to ignore NaN values when calling `aggregated_value()`.
+    is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']]
+        Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+    epsilon : Optional[float]
+        Epsilon distance used by some optimisation algorithms.
+    constraint_lower_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
+    constraint_upper_bounds : Optional[float | Iterable[float]]
+        The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+         constraint during an optimisation problem.
     """
     def __init__(self, *args, **kwargs):
+        """
+        Initialise the class.
+
+        Parameters
+        ----------
+        model : Model
+            The model instance.
+        param : Parameter
+            The parameter instance to use to get the value.
+        factor : Optional[float], default=1.0
+            The scaling factor for the values of `param`.
+        agg_func : Optional[str | Callable], default="mean"
+            Scenario aggregation function to use when `aggregated_value()` is called.
+        ignore_nan : Optional[bool], default=False
+            Flag to ignore NaN values when calling `aggregated_value()`.
+        is_objective : Optional[Literal[ 'maximize', 'maximise', 'max', 'minimize', 'minimise', 'min']], default=None
+            Flag to denote the direction, if any, of optimisation undertaken with this recorder.
+        epsilon : Optional[float], default=1.0
+            Epsilon distance used by some optimisation algorithms.
+        name : Optional[str], default=None
+            Name of the recorder.
+        constraint_lower_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for lower bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        constraint_upper_bounds : Optional[float | Iterable[float]], default=None
+            The value(s) to use for upper bound for the recorder value. When given, the recorder instance is marked as a
+             constraint during an optimisation problem.
+        comment : Optional[str], default=None
+            Comment or description of the recorder.
+        """
         self.factor = kwargs.pop('factor', 1.0)
         super(MeanParameterRecorder, self).__init__(*args, **kwargs)
 
     cpdef after(self):
+        """Add the value of the current timestep."""
         cdef ScenarioIndex scenario_index
         cdef int i
         cdef double[:] values
@@ -2348,6 +5565,7 @@ cdef class MeanParameterRecorder(BaseConstantParameterRecorder):
         return 0
 
     cpdef finish(self):
+        """Calculate the mean value from the total."""
         cdef int i
         cdef int nt = self.model.timestepper.current.index
         for i in range(self._values.shape[0]):
