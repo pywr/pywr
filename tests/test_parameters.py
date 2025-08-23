@@ -57,6 +57,7 @@ import pandas as pd
 import pytest
 import itertools
 import calendar
+import warnings
 from numpy.testing import assert_allclose
 from scipy.interpolate import Rbf, interp1d
 import warnings
