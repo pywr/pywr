@@ -1011,6 +1011,10 @@ cdef class RbfProfileParameter(Parameter):
         The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
         will cause the days of the year values to be exposed as integer variables (except the first value which
         remains at day 1). This value is bounds on those variables as maximum shift from the given `days_of_year`.
+    variable_days_lower_bounds : iterable, int (default=None)
+        Defines the upper bounds for each of the days_of_year values (excluding the first day)
+    variable_days_upper_bounds : iterable, int (default=None)
+        Defines the upper bounds for each of the days_of_year values (excluding the first day)
     min_value, max_value : float
         Optionally cap the interpolated daily profile to a minimum and/or maximum value. The default values
         are negative and positive infinity for minimum and maximum respectively.
@@ -1019,7 +1023,8 @@ cdef class RbfProfileParameter(Parameter):
 
     """
     def __init__(self, model, days_of_year, values, lower_bounds=0.0, upper_bounds=np.inf, rbf_kwargs=None,
-                 variable_days_of_year_range=0, min_value=-np.inf, max_value=np.inf, **kwargs):
+                 variable_days_of_year_range=0, variable_days_lower_bounds=None, variable_days_upper_bounds=None,
+                 min_value=-np.inf, max_value=np.inf, **kwargs):
         super(RbfProfileParameter, self).__init__(model, **kwargs)
 
         if len(days_of_year) != len(values):
@@ -1049,7 +1054,23 @@ cdef class RbfProfileParameter(Parameter):
                raise ValueError("Upper bounds must be a scalar or array like with length equivalent to rbf values")
         self._upper_bounds = ub
 
-        if self.variable_days_of_year_range > 0:
+        if variable_days_lower_bounds is not None and variable_days_upper_bounds is not None:
+            if np.any(np.array(variable_days_lower_bounds, dtype=np.int32) <=1 ):
+                raise ValueError("Lower bound cannot be <= 1.")
+
+            if np.any(np.array(variable_days_upper_bounds, dtype=np.int32) > 365):
+                raise ValueError("The upper bound cannot be > 365")
+
+            for l2, u1 in zip(variable_days_lower_bounds[1:], variable_days_upper_bounds[:-1]):
+
+                if u1 >= l2:
+                    raise ValueError("Upper and lower bounds of the variable days range cannot overlap")
+
+            self.integer_size = len(values) - 1
+            self._doy_lower_bounds = np.array(variable_days_lower_bounds, dtype=np.int32)
+            self._doy_upper_bounds = np.array(variable_days_upper_bounds, dtype=np.int32)
+
+        elif self.variable_days_of_year_range > 0:
             if np.any(np.diff(self.days_of_year) <= 2*self.variable_days_of_year_range):
                 raise ValueError(f"The days of the year are too close together for the given "
                                  f"`variable_days_of_year_range`. This could cause the optimised days"
