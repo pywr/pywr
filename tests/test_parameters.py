@@ -2266,12 +2266,15 @@ class TestRbfProfileParameter:
 
     @pytest.mark.parametrize(
         "lower_bounds, upper_bounds",
-        [[[1, 100], [90, 300]],  # first lower bound too low
-         [[50, 100], [90, 366]], # upper bound too high
-         [[50, 100], [120, 320]]  # overlapping bounds
-        ]
+        [
+            [[1, 100], [90, 300]],  # first lower bound too low
+            [[50, 100], [90, 366]],  # upper bound too high
+            [[50, 100], [120, 320]],  # overlapping bounds
+        ],
     )
-    def test_variable_doys_bounds_error(self, simple_linear_model, lower_bounds, upper_bounds):
+    def test_variable_doys_bounds_error(
+        self, simple_linear_model, lower_bounds, upper_bounds
+    ):
 
         data = {
             "type": "rbfprofile",
