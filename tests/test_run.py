@@ -620,6 +620,18 @@ def test_annual_virtual_storage_reset_to_max_volume(reset_to_initial_volume):
         expected_volume = 195.0
     assert_allclose(licence1.volume, [expected_volume])
 
+    # Test also volume stays at initial volume is start date is after reset date
+    # but in the same year.
+    model.timestepper.start = "2015-09-01"
+    model.reset()
+    # Now reset should have occurred during the reset. So, the volume should
+    # always be based on the initial volume.
+    model.step()
+
+    expected_volume = 90.0
+
+    assert_allclose(licence1.volume, [expected_volume])
+
 
 def test_annual_virtual_storage_with_dynamic_cost():
     model = load_model("virtual_storage2.json")
@@ -761,6 +773,19 @@ class TestSeasonalVirtualStorage:
 
         # License is turned off so flow is not constrained
         assert_allclose(supply_df.loc["2015-03-01", :], 10)
+
+    def test_start_within_period(self):
+        """Test the initial volume is retained if the model start date is within the active period"""
+        model = load_model("seasonal_virtual_storage.json")
+        vs = model.nodes["licence1"]
+        vs.initial_volume = 55
+        model.timestepper.start = "2015-01-10"
+        model.timestepper.end = "2016-12-02"
+
+        model.run()
+
+        licence_df = model.recorders["licence1"].to_dataframe()
+        assert_allclose(licence_df.loc["2015-01-10", :], 45)
 
 
 class TestMonthlyVirtualStorage:
