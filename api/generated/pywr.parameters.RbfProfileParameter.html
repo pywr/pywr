@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.parameters.RbfProfileParameter &mdash; Pywr 1.28.1.dev2+gdf87af7f documentation</title>
+  <title>pywr.parameters.RbfProfileParameter &mdash; Pywr 1.28.2.dev1+ga805119e8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6d8683ef"></script>
+      <script src="../../_static/documentation_options.js?v=05766cb8"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -123,7 +123,7 @@
 <h1>pywr.parameters.RbfProfileParameter<a class="headerlink" href="#pywr-parameters-rbfprofileparameter" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pywr.parameters.RbfProfileParameter">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">RbfProfileParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">days_of_year</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">np.inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_days_of_year_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-np.inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">np.inf</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.RbfProfileParameter" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pywr.parameters.</span></span><span class="sig-name descname"><span class="pre">RbfProfileParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">days_of_year</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">np.inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_days_of_year_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_days_lower_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_days_upper_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-np.inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">np.inf</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.RbfProfileParameter" title="Link to this definition"></a></dt>
 <dd><p>Parameter which interpolates a daily profile using a radial basis function (RBF).</p>
 <p>The daily profile is computed during model <cite>reset</cite> using a radial basis function with
 day-of-year as the independent variables. The days of the year are defined by the user
@@ -149,7 +149,17 @@ year. Otherwise an array like object of length equal to the number of days of th
 </dd>
 <dt><strong>variable_days_of_year_range</strong><span class="classifier">int (default=0)</span></dt><dd><p>The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
 will cause the days of the year values to be exposed as integer variables (except the first value which
-remains at day 1). This value is bounds on those variables as maximum shift from the given <cite>days_of_year</cite>.</p>
+remains at day 1). This value is bounds on those variables as maximum shift from the given <cite>days_of_year</cite>. If
+the <cite>variable_days_lower_bounds</cite> and <cite>variable_days_upper_bounds</cite> are passed then this is not needed/will be
+ignored.</p>
+</dd>
+<dt><strong>variable_days_lower_bounds</strong><span class="classifier">iterable, int (default=None)</span></dt><dd><p>Defines the upper bounds for each of the days_of_year values (excluding the first day). If given, needs to be
+passed alongside the <cite>variable_days_upper_bounds</cite> argument. If passed, this will also be used in preference to
+the <cite>variable_days_of_year_range</cite>.</p>
+</dd>
+<dt><strong>variable_days_upper_bounds</strong><span class="classifier">iterable, int (default=None)</span></dt><dd><p>Defines the upper bounds for each of the days_of_year values (excluding the first day). If given, needs to be
+passed alongside the <cite>variable_days_lower_bounds</cite> argument. If passed, this will also be used in preference to
+the <cite>variable_days_of_year_range</cite>.</p>
 </dd>
 <dt><strong>min_value, max_value</strong><span class="classifier">float</span></dt><dd><p>Optionally cap the interpolated daily profile to a minimum and/or maximum value. The default values
 are negative and positive infinity for minimum and maximum respectively.</p>
