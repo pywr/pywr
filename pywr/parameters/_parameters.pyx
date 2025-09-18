@@ -1010,11 +1010,17 @@ cdef class RbfProfileParameter(Parameter):
     variable_days_of_year_range : int (default=0)
         The maximum bounds (positive or negative) for the days of year during optimisation. A non-zero value
         will cause the days of the year values to be exposed as integer variables (except the first value which
-        remains at day 1). This value is bounds on those variables as maximum shift from the given `days_of_year`.
+        remains at day 1). This value is bounds on those variables as maximum shift from the given `days_of_year`. If
+        the `variable_days_lower_bounds` and `variable_days_upper_bounds` are passed then this is not needed/will be
+        ignored.
     variable_days_lower_bounds : iterable, int (default=None)
-        Defines the upper bounds for each of the days_of_year values (excluding the first day)
+        Defines the upper bounds for each of the days_of_year values (excluding the first day). If given, needs to be
+        passed alongside the `variable_days_upper_bounds` argument. If passed, this will also be used in preference to
+        the `variable_days_of_year_range`.
     variable_days_upper_bounds : iterable, int (default=None)
-        Defines the upper bounds for each of the days_of_year values (excluding the first day)
+        Defines the upper bounds for each of the days_of_year values (excluding the first day). If given, needs to be
+        passed alongside the `variable_days_lower_bounds` argument. If passed, this will also be used in preference to
+        the `variable_days_of_year_range`.
     min_value, max_value : float
         Optionally cap the interpolated daily profile to a minimum and/or maximum value. The default values
         are negative and positive infinity for minimum and maximum respectively.
