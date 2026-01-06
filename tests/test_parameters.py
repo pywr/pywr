@@ -2264,6 +2264,58 @@ class TestRbfProfileParameter:
         ub = np.array([120, 220, 320], dtype=np.int32)
         np.testing.assert_allclose(p.get_integer_upper_bounds(), ub)
 
+    @pytest.mark.parametrize(
+        "lower_bounds, upper_bounds",
+        [
+            [[1, 100], [90, 300]],  # first lower bound too low
+            [[50, 100], [90, 366]],  # upper bound too high
+            [[50, 100], [120, 320]],  # overlapping bounds
+        ],
+    )
+    def test_variable_doys_bounds_error(
+        self, simple_linear_model, lower_bounds, upper_bounds
+    ):
+
+        data = {
+            "type": "rbfprofile",
+            "days_of_year": [1, 90, 200],
+            "values": [0.5, 0.7, 0.5],
+            "variable_days_lower_bounds": lower_bounds,
+            "variable_days_upper_bounds": upper_bounds,
+            "is_variable": True,
+        }
+
+        with pytest.raises(ValueError):
+            load_parameter(simple_linear_model, data)
+
+    def test_variable_doys_bounds_api(self, simple_linear_model):
+
+        data = {
+            "type": "rbfprofile",
+            "days_of_year": [1, 90, 200],
+            "values": [0.5, 0.7, 0.5],
+            "variable_days_lower_bounds": [50, 150],
+            "variable_days_upper_bounds": [100, 250],
+        }
+
+        p = load_parameter(simple_linear_model, data)
+        assert p.double_size == 3
+        assert p.integer_size == 2
+
+        new_values = np.random.rand(p.double_size)
+        p.set_double_variables(new_values)
+        np.testing.assert_allclose(p.get_double_variables(), new_values)
+
+        new_doys = np.array([75, 225], dtype=np.int32)
+        p.set_integer_variables(new_doys)
+        np.testing.assert_allclose(p.get_integer_variables(), new_doys)
+
+        lb = np.array([50, 150], dtype=np.int32)
+        np.testing.assert_allclose(p.get_integer_lower_bounds(), lb)
+
+        ub = np.array([100, 250], dtype=np.int32)
+        np.testing.assert_allclose(p.get_integer_upper_bounds(), ub)
+
     def test_too_close_doys_error(self, simple_linear_model):
         """Test that setting days of the year too close together for optimisation raises an error."""
 

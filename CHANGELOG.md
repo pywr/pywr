@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.29.0] - 2025-09-19
+
+### 🚀 Features
+
+- Allow radial basis function day of year bounds to be specified ([#1166](https://github.com/pywr/pywr/issues/1166))
+
+### 🐛 Bug Fixes
+
+- Do not reset AVS if simulation starts after reset day. ([#1167](https://github.com/pywr/pywr/issues/1167))
+
 ## [1.28.1] - 2025-08-07
 
 ### 🐛 Bug Fixes

@@ -624,6 +624,13 @@ class AnnualVirtualStorage(VirtualStorage):
     def before(self, ts):
         super(AnnualVirtualStorage, self).before(ts)
 
+        if ts.index == 0:
+            if ts.month > self.reset_month or (
+                ts.month == self.reset_month and ts.day > self.reset_day
+            ):
+                # Assume we reset before the model started
+                self._last_reset_year = ts.year
+
         # Reset the storage volume if necessary
         if ts.year != self._last_reset_year:
             # I.e. we're in a new year and ...
