@@ -7,7 +7,6 @@ from platypus import NSGAII, ProcessPoolEvaluator
 import os
 import numpy as np
 
-
 TEST_FOLDER = os.path.dirname(__file__)
 
 

@@ -3,6 +3,7 @@
 Test the Recorder object API
 
 """
+
 import pywr.core
 from pywr.core import Model, Input, Output, Scenario, AggregatedNode
 import numpy as np
