@@ -5,11 +5,11 @@ from pywr.recorders import TablesRecorder
 import numpy as np
 from matplotlib import pyplot as plt
 import click
-import time
+from pathlib import Path
 import json
 import pandas
 
-MODEL_FILENAME = "thames.json"
+MODEL_FILENAME = Path(__file__).parent / "thames.json"
 
 
 @click.group()
