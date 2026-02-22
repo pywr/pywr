@@ -655,8 +655,8 @@ def test_timestep_days_in_year_methods(
     simple_linear_model.step()
 
     ts = simple_linear_model.timestepper.current
-    assert days_in_current_year == ts.days_in_current_year()
-    assert days_in_next_year == ts.days_in_next_year()
+    np.testing.assert_allclose(days_in_current_year, ts.days_in_current_year())
+    np.testing.assert_allclose(days_in_next_year, ts.days_in_next_year())
 
 
 class TestSpecifyingSolver:

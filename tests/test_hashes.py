@@ -3,7 +3,6 @@ import pytest
 from pywr import hashes
 from pywr.model import Model
 
-
 TEST_FOLDER = os.path.dirname(__file__)
 
 
