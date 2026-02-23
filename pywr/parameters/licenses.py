@@ -151,7 +151,7 @@ AnnualLicense.register()
 
 
 class AnnualExponentialLicense(AnnualLicense):
-    """An annual license that returns a value based on an exponential function of the license's current state.
+    r"""An annual license that returns a value based on an exponential function of the license's current state.
 
     The exponential function takes the form,
 
@@ -191,7 +191,7 @@ AnnualExponentialLicense.register()
 
 
 class AnnualHyperbolaLicense(AnnualLicense):
-    """An annual license that returns a value based on an hyperbola (1/x) function of the license's current state.
+    r"""An annual license that returns a value based on an hyperbola (1/x) function of the license's current state.
 
     The hyperbola function takes the form,
 
