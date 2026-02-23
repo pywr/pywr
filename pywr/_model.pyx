@@ -283,7 +283,7 @@ class Model(object):
         path : str (optional)
             Path to the model document for relative path names.
         **kwargs
-            Extra keyword arguments passed to `_load_from_dict`
+            Extra keyword arguments passed to `load_from_dict`
         """
         if isinstance(data, (str, bytes, os.PathLike)):
             # argument is a filename
