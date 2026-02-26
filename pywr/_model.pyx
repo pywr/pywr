@@ -200,7 +200,7 @@ class Model(object):
         return self.graph.edges()
 
     @classmethod
-    def loads(cls, data, model=None, path=None, **kwargs):
+    def loads(cls, data, model=None, path=None, **kwargs) -> "Model":
         """Read JSON data from a string and parse it as a model document"""
         try:
             data = json.loads(data)
@@ -270,7 +270,7 @@ class Model(object):
         return None  # data modified in-place
 
     @classmethod
-    def load(cls, data: str | bytes | os.PathLike[str] | os.PathLike[bytes] | IOBase | Dict[str, Any], model=None, path=None, **kwargs):
+    def load(cls, data: str | bytes | os.PathLike[str] | os.PathLike[bytes] | IOBase | Dict[str, Any], model=None, path=None, **kwargs) -> "Model":
         """Load an existing model from a file, file-like object, or dictionary.
 
         Parameters
@@ -302,12 +302,12 @@ class Model(object):
         return cls.load_from_dict(data, model=model, path=path, **kwargs)
 
     @classmethod
-    def _load_from_dict(cls, *args, **kwargs):
+    def _load_from_dict(cls, *args, **kwargs) -> "Model":
         warnings.warn("`_load_from_dict` is deprecated and will be removed in a future version. Please use `load_from_dict` instead.", DeprecationWarning)
-        cls.load_from_dict(*args, **kwargs)
+        return cls.load_from_dict(*args, **kwargs)
 
     @classmethod
-    def load_from_dict(cls, data: Dict[str, Any], model=None, path=None, solver=None, solver_args=None):
+    def load_from_dict(cls, data: Dict[str, Any], model=None, path=None, solver=None, solver_args=None) -> "Model":
         """Load data from a dictionary.
 
         Parameters
