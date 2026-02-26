@@ -73,15 +73,35 @@ class MultiModel:
         sub_model_paths = data["models"]
         for sub_model_definition in sub_model_paths:
             sub_model_name = sub_model_definition["name"]
-            sub_model_filename = sub_model_definition["filename"]
-            sub_model_path = sub_model_definition.get("path", None)
+            sub_model_filename = sub_model_definition.get("filename", None)
+            sub_model_data = sub_model_definition.get("data", None)
             sub_model_solver = sub_model_definition.get("solver", solver)
-            if path is not None:
-                sub_model_filename = os.path.join(path, sub_model_filename)
 
-            sub_model = Model.load(
-                sub_model_filename, path=sub_model_path, solver=sub_model_solver
-            )
+            if sub_model_filename is not None and sub_model_data is not None:
+                raise ValueError(
+                    f"Sub-model definition for '{sub_model_name}' cannot have both 'filename' and 'data' fields."
+                )
+
+            if sub_model_filename is not None:
+                sub_model_path = sub_model_definition.get("path", None)
+
+                if path is not None:
+                    sub_model_filename = os.path.join(path, sub_model_filename)
+
+                sub_model = Model.load(
+                    sub_model_filename, path=sub_model_path, solver=sub_model_solver
+                )
+            elif sub_model_data is not None:
+                sub_model_path = sub_model_definition.get("path", path)
+
+                sub_model = Model.load(
+                    sub_model_data, path=sub_model_path, solver=sub_model_solver
+                )
+            else:
+                raise ValueError(
+                    f"Sub-model definition for '{sub_model_name}' must have either 'filename' or 'data' field."
+                )
+
             sub_model.timestepper.start = timestepper_data["start"]
             sub_model.timestepper.end = timestepper_data["end"]
             sub_model.timestepper.timestep = timestepper_data["timestep"]
