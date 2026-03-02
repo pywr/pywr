@@ -559,6 +559,14 @@ def test_timestep_repr():
     assert "2015-01-05" in str(res.timestep)
 
 
+def test_load_from_path():
+    from pathlib import Path
+
+    filename = Path(TEST_FOLDER) / "models" / "simple1.json"
+    model = Model.load(filename)
+    _ = model.run()
+
+
 def test_virtual_storage_cost():
     """VirtualStorage doesn't (currently) implement its cost attribute"""
     model = Model()
