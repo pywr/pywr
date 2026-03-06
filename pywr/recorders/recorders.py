@@ -729,7 +729,7 @@ class TablesRecorder2(Recorder):
 
     This Recorder is an extension of the original 'TablesRecorder'. It creates
     multiple CArrays in the HDF file for every node passed to the
-    constructor. Each node has a CArray for flow, max flow/volume, min flow/volume.
+    constructor. Each node has a CArray for flow/volume, max flow/volume, min flow/volume.
     This enables downstream processing to calculate statistics such as deficit and
     utilisation. Each CArray stores the data for all scenarios on the specific node.
     This is useful for analysis of Node statistics across multiple scenarios.
@@ -1166,7 +1166,9 @@ class TablesRecorder2(Recorder):
                     ca[idx, :] = np.reshape(a, scenario_shape)
                 else:
                     raise ValueError(
-                        "Unrecognised Node and attribute type. Node:'{}', Attribute: '{}' for TablesRecorder".format(type(node), attr)
+                        "Unrecognised Node and attribute type. Node:'{}', Attribute: '{}' for TablesRecorder".format(
+                            type(node), attr
+                        )
                     )
 
         if self._routes_flow_array is not None:

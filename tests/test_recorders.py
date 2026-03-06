@@ -1782,23 +1782,27 @@ class TestTablesRecorder2:
         import tables
 
         expected_flows = {
-            'Input': {
+            "Input": {
                 "max_flow": [[10, 10], [20, 20], [30, 30], [40, 40]],
                 "flow": [[10, 10], [20, 20], [20, 30], [20, 40]],
                 "min_flow": [[0, 0], [0, 0], [0, 0], [0, 0]],
             },
-            'Link': {
-                "max_flow": [[np.inf, np.inf], [np.inf, np.inf], [np.inf, np.inf], [np.inf, np.inf]],
+            "Link": {
+                "max_flow": [
+                    [np.inf, np.inf],
+                    [np.inf, np.inf],
+                    [np.inf, np.inf],
+                    [np.inf, np.inf],
+                ],
                 "flow": [[10, 10], [20, 20], [20, 30], [20, 40]],
                 "min_flow": [[0, 0], [0, 0], [0, 0], [0, 0]],
             },
-            'Output': {
+            "Output": {
                 "max_flow": [[20, 40], [20, 40], [20, 40], [20, 40]],
                 "flow": [[10, 10], [20, 20], [20, 30], [20, 40]],
                 "min_flow": [[0, 0], [0, 0], [0, 0], [0, 0]],
             },
         }
-
 
         with tables.open_file(str(h5file), "w") as h5f:
             rec = TablesRecorder2(model, h5f)
@@ -1844,20 +1848,20 @@ class TestTablesRecorder2:
         import tables
 
         expected_flows = {
-            'Input': {
+            "Input": {
                 "max_flow": [10, 40],
                 "flow": [10, 40],
                 "min_flow": [0, 0],
             },
-            'Link': {
+            "Link": {
                 "max_flow": [np.inf, np.inf],
                 "flow": [10, 40],
                 "min_flow": [0, 0],
             },
-            'Output': {
+            "Output": {
                 "max_flow": [20, 40],
                 "flow": [10, 40],
-                "min_flow": [0,  0],
+                "min_flow": [0, 0],
             },
         }
 
@@ -1870,7 +1874,9 @@ class TestTablesRecorder2:
                 for node_attr in ("max_flow", "flow", "min_flow"):
                     ca = h5f.get_node(f"/{node_name}", node_attr)
                     assert ca.shape == (365, 2)
-                    np.testing.assert_allclose(ca[0, ...], expected_flows[node_name][node_attr])
+                    np.testing.assert_allclose(
+                        ca[0, ...], expected_flows[node_name][node_attr]
+                    )
 
             # check combinations table exists
             combinations = h5f.get_node("/scenario_combinations")
@@ -1943,12 +1949,12 @@ class TestTablesRecorder2:
         import tables
 
         expected_values = {
-            'Input': {"min_flow": 0.0, 'max_flow': 10.0, 'flow': 10.0},
-            'Link': {"min_flow": 0.0, 'max_flow': np.inf, 'flow': 10.0},
-            'Output': {"min_flow": 0.0, 'max_flow': np.inf, 'flow': 10.0},
-            'Sum': {"min_flow": 0.0, 'max_flow': np.inf, 'flow': 20.0},
+            "Input": {"min_flow": 0.0, "max_flow": 10.0, "flow": 10.0},
+            "Link": {"min_flow": 0.0, "max_flow": np.inf, "flow": 10.0},
+            "Output": {"min_flow": 0.0, "max_flow": np.inf, "flow": 10.0},
+            "Sum": {"min_flow": 0.0, "max_flow": np.inf, "flow": 20.0},
             "max_flow": {"parameter": 10.0},
-            "name with a _ in it": {"parameter": 0.0}
+            "name with a _ in it": {"parameter": 0.0},
         }
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -2099,7 +2105,7 @@ class TestTablesRecorder2:
         url = data["recorders"]["database"]["url"]
         data["recorders"]["database"]["url"] = str(tmpdir.join(url))
 
-        data["recorders"]["database"]["type"] ='TablesRecorder2'
+        data["recorders"]["database"]["type"] = "TablesRecorder2"
         model = Model.load(data, path=path)
 
         model.timestepper.end = "2016-01-31"
