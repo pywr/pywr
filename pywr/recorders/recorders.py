@@ -721,3 +721,512 @@ class TablesRecorder(Recorder):
 
 
 TablesRecorder.register()
+
+
+class TablesRecorder2(Recorder):
+    """
+    A recorder that saves model outputs to an HDF file.
+
+    This Recorder is an extension of the original 'TablesRecorder'. It creates
+    multiple CArrays in the HDF file for every node passed to the
+    constructor. Each node has a CArray for flow/volume, max flow/volume, min flow/volume.
+    This enables downstream processing to calculate statistics such as deficit and
+    utilisation. Each CArray stores the data for all scenarios on the specific node.
+    This is useful for analysis of Node statistics across multiple scenarios.
+    Parameter values can also be optionally stored in CArrays within the file.
+
+    By default, the recorder also stores time and scenario metadata tables. The
+    time table stores a row containing index, year, month and day values for every
+    timestep. A scenario table is created containing the name and size of each
+    scenario defined for the Model. If scenario combinations are defined for the
+    model then a separate table is created that saves the scenario indices of each
+    combination. If there are no combinations but some of the scenarios have slices
+    defined then scenario slice information, including the slice start, end, and
+    step, is stored in a table.
+    """
+
+    def __init__(
+        self,
+        model,
+        h5file,
+        nodes=None,
+        parameters=None,
+        where="/",
+        time="/time",
+        routes_flows=None,
+        routes="/routes",
+        scenarios="/scenarios",
+        **kwargs,
+    ):
+        """
+
+        Parameters
+        ----------
+        model : `pywr.model.Model`
+            The model to record nodes from.
+        h5file : tables.File or filename
+            The tables file handle or filename to attach the CArray objects to. If a
+            filename is given the object will open and close the file handles.
+        nodes : iterable or None
+            Nodes to save in the tables database. Can be an iterable of Node objects or
+            node names. It can also be a iterable of tuples with a node specific where
+            keyword as the first item and a Node object or name as the second item. If
+            an iterable of tuples is provided then the node specific where keyword is
+            used in preference to the where keyword (see below).
+        parameters : iterable or None
+            Parameters to save. Similar to the nodes keyword, except refers to Parameter
+            objects or names thereof.
+        where : string
+            Default path to create the CArrays inside the database.
+        time : string
+            Default full node path to save a time tables.Table. If None no table is created.
+        scenarios : string
+            Default full node path to save a scenarios tables.Table. If None no table is created.
+        routes_flows : string
+            Relative (to `where`) node path to save the routes flow CArray. If None (default) no array is created.
+        routes : string
+            Full node path to save the routes tables.Table. If None no table is created.
+        filter_kwds : dict
+            Filter keywords to pass to tables.open_file when opening a file.
+        mode : string
+            Model argument to pass to tables.open_file. Defaults to 'w'
+        metadata : dict
+            Dict of user defined attributes to save on the root node (`root._v_attrs`)
+        create_directories : bool
+            If a file path is given and create_directories is True then attempt to make the intermediate
+            directories. This uses os.makedirs() underneath.
+        """
+        self.filter_kwds = kwargs.pop("filter_kwds", {})
+        self.mode = kwargs.pop("mode", "w")
+        self.metadata = kwargs.pop("metadata", {})
+        self.create_directories = kwargs.pop("create_directories", False)
+
+        title = kwargs.pop("title", None)
+        if title is None:
+            try:
+                title = model.metadata["title"]
+            except KeyError:
+                title = ""
+        self.title = title
+        super(TablesRecorder2, self).__init__(model, **kwargs)
+
+        self.h5file = h5file
+        self.h5store = None
+        self._arrays = {}
+        self.nodes = nodes
+        self.where = where
+        self.time = time
+        self.scenarios = scenarios
+        self.routes = routes
+        self.routes_flows = routes_flows
+
+        # Enable saving routes in the solver.
+        if routes_flows:
+            self.model.solver.save_routes_flows = True
+
+        self.parameters = []
+        if parameters:
+            for parameter in parameters:
+                self._add_parameter(parameter)
+
+        self._arrays = None
+        self._time_table = None
+        self._routes_flow_array = None
+
+    def _add_parameter(self, parameter):
+        try:
+            where, param = parameter
+        except (TypeError, ValueError):
+            where = None
+            param = parameter
+        if isinstance(param, str):
+            from ..parameters import load_parameter
+
+            param = load_parameter(self.model, param)
+        if not param.name:
+            raise ValueError("Can only record named Parameter objects")
+        if where is None:
+            name = param.name.replace("/", "_")
+            if name != param.name:
+                warnings.warn(
+                    'Recorded parameter has "/" in name, replaced with "_" to avoid creation of subgroup: {}'.format(
+                        param.name
+                    ),
+                    ParameterNameWarning,
+                )
+            where = self.where + "/" + name
+        where = where.replace("//", "/")
+        self.children.add(param)
+        self.parameters.append((where, param))
+
+    def _remove_parameter(self, parameter):
+        if isinstance(parameter, str):
+            parameter = self.model.parameters[parameter]
+        index = None
+        for n, (where, param) in enumerate(self.parameters):
+            if param is parameter:
+                index = n
+        if index is None:
+            raise KeyError("Parameter is not in TablesRecorder: {}".format(parameter))
+        self.parameters.pop(index)
+        self.children.remove(parameter)
+
+    @classmethod
+    def load(cls, model, data):
+        import os
+
+        url = data.pop("url")
+        if not os.path.isabs(url) and model.path is not None:
+            url = os.path.join(model.path, url)
+        return cls(model, url, **data)
+
+    @staticmethod
+    def _node_attribute(node) -> str:
+        """Return the type of attribute recorded from a particular "node" type."""
+        from pywr.parameters import Parameter, IndexParameter
+
+        if isinstance(node, AbstractStorage):
+            return ("max_volume", "volume", "min_volume")
+        elif isinstance(node, AbstractNode):
+            return ("max_flow", "flow", "min_flow")
+        elif isinstance(node, IndexParameter):
+            return (None, "parameter-index", None)
+        elif isinstance(node, Parameter):
+            return (None, "parameter", None)
+        else:
+            raise ValueError(
+                "Unrecognised Node type '{}' for TablesRecorder".format(type(node))
+            )
+
+    def setup(self):
+        """
+        Setup the tables
+        """
+        from pywr.parameters import IndexParameter
+        import tables
+
+        # The first dimension is the number of timesteps.
+        # The following dimensions are sized per scenario
+        scenario_shape = list(self.model.scenarios.shape)
+        shape = [len(self.model.timestepper)] + scenario_shape
+        self.h5store = H5Store(
+            self.h5file,
+            self.filter_kwds,
+            self.mode,
+            title=self.title,
+            metadata=self.metadata,
+            create_directories=self.create_directories,
+        )
+
+        # Create a CArray for each node
+        self._arrays = {}
+
+        # Default to all nodes if None given.
+        if self.nodes is None:
+            nodes = [
+                ((self.where + "/" + n.name).replace("//", "/"), n)
+                for n in self.model.nodes.values()
+            ]
+        else:
+            nodes = []
+            for n in self.nodes:
+                try:
+                    where, node = n
+                except (TypeError, ValueError):
+                    node = n
+                    where = self.where + "/" + node
+
+                # Accept a str, and lookup node by name instead.
+                if isinstance(node, str):
+                    node = self.model.nodes[node]
+                # Otherwise assume it is a node object anyway
+
+                where = where.replace("//", "/")
+                nodes.append((where, node))
+
+        if self.parameters is not None:
+            nodes.extend(self.parameters)
+
+        self._nodes = nodes
+
+        for where, node in self._nodes:
+            if isinstance(node, IndexParameter):
+                atom = tables.Int32Atom()
+            else:
+                atom = tables.Float64Atom()
+            group_name = where
+            if group_name == "":
+                group_name = "/"
+
+            node_attributes = self._node_attribute(node)
+            for attr in node_attributes:
+                if attr is not None:
+                    carray = self.h5store.file.create_carray(
+                        group_name, attr, atom, shape, createparents=True
+                    )
+                    # Save some metadata about the type of data this is
+                    carray._v_attrs["pywr-attribute"] = attr
+                    carray._v_attrs["pywr-type"] = node.__class__.__name__
+
+        # Create scenario tables
+        if self.scenarios is not None:
+            group_name, node_name = self.scenarios.rsplit("/", 1)
+            if group_name == "":
+                group_name = "/"
+            description = {
+                # TODO make string length configurable
+                "name": tables.StringCol(1024),
+                "size": tables.Int64Col(),
+            }
+            tbl = self.h5store.file.create_table(
+                group_name, node_name, description=description, createparents=True
+            )
+            # Now add the scenarios
+            entry = tbl.row
+            for scenario in self.model.scenarios.scenarios:
+                entry["name"] = scenario.name.encode("utf-8")
+                entry["size"] = scenario.size
+                entry.append()
+            tbl.flush()
+
+            if self.model.scenarios.user_combinations is not None:
+                description = {
+                    s.name: tables.Int64Col() for s in self.model.scenarios.scenarios
+                }
+                tbl = self.h5store.file.create_table(
+                    group_name,
+                    "scenario_combinations",
+                    description=description,
+                    createparents=True,
+                )
+                entry = tbl.row
+                for comb in self.model.scenarios.user_combinations:
+                    for s, i in zip(self.model.scenarios.scenarios, comb):
+                        entry[s.name] = i
+                    entry.append()
+                tbl.flush()
+            elif any([s.slice for s in self.model.scenarios.scenarios]):
+                # Slices are only applied in a model run if there are no user combinations
+                description = {
+                    "name": tables.StringCol(1024),
+                    "start": tables.Int64Col(),
+                    "stop": tables.Int64Col(),
+                    "step": tables.Int64Col(),
+                }
+                tbl = self.h5store.file.create_table(
+                    group_name,
+                    "scenario_slices",
+                    description=description,
+                    createparents=True,
+                )
+
+                entry = tbl.row
+                for scenario in self.model.scenarios.scenarios:
+                    if scenario.slice is not None:
+                        entry["name"] = scenario.name.encode("utf-8")
+                        entry["start"] = scenario.slice.start
+                        entry["stop"] = scenario.slice.stop
+                        if scenario.slice.step:
+                            entry["step"] = scenario.slice.step
+                        else:
+                            entry["step"] = 1
+                        entry.append()
+                tbl.flush()
+
+        self.h5store = None
+
+    def reset(self):
+        import tables
+
+        mode = "r+"  # always need to append, as file already created in setup
+        self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
+        self._arrays = {}
+        for where, node in self._nodes:
+            self._arrays[node] = self.h5store.file.get_node(where)
+
+        self._time_table = None
+        # Create time table
+        # This is created in reset so that the table is always recreated
+        if self.time is not None:
+            group_name, node_name = self.time.rsplit("/", 1)
+            if group_name == "":
+                group_name = "/"
+            description = {
+                c: tables.Int64Col() for c in ("year", "month", "day", "index")
+            }
+
+            try:
+                self.h5store.file.remove_node(group_name, node_name)
+            except tables.NoSuchNodeError:
+                pass
+            finally:
+                self._time_table = self.h5store.file.create_table(
+                    group_name, node_name, description=description, createparents=True
+                )
+
+        self._routes_flow_array = None
+        if self.routes_flows is not None:
+            # Create a CArray for the flows
+            # The first dimension is the number of timesteps.
+            # The second dimension is the number of routes
+            # The following dimensions are sized per scenario
+            scenario_shape = list(self.model.scenarios.shape)
+            shape = [
+                len(self.model.timestepper),
+                len(self.model.solver.routes),
+            ] + scenario_shape
+            atom = tables.Float64Atom()
+
+            try:
+                self.h5store.file.remove_node(self.where, self.routes_flows)
+            except tables.NoSuchNodeError:
+                pass
+            finally:
+                self._routes_flow_array = self.h5store.file.create_carray(
+                    self.where, self.routes_flows, atom, shape, createparents=True
+                )
+
+            # Create routes table. This must be done in reset
+            if self.routes is not None:
+                group_name, node_name = self.routes.rsplit("/", 1)
+                if group_name == "":
+                    group_name = "/"
+
+                description = {
+                    # TODO make string length configurable
+                    "start": tables.StringCol(1024),
+                    "end": tables.StringCol(1024),
+                }
+                try:
+                    self.h5store.file.remove_node(group_name, node_name)
+                except tables.NoSuchNodeError:
+                    pass
+                finally:
+                    tbl = self.h5store.file.create_table(
+                        group_name,
+                        node_name,
+                        description=description,
+                        createparents=True,
+                    )
+
+                entry = tbl.row
+                for route in self.model.solver.routes:
+                    node_first = route[0]
+                    node_last = route[-1]
+
+                    if node_first.parent is not None:
+                        node_first = node_first.parent
+                    if node_last.parent is not None:
+                        node_last = node_last.parent
+
+                    entry["start"] = node_first.name.encode("utf-8")
+                    entry["end"] = node_last.name.encode("utf-8")
+                    entry.append()
+
+                tbl.flush()
+
+    def after(self):
+        """
+        Save data to the tables
+        """
+        from pywr._core import AbstractNode, AbstractStorage
+        from pywr.parameters import Parameter, IndexParameter
+
+        scenario_shape = list(self.model.scenarios.shape)
+        ts = self.model.timestepper.current
+        idx = ts.index
+
+        if self._time_table is not None:
+            entry = self._time_table.row
+            entry["year"] = ts.year
+            entry["month"] = ts.month
+            entry["day"] = ts.day
+            entry["index"] = idx
+            entry.append()
+
+        for node, node_attrs in self._arrays.items():
+            for attr, ca in node_attrs._v_children.items():
+                if attr == "max_volume":
+                    ca[idx, :] = np.reshape(node.get_all_max_volume(), scenario_shape)
+                elif attr == "min_volume":
+                    ca[idx, :] = np.reshape(node.get_all_min_volume(), scenario_shape)
+                elif attr == "volume":
+                    ca[idx, :] = np.reshape(node.volume, scenario_shape)
+                elif attr == "max_flow":
+                    ca[idx, :] = np.reshape(node.get_all_max_flow(), scenario_shape)
+                elif attr == "min_flow":
+                    ca[idx, :] = np.reshape(node.get_all_min_flow(), scenario_shape)
+                elif attr == "flow":
+                    ca[idx, :] = np.reshape(node.flow, scenario_shape)
+                elif attr == "parameter-index":
+                    a = node.get_all_indices()
+                    ca[idx, :] = np.reshape(a, scenario_shape)
+                elif attr == "parameter":
+                    a = node.get_all_values()
+                    ca[idx, :] = np.reshape(a, scenario_shape)
+                else:
+                    raise ValueError(
+                        "Unrecognised Node and attribute type. Node:'{}', Attribute: '{}' for TablesRecorder".format(
+                            type(node), attr
+                        )
+                    )
+
+        if self._routes_flow_array is not None:
+            routes_shape = [
+                len(self.model.solver.routes),
+            ] + scenario_shape
+            self._routes_flow_array[idx, ...] = np.reshape(
+                self.model.solver.routes_flows_array.T, routes_shape
+            )
+
+    def finish(self):
+        if self._time_table is not None:
+            self._time_table.flush()
+        self.h5store = None
+        self._arrays = {}
+        self._routes_flow_array = None
+
+    @staticmethod
+    def generate_dataframes(h5file, time="/time", scenarios="/scenarios"):
+        """Helper function to generate pandas dataframes from `TablesRecorder` data.
+
+        Parameters
+        h5file : str
+            A path to a H5 file created by `TablesRecorder`.
+        time : str
+            The internal table that contains the time information (default "/time")
+        scenarios : str
+            The internal table that contains the scenario information (default "/scenarios")
+        """
+        store = H5Store(h5file, mode="r")
+
+        # Get the time information
+        if time:
+            time_table = store.file.get_node(time)
+            index = pandas.to_datetime(
+                {k: time_table.col(k) for k in ("year", "month", "day")}
+            )
+        else:
+            index = None
+
+        # Get the scenario information
+        if scenarios:
+            scenarios_table = store.file.get_node(scenarios)
+            scenarios = pandas.DataFrame(
+                {k: scenarios_table.col(k) for k in ("name", "size")}
+            )
+            columns = pandas.MultiIndex.from_product(
+                [range(row["size"]) for _, row in scenarios.iterrows()],
+                names=[row["name"].decode() for _, row in scenarios.iterrows()],
+            )
+        else:
+            columns = None
+
+        for node in store.file.walk_nodes("/", "CArray"):
+            data = node.read()
+            data = data.reshape((data.shape[0], -1))
+            df = pandas.DataFrame(data, index=index, columns=columns)
+            yield node._v_name, df
+
+
+TablesRecorder2.register()
