@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Utilities &mdash; Pywr 1.29.1.dev6+g17c8493d0 documentation</title>
+  <title>Utilities &mdash; Pywr 1.29.1.dev7+g2bfa1d463 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=848610ed"></script>
+      <script src="../_static/documentation_options.js?v=061ac11a"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -128,6 +128,28 @@ bisection parameter is the final result.</p>
 </dl>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pywr.utils.bisect.BisectionSearchModel.load_from_dict">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">load_from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">cls,</span> <span class="pre">dict</span> <span class="pre">data:</span> <span class="pre">Dict[str,</span> <span class="pre">Any],</span> <span class="pre">model=None,</span> <span class="pre">path=None,</span> <span class="pre">solver=None,</span> <span class="pre">solver_args=None</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="s"><span class="pre">'Model'</span></span></span></span><a class="headerlink" href="#pywr.utils.bisect.BisectionSearchModel.load_from_dict" title="Link to this definition"></a></dt>
+<dd><p>Load data from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">dict</span></dt><dd><p>The model data as a dictionary.</p>
+</dd>
+<dt><strong>model</strong><span class="classifier">Model (optional)</span></dt><dd><p>An existing model to append to.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str (optional)</span></dt><dd><p>Path to the model document for relative path names.</p>
+</dd>
+<dt><strong>solver</strong><span class="classifier">Solver (optional)</span></dt><dd><p>The solver to use for the model. If None, the first available solver is used.</p>
+</dd>
+<dt><strong>solver_args</strong><span class="classifier">dict (optional)</span></dt><dd><p>Additional arguments to pass to the solver constructor.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.utils.bisect.BisectionSearchModel.run">
 <span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywr.utils.bisect.BisectionSearchModel.run" title="Link to this definition"></a></dt>
