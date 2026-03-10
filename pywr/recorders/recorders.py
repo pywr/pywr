@@ -890,7 +890,7 @@ class TablesRecorder2(Recorder):
         elif isinstance(node, AbstractNode):
             return ("max_flow", "flow", "min_flow")
         elif isinstance(node, IndexParameter):
-            return (None, "parameter-index", None)
+            return (None, "parameter_index", None)
         elif isinstance(node, Parameter):
             return (None, "parameter", None)
         else:
@@ -1144,26 +1144,37 @@ class TablesRecorder2(Recorder):
             entry["index"] = idx
             entry.append()
 
-        for node, node_attrs in self._arrays.items():
-            for attr, ca in node_attrs._v_children.items():
+        for node, arrays in self._arrays.items():
+            attrs = self._node_attribute(node)
+            for attr in attrs:
+                if attr is None:
+                    continue
                 if attr == "max_volume":
-                    ca[idx, :] = np.reshape(node.get_all_max_volume(), scenario_shape)
+                    arrays.max_volume[idx, :] = np.reshape(
+                        node.get_all_max_volume(), scenario_shape
+                    )
                 elif attr == "min_volume":
-                    ca[idx, :] = np.reshape(node.get_all_min_volume(), scenario_shape)
+                    arrays.min_volume[idx, :] = np.reshape(
+                        node.get_all_min_volume(), scenario_shape
+                    )
                 elif attr == "volume":
-                    ca[idx, :] = np.reshape(node.volume, scenario_shape)
+                    arrays.volume[idx, :] = np.reshape(node.volume, scenario_shape)
                 elif attr == "max_flow":
-                    ca[idx, :] = np.reshape(node.get_all_max_flow(), scenario_shape)
+                    arrays.max_flow[idx, :] = np.reshape(
+                        node.get_all_max_flow(), scenario_shape
+                    )
                 elif attr == "min_flow":
-                    ca[idx, :] = np.reshape(node.get_all_min_flow(), scenario_shape)
+                    arrays.min_flow[idx, :] = np.reshape(
+                        node.get_all_min_flow(), scenario_shape
+                    )
                 elif attr == "flow":
-                    ca[idx, :] = np.reshape(node.flow, scenario_shape)
-                elif attr == "parameter-index":
+                    arrays.flow[idx, :] = np.reshape(node.flow, scenario_shape)
+                elif attr == "parameter_index":
                     a = node.get_all_indices()
-                    ca[idx, :] = np.reshape(a, scenario_shape)
+                    arrays.parameter_index[idx, :] = np.reshape(a, scenario_shape)
                 elif attr == "parameter":
                     a = node.get_all_values()
-                    ca[idx, :] = np.reshape(a, scenario_shape)
+                    arrays.parameter[idx, :] = np.reshape(a, scenario_shape)
                 else:
                     raise ValueError(
                         "Unrecognised Node and attribute type. Node:'{}', Attribute: '{}' for TablesRecorder".format(
