@@ -66,6 +66,7 @@
       ~Node.parent
       ~Node.prev_flow
       ~Node.recorders
+      ~Node.tags
       ~Node.virtual
    
    

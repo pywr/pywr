@@ -61,6 +61,7 @@
       ~AggregatedNode.parent
       ~AggregatedNode.prev_flow
       ~AggregatedNode.recorders
+      ~AggregatedNode.tags
       ~AggregatedNode.virtual
    
    

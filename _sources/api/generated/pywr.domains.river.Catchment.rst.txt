@@ -67,6 +67,7 @@
       ~Catchment.parent
       ~Catchment.prev_flow
       ~Catchment.recorders
+      ~Catchment.tags
       ~Catchment.virtual
    
    

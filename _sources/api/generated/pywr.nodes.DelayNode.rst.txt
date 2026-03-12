@@ -66,6 +66,7 @@
       ~DelayNode.parent
       ~DelayNode.prev_flow
       ~DelayNode.recorders
+      ~DelayNode.tags
       ~DelayNode.virtual
    
    

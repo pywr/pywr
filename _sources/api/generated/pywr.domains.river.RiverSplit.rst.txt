@@ -68,6 +68,7 @@
       ~RiverSplit.parent
       ~RiverSplit.prev_flow
       ~RiverSplit.recorders
+      ~RiverSplit.tags
       ~RiverSplit.virtual
    
    

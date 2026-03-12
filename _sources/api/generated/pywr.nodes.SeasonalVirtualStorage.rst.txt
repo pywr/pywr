@@ -68,6 +68,7 @@
       ~SeasonalVirtualStorage.parent
       ~SeasonalVirtualStorage.prev_flow
       ~SeasonalVirtualStorage.recorders
+      ~SeasonalVirtualStorage.tags
       ~SeasonalVirtualStorage.virtual
       ~SeasonalVirtualStorage.volume
    

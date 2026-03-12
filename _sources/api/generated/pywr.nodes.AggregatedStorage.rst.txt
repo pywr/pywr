@@ -51,6 +51,7 @@
       ~AggregatedStorage.prev_flow
       ~AggregatedStorage.recorders
       ~AggregatedStorage.storage_nodes
+      ~AggregatedStorage.tags
       ~AggregatedStorage.virtual
       ~AggregatedStorage.volume
    

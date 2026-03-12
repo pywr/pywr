@@ -66,6 +66,7 @@
       ~Output.parent
       ~Output.prev_flow
       ~Output.recorders
+      ~Output.tags
       ~Output.virtual
    
    

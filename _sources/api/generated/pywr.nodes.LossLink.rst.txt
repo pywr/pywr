@@ -66,6 +66,7 @@
       ~LossLink.parent
       ~LossLink.prev_flow
       ~LossLink.recorders
+      ~LossLink.tags
       ~LossLink.virtual
    
    

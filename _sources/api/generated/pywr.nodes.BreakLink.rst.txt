@@ -66,6 +66,7 @@
       ~BreakLink.parent
       ~BreakLink.prev_flow
       ~BreakLink.recorders
+      ~BreakLink.tags
       ~BreakLink.virtual
    
    

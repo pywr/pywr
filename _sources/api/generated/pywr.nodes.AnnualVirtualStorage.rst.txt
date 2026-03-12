@@ -68,6 +68,7 @@
       ~AnnualVirtualStorage.parent
       ~AnnualVirtualStorage.prev_flow
       ~AnnualVirtualStorage.recorders
+      ~AnnualVirtualStorage.tags
       ~AnnualVirtualStorage.virtual
       ~AnnualVirtualStorage.volume
    

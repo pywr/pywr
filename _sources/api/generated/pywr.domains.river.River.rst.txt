@@ -66,6 +66,7 @@
       ~River.parent
       ~River.prev_flow
       ~River.recorders
+      ~River.tags
       ~River.virtual
    
    

@@ -70,6 +70,7 @@
       ~RiverGauge.parent
       ~RiverGauge.prev_flow
       ~RiverGauge.recorders
+      ~RiverGauge.tags
       ~RiverGauge.virtual
    
    

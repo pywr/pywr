@@ -68,6 +68,7 @@
       ~PiecewiseLink.parent
       ~PiecewiseLink.prev_flow
       ~PiecewiseLink.recorders
+      ~PiecewiseLink.tags
       ~PiecewiseLink.virtual
    
    

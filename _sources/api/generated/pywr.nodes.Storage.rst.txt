@@ -68,6 +68,7 @@
       ~Storage.parent
       ~Storage.prev_flow
       ~Storage.recorders
+      ~Storage.tags
       ~Storage.virtual
       ~Storage.volume
    

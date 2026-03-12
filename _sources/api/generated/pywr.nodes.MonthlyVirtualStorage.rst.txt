@@ -68,6 +68,7 @@
       ~MonthlyVirtualStorage.parent
       ~MonthlyVirtualStorage.prev_flow
       ~MonthlyVirtualStorage.recorders
+      ~MonthlyVirtualStorage.tags
       ~MonthlyVirtualStorage.virtual
       ~MonthlyVirtualStorage.volume
    

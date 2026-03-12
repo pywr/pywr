@@ -68,6 +68,7 @@
       ~RollingVirtualStorage.parent
       ~RollingVirtualStorage.prev_flow
       ~RollingVirtualStorage.recorders
+      ~RollingVirtualStorage.tags
       ~RollingVirtualStorage.timesteps
       ~RollingVirtualStorage.virtual
       ~RollingVirtualStorage.volume
