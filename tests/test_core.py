@@ -153,6 +153,19 @@ def test_slots_connect_disconnect():
         supply1.disconnect(storage)
 
 
+def test_node_tags():
+    """Test node tags, both from kwargs and from JSON"""
+    model = Model()
+
+    node1 = Input(model, "input", tags={"tag1": "value1", "tag2": "value2"})
+    assert node1.tags["tag1"] == "value1"
+    assert node1.tags["tag2"] == "value2"
+
+    model = load_model("demand_saving2.json")
+    demand = model.nodes["Demand"]
+    assert demand.tags["demand"] == "true"
+
+
 def test_node_position():
     model = Model()
 

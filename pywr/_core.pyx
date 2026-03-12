@@ -348,6 +348,7 @@ cdef class AbstractNode:
 
         self._parent = kwargs.pop('parent', None)
         self._domain = kwargs.pop('domain', None)
+        self.tags = kwargs.pop('tags', {})
         self._recorders = []
 
         self._flow = np.empty([0], np.float64)
