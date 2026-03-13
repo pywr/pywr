@@ -1364,6 +1364,169 @@ class LossLink(Node):
         self.commit_all(self.net.flow)
 
 
+class WaterTreatmentWorks(Node):
+    """
+    A node that represents a water treatment work a componen. This combine the features of a `Losslink` to represent
+    process losses and a `PiecewiseLink` to implement a piecewise cost function for soft minimum flow constraints..
+
+    Parameters
+    ----------
+    model : `pywr.model.Model`
+    name : string
+        Name of the node.
+    max_flow : float or function (optional)
+        A maximum flow constraint on the link, e.g. 5.0
+    loss_factor : float
+        The proportion of flow that is lost through this node. Must be greater than or equal to zero. If zero
+        then no-losses are calculated. The percentage is calculated as a percentage of gross flow.
+    soft_min_flow : float or function (optional)
+        A soft minimum flow constraint on the link.
+    soft_min_flow_cost : float or function (optional)
+        The cost associated with the soft minimum flow constraint.
+    """
+
+    __parameter_attributes__ = (
+        "cost",
+        "min_flow",
+        "max_flow",
+        "soft_min_flow",
+        "soft_min_flow_cost",
+    )
+    __parameter_value_attributes__ = ("loss_factor",)
+
+    def __init__(self, model, name, **kwargs):
+        self.allow_isolated = True
+
+        output_name = "{} Output".format(name)
+        gross_name = "{} Gross".format(name)
+        net_name = "{} Net".format(name)
+        soft_min_flow = "{} Soft Min Flow".format(name)
+        agg_name = "{} Aggregated".format(name)
+
+        assert output_name not in model.nodes
+        assert gross_name not in model.nodes
+        assert net_name not in model.nodes
+        assert agg_name not in model.nodes
+
+        self.output = Output(model, name=output_name, parent=self)
+        self.gross = Link(model, name=gross_name, parent=self)
+        self.net = Link(model, name=net_name, parent=self)
+        self.soft_min = Link(model, name=soft_min_flow, parent=self)
+        self.gross.connect(self.output)
+        self.gross.connect(self.net)
+        self.net.connect(self.soft_min)
+
+        self.agg = AggregatedNode(model, name=agg_name, nodes=[self.net, self.output])
+        self.loss_factor = kwargs.pop("loss_factor", 0.0)
+
+        super().__init__(model, name, **kwargs)
+
+    def loss_factor():
+        def fget(self):
+            if self.agg.factors:
+                return self.agg.factors[1]
+            elif self.output.max_flow == 0.0:
+                return 0.0
+            else:
+                return 1.0
+
+        def fset(self, value):
+            if value == 0.0:
+                # 0% loss; no flow to the output loss node.
+                self.agg.factors = None
+                self.output.max_flow = 0.0
+            elif value == 1.0:
+                # 100% loss; all flow to the output loss node
+                self.agg.factors = None
+                self.output.max_flow = float("inf")
+                self.net.max_flow = 0.0
+            else:
+                self.output.max_flow = float("inf")
+                self.agg.factors = [1.0, float(value)]
+
+        return locals()
+
+    loss_factor = property(**loss_factor())
+
+    def min_flow():
+        def fget(self):
+            return self.net.min_flow
+
+        def fset(self, value):
+            self.net.min_flow = value
+
+        return locals()
+
+    min_flow = property(**min_flow())
+
+    def max_flow():
+        def fget(self):
+            return self.net.max_flow
+
+        def fset(self, value):
+            self.net.max_flow = value
+
+        return locals()
+
+    max_flow = property(**max_flow())
+
+    def cost():
+        def fget(self):
+            return self.net.cost
+
+        def fset(self, value):
+            self.net.cost = value
+
+        return locals()
+
+    cost = property(**cost())
+
+    def soft_min_flow():
+        def fget(self):
+            return self.soft_min_flow.max_flow
+
+        def fset(self, value):
+            self.soft_min_flow.max_flow = value
+
+        return locals()
+
+    soft_min_flow = property(**soft_min_flow())
+
+    def soft_min_flow():
+        def fget(self):
+            return self.soft_min.max_flow
+
+        def fset(self, value):
+            self.soft_min.max_flow = value
+
+        return locals()
+
+    soft_min_flow = property(**soft_min_flow())
+
+    def soft_min_flow_cost():
+        def fget(self):
+            return self.soft_min.cost
+
+        def fset(self, value):
+            self.soft_min.cost = value
+
+        return locals()
+
+    soft_min_flow_cost = property(**soft_min_flow_cost())
+
+    def iter_slots(self, slot_name=None, is_connector=True):
+        if is_connector:
+            yield self.net
+            yield self.soft_min
+        else:
+            yield self.gross
+
+    def after(self, timestep):
+        super().after(timestep)
+        # Net flow is saved to the node.
+        self.commit_all(self.net.flow)
+
+
 class ShadowStorage(Loadable, Drawable, _core.ShadowStorage, metaclass=NodeMeta):
     pass
 
