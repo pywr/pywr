@@ -1882,8 +1882,99 @@ class TestTablesRecorder2:
             combinations = h5f.get_node("/scenario_combinations")
             for i, comb in enumerate(model.scenarios.user_combinations):
                 row = combinations[i]
-                assert row["A"] == comb[0]
-                assert row["B"] == comb[1]
+                assert row[combinations.attrs.columns.index("A")] == comb[0]
+                assert row[combinations.attrs.columns.index("B")] == comb[1]
+
+    def test_multiple_scenarios_ensemble_names(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
+
+        """
+        from pywr.parameters import ConstantScenarioParameter
+
+        model = simple_linear_model
+        scA = Scenario(
+            model,
+            name="A",
+            size=4,
+            ensemble_names=["scenario A1", "scenario A2", "scenario A3", "scenario A4"],
+        )
+        scB = Scenario(
+            model, name="B", size=2, ensemble_names=["scenario B1", "scenario B2"]
+        )
+
+        otpt = model.nodes["Output"]
+        inpt = model.nodes["Input"]
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join("output.h5")
+        import tables
+
+        with tables.open_file(str(h5file), "w") as h5f:
+            rec = TablesRecorder2(model, h5f)
+
+            model.run()
+
+            scenarios = h5f.get_node("/scenarios")
+            for i, s in enumerate(model.scenarios.scenarios):
+                row = scenarios[i]
+                assert row["name"] == s.name.encode("utf-8")
+                assert row["size"] == s.size
+
+            ensemble_names = h5f.get_node("/scenario_ensemble_names")
+            col1 = ensemble_names[:, 0]
+            exp1 = np.repeat(
+                ["scenario A1", "scenario A2", "scenario A3", "scenario A4"], 2
+            )
+            for val1, ex1 in zip(col1, exp1):
+                assert val1 == ex1.encode("utf-8")
+            col2 = ensemble_names[:, 1]
+            exp2 = ["scenario B1", "scenario B2"] * 4
+            for val2, ex2 in zip(col2, exp2):
+                assert val2 == ex2.encode("utf-8")
+
+    def test_ensemble_names_with_user_combinations(self, simple_linear_model, tmpdir):
+
+        from pywr.parameters import ConstantScenarioParameter
+
+        model = simple_linear_model
+        scA = Scenario(
+            model,
+            name="A",
+            size=4,
+            ensemble_names=["scenario A1", "scenario A2", "scenario A3", "scenario A4"],
+        )
+        scB = Scenario(
+            model, name="B", size=2, ensemble_names=["scenario B1", "scenario B2"]
+        )
+
+        # Use first and last combinations
+        model.scenarios.user_combinations = [[0, 0], [3, 1]]
+
+        otpt = model.nodes["Output"]
+        inpt = model.nodes["Input"]
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join("output.h5")
+        import tables
+
+        with tables.open_file(str(h5file), "w") as h5f:
+            rec = TablesRecorder2(model, h5f)
+
+            model.run()
+
+            # check combinations table exists
+            scenario_ensemble_names = h5f.get_node("/scenario_ensemble_names")
+            assert scenario_ensemble_names[0][0].decode() == "scenario A1"
+            assert scenario_ensemble_names[0][1].decode() == "scenario B1"
+            assert scenario_ensemble_names[1][0].decode() == "scenario A4"
+            assert scenario_ensemble_names[1][1].decode() == "scenario B2"
 
     def test_scenario_slices(self, simple_linear_model, tmpdir):
         """
@@ -2286,8 +2377,8 @@ class TestTablesRecorder2:
             combinations = h5f.get_node("/scenario_combinations")
             for i, comb in enumerate(model.scenarios.user_combinations):
                 row = combinations[i]
-                assert row["A"] == comb[0]
-                assert row["B"] == comb[1]
+                assert row[combinations.attrs.columns.index("A")] == comb[0]
+                assert row[combinations.attrs.columns.index("B")] == comb[1]
 
         # This part of the test requires IPython (see `pywr.notebook`)
         pytest.importorskip(
@@ -2333,7 +2424,7 @@ class TestTablesRecorder2:
         otpt.cost = -2.0
 
         h5file = tmpdir.join("output.h5")
-        TablesRecorder(model, h5file)
+        TablesRecorder2(model, h5file)
         model.run()
 
         dfs = {}
@@ -2341,9 +2432,39 @@ class TestTablesRecorder2:
             dfs[node] = df
 
         for node_name in model.nodes.keys():
-            df = dfs[node_name]
-            assert df.shape == (365, 8)
-            np.testing.assert_allclose(df.iloc[0, :], [10, 10, 20, 20, 20, 30, 20, 40])
+            for attr in ("min_flow", "max_flow", "flow"):
+                print(node_name, attr)
+                df = dfs[f"{node_name}.{attr}"]
+                assert df.shape == (365, 8)
+                if attr == "min_flow":
+                    np.testing.assert_allclose(df.iloc[0, :], [0, 0, 0, 0, 0, 0, 0, 0])
+                elif attr == "max_flow":
+                    if node_name == "Link":
+                        np.testing.assert_allclose(
+                            df.iloc[0, :],
+                            [
+                                np.inf,
+                                np.inf,
+                                np.inf,
+                                np.inf,
+                                np.inf,
+                                np.inf,
+                                np.inf,
+                                np.inf,
+                            ],
+                        )
+                    elif node_name == "Input":
+                        np.testing.assert_allclose(
+                            df.iloc[0, :], [10, 10, 20, 20, 30, 30, 40, 40]
+                        )
+                    else:
+                        np.testing.assert_allclose(
+                            df.iloc[0, :], [20, 40, 20, 40, 20, 40, 20, 40]
+                        )
+                else:
+                    np.testing.assert_allclose(
+                        df.iloc[0, :], [10, 10, 20, 20, 20, 30, 20, 40]
+                    )
 
 
 class TestDeficitRecorders:

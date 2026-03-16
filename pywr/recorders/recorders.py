@@ -420,7 +420,7 @@ class TablesRecorder(Recorder):
             self.filter_kwds,
             self.mode,
             title=self.title,
-            metadata=self.metadata,
+            metadata={"pywr-format": 1, "pywr-version": 1, **self.metadata},
             create_directories=self.create_directories,
         )
 
@@ -914,7 +914,7 @@ class TablesRecorder2(Recorder):
             self.filter_kwds,
             self.mode,
             title=self.title,
-            metadata=self.metadata,
+            metadata={"pywr-format": 2, "pywr-version": 1, **self.metadata},
             create_directories=self.create_directories,
         )
 
@@ -989,22 +989,27 @@ class TablesRecorder2(Recorder):
                 entry.append()
             tbl.flush()
 
-            if self.model.scenarios.user_combinations is not None:
-                description = {
-                    s.name: tables.Int64Col() for s in self.model.scenarios.scenarios
-                }
-                tbl = self.h5store.file.create_table(
-                    group_name,
-                    "scenario_combinations",
-                    description=description,
-                    createparents=True,
+            ensemble_names = [
+                scenario.ensemble_names for scenario in self.model.scenarios.scenarios
+            ]
+            if len(ensemble_names) > 0:
+                indices = [
+                    [
+                        str(ensemble_names[n][i])
+                        for n, i in enumerate(scenario_index.indices)
+                    ]
+                    for scenario_index in self.model.scenarios.get_combinations()
+                ]
+                _ = self.h5store.file.create_carray(
+                    "/", "scenario_ensemble_names", obj=indices
                 )
-                entry = tbl.row
-                for comb in self.model.scenarios.user_combinations:
-                    for s, i in zip(self.model.scenarios.scenarios, comb):
-                        entry[s.name] = i
-                    entry.append()
-                tbl.flush()
+
+            if self.model.scenarios.user_combinations is not None:
+                combs = np.array(self.model.scenarios.user_combinations, dtype=np.int64)
+                ds = self.h5store.file.create_carray(
+                    "/", "scenario_combinations", obj=combs
+                )
+                ds.attrs.columns = [s.name for s in self.model.scenarios.scenarios]
             elif any([s.slice for s in self.model.scenarios.scenarios]):
                 # Slices are only applied in a model run if there are no user combinations
                 description = {
@@ -1234,10 +1239,12 @@ class TablesRecorder2(Recorder):
             columns = None
 
         for node in store.file.walk_nodes("/", "CArray"):
+            if node.name in ("scenario_combinations", "scenario_ensemble_names"):
+                continue
             data = node.read()
             data = data.reshape((data.shape[0], -1))
             df = pandas.DataFrame(data, index=index, columns=columns)
-            yield node._v_name, df
+            yield f"{node._v_parent._v_name}.{node._v_name}", df
 
 
 TablesRecorder2.register()
