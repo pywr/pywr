@@ -426,7 +426,7 @@ class TablesRecorder(Recorder):
             self.filter_kwds,
             self.mode,
             title=self.title,
-            metadata={"pywr-format": 1, "pywr-version": 1, **self.metadata},
+            metadata={"PYWR_FORMAT": 1, "PYWR_VERSION": 1, **self.metadata},
             create_directories=self.create_directories,
         )
 
@@ -924,7 +924,7 @@ class TablesRecorder2(Recorder):
             self.filter_kwds,
             self.mode,
             title=self.title,
-            metadata={"pywr-format": 2, "pywr-version": 1, **self.metadata},
+            metadata={"PYWR_FORMAT": 2, "PYWR_VERSION": 1, **self.metadata},
             create_directories=self.create_directories,
         )
 
