@@ -1123,8 +1123,8 @@ class TestTablesRecorder:
             for node_name in model.nodes.keys():
                 ca = h5f.get_node("/", node_name)
                 assert ca.shape == (365, 1)
-                assert ca._v_attrs["pywr-attribute"] == "flow"
-                assert "pywr-type" in ca._v_attrs
+                assert ca._v_attrs["PYWR_ATTRIBUTE"] == "flow"
+                assert "PYWR_TYPE" in ca._v_attrs
                 if node_name == "Sum":
                     np.testing.assert_allclose(ca, 20.0)
                 else:
@@ -1720,8 +1720,8 @@ class TestTablesRecorder2:
                     ca = h5f.get_node(f"/{node_name}", node_attr)
 
                     assert ca.shape == (365, 1)
-                    assert ca._v_attrs["pywr-attribute"] == node_attr
-                    assert "pywr-type" in ca._v_attrs
+                    assert ca._v_attrs["PYWR_ATTRIBUTE"] == node_attr
+                    assert "PYWR_TYPE" in ca._v_attrs
 
                     if node_attr == "min_flow":
                         np.testing.assert_allclose(ca, 0.0)
@@ -2066,7 +2066,6 @@ class TestTablesRecorder2:
                 node_name = node._v_name
                 if not isinstance(node, tables.Table):
                     for attr, ca in node._v_children.items():
-                        print(node_name, attr)
                         np.testing.assert_allclose(ca, expected_values[node_name][attr])
 
     def test_nodes_with_str(self, simple_linear_model, tmpdir):
@@ -2104,11 +2103,9 @@ class TestTablesRecorder2:
             model.run()
 
             for node_name in ["Output", "Input", "Sum"]:
-                print(node_name)
                 for attr in ("max_flow", "flow", "min_flow"):
                     ca = h5f.get_node("/agroup/" + node_name + "/" + attr)
                     assert ca.shape == (365, 1)
-                    print(node_name, attr)
                     if attr == "max_flow":
                         if node_name == "Input":
                             np.testing.assert_allclose(ca, 10.0)
@@ -2433,7 +2430,6 @@ class TestTablesRecorder2:
 
         for node_name in model.nodes.keys():
             for attr in ("min_flow", "max_flow", "flow"):
-                print(node_name, attr)
                 df = dfs[f"{node_name}.{attr}"]
                 assert df.shape == (365, 8)
                 if attr == "min_flow":

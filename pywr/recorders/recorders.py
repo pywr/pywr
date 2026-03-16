@@ -300,11 +300,17 @@ class TablesRecorder(Recorder):
         create_directories : bool
             If a file path is given and create_directories is True then attempt to make the intermediate
             directories. This uses os.makedirs() underneath.
+        use_legacy_attribute_naming: bool
+            if True then the attribute and type metadata associated with each node will be 'pywr-attribute' and 'pywr-type'.
+            Defaults to False for 'PYWR_ATTRIBUTE' and 'PYWR_TYPE' respectively.
         """
         self.filter_kwds = kwargs.pop("filter_kwds", {})
         self.mode = kwargs.pop("mode", "w")
         self.metadata = kwargs.pop("metadata", {})
         self.create_directories = kwargs.pop("create_directories", False)
+        self.use_legacy_attribute_naming = kwargs.pop(
+            "use_legacy_attribute_naming", False
+        )
 
         title = kwargs.pop("title", None)
         if title is None:
@@ -467,8 +473,12 @@ class TablesRecorder(Recorder):
                 group_name, node_name, atom, shape, createparents=True
             )
             # Save some metadata about the type of data this is
-            carray._v_attrs["pywr-attribute"] = self._node_attribute(node)
-            carray._v_attrs["pywr-type"] = node.__class__.__name__
+            if self.use_legacy_attribute_naming:
+                carray._v_attrs["pywr-attribute"] = self._node_attribute(node)
+                carray._v_attrs["pywr-type"] = node.__class__.__name__
+            else:
+                carray._v_attrs["PYWR_ATTRIBUTE"] = self._node_attribute(node)
+                carray._v_attrs["PYWR_TYPE"] = node.__class__.__name__
 
         # Create scenario tables
         if self.scenarios is not None:
@@ -965,8 +975,8 @@ class TablesRecorder2(Recorder):
                         group_name, attr, atom, shape, createparents=True
                     )
                     # Save some metadata about the type of data this is
-                    carray._v_attrs["pywr-attribute"] = attr
-                    carray._v_attrs["pywr-type"] = node.__class__.__name__
+                    carray._v_attrs["PYWR_ATTRIBUTE"] = attr
+                    carray._v_attrs["PYWR_TYPE"] = node.__class__.__name__
 
         # Create scenario tables
         if self.scenarios is not None:
