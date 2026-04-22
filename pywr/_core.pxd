@@ -55,6 +55,7 @@ cdef class AbstractNode:
     cdef public bint virtual
     cdef public object __data
     cdef public basestring comment
+    cdef public dict tags
 
     cdef Parameter _cost_param
     cpdef double get_cost(self, ScenarioIndex scenario_index) except? -1

@@ -615,6 +615,12 @@ class AnnualVirtualStorage(VirtualStorage):
         self.reset_to_initial_volume = kwargs.pop("reset_to_initial_volume", False)
         self._last_reset_year = None
 
+        for node in kwargs["nodes"]:
+            if isinstance(node, LossLink):
+                raise TypeError(
+                    f"You cannot use the node '{node.name}' as it is a compound node"
+                )
+
         super(AnnualVirtualStorage, self).__init__(*args, **kwargs)
 
     def reset(self):

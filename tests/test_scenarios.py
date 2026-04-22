@@ -4,6 +4,7 @@ A series of tests of the Scenario objects and associated infrastructure
 
 
 """
+
 from pywr.core import Model, Input, Output, Link, Storage, Scenario
 from pywr.parameters import ConstantScenarioParameter
 from pywr.recorders import NumpyArrayStorageRecorder, NumpyArrayNodeRecorder

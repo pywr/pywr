@@ -7,6 +7,7 @@ The network looks like this:
   A -->-- B -->-- C
 
 """
+
 from pywr.model import Model
 from pywr.nodes import Input, Output, Link
 

@@ -2040,7 +2040,7 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         """
         start_year = self.model.timestepper.start.year
         end_year = self.model.timestepper.end.year
-        index = pd.period_range(f'{start_year}-01-01', f'{end_year}-01-01', freq='A')
+        index = pd.period_range(f'{start_year}-01-01', f'{end_year}-01-01', freq='Y')
         sc_index = self.model.scenarios.multiindex
         return pd.DataFrame(data=np.array(self._data, dtype=int), index=index, columns=sc_index)
 
@@ -2139,7 +2139,7 @@ cdef class AnnualTotalFlowRecorder(Recorder):
         """
         start_year = self.model.timestepper.start.year
         end_year = self.model.timestepper.end.year
-        index = pd.period_range(f'{start_year}-01-01', f'{end_year}-01-01', freq='A')
+        index = pd.period_range(f'{start_year}-01-01', f'{end_year}-01-01', freq='Y')
         sc_index = self.model.scenarios.multiindex
         return pd.DataFrame(data=np.array(self._data), index=index, columns=sc_index)
 

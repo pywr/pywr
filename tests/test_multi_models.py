@@ -105,6 +105,30 @@ def test_run_two_dependent_models_from_json():
     np.testing.assert_allclose(demand2_rec.data, expected_flow)
 
 
+def test_run_two_dependent_models_single_file_from_json():
+    """Test two simple but dependent models defined in one JSON document."""
+
+    path = Path(os.path.dirname(__file__)) / "models" / "two-dependent-sub-models"
+    multi_model = MultiModel.load(path / "integrated-model-single-file.json")
+
+    sub_model2 = multi_model.models["model2"]
+    supply2 = sub_model2.nodes["supply2"]
+    demand2 = sub_model2.nodes["demand2"]
+    assert isinstance(supply2.max_flow, OtherModelParameterValueParameter)
+
+    # Add recorder for flow
+    demand2_rec = NumpyArrayNodeRecorder(sub_model2, demand2)
+    # Demand should equal the inflow the model1
+    expected_flow = pandas.read_csv(path / "timeseries1.csv", index_col=0)
+
+    multi_model.run()
+
+    np.testing.assert_allclose(
+        multi_model.models["model1"].nodes["demand1"].flow[0], 10.0
+    )
+    np.testing.assert_allclose(demand2_rec.data, expected_flow)
+
+
 def test_run_two_dependent_models_with_flow_transfer_from_json():
     """Test two simple but dependent models."""
 

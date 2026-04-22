@@ -31,7 +31,10 @@
             "type": "output",
             "name": "Demand",
             "max_flow": "demand_max_flow",
-            "cost": -500
+            "cost": -500,
+            "tags": {
+                "demand": "true"
+            }
         }
     ],
     "edges": [

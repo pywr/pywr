@@ -153,6 +153,19 @@ def test_slots_connect_disconnect():
         supply1.disconnect(storage)
 
 
+def test_node_tags():
+    """Test node tags, both from kwargs and from JSON"""
+    model = Model()
+
+    node1 = Input(model, "input", tags={"tag1": "value1", "tag2": "value2"})
+    assert node1.tags["tag1"] == "value1"
+    assert node1.tags["tag2"] == "value2"
+
+    model = load_model("demand_saving2.json")
+    demand = model.nodes["Demand"]
+    assert demand.tags["demand"] == "true"
+
+
 def test_node_position():
     model = Model()
 
@@ -559,6 +572,14 @@ def test_timestep_repr():
     assert "2015-01-05" in str(res.timestep)
 
 
+def test_load_from_path():
+    from pathlib import Path
+
+    filename = Path(TEST_FOLDER) / "models" / "simple1.json"
+    model = Model.load(filename)
+    _ = model.run()
+
+
 def test_virtual_storage_cost():
     """VirtualStorage doesn't (currently) implement its cost attribute"""
     model = Model()
@@ -655,8 +676,8 @@ def test_timestep_days_in_year_methods(
     simple_linear_model.step()
 
     ts = simple_linear_model.timestepper.current
-    assert days_in_current_year == ts.days_in_current_year()
-    assert days_in_next_year == ts.days_in_next_year()
+    np.testing.assert_allclose(days_in_current_year, ts.days_in_current_year())
+    np.testing.assert_allclose(days_in_next_year, ts.days_in_next_year())
 
 
 class TestSpecifyingSolver:

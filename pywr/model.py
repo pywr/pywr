@@ -1,5 +1,8 @@
 import warnings
+from io import IOBase
 from pathlib import Path
+from typing import Dict, Any
+
 from ._model import *  # noqa
 
 import logging
@@ -24,7 +27,7 @@ class MultiModel:
         model.parent = self
 
     @classmethod
-    def loads(cls, data, model=None, path=None, solver=None, **kwargs):
+    def loads(cls, data, model=None, path=None, solver=None) -> "MultiModel":
         """Read JSON data from a string and parse it as a model document"""
         try:
             data = json.loads(data)
@@ -34,11 +37,40 @@ class MultiModel:
                 e.args = ("{} [{}]".format(e.args[0], os.path.basename(path)),)
             raise (e)
 
-        return cls.load(data, model, path, solver, **kwargs)
+        return cls.load(data, model, path, solver)
 
     @classmethod
-    def load(cls, data, model=None, path=None, solver=None, **kwargs):
-        if isinstance(data, (str, Path)):
+    def load(
+        cls,
+        data: (
+            str
+            | bytes
+            | os.PathLike[str]
+            | os.PathLike[bytes]
+            | IOBase
+            | Dict[str, Any]
+        ),
+        model=None,
+        path=None,
+        solver=None,
+    ) -> "MultiModel":
+        """Load a model from a file, file-like object, or dictionary.
+
+        Parameters
+        ----------
+        data : str, bytes, os.PathLike, IOBase, or dict
+            The data to load. This can be a filename, a file-like object, or a dictionary containing the model data.
+        model : Model (optional)
+            An optional model instance to load the data into. If not provided, a new model instance will be created.
+        path : str (optional)
+            Path used to resolve sub-model file paths. If not provided, the current working directory will be used.
+            This path will also be used as the sub-model data path if the sub-model definition does not specify a path.
+        solver : Solver (optional)
+            An optional solver to use for the sub-models. This is only used when loading from
+            a file or file-like object. If a sub-model does not specify a solver, this solver will be used.
+            If neither a sub-model solver nor this keyword are provided, the default solver will be used.
+        """
+        if isinstance(data, (str, bytes, os.PathLike)):
             # argument is a filename
             path = data
             logger.info('Loading model from file: "{}"'.format(path))
@@ -46,17 +78,40 @@ class MultiModel:
                 data = f.read()
             return cls.loads(data, model, path, solver)
 
-        if hasattr(data, "read"):
+        if isinstance(data, IOBase):
             logger.info("Loading model from file-like object.")
             # argument is a file-like object
             data = data.read()
             return cls.loads(data, model, path, solver)
 
-        return cls._load_from_dict(data, model=model, path=path, solver=None, **kwargs)
+        return cls.load_from_dict(data, model=model, path=path, solver=None)
 
     @classmethod
-    def _load_from_dict(cls, data, model=None, path=None, solver=None, **kwargs):
-        """Load data from a dictionary."""
+    def _load_from_dict(cls, *args, **kwargs) -> "MultiModel":
+        warnings.warn(
+            "`_load_from_dict` is deprecated and will be removed in a future version. Please use `load_from_dict` instead.",
+            DeprecationWarning,
+        )
+        return cls.load_from_dict(*args, **kwargs)
+
+    @classmethod
+    def load_from_dict(cls, data, model=None, path=None, solver=None) -> "MultiModel":
+        """Load data from a dictionary.
+
+        Parameters
+        ----------
+        data : dict
+            The model data as a dictionary.
+        model : Model (optional)
+            An existing model to append to.
+        path : str (optional)
+            Path used to resolve sub-model file paths. If not provided, the current working directory will be used.
+            This path will also be used as the sub-model data path if the sub-model definition does not specify a path.
+        solver : Solver (optional)
+            An optional solver to use for the sub-models. This is only used when loading from
+            a file or file-like object. If a sub-model does not specify a solver, this solver will be used.
+            If neither a sub-model solver nor this keyword are provided, the default solver will be used.
+        """
         # data is a dictionary, make a copy to avoid modify the input
         data = copy.deepcopy(data)
 
@@ -73,15 +128,35 @@ class MultiModel:
         sub_model_paths = data["models"]
         for sub_model_definition in sub_model_paths:
             sub_model_name = sub_model_definition["name"]
-            sub_model_filename = sub_model_definition["filename"]
-            sub_model_path = sub_model_definition.get("path", None)
+            sub_model_filename = sub_model_definition.get("filename", None)
+            sub_model_data = sub_model_definition.get("data", None)
             sub_model_solver = sub_model_definition.get("solver", solver)
-            if path is not None:
-                sub_model_filename = os.path.join(path, sub_model_filename)
 
-            sub_model = Model.load(
-                sub_model_filename, path=sub_model_path, solver=sub_model_solver
-            )
+            if sub_model_filename is not None and sub_model_data is not None:
+                raise ValueError(
+                    f"Sub-model definition for '{sub_model_name}' cannot have both 'filename' and 'data' fields."
+                )
+
+            if sub_model_filename is not None:
+                sub_model_path = sub_model_definition.get("path", None)
+
+                if path is not None:
+                    sub_model_filename = os.path.join(path, sub_model_filename)
+
+                sub_model = Model.load(
+                    sub_model_filename, path=sub_model_path, solver=sub_model_solver
+                )
+            elif sub_model_data is not None:
+                sub_model_path = sub_model_definition.get("path", path)
+
+                sub_model = Model.load(
+                    sub_model_data, path=sub_model_path, solver=sub_model_solver
+                )
+            else:
+                raise ValueError(
+                    f"Sub-model definition for '{sub_model_name}' must have either 'filename' or 'data' field."
+                )
+
             sub_model.timestepper.start = timestepper_data["start"]
             sub_model.timestepper.end = timestepper_data["end"]
             sub_model.timestepper.timestep = timestepper_data["timestep"]

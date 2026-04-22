@@ -1,4 +1,7 @@
 import os
+from io import IOBase
+from typing import Any, Dict
+
 import pandas
 import json
 import networkx as nx
@@ -197,7 +200,7 @@ class Model(object):
         return self.graph.edges()
 
     @classmethod
-    def loads(cls, data, model=None, path=None, **kwargs):
+    def loads(cls, data, model=None, path=None, **kwargs) -> "Model":
         """Read JSON data from a string and parse it as a model document"""
         try:
             data = json.loads(data)
@@ -267,23 +270,22 @@ class Model(object):
         return None  # data modified in-place
 
     @classmethod
-    def load(cls, data, model=None, path=None, **kwargs):
-        """Load an existing model
+    def load(cls, data: str | bytes | os.PathLike[str] | os.PathLike[bytes] | IOBase | Dict[str, Any], model=None, path=None, **kwargs) -> "Model":
+        """Load an existing model from a file, file-like object, or dictionary.
 
         Parameters
         ----------
-        data : file-like, string, or dict
-            A file-like object to read JSON data from, a filename to read,
-            or a parsed dict
+        data : path-like, string, bytes, IOBase, or dict
+            A filename, string or bytes containing the path to the model document, or a file-like
+            object containing the model document, or a dictionary containing the model data.
         model : Model (optional)
-            An existing model to append to
+            An existing model to append to.
         path : str (optional)
-            Path to the model document for relative pathnames
-        solver : str (optional)
-            Name of the solver to use for the model. This overrides the solver
-            section of the model document.
+            Path to the model document for relative path names.
+        **kwargs
+            Extra keyword arguments passed to `load_from_dict`
         """
-        if isinstance(data, str):
+        if isinstance(data, (str, bytes, os.PathLike)):
             # argument is a filename
             path = data
             logger.info('Loading model from file: "{}"'.format(path))
@@ -291,17 +293,36 @@ class Model(object):
                 data = f.read()
             return cls.loads(data, model, path, **kwargs)
 
-        if hasattr(data, 'read'):
+        if isinstance(data, IOBase):
             logger.info('Loading model from file-like object.')
             # argument is a file-like object
             data = data.read()
             return cls.loads(data, model, path, **kwargs)
 
-        return cls._load_from_dict(data, model=model, path=path, **kwargs)
+        return cls.load_from_dict(data, model=model, path=path, **kwargs)
 
     @classmethod
-    def _load_from_dict(cls, data, model=None, path=None, solver=None, solver_args=None):
-        """Load data from a dictionary."""
+    def _load_from_dict(cls, *args, **kwargs) -> "Model":
+        warnings.warn("`_load_from_dict` is deprecated and will be removed in a future version. Please use `load_from_dict` instead.", DeprecationWarning)
+        return cls.load_from_dict(*args, **kwargs)
+
+    @classmethod
+    def load_from_dict(cls, data: Dict[str, Any], model=None, path=None, solver=None, solver_args=None) -> "Model":
+        """Load data from a dictionary.
+
+        Parameters
+        ----------
+        data : dict
+            The model data as a dictionary.
+        model : Model (optional)
+            An existing model to append to.
+        path : str (optional)
+            Path to the model document for relative path names.
+        solver : Solver (optional)
+            The solver to use for the model. If None, the first available solver is used.
+        solver_args : dict (optional)
+            Additional arguments to pass to the solver constructor.
+        """
         # data is a dictionary, make a copy to avoid modify the input
         data = copy.deepcopy(data)
 

@@ -252,6 +252,8 @@ def read_dataframe(model, data):
                 filetype = "csv"
             elif url.endswith((".hdf", ".hdf5", ".h5")):
                 filetype = "hdf"
+            elif url.endswith((".rds", ".Rds", ".rdata", ".RData")):
+                filetype = "rds"
             else:
                 raise NotImplementedError('Unknown file extension: "{}"'.format(url))
     else:
@@ -276,6 +278,26 @@ def read_dataframe(model, data):
         df = pandas.DataFrame.from_dict(df_data, **data)
         if parse_dates:
             df.index = pandas.DatetimeIndex(df.index)
+    elif filetype == "rds":
+        try:
+            from pyreadr import pyreadr
+        except ImportError:
+            raise ImportError(
+                'The "pyreadr" package is required to read RDS or RDATA files. Please install it and try again.'
+            )
+        else:
+            result = pyreadr.read_r(url)
+            key = data.pop("key", None)
+            df = result[key]
+
+            parse_dates = data.pop("parse_dates", False)
+            index_col = data.pop("index_col", None)
+            if index_col is not None:
+                if parse_dates:
+                    df[index_col] = pandas.to_datetime(df[index_col])
+                df.set_index(index_col, inplace=True)
+    else:
+        raise NotImplementedError('Unsupported file type: "{}"'.format(filetype))
 
     if df.index.dtype.name == "object" and data.get("parse_dates", False):
         # catch dates that haven't been parsed yet

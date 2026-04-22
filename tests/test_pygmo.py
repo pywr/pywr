@@ -7,7 +7,6 @@ from pywr.optimisation.pygmo import PygmoWrapper
 from pywr.optimisation import clear_global_model_cache
 import os
 
-
 TEST_FOLDER = os.path.dirname(__file__)
 
 

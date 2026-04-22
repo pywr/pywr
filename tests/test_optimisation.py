@@ -4,7 +4,6 @@ import pytest
 import os
 from fixtures import simple_storage_model
 
-
 TEST_FOLDER = os.path.dirname(__file__)
 
 
