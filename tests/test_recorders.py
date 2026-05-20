@@ -2463,6 +2463,49 @@ class TestTablesRecorder2:
                     )
 
 
+    @pytest.mark.parametrize(
+        "buffer_timesteps", [None, 1, 5, 10, 100, 500]
+    )
+    def test_buffering(self,  simple_linear_model, tmpdir, buffer_timesteps):
+        """Test buffering saves the complete and correct data."""
+
+        model = simple_linear_model
+        model.timestepper.delta = 1
+        otpt = model.nodes["Output"]
+        inpt = model.nodes["Input"]
+
+        inflow = np.arange(365) * 0.1
+        inpt.max_flow = ArrayIndexedParameter(model, inflow)
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join("output.h5")
+        import tables
+
+        with tables.open_file(str(h5file), "w") as h5f:
+            _rec = TablesRecorder2(model, h5f, buffer_timesteps=buffer_timesteps, buffer_size=None)
+
+            model.run()
+
+            inflow = inflow[:, np.newaxis]
+            for node_name in model.nodes.keys():
+                for node_attr in ["max_flow", "flow", "min_flow"]:
+                    ca = h5f.get_node(f"/{node_name}", node_attr)
+
+                    assert ca.shape == (365, 1)
+                    assert ca._v_attrs["PYWR_ATTRIBUTE"] == node_attr
+                    assert "PYWR_TYPE" in ca._v_attrs
+
+                    if node_attr == "min_flow":
+                        np.testing.assert_allclose(ca, 0.0)
+                    elif node_attr == "max_flow":
+                        if node_name != "Input":
+                            np.testing.assert_allclose(ca, np.inf)
+                        else:
+                            np.testing.assert_allclose(ca, inflow)
+                    else:
+                        np.testing.assert_allclose(ca, inflow)
+
+
 class TestDeficitRecorders:
     @pytest.mark.parametrize("demand", [30.0, 0.0])
     def test_total_deficit_node_recorder(self, simple_linear_model, demand):

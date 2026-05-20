@@ -88,12 +88,16 @@ class TablesRecorder2(Recorder):
             The size in megabytes of buffer to keep in memory before appending to the PyTables data. This
             buffer is a total buffer for the whole recorder and is divided amongst the items to be recorded
             equally. Default is 100.
+        buffer_timesteps: int
+            The number of timesteps to buffer in memory before appending to the PyTables data. This is an alternative
+            to buffer_size, and if given will be used in preference to buffer_size.
         """
         self.filter_kwds = kwargs.pop("filter_kwds", {})
         self.mode = kwargs.pop("mode", "w")
         self.metadata = kwargs.pop("metadata", {})
         self.create_directories = kwargs.pop("create_directories", False)
         self.buffer_size = kwargs.pop("buffer_size", 100)
+        self.buffer_timesteps = kwargs.pop("buffer_timesteps", None)
         self._buffer_num_timesteps = 1
 
         title = kwargs.pop("title", None)
@@ -253,7 +257,9 @@ class TablesRecorder2(Recorder):
             items.extend(self.parameters)
 
         # Work out the number of timesteps to buffer
-        if self.buffer_size is not None:
+        if self.buffer_timesteps is not None:
+            self._buffer_num_timesteps = min(self._buffer_num_timesteps, len(self.model.timestepper))
+        elif self.buffer_size is not None:
             # Divide by 8 as we are storing 64-bit floats
             # Also assume most data is nodes, and we store 3 values for each
             total_buffer_values = self.buffer_size * 1024 * 1024 / 8 / 3
@@ -524,9 +530,7 @@ class TablesRecorder2(Recorder):
             entry["index"] = idx
             entry.append()
 
-        # Flush before we overwrite the data
-        if self._buffer_num_timesteps > 1 and idx != 0 and idx % self._buffer_num_timesteps == 0:
-            self.flush_buffer(idx, self._buffer_num_timesteps)
+        buffer_idx = idx % self._buffer_num_timesteps
 
         for node, (arrays, buffer) in self._node_arrays.items():
             if buffer is None:
@@ -538,7 +542,6 @@ class TablesRecorder2(Recorder):
 
                 arrays.flow[idx, :] = np.reshape(node._flow, scenario_shape)
             else:
-                buffer_idx = idx % self._buffer_num_timesteps
                 node.get_all_max_flow(out)
                 buffer[0, buffer_idx, ...] = np.reshape(out, scenario_shape)
                 node.get_all_min_flow(out)
@@ -555,7 +558,6 @@ class TablesRecorder2(Recorder):
 
                 arrays.volume[idx, :] = np.reshape(storage_node._volume, scenario_shape)
             else:
-                buffer_idx = idx % self._buffer_num_timesteps
                 storage_node.get_all_max_volume(out)
                 buffer[0, buffer_idx, ...] = np.reshape(out, scenario_shape)
                 storage_node.get_all_min_volume(out)
@@ -576,6 +578,10 @@ class TablesRecorder2(Recorder):
             else:
                 buffer[0, buffer_idx, ...] = np.reshape(index_parameter.get_all_indices(), scenario_shape)
 
+        # Flush before we overwrite the data if this is the last entry in the buffer
+        if self._buffer_num_timesteps > 1 and (idx + 1) % self._buffer_num_timesteps == 0:
+            self.flush_buffer(idx, self._buffer_num_timesteps)
+
         if self._routes_flow_array is not None:
             routes_shape = [
                 len(self.model.solver.routes),
@@ -586,23 +592,26 @@ class TablesRecorder2(Recorder):
 
     def flush_buffer(self, int idx, int num_timesteps):
         """Flush the buffer arrays to PyTables"""
-        cdef int idx_start = idx - num_timesteps
+        cdef int idx_start = idx + 1 - num_timesteps
 
         for _, (arrays, buffer) in self._node_arrays.items():
-            arrays.max_flow[idx_start:idx, ...] = buffer[0, :num_timesteps, ...]
-            arrays.min_flow[idx_start:idx, ...] = buffer[1, :num_timesteps, ...]
-            arrays.flow[idx_start:idx, ...] = buffer[2, :num_timesteps, ...]
+            arrays.max_flow[idx_start:idx + 1, ...] = buffer[0, :num_timesteps, ...]
+            arrays.min_flow[idx_start:idx + 1, ...] = buffer[1, :num_timesteps, ...]
+            arrays.flow[idx_start:idx + 1, ...] = buffer[2, :num_timesteps, ...]
 
         for _, (arrays, buffer) in self._storage_node_arrays.items():
-            arrays.max_volume[idx_start:idx, ...] = buffer[0, :num_timesteps, ...]
-            arrays.min_volume[idx_start:idx, ...] = buffer[1, :num_timesteps, ...]
-            arrays.volume[idx_start:idx, ...] = buffer[2, :num_timesteps, ...]
+            arrays.max_volume[idx_start:idx + 1, ...] = buffer[0, :num_timesteps, ...]
+            arrays.min_volume[idx_start:idx + 1, ...] = buffer[1, :num_timesteps, ...]
+            arrays.volume[idx_start:idx + 1, ...] = buffer[2, :num_timesteps, ...]
 
         for _, (arrays, buffer) in self._parameter_arrays.items():
-            arrays.parameter[idx_start:idx, ...] = buffer[0, :num_timesteps, ...]
+            arrays.parameter[idx_start:idx + 1, ...] = buffer[0, :num_timesteps, ...]
 
         for _, (arrays, buffer) in self._index_parameter_arrays.items():
-            arrays.parameter_index[idx_start:idx, ...] = buffer[0, :num_timesteps, ...]
+            arrays.parameter_index[idx_start:idx + 1, ...] = buffer[0, :num_timesteps, ...]
+
+        if self._time_table is not None:
+            self._time_table.flush()
 
     def finish(self):
 
@@ -614,9 +623,9 @@ class TablesRecorder2(Recorder):
 
             # Flush the buffer if there are residual time-steps, or our buffer covered the entire simulation
             if residual_timesteps > 0:
-                self.flush_buffer(idx, residual_timesteps)
+                self.flush_buffer(idx - 1, residual_timesteps)
             elif self._buffer_num_timesteps == len(self.model.timestepper):
-                self.flush_buffer(idx, self._buffer_num_timesteps)
+                self.flush_buffer(idx - 1, self._buffer_num_timesteps)
 
         if self._time_table is not None:
             self._time_table.flush()
