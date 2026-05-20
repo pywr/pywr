@@ -258,7 +258,7 @@ class TablesRecorder2(Recorder):
 
         # Work out the number of timesteps to buffer
         if self.buffer_timesteps is not None:
-            self._buffer_num_timesteps = min(self._buffer_num_timesteps, len(self.model.timestepper))
+            self._buffer_num_timesteps = min(self.buffer_timesteps, len(self.model.timestepper))
         elif self.buffer_size is not None:
             # Divide by 8 as we are storing 64-bit floats
             # Also assume most data is nodes, and we store 3 values for each
