@@ -2462,11 +2462,8 @@ class TestTablesRecorder2:
                         df.iloc[0, :], [10, 10, 20, 20, 20, 30, 20, 40]
                     )
 
-
-    @pytest.mark.parametrize(
-        "buffer_timesteps", [None, 1, 5, 10, 100, 500]
-    )
-    def test_buffering(self,  simple_linear_model, tmpdir, buffer_timesteps):
+    @pytest.mark.parametrize("buffer_timesteps", [None, 1, 5, 10, 100, 500])
+    def test_buffering(self, simple_linear_model, tmpdir, buffer_timesteps):
         """Test buffering saves the complete and correct data."""
 
         model = simple_linear_model
@@ -2482,7 +2479,9 @@ class TestTablesRecorder2:
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
-            _rec = TablesRecorder2(model, h5f, buffer_timesteps=buffer_timesteps, buffer_size=None)
+            _rec = TablesRecorder2(
+                model, h5f, buffer_timesteps=buffer_timesteps, buffer_size=None
+            )
 
             model.run()
 
