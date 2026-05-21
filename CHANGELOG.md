@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.30.0] - 2026-03-17
+## [1.31.0] - 2026-05-21
+
+### 🐛 Bug Fixes
+
+- Clip aggregated storage volume in min or max when close. ([#1182](https://github.com/pywr/pywr/issues/1182))
+
+### ⚡ Performance
+
+- Improve the performance of TablesRecorder2 ([#1183](https://github.com/pywr/pywr/issues/1183))
+
+## [1.30.0] - 2026-03-17
 
 ### 🚀 Features
 
