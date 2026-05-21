@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.29.1.dev11+ge9f27743c documentation</title>
+  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.30.1.dev1+gaf83a8153 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=b5a964bb"></script>
+      <script src="../_static/documentation_options.js?v=af783456"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -290,10 +290,10 @@ from <code class="docutils literal notranslate"><span class="pre">libm</span></c
 <span class="k">from</span><span class="w"> </span><span class="nn">pywr._core</span><span class="w"> </span><span class="k">cimport</span> <span class="n">Timestep</span><span class="p">,</span> <span class="n">ScenarioIndex</span>
 
 <span class="k">cdef</span><span class="w"> </span><span class="kr">extern</span> <span class="k">from</span> <span class="s">&quot;math.h&quot;</span><span class="p">:</span>
-    <span class="n">double</span> <span class="nb">pow</span><span class="p">(</span><span class="n">double</span> <span class="n">x</span><span class="p">,</span> <span class="n">double</span> <span class="n">y</span><span class="p">)</span>
+    <span class="nb">double</span> <span class="nb">pow</span><span class="p">(</span><span class="nb">double</span> <span class="n">x</span><span class="p">,</span> <span class="nb">double</span> <span class="n">y</span><span class="p">)</span>
 
-<span class="k">cdef</span><span class="w"> </span><span class="k">class</span> <span class="nf">SquaredParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
-    <span class="k">cdef</span><span class="w"> </span><span class="kt">double</span> <span class="nf">_value</span>
+<span class="k">cdef</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">SquaredParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">cdef</span><span class="w"> </span><span class="kt">double</span> <span class="nv">_value</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -303,10 +303,10 @@ from <code class="docutils literal notranslate"><span class="pre">libm</span></c
         <span class="k">return</span> <span class="nb">pow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="c"># called when the parameter is loaded from a JSON document</span>
         <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&quot;value&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
 
 <span class="n">SquaredParameter</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
 </pre></div>
