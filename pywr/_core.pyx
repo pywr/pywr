@@ -1403,14 +1403,22 @@ cdef class AggregatedStorage(AbstractStorage):
         cdef int i
         cdef Storage s
         cdef double mxv
+        cdef double mnv
 
         for i, si in enumerate(self.model.scenarios.combinations):
             self._flow[i] = 0.0
             mxv = 0.0
+            mnv = 0.0
             for s in self._storage_nodes:
                 self._flow[i] += s._flow[i]
                 mxv += s.get_max_volume(si)
+                mnv += s.get_min_volume(si)
             self._volume[i] += self._flow[i]*ts.days
+
+            if abs(self._volume[i] - mxv) < 1e-6:
+                self._volume[i] = mxv
+            if abs(self._volume[i] - mnv) < 1e-6:
+                self._volume[i] = mnv
 
             # Ensure variable maximum volume is taken in to account
             try:
