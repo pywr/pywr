@@ -1,239 +1,26 @@
-import sys
+from typing import Tuple
 import pandas
+cimport numpy as np
 import numpy as np
-from functools import wraps
-from pywr._core import AbstractNode, AbstractStorage
-from ._recorders import *
-from ._thresholds import *
-from ._hydropower import *
-from ._tables_recorders import TablesRecorder2, ParameterNameWarning
-from .events import *
-from .calibration import *
-from .kde import *
 from pywr.h5tools import H5Store
-from ..parameter_property import parameter_property
 import warnings
+from pywr.parameters._parameters cimport IndexParameter, Parameter
+from pywr.recorders._recorders cimport Recorder
+from .._core cimport Timestep, Scenario, ScenarioIndex, AbstractNode, AbstractStorage, Storage
+
+class ParameterNameWarning(UserWarning):
+    pass
 
 
-def assert_rec(model, parameter, name=None, get_index=False):
-    """Decorator for creating AssertionRecorder objects
-
-    Example
-    -------
-    @assert_rec(model, parameter)
-    def expected_func(timestep, scenario_index):
-        return timestep.dayofyear * 2.0
-    """
-
-    def assert_rec_(f):
-        rec = AssertionRecorder(
-            model, parameter, expected_func=f, name=name, get_index=get_index
-        )
-        return f
-
-    return assert_rec_
-
-
-class AssertionRecorder(Recorder):
-    """A recorder that asserts the value of a parameter for testing purposes"""
-
-    def __init__(
-        self,
-        model,
-        parameter,
-        expected_data=None,
-        expected_func=None,
-        get_index=False,
-        **kwargs,
-    ):
-        """
-        Parameters
-        ----------
-        model : pywr.model.Model
-        parameter : pywr.parameters.Parameter
-        expected_data : np.ndarray[timestep, scenario] (optional)
-        expected_func : function
-        get_index : bool
-
-        See also
-        --------
-        pywr.recorders.assert_rec
-        """
-        super(AssertionRecorder, self).__init__(model, **kwargs)
-        self._parameter = None
-        self.parameter = parameter
-        self.expected_data = expected_data
-        self.expected_func = expected_func
-        self.get_index = get_index
-
-    parameter = parameter_property("_parameter")
-
-    def setup(self):
-        super(AssertionRecorder, self).setup()
-        self.count = 0
-
-    def after(self):
-        timestep = self.model.timestep
-        self.count += 1
-        for scenario_index in self.model.scenarios.combinations:
-            if self.expected_func:
-                expected_value = self.expected_func(timestep, scenario_index)
-            elif self.expected_data is not None:
-                expected_value = self.expected_data[
-                    timestep.index, scenario_index.global_id
-                ]
-            if self.get_index:
-                value = self._parameter.get_index(scenario_index)
-            else:
-                value = self._parameter.get_value(scenario_index)
-
-            try:
-                np.testing.assert_allclose(value, expected_value)
-            except AssertionError:
-                raise AssertionError(
-                    'Expected {}, got {} from "{}" [timestep={}, scenario={}]'.format(
-                        expected_value,
-                        value,
-                        self._parameter.name,
-                        timestep.index,
-                        scenario_index.global_id,
-                    )
-                )
-
-    def finish(self):
-        super(AssertionRecorder, self).finish()
-        if sys.exc_info():
-            # exception was raised before we had a chance! (e.g. ModelStructureError)
-            pass
-        elif self.count == 0:
-            # this still requires model.run() to have been called...
-            raise RuntimeError("AssertionRecorder was never called!")
-
-
-class CSVRecorder(Recorder):
-    """
-    A Recorder that saves Node values to a CSV file.
-
-    This class uses the csv package from the Python standard library
-
-    Parameters
-    ----------
-
-    model : `pywr.model.Model`
-        The model to record nodes from.
-    csvfile : str
-        The path to the CSV file.
-    scenario_index : int
-        The scenario index of the model to save.
-    nodes : iterable (default=None)
-        An iterable of nodes to save data. It defaults to None which is all nodes in the model
-    kwargs : Additional keyword arguments to pass to the `csv.writer` object
-
-    """
-
-    def __init__(
-        self,
-        model,
-        csvfile,
-        scenario_index=0,
-        nodes=None,
-        complib=None,
-        complevel=9,
-        **kwargs,
-    ):
-        super(CSVRecorder, self).__init__(model, **kwargs)
-        self.csvfile = csvfile
-        self.scenario_index = scenario_index
-        self.nodes = nodes
-        self.csv_kwargs = kwargs.pop("csv_kwargs", {})
-        self._node_names = None
-        self._fh = None
-        self._writer = None
-        self.complib = complib
-        self.complevel = complevel
-
-    @classmethod
-    def load(cls, model, data):
-        import os
-
-        url = data.pop("url")
-        if not os.path.isabs(url) and model.path is not None:
-            url = os.path.join(model.path, url)
-        return cls(model, url, **data)
-
-    def setup(self):
-        """
-        Setup the CSV file recorder.
-        """
-
-        if self.nodes is None:
-            self._node_names = sorted(self.model.nodes.keys())
-        else:
-            node_names = []
-            for node_ in self.nodes:
-                # test if the node name is provided
-                if isinstance(node_, str):
-                    # lookup node by name
-                    node_names.append(node_)
-                else:
-                    node_names.append((node_.name))
-            self._node_names = node_names
-
-    def reset(self):
-        import csv
-
-        kwargs = {"newline": "", "encoding": "utf-8"}
-        mode = "wt"
-
-        if self.complib == "gzip":
-            import gzip
-
-            self._fh = gzip.open(self.csvfile, mode, self.complevel, **kwargs)
-        elif self.complib in ("bz2", "bzip2"):
-            import bz2
-
-            self._fh = bz2.open(self.csvfile, mode, self.complevel, **kwargs)
-        elif self.complib is None:
-            self._fh = open(self.csvfile, mode, **kwargs)
-        else:
-            raise KeyError("Unexpected compression library: {}".format(self.complib))
-        self._writer = csv.writer(self._fh, **self.csv_kwargs)
-        # Write header data
-        row = ["Datetime"] + [name for name in self._node_names]
-        self._writer.writerow(row)
-
-    def after(self):
-        """
-        Write the node values to the CSV file
-        """
-        values = [self.model.timestepper.current.datetime.isoformat()]
-        for node_name in self._node_names:
-            node = self.model.nodes[node_name]
-            if isinstance(node, AbstractStorage):
-                values.append(node.volume[self.scenario_index])
-            elif isinstance(node, AbstractNode):
-                values.append(node.flow[self.scenario_index])
-            else:
-                raise ValueError(
-                    "Unrecognised Node type '{}' for CSV writer".format(type(node))
-                )
-
-        self._writer.writerow(values)
-
-    def finish(self):
-        if self._fh:
-            self._fh.close()
-
-
-CSVRecorder.register()
-
-
-class TablesRecorder(Recorder):
+class TablesRecorder2(Recorder):
     """
     A recorder that saves model outputs to an HDF file.
 
-    This Recorder creates a CArray in the HDF file for every node passed to the
-    constructor. Each CArray stores the data for all scenarios on the specific node.
+    This Recorder is an extension of the original 'TablesRecorder'. It creates
+    multiple CArrays in the HDF file for every node passed to the
+    constructor. Each node has a CArray for flow/volume, max flow/volume, min flow/volume.
+    This enables downstream processing to calculate statistics such as deficit and
+    utilisation. Each CArray stores the data for all scenarios on the specific node.
     This is useful for analysis of Node statistics across multiple scenarios.
     Parameter values can also be optionally stored in CArrays within the file.
 
@@ -287,7 +74,7 @@ class TablesRecorder(Recorder):
         routes_flows : string
             Relative (to `where`) node path to save the routes flow CArray. If None (default) no array is created.
         routes : string
-            Full node path to save the routes tables.Table. If None not table is created.
+            Full node path to save the routes tables.Table. If None no table is created.
         filter_kwds : dict
             Filter keywords to pass to tables.open_file when opening a file.
         mode : string
@@ -297,17 +84,21 @@ class TablesRecorder(Recorder):
         create_directories : bool
             If a file path is given and create_directories is True then attempt to make the intermediate
             directories. This uses os.makedirs() underneath.
-        use_legacy_attribute_naming: bool
-            if True then the attribute and type metadata associated with each node will be 'pywr-attribute' and 'pywr-type'.
-            Defaults to False for 'PYWR_ATTRIBUTE' and 'PYWR_TYPE' respectively.
+        buffer_size : int
+            The size in megabytes of buffer to keep in memory before appending to the PyTables data. This
+            buffer is a total buffer for the whole recorder and is divided amongst the items to be recorded
+            equally. Default is 100.
+        buffer_timesteps: int
+            The number of timesteps to buffer in memory before appending to the PyTables data. This is an alternative
+            to buffer_size, and if given will be used in preference to buffer_size.
         """
         self.filter_kwds = kwargs.pop("filter_kwds", {})
         self.mode = kwargs.pop("mode", "w")
         self.metadata = kwargs.pop("metadata", {})
         self.create_directories = kwargs.pop("create_directories", False)
-        self.use_legacy_attribute_naming = kwargs.pop(
-            "use_legacy_attribute_naming", False
-        )
+        self.buffer_size = kwargs.pop("buffer_size", 100)
+        self.buffer_timesteps = kwargs.pop("buffer_timesteps", None)
+        self._buffer_num_timesteps = 1
 
         title = kwargs.pop("title", None)
         if title is None:
@@ -316,11 +107,19 @@ class TablesRecorder(Recorder):
             except KeyError:
                 title = ""
         self.title = title
-        super(TablesRecorder, self).__init__(model, **kwargs)
+        super(TablesRecorder2, self).__init__(model, **kwargs)
 
         self.h5file = h5file
         self.h5store = None
-        self._arrays = {}
+        # Separate internal storage
+        self._node_arrays = None
+        self._nodes = None
+        self._storage_node_arrays = None
+        self._storage_nodes = None
+        self._parameter_arrays = None
+        self._parameters = None
+        self._index_parameter_arrays = None
+        self._index_parameters = None
         self.nodes = nodes
         self.where = where
         self.time = time
@@ -337,7 +136,6 @@ class TablesRecorder(Recorder):
             for parameter in parameters:
                 self._add_parameter(parameter)
 
-        self._arrays = None
         self._time_table = None
         self._routes_flow_array = None
 
@@ -389,18 +187,17 @@ class TablesRecorder(Recorder):
         return cls(model, url, **data)
 
     @staticmethod
-    def _node_attribute(node) -> str:
+    def _node_attribute(node) -> Tuple[str, str, str]:
         """Return the type of attribute recorded from a particular "node" type."""
-        from pywr.parameters import Parameter, IndexParameter
 
         if isinstance(node, AbstractStorage):
-            return "volume"
+            return ("max_volume", "volume", "min_volume")
         elif isinstance(node, AbstractNode):
-            return "flow"
+            return ("max_flow", "flow", "min_flow")
         elif isinstance(node, IndexParameter):
-            return "parameter-index"
+            return (None, "parameter_index", None)
         elif isinstance(node, Parameter):
-            return "parameter"
+            return (None, "parameter", None)
         else:
             raise ValueError(
                 "Unrecognised Node type '{}' for TablesRecorder".format(type(node))
@@ -417,27 +214,30 @@ class TablesRecorder(Recorder):
         # The following dimensions are sized per scenario
         scenario_shape = list(self.model.scenarios.shape)
         shape = [len(self.model.timestepper)] + scenario_shape
-
         self.h5store = H5Store(
             self.h5file,
             self.filter_kwds,
             self.mode,
             title=self.title,
-            metadata={"PYWR_FORMAT": 1, "PYWR_VERSION": 1, **self.metadata},
+            metadata={"PYWR_FORMAT": 2, "PYWR_VERSION": 1, **self.metadata},
             create_directories=self.create_directories,
         )
 
         # Create a CArray for each node
-        self._arrays = {}
+        self._node_arrays = {}
+        self._storage_node_arrays = {}
+        self._parameter_arrays = {}
+        self._index_parameter_arrays = {}
 
-        # Default to all nodes if None given.
+        # Collect all items
         if self.nodes is None:
-            nodes = [
+            # Default to all nodes if None given.
+            items = [
                 ((self.where + "/" + n.name).replace("//", "/"), n)
                 for n in self.model.nodes.values()
             ]
         else:
-            nodes = []
+            items = []
             for n in self.nodes:
                 try:
                     where, node = n
@@ -451,31 +251,60 @@ class TablesRecorder(Recorder):
                 # Otherwise assume it is a node object anyway
 
                 where = where.replace("//", "/")
-                nodes.append((where, node))
+                items.append((where, node))
 
         if self.parameters is not None:
-            nodes.extend(self.parameters)
+            items.extend(self.parameters)
 
-        self._nodes = nodes
+        # Work out the number of timesteps to buffer
+        if self.buffer_timesteps is not None:
+            self._buffer_num_timesteps = min(self.buffer_timesteps, len(self.model.timestepper))
+        elif self.buffer_size is not None:
+            # Divide by 8 as we are storing 64-bit floats
+            # Also assume most data is nodes, and we store 3 values for each
+            total_buffer_values = self.buffer_size * 1024 * 1024 / 8 / 3
+            buffer_per_item = total_buffer_values // len(items)
+            self._buffer_num_timesteps = min(max(1, int(buffer_per_item // np.prod(scenario_shape))), len(self.model.timestepper))
+        else:
+            self._buffer_num_timesteps = 1
 
-        for where, node in self._nodes:
-            if isinstance(node, IndexParameter):
+        self._nodes = []
+        self._storage_nodes = []
+        self._parameters = []
+        self._index_parameters = []
+
+        for where, item in items:
+            if isinstance(item, IndexParameter):
                 atom = tables.Int32Atom()
             else:
                 atom = tables.Float64Atom()
-            group_name, node_name = where.rsplit("/", 1)
+            group_name = where
             if group_name == "":
                 group_name = "/"
-            carray = self.h5store.file.create_carray(
-                group_name, node_name, atom, shape, createparents=True
-            )
-            # Save some metadata about the type of data this is
-            if self.use_legacy_attribute_naming:
-                carray._v_attrs["pywr-attribute"] = self._node_attribute(node)
-                carray._v_attrs["pywr-type"] = node.__class__.__name__
+
+            node_attributes = self._node_attribute(item)
+            for attr in node_attributes:
+                if attr is not None:
+                    carray = self.h5store.file.create_carray(
+                        group_name, attr, atom, shape, createparents=True
+                    )
+                    # Save some metadata about the type of data this is
+                    carray._v_attrs["PYWR_ATTRIBUTE"] = attr
+                    carray._v_attrs["PYWR_TYPE"] = item.__class__.__name__
+
+            # Collect the items into their own dictionaries organised by type
+            if isinstance(item, AbstractStorage):
+                self._storage_nodes.append((where, item))
+            elif isinstance(item, AbstractNode):
+                self._nodes.append((where, item))
+            elif isinstance(item, IndexParameter):
+                self._index_parameters.append((where, item))
+            elif isinstance(item, Parameter):
+                self._parameters.append((where, item))
             else:
-                carray._v_attrs["PYWR_ATTRIBUTE"] = self._node_attribute(node)
-                carray._v_attrs["PYWR_TYPE"] = node.__class__.__name__
+                raise ValueError(
+                    "Unrecognised type '{}' for TablesRecorder".format(type(item))
+                )
 
         # Create scenario tables
         if self.scenarios is not None:
@@ -498,22 +327,27 @@ class TablesRecorder(Recorder):
                 entry.append()
             tbl.flush()
 
-            if self.model.scenarios.user_combinations is not None:
-                description = {
-                    s.name: tables.Int64Col() for s in self.model.scenarios.scenarios
-                }
-                tbl = self.h5store.file.create_table(
-                    group_name,
-                    "scenario_combinations",
-                    description=description,
-                    createparents=True,
+            ensemble_names = [
+                scenario.ensemble_names for scenario in self.model.scenarios.scenarios
+            ]
+            if len(ensemble_names) > 0:
+                indices = [
+                    [
+                        str(ensemble_names[n][i])
+                        for n, i in enumerate(scenario_index.indices)
+                    ]
+                    for scenario_index in self.model.scenarios.get_combinations()
+                ]
+                _ = self.h5store.file.create_carray(
+                    "/", "scenario_ensemble_names", obj=indices
                 )
-                entry = tbl.row
-                for comb in self.model.scenarios.user_combinations:
-                    for s, i in zip(self.model.scenarios.scenarios, comb):
-                        entry[s.name] = i
-                    entry.append()
-                tbl.flush()
+
+            if self.model.scenarios.user_combinations is not None:
+                combs = np.array(self.model.scenarios.user_combinations, dtype=np.int64)
+                ds = self.h5store.file.create_carray(
+                    "/", "scenario_combinations", obj=combs
+                )
+                ds.attrs.columns = [s.name for s in self.model.scenarios.scenarios]
             elif any([s.slice for s in self.model.scenarios.scenarios]):
                 # Slices are only applied in a model run if there are no user combinations
                 description = {
@@ -549,9 +383,47 @@ class TablesRecorder(Recorder):
 
         mode = "r+"  # always need to append, as file already created in setup
         self.h5store = H5Store(self.h5file, self.filter_kwds, mode)
-        self._arrays = {}
+
+        if self._buffer_num_timesteps > 1:
+            scenario_shape = list(self.model.scenarios.shape)
+            buffer_shape = [self._buffer_num_timesteps, ] + scenario_shape
+        else:
+            buffer_shape = None
+
+        self._buffer_write_position = 0
+
+        self._node_arrays = {}
         for where, node in self._nodes:
-            self._arrays[node] = self.h5store.file.get_node(where)
+            if buffer_shape is not None:
+                buffer = np.empty([3, ] + buffer_shape, dtype=np.float64)
+            else:
+                buffer = None
+
+            self._node_arrays[node] = (self.h5store.file.get_node(where), buffer)
+
+        self._storage_node_arrays = {}
+        for where, node in self._storage_nodes:
+            if buffer_shape is not None:
+                buffer = np.empty([3, ] + buffer_shape, dtype=np.float64)
+            else:
+                buffer = None
+            self._storage_node_arrays[node] = (self.h5store.file.get_node(where), buffer)
+
+        self._index_parameter_arrays = {}
+        for where, node in self._index_parameters:
+            if buffer_shape is not None:
+                buffer = np.empty([1, ] + buffer_shape, dtype=np.int32)
+            else:
+                buffer = None
+            self._index_parameter_arrays[node] = (self.h5store.file.get_node(where), buffer)
+
+        self._parameter_arrays = {}
+        for where, node in self._parameters:
+            if buffer_shape is not None:
+                buffer = np.empty([1, ] + buffer_shape, dtype=np.float64)
+            else:
+                buffer = None
+            self._parameter_arrays[node] = (self.h5store.file.get_node(where), buffer)
 
         self._time_table = None
         # Create time table
@@ -638,8 +510,13 @@ class TablesRecorder(Recorder):
         """
         Save data to the tables
         """
-        from pywr._core import AbstractNode, AbstractStorage
-        from pywr.parameters import Parameter, IndexParameter
+        cdef AbstractNode node
+        cdef AbstractStorage storage_node
+        cdef Parameter parameter
+        cdef IndexParameter index_parameter
+        cdef double[:] v
+        cdef int[:] i
+        cdef double[:] out = np.empty(len(self.model.scenarios.combinations))
 
         scenario_shape = list(self.model.scenarios.shape)
         ts = self.model.timestepper.current
@@ -653,21 +530,57 @@ class TablesRecorder(Recorder):
             entry["index"] = idx
             entry.append()
 
-        for node, ca in self._arrays.items():
-            if isinstance(node, AbstractStorage):
-                ca[idx, :] = np.reshape(node.volume, scenario_shape)
-            elif isinstance(node, AbstractNode):
-                ca[idx, :] = np.reshape(node.flow, scenario_shape)
-            elif isinstance(node, IndexParameter):
-                a = node.get_all_indices()
-                ca[idx, :] = np.reshape(a, scenario_shape)
-            elif isinstance(node, Parameter):
-                a = node.get_all_values()
-                ca[idx, :] = np.reshape(a, scenario_shape)
+        buffer_idx = idx % self._buffer_num_timesteps
+
+        for node, (arrays, buffer) in self._node_arrays.items():
+            if buffer is None:
+                node.get_all_max_flow(out)
+                arrays.max_flow[idx, :] = np.reshape(out, scenario_shape)
+
+                node.get_all_min_flow(out)
+                arrays.min_flow[idx, :] = np.reshape(out, scenario_shape)
+
+                arrays.flow[idx, :] = np.reshape(node._flow, scenario_shape)
             else:
-                raise ValueError(
-                    "Unrecognised Node type '{}' for TablesRecorder".format(type(node))
-                )
+                node.get_all_max_flow(out)
+                buffer[0, buffer_idx, ...] = np.reshape(out, scenario_shape)
+                node.get_all_min_flow(out)
+                buffer[1, buffer_idx, ...] = np.reshape(out, scenario_shape)
+                buffer[2, buffer_idx, ...] = np.reshape(node._flow, scenario_shape)
+
+        for storage_node, (arrays, buffer) in self._storage_node_arrays.items():
+            if buffer is None:
+                storage_node.get_all_max_volume(out)
+                arrays.max_volume[idx, :] = np.reshape(out, scenario_shape)
+
+                storage_node.get_all_min_volume(out)
+                arrays.min_volume[idx, :] = np.reshape(out, scenario_shape)
+
+                arrays.volume[idx, :] = np.reshape(storage_node._volume, scenario_shape)
+            else:
+                storage_node.get_all_max_volume(out)
+                buffer[0, buffer_idx, ...] = np.reshape(out, scenario_shape)
+                storage_node.get_all_min_volume(out)
+                buffer[1, buffer_idx, ...] = np.reshape(out, scenario_shape)
+                buffer[2, buffer_idx, ...] = np.reshape(storage_node._volume, scenario_shape)
+
+        for parameter, (arrays, buffer) in self._parameter_arrays.items():
+            if buffer is None:
+                v = parameter.get_all_values()
+                arrays.parameter[idx, :] = np.reshape(v, scenario_shape)
+            else:
+                buffer[0, buffer_idx, ...] = np.reshape(parameter.get_all_values(), scenario_shape)
+
+        for index_parameter, (arrays, buffer) in self._index_parameter_arrays.items():
+            if buffer is None:
+                i = index_parameter.get_all_indices()
+                arrays.parameter_index[idx, :] = np.reshape(i, scenario_shape)
+            else:
+                buffer[0, buffer_idx, ...] = np.reshape(index_parameter.get_all_indices(), scenario_shape)
+
+        # Flush before we overwrite the data if this is the last entry in the buffer
+        if self._buffer_num_timesteps > 1 and (idx + 1) % self._buffer_num_timesteps == 0:
+            self.flush_buffer(idx, self._buffer_num_timesteps)
 
         if self._routes_flow_array is not None:
             routes_shape = [
@@ -677,11 +590,50 @@ class TablesRecorder(Recorder):
                 self.model.solver.routes_flows_array.T, routes_shape
             )
 
+    def flush_buffer(self, int idx, int num_timesteps):
+        """Flush the buffer arrays to PyTables"""
+        cdef int idx_start = idx + 1 - num_timesteps
+
+        for _, (arrays, buffer) in self._node_arrays.items():
+            arrays.max_flow[idx_start:idx + 1, ...] = buffer[0, :num_timesteps, ...]
+            arrays.min_flow[idx_start:idx + 1, ...] = buffer[1, :num_timesteps, ...]
+            arrays.flow[idx_start:idx + 1, ...] = buffer[2, :num_timesteps, ...]
+
+        for _, (arrays, buffer) in self._storage_node_arrays.items():
+            arrays.max_volume[idx_start:idx + 1, ...] = buffer[0, :num_timesteps, ...]
+            arrays.min_volume[idx_start:idx + 1, ...] = buffer[1, :num_timesteps, ...]
+            arrays.volume[idx_start:idx + 1, ...] = buffer[2, :num_timesteps, ...]
+
+        for _, (arrays, buffer) in self._parameter_arrays.items():
+            arrays.parameter[idx_start:idx + 1, ...] = buffer[0, :num_timesteps, ...]
+
+        for _, (arrays, buffer) in self._index_parameter_arrays.items():
+            arrays.parameter_index[idx_start:idx + 1, ...] = buffer[0, :num_timesteps, ...]
+
+        if self._time_table is not None:
+            self._time_table.flush()
+
     def finish(self):
+
+        if self._buffer_num_timesteps > 1:
+            ts = self.model.timestepper.current
+            # The final time-step is one past the end of the data
+            idx = ts.index
+            residual_timesteps = idx % self._buffer_num_timesteps
+
+            # Flush the buffer if there are residual time-steps, or our buffer covered the entire simulation
+            if residual_timesteps > 0:
+                self.flush_buffer(idx - 1, residual_timesteps)
+            elif self._buffer_num_timesteps == len(self.model.timestepper):
+                self.flush_buffer(idx - 1, self._buffer_num_timesteps)
+
         if self._time_table is not None:
             self._time_table.flush()
         self.h5store = None
-        self._arrays = {}
+        self._node_arrays = {}
+        self._storage_node_arrays = {}
+        self._parameter_arrays = {}
+        self._index_parameter_arrays = {}
         self._routes_flow_array = None
 
     @staticmethod
@@ -721,10 +673,12 @@ class TablesRecorder(Recorder):
             columns = None
 
         for node in store.file.walk_nodes("/", "CArray"):
+            if node.name in ("scenario_combinations", "scenario_ensemble_names"):
+                continue
             data = node.read()
             data = data.reshape((data.shape[0], -1))
             df = pandas.DataFrame(data, index=index, columns=columns)
-            yield node._v_name, df
+            yield f"{node._v_parent._v_name}.{node._v_name}", df
 
 
-TablesRecorder.register()
+TablesRecorder2.register()
