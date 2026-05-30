@@ -227,6 +227,38 @@ def test_aggregated_node_connectivity(three_storage_model):
         inpt.connect(agg_otpt)
 
 
+def test_aggregated_storage_get_all_min_volume(three_storage_model):
+    """Test `AggregatedStorage.get_all_min_volume` sums storages."""
+    m = three_storage_model
+
+    agg_storage = m.nodes["Total Storage"]
+    storages = [m.nodes["Storage {}".format(num)] for num in range(3)]
+
+    # Set some non-zero min volumes
+    for i, stg in enumerate(storages):
+        stg.min_volume = float(i + 1)
+
+    m.setup()
+
+    min_vols = np.array(agg_storage.get_all_min_volume())
+    expected = sum(s.min_volume for s in storages)
+    np.testing.assert_allclose(min_vols, expected)
+
+
+def test_aggregated_storage_get_all_max_volume(three_storage_model):
+    """Test `AggregatedStorage.get_all_max_volume` sums storages."""
+    m = three_storage_model
+
+    agg_storage = m.nodes["Total Storage"]
+    storages = [m.nodes["Storage {}".format(num)] for num in range(3)]
+
+    m.setup()
+
+    max_vols = np.array(agg_storage.get_all_max_volume())
+    expected = sum(s.max_volume for s in storages)
+    np.testing.assert_allclose(max_vols, expected)
+
+
 def test_aggregated_node_attributes(three_storage_model):
     """Test `AggregatedStorage` has the correct attributes."""
     m = three_storage_model
