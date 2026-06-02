@@ -12,7 +12,7 @@ import pytest
 import tables
 import json
 from numpy.testing import assert_allclose, assert_equal
-from fixtures import simple_linear_model, simple_storage_model
+from fixtures import simple_linear_model, simple_storage_model, three_storage_model
 from pywr.nodes import PiecewiseLink
 from pywr.recorders import (
     Recorder,
@@ -2503,6 +2503,34 @@ class TestTablesRecorder2:
                             np.testing.assert_allclose(ca, inflow)
                     else:
                         np.testing.assert_allclose(ca, inflow)
+
+    def test_aggregated_storage(self, three_storage_model, tmpdir):
+        """Test TablesRecorder2 works with an AggregatedStorage node."""
+        model = three_storage_model
+
+        agg_stg = model.nodes["Total Storage"]
+        stgs = [model.nodes["Storage {}".format(num)] for num in range(3)]
+
+        h5file = tmpdir.join("output.h5")
+        import tables
+
+        with tables.open_file(str(h5file), "w") as h5f:
+            rec = TablesRecorder2(model, h5f)
+            model.run()
+
+            # Check the aggregated storage node has volume, max_volume, min_volume arrays
+            for attr in ("volume", "max_volume", "min_volume"):
+                ca = h5f.get_node("/Total Storage", attr)
+                assert ca.shape[0] == len(model.timestepper)
+
+            # Verify max_volume is the sum of individual storages
+            ca = h5f.get_node("/Total Storage", "max_volume")
+            expected_max = sum(s.max_volume for s in stgs)
+            np.testing.assert_allclose(ca[0, 0], expected_max)
+
+            # Verify min_volume is the sum (all zero by default)
+            ca = h5f.get_node("/Total Storage", "min_volume")
+            np.testing.assert_allclose(ca[0, 0], 0.0)
 
 
 class TestDeficitRecorders:

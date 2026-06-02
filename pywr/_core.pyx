@@ -1436,7 +1436,7 @@ cdef class AggregatedStorage(AbstractStorage):
             out[:] = 0.0
         for s in self._storage_nodes:
             mnvs = s.get_all_min_volume()
-            for i in range(out.shape[0]):
+            for i in range(mnvs.shape[0]):
                 out[i] += mnvs[i]
         return out
 
@@ -1450,7 +1450,7 @@ cdef class AggregatedStorage(AbstractStorage):
             out[:] = 0.0
         for s in self._storage_nodes:
             mxvs = s.get_all_max_volume()
-            for i in range(out.shape[0]):
+            for i in range(mxvs.shape[0]):
                 out[i] += mxvs[i]
         return out
 
