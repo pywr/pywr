@@ -1426,6 +1426,34 @@ cdef class AggregatedStorage(AbstractStorage):
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
 
+    cpdef double[:] get_all_min_volume(self, double[:] out=None):
+        cdef int i
+        cdef Storage s
+        cdef double[:] mnvs
+        if out is None:
+            out = np.zeros(len(self.model.scenarios.combinations))
+        else:
+            out[:] = 0.0
+        for s in self._storage_nodes:
+            mnvs = s.get_all_min_volume()
+            for i in range(mnvs.shape[0]):
+                out[i] += mnvs[i]
+        return out
+
+    cpdef double[:] get_all_max_volume(self, double[:] out=None):
+        cdef int i
+        cdef Storage s
+        cdef double[:] mxvs
+        if out is None:
+            out = np.zeros(len(self.model.scenarios.combinations))
+        else:
+            out[:] = 0.0
+        for s in self._storage_nodes:
+            mxvs = s.get_all_max_volume()
+            for i in range(mxvs.shape[0]):
+                out[i] += mxvs[i]
+        return out
+
 
 cdef class VirtualStorage(Storage):
     def __cinit__(self, ):
