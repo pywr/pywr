@@ -22,6 +22,8 @@
       ~AggregatedStorage.finalise_load
       ~AggregatedStorage.finish
       ~AggregatedStorage.get_all_cost
+      ~AggregatedStorage.get_all_max_volume
+      ~AggregatedStorage.get_all_min_volume
       ~AggregatedStorage.get_cost
       ~AggregatedStorage.get_current_pc
       ~AggregatedStorage.pre_load
