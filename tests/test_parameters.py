@@ -142,7 +142,7 @@ class TestConstantParameter:
 
 def test_load_parameter_tags_with_url(model):
     """Check that tags are not passed to load_parameter_values when loading a parameter with a url"""
-    
+
     model.path = os.path.join(TEST_DIR, "models")
 
     data = {
