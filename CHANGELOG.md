@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.31.1] - 2026-06-08
+
+### 🐛 Bug Fixes
+
+- Add get_all_min_volume and get_all_max_volume to methods to AggregatedStorage ([#1185](https://github.com/pywr/pywr/issues/1185))
+- Prevent tags from being passed to load_parameter_values function ([#1186](https://github.com/pywr/pywr/issues/1186))
+
 ## [1.31.0] - 2026-05-21
 
 ### 🐛 Bug Fixes
