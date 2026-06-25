@@ -140,6 +140,22 @@ class TestConstantParameter:
             p.get_integer_variables()
 
 
+def test_load_parameter_tags_with_url(model):
+    """Check that tags are not passed to load_parameter_values when loading a parameter with a url"""
+
+    model.path = os.path.join(TEST_DIR, "models")
+
+    data = {
+        "type": "dailyprofileparameter",
+        "url": "control_curve.csv",
+        "column": "Control Curve",
+        "tags": {"tag1": "val1", "tag2": "val2"},
+    }
+    parameter = load_parameter(model, data)
+
+    assert parameter.tags == {"tag1": "val1", "tag2": "val2"}
+
+
 def test_parameter_array_indexed(simple_linear_model):
     """
     Test ArrayIndexedParameter

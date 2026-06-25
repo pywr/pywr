@@ -144,6 +144,8 @@ cdef class Storage(AbstractStorage):
 
 cdef class AggregatedStorage(AbstractStorage):
     cdef list _storage_nodes
+    cpdef double[:] get_all_min_volume(self, double[:] out=*)
+    cpdef double[:] get_all_max_volume(self, double[:] out=*)
 
 cdef class VirtualStorage(Storage):
     cdef list _nodes

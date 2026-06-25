@@ -2,7 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.30.0] - 2026-03-17
+## [1.31.1] - 2026-06-08
+
+### 🐛 Bug Fixes
+
+- Add get_all_min_volume and get_all_max_volume to methods to AggregatedStorage ([#1185](https://github.com/pywr/pywr/issues/1185))
+- Prevent tags from being passed to load_parameter_values function ([#1186](https://github.com/pywr/pywr/issues/1186))
+
+## [1.31.0] - 2026-05-21
+
+### 🐛 Bug Fixes
+
+- Clip aggregated storage volume in min or max when close. ([#1182](https://github.com/pywr/pywr/issues/1182))
+
+### ⚡ Performance
+
+- Improve the performance of TablesRecorder2 ([#1183](https://github.com/pywr/pywr/issues/1183))
+
+## [1.30.0] - 2026-03-17
 
 ### 🚀 Features
 

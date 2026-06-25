@@ -1403,20 +1403,56 @@ cdef class AggregatedStorage(AbstractStorage):
         cdef int i
         cdef Storage s
         cdef double mxv
+        cdef double mnv
 
         for i, si in enumerate(self.model.scenarios.combinations):
             self._flow[i] = 0.0
             mxv = 0.0
+            mnv = 0.0
             for s in self._storage_nodes:
                 self._flow[i] += s._flow[i]
                 mxv += s.get_max_volume(si)
+                mnv += s.get_min_volume(si)
             self._volume[i] += self._flow[i]*ts.days
+
+            if abs(self._volume[i] - mxv) < 1e-6:
+                self._volume[i] = mxv
+            if abs(self._volume[i] - mnv) < 1e-6:
+                self._volume[i] = mnv
 
             # Ensure variable maximum volume is taken in to account
             try:
                 self._current_pc[i] = self._volume[i] / mxv
             except ZeroDivisionError:
                 self._current_pc[i] = np.nan
+
+    cpdef double[:] get_all_min_volume(self, double[:] out=None):
+        cdef int i
+        cdef Storage s
+        cdef double[:] mnvs
+        if out is None:
+            out = np.zeros(len(self.model.scenarios.combinations))
+        else:
+            out[:] = 0.0
+        for s in self._storage_nodes:
+            mnvs = s.get_all_min_volume()
+            for i in range(mnvs.shape[0]):
+                out[i] += mnvs[i]
+        return out
+
+    cpdef double[:] get_all_max_volume(self, double[:] out=None):
+        cdef int i
+        cdef Storage s
+        cdef double[:] mxvs
+        if out is None:
+            out = np.zeros(len(self.model.scenarios.combinations))
+        else:
+            out[:] = 0.0
+        for s in self._storage_nodes:
+            mxvs = s.get_all_max_volume()
+            for i in range(mxvs.shape[0]):
+                out[i] += mxvs[i]
+        return out
 
 
 cdef class VirtualStorage(Storage):

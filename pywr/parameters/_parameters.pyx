@@ -2319,6 +2319,7 @@ def load_parameter(model, data, parameter_name=None):
         parameter = data
     else:
         # parameter is dynamic
+        tags = data.pop("tags", None)
 
         try:
              parameter_type = data['type']
@@ -2338,6 +2339,9 @@ def load_parameter(model, data, parameter_name=None):
         if "name" in kwargs:
             del(kwargs["name"])
         parameter = cls.load(model, kwargs)
+
+        if tags is not None:
+            parameter.tags = tags
 
     if parameter_name is not None:
         # TODO FIXME: memory leak if parameter is subsequently removed from the model

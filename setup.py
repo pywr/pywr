@@ -66,6 +66,9 @@ def setup_package():
         Extension("pywr.recorders._recorders", ["pywr/recorders/_recorders.pyx"]),
         Extension("pywr.recorders._thresholds", ["pywr/recorders/_thresholds.pyx"]),
         Extension("pywr.recorders._hydropower", ["pywr/recorders/_hydropower.pyx"]),
+        Extension(
+            "pywr.recorders._tables_recorders", ["pywr/recorders/_tables_recorders.pyx"]
+        ),
     ]
 
     config = parse_optional_arguments()
