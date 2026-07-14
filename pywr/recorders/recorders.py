@@ -498,6 +498,21 @@ class TablesRecorder(Recorder):
                 entry.append()
             tbl.flush()
 
+            ensemble_names = [
+                scenario.ensemble_names for scenario in self.model.scenarios.scenarios
+            ]
+            if len(ensemble_names) > 0:
+                indices = [
+                    [
+                        str(ensemble_names[n][i])
+                        for n, i in enumerate(scenario_index.indices)
+                    ]
+                    for scenario_index in self.model.scenarios.get_combinations()
+                ]
+                _ = self.h5store.file.create_carray(
+                    "/", "scenario_ensemble_names", obj=indices
+                )
+
             if self.model.scenarios.user_combinations is not None:
                 description = {
                     s.name: tables.Int64Col() for s in self.model.scenarios.scenarios
