@@ -736,6 +736,8 @@ class TablesRecorder(Recorder):
             columns = None
 
         for node in store.file.walk_nodes("/", "CArray"):
+            if node.name in ("scenario_combinations", "scenario_ensemble_names"):
+                continue
             data = node.read()
             data = data.reshape((data.shape[0], -1))
             df = pandas.DataFrame(data, index=index, columns=columns)
