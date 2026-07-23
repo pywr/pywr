@@ -1924,17 +1924,15 @@ class TestTablesRecorder2:
                 assert row["name"] == s.name.encode("utf-8")
                 assert row["size"] == s.size
 
-            ensemble_names = h5f.get_node("/scenario_ensemble_names")
-            col1 = ensemble_names[:, 0]
-            exp1 = np.repeat(
-                ["scenario A1", "scenario A2", "scenario A3", "scenario A4"], 2
-            )
-            for val1, ex1 in zip(col1, exp1):
-                assert val1 == ex1.encode("utf-8")
-            col2 = ensemble_names[:, 1]
-            exp2 = ["scenario B1", "scenario B2"] * 4
-            for val2, ex2 in zip(col2, exp2):
-                assert val2 == ex2.encode("utf-8")
+            names_a = h5f.get_node("/scenario_ensemble_names/A").read()
+            names_b = h5f.get_node("/scenario_ensemble_names/B").read()
+            assert [n.decode() for n in names_a] == [
+                "scenario A1",
+                "scenario A2",
+                "scenario A3",
+                "scenario A4",
+            ]
+            assert [n.decode() for n in names_b] == ["scenario B1", "scenario B2"]
 
     def test_ensemble_names_with_user_combinations(self, simple_linear_model, tmpdir):
 
@@ -1969,12 +1967,98 @@ class TestTablesRecorder2:
 
             model.run()
 
-            # check combinations table exists
-            scenario_ensemble_names = h5f.get_node("/scenario_ensemble_names")
-            assert scenario_ensemble_names[0][0].decode() == "scenario A1"
-            assert scenario_ensemble_names[0][1].decode() == "scenario B1"
-            assert scenario_ensemble_names[1][0].decode() == "scenario A4"
-            assert scenario_ensemble_names[1][1].decode() == "scenario B2"
+            per_scenario_names = [
+                [
+                    n.decode()
+                    for n in h5f.get_node(
+                        "/scenario_ensemble_names/{}".format(s.name)
+                    ).read()
+                ]
+                for s in model.scenarios.scenarios
+            ]
+            assert per_scenario_names[0] == [
+                "scenario A1",
+                "scenario A2",
+                "scenario A3",
+                "scenario A4",
+            ]
+            assert per_scenario_names[1] == ["scenario B1", "scenario B2"]
+
+            # The labelled combinations are recovered by indexing the per-scenario
+            # names with the integer indices in scenario_combinations.
+            combinations = h5f.get_node("/scenario_combinations").read()
+            labelled = [
+                [per_scenario_names[s][idx] for s, idx in enumerate(comb)]
+                for comb in combinations
+            ]
+            assert labelled[0] == ["scenario A1", "scenario B1"]
+            assert labelled[1] == ["scenario A4", "scenario B2"]
+
+    def test_ensemble_names_not_stored_when_undefined(
+        self, simple_linear_model, tmpdir
+    ):
+        """Ensemble names are not persisted when they are not defined for a scenario."""
+        from pywr.parameters import ConstantScenarioParameter
+
+        model = simple_linear_model
+        scA = Scenario(model, name="A", size=4)  # no ensemble_names
+        scB = Scenario(model, name="B", size=2)  # no ensemble_names
+
+        otpt = model.nodes["Output"]
+        inpt = model.nodes["Input"]
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join("output.h5")
+        import tables
+
+        with tables.open_file(str(h5file), "w") as store:
+            TablesRecorder2(model, store)
+            model.run()
+            # Nothing was named, so no group/arrays should be created.
+            assert "/scenario_ensemble_names" not in store
+
+    def test_ensemble_names_mixed(self, simple_linear_model, tmpdir):
+        """Only scenarios with explicit ensemble names are stored."""
+        from pywr.parameters import ConstantScenarioParameter
+
+        model = simple_linear_model
+        scA = Scenario(model, name="A", size=4, ensemble_names=["A1", "A2", "A3", "A4"])
+        scB = Scenario(model, name="B", size=2)  # unnamed
+
+        otpt = model.nodes["Output"]
+        inpt = model.nodes["Input"]
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join("output.h5")
+        import tables
+
+        with tables.open_file(str(h5file), "w") as store:
+            TablesRecorder2(model, store)
+            model.run()
+            # Only the named scenario ("A") has a stored array.
+            assert "/scenario_ensemble_names/A" in store
+            assert "/scenario_ensemble_names/B" not in store
+
+    def test_ensemble_names_duplicate_node_name_error(
+        self, simple_linear_model, tmpdir
+    ):
+        """Scenario names that collide after sanitisation raise an error."""
+        model = simple_linear_model
+        # "a/b" and "a_b" both sanitise to the node name "a_b".
+        Scenario(model, name="a/b", size=2, ensemble_names=["x", "y"])
+        Scenario(model, name="a_b", size=2, ensemble_names=["p", "q"])
+
+        h5file = tmpdir.join("output.h5")
+        import tables
+
+        with tables.open_file(str(h5file), "w") as store:
+            TablesRecorder2(model, store)
+            with pytest.raises(ValueError, match="not unique"):
+                model.setup()
 
     def test_scenario_slices(self, simple_linear_model, tmpdir):
         """
