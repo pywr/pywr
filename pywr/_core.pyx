@@ -71,6 +71,11 @@ cdef class Scenario:
                 raise ValueError("The length of ensemble_names ({}) must be equal to the size of the scenario ({})".format(len(names), self.size))  # noqa
             self._ensemble_names = names
 
+    property has_ensemble_names:
+        """Whether user-defined ensemble names have been set on this scenario."""
+        def __get__(self):
+            return self._ensemble_names is not None
+
 cdef class ScenarioCollection:
     """ Represents a collection of `Scenario` objects.
 
