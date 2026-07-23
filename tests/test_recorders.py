@@ -1234,6 +1234,55 @@ class TestTablesRecorder:
                 assert row["A"] == comb[0]
                 assert row["B"] == comb[1]
 
+    def test_multiple_scenarios_ensemble_names(self, simple_linear_model, tmpdir):
+        """
+        Test the TablesRecorder
+
+        """
+        from pywr.parameters import ConstantScenarioParameter
+
+        model = simple_linear_model
+        scA = Scenario(
+            model,
+            name="A",
+            size=4,
+            ensemble_names=["scenario A1", "scenario A2", "scenario A3", "scenario A4"],
+        )
+        scB = Scenario(
+            model, name="B", size=2, ensemble_names=["scenario B1", "scenario B2"]
+        )
+
+        otpt = model.nodes["Output"]
+        inpt = model.nodes["Input"]
+
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmpdir.join("output.h5")
+        import tables
+
+        with tables.open_file(str(h5file), "w") as h5f:
+            rec = TablesRecorder(model, h5f)
+
+            model.run()
+
+            scenarios = h5f.get_node("/scenarios")
+            for i, s in enumerate(model.scenarios.scenarios):
+                row = scenarios[i]
+                assert row["name"] == s.name.encode("utf-8")
+                assert row["size"] == s.size
+
+            names_a = h5f.get_node("/scenario_ensemble_names/A").read()
+            names_b = h5f.get_node("/scenario_ensemble_names/B").read()
+            assert [n.decode() for n in names_a] == [
+                "scenario A1",
+                "scenario A2",
+                "scenario A3",
+                "scenario A4",
+            ]
+            assert [n.decode() for n in names_b] == ["scenario B1", "scenario B2"]
+
     def test_scenario_slices(self, simple_linear_model, tmpdir):
         """
         Test the TablesRecorder with user defined scenario subset
