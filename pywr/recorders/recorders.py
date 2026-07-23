@@ -498,19 +498,30 @@ class TablesRecorder(Recorder):
                 entry.append()
             tbl.flush()
 
-            ensemble_names = [
-                scenario.ensemble_names for scenario in self.model.scenarios.scenarios
-            ]
-            if len(ensemble_names) > 0:
-                indices = [
-                    [
-                        str(ensemble_names[n][i])
-                        for n, i in enumerate(scenario_index.indices)
-                    ]
-                    for scenario_index in self.model.scenarios.get_combinations()
-                ]
-                _ = self.h5store.file.create_carray(
-                    "/", "scenario_ensemble_names", obj=indices
+            # Store user-defined ensemble name for each scenario, it they exist.
+            scenarios_list = self.model.scenarios.scenarios
+            node_names = [s.name.replace("/", "_") for s in scenarios_list]
+            duplicate_node_names = {n for n in node_names if node_names.count(n) > 1}
+            for scenario, node_name in zip(scenarios_list, node_names):
+                if not scenario.has_ensemble_names:
+                    continue
+                if node_name in duplicate_node_names:
+                    raise ValueError(
+                        "Cannot store ensemble names for scenario '{}': its "
+                        "sanitised node name '{}' is not unique across scenarios "
+                        "(scenario names are sanitised by replacing '/' with "
+                        "'_'). Rename the scenario(s) to avoid the collision."
+                        .format(scenario.name, node_name)
+                    )
+                names = np.array(
+                    [str(name).encode("utf-8") for name in scenario.ensemble_names],
+                    dtype="S1024"
+                )
+                self.h5store.file.create_array(
+                    "/scenario_ensemble_names",
+                    node_name,
+                    obj=names,
+                    createparents=True,
                 )
 
             if self.model.scenarios.user_combinations is not None:
