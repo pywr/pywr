@@ -2432,3 +2432,51 @@ class TestRollingMeanFlowNodeParameter:
         assert_allclose(rec_flow.data[:, 0], [2.0, 3.0, 4.0, 5.0])
         assert_allclose(rec_mean.data[:, 0], [0.0, 2.0, 2.5, 3.0])
         assert_allclose(rec_check.data[:, 0], [50.0, 50.0, 60.0, 60.0])
+
+
+class TestLinearInterpolator:
+    X = [3.0, 0.0, 5.0, 10.0, 11.0]  # deliberately unsorted
+    Y = [4.0, 0.0, 10.0, 30.0, 2.0]
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {},
+            {"bounds_error": False},
+            {"bounds_error": False, "fill_value": 7.0},
+            {"bounds_error": False, "fill_value": (0.0, 2.0)},
+            {"fill_value": "extrapolate"},
+        ],
+    )
+    def test_matches_interp1d(self, kwargs):
+        from pywr.parameters._parameters import LinearInterpolator
+
+        expected = interp1d(self.X, self.Y, kind="linear", **kwargs)
+        actual = LinearInterpolator(self.X, self.Y, **kwargs)
+
+        # Includes values on and outside of the data range, and on the data points.
+        for v in np.concatenate([np.linspace(-3, 14, 69), self.X]):
+            try:
+                e = float(expected(v))
+            except ValueError:
+                with pytest.raises(ValueError):
+                    actual(v)
+            else:
+                np.testing.assert_allclose(actual(v), e, equal_nan=True)
+
+    def test_parameter_uses_fast_path_only_for_linear(self, simple_linear_model):
+        from pywr.parameters._parameters import LinearInterpolator
+
+        model = simple_linear_model
+        p1 = ConstantParameter(model, 1.0)
+        p_linear = InterpolatedParameter(model, p1, [0, 5, 10, 11], [0, 10, 30, 2])
+        p_quad = InterpolatedParameter(
+            model,
+            p1,
+            [0, 5, 10, 11],
+            [0, 10, 30, 2],
+            interp_kwargs={"kind": "quadratic"},
+        )
+        model.setup()
+        assert isinstance(p_linear.interp, LinearInterpolator)
+        assert isinstance(p_quad.interp, interp1d)
