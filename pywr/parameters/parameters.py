@@ -5,6 +5,7 @@ from ._parameters import (
     Parameter,
     parameter_registry,
     UnutilisedDataWarning,
+    LinearInterpolator,
     ConstantParameter,
     ConstantScenarioParameter,
     ConstantScenarioIndexParameter,
@@ -149,7 +150,41 @@ class AbstractInterpolatedParameter(Parameter):
 
     def setup(self):
         super(AbstractInterpolatedParameter, self).setup()
-        self.interp = interp1d(self.x, self.y, **self.interp_kwargs)
+        self.interp = self._create_interpolator()
+
+    def _create_interpolator(self):
+        kwargs = self.interp_kwargs
+        x = np.asarray(self.x)
+        y = np.asarray(self.y)
+        # Use the fast Cython implementation for the (default) case of scalar linear interpolation. Anything
+        # else falls back to SciPy's `interp1d` for its flexibility.
+        fast_keys = {"kind", "bounds_error", "fill_value", "assume_sorted"}
+        if (
+            kwargs.get("kind") == "linear"
+            and set(kwargs) <= fast_keys
+            and x.ndim == 1
+            and y.ndim == 1
+            and x.shape == y.shape
+            and x.shape[0] >= 2
+        ):
+            fill_value = kwargs.get("fill_value", np.nan)
+            bounds_error = kwargs.get("bounds_error")
+            if bounds_error is None:
+                # Mirror interp1d's default
+                bounds_error = not (
+                    isinstance(fill_value, str) and fill_value == "extrapolate"
+                )
+            try:
+                return LinearInterpolator(
+                    x,
+                    y,
+                    bounds_error=bool(bounds_error),
+                    fill_value=fill_value,
+                    assume_sorted=bool(kwargs.get("assume_sorted", False)),
+                )
+            except (ValueError, TypeError):
+                pass
+        return interp1d(x, y, **kwargs)
 
     def value(self, ts, scenario_index):
         v = self._value_to_interpolate(ts, scenario_index)
