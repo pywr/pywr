@@ -19,6 +19,7 @@ from pywr.parameters import (
     DataFrameParameter,
     AggregatedParameter,
     ArrayIndexedParameter,
+    DailyProfileParameter,
 )
 from pywr.recorders import assert_rec, AssertionRecorder
 
@@ -434,6 +435,37 @@ def test_storage_max_volume_param():
 
     np.testing.assert_allclose(storage.volume, 10.0)
     np.testing.assert_allclose(storage.current_pc, 0.5)
+
+
+def test_storage_max_volume_time_varying_parameter():
+    """Test that a time-varying max_volume parameter updates current_pc correctly."""
+
+    model = Model(
+        start=pandas.to_datetime("2016-01-01"),
+        end=pandas.to_datetime("2016-01-02"),
+    )
+
+    storage = Storage(model, "storage", inputs=1, outputs=0)
+    otpt = Output(model, "output", cost=1)
+    storage.connect(otpt)
+
+    # Leap-year daily profile:
+    # 2016-01-01 -> max_volume = 20.0
+    # 2016-01-02 -> max_volume = 10.0
+    values = np.ones(366, dtype=float) * 20.0
+    values[1] = 10.0
+
+    storage.max_volume = DailyProfileParameter(model, values)
+    storage.initial_volume = 20.0
+    storage.initial_volume_pc = 1.0
+
+    model.run()
+
+    # With zero flow, storage volume should remain unchanged at 10.0
+    np.testing.assert_allclose(storage.volume, 10.0)
+
+    # On the final timestep (2016-01-02), current_pc should use max_volume = 10.0
+    np.testing.assert_allclose(storage.current_pc, 1.0)
 
 
 def test_storage_initial_volume_pc():

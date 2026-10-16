@@ -976,7 +976,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 # change in storage cannot be more than the current volume or
                 # result in maximum volume being exceeded
                 lb = -avail_volume/timestep.days
-                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep.days
+                ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
 
                 if abs(lb) < 1e-8:
                     lb = 0.0
@@ -1007,7 +1007,7 @@ cdef class CythonGLPKSolver(GLPKSolver):
                 # change in storage cannot be more than the current volume or
                 # result in maximum volume being exceeded
                 lb = -avail_volume/timestep.days
-                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep.days
+                ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
 
                 if abs(lb) < 1e-8:
                     lb = 0.0
@@ -1800,7 +1800,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 # change in storage cannot be more than the current volume or
                 # result in maximum volume being exceeded
                 lb = -avail_volume/timestep.days
-                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep.days
+                ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
 
                 if abs(lb) < 1e-8:
                     lb = 0.0
@@ -1831,7 +1831,7 @@ cdef class CythonGLPKEdgeSolver(GLPKSolver):
                 # change in storage cannot be more than the current volume or
                 # result in maximum volume being exceeded
                 lb = -avail_volume/timestep.days
-                ub = max(max_volume - storage._volume[scenario_index.global_id], 0.0) / timestep.days
+                ub = (max_volume - storage._volume[scenario_index.global_id]) / timestep.days
 
                 if abs(lb) < 1e-8:
                     lb = 0.0
