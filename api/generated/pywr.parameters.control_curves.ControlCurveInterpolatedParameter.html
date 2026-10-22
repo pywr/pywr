@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.parameters.control_curves.ControlCurveInterpolatedParameter &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>pywr.parameters.control_curves.ControlCurveInterpolatedParameter &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e51853e0"></script>
+      <script src="../../_static/documentation_options.js?v=5be4167a"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -152,7 +152,7 @@ and -20</p>
   <span class="n">Cost</span><span class="p">:</span>  <span class="mf">0.0</span>            <span class="o">-</span><span class="mf">5.0</span>     <span class="o">-</span><span class="mf">10.0</span>   <span class="o">-</span><span class="mf">20.0</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">storage_node</span> <span class="o">=</span> <span class="n">Storage</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;reservoir&quot;</span><span class="p">,</span> <span class="n">max_volume</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">initial_volume</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">storage_node</span> <span class="o">=</span> <span class="n">Storage</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"reservoir"</span><span class="p">,</span> <span class="n">max_volume</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">initial_volume</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ccs</span> <span class="o">=</span> <span class="p">[</span><span class="n">ConstantParameter</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">ConstantParameter</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.0</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cost</span> <span class="o">=</span> <span class="n">ControlCurveInterpolatedParameter</span><span class="p">(</span><span class="n">storage_node</span><span class="p">,</span> <span class="n">ccs</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>

@@ -24,6 +24,7 @@
    .. autosummary::
    
       ~Scenario.ensemble_names
+      ~Scenario.has_ensemble_names
       ~Scenario.name
       ~Scenario.size
       ~Scenario.slice

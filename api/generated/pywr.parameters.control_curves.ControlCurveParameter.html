@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.parameters.control_curves.ControlCurveParameter &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>pywr.parameters.control_curves.ControlCurveParameter &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e51853e0"></script>
+      <script src="../../_static/documentation_options.js?v=5be4167a"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -120,8 +120,7 @@
 <dt class="sig sig-object py" id="pywr.parameters.control_curves.ControlCurveParameter">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pywr.parameters.control_curves.</span></span><span class="sig-name descname"><span class="pre">ControlCurveParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">control_curves</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.parameters.control_curves.ControlCurveParameter" title="Link to this definition"></a></dt>
 <dd><p>A generic multi-levelled control curve Parameter.</p>
-<blockquote>
-<div><dl class="simple">
+<dl class="simple">
 <dt>This parameter can be used to return different values when a <cite>Storage</cite> node’s current</dt><dd><p>volumes is at different percentage of <cite>max_volume</cite> relative to predefined control curves.
 Control curves must be defined in the range [0, 1] corresponding to 0% and 100% volume.</p>
 </dd>
@@ -129,7 +128,6 @@ Control curves must be defined in the range [0, 1] corresponding to 0% and 100% 
 is below.</p>
 </dd>
 </dl>
-</div></blockquote>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl>

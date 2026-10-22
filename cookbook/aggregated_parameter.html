@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aggregated parameters &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>Aggregated parameters &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=e51853e0"></script>
+      <script src="../_static/documentation_options.js?v=5be4167a"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -108,18 +108,18 @@
 <span class="p">)</span>
 <span class="n">agg</span> <span class="o">=</span> <span class="n">AggregatedParameter</span><span class="p">(</span>
     <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="n">baseline</span><span class="p">,</span> <span class="n">profile</span><span class="p">],</span>
-    <span class="n">agg_func</span><span class="o">=</span><span class="s2">&quot;product&quot;</span>
+    <span class="n">agg_func</span><span class="o">=</span><span class="s2">"product"</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 <p>An example of creating an <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code> in JSON is given below. This parameter aggregates three parameters, one of which is a constant while the other two are references to parameters named in the <code class="docutils literal notranslate"><span class="pre">&quot;parameters&quot;</span></code> section.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;aggregated&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;agg_func&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;product&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"aggregated"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"agg_func"</span><span class="o">:</span><span class="w"> </span><span class="s2">"product"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"parameters"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">        </span><span class="mf">104.7</span>
-<span class="w">        </span><span class="s2">&quot;monthly_demand_profile&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;demand_saving_factor&quot;</span>
+<span class="w">        </span><span class="s2">"monthly_demand_profile"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"demand_saving_factor"</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
@@ -152,46 +152,46 @@
 <p>The Max/Min/Negative parameters are optimised aggregation functions for some common operations, which aggregate a single parameter and a constant.</p>
 <p>The examples below compare the “max” aggregation function in <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code> to the <code class="docutils literal notranslate"><span class="pre">MaxParameter</span></code>. The JSON required is shorter, arguably more readable and quicker to evaluate.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;aggregated&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;agg_func&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;max&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;another_parameter&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"aggregated"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"agg_func"</span><span class="o">:</span><span class="w"> </span><span class="s2">"max"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"parameters"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"another_parameter"</span><span class="p">,</span>
 <span class="w">        </span><span class="mf">0.0</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;max&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;parameter&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;another_parameter&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;threshold&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.0</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"max"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"parameter"</span><span class="o">:</span><span class="w"> </span><span class="s2">"another_parameter"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"threshold"</span><span class="o">:</span><span class="w"> </span><span class="mf">0.0</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>An example use of these functions is to handle the net inflow timeseries for a reservoir, which includes both positive flows (net gain) and negative flows (net evaporation / leakage). If the original parameter is given as <em>X</em>, the positive component can be achieved using <code class="docutils literal notranslate"><span class="pre">max(X,</span> <span class="pre">0)</span></code> and attached to an <code class="docutils literal notranslate"><span class="pre">Input</span></code> node. The negative component needs to be made positive, as <code class="docutils literal notranslate"><span class="pre">Outputs</span></code> require positive flows, using <code class="docutils literal notranslate"><span class="pre">max(negative(X))</span></code>. This setup is shown in JSON below.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;original&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">...</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"original"</span><span class="o">:</span><span class="w"> </span><span class="p">...</span>
 
-<span class="s2">&quot;inflow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;max&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;parameter&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;original&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;threshold&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.0</span>
+<span class="s2">"inflow"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"max"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"parameter"</span><span class="o">:</span><span class="w"> </span><span class="s2">"original"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"threshold"</span><span class="o">:</span><span class="w"> </span><span class="mf">0.0</span>
 <span class="p">}</span>
 
-<span class="s2">&quot;evaporation&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;max&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;parameter&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;negative&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;parameter&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;original&quot;</span>
+<span class="s2">"evaporation"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"max"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"parameter"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"negative"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"parameter"</span><span class="o">:</span><span class="w"> </span><span class="s2">"original"</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="s2">&quot;threshold&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.0</span>
+<span class="w">    </span><span class="s2">"threshold"</span><span class="o">:</span><span class="w"> </span><span class="mf">0.0</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>The pattern above was common enough to warrant the creation of the <code class="docutils literal notranslate"><span class="pre">NegativeMaxParameter</span></code>.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;evaporation&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;negativemax&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;parameter&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;original&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;threshold&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.0</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"evaporation"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"negativemax"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"parameter"</span><span class="o">:</span><span class="w"> </span><span class="s2">"original"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"threshold"</span><span class="o">:</span><span class="w"> </span><span class="mf">0.0</span>
 <span class="p">}</span>
 </pre></div>
 </div>

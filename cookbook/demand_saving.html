@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Demand restrictions &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>Demand restrictions &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=e51853e0"></script>
+      <script src="../_static/documentation_options.js?v=5be4167a"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
@@ -97,16 +97,16 @@
 <p>where <span class="math notranslate nohighlight">\(d\)</span> is the final demand to be calculated, <span class="math notranslate nohighlight">\(d_{mean}\)</span> is the baseline demand, <span class="math notranslate nohighlight">\(p\)</span> is the annual profile and <span class="math notranslate nohighlight">\(s\)</span> is the demand restriction (e.g. 5%).</p>
 <p>The code snippets that follow belong in the <code class="docutils literal notranslate"><span class="pre">&quot;parameters&quot;:</span> <span class="pre">{}</span></code> section of the model document (except for the <code class="docutils literal notranslate"><span class="pre">node</span></code> at the end).</p>
 <p>The baseline demand is specified as a constant (this is often the <em>mean</em> annual demand).</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;demand_baseline&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">50</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"demand_baseline"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"values"</span><span class="o">:</span><span class="w"> </span><span class="mf">50</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>A daily or monthly profile can be used to vary the demand throughout the year. In the example below the demand in May - August is 1.2x the baseline demand, with the rest of the year at 0.9x the baseline, forming the common “top hat” profile (illustrated below).</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;demand_profile&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;monthlyprofile&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">]</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"demand_profile"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"monthlyprofile"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"values"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">]</span>
 <span class="p">},</span>
 </pre></div>
 </div>
@@ -116,40 +116,40 @@
 </figure>
 <p>The demand restriction level describes the level of restrictions as an integer, where 0 means no demand restrictions, level 1 (L1) is some restriction (or perhaps just publicity), level 2 (L2) more severe restrictions, and so on. The specifics will depend on the system being modelled. This is represented in Pywr using the <code class="docutils literal notranslate"><span class="pre">ControlCurveIndexParameter</span></code>. <code class="docutils literal notranslate"><span class="pre">IndexParameter</span></code> return an integer to be used as an index, rather than a decimal value.</p>
 <p>The demand restriction level is often related to the storage of strategic reservoirs in relation to a control curve (the expected reservoir volume at a given time of the year). The example below two demand restriction levels are defined (and implicitly a L0) based on the volume in the <code class="docutils literal notranslate"><span class="pre">&quot;Central</span> <span class="pre">Reservoir&quot;</span></code> storage node. L1 is defined as 80% of full, L2 as 50% of full. Control curves are commonly more complicated, as the expected level of a reservoir is usually lower in the summer than it is in the winter.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;demand_restriction_level&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;controlcurveindex&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;storage_node&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Central Reservoir&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;control_curves&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;level1&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;level2&quot;</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"demand_restriction_level"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"controlcurveindex"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"storage_node"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Central Reservoir"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"control_curves"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"level1"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"level2"</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="p">},</span>
-<span class="s2">&quot;level1&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.8</span>
+<span class="s2">"level1"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"values"</span><span class="o">:</span><span class="w"> </span><span class="mf">0.8</span>
 <span class="p">},</span>
-<span class="s2">&quot;level2&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">0.5</span>
+<span class="s2">"level2"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"values"</span><span class="o">:</span><span class="w"> </span><span class="mf">0.5</span>
 <span class="p">},</span>
 </pre></div>
 </div>
 <p>The demand restriction factor is determined by indexing an array of possible restriction profiles with the demand restriction level (i.e. index). In the example below the list of profiles (<code class="docutils literal notranslate"><span class="pre">&quot;params&quot;</span></code>) corresponds to the L0, L1 and L2 profiles respectively. At L0 a constant factor <code class="docutils literal notranslate"><span class="pre">1.0</span></code> is used to represent no restrictions. At L1 there is a 10% reduction in demand (<code class="docutils literal notranslate"><span class="pre">0.90</span></code> as a factor) during the summer months and a 5% reduction elsewhere (<code class="docutils literal notranslate"><span class="pre">0.95</span></code>). At L2 there are further reductions to 75%/80%.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;demand_restriction_factor&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;indexedarray&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;index_parameter&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;demand_restriction_level&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;params&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"demand_restriction_factor"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"indexedarray"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"index_parameter"</span><span class="o">:</span><span class="w"> </span><span class="s2">"demand_restriction_level"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"params"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">1.0</span>
+<span class="w">            </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">"values"</span><span class="o">:</span><span class="w"> </span><span class="mf">1.0</span>
 <span class="w">        </span><span class="p">},</span>
 <span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;monthlyprofile&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.90</span><span class="p">,</span><span class="w"> </span><span class="mf">0.90</span><span class="p">,</span><span class="w"> </span><span class="mf">0.90</span><span class="p">,</span><span class="w"> </span><span class="mf">0.90</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">]</span>
+<span class="w">            </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"monthlyprofile"</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">"values"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.90</span><span class="p">,</span><span class="w"> </span><span class="mf">0.90</span><span class="p">,</span><span class="w"> </span><span class="mf">0.90</span><span class="p">,</span><span class="w"> </span><span class="mf">0.90</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span><span class="w"> </span><span class="mf">0.95</span><span class="p">]</span>
 <span class="w">        </span><span class="p">},</span>
 <span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;monthlyprofile&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">]</span>
+<span class="w">            </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"monthlyprofile"</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">"values"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">]</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="p">},</span>
@@ -163,13 +163,13 @@
 </pre></div>
 </div>
 <p>Finally the demand components can be combined as in the equation at the beginning using an <code class="docutils literal notranslate"><span class="pre">AggregatedParameter</span></code>. Each timestep the value of each of the components is calculated and the values are multiplied to give the final demand value.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;demand_max_flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;aggregated&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;agg_func&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;product&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;demand_baseline&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;demand_profile&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;demand_restriction_factor&quot;</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"demand_max_flow"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"aggregated"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"agg_func"</span><span class="o">:</span><span class="w"> </span><span class="s2">"product"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"parameters"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"demand_baseline"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"demand_profile"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"demand_restriction_factor"</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="p">},</span>
 </pre></div>
@@ -181,10 +181,10 @@
 </figure>
 <p>This parameter can then be applied to the <code class="docutils literal notranslate"><span class="pre">max_flow</span></code> attribute of the demand node.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;name&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Demand&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;demand_max_flow&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;cost&quot;</span><span class="o">:</span><span class="w"> </span><span class="o">-</span><span class="mf">500</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"output"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"name"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Demand"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"max_flow"</span><span class="o">:</span><span class="w"> </span><span class="s2">"demand_max_flow"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"cost"</span><span class="o">:</span><span class="w"> </span><span class="o">-</span><span class="mf">500</span>
 <span class="p">},</span>
 </pre></div>
 </div>

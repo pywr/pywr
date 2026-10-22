@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.recorders.Aggregator &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>pywr.recorders.Aggregator &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e51853e0"></script>
+      <script src="../../_static/documentation_options.js?v=5be4167a"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -139,9 +139,9 @@ the callable function should behave in a similar fashion to the numpy functions.
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Aggregator</span><span class="p">(</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Aggregator</span><span class="p">({</span><span class="s2">&quot;func&quot;</span><span class="p">:</span> <span class="s2">&quot;percentile&quot;</span><span class="p">,</span> <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">95</span><span class="p">],</span><span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{}})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Aggregator</span><span class="p">({</span><span class="s2">&quot;func&quot;</span><span class="p">:</span> <span class="s2">&quot;percentileofscore&quot;</span><span class="p">,</span> <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;rank&quot;</span><span class="p">}})</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Aggregator</span><span class="p">(</span><span class="s2">"sum"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Aggregator</span><span class="p">({</span><span class="s2">"func"</span><span class="p">:</span> <span class="s2">"percentile"</span><span class="p">,</span> <span class="s2">"args"</span><span class="p">:</span> <span class="p">[</span><span class="mi">95</span><span class="p">],</span><span class="s2">"kwargs"</span><span class="p">:</span> <span class="p">{}})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Aggregator</span><span class="p">({</span><span class="s2">"func"</span><span class="p">:</span> <span class="s2">"percentileofscore"</span><span class="p">,</span> <span class="s2">"kwargs"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"rank"</span><span class="p">}})</span>
 </pre></div>
 </div>
 <dl class="py method">

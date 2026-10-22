@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>Extending Pywr with custom Parameters &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=e51853e0"></script>
+      <script src="../_static/documentation_options.js?v=5be4167a"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -122,7 +122,7 @@ from JSON.</p>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="c1"># called when the parameter is loaded from a JSON document</span>
-        <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"value"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
 
 <span class="n">MyParameter</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>  <span class="c1"># register the name so it can be loaded from JSON</span>
@@ -137,9 +137,9 @@ from JSON.</p>
 <p>An instance of the parameter can be created from a JSON model as below. The type of the parameter is the class name,
 with the word “parameter” optionally removed (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;constant&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;constantparameter&quot;</span></code> both create an instance
 of <code class="docutils literal notranslate"><span class="pre">ConstantParameter</span></code>).</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="s">&quot;max_flow&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">{</span>
-<span class="w">    </span><span class="s">&quot;type&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;myparameter&quot;</span><span class="p p-Indicator">,</span>
-<span class="w">    </span><span class="s">&quot;value&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">123.0</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="s">"max_flow"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="w">    </span><span class="s">"type"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"myparameter"</span><span class="p p-Indicator">,</span>
+<span class="w">    </span><span class="s">"value"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">123.0</span>
 <span class="p p-Indicator">}</span>
 </pre></div>
 </div>
@@ -207,8 +207,8 @@ parameter which has a finite volume.</p>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">total_volume</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;total_volume&quot;</span><span class="p">)</span>
-        <span class="n">node</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;node&quot;</span><span class="p">)]</span>
+        <span class="n">total_volume</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"total_volume"</span><span class="p">)</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"node"</span><span class="p">)]</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">total_volume</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
 
 <span class="n">LicenceParameter</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>  <span class="c1"># register the name so it can be loaded from JSON</span>
@@ -254,7 +254,7 @@ parameters and nested parameters.</p>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">load_parameter</span><span class="p">(</span><span class="n">parameter_data</span><span class="p">)</span>
-                      <span class="k">for</span> <span class="n">parameter_data</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;parameters&quot;</span><span class="p">)]</span>
+                      <span class="k">for</span> <span class="n">parameter_data</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"parameters"</span><span class="p">)]</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -289,7 +289,7 @@ from <code class="docutils literal notranslate"><span class="pre">libm</span></c
 <div class="highlight-cython notranslate"><div class="highlight"><pre><span></span><span class="k">from</span><span class="w"> </span><span class="nn">pywr.parameters._parameters</span><span class="w"> </span><span class="k">cimport</span> <span class="n">Parameter</span>
 <span class="k">from</span><span class="w"> </span><span class="nn">pywr._core</span><span class="w"> </span><span class="k">cimport</span> <span class="n">Timestep</span><span class="p">,</span> <span class="n">ScenarioIndex</span>
 
-<span class="k">cdef</span><span class="w"> </span><span class="kr">extern</span> <span class="k">from</span> <span class="s">&quot;math.h&quot;</span><span class="p">:</span>
+<span class="k">cdef</span><span class="w"> </span><span class="kr">extern</span> <span class="k">from</span> <span class="s">"math.h"</span><span class="p">:</span>
     <span class="nb">double</span> <span class="nb">pow</span><span class="p">(</span><span class="nb">double</span> <span class="n">x</span><span class="p">,</span> <span class="nb">double</span> <span class="n">y</span><span class="p">)</span>
 
 <span class="k">cdef</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">SquaredParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
@@ -305,7 +305,7 @@ from <code class="docutils literal notranslate"><span class="pre">libm</span></c
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="c"># called when the parameter is loaded from a JSON document</span>
-        <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&quot;value&quot;</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">"value"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
 
 <span class="n">SquaredParameter</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
@@ -320,7 +320,7 @@ from <code class="docutils literal notranslate"><span class="pre">libm</span></c
 <span class="kn">from</span><span class="w"> </span><span class="nn">pywr.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">custom_parameters</span>
 
-<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;simple.json&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"simple.json"</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>

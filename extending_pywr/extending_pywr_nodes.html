@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Extending Pywr with custom Nodes &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>Extending Pywr with custom Nodes &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=e51853e0"></script>
+      <script src="../_static/documentation_options.js?v=5be4167a"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -135,9 +135,9 @@ an example:</p>
         <span class="nb">super</span><span class="p">(</span><span class="n">LeakyPipe</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="c1"># Define the internal nodes. The parent of the nodes is defined to identify them as sub-nodes.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">inflow</span> <span class="o">=</span> <span class="n">Link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> In&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">outflow</span> <span class="o">=</span> <span class="n">Link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> Out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">leak</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> Leak&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inflow</span> <span class="o">=</span> <span class="n">Link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'</span><span class="si">{}</span><span class="s1"> In'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outflow</span> <span class="o">=</span> <span class="n">Link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'</span><span class="si">{}</span><span class="s1"> Out'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">leak</span> <span class="o">=</span> <span class="n">Output</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'</span><span class="si">{}</span><span class="s1"> Leak'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="c1"># Connect the internal nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inflow</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outflow</span><span class="p">)</span>
@@ -163,9 +163,9 @@ an example:</p>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="k">del</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">])</span>
-        <span class="n">leakage</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;leakage&quot;</span><span class="p">)</span>
-        <span class="n">leakage_cost</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;leakage_cost&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">del</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"type"</span><span class="p">])</span>
+        <span class="n">leakage</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"leakage"</span><span class="p">)</span>
+        <span class="n">leakage_cost</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"leakage_cost"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">leakage</span><span class="p">,</span> <span class="n">leakage_cost</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -175,12 +175,12 @@ the JSON is loaded:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pywr.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">leakypipe</span>
 
-<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;leaky_pipe_model.sjon&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"leaky_pipe_model.sjon"</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">{</span>
-<span class="w">    </span><span class="s">&quot;type&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;leakypipe&quot;</span><span class="p p-Indicator">,</span>
-<span class="w">    </span><span class="s">&quot;leakage&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;1.0&quot;</span>
+<span class="w">    </span><span class="s">"type"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"leakypipe"</span><span class="p p-Indicator">,</span>
+<span class="w">    </span><span class="s">"leakage"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"1.0"</span>
 <span class="p p-Indicator">}</span>
 </pre></div>
 </div>

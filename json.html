@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JSON model format &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>JSON model format &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=e51853e0"></script>
+      <script src="_static/documentation_options.js?v=5be4167a"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
@@ -102,12 +102,12 @@
 <p>In addition to creating models programmatically using the Python API, models can be described in a JSON (JavaScript Object Notation) document <a class="footnote-reference brackets" href="#id3" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
 <p>The overall structure of the model is given below. A description of the contents of each of the first level items is given in this document. The most important are the <a class="reference internal" href="#nodes">nodes</a> and <a class="reference internal" href="#edges">edges</a> sections.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
-<span class="w">    </span><span class="nt">&quot;timestepper&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
-<span class="w">    </span><span class="nt">&quot;solver&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
-<span class="w">    </span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
-<span class="w">    </span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
-<span class="w">    </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">    </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">    </span><span class="nt">"timestepper"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">    </span><span class="nt">"solver"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">    </span><span class="nt">"nodes"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">    </span><span class="nt">"edges"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">    </span><span class="nt">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -116,10 +116,10 @@
 <section id="metadata">
 <h2>Metadata<a class="headerlink" href="#metadata" title="Link to this heading"></a></h2>
 <p>The metadata section includes information about the model as key-value pairs. It is expected as a minimum to include a <code class="docutils literal notranslate"><span class="pre">&quot;title&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;description&quot;</span></code> and may additionally include keys such as <code class="docutils literal notranslate"><span class="pre">&quot;author&quot;</span></code>.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Example&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;An example for the documentation&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;author&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John Smith&quot;</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Example"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"An example for the documentation"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"author"</span><span class="p">:</span><span class="w"> </span><span class="s2">"John Smith"</span>
 <span class="p">}}</span>
 </pre></div>
 </div>
@@ -128,10 +128,10 @@
 <h2>Timestepper<a class="headerlink" href="#timestepper" title="Link to this heading"></a></h2>
 <p>The timestepper defines the period a model is run for and the timestep used. It corresponds directly to the <code class="xref py py-class docutils literal notranslate"><span class="pre">pywr.core.Timestepper</span></code> instance on the model. It has three properties: the start date, end date and timestep.</p>
 <p>The example below describes a model that will run from 1st January 2016 to 31st December 2016 using a 7 day timestep.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;timestepper&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;start&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2016-01-01&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;end&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2016-12-31&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;timestep&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"timestepper"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2016-01-01"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"end"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2016-12-31"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"timestep"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span>
 <span class="p">}}</span>
 </pre></div>
 </div>
@@ -139,8 +139,8 @@
 <section id="solver">
 <h2>Solver<a class="headerlink" href="#solver" title="Link to this heading"></a></h2>
 <p>The solver section contains items to be passed to the solver. The only required item is the name of the solver to use. Other items will be specific to the solver.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;solver&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;glpk&quot;</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"solver"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"glpk"</span>
 <span class="p">}}</span>
 </pre></div>
 </div>
@@ -152,24 +152,24 @@
 <section id="non-storage-nodes">
 <h3>Non-storage nodes<a class="headerlink" href="#non-storage-nodes" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">Node</span></code> type and it’s subtypes have a <code class="docutils literal notranslate"><span class="pre">max_flow</span></code> and <code class="docutils literal notranslate"><span class="pre">cost</span></code> property, both of which have default values.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"nodes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;groundwater&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;input&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;max_flow&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">23.0</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">10.0</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"groundwater"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"input"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"max_flow"</span><span class="p">:</span><span class="w"> </span><span class="mf">23.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"cost"</span><span class="p">:</span><span class="w"> </span><span class="mf">10.0</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">]}</span>
 </pre></div>
 </div>
 <p>In addition to the basic <code class="docutils literal notranslate"><span class="pre">input</span></code>, <code class="docutils literal notranslate"><span class="pre">output</span></code> and <code class="docutils literal notranslate"><span class="pre">link</span></code> types, subtypes can be created by specifying the appropriate name. Some subtypes will provide additional properties; often these correspond directly to the keyword arguments of the class. For example, a river gauge which has a soft MRF constraint is demonstrated below. The <code class="docutils literal notranslate"><span class="pre">&quot;mrf&quot;</span></code> property is the minimum residual flow required, the <code class="docutils literal notranslate"><span class="pre">&quot;mrf_cost&quot;</span></code> is the cost applied to that minimum flow, and the <code class="docutils literal notranslate"><span class="pre">&quot;cost&quot;</span></code> property is the cost associated with the residual flow.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"nodes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Teddington GS&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rivergauge&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;mrf&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">200.0</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;mrf_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-1000.0</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Teddington GS"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"rivergauge"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"mrf"</span><span class="p">:</span><span class="w"> </span><span class="mf">200.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"cost"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"mrf_cost"</span><span class="p">:</span><span class="w"> </span><span class="mf">-1000.0</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">]}</span>
 </pre></div>
@@ -178,16 +178,16 @@
 <section id="storage-nodes">
 <h3>Storage nodes<a class="headerlink" href="#storage-nodes" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">Storage</span></code> type and it’s subtypes have a <code class="docutils literal notranslate"><span class="pre">max_volume</span></code>, <code class="docutils literal notranslate"><span class="pre">min_volume</span></code> and <code class="docutils literal notranslate"><span class="pre">initial_volume</span></code>, as well as <code class="docutils literal notranslate"><span class="pre">num_inputs</span></code> and <code class="docutils literal notranslate"><span class="pre">num_outputs</span></code>. The maximum and initial volumes must be specified, whereas the others have default values.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"nodes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Big Wet Lake&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;storage&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;max_volume&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;initial_volume&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">700</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;min_volume&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;num_inputs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;num_outputs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-10.0</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Big Wet Lake"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"storage"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"max_volume"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"initial_volume"</span><span class="p">:</span><span class="w"> </span><span class="mi">700</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"min_volume"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"num_inputs"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"num_outputs"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"cost"</span><span class="p">:</span><span class="w"> </span><span class="mf">-10.0</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">]}</span>
 </pre></div>
@@ -198,15 +198,15 @@
 <section id="edges">
 <h2>Edges<a class="headerlink" href="#edges" title="Link to this heading"></a></h2>
 <p>The edges section describes the connections between nodes. As a minimum an edge is defined as a two-item list containing the names of the nodes to connect (given in the order corresponding to the direction of flow), e.g.:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">[</span><span class="s2">&quot;supply&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;intermediate&quot;</span><span class="p">],</span>
-<span class="w">    </span><span class="p">[</span><span class="s2">&quot;intermediate&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;demand&quot;</span><span class="p">]</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"edges"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">"supply"</span><span class="p">,</span><span class="w"> </span><span class="s2">"intermediate"</span><span class="p">],</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">"intermediate"</span><span class="p">,</span><span class="w"> </span><span class="s2">"demand"</span><span class="p">]</span>
 <span class="p">]}</span>
 </pre></div>
 </div>
 <p>Additionally the to and from slots can be specified. For example the code below connects <cite>reservoirA</cite> slot 2 to <cite>reservoirB</cite> slot 3.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;edges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">[</span><span class="s2">&quot;reservoirA&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;reservoirB&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">]</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"edges"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">"reservoirA"</span><span class="p">,</span><span class="w"> </span><span class="s2">"reservoirB"</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">]</span>
 <span class="p">]}</span>
 </pre></div>
 </div>
@@ -215,42 +215,42 @@
 <h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
 <p>Sometimes it is convenient to define a <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> used in the model in the <code class="docutils literal notranslate"><span class="pre">&quot;parameters&quot;</span></code> section instead of inside a node, for instance if the parameter is needed by more than one node.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="nt">"nodes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;groundwater&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;input&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;max_flow&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gw_flow&quot;</span>
+<span class="w">            </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"groundwater"</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"input"</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"max_flow"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gw_flow"</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="nt">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gw_flow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">23.0</span>
+<span class="w">            </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gw_flow"</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="mf">23.0</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>Parameters can be more complicated than simple scalar values. For instance, a time varying parameter can be defined using a monthly or daily profile which repeats each year.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mrf_profile&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;monthlyprofile&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;values&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">]</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mrf_profile"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"monthlyprofile"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"values"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">]</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">]}</span>
 </pre></div>
 </div>
 <p>Instead of defining the data inline using the <code class="docutils literal notranslate"><span class="pre">&quot;values&quot;</span></code> property, external data can be referenced as below. The URL should be relative to the JSON document <em>not</em> the current working directory.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;catchment_inflow&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data/catchmod_outputs_v2.csv&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;column&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Flow&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;index_col&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Date&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;parse_dates&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"catchment_inflow"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dataframe"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"data/catchmod_outputs_v2.csv"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"column"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Flow"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"index_col"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Date"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"parse_dates"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">]}</span>
 </pre></div>
@@ -260,30 +260,30 @@
 <h2>Loading a JSON document<a class="headerlink" href="#loading-a-json-document" title="Link to this heading"></a></h2>
 <p>A Pywr JSON document can be loaded into a <cite>Model</cite> instance by using the <cite>Model.load</cite> class-method:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pywr.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
-<span class="n">my_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;/path/to/my_model.json&#39;</span><span class="p">)</span>
+<span class="n">my_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'/path/to/my_model.json'</span><span class="p">)</span>
 <span class="n">my_model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Once a model is loaded if a reference to an actual node is required, using .get …</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">node</span> <span class="o">=</span> <span class="n">my_model</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;River Thames&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">node</span> <span class="o">=</span> <span class="n">my_model</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"River Thames"</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">node</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_flow: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">max_flow</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max_flow: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">max_flow</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Not found&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Not found"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>… or try-except is preferable to avoid searching twice.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
-    <span class="n">node</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s2">&quot;River Thames&quot;</span><span class="p">]</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s2">"River Thames"</span><span class="p">]</span>
 <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Not found&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Not found"</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_flow: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">max_flow</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max_flow: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">max_flow</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>It is also possible to test for node and component membership using their names:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="s2">&quot;River Thames&quot;</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">nodes</span>
-<span class="k">assert</span> <span class="s2">&quot;Demand&quot;</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="s2">"River Thames"</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">nodes</span>
+<span class="k">assert</span> <span class="s2">"Demand"</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span>
 </pre></div>
 </div>
 </section>
@@ -292,14 +292,14 @@
 <p>The JSON format is not sensitive to white space but is otherwise quite strict. When the <cite>json</cite> module fails to parse a document an exception will be raised. The exception includes a (somewhat cryptic) description of the problem and usefully includes a line number (see example below).</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
-  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
-  File <span class="nb">&quot;/Users/snorf/Desktop/pywr/pywr/core.py&quot;</span>, line <span class="m">316</span>, in <span class="n">loads</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+  File <span class="nb">"/Users/snorf/Desktop/pywr/pywr/core.py"</span>, line <span class="m">316</span>, in <span class="n">loads</span>
 <span class="w">    </span><span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-  File <span class="nb">&quot;/Users/snorf/miniconda3/envs/pywr/lib/python3.4/json/__init__.py&quot;</span>, line <span class="m">318</span>, in <span class="n">loads</span>
+  File <span class="nb">"/Users/snorf/miniconda3/envs/pywr/lib/python3.4/json/__init__.py"</span>, line <span class="m">318</span>, in <span class="n">loads</span>
 <span class="w">    </span><span class="k">return</span> <span class="n">_default_decoder</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-  File <span class="nb">&quot;/Users/snorf/miniconda3/envs/pywr/lib/python3.4/json/decoder.py&quot;</span>, line <span class="m">343</span>, in <span class="n">decode</span>
+  File <span class="nb">"/Users/snorf/miniconda3/envs/pywr/lib/python3.4/json/decoder.py"</span>, line <span class="m">343</span>, in <span class="n">decode</span>
 <span class="w">    </span><span class="n">obj</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_decode</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">_w</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">end</span><span class="p">())</span>
-  File <span class="nb">&quot;/Users/snorf/miniconda3/envs/pywr/lib/python3.4/json/decoder.py&quot;</span>, line <span class="m">359</span>, in <span class="n">raw_decode</span>
+  File <span class="nb">"/Users/snorf/miniconda3/envs/pywr/lib/python3.4/json/decoder.py"</span>, line <span class="m">359</span>, in <span class="n">raw_decode</span>
 <span class="w">    </span><span class="n">obj</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_once</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
 <span class="gr">ValueError</span>: <span class="n">Expecting property name enclosed in double quotes: line 17 column 9 (char 372)</span>
 </pre></div>

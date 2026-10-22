@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.nodes.Storage &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>pywr.nodes.Storage &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e51853e0"></script>
+      <script src="../../_static/documentation_options.js?v=5be4167a"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -129,7 +129,7 @@
 other node, provided there is only 1 input and 1 output. If there are
 multiple sub-nodes the connections need to be explicit about which they
 are connecting to. For example:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">storage</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;reservoir&#39;</span><span class="p">,</span> <span class="n">num_outputs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_inputs</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">storage</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">'reservoir'</span><span class="p">,</span> <span class="n">num_outputs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_inputs</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">supply</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">storage</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">storage</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">demand1</span><span class="p">,</span> <span class="n">from_slot</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">storage</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">demand2</span><span class="p">,</span> <span class="n">from_slot</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>

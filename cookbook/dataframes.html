@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Using external data &mdash; Pywr 1.31.1.dev3+g28cfe05d4 documentation</title>
+  <title>Using external data &mdash; Pywr 1.31.2.dev1+g3846bf2e3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=e51853e0"></script>
+      <script src="../_static/documentation_options.js?v=5be4167a"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
@@ -129,12 +129,12 @@ the external data. The example below shows how to define a checksum in the JSON 
 If the local file does not match the checksum in the JSON definition a <cite>HashMismatchError</cite> is raised. Pywr uses
 <a class="reference external" href="https://docs.python.org/3/library/hashlib.html">hashlib</a> and supports all of its algorithms.</p>
 <p><strong>Note:</strong> The example shows checksums for two different algorithms, but usually one is sufficient.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;url&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;timeseries2.csv&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;checksum&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;md5&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a5c4032e2d8f5205ca99dedcfa4cd18e&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;sha256&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0f75b3cee325d37112687d3d10596f44e0add374f4e40a1b6687912c05e65366&quot;</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"max_flow"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"dataframe"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"url"</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">"timeseries2.csv"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"checksum"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">"md5"</span><span class="o">:</span><span class="w"> </span><span class="s2">"a5c4032e2d8f5205ca99dedcfa4cd18e"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"sha256"</span><span class="o">:</span><span class="w"> </span><span class="s2">"0f75b3cee325d37112687d3d10596f44e0add374f4e40a1b6687912c05e65366"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -143,8 +143,8 @@ If the local file does not match the checksum in the JSON definition a <cite>Has
 shows how Python can be used to calculate the checksum of a file.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
 <span class="n">md5</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">()</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data.h5&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">8192</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"data.h5"</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">8192</span><span class="p">),</span> <span class="s2">""</span><span class="p">):</span>
        <span class="n">md5</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">md5</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">())</span>
 </pre></div>
@@ -186,12 +186,12 @@ shows how Python can be used to calculate the checksum of a file.</p>
 </tbody>
 </table>
 <p>The parameter below references the <cite>timeseries1.csv</cite> file in its <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code>. The index column is defined by <code class="docutils literal notranslate"><span class="pre">&quot;index_col&quot;</span></code> and the data column is defined by the <code class="docutils literal notranslate"><span class="pre">&quot;column&quot;</span></code> keyword (in this case, <code class="docutils literal notranslate"><span class="pre">&quot;Flow&quot;</span></code>). The <code class="docutils literal notranslate"><span class="pre">&quot;parse_dates&quot;</span></code> keyword is required in order to parse the dates from strings in the CSV file into pandas date objects.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;timeseries1.csv&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Timestamp&quot;</span>
-<span class="w">    </span><span class="s2">&quot;parse_dates&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Flow&quot;</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"flow"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"dataframe"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"url"</span><span class="o">:</span><span class="w"> </span><span class="s2">"timeseries1.csv"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"index_col"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Timestamp"</span>
+<span class="w">    </span><span class="s2">"parse_dates"</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"column"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Flow"</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -230,12 +230,12 @@ shows how Python can be used to calculate the checksum of a file.</p>
 </tbody>
 </table>
 <p>As in the previous example, the filename is passed to the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword. The <code class="docutils literal notranslate"><span class="pre">&quot;index_col&quot;</span></code> keyword defines which column should be used for the lookups, with the <code class="docutils literal notranslate"><span class="pre">&quot;index&quot;</span></code> keyword specifying the lookup key.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow_oxford&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;demands.csv&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;City&quot;</span>
-<span class="w">    </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Oxford&quot;</span>
-<span class="w">    </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Demand&quot;</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"max_flow_oxford"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"url"</span><span class="o">:</span><span class="w"> </span><span class="s2">"demands.csv"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"index_col"</span><span class="o">:</span><span class="w"> </span><span class="s2">"City"</span>
+<span class="w">    </span><span class="s2">"index"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Oxford"</span>
+<span class="w">    </span><span class="s2">"column"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Demand"</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -279,11 +279,11 @@ shows how Python can be used to calculate the checksum of a file.</p>
 </tr>
 </tbody>
 </table>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;monthlyprofile&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;demands_monthly.csv&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;City&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Oxford&quot;</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"max_flow"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"monthlyprofile"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"url"</span><span class="o">:</span><span class="w"> </span><span class="s2">"demands_monthly.csv"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"index_col"</span><span class="o">:</span><span class="w"> </span><span class="s2">"City"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"index"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Oxford"</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -330,21 +330,21 @@ shows how Python can be used to calculate the checksum of a file.</p>
 </tbody>
 </table>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;name&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;DC1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;output&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;max_flow&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;multiindex_data.csv&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;max_flow&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;demand1&quot;</span><span class="p">],</span>
-<span class="w">        </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;level&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;node&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="s2">"name"</span><span class="o">:</span><span class="w"> </span><span class="s2">"DC1"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"output"</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">"max_flow"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"url"</span><span class="o">:</span><span class="w"> </span><span class="s2">"multiindex_data.csv"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"column"</span><span class="o">:</span><span class="w"> </span><span class="s2">"max_flow"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"index"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="s2">"demand1"</span><span class="p">],</span>
+<span class="w">        </span><span class="s2">"index_col"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"level"</span><span class="p">,</span><span class="w"> </span><span class="s2">"node"</span><span class="p">]</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="s2">&quot;cost&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;multiindex_data.csv&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;cost&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;demand1&quot;</span><span class="p">],</span>
-<span class="w">        </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;level&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;node&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="s2">"cost"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"url"</span><span class="o">:</span><span class="w"> </span><span class="s2">"multiindex_data.csv"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"column"</span><span class="o">:</span><span class="w"> </span><span class="s2">"cost"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"index"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="s2">"demand1"</span><span class="p">],</span>
+<span class="w">        </span><span class="s2">"index_col"</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"level"</span><span class="p">,</span><span class="w"> </span><span class="s2">"node"</span><span class="p">]</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -356,24 +356,24 @@ shows how Python can be used to calculate the checksum of a file.</p>
 <h2>Tables<a class="headerlink" href="#tables" title="Link to this heading"></a></h2>
 <p>Each time an external data source is referenced using the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword the data is reloaded from disk. If a dataset is going to be used multiple times in a model it can be defined in the <code class="docutils literal notranslate"><span class="pre">&quot;tables&quot;</span></code> section of the JSON document. In this way the data will only be loaded once. Parameters can then reference the data using the <code class="docutils literal notranslate"><span class="pre">&quot;table&quot;</span></code> keyword instead of the <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> keyword. Although the index column applied to the data must be defined in the <code class="docutils literal notranslate"><span class="pre">&quot;tables&quot;</span></code> section, the index used for each lookup can be different.</p>
 <p>An example is given below using the <cite>demands.csv</cite> dataset shown previously. Two constant parameters are defined referencing data in the table.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;oxford_demand&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;table&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;simple_data&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Demand&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Oxford&quot;</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="s2">"parameters"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"oxford_demand"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"table"</span><span class="o">:</span><span class="w"> </span><span class="s2">"simple_data"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"column"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Demand"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"index"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Oxford"</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="s2">&quot;cambridge_demand&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;table&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;simple_data&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;column&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Demand&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;index&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Cambridge&quot;</span>
+<span class="w">    </span><span class="s2">"cambridge_demand"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">"type"</span><span class="o">:</span><span class="w"> </span><span class="s2">"constant"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"table"</span><span class="o">:</span><span class="w"> </span><span class="s2">"simple_data"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"column"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Demand"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"index"</span><span class="o">:</span><span class="w"> </span><span class="s2">"Cambridge"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">},</span>
-<span class="s2">&quot;tables&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="s2">&quot;simple_data&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;url&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;demands.csv&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;index_col&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;City&quot;</span>
+<span class="s2">"tables"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s2">"simple_data"</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">"url"</span><span class="o">:</span><span class="w"> </span><span class="s2">"demands.csv"</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"index_col"</span><span class="o">:</span><span class="w"> </span><span class="s2">"City"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
