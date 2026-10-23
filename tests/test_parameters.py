@@ -176,14 +176,14 @@ def test_parameter_array_indexed(simple_linear_model):
         p.value(ts, si)
 
 
-def test_parameter_array_indexed_json_load(simple_linear_model, tmpdir):
+def test_parameter_array_indexed_json_load(simple_linear_model, tmp_path):
     """Test ArrayIndexedParameter can be loaded from json dict"""
     model = simple_linear_model
     # Daily time-step
     index = pd.date_range("2015-01-01", periods=365, freq="D", name="date")
     df = pd.DataFrame(np.arange(365), index=index, columns=["data"])
-    df_path = tmpdir.join("df.csv")
-    df.to_csv(str(df_path))
+    df_path = tmp_path / "df.csv"
+    df.to_csv(df_path)
 
     data = {
         "type": "arrayindexed",
@@ -965,12 +965,12 @@ def test_parameter_df_subsample():
 
 
 @pytest.mark.parametrize("timestep_offset", [0, 1, -1, 2])
-def test_parameter_df_json_load(model, tmpdir, timestep_offset):
+def test_parameter_df_json_load(model, tmp_path, timestep_offset):
     # Daily time-step
     index = pd.date_range("2015-01-01", periods=365, freq="D", name="date")
     df = pd.DataFrame(np.random.rand(365), index=index, columns=["data"])
-    df_path = tmpdir.join("df.csv")
-    df.to_csv(str(df_path))
+    df_path = tmp_path / "df.csv"
+    df.to_csv(df_path)
 
     data = {
         "type": "dataframe",
