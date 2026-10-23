@@ -633,6 +633,57 @@ def test_annual_virtual_storage_reset_to_max_volume(reset_to_initial_volume):
     assert_allclose(licence1.volume, [expected_volume])
 
 
+@pytest.mark.parametrize("reset_to_initial_volume", [None, False, True])
+def test_annual_virtual_storage_reset_to_max_volume_with_reset_month_as_parameter(
+    reset_to_initial_volume,
+):
+    """Test that AnnualVirtualStorage resets to maximum volume when reset_month is a constant parameter."""
+    model = load_model("virtual_storage9.json")
+    licence1 = model.nodes["licence1"]
+    if reset_to_initial_volume is not None:
+        licence1.reset_to_initial_volume = reset_to_initial_volume
+    licence1.initial_volume = 100
+
+    model.setup()
+    # reset_month has been loaded as a Parameter but not yet resolved to a constant value
+    assert isinstance(licence1.reset_month, Parameter)
+    # After reset the current volume is always the initial volume
+    assert_allclose(licence1.volume, [100.0])
+
+    model.timestepper.start = "2015-04-01"
+    model.reset()
+    # After stepping over the reset day the volume should have been reset
+    # before the solve to either initial volume or maximum volume.
+    model.step()
+    # reset_month should now have been resolved from the Parameter to a plain int
+    assert licence1.reset_month == 4
+    if reset_to_initial_volume:
+        expected_volume = 90.0
+    else:
+        expected_volume = 195.0
+    assert_allclose(licence1.volume, [expected_volume])
+
+    # Test also volume stays at initial volume is start date is after reset date
+    # but in the same year.
+    model.timestepper.start = "2015-09-01"
+    model.reset()
+    # Now reset should have occurred during the reset. So, the volume should
+    # always be based on the initial volume.
+    model.step()
+
+    expected_volume = 90.0
+
+    assert_allclose(licence1.volume, [expected_volume])
+
+
+def test_annual_virtual_storage_reset_month_non_constant_parameter_raises():
+    """Test that a non-constant reset_month parameter raises a clear error rather than a bare NotImplementedError."""
+    model = load_model("virtual_storage10.json")
+    model.setup()
+    with pytest.raises(ValueError, match="does not have a constant value"):
+        model.step()
+
+
 def test_annual_virtual_storage_with_dynamic_cost():
     model = load_model("virtual_storage2.json")
     model.run()
@@ -786,6 +837,20 @@ class TestSeasonalVirtualStorage:
 
         licence_df = model.recorders["licence1"].to_dataframe()
         assert_allclose(licence_df.loc["2015-01-10", :], 45)
+
+    def test_reset_month_non_constant_parameter_raises(self):
+        """Test that a non-constant reset_month parameter raises a clear, node-type-specific error."""
+        model = load_model("seasonal_virtual_storage.json")
+        vs = model.nodes["licence1"]
+        vs.reset_month = pywr.parameters.MonthlyProfileParameter(
+            model, np.arange(1, 13), name="reset_month_profile"
+        )
+
+        model.setup()
+        with pytest.raises(
+            ValueError, match="SeasonalVirtualStorage node 'licence1' does not have a"
+        ):
+            model.step()
 
 
 class TestMonthlyVirtualStorage:

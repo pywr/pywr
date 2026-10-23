@@ -3,6 +3,7 @@ from pywr import _core
 from pywr._core import Node as BaseNode
 from pywr._core import BaseInput, BaseLink, BaseOutput, StorageInput, StorageOutput
 from pywr.parameters import (
+    Parameter,
     pop_kwarg_parameter,
     load_parameter,
     load_parameter_values,
@@ -600,18 +601,25 @@ class AnnualVirtualStorage(VirtualStorage):
 
     Parameters
     ----------
-    reset_day: int
-        The day of the month (0-31) to reset the volume to the initial value.
-    reset_month: int
-        The month of the year (0-12) to reset the volume to the initial value.
+    reset_day: int or parameter
+        The day of the month (0-31) to reset the volume to the initial value. Must evaluate to a
+        constant value if given as a parameter.
+    reset_month: int or parameter
+        The month of the year (0-12) to reset the volume to the initial value. Must evaluate to a
+        constant value if given as a parameter.
     reset_to_initial_volume: bool
         Reset the volume to the initial volume instead of maximum volume each year (default is False).
 
     """
 
+    __parameter_attributes__ = VirtualStorage.__parameter_attributes__ + (
+        "reset_month",
+        "reset_day",
+    )
+
     def __init__(self, *args, **kwargs):
-        self.reset_day = kwargs.pop("reset_day", 1)
-        self.reset_month = kwargs.pop("reset_month", 1)
+        self.reset_day = pop_kwarg_parameter(kwargs, "reset_day", 1)
+        self.reset_month = pop_kwarg_parameter(kwargs, "reset_month", 1)
         self.reset_to_initial_volume = kwargs.pop("reset_to_initial_volume", False)
         self._last_reset_year = None
 
@@ -623,12 +631,36 @@ class AnnualVirtualStorage(VirtualStorage):
 
         super(AnnualVirtualStorage, self).__init__(*args, **kwargs)
 
+    def _resolve_constant_reset_value(self, parameter, kwarg_name):
+        """Resolve a constant-valued `Parameter` given for `kwarg_name` to a plain int."""
+        try:
+            value = parameter.get_constant_value()
+        except NotImplementedError:
+            raise ValueError(
+                f"The parameter '{parameter.name}' given for '{kwarg_name}' on "
+                f"{self.__class__.__name__} node '{self.name}' does not have a "
+                "constant value. reset_month and reset_day must reference a "
+                "parameter that returns a single constant value, such as a "
+                "ConstantParameter."
+            )
+        return int(value)
+
     def reset(self):
         super(AnnualVirtualStorage, self).reset()
         self._last_reset_year = None
 
     def before(self, ts):
         super(AnnualVirtualStorage, self).before(ts)
+
+        # Resolve parameter references to plain ints on first use, then leave as ints.
+        if isinstance(self.reset_month, Parameter):
+            self.reset_month = self._resolve_constant_reset_value(
+                self.reset_month, "reset_month"
+            )
+        if isinstance(self.reset_day, Parameter):
+            self.reset_day = self._resolve_constant_reset_value(
+                self.reset_day, "reset_day"
+            )
 
         if ts.index == 0:
             if ts.month > self.reset_month or (
