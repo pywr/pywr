@@ -633,6 +633,66 @@ def test_annual_virtual_storage_reset_to_max_volume(reset_to_initial_volume):
     assert_allclose(licence1.volume, [expected_volume])
 
 
+@pytest.mark.parametrize("reset_to_initial_volume", [None, False, True])
+def test_annual_virtual_storage_reset_to_max_volume_with_reset_month_as_parameter(
+    reset_to_initial_volume,
+):
+    """Test that AnnualVirtualStorage resets to maximum volume when reset_month is a constant parameter."""
+    model = load_model("virtual_storage9.json")
+    licence1 = model.nodes["licence1"]
+    if reset_to_initial_volume is not None:
+        licence1.reset_to_initial_volume = reset_to_initial_volume
+    licence1.initial_volume = 100
+
+    model.setup()
+    # reset_month has been loaded as a Parameter
+    assert isinstance(licence1.reset_month, Parameter)
+    # After reset the current volume is always the initial volume
+    assert_allclose(licence1.volume, [100.0])
+
+    model.timestepper.start = "2015-04-01"
+    model.reset()
+    # After stepping over the reset day the volume should have been reset
+    # before the solve to either initial volume or maximum volume.
+    model.step()
+    # reset_month remains a Parameter so that it can be modified via the optimisation API
+    assert isinstance(licence1.reset_month, Parameter)
+    if reset_to_initial_volume:
+        expected_volume = 90.0
+    else:
+        expected_volume = 195.0
+    assert_allclose(licence1.volume, [expected_volume])
+
+    # Test also volume stays at initial volume is start date is after reset date
+    # but in the same year.
+    model.timestepper.start = "2015-09-01"
+    model.reset()
+    # Now reset should have occurred during the reset. So, the volume should
+    # always be based on the initial volume.
+    model.step()
+
+    expected_volume = 90.0
+
+    assert_allclose(licence1.volume, [expected_volume])
+
+
+def test_annual_virtual_storage_reset_month_non_constant_parameter_raises():
+    """Test that a non-constant reset_month parameter raises a clear error rather than a bare NotImplementedError."""
+    model = load_model("virtual_storage10.json")
+    with pytest.raises(ValueError, match="does not have a constant value"):
+        model.setup()
+
+
+def test_annual_virtual_storage_reset_date_invalid_parameter_values_raises():
+    """Test that parameter values that are not a valid month and day raise an error."""
+    model = load_model("virtual_storage9.json")
+    licence1 = model.nodes["licence1"]
+    licence1.reset_day = ConstantParameter(model, 30)
+    licence1.reset_month = ConstantParameter(model, 2)
+    with pytest.raises(ValueError, match="are not a valid month and day"):
+        model.setup()
+
+
 def test_annual_virtual_storage_with_dynamic_cost():
     model = load_model("virtual_storage2.json")
     model.run()
@@ -712,7 +772,8 @@ class TestSeasonalVirtualStorage:
         assert_allclose(supply_df.loc["2016-02-01", :], 10)
         assert_allclose(licence_df.loc["2016-02-01", :], 0)
 
-    def test_year_overlap(self):
+    @pytest.mark.parametrize("use_parameters", [False, True])
+    def test_year_overlap(self, use_parameters):
         """test the the node works: end date < reset date < model start date. This
         means that the node's active period extends from one year to the next
         """
@@ -720,10 +781,11 @@ class TestSeasonalVirtualStorage:
         model = load_model("seasonal_virtual_storage.json")
 
         vs = model.nodes["licence1"]
-        vs.reset_day = 1
-        vs.reset_month = 12
-        vs.end_day = 31
-        vs.end_month = 3
+        dates = {"reset_day": 1, "reset_month": 12, "end_day": 31, "end_month": 3}
+        for name, value in dates.items():
+            if use_parameters:
+                value = ConstantParameter(model, value)
+            setattr(vs, name, value)
         model.timestepper.start = "2015-12-15"
         model.timestepper.end = "2016-12-02"
 
@@ -786,6 +848,43 @@ class TestSeasonalVirtualStorage:
 
         licence_df = model.recorders["licence1"].to_dataframe()
         assert_allclose(licence_df.loc["2015-01-10", :], 45)
+
+    def test_reset_month_non_constant_parameter_raises(self):
+        """Test that a non-constant reset_month parameter raises a clear, node-type-specific error."""
+        model = load_model("seasonal_virtual_storage.json")
+        vs = model.nodes["licence1"]
+        vs.reset_month = pywr.parameters.MonthlyProfileParameter(
+            model, np.arange(1.0, 13.0), name="reset_month_profile"
+        )
+
+        with pytest.raises(
+            ValueError, match="SeasonalVirtualStorage node 'licence1' does not have a"
+        ):
+            model.setup()
+
+    def test_end_month_non_constant_parameter_raises(self):
+        """Test that a non-constant end_month parameter raises a clear, node-type-specific error."""
+        model = load_model("seasonal_virtual_storage.json")
+        vs = model.nodes["licence1"]
+        vs.end_month = pywr.parameters.MonthlyProfileParameter(
+            model, np.arange(1.0, 13.0), name="end_month_profile"
+        )
+
+        with pytest.raises(
+            ValueError, match="SeasonalVirtualStorage node 'licence1' does not have a"
+        ):
+            model.setup()
+
+    def test_end_date_parameters_remain_parameters(self):
+        """Test that end_day and end_month remain parameters after the model is reset."""
+        model = load_model("seasonal_virtual_storage.json")
+        vs = model.nodes["licence1"]
+        vs.end_day = ConstantParameter(model, 31)
+        vs.end_month = ConstantParameter(model, 3)
+
+        model.run()
+        assert isinstance(vs.end_day, Parameter)
+        assert isinstance(vs.end_month, Parameter)
 
 
 class TestMonthlyVirtualStorage:

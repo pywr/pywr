@@ -1,8 +1,10 @@
+import datetime
 import numpy as np
 from pywr import _core
 from pywr._core import Node as BaseNode
 from pywr._core import BaseInput, BaseLink, BaseOutput, StorageInput, StorageOutput
 from pywr.parameters import (
+    Parameter,
     pop_kwarg_parameter,
     load_parameter,
     load_parameter_values,
@@ -600,20 +602,29 @@ class AnnualVirtualStorage(VirtualStorage):
 
     Parameters
     ----------
-    reset_day: int
-        The day of the month (0-31) to reset the volume to the initial value.
-    reset_month: int
-        The month of the year (0-12) to reset the volume to the initial value.
+    reset_day: int or parameter
+        The day of the month (0-31) to reset the volume to the initial value. Must evaluate to a
+        constant value if given as a parameter.
+    reset_month: int or parameter
+        The month of the year (0-12) to reset the volume to the initial value. Must evaluate to a
+        constant value if given as a parameter.
     reset_to_initial_volume: bool
         Reset the volume to the initial volume instead of maximum volume each year (default is False).
 
     """
 
+    __parameter_attributes__ = VirtualStorage.__parameter_attributes__ + (
+        "reset_month",
+        "reset_day",
+    )
+
     def __init__(self, *args, **kwargs):
-        self.reset_day = kwargs.pop("reset_day", 1)
-        self.reset_month = kwargs.pop("reset_month", 1)
+        self.reset_day = pop_kwarg_parameter(kwargs, "reset_day", 1)
+        self.reset_month = pop_kwarg_parameter(kwargs, "reset_month", 1)
         self.reset_to_initial_volume = kwargs.pop("reset_to_initial_volume", False)
         self._last_reset_year = None
+        self._reset_day = None
+        self._reset_month = None
 
         for node in kwargs["nodes"]:
             if isinstance(node, LossLink):
@@ -623,16 +634,53 @@ class AnnualVirtualStorage(VirtualStorage):
 
         super(AnnualVirtualStorage, self).__init__(*args, **kwargs)
 
+    def _resolve_constant_date_value(self, value, attr_name):
+        """Resolve an int or constant-valued `Parameter` given for `attr_name` to a plain int."""
+        if isinstance(value, Parameter):
+            if not value.is_constant:
+                raise ValueError(
+                    f"The parameter '{value.name}' given for '{attr_name}' on "
+                    f"{self.__class__.__name__} node '{self.name}' does not have a "
+                    "constant value. The month and day arguments must reference a "
+                    "parameter that returns a single constant value, such as a "
+                    "ConstantParameter."
+                )
+            value = value.get_constant_value()
+        return int(value)
+
+    def _resolve_constant_date(self, day, month, day_name, month_name):
+        """Resolve a day and month, each an int or constant-valued `Parameter`, to a pair of plain ints.
+
+        A day and month resolved from a `Parameter` must make a valid date. A leap year is used so that
+        29 February is accepted.
+        """
+        from_parameter = isinstance(day, Parameter) or isinstance(month, Parameter)
+        day = self._resolve_constant_date_value(day, day_name)
+        month = self._resolve_constant_date_value(month, month_name)
+        if from_parameter:
+            try:
+                datetime.date(2016, month, day)
+            except ValueError:
+                raise ValueError(
+                    f"The values {month_name}={month} and {day_name}={day} on "
+                    f"{self.__class__.__name__} node '{self.name}' are not a valid month and day."
+                )
+        return day, month
+
     def reset(self):
         super(AnnualVirtualStorage, self).reset()
         self._last_reset_year = None
+        # Resolve once here, keeping any parameters in the public attributes.
+        self._reset_day, self._reset_month = self._resolve_constant_date(
+            self.reset_day, self.reset_month, "reset_day", "reset_month"
+        )
 
     def before(self, ts):
         super(AnnualVirtualStorage, self).before(ts)
 
         if ts.index == 0:
-            if ts.month > self.reset_month or (
-                ts.month == self.reset_month and ts.day > self.reset_day
+            if ts.month > self._reset_month or (
+                ts.month == self._reset_month and ts.day > self._reset_day
             ):
                 # Assume we reset before the model started
                 self._last_reset_year = ts.year
@@ -641,8 +689,8 @@ class AnnualVirtualStorage(VirtualStorage):
         if ts.year != self._last_reset_year:
             # I.e. we're in a new year and ...
             # ... we're at or past the reset month/day
-            if ts.month > self.reset_month or (
-                ts.month == self.reset_month and ts.day >= self.reset_day
+            if ts.month > self._reset_month or (
+                ts.month == self._reset_month and ts.day >= self._reset_day
             ):
                 # Reset maximum volume depending on user preference ...
                 use_initial_volume = self.reset_to_initial_volume
@@ -670,26 +718,42 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
 
     Parameters
     ----------
-    reset_day : int
+    reset_day : int or parameter
         The day of the month (0-31) when the node starts operating and its volume is reset to the initial value or
-        maximum volume.
-    reset_month : int
+        maximum volume. Must evaluate to a constant value if given as a parameter.
+    reset_month : int or parameter
         The month of the year (0-12) when the node starts operating and its volume is reset to the initial value or
-        maximum volume.
+        maximum volume. Must evaluate to a constant value if given as a parameter.
     reset_to_initial_volume : bool
         Reset the volume to the initial volume instead of maximum volume each year (default is False).
-    end_day : int
-        The day of the month (0-31) when the node stops operating.
-    end_month : int
-        The month of the year (0-12) when the node stops operating.
+    end_day : int or parameter
+        The day of the month (0-31) when the node stops operating. Must evaluate to a constant value if given as a
+        parameter.
+    end_month : int or parameter
+        The month of the year (0-12) when the node stops operating. Must evaluate to a constant value if given as a
+        parameter.
     """
 
+    __parameter_attributes__ = AnnualVirtualStorage.__parameter_attributes__ + (
+        "end_month",
+        "end_day",
+    )
+
     def __init__(self, *args, **kwargs):
-        self.end_day = kwargs.pop("end_day", 31)
-        self.end_month = kwargs.pop("end_month", 12)
+        self.end_day = pop_kwarg_parameter(kwargs, "end_day", 31)
+        self.end_month = pop_kwarg_parameter(kwargs, "end_month", 12)
         self._last_active_year = None
+        self._end_day = None
+        self._end_month = None
 
         super().__init__(*args, **kwargs)
+
+    def reset(self):
+        super().reset()
+        # Resolve once here, keeping any parameters in the public attributes.
+        self._end_day, self._end_month = self._resolve_constant_date(
+            self.end_day, self.end_month, "end_day", "end_month"
+        )
 
     def before(self, ts):
         super().before(ts)
@@ -698,22 +762,22 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
             if ts.index == 0:
                 if self._last_reset_year == ts.year:
                     # First timestep is later in year than reset date
-                    if self.end_month < self.reset_month or (
-                        self.end_month == self.reset_month
-                        and self.end_day <= self.reset_day
+                    if self._end_month < self._reset_month or (
+                        self._end_month == self._reset_month
+                        and self._end_day <= self._reset_day
                     ):
                         # end date is earlier in year than reset date so do not deactivate node in first year
                         self._last_active_year = ts.year
                 else:
                     # First timestep is earlier in year than reset date
-                    if self.end_month > self.reset_month or (
-                        self.end_month == self.reset_month
-                        and self.end_day >= self.reset_day
+                    if self._end_month > self._reset_month or (
+                        self._end_month == self._reset_month
+                        and self._end_day >= self._reset_day
                     ):
                         # end date is later in year than reset date so node needs to be deactivated
                         self.active = False
-            elif ts.month > self.end_month or (
-                ts.month == self.end_month and ts.day >= self.end_day
+            elif ts.month > self._end_month or (
+                ts.month == self._end_month and ts.day >= self._end_day
             ):
                 self._last_active_year = ts.year
                 self.active = False
