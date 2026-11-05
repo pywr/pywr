@@ -2396,14 +2396,22 @@ cdef class LinearInterpolator:
     x, y : array_like
         One-dimensional coordinates of the data points. `x` is sorted (along with `y`) unless
         `assume_sorted` is `True`.
-    bounds_error : bool
+    bounds_error : bool or None (default=None)
         If `True` a `ValueError` is raised when interpolating outside of the range of `x`.
-        Otherwise `fill_value` is used.
+        Otherwise `fill_value` is used. As with `interp1d`, the default of `None` is `True` unless
+        `fill_value` is "extrapolate", and `True` is not allowed with "extrapolate".
     fill_value : float, tuple of 2 floats or "extrapolate"
         Value(s) returned below and above the range of `x` when `bounds_error` is `False`. A scalar is
         used for both sides. "extrapolate" linearly extrapolates using the first and last segments.
     assume_sorted : bool
         If `True`, `x` must already be monotonically increasing.
+
+    Notes
+    -----
+    Repeated values in `x` are treated as `interp1d` treats them. Within the range of `x` the value of the
+    last of the repeated points is used, e.g. `x=[0, 1, 1, 2]` and `y=[0, 1, 5, 6]` evaluates to 5 at 1.
+    When extrapolating the first of the repeated points is used instead, and extrapolating from a segment of zero
+    width gives NaN.
     """
     cdef double[:] _x
     cdef double[:] _y
@@ -2413,7 +2421,7 @@ cdef class LinearInterpolator:
     cdef double _fill_below
     cdef double _fill_above
 
-    def __init__(self, x, y, bint bounds_error=True, fill_value=np.nan, bint assume_sorted=False):
+    def __init__(self, x, y, bounds_error=None, fill_value=np.nan, bint assume_sorted=False):
         x_arr = np.array(x, dtype=np.float64)
         y_arr = np.array(y, dtype=np.float64)
         if x_arr.ndim != 1 or y_arr.ndim != 1:
@@ -2431,14 +2439,18 @@ cdef class LinearInterpolator:
         self._n = x_arr.shape[0]
 
         self._extrapolate = False
-        self._bounds_error = bounds_error
         if isinstance(fill_value, str):
             if fill_value != "extrapolate":
                 raise ValueError('fill_value must be a number, a pair of numbers or "extrapolate".')
+            if bounds_error:
+                raise ValueError("Cannot extrapolate and raise at the same time.")
             self._extrapolate = True
             self._bounds_error = False
             self._fill_below = self._fill_above = np.nan
-        elif isinstance(fill_value, (tuple, list)):
+            return
+
+        self._bounds_error = True if bounds_error is None else bool(bounds_error)
+        if isinstance(fill_value, (tuple, list)):
             if len(fill_value) != 2:
                 raise ValueError("fill_value must be a scalar or a pair (below, above).")
             self._fill_below = fill_value[0]
@@ -2464,7 +2476,18 @@ cdef class LinearInterpolator:
         if isnan(v):
             return v
 
-        if not self._extrapolate:
+        lo = 0
+        hi = n - 1
+        if self._extrapolate:
+            # Binary search for the first index with x[hi] >= v, clipped to [1, n - 1], as `interp1d` does
+            # when extrapolating.
+            while hi - lo > 1:
+                mid = (lo + hi) // 2
+                if self._x[mid] >= v:
+                    hi = mid
+                else:
+                    lo = mid
+        else:
             if v < self._x[0]:
                 if self._bounds_error:
                     raise ValueError("A value ({}) is below the interpolation range's minimum value ({}).".format(v, self._x[0]))
@@ -2473,21 +2496,26 @@ cdef class LinearInterpolator:
                 if self._bounds_error:
                     raise ValueError("A value ({}) is above the interpolation range's maximum value ({}).".format(v, self._x[n - 1]))
                 return self._fill_above
+            if v == self._x[n - 1]:
+                return self._y[n - 1]
 
-        # Binary search for the first index with x[hi] >= v, clipped to [1, n - 1]
-        lo = 0
-        hi = n - 1
-        while hi - lo > 1:
-            mid = (lo + hi) // 2
-            if self._x[mid] >= v:
-                hi = mid
-            else:
-                lo = mid
+            # Binary search for the last index with x[lo] <= v, as `numpy.interp` (used by `interp1d`) does.
+            # Because x[hi] > v >= x[lo] the segment is never of zero width.
+            while hi - lo > 1:
+                mid = (lo + hi) // 2
+                if self._x[mid] > v:
+                    hi = mid
+                else:
+                    lo = mid
+
         # Now lo = hi - 1 and the segment [x[lo], x[hi]] contains v (or is the end segment when extrapolating)
         x0 = self._x[lo]
         x1 = self._x[hi]
         y0 = self._y[lo]
         y1 = self._y[hi]
+        if x1 == x0:
+            # Only possible when extrapolating from repeated x values; the slope is undefined as in `interp1d`
+            return np.nan
         return (y1 - y0) / (x1 - x0) * (v - x0) + y0
 
     def __call__(self, v):

@@ -2464,6 +2464,78 @@ class TestLinearInterpolator:
             else:
                 np.testing.assert_allclose(actual(v), e, equal_nan=True)
 
+    @pytest.mark.parametrize(
+        "x, y",
+        [
+            ([0.0, 1.0, 1.0, 2.0], [0.0, 1.0, 5.0, 6.0]),
+            ([0.0, 0.0, 1.0], [0.0, 1.0, 2.0]),
+            ([0.0, 1.0, 1.0], [0.0, 1.0, 2.0]),
+            ([1.0, 0.0, 1.0, 2.0, 1.0], [5.0, 0.0, 1.0, 6.0, 3.0]),  # unsorted
+        ],
+    )
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {},
+            {"bounds_error": False, "fill_value": (-1.0, 9.0)},
+            {"fill_value": "extrapolate"},
+        ],
+    )
+    def test_repeated_x_matches_interp1d(self, x, y, kwargs):
+        from pywr.parameters._parameters import LinearInterpolator
+
+        expected = interp1d(x, y, kind="linear", **kwargs)
+        actual = LinearInterpolator(x, y, **kwargs)
+
+        # Includes values on and outside of the data range, and on the repeated points. Interpolating on a
+        # segment of zero width when extrapolating gives NaN as it does in `interp1d`.
+        with np.errstate(all="ignore"):
+            for v in np.concatenate([np.linspace(-1, 3, 33), x]):
+                try:
+                    e = float(expected(v))
+                except ValueError:
+                    with pytest.raises(ValueError):
+                        actual(v)
+                else:
+                    np.testing.assert_allclose(actual(v), e, equal_nan=True)
+
+    @pytest.mark.parametrize(
+        "x, y, v, expected",
+        [
+            ([0.0, 1.0, 1.0, 2.0], [0.0, 1.0, 5.0, 6.0], 1.0, 5.0),
+            ([0.0, 0.0, 1.0], [0.0, 1.0, 2.0], 0.0, 1.0),
+        ],
+    )
+    def test_repeated_x_uses_last_point(self, x, y, v, expected):
+        from pywr.parameters._parameters import LinearInterpolator
+
+        assert LinearInterpolator(x, y)(v) == expected
+
+    def test_extrapolate_and_bounds_error_raises(self):
+        """Test the same combination of arguments is rejected as in `interp1d`."""
+        from pywr.parameters._parameters import LinearInterpolator
+
+        with pytest.raises(ValueError, match="extrapolate and raise"):
+            interp1d(self.X, self.Y, bounds_error=True, fill_value="extrapolate")
+        with pytest.raises(ValueError, match="extrapolate and raise"):
+            LinearInterpolator(
+                self.X, self.Y, bounds_error=True, fill_value="extrapolate"
+            )
+
+    def test_parameter_extrapolate_and_bounds_error_raises(self, simple_linear_model):
+        """Test the default `bounds_error` of an interpolated parameter is not silently ignored."""
+        model = simple_linear_model
+        p1 = ConstantParameter(model, 1.0)
+        InterpolatedParameter(
+            model,
+            p1,
+            [0, 5, 10, 11],
+            [0, 10, 30, 2],
+            interp_kwargs={"fill_value": "extrapolate"},
+        )
+        with pytest.raises(ValueError, match="extrapolate and raise"):
+            model.setup()
+
     def test_parameter_uses_fast_path_only_for_linear(self, simple_linear_model):
         from pywr.parameters._parameters import LinearInterpolator
 

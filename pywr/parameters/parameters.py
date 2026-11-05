@@ -167,22 +167,16 @@ class AbstractInterpolatedParameter(Parameter):
             and x.shape == y.shape
             and x.shape[0] >= 2
         ):
-            fill_value = kwargs.get("fill_value", np.nan)
-            bounds_error = kwargs.get("bounds_error")
-            if bounds_error is None:
-                # Mirror interp1d's default
-                bounds_error = not (
-                    isinstance(fill_value, str) and fill_value == "extrapolate"
-                )
             try:
                 return LinearInterpolator(
                     x,
                     y,
-                    bounds_error=bool(bounds_error),
-                    fill_value=fill_value,
+                    bounds_error=kwargs.get("bounds_error"),
+                    fill_value=kwargs.get("fill_value", np.nan),
                     assume_sorted=bool(kwargs.get("assume_sorted", False)),
                 )
             except (ValueError, TypeError):
+                # Invalid arguments fall through so that `interp1d` raises its own error
                 pass
         return interp1d(x, y, **kwargs)
 
