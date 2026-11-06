@@ -1,9 +1,12 @@
+import multiprocessing
+import numpy as np
 import pytest
 
 pymoo = pytest.importorskip("pymoo")
 
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.optimize import minimize
+from pymoo.parallelization.starmap import StarmapParallelization
 from pywr.optimisation.pymoo import PymooWrapper
 from pywr.optimisation import clear_global_model_cache
 import os
@@ -60,3 +63,39 @@ def test_pymoo_nsga2_step_constrained(two_reservoir_constrained_wrapper):
         ("n_gen", 1),
         verbose=False,
     )
+
+
+def test_pymoo_equality_constraint():
+    """Test the equality constraint is evaluated as the difference from its bound."""
+
+    class EqualityWrapper(PymooWrapper):
+        def customise_model(self, model):
+            for r in model.constraints:
+                r.constraint_lower_bounds = 4.0
+                r.constraint_upper_bounds = 4.0
+
+    filename = os.path.join(TEST_FOLDER, "models", "two_reservoir_constrained.json")
+    wrapper = EqualityWrapper(filename)
+    try:
+        p = wrapper.problem
+        assert p.n_ieq_constr == 0
+        assert p.n_eq_constr == 1
+
+        x = 0.5 * (p.xl + p.xu)
+        out = {}
+        wrapper._pymoo_evaluate(x, out)
+        value = wrapper.model_constraints[0].aggregated_value()
+        np.testing.assert_allclose(out["H"], [value - 4.0])
+    finally:
+        clear_global_model_cache()
+
+
+def test_pymoo_nsga2_step_parallel(two_reservoir_constrained_wrapper):
+    """Undertake a single generation of NSGA2 with the population evaluated in parallel."""
+    with multiprocessing.Pool(2) as pool:
+        wrapper = PymooWrapper(
+            two_reservoir_constrained_wrapper.pywr_model_json,
+            elementwise_runner=StarmapParallelization(pool.starmap),
+        )
+        algorithm = NSGA2(pop_size=10)
+        minimize(wrapper.problem, algorithm, ("n_gen", 1), verbose=False)

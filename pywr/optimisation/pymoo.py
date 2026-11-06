@@ -5,41 +5,61 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+try:
+    from pymoo.core.problem import ElementwiseProblem
+except ImportError:
+    raise ImportError("pymoo is required. Install with: pip install pymoo")
+
+
+class PymooProblem(ElementwiseProblem):
+    """A pymoo problem that evaluates solutions using a `PymooWrapper`.
+
+    This is defined at module level (rather than inside the wrapper) so that it can be pickled. This is
+    required to evaluate solutions in parallel, e.g. using pymoo's `StarmapParallelization`.
+    """
+
+    def __init__(
+        self, wrapper, lower, upper, n_obj, n_ieq_constr, n_eq_constr, **kwargs
+    ):
+        super().__init__(
+            n_var=len(lower),
+            n_obj=n_obj,
+            n_ieq_constr=n_ieq_constr,
+            n_eq_constr=n_eq_constr,
+            xl=lower,
+            xu=upper,
+            **kwargs,
+        )
+        self.wrapper = wrapper
+
+    def _evaluate(self, x, out, *args, **kwargs):
+        self.wrapper._pymoo_evaluate(x, out)
+
+
 class PymooWrapper(BaseOptimisationWrapper):
-    """A helper class for running pywr optimisations with pymoo."""
+    """A helper class for running pywr optimisations with pymoo.
+
+    Parameters
+    ----------
+    elementwise_runner : pymoo runner (optional)
+        A pymoo elementwise runner used to evaluate the solutions of a population, e.g. an instance of
+        `pymoo.parallelization.starmap.StarmapParallelization` to evaluate them in parallel.
+    """
 
     def __init__(self, *args, **kwargs):
+        elementwise_runner = kwargs.pop("elementwise_runner", None)
         super().__init__(*args, **kwargs)
-        self.problem = self._make_pymoo_problem()
+        self.problem = self._make_pymoo_problem(elementwise_runner)
 
-    def _make_pymoo_problem(self):
-        try:
-            from pymoo.core.problem import ElementwiseProblem
-        except ImportError:
-            raise ImportError("pymoo is required. Install with: pip install pymoo")
-
+    def _make_pymoo_problem(self, elementwise_runner=None):
         lower, upper = self._get_variable_bounds()
-        n_var = len(lower)
         n_obj = len(self.model_objectives)
         n_ieq = self._count_ineq_constraints()
         n_eq = len([c for c in self.model_constraints if c.is_equality_constraint])
-        wrapper = self
-
-        class _ProblemImpl(ElementwiseProblem):
-            def __init__(self):
-                super().__init__(
-                    n_var=n_var,
-                    n_obj=n_obj,
-                    n_ieq_constr=n_ieq,
-                    n_eq_constr=n_eq,
-                    xl=lower,
-                    xu=upper,
-                )
-
-            def _evaluate(self, x, out, *args, **kwargs):
-                wrapper._pymoo_evaluate(x, out)
-
-        return _ProblemImpl()
+        kwargs = {}
+        if elementwise_runner is not None:
+            kwargs["elementwise_runner"] = elementwise_runner
+        return PymooProblem(self, lower, upper, n_obj, n_ieq, n_eq, **kwargs)
 
     def _get_variable_bounds(self):
         lower = []
@@ -90,7 +110,7 @@ class PymooWrapper(BaseOptimisationWrapper):
                 ineq_constraints.append(r.constraint_lower_bounds - val)
                 ineq_constraints.append(val - r.constraint_upper_bounds)
             elif r.is_equality_constraint:
-                eq_constraints.append(val)
+                eq_constraints.append(val - r.constraint_lower_bounds)
             elif r.is_lower_bounded_constraint:
                 ineq_constraints.append(r.constraint_lower_bounds - val)
             elif r.is_upper_bounded_constraint:
