@@ -35,7 +35,7 @@ class PygmoWrapper(BaseOptimisationWrapper):
                 ineq_constraints.append(r.constraint_lower_bounds - x)
                 ineq_constraints.append(x - r.constraint_upper_bounds)
             elif r.is_equality_constraint:
-                eq_constraints.append(x)
+                eq_constraints.append(x - r.constraint_lower_bounds)
             elif r.is_lower_bounded_constraint:
                 ineq_constraints.append(r.constraint_lower_bounds - x)
             elif r.is_upper_bounded_constraint:
