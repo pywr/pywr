@@ -1373,3 +1373,4 @@ class ShadowNode(Loadable, Drawable, _core.ShadowNode, metaclass=NodeMeta):
 
 
 from pywr.domains.river import *  # noqa
+from pywr.domains.hydropower import *  # noqa

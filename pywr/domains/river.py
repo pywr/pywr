@@ -1,13 +1,42 @@
-from pywr.nodes import Domain, Input, Link, Storage, PiecewiseLink, MultiSplitLink
+import pandas as pd
+import numpy as np
+
+from pywr.nodes import (
+    Domain,
+    Input,
+    Output,
+    Link,
+    Storage,
+    PiecewiseLink,
+    NodeMeta,
+    MultiSplitLink,
+    AggregatedNode,
+)
+
 from pywr.parameters import (
     pop_kwarg_parameter,
     ConstantParameter,
     Parameter,
     load_parameter,
+    MonthlyProfileParameter,
+    DataFrameParameter,
+    InterpolatedVolumeParameter,
+    AggregatedParameter,
+    ScenarioWrapperParameter,
 )
-from pywr.parameters.control_curves import ControlCurveParameter
+
+from pywr.recorders import NumpyArrayNodeRecorder
+
+from pywr.parameters.control_curves import (
+    ControlCurveParameter,
+    ControlCurveInterpolatedParameter,
+)
 
 DEFAULT_RIVER_DOMAIN = Domain(name="river", color="#33CCFF")
+
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 class RiverDomainMixin(object):
@@ -62,6 +91,35 @@ class Reservoir(RiverDomainMixin, Storage):
     simple control curve. The Reservoir has above_curve_cost when it is above its curve
     and the user defined cost when it is below. Typically the costs are negative
     to represent a benefit of filling the reservoir when it is below its curve.
+
+    A reservoir can also be used to simplify evaporation and rainfall by creating
+    these nodes internally when the evaporation, rainfall, and area properties are set.
+
+    Parameters
+    ----------
+    model : Model
+        Model instance to which this storage node is attached.
+    name : str
+        The name of the storage node.
+    min_volume : float (optional)
+        The minimum volume of the storage. Defaults to 0.0.
+    max_volume : float, Parameter (optional)
+        The maximum volume of the storage. Defaults to 0.0.
+    initial_volume, initial_volume_pc : float (optional)
+        Specify initial volume in either absolute or proportional terms. Both are required if `max_volume`
+        is a parameter because the parameter will not be evaluated at the first time-step. If both are given
+        and `max_volume` is not a Parameter, then the absolute value is ignored.
+    evaporation :   DataFrame, Parameter (optional)
+        Normally a DataFrame with a index and a single column of 12 evaporation rates, representing each month in a year.
+    evaporation_cost : float (optional)
+        The cost of evaporation. Defaults to -999.
+    unit_conversion : float (optional)
+        The unit conversion factor for evaporation. Defaults to 1e6 * 1e-3 * 1e-6. This assumes area is Km2, level is m and evaporation is mm/day.
+    rainfall : DataFrame, Parameter (optional)
+        Normally a DataFrame with a index and a single column of 12 rainfall rates, representing each month in a year.
+    area, level : float, Parameter (optional)
+        Optional float or Parameter defining the area and level of the storage node. These values are
+        accessible through the `get_area` and `get_level` methods respectively.
     """
 
     def __init__(self, model, *args, **kwargs):
@@ -71,6 +129,9 @@ class Reservoir(RiverDomainMixin, Storage):
             control_curve - A Parameter object that can return the control curve position,
                 as a percentage of fill, for the given timestep.
         """
+
+        __parameter_attributes__ = ("min_volume", "max_volume", "level", "area")
+
         control_curve = pop_kwarg_parameter(kwargs, "control_curve", None)
         above_curve_cost = kwargs.pop("above_curve_cost", None)
         cost = kwargs.pop("cost", 0.0)
@@ -95,7 +156,109 @@ class Reservoir(RiverDomainMixin, Storage):
         else:
             # reinstate the given cost parameter to pass to the parent constructors
             kwargs["cost"] = cost
-        super(Reservoir, self).__init__(model, *args, **kwargs)
+
+        # self.level = pop_kwarg_parameter(kwargs, "level", None)
+        # self.area = pop_kwarg_parameter(kwargs, "area", None)
+
+        self.evaporation_cost = kwargs.pop("evaporation_cost", -999)
+        self.unit_conversion = kwargs.pop(
+            "unit_conversion", 1e6 * 1e-3 * 1e-6
+        )  # This assume area is Km2, level is m and evaporation is mm/day
+
+        self.evaporation = kwargs.pop("evaporation", None)
+        self.rainfall = kwargs.pop("rainfall", None)
+
+        name = kwargs.pop("name")
+        super().__init__(model, name, **kwargs)
+
+        self.rainfall_node = None
+        self.rainfall_recorder = None
+        self.evaporation_node = None
+        self.evaporation_recorder = None
+
+    def finalise_load(self):
+        super(Reservoir, self).finalise_load()
+
+        # in some cases, this hasn't been converted to a constant parameter, such as in the unit tests, so
+        # check for that here.
+        if not isinstance(self.unit_conversion, Parameter):
+            self.unit_conversion = ConstantParameter(self.model, self.unit_conversion)
+
+        if self.evaporation is not None:
+            self._make_evaporation_node(self.evaporation, self.evaporation_cost)
+
+        if self.rainfall is not None:
+            self._make_rainfall_node(self.rainfall)
+
+    def _make_evaporation_node(self, evaporation, cost):
+
+        if not isinstance(self.area, Parameter):
+            raise ValueError(
+                "Evaporation nodes can only be created if an area Parameter is given."
+            )
+
+        if isinstance(evaporation, Parameter):
+            evaporation_param = evaporation
+        elif isinstance(evaporation, str):
+            evaporation_param = load_parameter(self.model, evaporation)
+        elif isinstance(evaporation, (int, float)):
+            evaporation_param = ConstantParameter(self.model, evaporation)
+        else:
+            evp = pd.DataFrame.from_dict(evaporation)
+            evaporation_param = DataFrameParameter(self.model, evp)
+
+        evaporation_flow_param = AggregatedParameter(
+            self.model,
+            [evaporation_param, self.unit_conversion, self.area],
+            agg_func="product",
+        )
+
+        evaporation_node = Output(
+            self.model, "{}_evaporation".format(self.name), parent=self
+        )
+        evaporation_node.max_flow = evaporation_flow_param
+        evaporation_node.cost = cost
+
+        self.connect(evaporation_node)
+        self.evaporation_node = evaporation_node
+
+        self.evaporation_recorder = NumpyArrayNodeRecorder(
+            self.model,
+            evaporation_node,
+            name=f"__{evaporation_node.name}__:evaporation",
+        )
+
+    def _make_rainfall_node(self, rainfall):
+        if isinstance(rainfall, Parameter):
+            rainfall_param = rainfall
+        elif isinstance(rainfall, str):
+            rainfall_param = load_parameter(self.model, rainfall)
+        elif isinstance(rainfall, (int, float)):
+            rainfall_param = ConstantParameter(self.model, rainfall)
+        else:
+            # it's not a paramter or parameter reference, to try float and dataframe
+            rain = pd.DataFrame.from_dict(rainfall)
+            rainfall_param = DataFrameParameter(self.model, rain)
+
+        # Create the flow parameters multiplying area by rate of rainfall/evap
+
+        rainfall_flow_param = AggregatedParameter(
+            self.model,
+            [rainfall_param, self.unit_conversion, self.area],
+            agg_func="product",
+        )
+
+        # Create the nodes to provide the flows
+        rainfall_node = Catchment(
+            self.model, "{}_rainfall".format(self.name), parent=self
+        )
+        rainfall_node.flow = rainfall_flow_param
+
+        rainfall_node.connect(self)
+        self.rainfall_node = rainfall_node
+        self.rainfall_recorder = NumpyArrayNodeRecorder(
+            self.model, rainfall_node, name=f"__{rainfall_node.name}__:rainfall"
+        )
 
 
 class River(RiverDomainMixin, Link):
@@ -298,3 +461,41 @@ class RiverGauge(RiverDomainMixin, PiecewiseLink):
         return locals()
 
     cost = property(**cost())
+
+
+class ProportionalInput(Input, metaclass=NodeMeta):
+    """
+    This node is an input node that has a max_flow that is a proportion of another node.
+    An example of this is a return flow from an irrigation node.
+    The return flow is the proportion of the irrigation node flow.
+
+    Parameters
+    ----------
+    model : Model
+        The model object
+    name : str
+        The name of the node
+    node : Node
+        The node to which the input is proportional
+    proportion : float
+        The proportion of the node's flow to use as the max_flow
+
+    """
+
+    min_proportion = 1e-6
+
+    def __init__(self, model, name, node, proportion, **kwargs):
+        super().__init__(model, name, **kwargs)
+
+        self.node = model.pre_load_node(node)
+
+        # Create the flow factors for the other node and self
+        if proportion < self.__class__.min_proportion:
+            self.max_flow = 0.0
+        else:
+            factors = [1, proportion]
+            # Create the aggregated node to apply the factors.
+            self.aggregated_node = AggregatedNode(
+                model, f"{name}.aggregated", [self.node, self]
+            )
+            self.aggregated_node.factors = factors

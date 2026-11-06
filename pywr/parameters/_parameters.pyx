@@ -213,7 +213,12 @@ cdef class DataFrameParameter(Parameter):
         cdef Py_ssize_t i
         super(DataFrameParameter, self).setup()
         # align and resample the dataframe
-        dataframe_resampled = align_and_resample_dataframe(self.dataframe, self.model.timestepper.datetime_index)
+        try:
+            dataframe_resampled = align_and_resample_dataframe(self.dataframe, self.model.timestepper.datetime_index)
+        except Exception as e:
+            print(f"Error with dataframe on parameter: {self.name}")
+            raise
+
         if dataframe_resampled.ndim == 1:
             dataframe_resampled = pandas.DataFrame(dataframe_resampled)
         # dataframe should now have the correct number of timesteps for the model
