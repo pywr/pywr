@@ -126,6 +126,10 @@ Interpolation parameters
     InterpolatedVolumeParameter
     InterpolatedQuadratureParameter
     InterpolatedFlowParameter
+    SplineInterpolatedParameter
+    SplineInterpolatedVolumeParameter
+    SplineInterpolatedFlowParameter
+    SplineInterpolatedQuadratureParameter
 
 
 Control curve parameters
