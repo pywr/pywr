@@ -1,11 +1,12 @@
 import os
 import numpy as np
 cimport numpy as np
+cimport cython
 from scipy.interpolate import Rbf
 import pandas
 import json
 import calendar
-from libc.math cimport cos, M_PI
+from libc.math cimport cos, M_PI, isnan
 from libc.limits cimport INT_MIN, INT_MAX
 from pywr.h5tools import H5Store
 from .._core cimport is_leap_year
@@ -2382,3 +2383,140 @@ def load_parameter_values(model, data, values_key='values', url_key='url',
         raise ValueError("Parameter ('{name}' of type '{ptype}' is missing a valid key to load its values. "
                          "Please provide either a '{}', '{}' or '{}' entry.".format(values_key, url_key, table_key, name=name, ptype=ptype))
     return values
+
+
+cdef class LinearInterpolator:
+    """Fast scalar linear interpolation.
+
+    A lightweight replacement for `scipy.interpolate.interp1d(kind="linear")` when called with
+    a single value, which avoids the (large) Python overhead of the SciPy class.
+
+    Parameters
+    ----------
+    x, y : array_like
+        One-dimensional coordinates of the data points. `x` is sorted (along with `y`) unless
+        `assume_sorted` is `True`.
+    bounds_error : bool or None (default=None)
+        If `True` a `ValueError` is raised when interpolating outside of the range of `x`.
+        Otherwise `fill_value` is used. As with `interp1d`, the default of `None` is `True` unless
+        `fill_value` is "extrapolate", and `True` is not allowed with "extrapolate".
+    fill_value : float, tuple of 2 floats or "extrapolate"
+        Value(s) returned below and above the range of `x` when `bounds_error` is `False`. A scalar is
+        used for both sides. "extrapolate" linearly extrapolates using the first and last segments.
+    assume_sorted : bool
+        If `True`, `x` must already be monotonically increasing.
+
+    Notes
+    -----
+    Repeated values in `x` are treated as `interp1d` treats them. Within the range of `x` the value of the
+    last of the repeated points is used, e.g. `x=[0, 1, 1, 2]` and `y=[0, 1, 5, 6]` evaluates to 5 at 1.
+    When extrapolating the first of the repeated points is used instead, and extrapolating from a segment of zero
+    width gives NaN.
+    """
+    cdef double[:] _x
+    cdef double[:] _y
+    cdef Py_ssize_t _n
+    cdef bint _bounds_error
+    cdef bint _extrapolate
+    cdef double _fill_below
+    cdef double _fill_above
+
+    def __init__(self, x, y, bounds_error=None, fill_value=np.nan, bint assume_sorted=False):
+        x_arr = np.array(x, dtype=np.float64)
+        y_arr = np.array(y, dtype=np.float64)
+        if x_arr.ndim != 1 or y_arr.ndim != 1:
+            raise ValueError("x and y must be one-dimensional.")
+        if x_arr.shape[0] != y_arr.shape[0]:
+            raise ValueError("x and y must have the same length.")
+        if x_arr.shape[0] < 2:
+            raise ValueError("x and y must contain at least two points for linear interpolation.")
+        if not assume_sorted:
+            order = np.argsort(x_arr, kind="mergesort")
+            x_arr = x_arr[order]
+            y_arr = y_arr[order]
+        self._x = x_arr
+        self._y = y_arr
+        self._n = x_arr.shape[0]
+
+        self._extrapolate = False
+        if isinstance(fill_value, str):
+            if fill_value != "extrapolate":
+                raise ValueError('fill_value must be a number, a pair of numbers or "extrapolate".')
+            if bounds_error:
+                raise ValueError("Cannot extrapolate and raise at the same time.")
+            self._extrapolate = True
+            self._bounds_error = False
+            self._fill_below = self._fill_above = np.nan
+            return
+
+        self._bounds_error = True if bounds_error is None else bool(bounds_error)
+        if isinstance(fill_value, (tuple, list)):
+            if len(fill_value) != 2:
+                raise ValueError("fill_value must be a scalar or a pair (below, above).")
+            self._fill_below = fill_value[0]
+            self._fill_above = fill_value[1]
+        else:
+            self._fill_below = self._fill_above = fill_value
+
+    @property
+    def x(self):
+        return np.asarray(self._x)
+
+    @property
+    def y(self):
+        return np.asarray(self._y)
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cpdef double evaluate(self, double v) except? -1:
+        cdef Py_ssize_t lo, hi, mid, n
+        cdef double x0, x1, y0, y1
+        n = self._n
+
+        if isnan(v):
+            return v
+
+        lo = 0
+        hi = n - 1
+        if self._extrapolate:
+            # Binary search for the first index with x[hi] >= v, clipped to [1, n - 1], as `interp1d` does
+            # when extrapolating.
+            while hi - lo > 1:
+                mid = (lo + hi) // 2
+                if self._x[mid] >= v:
+                    hi = mid
+                else:
+                    lo = mid
+        else:
+            if v < self._x[0]:
+                if self._bounds_error:
+                    raise ValueError("A value ({}) is below the interpolation range's minimum value ({}).".format(v, self._x[0]))
+                return self._fill_below
+            if v > self._x[n - 1]:
+                if self._bounds_error:
+                    raise ValueError("A value ({}) is above the interpolation range's maximum value ({}).".format(v, self._x[n - 1]))
+                return self._fill_above
+            if v == self._x[n - 1]:
+                return self._y[n - 1]
+
+            # Binary search for the last index with x[lo] <= v, as `numpy.interp` (used by `interp1d`) does.
+            # Because x[hi] > v >= x[lo] the segment is never of zero width.
+            while hi - lo > 1:
+                mid = (lo + hi) // 2
+                if self._x[mid] > v:
+                    hi = mid
+                else:
+                    lo = mid
+
+        # Now lo = hi - 1 and the segment [x[lo], x[hi]] contains v (or is the end segment when extrapolating)
+        x0 = self._x[lo]
+        x1 = self._x[hi]
+        y0 = self._y[lo]
+        y1 = self._y[hi]
+        if x1 == x0:
+            # Only possible when extrapolating from repeated x values; the slope is undefined as in `interp1d`
+            return np.nan
+        return (y1 - y0) / (x1 - x0) * (v - x0) + y0
+
+    def __call__(self, v):
+        return self.evaluate(v)
