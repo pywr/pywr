@@ -81,7 +81,7 @@ from .multi_model_parameters import (
     OtherModelIndexParameterValueIndexParameter,
 )
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, make_interp_spline
 from scipy.integrate import quad
 import pandas
 
@@ -354,6 +354,350 @@ class InterpolatedQuadratureParameter(AbstractInterpolatedParameter):
 
 
 InterpolatedQuadratureParameter.register()
+
+
+class AbstractSplineInterpolatedParameter(Parameter):
+    """Base class for parameters that interpolate using a B-spline.
+
+    The spline is constructed with `scipy.interpolate.make_interp_spline`. Unlike the
+    `AbstractInterpolatedParameter` family (which uses `scipy.interpolate.interp1d`)
+    the "nearest", "next" and "previous" kinds are not available.
+
+    Parameters
+    ----------
+    x : array_like
+        x coordinates of the data points for interpolation. Must be strictly increasing.
+    y : array_like
+        y coordinates of the data points for interpolation.
+    k : int (default=3)
+        Degree of the spline. At least `k + 1` data points are required.
+    bc_type : tuple or None (default=None)
+        Boundary conditions passed to `make_interp_spline`.
+    bounds_error : bool (default=True)
+        If True a `ValueError` is raised when interpolating outside of the range of `x`.
+        Otherwise `fill_value` is required.
+    fill_value : float, array_like or "extrapolate" or None (default=None)
+        Only used when `bounds_error` is False. A single value is used both below and above
+        the range of `x`. A pair of values is used as (below, above). "extrapolate"
+        extrapolates using the spline.
+    """
+
+    def __init__(
+        self,
+        model,
+        x,
+        y,
+        k=3,
+        bc_type=None,
+        bounds_error=True,
+        fill_value=None,
+        **kwargs,
+    ):
+        super().__init__(model, **kwargs)
+        self.x = x
+        self.y = y
+        self.k = k
+        self.bc_type = bc_type
+        self.bounds_error = bounds_error
+        self.fill_value = fill_value
+        self._spline = None
+        self._antiderivative = None
+        self._fill_below = None
+        self._fill_above = None
+        self._extrapolate = False
+
+    def setup(self):
+        super().setup()
+        x = np.asarray(self.x, dtype=np.float64)
+        y = np.asarray(self.y, dtype=np.float64)
+        name = self.__class__.__qualname__
+        if x.ndim != 1 or x.shape != y.shape[:1]:
+            raise ValueError(
+                f'"x" and "y" must have the same length for parameter {name}.'
+            )
+        if len(x) < self.k + 1:
+            raise ValueError(
+                f"At least {self.k + 1} data points are required for a spline of degree "
+                f"{self.k} in parameter {name}."
+            )
+        if np.any(np.diff(x) <= 0):
+            raise ValueError(f'"x" must be strictly increasing in parameter {name}.')
+
+        bc_type = self.bc_type
+        if isinstance(bc_type, list):
+            # make_interp_spline expects a tuple (e.g. from JSON)
+            bc_type = tuple(bc_type)
+        self._spline = make_interp_spline(x, y, k=self.k, bc_type=bc_type)
+        self._antiderivative = None
+
+        self._extrapolate = False
+        if self.bounds_error:
+            return
+
+        fill_value = self.fill_value
+        if fill_value is None:
+            raise ValueError(
+                f'"fill_value" is required when "bounds_error" is False in parameter {name}.'
+            )
+        if isinstance(fill_value, str):
+            if fill_value != "extrapolate":
+                raise ValueError(
+                    f'Invalid "fill_value" "{fill_value}" in parameter {name}.'
+                )
+            self._extrapolate = True
+        else:
+            fill = np.atleast_1d(np.asarray(fill_value, dtype=np.float64))
+            if fill.shape not in ((1,), (2,)):
+                raise ValueError(
+                    f'"fill_value" must be a scalar or a pair of values in parameter {name}.'
+                )
+            self._fill_below = float(fill[0])
+            self._fill_above = float(fill[-1])
+
+    def _interpolate(self, v):
+        spline = self._spline
+        if self._extrapolate:
+            return float(spline(v, extrapolate=True))
+
+        lower, upper = spline.t[spline.k], spline.t[-spline.k - 1]
+        if v < lower:
+            if self.bounds_error:
+                raise ValueError(f"Value {v} falls below the interpolation bounds.")
+            return self._fill_below
+        if v > upper:
+            if self.bounds_error:
+                raise ValueError(f"Value {v} falls above the interpolation bounds.")
+            return self._fill_above
+        return float(spline(v))
+
+    def _integral_to(self, v):
+        """Definite integral of the interpolation from the lower bound of x to `v`."""
+        if self._antiderivative is None:
+            self._antiderivative = self._spline.antiderivative()
+        antiderivative = self._antiderivative
+        lower, upper = (
+            antiderivative.t[antiderivative.k],
+            antiderivative.t[-antiderivative.k - 1],
+        )
+        base = float(antiderivative(lower))
+        if self._extrapolate:
+            return float(antiderivative(v, extrapolate=True)) - base
+        if v < lower:
+            if self.bounds_error:
+                raise ValueError(f"Value {v} falls below the interpolation bounds.")
+            return self._fill_below * (v - lower)
+        if v > upper:
+            if self.bounds_error:
+                raise ValueError(f"Value {v} falls above the interpolation bounds.")
+            return float(antiderivative(upper)) - base + self._fill_above * (v - upper)
+        return float(antiderivative(v)) - base
+
+    @staticmethod
+    def _load_spline_kwargs(data):
+        """Pop the spline keyword arguments from the JSON data."""
+        kwargs = {}
+        for key in ("k", "bc_type", "bounds_error", "fill_value"):
+            if key in data:
+                kwargs[key] = data.pop(key)
+        return kwargs
+
+
+class SplineInterpolatedParameter(AbstractSplineInterpolatedParameter):
+    """
+    Parameter value is equal to the spline interpolation of another parameter
+
+    Parameters
+    ----------
+    parameter : Parameter
+        Parameter providing the value to interpolate.
+    x : array_like
+        x coordinates of the data points for interpolation.
+    y : array_like
+        y coordinates of the data points for interpolation.
+
+    See also
+    --------
+    AbstractSplineInterpolatedParameter for the spline options (`k`, `bc_type`,
+    `bounds_error` and `fill_value`).
+
+    Example
+    -------
+    >>> x = [0, 5, 10, 20]
+    >>> y = [0, 10, 30, -5]
+    >>> p1 = ConstantParameter(model, 9.3) # or something more interesting
+    >>> p2 = SplineInterpolatedParameter(model, p1, x, y, k=1)
+    """
+
+    def __init__(self, model, parameter, x, y, **kwargs):
+        super().__init__(model, x, y, **kwargs)
+        self._parameter = None
+        self.parameter = parameter
+
+    parameter = parameter_property("_parameter")
+
+    def value(self, ts, scenario_index):
+        return self._interpolate(self._parameter.get_value(scenario_index))
+
+    @classmethod
+    def load(cls, model, data):
+        parameter = load_parameter(model, data.pop("parameter"))
+        x = np.array(data.pop("x"))
+        y = np.array(data.pop("y"))
+        spline_kwargs = cls._load_spline_kwargs(data)
+        return cls(model, parameter, x, y, **spline_kwargs, **data)
+
+
+SplineInterpolatedParameter.register()
+
+
+class SplineInterpolatedVolumeParameter(AbstractSplineInterpolatedParameter):
+    """
+    Spline interpolation parameter calculated from the current volume of a storage node
+
+    Parameters
+    ----------
+    node : Node
+        Storage node to provide input volume values to the interpolation.
+    volumes : array_like or from file
+        x coordinates of the data points for interpolation.
+    values : array_like or from file
+        y coordinates of the data points for interpolation.
+
+    See also
+    --------
+    AbstractSplineInterpolatedParameter for the spline options (`k`, `bc_type`,
+    `bounds_error` and `fill_value`).
+    """
+
+    def __init__(self, model, node, volumes, values, **kwargs):
+        super().__init__(model, volumes, values, **kwargs)
+        self._node = node
+
+    def value(self, ts, scenario_index):
+        return self._interpolate(self._node.volume[scenario_index.global_id])
+
+    @classmethod
+    def load(cls, model, data):
+        node = model.nodes[data.pop("node")]
+        volumes = data.pop("volumes")
+        if isinstance(volumes, list):
+            volumes = np.asarray(volumes, np.float64)
+        elif isinstance(volumes, dict):
+            volumes = load_parameter_values(model, volumes)
+        else:
+            raise TypeError(f'Unexpected type for "volumes" in {cls.__name__}')
+        values = data.pop("values")
+        if isinstance(values, list):
+            values = np.asarray(values, np.float64)
+        elif isinstance(values, dict):
+            values = load_parameter_values(model, values)
+        else:
+            raise TypeError(f'Unexpected type for "values" in {cls.__name__}')
+        spline_kwargs = cls._load_spline_kwargs(data)
+        return cls(model, node, volumes, values, **spline_kwargs, **data)
+
+
+SplineInterpolatedVolumeParameter.register()
+
+
+class SplineInterpolatedFlowParameter(AbstractSplineInterpolatedParameter):
+    """
+    Spline interpolation parameter that uses a node's flow at the previous time-step
+
+    Parameters
+    ----------
+    node : Node
+        Node to provide input flow values to the interpolation.
+    flows : array_like
+        x coordinates of the data points for interpolation.
+    values : array_like
+        y coordinates of the data points for interpolation.
+
+    See also
+    --------
+    AbstractSplineInterpolatedParameter for the spline options (`k`, `bc_type`,
+    `bounds_error` and `fill_value`).
+    """
+
+    def __init__(self, model, node, flows, values, **kwargs):
+        super().__init__(model, flows, values, **kwargs)
+        self._node = node
+
+    def value(self, ts, scenario_index):
+        return self._interpolate(self._node.prev_flow[scenario_index.global_id])
+
+    @classmethod
+    def load(cls, model, data):
+        node = model.nodes[data.pop("node")]
+        flows = np.array(data.pop("flows"))
+        values = np.array(data.pop("values"))
+        spline_kwargs = cls._load_spline_kwargs(data)
+        return cls(model, node, flows, values, **spline_kwargs, **data)
+
+
+SplineInterpolatedFlowParameter.register()
+
+
+class SplineInterpolatedQuadratureParameter(AbstractSplineInterpolatedParameter):
+    """
+    Parameter value is equal to the integral of the spline interpolation between two parameters
+
+    The integral is calculated analytically from the spline.
+
+    Parameters
+    ----------
+    upper_parameter : Parameter
+        Upper value of the interpolated interval to integrate over.
+    x : array_like
+        x coordinates of the data points for interpolation.
+    y : array_like
+        y coordinates of the data points for interpolation.
+    lower_parameter : Parameter or None
+        Lower value of the interpolated interval to integrate over. Can be `None` in which
+        case the lower value of interval is zero.
+
+    See also
+    --------
+    AbstractSplineInterpolatedParameter for the spline options (`k`, `bc_type`,
+    `bounds_error` and `fill_value`).
+    """
+
+    def __init__(self, model, upper_parameter, x, y, lower_parameter=None, **kwargs):
+        super().__init__(model, x, y, **kwargs)
+        self._upper_parameter = None
+        self.upper_parameter = upper_parameter
+        self._lower_parameter = None
+        self.lower_parameter = lower_parameter
+
+    upper_parameter = parameter_property("_upper_parameter")
+    lower_parameter = parameter_property("_lower_parameter")
+
+    def value(self, ts, scenario_index):
+        a = 0
+        if self._lower_parameter is not None:
+            a = self._lower_parameter.get_value(scenario_index)
+        b = self._upper_parameter.get_value(scenario_index)
+        return self._integral_to(b) - self._integral_to(a)
+
+    @classmethod
+    def load(cls, model, data):
+        upper_parameter = load_parameter(model, data.pop("upper_parameter"))
+        lower_parameter = load_parameter(model, data.pop("lower_parameter", None))
+        x = np.array(data.pop("x"))
+        y = np.array(data.pop("y"))
+        spline_kwargs = cls._load_spline_kwargs(data)
+        return cls(
+            model,
+            upper_parameter,
+            x,
+            y,
+            lower_parameter=lower_parameter,
+            **spline_kwargs,
+            **data,
+        )
+
+
+SplineInterpolatedQuadratureParameter.register()
 
 
 class ScenarioWrapperParameter(Parameter):
