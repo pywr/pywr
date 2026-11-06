@@ -2487,8 +2487,9 @@ class TestLinearInterpolator:
         expected = interp1d(x, y, kind="linear", **kwargs)
         actual = LinearInterpolator(x, y, **kwargs)
 
-        # Includes values on and outside of the data range, and on the repeated points. Interpolating on a
-        # segment of zero width when extrapolating gives NaN as it does in `interp1d`.
+        # Includes values on and outside of the data range, and on the repeated points. Extrapolating from a
+        # segment of zero width is undefined and not the same in every version of SciPy, so only finite
+        # values are compared here. See `test_extrapolate_zero_width_segment_is_nan`.
         with np.errstate(all="ignore"):
             for v in np.concatenate([np.linspace(-1, 3, 33), x]):
                 try:
@@ -2497,7 +2498,20 @@ class TestLinearInterpolator:
                     with pytest.raises(ValueError):
                         actual(v)
                 else:
-                    np.testing.assert_allclose(actual(v), e, equal_nan=True)
+                    if np.isfinite(e):
+                        np.testing.assert_allclose(actual(v), e)
+
+    @pytest.mark.parametrize(
+        "x, y, v",
+        [
+            ([0.0, 0.0, 1.0], [0.0, 1.0, 2.0], -1.0),
+            ([0.0, 1.0, 1.0], [0.0, 1.0, 2.0], 2.0),
+        ],
+    )
+    def test_extrapolate_zero_width_segment_is_nan(self, x, y, v):
+        from pywr.parameters._parameters import LinearInterpolator
+
+        assert np.isnan(LinearInterpolator(x, y, fill_value="extrapolate")(v))
 
     @pytest.mark.parametrize(
         "x, y, v, expected",
