@@ -978,7 +978,7 @@ def test_concatenated_dataframes(simple_storage_model):
 
 
 @pytest.mark.parametrize("complib", [None, "gzip", "bz2"])
-def test_csv_recorder(simple_storage_model, tmpdir, complib):
+def test_csv_recorder(simple_storage_model, tmp_path, complib):
     """Test the CSV Recorder"""
     model = simple_storage_model
     otpt = model.nodes["Output"]
@@ -988,7 +988,7 @@ def test_csv_recorder(simple_storage_model, tmpdir, complib):
     otpt.name = "\u03a9"
     expected_header = ["Datetime", "Input", "Storage", "\u03a9"]
 
-    csvfile = tmpdir.join("output.csv")
+    csvfile = tmp_path / ("output.csv")
     # By default the CSVRecorder saves all nodes in alphabetical order
     # and scenario index 0.
     rec = CSVRecorder(model, str(csvfile), complib=complib, complevel=5)
@@ -1036,7 +1036,7 @@ def test_csv_recorder(simple_storage_model, tmpdir, complib):
     fh.close()
 
 
-def test_loading_csv_recorder_from_json(tmpdir):
+def test_loading_csv_recorder_from_json(tmp_path):
     """
     Test the CSV Recorder which is loaded from json
     """
@@ -1052,11 +1052,11 @@ def test_loading_csv_recorder_from_json(tmpdir):
 
     # Make an absolute, but temporary, path for the recorder
     url = data["recorders"]["model_out"]["url"]
-    data["recorders"]["model_out"]["url"] = str(tmpdir.join(url))
+    data["recorders"]["model_out"]["url"] = str(tmp_path / url)
 
     model = Model.load(data, path=path)
 
-    csvfile = tmpdir.join("output.csv")
+    csvfile = tmp_path / "output.csv"
     model.run()
 
     periods = model.timestepper.datetime_index
@@ -1080,7 +1080,7 @@ def test_loading_csv_recorder_from_json(tmpdir):
 
 
 class TestTablesRecorder:
-    def test_create_directory(self, simple_linear_model, tmpdir):
+    def test_create_directory(self, simple_linear_model, tmp_path):
         """Test TablesRecorder to create a new directory"""
 
         model = simple_linear_model
@@ -1091,15 +1091,15 @@ class TestTablesRecorder:
         inpt.max_flow = 10.0
         otpt.cost = -2.0
         # Make a path with a new directory
-        folder = tmpdir.join("outputs")
-        h5file = folder.join("output.h5")
+        folder = tmp_path / "outputs"
+        h5file = folder / "output.h5"
         assert not folder.exists()
         rec = TablesRecorder(model, str(h5file), create_directories=True)
         model.run()
         assert folder.exists()
         assert h5file.exists()
 
-    def test_nodes(self, simple_linear_model, tmpdir):
+    def test_nodes(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1112,7 +1112,7 @@ class TestTablesRecorder:
         inpt.max_flow = 10.0
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1154,7 +1154,7 @@ class TestTablesRecorder:
             time = h5f.get_node("/time")
             assert len(time) == len(model.timestepper)
 
-    def test_multiple_scenarios(self, simple_linear_model, tmpdir):
+    def test_multiple_scenarios(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1172,7 +1172,7 @@ class TestTablesRecorder:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1193,7 +1193,7 @@ class TestTablesRecorder:
                 assert row["name"] == s.name.encode("utf-8")
                 assert row["size"] == s.size
 
-    def test_user_scenarios(self, simple_linear_model, tmpdir):
+    def test_user_scenarios(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder with user defined scenario subset
 
@@ -1214,7 +1214,7 @@ class TestTablesRecorder:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1234,7 +1234,7 @@ class TestTablesRecorder:
                 assert row["A"] == comb[0]
                 assert row["B"] == comb[1]
 
-    def test_scenario_slices(self, simple_linear_model, tmpdir):
+    def test_scenario_slices(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder with user defined scenario subset
 
@@ -1252,7 +1252,7 @@ class TestTablesRecorder:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1271,7 +1271,7 @@ class TestTablesRecorder:
             assert slices[0]["stop"] == 4
             assert slices[0]["step"] == 1
 
-    def test_parameters(self, simple_linear_model, tmpdir):
+    def test_parameters(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1294,7 +1294,7 @@ class TestTablesRecorder:
         inpt.max_flow = 10.0
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1324,7 +1324,7 @@ class TestTablesRecorder:
                     else:
                         np.testing.assert_allclose(ca, 10.0)
 
-    def test_nodes_with_str(self, simple_linear_model, tmpdir):
+    def test_nodes_with_str(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1340,7 +1340,7 @@ class TestTablesRecorder:
 
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1366,7 +1366,7 @@ class TestTablesRecorder:
                 else:
                     np.testing.assert_allclose(ca, 10.0)
 
-    def test_demand_saving_with_indexed_array(self, tmpdir):
+    def test_demand_saving_with_indexed_array(self, tmp_path):
         """Test recording various items from demand saving example"""
         model = load_model("demand_saving2.json")
 
@@ -1374,7 +1374,7 @@ class TestTablesRecorder:
 
         model.check()
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1417,7 +1417,7 @@ class TestTablesRecorder:
                 rec_demand[12, 0], demand_baseline * demand_factor * demand_saving
             )
 
-    def test_demand_saving_with_indexed_array_from_json(self, tmpdir):
+    def test_demand_saving_with_indexed_array_from_json(self, tmp_path):
         """Test recording various items from demand saving example.
 
         This time the TablesRecorder is defined in JSON.
@@ -1432,7 +1432,7 @@ class TestTablesRecorder:
 
         # Make an absolute, but temporary, path for the recorder
         url = data["recorders"]["database"]["url"]
-        data["recorders"]["database"]["url"] = str(tmpdir.join(url))
+        data["recorders"]["database"]["url"] = str(tmp_path / url)
 
         model = Model.load(data, path=path)
 
@@ -1446,7 +1446,7 @@ class TestTablesRecorder:
         model.run()
         max_volume = model.nodes["Reservoir"].max_volume
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         with tables.open_file(str(h5file), "r") as h5f:
             assert model.metadata["title"] == h5f.title
             # Check metadata on root node
@@ -1482,7 +1482,7 @@ class TestTablesRecorder:
         Model().solver.name == "glpk-edge",
         reason="Not valid for GLPK Edge based solver.",
     )
-    def test_routes(self, simple_linear_model, tmpdir):
+    def test_routes(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1495,7 +1495,7 @@ class TestTablesRecorder:
         inpt.max_flow = 10.0
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1541,7 +1541,7 @@ class TestTablesRecorder:
         Model().solver.name == "glpk-edge",
         reason="Not valid for GLPK Edge based solver.",
     )
-    def test_routes_multiple_scenarios(self, simple_linear_model, tmpdir):
+    def test_routes_multiple_scenarios(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1559,7 +1559,7 @@ class TestTablesRecorder:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1577,7 +1577,7 @@ class TestTablesRecorder:
         Model().solver.name == "glpk-edge",
         reason="Not valid for GLPK Edge based solver.",
     )
-    def test_routes_user_scenarios(self, simple_linear_model, tmpdir):
+    def test_routes_user_scenarios(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder with user defined scenario subset
 
@@ -1598,7 +1598,7 @@ class TestTablesRecorder:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1645,7 +1645,7 @@ class TestTablesRecorder:
         assert link["target"] == "Output"
         np.testing.assert_allclose(link["value"], 40.0)
 
-    def test_generate_dataframes(self, simple_linear_model, tmpdir):
+    def test_generate_dataframes(self, simple_linear_model, tmp_path):
         """Test TablesRecorder.generate_dataframes"""
         from pywr.parameters import ConstantScenarioParameter
 
@@ -1660,7 +1660,7 @@ class TestTablesRecorder:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         TablesRecorder(model, h5file)
         model.run()
 
@@ -1675,7 +1675,7 @@ class TestTablesRecorder:
 
 
 class TestTablesRecorder2:
-    def test_create_directory(self, simple_linear_model, tmpdir):
+    def test_create_directory(self, simple_linear_model, tmp_path):
         """Test TablesRecorder to create a new directory"""
 
         model = simple_linear_model
@@ -1686,15 +1686,15 @@ class TestTablesRecorder2:
         inpt.max_flow = 10.0
         otpt.cost = -2.0
         # Make a path with a new directory
-        folder = tmpdir.join("outputs")
-        h5file = folder.join("output.h5")
+        folder = tmp_path / "outputs"
+        h5file = folder / "output.h5"
         assert not folder.exists()
         rec = TablesRecorder2(model, str(h5file), create_directories=True)
         model.run()
         assert folder.exists()
         assert h5file.exists()
 
-    def test_nodes(self, simple_linear_model, tmpdir):
+    def test_nodes(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1707,7 +1707,7 @@ class TestTablesRecorder2:
         inpt.max_flow = 10.0
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1760,7 +1760,7 @@ class TestTablesRecorder2:
             time = h5f.get_node("/time")
             assert len(time) == len(model.timestepper)
 
-    def test_multiple_scenarios(self, simple_linear_model, tmpdir):
+    def test_multiple_scenarios(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1778,7 +1778,7 @@ class TestTablesRecorder2:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         expected_flows = {
@@ -1823,7 +1823,7 @@ class TestTablesRecorder2:
                 assert row["name"] == s.name.encode("utf-8")
                 assert row["size"] == s.size
 
-    def test_user_scenarios(self, simple_linear_model, tmpdir):
+    def test_user_scenarios(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder with user defined scenario subset
 
@@ -1844,7 +1844,7 @@ class TestTablesRecorder2:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         expected_flows = {
@@ -1885,7 +1885,7 @@ class TestTablesRecorder2:
                 assert row[combinations.attrs.columns.index("A")] == comb[0]
                 assert row[combinations.attrs.columns.index("B")] == comb[1]
 
-    def test_multiple_scenarios_ensemble_names(self, simple_linear_model, tmpdir):
+    def test_multiple_scenarios_ensemble_names(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1910,7 +1910,7 @@ class TestTablesRecorder2:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1924,19 +1924,17 @@ class TestTablesRecorder2:
                 assert row["name"] == s.name.encode("utf-8")
                 assert row["size"] == s.size
 
-            ensemble_names = h5f.get_node("/scenario_ensemble_names")
-            col1 = ensemble_names[:, 0]
-            exp1 = np.repeat(
-                ["scenario A1", "scenario A2", "scenario A3", "scenario A4"], 2
-            )
-            for val1, ex1 in zip(col1, exp1):
-                assert val1 == ex1.encode("utf-8")
-            col2 = ensemble_names[:, 1]
-            exp2 = ["scenario B1", "scenario B2"] * 4
-            for val2, ex2 in zip(col2, exp2):
-                assert val2 == ex2.encode("utf-8")
+            names_a = h5f.get_node("/scenario_ensemble_names/A").read()
+            names_b = h5f.get_node("/scenario_ensemble_names/B").read()
+            assert [n.decode() for n in names_a] == [
+                "scenario A1",
+                "scenario A2",
+                "scenario A3",
+                "scenario A4",
+            ]
+            assert [n.decode() for n in names_b] == ["scenario B1", "scenario B2"]
 
-    def test_ensemble_names_with_user_combinations(self, simple_linear_model, tmpdir):
+    def test_ensemble_names_with_user_combinations(self, simple_linear_model, tmp_path):
 
         from pywr.parameters import ConstantScenarioParameter
 
@@ -1961,7 +1959,7 @@ class TestTablesRecorder2:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -1969,14 +1967,100 @@ class TestTablesRecorder2:
 
             model.run()
 
-            # check combinations table exists
-            scenario_ensemble_names = h5f.get_node("/scenario_ensemble_names")
-            assert scenario_ensemble_names[0][0].decode() == "scenario A1"
-            assert scenario_ensemble_names[0][1].decode() == "scenario B1"
-            assert scenario_ensemble_names[1][0].decode() == "scenario A4"
-            assert scenario_ensemble_names[1][1].decode() == "scenario B2"
+            per_scenario_names = [
+                [
+                    n.decode()
+                    for n in h5f.get_node(
+                        "/scenario_ensemble_names/{}".format(s.name)
+                    ).read()
+                ]
+                for s in model.scenarios.scenarios
+            ]
+            assert per_scenario_names[0] == [
+                "scenario A1",
+                "scenario A2",
+                "scenario A3",
+                "scenario A4",
+            ]
+            assert per_scenario_names[1] == ["scenario B1", "scenario B2"]
 
-    def test_scenario_slices(self, simple_linear_model, tmpdir):
+            # The labelled combinations are recovered by indexing the per-scenario
+            # names with the integer indices in scenario_combinations.
+            combinations = h5f.get_node("/scenario_combinations").read()
+            labelled = [
+                [per_scenario_names[s][idx] for s, idx in enumerate(comb)]
+                for comb in combinations
+            ]
+            assert labelled[0] == ["scenario A1", "scenario B1"]
+            assert labelled[1] == ["scenario A4", "scenario B2"]
+
+    def test_ensemble_names_not_stored_when_undefined(
+        self, simple_linear_model, tmp_path
+    ):
+        """Ensemble names are not persisted when they are not defined for a scenario."""
+        from pywr.parameters import ConstantScenarioParameter
+
+        model = simple_linear_model
+        scA = Scenario(model, name="A", size=4)  # no ensemble_names
+        scB = Scenario(model, name="B", size=2)  # no ensemble_names
+
+        otpt = model.nodes["Output"]
+        inpt = model.nodes["Input"]
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmp_path / "output.h5"
+        import tables
+
+        with tables.open_file(str(h5file), "w") as store:
+            TablesRecorder2(model, store)
+            model.run()
+            # Nothing was named, so no group/arrays should be created.
+            assert "/scenario_ensemble_names" not in store
+
+    def test_ensemble_names_mixed(self, simple_linear_model, tmp_path):
+        """Only scenarios with explicit ensemble names are stored."""
+        from pywr.parameters import ConstantScenarioParameter
+
+        model = simple_linear_model
+        scA = Scenario(model, name="A", size=4, ensemble_names=["A1", "A2", "A3", "A4"])
+        scB = Scenario(model, name="B", size=2)  # unnamed
+
+        otpt = model.nodes["Output"]
+        inpt = model.nodes["Input"]
+        inpt.max_flow = ConstantScenarioParameter(model, scA, [10, 20, 30, 40])
+        otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
+        otpt.cost = -2.0
+
+        h5file = tmp_path / "output.h5"
+        import tables
+
+        with tables.open_file(str(h5file), "w") as store:
+            TablesRecorder2(model, store)
+            model.run()
+            # Only the named scenario ("A") has a stored array.
+            assert "/scenario_ensemble_names/A" in store
+            assert "/scenario_ensemble_names/B" not in store
+
+    def test_ensemble_names_duplicate_node_name_error(
+        self, simple_linear_model, tmp_path
+    ):
+        """Scenario names that collide after sanitisation raise an error."""
+        model = simple_linear_model
+        # "a/b" and "a_b" both sanitise to the node name "a_b".
+        Scenario(model, name="a/b", size=2, ensemble_names=["x", "y"])
+        Scenario(model, name="a_b", size=2, ensemble_names=["p", "q"])
+
+        h5file = tmp_path / "output.h5"
+        import tables
+
+        with tables.open_file(h5file, "w") as store:
+            TablesRecorder2(model, store)
+            with pytest.raises(ValueError, match="not unique"):
+                model.setup()
+
+    def test_scenario_slices(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder with user defined scenario subset
 
@@ -1994,10 +2078,10 @@ class TestTablesRecorder2:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
-        with tables.open_file(str(h5file), "w") as h5f:
+        with tables.open_file(h5file, "w") as h5f:
             rec = TablesRecorder2(model, h5f)
 
             model.run()
@@ -2013,7 +2097,7 @@ class TestTablesRecorder2:
             assert slices[0]["stop"] == 4
             assert slices[0]["step"] == 1
 
-    def test_parameters(self, simple_linear_model, tmpdir):
+    def test_parameters(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder2
 
@@ -2036,7 +2120,7 @@ class TestTablesRecorder2:
         inpt.max_flow = 10.0
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         expected_values = {
@@ -2068,7 +2152,7 @@ class TestTablesRecorder2:
                     for attr, ca in node._v_children.items():
                         np.testing.assert_allclose(ca, expected_values[node_name][attr])
 
-    def test_nodes_with_str(self, simple_linear_model, tmpdir):
+    def test_nodes_with_str(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -2084,7 +2168,7 @@ class TestTablesRecorder2:
 
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -2122,7 +2206,7 @@ class TestTablesRecorder2:
             assert ca.shape == (365, 1)
             np.testing.assert_allclose(ca, 10.0)
 
-    def test_demand_saving_with_indexed_array(self, tmpdir):
+    def test_demand_saving_with_indexed_array(self, tmp_path):
         """Test recording various items from demand saving example"""
         model = load_model("demand_saving2.json")
 
@@ -2130,7 +2214,7 @@ class TestTablesRecorder2:
 
         model.check()
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -2176,7 +2260,7 @@ class TestTablesRecorder2:
                 rec_demand[12, 0], demand_baseline * demand_factor * demand_saving
             )
 
-    def test_demand_saving_with_indexed_array_from_json(self, tmpdir):
+    def test_demand_saving_with_indexed_array_from_json(self, tmp_path):
         """Test recording various items from demand saving example.
 
         This time the TablesRecorder is defined in JSON.
@@ -2191,7 +2275,7 @@ class TestTablesRecorder2:
 
         # Make an absolute, but temporary, path for the recorder
         url = data["recorders"]["database"]["url"]
-        data["recorders"]["database"]["url"] = str(tmpdir.join(url))
+        data["recorders"]["database"]["url"] = str(tmp_path / url)
 
         data["recorders"]["database"]["type"] = "TablesRecorder2"
         model = Model.load(data, path=path)
@@ -2206,7 +2290,7 @@ class TestTablesRecorder2:
         model.run()
         max_volume = model.nodes["Reservoir"].max_volume
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         with tables.open_file(str(h5file), "r") as h5f:
             assert model.metadata["title"] == h5f.title
             # Check metadata on root node
@@ -2242,7 +2326,7 @@ class TestTablesRecorder2:
         Model().solver.name == "glpk-edge",
         reason="Not valid for GLPK Edge based solver.",
     )
-    def test_routes(self, simple_linear_model, tmpdir):
+    def test_routes(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -2255,7 +2339,7 @@ class TestTablesRecorder2:
         inpt.max_flow = 10.0
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -2301,7 +2385,7 @@ class TestTablesRecorder2:
         Model().solver.name == "glpk-edge",
         reason="Not valid for GLPK Edge based solver.",
     )
-    def test_routes_multiple_scenarios(self, simple_linear_model, tmpdir):
+    def test_routes_multiple_scenarios(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -2319,7 +2403,7 @@ class TestTablesRecorder2:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -2337,7 +2421,7 @@ class TestTablesRecorder2:
         Model().solver.name == "glpk-edge",
         reason="Not valid for GLPK Edge based solver.",
     )
-    def test_routes_user_scenarios(self, simple_linear_model, tmpdir):
+    def test_routes_user_scenarios(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder with user defined scenario subset
 
@@ -2358,7 +2442,7 @@ class TestTablesRecorder2:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -2405,7 +2489,7 @@ class TestTablesRecorder2:
         assert link["target"] == "Output"
         np.testing.assert_allclose(link["value"], 40.0)
 
-    def test_generate_dataframes(self, simple_linear_model, tmpdir):
+    def test_generate_dataframes(self, simple_linear_model, tmp_path):
         """Test TablesRecorder.generate_dataframes"""
         from pywr.parameters import ConstantScenarioParameter
 
@@ -2420,7 +2504,7 @@ class TestTablesRecorder2:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         TablesRecorder2(model, h5file)
         model.run()
 
@@ -2463,7 +2547,7 @@ class TestTablesRecorder2:
                     )
 
     @pytest.mark.parametrize("buffer_timesteps", [None, 1, 5, 10, 100, 500])
-    def test_buffering(self, simple_linear_model, tmpdir, buffer_timesteps):
+    def test_buffering(self, simple_linear_model, tmp_path, buffer_timesteps):
         """Test buffering saves the complete and correct data."""
 
         model = simple_linear_model
@@ -2475,7 +2559,7 @@ class TestTablesRecorder2:
         inpt.max_flow = ArrayIndexedParameter(model, inflow)
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
@@ -2504,14 +2588,14 @@ class TestTablesRecorder2:
                     else:
                         np.testing.assert_allclose(ca, inflow)
 
-    def test_aggregated_storage(self, three_storage_model, tmpdir):
+    def test_aggregated_storage(self, three_storage_model, tmp_path):
         """Test TablesRecorder2 works with an AggregatedStorage node."""
         model = three_storage_model
 
         agg_stg = model.nodes["Total Storage"]
         stgs = [model.nodes["Storage {}".format(num)] for num in range(3)]
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:
