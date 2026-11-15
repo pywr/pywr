@@ -2616,6 +2616,19 @@ class TestTablesRecorder2:
             ca = h5f.get_node("/Total Storage", "min_volume")
             np.testing.assert_allclose(ca[0, 0], 0.0)
 
+    def test_no_items(self, simple_linear_model, tmp_path):
+        """Test TablesRecorder2 with nothing to record writes an empty file."""
+        model = simple_linear_model
+        h5file = tmp_path / "output.h5"
+        import tables
+
+        TablesRecorder2(model, str(h5file), nodes=[])
+        model.run()
+
+        assert h5file.exists()
+        with tables.open_file(str(h5file), "r") as h5f:
+            assert len(list(h5f.walk_nodes("/", classname="CArray"))) == 0
+
 
 class TestDeficitRecorders:
     @pytest.mark.parametrize("demand", [30.0, 0.0])

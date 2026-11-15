@@ -263,7 +263,8 @@ class TablesRecorder2(Recorder):
             # Divide by 8 as we are storing 64-bit floats
             # Also assume most data is nodes, and we store 3 values for each
             total_buffer_values = self.buffer_size * 1024 * 1024 / 8 / 3
-            buffer_per_item = total_buffer_values // len(items)
+            # Guard against an empty recorder (e.g. ``nodes=[]`` and no parameters).
+            buffer_per_item = total_buffer_values // max(1, len(items))
             self._buffer_num_timesteps = min(max(1, int(buffer_per_item // np.prod(scenario_shape))), len(self.model.timestepper))
         else:
             self._buffer_num_timesteps = 1
