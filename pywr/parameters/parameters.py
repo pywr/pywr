@@ -81,6 +81,7 @@ from .multi_model_parameters import (
     OtherModelIndexParameterValueIndexParameter,
 )
 import numpy as np
+from bisect import bisect_left
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 import pandas
@@ -121,6 +122,100 @@ class ScaledProfileParameter(Parameter):
 ScaledProfileParameter.register()
 
 
+class LinearInterpolator:
+    """Scalar linear interpolation with the semantics of `scipy.interpolate.interp1d`.
+
+    `interp1d.__call__` validates its input, converts it to an array and indexes arrays for every
+    call, which costs far more than the interpolation itself when it is evaluated for one value at
+    a time, as `AbstractInterpolatedParameter` does for every scenario at every timestep. This class
+    evaluates the same piecewise linear function, with the same interpolation formula, on Python
+    floats.
+
+    Parameters
+    ----------
+    x : array_like
+        Strictly increasing one dimensional x coordinates.
+    y : array_like
+        One dimensional y coordinates, the same length as `x`.
+    bounds_error : bool
+        Raise `ValueError` for an argument outside the range of `x` when true, otherwise return the
+        fill value for the side the argument falls on.
+    fill_value : float or tuple of two floats
+        The value below the range of `x` and above it, or the pair (below, above). Unused when
+        `bounds_error` is true.
+    """
+
+    def __init__(self, x, y, bounds_error, fill_value):
+        self._x = np.asarray(x, dtype=np.float64).tolist()
+        self._y = np.asarray(y, dtype=np.float64).tolist()
+        self._bounds_error = bounds_error
+        if isinstance(fill_value, tuple):
+            self._fill_below, self._fill_above = (float(v) for v in fill_value)
+        else:
+            self._fill_below = self._fill_above = float(fill_value)
+
+    def __call__(self, x_new):
+        xs = self._x
+        if x_new < xs[0]:
+            if self._bounds_error:
+                raise ValueError(
+                    f"A value ({x_new}) in x_new is below the interpolation range's minimum value ({xs[0]})."
+                )
+            return self._fill_below
+        if x_new > xs[-1]:
+            if self._bounds_error:
+                raise ValueError(
+                    f"A value ({x_new}) in x_new is above the interpolation range's maximum value ({xs[-1]})."
+                )
+            return self._fill_above
+        # The segment index is the one scipy picks: the insertion point of x_new, clipped to a segment.
+        hi = min(max(bisect_left(xs, x_new), 1), len(xs) - 1)
+        lo = hi - 1
+        x_lo, x_hi = xs[lo], xs[hi]
+        width = x_hi - x_lo
+        return (x_new - x_lo) / width * self._y[hi] + (x_hi - x_new) / width * self._y[
+            lo
+        ]
+
+    @classmethod
+    def from_interp1d_arguments(cls, x, y, **interp_kwargs):
+        """Return a `LinearInterpolator` equivalent to `interp1d(x, y, **interp_kwargs)`, or `None`.
+
+        `None` means `interp1d` has behaviour this class does not reproduce for the arguments: another
+        interpolation kind, extrapolation, unsorted or repeated x values, or y values that are not
+        one dimensional.
+        """
+        supported = {"kind", "bounds_error", "fill_value"}
+        if not supported.issuperset(interp_kwargs):
+            return None
+        if interp_kwargs.get("kind", "linear") != "linear":
+            return None
+        bounds_error = interp_kwargs.get("bounds_error")
+        if not isinstance(bounds_error, bool):
+            return None
+        fill_value = interp_kwargs.get("fill_value", np.nan)
+        if isinstance(fill_value, tuple):
+            fill_is_scalars = len(fill_value) == 2 and all(
+                np.ndim(v) == 0 for v in fill_value
+            )
+        else:
+            fill_is_scalars = np.ndim(fill_value) == 0 and not isinstance(
+                fill_value, str
+            )
+        if not fill_is_scalars:
+            return None
+        x = np.asarray(x, dtype=np.float64)
+        y = np.asarray(y, dtype=np.float64)
+        if (
+            x.ndim != 1
+            or y.shape != x.shape
+            or x.size < 2
+            or not np.all(np.diff(x) > 0)
+        ):
+            return None
+        return cls(x, y, bounds_error, fill_value)
+
+
 class AbstractInterpolatedParameter(Parameter):
     def __init__(self, model, x, y, interp_kwargs=None, **kwargs):
         super(AbstractInterpolatedParameter, self).__init__(model, **kwargs)
@@ -149,7 +244,13 @@ class AbstractInterpolatedParameter(Parameter):
 
     def setup(self):
         super(AbstractInterpolatedParameter, self).setup()
-        self.interp = interp1d(self.x, self.y, **self.interp_kwargs)
+        linear = LinearInterpolator.from_interp1d_arguments(
+            self.x, self.y, **self.interp_kwargs
+        )
+        if linear is None:
+            self.interp = interp1d(self.x, self.y, **self.interp_kwargs)
+        else:
+            self.interp = linear
 
     def value(self, ts, scenario_index):
         v = self._value_to_interpolate(ts, scenario_index)

@@ -33,6 +33,7 @@ from pywr.parameters import (
     Polynomial2DStorageParameter,
     ArrayIndexedScenarioParameter,
     InterpolatedParameter,
+    LinearInterpolator,
     WeeklyProfileParameter,
     InterpolatedQuadratureParameter,
     PiecewiseIntegralParameter,
@@ -1297,6 +1298,81 @@ class Test1DPolynomialParameter:
             return 0.5 + 2.5 * xscaled
 
         model.run()
+
+
+class TestLinearInterpolator:
+    X = [0.0, 5.0, 10.0, 11.0]
+    Y = [0.0, 10.0, 30.0, 2.0]
+    # Below, on and between the knots, and above.
+    ARGUMENTS = [-2.0, 0.0, 0.5, 5.0, 7.3, 10.0, 10.5, 11.0, 15.0]
+
+    @pytest.mark.parametrize(
+        "interp_kwargs",
+        [
+            {"bounds_error": False, "fill_value": np.nan},
+            {"bounds_error": False, "fill_value": 3.0},
+            {"bounds_error": False, "fill_value": (0.0, 2.0)},
+            {"bounds_error": True},
+            {"kind": "linear", "bounds_error": False, "fill_value": (-1.0, 4.0)},
+        ],
+    )
+    def test_matches_interp1d(self, interp_kwargs):
+        linear = LinearInterpolator.from_interp1d_arguments(
+            self.X, self.Y, **interp_kwargs
+        )
+        assert isinstance(linear, LinearInterpolator)
+        expected = interp1d(self.X, self.Y, **interp_kwargs)
+        for v in self.ARGUMENTS:
+            try:
+                expected_value = float(expected(v))
+            except ValueError:
+                with pytest.raises(ValueError, match="in x_new is (below|above)"):
+                    linear(v)
+            else:
+                assert_allclose(linear(v), expected_value, rtol=1e-14)
+
+    @pytest.mark.parametrize(
+        "interp_kwargs",
+        [
+            {"kind": "quadratic", "bounds_error": True},
+            {"bounds_error": False, "fill_value": "extrapolate"},
+            {"bounds_error": None},
+            {"bounds_error": True, "assume_sorted": True},
+            {"bounds_error": False, "fill_value": [0.0, 2.0]},
+        ],
+    )
+    def test_declines_what_it_does_not_reproduce(self, interp_kwargs):
+        assert (
+            LinearInterpolator.from_interp1d_arguments(self.X, self.Y, **interp_kwargs)
+            is None
+        )
+
+    @pytest.mark.parametrize(
+        ["x", "y"],
+        [
+            ([5.0, 0.0, 10.0], [1.0, 2.0, 3.0]),
+            ([0.0, 5.0, 5.0], [1.0, 2.0, 3.0]),
+            ([0.0], [1.0]),
+            ([0.0, 1.0], [[1.0, 2.0], [3.0, 4.0]]),
+        ],
+    )
+    def test_declines_unsorted_repeated_short_or_multidimensional(self, x, y):
+        assert (
+            LinearInterpolator.from_interp1d_arguments(x, y, bounds_error=True) is None
+        )
+
+    def test_parameter_uses_the_scalar_interpolator_for_linear_kinds(
+        self, simple_linear_model
+    ):
+        model = simple_linear_model
+        p1 = ConstantParameter(model, 1.0)
+        linear = InterpolatedParameter(model, p1, self.X, self.Y)
+        quadratic = InterpolatedParameter(
+            model, p1, self.X, self.Y, interp_kwargs={"kind": "quadratic"}
+        )
+        model.setup()
+        assert isinstance(linear.interp, LinearInterpolator)
+        assert isinstance(quadratic.interp, interp1d)
 
 
 class TestInterpolatedParameter:
