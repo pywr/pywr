@@ -640,6 +640,8 @@ def test_annual_virtual_storage_reset_to_max_volume_with_reset_month_as_paramete
     """Test that AnnualVirtualStorage resets to maximum volume when reset_month is a constant parameter."""
     model = load_model("virtual_storage9.json")
     licence1 = model.nodes["licence1"]
+    # The parameter is a component of the node so is not reported as orphaned
+    assert not model.find_orphaned_parameters()
     if reset_to_initial_volume is not None:
         licence1.reset_to_initial_volume = reset_to_initial_volume
     licence1.initial_volume = 100
@@ -683,12 +685,13 @@ def test_annual_virtual_storage_reset_month_non_constant_parameter_raises():
         model.setup()
 
 
-def test_annual_virtual_storage_reset_date_invalid_parameter_values_raises():
-    """Test that parameter values that are not a valid month and day raise an error."""
+@pytest.mark.parametrize("day, month", [(1, 13), (1, 0), (32, 1), (0, 1)])
+def test_annual_virtual_storage_reset_date_invalid_parameter_values_raises(day, month):
+    """Test that parameter values that are out of range for a month and day raise an error."""
     model = load_model("virtual_storage9.json")
     licence1 = model.nodes["licence1"]
-    licence1.reset_day = ConstantParameter(model, 30)
-    licence1.reset_month = ConstantParameter(model, 2)
+    licence1.reset_day = ConstantParameter(model, day)
+    licence1.reset_month = ConstantParameter(model, month)
     with pytest.raises(ValueError, match="are not a valid month and day"):
         model.setup()
 
@@ -884,6 +887,18 @@ class TestSeasonalVirtualStorage:
 
         model.run()
         assert isinstance(vs.end_day, Parameter)
+        assert isinstance(vs.end_month, Parameter)
+        # The parameters are components of the node so are not reported as orphaned
+        assert not model.find_orphaned_parameters()
+
+    def test_end_month_parameter_with_end_day_31(self):
+        """Test a parameter end_month is valid with an end_day of 31 for a month with fewer days."""
+        model = load_model("seasonal_virtual_storage.json")
+        vs = model.nodes["licence1"]
+        vs.end_day = 31
+        vs.end_month = ConstantParameter(model, 6)
+
+        model.run()
         assert isinstance(vs.end_month, Parameter)
 
 

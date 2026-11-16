@@ -1,4 +1,3 @@
-import datetime
 import numpy as np
 from pywr import _core
 from pywr._core import Node as BaseNode
@@ -617,6 +616,7 @@ class AnnualVirtualStorage(VirtualStorage):
         "reset_month",
         "reset_day",
     )
+    component_attrs = VirtualStorage.component_attrs + ["reset_month", "reset_day"]
 
     def __init__(self, *args, **kwargs):
         self.reset_day = pop_kwarg_parameter(kwargs, "reset_day", 1)
@@ -651,20 +651,19 @@ class AnnualVirtualStorage(VirtualStorage):
     def _resolve_constant_date(self, day, month, day_name, month_name):
         """Resolve a day and month, each an int or constant-valued `Parameter`, to a pair of plain ints.
 
-        A day and month resolved from a `Parameter` must make a valid date. A leap year is used so that
-        29 February is accepted.
+        A day and month resolved from a `Parameter` must be in range (month 1-12 and day 1-31). The day is
+        not checked against the length of the month, so a day of 31 is accepted for any month as it is for
+        a plain int.
         """
         from_parameter = isinstance(day, Parameter) or isinstance(month, Parameter)
         day = self._resolve_constant_date_value(day, day_name)
         month = self._resolve_constant_date_value(month, month_name)
-        if from_parameter:
-            try:
-                datetime.date(2016, month, day)
-            except ValueError:
-                raise ValueError(
-                    f"The values {month_name}={month} and {day_name}={day} on "
-                    f"{self.__class__.__name__} node '{self.name}' are not a valid month and day."
-                )
+        if from_parameter and not (1 <= month <= 12 and 1 <= day <= 31):
+            raise ValueError(
+                f"The values {month_name}={month} and {day_name}={day} on "
+                f"{self.__class__.__name__} node '{self.name}' are not a valid month and day. "
+                "The month must be 1-12 and the day 1-31."
+            )
         return day, month
 
     def reset(self):
@@ -738,6 +737,7 @@ class SeasonalVirtualStorage(AnnualVirtualStorage):
         "end_month",
         "end_day",
     )
+    component_attrs = AnnualVirtualStorage.component_attrs + ["end_month", "end_day"]
 
     def __init__(self, *args, **kwargs):
         self.end_day = pop_kwarg_parameter(kwargs, "end_day", 31)
