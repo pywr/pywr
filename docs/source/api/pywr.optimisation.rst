@@ -22,6 +22,15 @@ Pygmo (pywr.optimisation.pygmo)
     :show-inheritance:
 
 
+Pymoo (pywr.optimisation.pymoo)
+-------------------------------
+
+.. automodule:: pywr.optimisation.pymoo
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Module contents
 ---------------
 
