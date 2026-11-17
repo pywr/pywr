@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.32.0] - 2026-11-17
+
+### 🚀 Features
+
+- Add pymoo optimisation wrapper.
+- Allow virtual storage reset and end dates to be parameters ([#1191](https://github.com/pywr/pywr/issues/1191))
+
+### 🐛 Bug Fixes
+
+- Store TablesRecorder2 ensemble names as per-scenario arrays ([#1190](https://github.com/pywr/pywr/issues/1190))
+- Correct equality constraint values in the pygmo wrapper.
+- Prevent divide-by-zero in TablesRecorder2.setup when there is nothing to record ([#1197](https://github.com/pywr/pywr/issues/1197))
+
+### 📚 Documentation
+
+- Add MultiSplitLink factor note to RiverSplit docstring ([#1194](https://github.com/pywr/pywr/issues/1194))
+
+### ⚡ Performance
+
+- Add Cython linear interpolator for interpolated parameters ([#1192](https://github.com/pywr/pywr/issues/1192))
+
+### 🧪 Testing
+
+- Use pytest tmp_path instead of legacy tmpdir. ([#1193](https://github.com/pywr/pywr/issues/1193))
+
 ## [1.31.1] - 2026-06-08
 
 ### 🐛 Bug Fixes
