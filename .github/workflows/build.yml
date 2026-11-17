@@ -2,6 +2,10 @@ name: Build
 
 on: [push, pull_request]
 
+# Least-privilege default for the GITHUB_TOKEN; jobs opt in to more where needed.
+permissions:
+  contents: read
+
 env:
   CIBW_TEST_REQUIRES: pytest platypus-opt pymoo ipython jinja2 matplotlib pyreadr
   CIBW_BEFORE_TEST_LINUX: "chmod +x {project}/.github/workflows/run-tests.sh"
@@ -34,26 +38,29 @@ jobs:
         os: [ubuntu-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # This is required for setuptools_scm: https://github.com/pypa/setuptools_scm/issues/480
+          persist-credentials: false
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         name: Install Python
         with:
           python-version: '3.11'
 
       - name: Install cibuildwheel
         run: |
-          python -m pip install cibuildwheel
+          python -m pip install cibuildwheel==4.3.5
 
       - name: Install WinGLPK (Windows)
         if: runner.os == 'Windows'
         shell: bash
         env:
           WINGLPK_URL: "https://anaconda.org/conda-forge/glpk/5.0/download/win-64/glpk-5.0-h8ffe710_0.tar.bz2"
+          WINGLPK_SHA256: "56965382a8ab357b44198b642f8f493e7ad8a26a6af1edbb5ae6ac8c4ee5e974"
         run: |
-          curl -L $WINGLPK_URL --output glpk.tar.bz2
+          curl -fL $WINGLPK_URL --output glpk.tar.bz2
+          echo "$WINGLPK_SHA256  glpk.tar.bz2" | sha256sum -c -
           mkdir /c/glpk
           tar -xf glpk.tar.bz2 -C /c/glpk/
 
@@ -62,15 +69,17 @@ jobs:
         shell: bash
         env:
           LPSOLVE_URL: "https://sourceforge.net/projects/lpsolve/files/lpsolve/5.5.2.5/lp_solve_5.5.2.5_dev_win64.zip/download"
+          LPSOLVE_SHA256: "4f1e0742bad6b3311d174b4aa52cc71381e802af21cfe505bea667e71354b5ce"
         run: |
-          curl -L $LPSOLVE_URL --output lpsolve.zip
+          curl -fL $LPSOLVE_URL --output lpsolve.zip
+          echo "$LPSOLVE_SHA256  lpsolve.zip" | sha256sum -c -
           7z x lpsolve.zip -o/c/lpsolve
 
       - name: Build wheels
         run: |
           python -m cibuildwheel --output-dir wheelhouse
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pywr_whl_${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -79,11 +88,12 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # This is required for setuptools_scm: https://github.com/pypa/setuptools_scm/issues/480
+          persist-credentials: false
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         name: Install Python
         with:
           python-version: '3.11'
@@ -93,20 +103,23 @@ jobs:
           python -m pip install build
           python -m build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: pywr_sdist_${{ matrix.os }}
+          name: pywr_sdist
           path: dist/*.tar.gz
 
   build_docs:
     name: Build documentation
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to push to the gh-pages branch
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # This is required for setuptools_scm: https://github.com/pypa/setuptools_scm/issues/480
+          persist-credentials: false
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         name: Install Python
         with:
           python-version: '3.11'
@@ -115,45 +128,62 @@ jobs:
         # lpsolve doesn't compile on Ubuntu without building the library from source - disable for the time being.
         # This doesn't really matter for the documentation builds.
         run: |
-          sudo apt-get install libglpk-dev          
+          sudo apt-get install libglpk-dev
           PYWR_BUILD_LPSOLVE=false pip install -e .[docs]
           cd docs
           make html
 
       - name: Deploy docs 🚀
-        uses: JamesIves/github-pages-deploy-action@3.7.1
-        # Only publish on master
-        if: github.ref == 'refs/heads/master'
+        uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4.9.0
+        # Only publish on pushes to master
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: docs/build/html # The folder the action should deploy.
-          CLEAN: true # Automatically remove deleted files from the deploy branc
+          branch: gh-pages # The branch the action should deploy to.
+          folder: docs/build/html # The folder the action should deploy.
+          clean: true # Automatically remove deleted files from the deploy branch
 
-  deploy:
-    name: Publish 🐍📦 to PyPI
+  # Publishing uses PyPI trusted publishing (OIDC); no API tokens are stored in the repository.
+  # Each index must have a trusted publisher configured for this workflow (build.yml) and the
+  # matching GitHub environment. See https://docs.pypi.org/trusted-publishers/
+  publish_testpypi:
+    name: Publish 🐍📦 to TestPyPI
     needs:
     - build_sdist
     - build_wheels
-
-    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags') || github.ref == 'refs/heads/master')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/pywr
+    permissions:
+      id-token: write  # Required for trusted publishing
     steps:
     - name: Download all the dists
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         path: dist/
         merge-multiple: true
     - name: Publish 🐍📦 to TestPyPI
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
       with:
-        user: __token__
-        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        repository_url: https://test.pypi.org/legacy/
+        repository-url: https://test.pypi.org/legacy/
+
+  publish_pypi:
+    name: Publish 🐍📦 to PyPI
+    needs:
+    - publish_testpypi
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pywr
+    permissions:
+      id-token: write  # Required for trusted publishing
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        path: dist/
+        merge-multiple: true
     - name: Publish 🐍📦 to PyPI
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
+      uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
