@@ -129,6 +129,14 @@ class RiverSplit(MultiSplitLink):
     --------
     pywr.nodes.MultiSplitLink
 
+    Notes
+    -----
+    Users must be careful when using the factor mechanism. Factors use the last
+    non-split sublink (i.e. X1 but not X0). If this link is constrained with a
+    maximum or minimum flow, or if it there is another unconstrained link
+    (i.e. if X0 is unconstrained) then ratios across this whole node may not be
+    enforced as expected.
+
     """
 
     def __init__(self, model, *args, nsteps=1, **kwargs):
