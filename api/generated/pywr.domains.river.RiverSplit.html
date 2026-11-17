@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pywr.domains.river.RiverSplit &mdash; Pywr 1.31.2.dev6+ga7bbe630b documentation</title>
+  <title>pywr.domains.river.RiverSplit &mdash; Pywr 1.31.2.dev7+gad1ace9db documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=0ed55df4"></script>
+      <script src="../../_static/documentation_options.js?v=3d59b4b2"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -148,6 +148,12 @@ than the length of factors (as per <cite>pywr.nodes.MultiSplitLink</cite> docume
 <dt><a class="reference internal" href="pywr.nodes.MultiSplitLink.html#pywr.nodes.MultiSplitLink" title="pywr.nodes.MultiSplitLink"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pywr.nodes.MultiSplitLink</span></code></a></dt><dd></dd>
 </dl>
 </div>
+<p class="rubric">Notes</p>
+<p>Users must be careful when using the factor mechanism. Factors use the last
+non-split sublink (i.e. X1 but not X0). If this link is constrained with a
+maximum or minimum flow, or if it there is another unconstrained link
+(i.e. if X0 is unconstrained) then ratios across this whole node may not be
+enforced as expected.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pywr.domains.river.RiverSplit.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywr.domains.river.RiverSplit.__init__" title="Link to this definition"></a></dt>
