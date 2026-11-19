@@ -40,10 +40,14 @@ from pywr.parameters import (
     AnnualHarmonicSeriesParameter,
     load_parameter,
     InterpolatedFlowParameter,
+    SplineInterpolatedFlowParameter,
+    SplineInterpolatedParameter,
+    SplineInterpolatedQuadratureParameter,
+    SplineInterpolatedVolumeParameter,
     ScenarioDailyProfileParameter,
     RollingMeanFlowNodeParameter,
 )
-from pywr.recorders import AssertionRecorder, assert_rec
+from pywr.recorders import AssertionRecorder, NumpyArrayParameterRecorder, assert_rec
 from pywr.model import OrphanedParameterWarning
 from pywr.dataframe_tools import ResamplingError
 from pywr.recorders import Recorder
@@ -58,7 +62,7 @@ import pytest
 import itertools
 import calendar
 from numpy.testing import assert_allclose
-from scipy.interpolate import Rbf, interp1d
+from scipy.interpolate import Rbf, interp1d, make_interp_spline
 import warnings
 
 TEST_DIR = os.path.dirname(__file__)
@@ -1414,6 +1418,275 @@ class TestInterpolatedQuadratureParameter:
             return value
 
         model.run()
+
+
+class TestSplineInterpolatedParameter:
+    X = [0, 5, 10, 11]
+    Y = [0, 10, 30, 2]
+    VALUES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+    @pytest.mark.parametrize("k", [1, 2, 3])
+    def test_matches_scipy(self, simple_linear_model, k):
+        """Spline parameter agrees with scipy's spline and, for k=1, with interp1d."""
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        p1 = ArrayIndexedParameter(model, self.VALUES)
+        p2 = SplineInterpolatedParameter(model, p1, self.X, self.Y, k=k)
+        expected_values = make_interp_spline(self.X, self.Y, k=k)(self.VALUES)
+        if k == 1:
+            assert_allclose(expected_values, interp1d(self.X, self.Y)(self.VALUES))
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            return expected_values[timestep.index]
+
+        model.run()
+
+    @pytest.mark.parametrize(
+        ["spline_kwargs", "values", "expected"],
+        [
+            (
+                {"bounds_error": False, "fill_value": [0, 2]},
+                [-2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15],
+                [0, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 2],
+            ),
+            (
+                {"bounds_error": False, "fill_value": 3},
+                [-2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15],
+                [3, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, 3],
+            ),
+            (
+                {"bounds_error": False, "fill_value": "extrapolate"},
+                [-1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12],
+                [-2, 2, 4, 6, 8, 10, 14, 18, 22, 26, 30, -26],
+            ),
+        ],
+    )
+    def test_out_of_bounds(self, simple_linear_model, spline_kwargs, values, expected):
+        """Out of bounds values are filled or extrapolated when `bounds_error` is False."""
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        ArrayIndexedParameter(model, values, name="myparam")
+        data = {
+            "parameter": "myparam",
+            "x": self.X,
+            "y": self.Y,
+            "k": 1,
+            **spline_kwargs,
+        }
+        p2 = SplineInterpolatedParameter.load(model, data)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            return expected[timestep.index]
+
+        model.run()
+
+    def test_bounds_error(self, simple_linear_model):
+        """A ValueError is raised for out of bounds values by default."""
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        p1 = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12])
+        SplineInterpolatedParameter(model, p1, self.X, self.Y, k=1)
+        with pytest.raises(ValueError, match="falls above the interpolation bounds"):
+            model.run()
+
+    @pytest.mark.parametrize(
+        ["x", "y", "kwargs", "match"],
+        [
+            ([0, 1], [0, 1], {"k": 3}, "At least 4 data points"),
+            ([0, 2, 1, 3], [0, 1, 2, 3], {}, "strictly increasing"),
+            ([0, 1, 2, 3], [0, 1, 2], {}, "same length"),
+            ([0, 1, 2, 3], [0, 1, 2, 3], {"bounds_error": False}, "fill_value"),
+        ],
+    )
+    def test_invalid(self, simple_linear_model, x, y, kwargs, match):
+        """Invalid data is rejected when the model is set up."""
+        model = simple_linear_model
+        p1 = ConstantParameter(model, 1.0)
+        SplineInterpolatedParameter(model, p1, x, y, **kwargs)
+        with pytest.raises(ValueError, match=match):
+            model.setup()
+
+    def test_load(self, simple_linear_model):
+        """Spline parameter can be loaded from a dict using the registered name."""
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        ArrayIndexedParameter(model, self.VALUES, name="p1")
+        data = {
+            "type": "splineinterpolated",
+            "parameter": "p1",
+            "x": self.X,
+            "y": self.Y,
+            "k": 2,
+        }
+        p2 = load_parameter(model, data)
+        expected_values = make_interp_spline(self.X, self.Y, k=2)(self.VALUES)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            return expected_values[timestep.index]
+
+        model.run()
+
+
+class TestSplineInterpolatedQuadratureParameter:
+    @pytest.mark.parametrize("lower_interval", [None, 0, 1])
+    def test_linear_matches_interp1d_quadrature(
+        self, simple_linear_model, lower_interval
+    ):
+        """With k=1 the analytical integral matches the numerical interp1d version."""
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        b = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        a = None
+        if lower_interval is not None:
+            a = ConstantParameter(model, lower_interval)
+
+        x = [-5, 0, 5, 10, 11]
+        y = [0, 0, 5 * 2, 10 * 3, 2]
+        p1 = InterpolatedQuadratureParameter(model, b, x, y, lower_parameter=a)
+        p2 = SplineInterpolatedQuadratureParameter(
+            model, b, x, y, lower_parameter=a, k=1
+        )
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            return p1.get_value(scenario_index)
+
+        model.run()
+
+    @pytest.mark.parametrize("k", [2, 3])
+    def test_cubic_matches_scipy(self, simple_linear_model, k):
+        """Higher degree integrals match scipy's spline integral."""
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        x = [0, 5, 10, 11]
+        y = [0, 10, 30, 2]
+        b = ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        p2 = SplineInterpolatedQuadratureParameter(model, b, x, y, k=k)
+        spline = make_interp_spline(x, y, k=k)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            return spline.integrate(0, timestep.index)
+
+        model.run()
+
+    def test_fill_value(self, simple_linear_model):
+        """Out of bounds intervals integrate the fill values."""
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-03"
+
+        x = [0, 10]
+        y = [0, 10]
+        lower = ArrayIndexedParameter(model, [-2, 5, 12])
+        upper = ArrayIndexedParameter(model, [-1, 12, 14])
+        p = SplineInterpolatedQuadratureParameter(
+            model,
+            upper,
+            x,
+            y,
+            lower_parameter=lower,
+            k=1,
+            bounds_error=False,
+            fill_value=[1, 2],
+        )
+        expected = [1.0, 37.5 + 4, 4.0]
+
+        @assert_rec(model, p)
+        def expected_func(timestep, scenario_index):
+            return expected[timestep.index]
+
+        model.run()
+
+    def test_load(self, simple_linear_model):
+        """Quadrature parameter can be loaded from a dict using the registered name."""
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-12"
+
+        ArrayIndexedParameter(model, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name="p1")
+        data = {
+            "type": "splineinterpolatedquadrature",
+            "upper_parameter": "p1",
+            "x": [0, 5, 10, 11],
+            "y": [0, 5 * 2, 10 * 3, 2],
+            "k": 1,
+        }
+        p2 = load_parameter(model, data)
+
+        @assert_rec(model, p2)
+        def expected_func(timestep, scenario_index):
+            i = timestep.index
+            if i < 6:
+                value = 2 * i**2 / 2
+            elif i < 11:
+                value = 25 + 4 * (i - 5) ** 2 / 2 + (i - 5) * 10
+            else:
+                value = 25 + 50 + 50 + 28 / 2 + 2
+            return value
+
+        model.run()
+
+
+class TestSplineInterpolatedNodeParameters:
+    def test_volume(self, simple_storage_model):
+        """Volume parameter interpolates the current volume of the storage."""
+        model = simple_storage_model
+        storage = model.nodes["Storage"]
+        p = SplineInterpolatedVolumeParameter(model, storage, [0, 20], [0, 100], k=1)
+        rec = NumpyArrayParameterRecorder(model, p)
+
+        model.run()
+
+        assert_allclose(rec.data[:, 0], [50, 35, 20, 5, 0], atol=1e-7)
+
+    def test_volume_load(self, simple_storage_model):
+        """Volume parameter can be loaded from a dict using the registered name."""
+        model = simple_storage_model
+        data = {
+            "type": "splineinterpolatedvolume",
+            "node": "Storage",
+            "volumes": [0, 20],
+            "values": [0, 100],
+            "k": 1,
+        }
+        p = load_parameter(model, data)
+        assert isinstance(p, SplineInterpolatedVolumeParameter)
+        assert p.k == 1
+
+    def test_flow(self, simple_linear_model):
+        """Flow parameter interpolates the previous flow of the node."""
+        model = simple_linear_model
+        model.timestepper.start = "1920-01-01"
+        model.timestepper.end = "1920-01-05"
+        node = model.nodes["Input"]
+        node.max_flow = ArrayIndexedParameter(model, [1, 2, 3, 4, 5])
+        model.nodes["Output"].max_flow = 10.0
+        model.nodes["Output"].cost = -10.0
+        p = SplineInterpolatedFlowParameter(
+            model, node, [0, 10], [0, 100], k=1, name="p"
+        )
+        rec = NumpyArrayParameterRecorder(model, p)
+
+        model.run()
+
+        # The previous flow is zero in the first time-step
+        assert_allclose(rec.data[:, 0], [0, 10, 20, 30, 40], atol=1e-7)
 
 
 class TestPiecewiseIntegralParameter:
