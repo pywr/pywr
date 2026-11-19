@@ -12,6 +12,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # Pinned to a release commit, which installs the matching black version from PyPI.
-      # Dependabot bumps this pin (and so the black version) along with the other actions.
+      # use_pyproject requires Python 3.11+ to read pyproject.toml.
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+      # The black version is taken from the pinned "dev" dependency group in pyproject.toml.
       - uses: psf/black@258e7dbf348bc23cb70b8cdf693481c04634ebcc # 26.10.1
+        with:
+          use_pyproject: true

@@ -30,7 +30,7 @@ opt = ["platypus-opt", "pygmo"]
 rds = ["pyreadr"]
 
 [dependency-groups]
-dev = ["pytest", "platypus-opt", "black"]
+dev = ["pytest", "platypus-opt", "black==26.10.1"]
 
 
 [build-system]
