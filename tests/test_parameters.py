@@ -576,7 +576,7 @@ class TestAnnualHarmonicSeriesParameter:
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
         for ts in model.timestepper:
-            doy = (ts.datetime.dayofyear - 1) / 365
+            doy = (ts.datetime.day_of_year - 1) / 365
             np.testing.assert_allclose(
                 p1.value(ts, si), 0.5 + 0.25 * np.cos(doy * 2 * np.pi + np.pi / 4)
             )
@@ -588,7 +588,7 @@ class TestAnnualHarmonicSeriesParameter:
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
         for ts in model.timestepper:
-            doy = (ts.datetime.dayofyear - 1) / 365
+            doy = (ts.datetime.day_of_year - 1) / 365
             expected = (
                 0.5
                 + 0.25 * np.cos(doy * 2 * np.pi + np.pi / 4)
@@ -608,7 +608,7 @@ class TestAnnualHarmonicSeriesParameter:
 
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
         for ts in model.timestepper:
-            doy = (ts.datetime.dayofyear - 1) / 365
+            doy = (ts.datetime.day_of_year - 1) / 365
             np.testing.assert_allclose(
                 p1.value(ts, si), 0.5 + 0.25 * np.cos(doy * 2 * np.pi + np.pi / 4)
             )
@@ -635,7 +635,7 @@ class TestAnnualHarmonicSeriesParameter:
         si = ScenarioIndex(0, np.array([0], dtype=np.int32))
 
         for ts in model.timestepper:
-            doy = (ts.datetime.dayofyear - 1) / 365
+            doy = (ts.datetime.day_of_year - 1) / 365
             np.testing.assert_allclose(
                 p1.value(ts, si), 0.6 + 0.1 * np.cos(doy * 2 * np.pi + np.pi / 2)
             )
@@ -927,7 +927,7 @@ def test_parameter_df_upsampling_multiple_columns(model):
     p = DataFrameParameter(model, df, scenario=scA)
     p.setup()
 
-    A = df.resample("7D", axis=0).mean()
+    A = df.resample("7D").mean()
     for v, ts in zip(A.values, model.timestepper):
         np.testing.assert_allclose(
             [

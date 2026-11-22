@@ -1,9 +1,32 @@
 """Utilities for working with pandas DataFrame objects."""
 
 import pandas
-from pandas.tseries.offsets import Tick, DateOffset
+from pandas.tseries.offsets import Tick, Day, BaseOffset
 from pandas._libs.tslibs.period import IncompatibleFrequency
 import os
+
+
+def _is_fixed_frequency(freq):
+    """True for fixed-duration offsets (e.g. hourly, daily, 7-daily).
+
+    In pandas 3, ``Day`` is no longer a subclass of ``Tick``, so it is checked
+    for explicitly.
+    """
+    return isinstance(freq, (Tick, Day))
+
+
+def _infer_freq(index):
+    """Infer the frequency of a `DatetimeIndex`.
+
+    Newer versions of pandas warn that `infer_freq` will return an offset instead
+    of a string in future. Opt in to that behaviour where the option exists; the
+    result is only passed to `asfreq`, which accepts either.
+    """
+    try:
+        with pandas.option_context("future.infer_freq_returns_offset", True):
+            return pandas.infer_freq(index)
+    except pandas.errors.OptionError:
+        return pandas.infer_freq(index)
 
 
 class ResamplingError(Exception):
@@ -62,11 +85,13 @@ def align_and_resample_dataframe(df, target_index, resample_func="mean"):
 
     # Determine how to do the resampling based on the frequency type
     # and whether to do up or down sampling.
-    if isinstance(model_freq, Tick):
+    if _is_fixed_frequency(model_freq):
         # Model is tick based e.g. daily or hourly
-        if isinstance(df_freq, Tick):
+        if _is_fixed_frequency(df_freq):
             # Dataframe is also tick based
-            if model_freq >= df_freq:
+            # Compare durations via `nanos`; `Day` is not orderable in pandas 3, and
+            # `pandas.Timedelta(Day())` is not supported in pandas 3.0.x.
+            if model_freq.nanos >= df_freq.nanos:
                 # Down sampling (i.e. from high freq to lower model freq)
                 df = _down_sample_tick_to_tick(df, target_index, resample_func)
             else:
@@ -76,9 +101,9 @@ def align_and_resample_dataframe(df, target_index, resample_func="mean"):
             # Generally this is going to be up sampling to a higher model freq
             df = _resample_date_offset_to_tick(df, target_index, resample_func)
 
-    elif isinstance(model_freq, DateOffset):
+    elif isinstance(model_freq, BaseOffset):
         # Model is based on date offsets.
-        if isinstance(df_freq, Tick):
+        if _is_fixed_frequency(df_freq):
             # Dataframe is tick based
             # Generally this is going to be down sampling to a lower model freq
             df = _down_sample_tick_to_date_offset(df, target_index, resample_func)
@@ -210,7 +235,7 @@ def load_dataframe(model, data):
             # Only infer freq if one isn't already found.
             # E.g. HDF stores the saved freq, but CSV tends to have None, but infer to Weekly for example
             if df.index.freq is None:
-                freq = pandas.infer_freq(df.index)
+                freq = _infer_freq(df.index)
                 if freq is None:
                     raise IndexError(
                         'Failed to identify frequency of dataset "{}"'.format(name)

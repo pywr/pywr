@@ -163,7 +163,10 @@ class Timestepper(object):
 
     @property
     def offset(self):
-        return pandas.tseries.frequencies.to_offset(self.freq)
+        # Use the offset of the period index. Since pandas 3, ``to_offset`` no longer
+        # accepts period aliases such as "M" or "Y" (it requires "ME"/"YE"), but those
+        # are the aliases `pandas.period_range` requires.
+        return self.datetime_index.freq
 
     @property
     def current(self):

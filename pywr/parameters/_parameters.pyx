@@ -940,7 +940,7 @@ cdef class UniformDrawdownProfileParameter(Parameter):
         super(UniformDrawdownProfileParameter, self).reset()
         # Reset day of the year based on a leap year.
         # Note that this is zero-based
-        self._reset_idoy = pandas.Period(year=2016, month=self.reset_month, day=self.reset_day, freq='D').dayofyear - 1
+        self._reset_idoy = pandas.Period(year=2016, month=self.reset_month, day=self.reset_day, freq='D').day_of_year - 1
 
     cpdef double value(self, Timestep ts, ScenarioIndex scenario_index) except? -1:
         cdef int current_idoy = ts.dayofyear_index
