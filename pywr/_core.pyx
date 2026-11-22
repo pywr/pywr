@@ -262,7 +262,7 @@ cdef class Timestep:
     days : int
         The time-step length in days.
     dayofyear : int
-        The day of the year (from `pandas.Period.dayofyear`).
+        The day of the year (from `pandas.Period.day_of_year`).
     dayofyear_index : int
         A zero-based index for the day of the year. This begins at 0 and ends at 366. The 29th of February
         is skipped if it is not a leap year.
@@ -284,7 +284,7 @@ cdef class Timestep:
         if days <= 0:
             raise ValueError("The days argument must be > 0.")
         self.days = days
-        self.dayofyear = period.dayofyear
+        self.dayofyear = period.day_of_year
         self.day = period.day
         self.month = period.month
         self.year = period.year

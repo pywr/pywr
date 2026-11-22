@@ -3189,7 +3189,7 @@ def timeseries2_observed():
         parse_dates=True,
         index_col=0,
     )
-    df = df.asfreq(pandas.infer_freq(df.index))
+    df = df.asfreq("D")
     # perturb a bit
     df += np.random.normal(size=df.shape)
     return df

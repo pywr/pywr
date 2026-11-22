@@ -2005,11 +2005,11 @@ cdef class AnnualCountIndexThresholdRecorder(Recorder):
         if self.include_from_month is None or self.include_from_day is None:
             include_from = 1
         else:
-            include_from = pd.Timestamp(self._current_year, self.include_from_month, self.include_from_day).dayofyear
+            include_from = pd.Timestamp(self._current_year, self.include_from_month, self.include_from_day).day_of_year
         if self.include_to_month is None or self.include_to_day is None:
             include_to = 366
         else:
-            include_to = pd.Timestamp(self._current_year, self.include_to_month, self.include_to_day).dayofyear
+            include_to = pd.Timestamp(self._current_year, self.include_to_month, self.include_to_day).day_of_year
         if not (include_from <= ts.dayofyear <= include_to):
             return
 
