@@ -1234,7 +1234,7 @@ class TestTablesRecorder:
                 assert row["A"] == comb[0]
                 assert row["B"] == comb[1]
 
-    def test_multiple_scenarios_ensemble_names(self, simple_linear_model, tmpdir):
+    def test_multiple_scenarios_ensemble_names(self, simple_linear_model, tmp_path):
         """
         Test the TablesRecorder
 
@@ -1259,7 +1259,7 @@ class TestTablesRecorder:
         otpt.max_flow = ConstantScenarioParameter(model, scB, [20, 40])
         otpt.cost = -2.0
 
-        h5file = tmpdir.join("output.h5")
+        h5file = tmp_path / "output.h5"
         import tables
 
         with tables.open_file(str(h5file), "w") as h5f:

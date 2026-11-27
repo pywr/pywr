@@ -498,7 +498,7 @@ class TablesRecorder(Recorder):
                 entry.append()
             tbl.flush()
 
-            # Store user-defined ensemble name for each scenario, it they exist.
+            # Store user-defined ensemble name for each scenario, if they exist.
             scenarios_list = self.model.scenarios.scenarios
             node_names = [s.name.replace("/", "_") for s in scenarios_list]
             duplicate_node_names = {n for n in node_names if node_names.count(n) > 1}
@@ -510,12 +510,13 @@ class TablesRecorder(Recorder):
                         "Cannot store ensemble names for scenario '{}': its "
                         "sanitised node name '{}' is not unique across scenarios "
                         "(scenario names are sanitised by replacing '/' with "
-                        "'_'). Rename the scenario(s) to avoid the collision."
-                        .format(scenario.name, node_name)
+                        "'_'). Rename the scenario(s) to avoid the collision.".format(
+                            scenario.name, node_name
+                        )
                     )
                 names = np.array(
                     [str(name).encode("utf-8") for name in scenario.ensemble_names],
-                    dtype="S1024"
+                    dtype="S1024",
                 )
                 self.h5store.file.create_array(
                     "/scenario_ensemble_names",
